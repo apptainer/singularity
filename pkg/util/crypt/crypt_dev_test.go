@@ -109,7 +109,8 @@ func TestEncrypt(t *testing.T) {
 				// if it is only that, we assume it is fine until we can precisely
 				// figure out why it is not working.
 				if !strings.Contains(err.Error(), "--luks2-metadata-size: unknown option") &&
-					!strings.Contains(err.Error(), "--type: unknown option") {
+					!strings.Contains(err.Error(), "--type: unknown option") &&
+					!strings.Contains(err.Error(), "Unrecognized metadata device type luks2") {
 					t.Fatalf("test %s expected to succeed but failed: %s", tt.name, err)
 				} else {
 					needCleanup = false
