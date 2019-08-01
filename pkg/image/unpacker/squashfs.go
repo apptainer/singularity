@@ -64,8 +64,8 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) error 
 	if stdin {
 		cmd.Stdin = reader
 	}
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("extract command failed: %s", err)
+	if o, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("extract command failed: %s: %s", string(o), err)
 	}
 	return nil
 }

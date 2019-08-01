@@ -287,7 +287,7 @@ github.com/satori/go.uuid
 github.com/seccomp/libseccomp-golang
 # github.com/sirupsen/logrus v1.0.5
 github.com/sirupsen/logrus
-# github.com/spf13/cobra v0.0.0-20190321000552-67fc4837d267
+# github.com/spf13/cobra v0.0.5
 github.com/spf13/cobra
 github.com/spf13/cobra/doc
 # github.com/spf13/pflag v1.0.3
@@ -300,7 +300,7 @@ github.com/sylabs/scs-build-client/client
 github.com/sylabs/scs-key-client/client
 # github.com/sylabs/scs-library-client v0.2.2
 github.com/sylabs/scs-library-client/client
-# github.com/sylabs/sif v1.0.5
+# github.com/sylabs/sif v1.0.6
 github.com/sylabs/sif/pkg/siftool
 github.com/sylabs/sif/pkg/sif
 github.com/sylabs/sif/internal/app/siftool

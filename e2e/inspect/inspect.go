@@ -6,11 +6,9 @@
 package inspect
 
 import (
-	"os/exec"
 	"testing"
 
 	"github.com/buger/jsonparser"
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
@@ -19,13 +17,6 @@ type ctx struct {
 }
 
 const containerTesterSIF = "testdata/inspecter_container.sif"
-
-func (c *ctx) runInspectCommand(inspectType string) ([]byte, error) {
-	argv := []string{"inspect", "--json", inspectType, containerTesterSIF}
-	cmd := exec.Command(c.env.CmdPath, argv...)
-
-	return cmd.CombinedOutput()
-}
 
 func (c *ctx) singularityInspect(t *testing.T) {
 	tests := []struct {
@@ -115,16 +106,10 @@ func (c *ctx) singularityInspect(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Inspect the container, and get the output
-			out, err := c.runInspectCommand(tt.insType)
-			err = errors.Wrap(err, "running inspect command")
-			if err != nil {
-				t.Fatalf("unexpected failure: %s: %+v", string(out), err)
-			}
-
+		// Inspect the container, and get the output
+		compareOutput := func(t *testing.T, r *e2e.SingularityCmdResult) {
 			// Parse the output
-			v, err := jsonparser.GetString(out, tt.json...)
+			v, err := jsonparser.GetString(r.Stdout, tt.json...)
 			if err != nil {
 				t.Fatalf("unable to get expected output from json: %v", err)
 			}
@@ -132,8 +117,15 @@ func (c *ctx) singularityInspect(t *testing.T) {
 			if v != tt.expectOut {
 				t.Fatalf("unexpected failure: got: %s, expecting: %s", v, tt.expectOut)
 			}
+		}
 
-		})
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithCommand("inspect"),
+			e2e.WithArgs("--json", tt.insType, containerTesterSIF),
+			e2e.ExpectExit(0, compareOutput),
+		)
 	}
 
 }

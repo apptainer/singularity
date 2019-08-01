@@ -1,11 +1,13 @@
 #!/bin/sh
 
 srcdir=$1
-shift
+gotags=$2
+shift 2
 
 go list -mod=vendor \
 	-deps \
-	-f '{{ with $d := . }}{{ range $d.GoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ end }}' \
+	-f '{{ with $d := . }}{{ range $d.GoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ range $d.CgoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ end }}' \
+	-tags "${gotags}" \
 	"$@" |
 tr ' ' '\n' |
 sort -u |
