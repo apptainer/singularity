@@ -21,12 +21,13 @@ import (
 const (
 	fileName      = "remote.yaml"
 	sysDir        = "singularity"
-	remoteWarning = "no authentication token, log in with 'singularity remote` commands"
+	remoteWarning = "no authentication token, log in with `singularity remote login`"
 )
 
 var (
 	loginTokenFile string
 	remoteConfig   string
+	remoteNoLogin  bool
 	global         bool
 )
 
@@ -63,6 +64,15 @@ var remoteTokenFileFlag = cmdline.Flag{
 	Usage:        "path to the file holding token",
 }
 
+// --no-login
+var remoteNoLoginFlag = cmdline.Flag{
+	ID:           "remoteNoLoginFlag",
+	Value:        &remoteNoLogin,
+	DefaultValue: false,
+	Name:         "no-login",
+	Usage:        "skip automatic login step",
+}
+
 func init() {
 	cmdManager.RegisterCmd(RemoteCmd)
 	cmdManager.RegisterSubCmd(RemoteCmd, RemoteAddCmd)
@@ -75,9 +85,11 @@ func init() {
 	// default location of the remote.yaml file is the user directory
 	cmdManager.RegisterFlagForCmd(&remoteConfigFlag, RemoteCmd)
 	// use tokenfile to log in to a remote
-	cmdManager.RegisterFlagForCmd(&remoteTokenFileFlag, RemoteLoginCmd)
+	cmdManager.RegisterFlagForCmd(&remoteTokenFileFlag, RemoteLoginCmd, RemoteAddCmd)
 	// add --global flag to remote add/remove/use commands
 	cmdManager.RegisterFlagForCmd(&remoteGlobalFlag, RemoteAddCmd, RemoteRemoveCmd, RemoteUseCmd)
+	// add --no-login flag to add command
+	cmdManager.RegisterFlagForCmd(&remoteNoLoginFlag, RemoteAddCmd)
 }
 
 // RemoteCmd singularity remote [...]
@@ -88,6 +100,8 @@ var RemoteCmd = &cobra.Command{
 	Short:   docs.RemoteShort,
 	Long:    docs.RemoteLong,
 	Example: docs.RemoteExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // setGlobalRemoteConfig will assign the appropriate value to remoteConfig if the global flag is set
@@ -110,8 +124,22 @@ var RemoteAddCmd = &cobra.Command{
 	Args:   cobra.ExactArgs(2),
 	PreRun: setGlobalRemoteConfig,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteAdd(remoteConfig, args[0], args[1], global); err != nil {
+		name := args[0]
+		uri := args[1]
+		if err := singularity.RemoteAdd(remoteConfig, name, uri, global); err != nil {
 			sylog.Fatalf("%s", err)
+		}
+		sylog.Infof("Remote %q added.", name)
+
+		// ensure that this was not called with global flag, otherwise this will store the token in the
+		// world readable config
+		if global && !remoteNoLogin {
+			sylog.Infof("Global option detected. Will not automatically log into remote.")
+		} else if !remoteNoLogin {
+			sylog.Infof("Authenticating with remote: %s", name)
+			if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, name, loginTokenFile); err != nil {
+				sylog.Fatalf("%s", err)
+			}
 		}
 	},
 
@@ -119,6 +147,8 @@ var RemoteAddCmd = &cobra.Command{
 	Short:   docs.RemoteAddShort,
 	Long:    docs.RemoteAddLong,
 	Example: docs.RemoteAddExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // RemoteRemoveCmd singularity remote remove [remoteName]
@@ -126,15 +156,19 @@ var RemoteRemoveCmd = &cobra.Command{
 	Args:   cobra.ExactArgs(1),
 	PreRun: setGlobalRemoteConfig,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteRemove(remoteConfig, args[0]); err != nil {
+		name := args[0]
+		if err := singularity.RemoteRemove(remoteConfig, name); err != nil {
 			sylog.Fatalf("%s", err)
 		}
+		sylog.Infof("Remote %q removed.", name)
 	},
 
 	Use:     docs.RemoteRemoveUse,
 	Short:   docs.RemoteRemoveShort,
 	Long:    docs.RemoteRemoveLong,
 	Example: docs.RemoteRemoveExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // RemoteUseCmd singularity remote use [remoteName]
@@ -142,15 +176,19 @@ var RemoteUseCmd = &cobra.Command{
 	Args:   cobra.ExactArgs(1),
 	PreRun: setGlobalRemoteConfig,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteUse(remoteConfig, remoteConfigSys, args[0], global); err != nil {
+		name := args[0]
+		if err := singularity.RemoteUse(remoteConfig, remoteConfigSys, name, global); err != nil {
 			sylog.Fatalf("%s", err)
 		}
+		sylog.Infof("Remote %q now in use.", name)
 	},
 
 	Use:     docs.RemoteUseUse,
 	Short:   docs.RemoteUseShort,
 	Long:    docs.RemoteUseLong,
 	Example: docs.RemoteUseExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // RemoteListCmd singularity remote list
@@ -166,6 +204,8 @@ var RemoteListCmd = &cobra.Command{
 	Short:   docs.RemoteListShort,
 	Long:    docs.RemoteListLong,
 	Example: docs.RemoteListExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // RemoteLoginCmd singularity remote login [remoteName]
@@ -190,6 +230,8 @@ var RemoteLoginCmd = &cobra.Command{
 	Short:   docs.RemoteLoginShort,
 	Long:    docs.RemoteLoginLong,
 	Example: docs.RemoteLoginExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // RemoteStatusCmd singularity remote status [remoteName]
@@ -214,4 +256,6 @@ var RemoteStatusCmd = &cobra.Command{
 	Short:   docs.RemoteStatusShort,
 	Long:    docs.RemoteStatusLong,
 	Example: docs.RemoteStatusExample,
+
+	DisableFlagsInUseLine: true,
 }

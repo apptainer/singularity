@@ -150,7 +150,7 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, force, no
 	// Get the image manifest
 	manifest, err := shub.GetManifest(shubURI, noHTTPS)
 	if err != nil {
-		return fmt.Errorf("failed to get manifest from shub: %s", err)
+		return fmt.Errorf("failed to get manifest for: %s: %s", shubRef, err)
 	}
 
 	imageName := uri.GetName(shubRef)
@@ -339,6 +339,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 			if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, false, ociAuth); err != nil {
 				return fmt.Errorf("while building SIF from layers: %v", err)
 			}
+			sylog.Infof("Build complete: %s", name)
 		}
 
 		// Perms are 777 *prior* to umask
