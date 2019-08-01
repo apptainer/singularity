@@ -80,9 +80,12 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 	}
 
 	// keep compatibility with v2
-	tmpdir := os.Getenv("SINGULARITY_LOCALCACHEDIR")
+	tmpdir := os.Getenv("SINGULARITY_TMPDIR")
 	if tmpdir == "" {
-		tmpdir = os.Getenv("SINGULARITY_CACHEDIR")
+		tmpdir = os.Getenv("SINGULARITY_LOCALCACHEDIR")
+		if tmpdir == "" {
+			tmpdir = os.Getenv("SINGULARITY_CACHEDIR")
+		}
 	}
 
 	// create temporary sandbox
