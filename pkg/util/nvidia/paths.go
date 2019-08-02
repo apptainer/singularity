@@ -94,7 +94,7 @@ func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
 	}
 
 	var nvidiaFiles []string
-	nvidiaFiles, err := nvidiaContainerCli("list", "--binaries", "--libraries")
+	nvidiaFiles, err = nvidiaContainerCli("list", "--binaries", "--libraries")
 	if err != nil {
 		sylog.Verbosef("nvidiaContainerCli returned: %v", err)
 		sylog.Verbosef("Falling back to nvliblist.conf")
