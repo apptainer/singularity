@@ -25,6 +25,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/overlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/underlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
+	fsoverlay "github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/priv"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
@@ -313,15 +314,40 @@ func (c *container) setupSessionLayout(system *mount.System) error {
 	}
 
 	if overlayEnabled {
-		sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
-		if imgObject.Type == image.SIF {
-			err = c.setupSIFOverlay(imgObject, c.engine.EngineConfig.GetWritableImage())
-			if err == nil {
-				return c.setupOverlayLayout(system, sessionPath)
-			}
-			sylog.Warningf("While attempting to set up SIFOverlay: %s", err)
+		skipOverlay := false
+
+		// before using overlay we check if the sandbox image is
+		// compatible as an overlay lower directory and skip using
+		// overlay to fallback to underlay if not filesystem is not
+		// compatible
+		rootfs := c.engine.EngineConfig.GetImage()
+		img, err := c.loadImage(rootfs, true)
+		if err != nil {
+			return err
 		}
-		return c.setupOverlayLayout(system, sessionPath)
+
+		if img.Type == image.SANDBOX {
+			if err := fsoverlay.CheckLower(img.Path); fsoverlay.IsIncompatible(err) {
+				// a warning message would be better but on some systems it
+				// could annoy users, make it verbose instead
+				sylog.Verbosef("Fallback to underlay: %s", err)
+				skipOverlay = true
+			} else if err != nil {
+				return fmt.Errorf("while checking image compatibility with overlay: %s", err)
+			}
+		}
+
+		if !skipOverlay {
+			sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
+			if imgObject.Type == image.SIF {
+				err = c.setupSIFOverlay(imgObject, c.engine.EngineConfig.GetWritableImage())
+				if err == nil {
+					return c.setupOverlayLayout(system, sessionPath)
+				}
+				sylog.Warningf("While attempting to set up SIFOverlay: %s", err)
+			}
+			return c.setupOverlayLayout(system, sessionPath)
+		}
 	}
 
 	if writableTmpfs {
@@ -869,10 +895,21 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			system.Points.AddRemount(mount.PreLayerTag, dst, flags)
 
 			if !imageObject.Writable {
+				// check if the sandbox directory is located on a compatible
+				// filesystem usable overlay lower directory
+				if err := fsoverlay.CheckLower(imageObject.Path); err != nil {
+					return err
+				}
 				if fs.IsDir(filepath.Join(imageObject.Path, "upper")) {
 					ov.AddLowerDir(filepath.Join(dst, "upper"))
 				} else {
 					ov.AddLowerDir(dst)
+				}
+			} else {
+				// check if the sandbox directory is located on a compatible
+				// filesystem usable with overlay upper directory
+				if err := fsoverlay.CheckUpper(imageObject.Path); err != nil {
+					return err
 				}
 			}
 		default:
