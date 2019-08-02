@@ -9,12 +9,10 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"path/filepath"
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	fakerootutil "github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
@@ -23,6 +21,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
@@ -48,7 +47,7 @@ func (e *EngineOperations) Config() config.EngineConfig {
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	g := generate.Generator{Config: &specs.Spec{}}
 
-	configurationFile := filepath.Join(buildcfg.SYSCONFDIR, "/singularity/singularity.conf")
+	configurationFile := files.GetSysConfigFile()
 
 	// check for ownership of singularity.conf
 	if starterConfig.GetIsSUID() && !fs.IsOwner(configurationFile, 0) {

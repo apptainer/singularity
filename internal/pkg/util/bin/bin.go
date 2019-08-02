@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
@@ -35,7 +36,7 @@ var (
 // returns a non-nil error.
 func Cryptsetup() (string, error) {
 	cache.Do(func() {
-		cfgpath := filepath.Join(buildcfg.SINGULARITY_CONFDIR, "singularity.conf")
+		cfgpath := files.GetSysConfigFile()
 		cache.cryptsetup, cache.err = cryptsetup(cfgpath)
 		sylog.Debugf("Using cryptsetup at %q", cache.cryptsetup)
 	})
