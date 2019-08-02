@@ -52,6 +52,10 @@ func TestCreateContainer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			go createContainer(tt.rpcSocket, tt.containerPid, tt.engine, fatalChan)
+			// createContainer is creating a separate thread and we sync with that
+			// thread through a channel similarly to the createContainer function itself,
+			// as well as the Master function.
+			// For more details, please refer to the master_linux.go code.
 			fatal = <-fatalChan
 			if tt.shallPass && fatal != nil {
 				t.Fatalf("test %s expected to succeed but failed: %s", tt.name, fatal)
