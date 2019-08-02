@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -17,7 +16,7 @@ import (
 )
 
 var (
-	cacheCleanForce bool
+	cacheCleanDry   bool
 	cacheCleanTypes []string
 	cacheCleanNames []string
 )
@@ -42,20 +41,19 @@ var cacheCleanNameFlag = cmdline.Flag{
 	Usage:        "specify a container cache to clean (will clear all cache with the same name)",
 }
 
-// -f|--force
-var cacheCleanForceFlag = cmdline.Flag{
-	ID:           "cacheCleanForceFlag",
-	Value:        &cacheCleanForce,
+// --dry-run
+var cacheCleanDryFlag = cmdline.Flag{
+	ID:           "cacheCleanDryFlag",
+	Value:        &cacheCleanDry,
 	DefaultValue: false,
-	Name:         "force",
-	ShortHand:    "f",
-	Usage:        "force cleaning the cache (otherwise operate in dry run mode)",
+	Name:         "dry-run",
+	Usage:        "operate in dry run mode and do not actually clean the cache",
 }
 
 func init() {
 	cmdManager.RegisterFlagForCmd(&cacheCleanTypesFlag, CacheCleanCmd)
 	cmdManager.RegisterFlagForCmd(&cacheCleanNameFlag, CacheCleanCmd)
-	cmdManager.RegisterFlagForCmd(&cacheCleanForceFlag, CacheCleanCmd)
+	cmdManager.RegisterFlagForCmd(&cacheCleanDryFlag, CacheCleanCmd)
 }
 
 // CacheCleanCmd is 'singularity cache clean' and will clear your local singularity cache
@@ -74,13 +72,9 @@ var CacheCleanCmd = &cobra.Command{
 }
 
 func cacheCleanCmd() error {
-	if !cacheCleanForce {
-		fmt.Printf("No --%s flag is specified, running in dry mode\n", cacheCleanForceFlag.Name)
-	}
-
 	// We create a handle to access the current image cache
 	imgCache := getCacheHandle()
-	err := singularity.CleanSingularityCache(imgCache, cacheCleanForce, cacheCleanTypes, cacheCleanNames)
+	err := singularity.CleanSingularityCache(imgCache, !cacheCleanDry, cacheCleanTypes, cacheCleanNames)
 	if err != nil {
 		sylog.Fatalf("Failed while clean cache: %v", err)
 	}
