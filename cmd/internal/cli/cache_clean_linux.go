@@ -6,14 +6,14 @@
 package cli
 
 import (
+	"fmt"
 	"os"
-
-	"github.com/sylabs/singularity/pkg/cmdline"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 var (
@@ -74,15 +74,15 @@ var CacheCleanCmd = &cobra.Command{
 }
 
 func cacheCleanCmd() error {
+	if !cacheCleanForce {
+		fmt.Printf("No --%s flag is specified, running in dry mode\n", cacheCleanForceFlag.Name)
+	}
+
 	// We create a handle to access the current image cache
 	imgCache := getCacheHandle()
-	if imgCache == nil {
-		sylog.Fatalf("failed to create an image cache handle")
-	}
 	err := singularity.CleanSingularityCache(imgCache, cacheCleanForce, cacheCleanTypes, cacheCleanNames)
 	if err != nil {
 		sylog.Fatalf("Failed while clean cache: %v", err)
 	}
-
-	return err
+	return nil
 }
