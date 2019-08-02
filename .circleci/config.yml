@@ -83,7 +83,7 @@ jobs:
           name: Update Go to 1.12.7
           working_directory: /tmp
           command: |-
-            wget https://dl.google.com/go/go1.12.7.darwin-amd64.tar.gz
+            curl -LO https://dl.google.com/go/go1.12.7.darwin-amd64.tar.gz
             sudo rm -rf /usr/local/go
             sudo tar -C /usr/local -xzf go1.12.7.darwin-amd64.tar.gz
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
