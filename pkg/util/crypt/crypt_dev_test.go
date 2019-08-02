@@ -86,12 +86,14 @@ func TestEncrypt(t *testing.T) {
 			key:       []byte("dummyKey"),
 			shallPass: false,
 		},
+		/* FIXME: deactivate because it creates too much variability in test results with CI
 		{
 			name:      "empty file",
 			path:      emptyFile.Name(),
 			key:       []byte("dummyKey"),
 			shallPass: false,
 		},
+		*/
 		{
 			name:      "valid file",
 			path:      tempTargetFile.Name(),
