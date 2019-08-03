@@ -97,11 +97,7 @@ func (e *EngineConfig) SetFuseCmd(fusecmd []string) error {
 
 		//Creates a fuse plugin config struct
 		var cfg struct {
-			Fuse struct {
-				DevFuseFd  int
-				MountPoint string
-				Program    []string
-			}
+			Fuse FuseInfo
 		}
 
 		//Adds the mount point and program to the fuse plugin config struct
