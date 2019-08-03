@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
@@ -92,20 +93,22 @@ func (e *EngineConfig) SetFuseCmd(fusecmd []string) error {
 		//Removes the mount point from the list of words
 		words = words[0 : len(words)-1]
 
-		sylog.Verbosef("Mounting FUSE filesystem with %s %s\n",
-			strings.Join(words, " "), mnt)
-
-		//Creates a fuse plugin config struct
 		var cfg struct {
 			Fuse FuseInfo
 		}
 
-		//Adds the mount point and program to the fuse plugin config struct
 		cfg.Fuse.MountPoint = mnt
 		cfg.Fuse.Program = words
 
-		//Runs SetPluginConfig to create a plugin object
-		if err := e.SetPluginConfig(mnt, cfg); err != nil {
+		//Choose a name that makes sure they get used in alphabetical
+		// order so the mountpoints stay in order.  Assumes no more
+		// than 1000 plugins.
+		pluginName := fmt.Sprintf("_fusecmd%03d", len(e.Plugin))
+
+		sylog.Verbosef("Mounting FUSE filesystem with %s %s as %s\n",
+			strings.Join(words, " "), mnt, pluginName)
+
+		if err := e.SetPluginConfig(pluginName, cfg); err != nil {
 			fmt.Fprintf(os.Stderr, "Cannot set plugin configuration: %+v\n", err)
 		}
 	}
@@ -137,6 +140,7 @@ func (e *EngineConfig) GetPluginFuseMounts() []string {
 		}
 	}
 
+	sort.Strings(list)
 	return list
 }
 
