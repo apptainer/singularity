@@ -93,7 +93,7 @@ func cacheCleanCmd() error {
 			return fmt.Errorf("could not prompt user: %v", err)
 		}
 		if !ok {
-			sylog.Infof("Cache cleanup cancelled")
+			sylog.Infof("Cache cleanup canceled")
 			return nil
 		}
 	}
