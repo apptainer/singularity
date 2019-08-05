@@ -76,7 +76,7 @@ var CacheCleanCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cacheCleanCmd(); err != nil {
-			os.Exit(2)
+			sylog.Fatalf("Cache clean failed: %v", err)
 		}
 	},
 
@@ -87,25 +87,27 @@ var CacheCleanCmd = &cobra.Command{
 }
 
 func cacheCleanCmd() error {
-	if !cacheCleanPrompt() {
-		sylog.Infof("Cache cleanup cancelled.")
-		return nil
+	if !cacheCleanForce {
+		ok, err := cacheCleanPrompt()
+		if err != nil {
+			return fmt.Errorf("could not prompt user: %v", err)
+		}
+		if !ok {
+			sylog.Infof("Cache cleanup cancelled")
+			return nil
+		}
 	}
 
-	// We create a handle to access the current image cache
+	// create a handle to access the current image cache
 	imgCache := getCacheHandle()
 	err := singularity.CleanSingularityCache(imgCache, !cacheCleanDry, cacheCleanTypes, cacheCleanNames)
 	if err != nil {
-		sylog.Fatalf("Failed while clean cache: %v", err)
+		return fmt.Errorf("could not clean cache: %v", err)
 	}
 	return nil
 }
 
-func cacheCleanPrompt() bool {
-	if cacheCleanForce {
-		return true
-	}
-
+func cacheCleanPrompt() (bool, error) {
 	fmt.Print(`This will delete everything in your cache (containers from all sources and OCI blobs). 
 Hint: You can see exactly what would be deleted by canceling and using the --dry-run option.
 Do you want to continue? [N/y] `)
@@ -113,8 +115,8 @@ Do you want to continue? [N/y] `)
 	r := bufio.NewReader(os.Stdin)
 	input, err := r.ReadString('\n')
 	if err != nil {
-		sylog.Fatalf("Could not read user's input: %s", err)
+		return false, fmt.Errorf("could not read user's input: %s", err)
 	}
 
-	return strings.ToLower(input) == "y\n"
+	return strings.ToLower(input) == "y\n", nil
 }
