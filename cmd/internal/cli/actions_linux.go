@@ -232,7 +232,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Verbosef("binding nvidia files into container")
 		}
 
-		libs, bins, err := nvidia.Paths(buildcfg.SINGULARITY_CONFDIR, userPath)
+		libs, bins, err := nvidia.Paths(buildcfg.NVIDIALIBS_FILE, userPath)
 		if err != nil {
 			sylog.Warningf("Unable to capture NVIDIA bind points: %v", err)
 		} else {
