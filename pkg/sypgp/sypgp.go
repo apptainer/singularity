@@ -799,6 +799,7 @@ func ExportPrivateKey(kpath string, armor bool) error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	if !armor {
 		// Export the key to the file
@@ -811,7 +812,6 @@ func ExportPrivateKey(kpath string, armor bool) error {
 		}
 		file.WriteString(keyText)
 	}
-	defer file.Close()
 
 	if err != nil {
 		return fmt.Errorf("unable to serialize private key: %v", err)
@@ -847,6 +847,7 @@ func ExportPubKey(kpath string, armor bool) error {
 	if err != nil {
 		return fmt.Errorf("unable to create file: %v", err)
 	}
+	defer file.Close()
 
 	if !armor {
 		err = entityToExport.Serialize(file)
@@ -859,7 +860,6 @@ func ExportPubKey(kpath string, armor bool) error {
 	if err != nil {
 		return fmt.Errorf("unable to serialize public key: %v", err)
 	}
-	defer file.Close()
 	fmt.Printf("Public key with fingerprint %X correctly exported to file: %s\n", entityToExport.PrimaryKey.Fingerprint, kpath)
 
 	return nil
