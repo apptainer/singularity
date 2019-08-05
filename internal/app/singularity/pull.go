@@ -36,7 +36,7 @@ var (
 // LibraryPull will download the image specified by file from the library specified by libraryURI.
 // After downloading, the image will be checked for a valid signature and removed if it does not contain one,
 // unless specified not to by the unauthenticated bool
-func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryURI, keyServerURL, authToken string, force, unauthenticated, noCache bool) error {
+func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL, authToken string, force, unauthenticated, noCache bool) error {
 	if !force {
 		if _, err := os.Stat(name); err == nil {
 			return fmt.Errorf("image file already exists: %q - will not overwrite", name)
