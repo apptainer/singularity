@@ -551,7 +551,7 @@ Enterprise Performance Computing (EPC)`
 	PullShort string = `Pull an image from a URI`
 	PullLong  string = `
   The 'pull' command allows you to download or build a container from a given
-  URI.  Supported URIs include:
+  URI. Supported URIs include:
 
   library: Pull an image from the currently configured library
       library://user/collection/container[:tag]
@@ -559,11 +559,17 @@ Enterprise Performance Computing (EPC)`
   docker: Pull an image from Docker Hub
       docker://user/image:tag
     
-  shub: Pull an image from Singularity Hub to CWD
+  shub: Pull an image from Singularity Hub
       shub://user/image:tag
 
   oras: Pull a SIF image from a supporting OCI registry
-      oras://registry/namespace/image:tag`
+      oras://registry/namespace/image:tag
+
+  http, https: Pull an image using the http(s?) protocol
+      https://library.sylabs.io/v1/imagefile/library/default/alpine:latest
+
+  NOTE: if you pulled a unsigned container from the library, Singularity
+  will exit 10. To avoid this, use the '--allow-unsigned' flag with 'pull'.`
 	PullExample string = `
   From Sylabs cloud library
   $ singularity pull alpine.sif library://alpine:latest
