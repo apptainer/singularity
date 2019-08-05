@@ -9,13 +9,13 @@ the [official documentation for SCIF](https://vsoch.github.io/scif/).
 Build your image
 
 ```
-sudo singularity build cowsay.simg Singularity.cowsay 
+sudo singularity build cowsay.sif Singularity.cowsay 
 ```
 
 What apps are installed?
 
 ```
-singularity apps cowsay.simg
+singularity apps cowsay.sif
 cowsay
 fortune
 lolcat
@@ -24,14 +24,14 @@ lolcat
 Ask for help for a specific app!
 
 ```
-singularity help --app fortune cowsay.simg
+singularity help --app fortune cowsay.sif
 fortune is the best app
 ```
 
 Run a particular app
 
 ```
-singularity run --app fortune cowsay.simg
+singularity run --app fortune cowsay.sif
 When I reflect upon the number of disagreeable people who I know who have gone
 to a better world, I am moved to lead a different life.
 		-- Mark Twain, "Pudd'nhead Wilson's Calendar"
@@ -40,7 +40,7 @@ to a better world, I am moved to lead a different life.
 Inspect an app
 
 ```
- singularity inspect --app fortune cowsay.img 
+ singularity inspect --app fortune cowsay.sif 
 {
     "SCIF_APPNAME": "fortune",
     "SCIF_APPSIZE": "1MB"
