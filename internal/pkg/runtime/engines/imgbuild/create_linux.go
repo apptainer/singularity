@@ -26,14 +26,14 @@ import (
 )
 
 // CreateContainer creates a container
-func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
-	if engine.CommonConfig.EngineName != imgbuildConfig.Name {
+func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
+	if e.CommonConfig.EngineName != imgbuildConfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
 	rpcOps := &client.RPC{
 		Client: rpc.NewClient(rpcConn),
-		Name:   engine.CommonConfig.EngineName,
+		Name:   e.CommonConfig.EngineName,
 	}
 	if rpcOps.Client == nil {
 		return fmt.Errorf("failed to initialiaze RPC client")
@@ -47,7 +47,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		sylog.Warningf("Running inside a user namespace, but setgroups is denied, build may not work correctly")
 	}
 
-	rootfs := engine.EngineConfig.Rootfs()
+	rootfs := e.EngineConfig.Rootfs()
 
 	st, err := os.Stat(rootfs)
 	if err != nil {
@@ -87,14 +87,14 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	// run setup/files sections here to allow injection of custom /etc/hosts or /etc/resolv.conf
-	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup.Script != "" {
+	if e.EngineConfig.RunSection("setup") && e.EngineConfig.Recipe.BuildData.Setup.Script != "" {
 		// Run %setup script here
-		engine.runScriptSection("setup", engine.EngineConfig.Recipe.BuildData.Setup, true)
+		e.runScriptSection("setup", e.EngineConfig.Recipe.BuildData.Setup, true)
 	}
 
-	if engine.EngineConfig.RunSection("files") {
+	if e.EngineConfig.RunSection("files") {
 		sylog.Debugf("Copying files from host")
-		if err := engine.copyFiles(); err != nil {
+		if err := e.copyFiles(); err != nil {
 			return fmt.Errorf("unable to copy files to container fs: %v", err)
 		}
 	}
@@ -182,9 +182,9 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	return nil
 }
 
-func (engine *EngineOperations) copyFiles() error {
+func (e *EngineOperations) copyFiles() error {
 	filesSection := types.Files{}
-	for _, f := range engine.EngineConfig.Recipe.BuildData.Files {
+	for _, f := range e.EngineConfig.Recipe.BuildData.Files {
 		if f.Args == "" {
 			filesSection = f
 		}
@@ -201,7 +201,7 @@ func (engine *EngineOperations) copyFiles() error {
 			transfer.Dst = transfer.Src
 		}
 		// copy each file into bundle rootfs
-		transfer.Dst = files.AddPrefix(engine.EngineConfig.Rootfs(), transfer.Dst)
+		transfer.Dst = files.AddPrefix(e.EngineConfig.Rootfs(), transfer.Dst)
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
 		if err := files.Copy(transfer.Src, transfer.Dst); err != nil {
 			return err
@@ -213,14 +213,14 @@ func (engine *EngineOperations) copyFiles() error {
 
 // runScriptSection executes the provided script by piping the
 // script to /bin/sh command.
-func (engine *EngineOperations) runScriptSection(name string, s types.Script, setEnv bool) {
+func (e *EngineOperations) runScriptSection(name string, s types.Script, setEnv bool) {
 	args := []string{"-ex"}
 	// trim potential trailing comment from args and append to args list
 	args = append(args, strings.Fields(strings.Split(s.Args, "#")[0])...)
 
 	envs := []string{}
 	if setEnv {
-		envs = engine.EngineConfig.OciConfig.Process.Env
+		envs = e.EngineConfig.OciConfig.Process.Env
 	}
 
 	sylog.Infof("Running %s scriptlet\n", name)
