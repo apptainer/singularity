@@ -67,7 +67,7 @@ jobs:
           command: |-
             make -j$(nproc) -C ./builddir check
 
-  go-macos:
+  go112-macos:
     macos:
       xcode: "10.2.0"
     working_directory: /Users/distiller/go/src/github.com/sylabs/singularity
@@ -76,11 +76,17 @@ jobs:
       - run:
           name: Setup environment
           command: |-
-            echo 'export GOPATH=$HOME/go'        >> $BASH_ENV
-            echo 'export PATH=$GOPATH/bin:$PATH' >> $BASH_ENV
+            echo 'export GOPATH=$HOME/go'      >> $BASH_ENV
+            echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
+            echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> $BASH_ENV
       - run:
-          name: Install dependencies
-          command: brew install go
+          name: Update Go to 1.12.7
+          working_directory: /tmp
+          command: |-
+            curl -LO https://dl.google.com/go/go1.12.7.darwin-amd64.tar.gz
+            sudo rm -rf /usr/local/go
+            sudo tar -C /usr/local -xzf go1.12.7.darwin-amd64.tar.gz
+            sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
       - run:
           name: Build Singularity
           command: |-
@@ -203,7 +209,7 @@ workflows:
       - go112-alpine:
           requires:
             - cache_go_mod
-      - go-macos:
+      - go112-macos:
           requires:
             - get_source
       - unit_tests:

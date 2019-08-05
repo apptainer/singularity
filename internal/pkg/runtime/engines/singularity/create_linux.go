@@ -10,9 +10,9 @@ import (
 	"net"
 	"net/rpc"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
@@ -26,7 +26,7 @@ func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 		return nil
 	}
 
-	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
+	configurationFile := files.GetSysConfigFile()
 	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
