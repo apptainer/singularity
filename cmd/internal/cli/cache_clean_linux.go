@@ -6,7 +6,10 @@
 package cli
 
 import (
+	"bufio"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
@@ -17,6 +20,7 @@ import (
 
 var (
 	cacheCleanDry   bool
+	cacheCleanForce bool
 	cacheCleanTypes []string
 	cacheCleanNames []string
 )
@@ -41,19 +45,30 @@ var cacheCleanNameFlag = cmdline.Flag{
 	Usage:        "specify a container cache to clean (will clear all cache with the same name)",
 }
 
-// --dry-run
+// -n|--dry-run
 var cacheCleanDryFlag = cmdline.Flag{
 	ID:           "cacheCleanDryFlag",
 	Value:        &cacheCleanDry,
 	DefaultValue: false,
 	Name:         "dry-run",
+	ShortHand:    "n",
 	Usage:        "operate in dry run mode and do not actually clean the cache",
+}
+
+// --force
+var cacheCleanForceFlag = cmdline.Flag{
+	ID:           "cacheCleanForceFlag",
+	Value:        &cacheCleanForce,
+	DefaultValue: false,
+	Name:         "force",
+	Usage:        "suppress any prompts and clean the cache",
 }
 
 func init() {
 	cmdManager.RegisterFlagForCmd(&cacheCleanTypesFlag, CacheCleanCmd)
 	cmdManager.RegisterFlagForCmd(&cacheCleanNameFlag, CacheCleanCmd)
 	cmdManager.RegisterFlagForCmd(&cacheCleanDryFlag, CacheCleanCmd)
+	cmdManager.RegisterFlagForCmd(&cacheCleanForceFlag, CacheCleanCmd)
 }
 
 // CacheCleanCmd is 'singularity cache clean' and will clear your local singularity cache
@@ -72,6 +87,11 @@ var CacheCleanCmd = &cobra.Command{
 }
 
 func cacheCleanCmd() error {
+	if !cacheCleanPrompt() {
+		sylog.Infof("Cache cleanup cancelled.")
+		return nil
+	}
+
 	// We create a handle to access the current image cache
 	imgCache := getCacheHandle()
 	err := singularity.CleanSingularityCache(imgCache, !cacheCleanDry, cacheCleanTypes, cacheCleanNames)
@@ -79,4 +99,22 @@ func cacheCleanCmd() error {
 		sylog.Fatalf("Failed while clean cache: %v", err)
 	}
 	return nil
+}
+
+func cacheCleanPrompt() bool {
+	if cacheCleanForce {
+		return true
+	}
+
+	fmt.Print(`This will delete everything in your cache (containers from all sources and OCI blobs). 
+Hint: You can see exactly what would be deleted by canceling and using the --dry-run option.
+Do you want to continue? [N/y] `)
+
+	r := bufio.NewReader(os.Stdin)
+	input, err := r.ReadString('\n')
+	if err != nil {
+		sylog.Fatalf("Could not read user's input: %s", err)
+	}
+
+	return strings.ToLower(input) == "y\n"
 }
