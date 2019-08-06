@@ -858,6 +858,10 @@ func RecryptKey(k *openpgp.Entity, passphrase []byte) error {
 
 // ExportPrivateKey Will export a private key into a file (kpath).
 func (keyring *Handle) ExportPrivateKey(kpath string, armor bool) error {
+	if err := keyring.PathsCheck(); err != nil {
+		return err
+	}
+
 	localEntityList, err := loadKeyring(keyring.SecretPath())
 	if err != nil {
 		return fmt.Errorf("unable to load private keyring: %v", err)
@@ -908,6 +912,10 @@ func (keyring *Handle) ExportPrivateKey(kpath string, armor bool) error {
 
 // ExportPubKey Will export a public key into a file (kpath).
 func (keyring *Handle) ExportPubKey(kpath string, armor bool) error {
+	if err := keyring.PathsCheck(); err != nil {
+		return err
+	}
+
 	localEntityList, err := loadKeyring(keyring.PublicPath())
 	if err != nil {
 		return fmt.Errorf("unable to open local keyring: %v", err)

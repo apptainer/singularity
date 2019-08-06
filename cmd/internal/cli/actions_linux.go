@@ -35,6 +35,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
@@ -80,9 +81,12 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 	}
 
 	// keep compatibility with v2
-	tmpdir := os.Getenv("SINGULARITY_LOCALCACHEDIR")
+	tmpdir := os.Getenv("SINGULARITY_TMPDIR")
 	if tmpdir == "" {
-		tmpdir = os.Getenv("SINGULARITY_CACHEDIR")
+		tmpdir = os.Getenv("SINGULARITY_LOCALCACHEDIR")
+		if tmpdir == "" {
+			tmpdir = os.Getenv("SINGULARITY_CACHEDIR")
+		}
 	}
 
 	// create temporary sandbox
@@ -129,7 +133,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	engineConfig := singularityConfig.NewConfig()
 
-	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
+	configurationFile := files.GetSysConfigFile()
 	if err := config.Parser(configurationFile, engineConfig.File); err != nil {
 		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
 	}

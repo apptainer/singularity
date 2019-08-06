@@ -38,7 +38,7 @@ func (c *ctx) remoteAdd(t *testing.T) {
 	}
 
 	for _, tt := range testPass {
-		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
+		argv := []string{"--config", config.Name(), "add", "--no-login", tt.remote, tt.uri}
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
@@ -58,7 +58,7 @@ func (c *ctx) remoteAdd(t *testing.T) {
 	}
 
 	for _, tt := range testFail {
-		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
+		argv := []string{"--config", config.Name(), "add", "--no-login", tt.remote, tt.uri}
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
@@ -92,7 +92,7 @@ func (c *ctx) remoteRemove(t *testing.T) {
 	}
 
 	for _, tt := range add {
-		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
+		argv := []string{"--config", config.Name(), "add", "--no-login", tt.remote, tt.uri}
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
@@ -180,7 +180,7 @@ func (c *ctx) remoteUse(t *testing.T) {
 	}
 
 	for _, tt := range add {
-		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
+		argv := []string{"--config", config.Name(), "add", "--no-login", tt.remote, tt.uri}
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
@@ -233,7 +233,7 @@ func (c *ctx) remoteStatus(t *testing.T) {
 	}
 
 	for _, tt := range add {
-		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
+		argv := []string{"--config", config.Name(), "add", "--no-login", tt.remote, tt.uri}
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
@@ -318,7 +318,7 @@ func (c *ctx) remoteList(t *testing.T) {
 	}
 
 	for _, tt := range add {
-		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
+		argv := []string{"--config", config.Name(), "add", "--no-login", tt.remote, tt.uri}
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),

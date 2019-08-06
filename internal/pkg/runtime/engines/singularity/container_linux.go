@@ -30,6 +30,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/network"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
@@ -169,6 +170,9 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return err
 	}
 	if err := c.addHostnameMount(system); err != nil {
+		return err
+	}
+	if err := c.addFuseMount(system); err != nil {
 		return err
 	}
 
@@ -1895,4 +1899,66 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func() e
 		c.engine.EngineConfig.Network = setup
 		return nil
 	}, nil
+}
+
+// addFuseMount transforms the plugin configuration into a series of
+// mount requests for FUSE filesystems
+func (c *container) addFuseMount(system *mount.System) error {
+	for i, name := range c.engine.EngineConfig.GetPluginFuseMounts() {
+		var cfg struct {
+			Fuse singularity.FuseInfo
+		}
+
+		if err := c.engine.EngineConfig.GetPluginConfig(name, &cfg); err != nil {
+			sylog.Debugf("Failed getting plugin config: %+v\n", err)
+			return err
+		}
+
+		// we cannot check this because the mount point might
+		// not exist outside the container with the name that
+		// it's going to have _inside_ the container, so we
+		// simply assume that it is a directory.
+		//
+		// In a normal situation we would stat the mount point
+		// to obtain the mode, and bitwise-and the result with
+		// S_IFMT.
+		rootmode := syscall.S_IFDIR & syscall.S_IFMT
+
+		// we assume that the file descriptor we obtained by
+		// opening /dev/fuse before is valid in the RPC server,
+		// where the actual mount operation is going to be
+		// executed.
+		opts := fmt.Sprintf("fd=%d,rootmode=%o,user_id=%d,group_id=%d",
+			cfg.Fuse.DevFuseFd,
+			rootmode,
+			os.Getuid(),
+			os.Getgid())
+
+		// mount file system in three steps: first create a
+		// dedicated session directory for each FUSE filesystem
+		// and use that as the mount point.
+		fuseDir := fmt.Sprintf("/fuse/%d", i)
+		if err := c.session.AddDir(fuseDir); err != nil {
+			return err
+		}
+		fuseDir, _ = c.session.GetPath(fuseDir)
+		sylog.Debugf("Add FUSE mount %s for %s with options %s", fuseDir, name, opts)
+		if err := system.Points.AddFS(
+			mount.BindsTag,
+			fuseDir,
+			"fuse",
+			syscall.MS_NOSUID|syscall.MS_NODEV,
+			opts); err != nil {
+			sylog.Debugf("Calling AddFS: %+v\n", err)
+			return err
+		}
+
+		// second, add a bind-mount the session directory into
+		// the destination mount point inside the container.
+		if err := system.Points.AddBind(mount.OtherTag, fuseDir, cfg.Fuse.MountPoint, 0); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
