@@ -569,9 +569,36 @@ func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	return el[n], nil
 }
 
-// SearchPubkey connects to a key server and searches for a specific key
-func SearchPubkey(search, keyserverURI, authToken string) error {
+// formatMROutput will take a machine readable input, and convert it to fit
+// on a 80x24 terminal.
+func formatMROutput(mrString string) string {
+	retList := "KEY ID    BITS  NAME/EMAIL\n\n"
+	count := 0
 
+	key := strings.Split(mrString, "\n")
+
+	for _, k := range key {
+		nk := strings.Split(k, ":")
+		for _, n := range nk {
+			if n == "pub" {
+				retList += nk[1][32:] + "  " // the fingerprint
+				retList += nk[3] + "  "      // the bits
+			}
+			if n == "uid" {
+				retList += nk[1] // the name/email
+				retList += "\n\n"
+				count++
+			}
+		}
+	}
+
+	retList = fmt.Sprintf("Showing %d results\n\n%s", count, retList)
+	return retList
+
+}
+
+// SearchPubkey connects to a key server and searches for a specific key
+func SearchPubkey(search, keyserverURI, authToken string, longOutput bool) error {
 	// Get a Key Service client.
 	c, err := client.NewClient(&client.Config{
 		BaseURL:   keyserverURI,
@@ -603,11 +630,15 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 		}
 	}
 
-	keyText, err = reformatMachineReadableOutput(keyText)
-	if err != nil {
-		return fmt.Errorf("could not reformat key output")
+	if longOutput {
+		keyText, err = reformatMachineReadableOutput(keyText)
+		if err != nil {
+			return fmt.Errorf("could not reformat key output")
+		}
+		fmt.Printf("%s", keyText)
+	} else {
+		fmt.Printf("%s", formatMROutput(keyText))
 	}
-	fmt.Printf("%v", keyText)
 
 	return nil
 }
@@ -729,7 +760,7 @@ func reformatMachineReadableOutput(keyText string) (string, error) {
 			return "", err
 		}
 
-		//check the status of each key if flags are present
+		// check the status of each key if flags are present
 		if len(featuresKey) == 7 {
 			if featuresKey[6] == "r" {
 				status = "revoked"
