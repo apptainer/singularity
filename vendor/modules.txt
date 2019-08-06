@@ -300,7 +300,7 @@ github.com/sylabs/scs-build-client/client
 github.com/sylabs/scs-key-client/client
 # github.com/sylabs/scs-library-client v0.2.2
 github.com/sylabs/scs-library-client/client
-# github.com/sylabs/sif v1.0.6
+# github.com/sylabs/sif v1.0.7-0.20190806212204-302c14a7e0fa
 github.com/sylabs/sif/pkg/siftool
 github.com/sylabs/sif/pkg/sif
 github.com/sylabs/sif/internal/app/siftool

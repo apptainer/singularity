@@ -208,7 +208,7 @@ func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.
 		return nil, nil, fmt.Errorf("no primary partition found")
 	}
 
-	sigs, _, err = fimg.GetFromLinkedDescr(descr[0].ID)
+	sigs, _, err = fimg.GetLinkingDescriptorsByType(descr[0].ID, sif.DataSignature)
 	if err != nil {
 		return nil, nil, fmt.Errorf("no signatures found for system partition")
 	}
