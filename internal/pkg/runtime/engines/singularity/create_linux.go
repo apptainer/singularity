@@ -17,27 +17,27 @@ import (
 )
 
 // CreateContainer creates a container
-func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
-	if engine.CommonConfig.EngineName != singularityConfig.Name {
+func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
+	if e.CommonConfig.EngineName != singularityConfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
-	if engine.EngineConfig.GetInstanceJoin() {
+	if e.EngineConfig.GetInstanceJoin() {
 		return nil
 	}
 
 	configurationFile := files.GetSysConfigFile()
-	if err := config.Parser(configurationFile, engine.EngineConfig.File); err != nil {
+	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 
 	rpcOps := &client.RPC{
 		Client: rpc.NewClient(rpcConn),
-		Name:   engine.CommonConfig.EngineName,
+		Name:   e.CommonConfig.EngineName,
 	}
 	if rpcOps.Client == nil {
 		return fmt.Errorf("failed to initialize RPC client")
 	}
 
-	return create(engine, rpcOps, pid)
+	return create(e, rpcOps, pid)
 }

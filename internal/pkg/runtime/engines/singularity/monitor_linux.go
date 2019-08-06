@@ -12,7 +12,7 @@ import (
 )
 
 // MonitorContainer monitors a container
-func (engine *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (syscall.WaitStatus, error) {
+func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (syscall.WaitStatus, error) {
 	var status syscall.WaitStatus
 
 	for {
@@ -26,7 +26,7 @@ func (engine *EngineOperations) MonitorContainer(pid int, signals chan os.Signal
 			}
 			return status, nil
 		default:
-			if engine.EngineConfig.GetSignalPropagation() {
+			if e.EngineConfig.GetSignalPropagation() {
 				if err := syscall.Kill(pid, s.(syscall.Signal)); err != nil {
 					return status, fmt.Errorf("interrupted by signal %s", s.String())
 				}

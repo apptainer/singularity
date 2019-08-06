@@ -59,8 +59,8 @@ func elfToGoArch(elfFile *elf.File) string {
 	return "UNKNOWN"
 }
 
-func (engine *EngineOperations) checkExec() error {
-	shell := engine.EngineConfig.GetShell()
+func (e *EngineOperations) checkExec() error {
+	shell := e.EngineConfig.GetShell()
 
 	if shell == "" {
 		shell = defaultShell
@@ -71,15 +71,15 @@ func (engine *EngineOperations) checkExec() error {
 		return fmt.Errorf("shell %s doesn't exist in container", shell)
 	}
 
-	args := engine.EngineConfig.OciConfig.Process.Args
-	env := engine.EngineConfig.OciConfig.Process.Env
+	args := e.EngineConfig.OciConfig.Process.Args
+	env := e.EngineConfig.OciConfig.Process.Env
 
 	// match old behavior of searching path
 	oldpath := os.Getenv("PATH")
 	defer func() {
 		os.Setenv("PATH", oldpath)
-		engine.EngineConfig.OciConfig.Process.Args = args
-		engine.EngineConfig.OciConfig.Process.Env = env
+		e.EngineConfig.OciConfig.Process.Args = args
+		e.EngineConfig.OciConfig.Process.Env = env
 	}()
 
 	for _, keyval := range env {
@@ -239,26 +239,26 @@ func preStartProcess(engine *EngineOperations) error {
 }
 
 // StartProcess starts the process
-func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
-	if err := preStartProcess(engine); err != nil {
+func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
+	if err := preStartProcess(e); err != nil {
 		return err
 	}
 
-	isInstance := engine.EngineConfig.GetInstance()
-	bootInstance := isInstance && engine.EngineConfig.GetBootInstance()
+	isInstance := e.EngineConfig.GetInstance()
+	bootInstance := isInstance && e.EngineConfig.GetBootInstance()
 	shimProcess := false
 
-	if err := os.Chdir(engine.EngineConfig.OciConfig.Process.Cwd); err != nil {
-		if err := os.Chdir(engine.EngineConfig.GetHomeDest()); err != nil {
+	if err := os.Chdir(e.EngineConfig.OciConfig.Process.Cwd); err != nil {
+		if err := os.Chdir(e.EngineConfig.GetHomeDest()); err != nil {
 			os.Chdir("/")
 		}
 	}
 
-	if err := engine.checkExec(); err != nil {
+	if err := e.checkExec(); err != nil {
 		return err
 	}
 
-	if engine.EngineConfig.File.MountDev == "minimal" || engine.EngineConfig.GetContain() {
+	if e.EngineConfig.File.MountDev == "minimal" || e.EngineConfig.GetContain() {
 		// If on a terminal, reopen /dev/console so /proc/self/fd/[0-2
 		//   will point to /dev/console.  This is needed so that tty and
 		//   ttyname() on el6 will return the correct answer.  Newer
@@ -290,14 +290,14 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 	}
 
-	args := engine.EngineConfig.OciConfig.Process.Args
-	env := engine.EngineConfig.OciConfig.Process.Env
+	args := e.EngineConfig.OciConfig.Process.Args
+	env := e.EngineConfig.OciConfig.Process.Env
 
-	if engine.EngineConfig.OciConfig.Linux != nil {
-		namespaces := engine.EngineConfig.OciConfig.Linux.Namespaces
+	if e.EngineConfig.OciConfig.Linux != nil {
+		namespaces := e.EngineConfig.OciConfig.Linux.Namespaces
 		for _, ns := range namespaces {
 			if ns.Type == specs.PIDNamespace {
-				if !engine.EngineConfig.GetNoInit() {
+				if !e.EngineConfig.GetNoInit() {
 					shimProcess = true
 				}
 				break
@@ -305,27 +305,27 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 	}
 
-	for _, img := range engine.EngineConfig.GetImageList() {
+	for _, img := range e.EngineConfig.GetImageList() {
 		if err := syscall.Close(int(img.Fd)); err != nil {
 			return fmt.Errorf("failed to close file descriptor for %s", img.Path)
 		}
 	}
 
-	for _, fd := range engine.EngineConfig.GetOpenFd() {
+	for _, fd := range e.EngineConfig.GetOpenFd() {
 		if err := syscall.Close(fd); err != nil {
 			return fmt.Errorf("aborting failed to close file descriptor: %s", err)
 		}
 	}
 
-	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
+	if err := security.Configure(&e.EngineConfig.OciConfig.Spec); err != nil {
 		return fmt.Errorf("failed to apply security configuration: %s", err)
 	}
 
-	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {
+	if (!isInstance && !shimProcess) || bootInstance || e.EngineConfig.GetInstanceJoin() {
 		err := syscall.Exec(args[0], args, env)
 		if err != nil {
 			// We know the shell exists at this point, so let's inspect its architecture
-			shell := engine.EngineConfig.GetShell()
+			shell := e.EngineConfig.GetShell()
 			if shell == "" {
 				shell = defaultShell
 			}
@@ -423,7 +423,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 						sylog.Debugf("No child process, exiting ...")
 						os.Exit(128 + int(signal))
 					}
-				} else if engine.EngineConfig.GetSignalPropagation() {
+				} else if e.EngineConfig.GetSignalPropagation() {
 					if err := syscall.Kill(cmd.Process.Pid, signal); err == syscall.ESRCH {
 						sylog.Debugf("No child process, exiting ...")
 						os.Exit(128 + int(signal))
@@ -462,11 +462,11 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 // PostStartProcess will execute code in master context after execution of container
 // process, typically to write instance state/config files or execute post start OCI hook
-func (engine *EngineOperations) PostStartProcess(pid int) error {
+func (e *EngineOperations) PostStartProcess(pid int) error {
 	sylog.Debugf("Post start process")
 
-	if engine.EngineConfig.GetInstance() {
-		name := engine.CommonConfig.ContainerID
+	if e.EngineConfig.GetInstance() {
+		name := e.CommonConfig.ContainerID
 
 		if err := os.Chdir("/"); err != nil {
 			return fmt.Errorf("failed to change directory to /: %s", err)
@@ -484,7 +484,7 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 		file.User = pw.Name
 		file.Pid = pid
 		file.PPid = os.Getpid()
-		file.Image = engine.EngineConfig.GetImage()
+		file.Image = e.EngineConfig.GetImage()
 
 		// by default we add all namespaces except the user namespace which
 		// is added conditionally. This delegates checks to the C starter code
@@ -504,19 +504,19 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 		}
 		for _, n := range namespaces {
 			nspath := filepath.Join(path, n.nstype)
-			engine.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
+			e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
 		}
-		for _, ns := range engine.EngineConfig.OciConfig.Linux.Namespaces {
+		for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
 			if ns.Type == specs.UserNamespace {
 				nspath := filepath.Join(path, "user")
-				engine.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, nspath)
+				e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, nspath)
 				file.UserNs = true
 				break
 			}
 		}
 
 		// grab configuration to store in instance file
-		file.Config, err = json.Marshal(engine.CommonConfig)
+		file.Config, err = json.Marshal(e.CommonConfig)
 		if err != nil {
 			return err
 		}
