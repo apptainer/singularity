@@ -84,7 +84,7 @@ func nvliblist(nvidiaDir string) ([]string, error) {
 func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
 	ldConfig, err := exec.LookPath("ldconfig")
 	if err != nil {
-		sylog.Debugf("ldconfig binary not found in %s, will search in %s", err, os.Getenv("PATH"), envPath)
+		sylog.Debugf("%v: ldconfig binary not found in %s, will search in %s", err, os.Getenv("PATH"), envPath)
 		ldConfig = "ldconfig"
 	}
 	if envPath != "" {
