@@ -65,6 +65,10 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 		return fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
+	if !unauthenticated && (libraryImage.Signed != nil && !*libraryImage.Signed) {
+		return ErrLibraryPullUnsigned
+	}
+
 	if noCache {
 		// Dont use cached image
 		sylog.Infof("Downloading library image: %s", name)
