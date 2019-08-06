@@ -54,25 +54,25 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 	// strip leading "library://" and append default tag, as necessary
 	imageRef := library.NormalizeLibraryRef(fullURI)
 
-	imageName := uri.GetName("library://" + imageRef)
-
 	// check if image exists in library
-	libraryImage, existOk, err := libraryClient.GetImage(context.TODO(), imageRef)
-	if err != nil {
-		return fmt.Errorf("while getting image info: %v", err)
-	}
-	if !existOk {
+	libraryImage, err := libraryClient.GetImage(context.Background(), imageRef)
+	if err == client.ErrNotFound {
 		return fmt.Errorf("image does not exist in the library: %s", imageRef)
+	}
+	if err != nil {
+		return fmt.Errorf("could not get image info: %v", err)
 	}
 
 	if noCache {
-		// Dont use cached image
+		// don't use cached image
 		sylog.Infof("Downloading library image: %s", name)
-		if err := library.DownloadImage(context.TODO(), libraryClient, name, imageRef, downloadImageCallback); err != nil {
+		err := library.DownloadImage(context.Background(), libraryClient, name, imageRef, downloadImageCallback)
+		if err != nil {
 			return fmt.Errorf("unable to download image: %v", err)
 		}
 	} else {
-		// Check, and use cached image
+		// check and use cached image
+		imageName := uri.GetName("library://" + imageRef)
 		imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
 		exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName)
 		if err != nil {
@@ -83,7 +83,8 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 			go interruptCleanup(imagePath)
 
 			// call library download image helper
-			if err := library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
+			err := library.DownloadImage(context.Background(), libraryClient, imagePath, imageRef, downloadImageCallback)
+			if err != nil {
 				return fmt.Errorf("unable to download image: %v", err)
 			}
 

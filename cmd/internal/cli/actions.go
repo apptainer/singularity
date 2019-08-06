@@ -191,12 +191,12 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 
 	imageRef := libraryhelper.NormalizeLibraryRef(u)
 
-	libraryImage, existOk, err := c.GetImage(ctx, imageRef)
+	libraryImage, err := c.GetImage(ctx, imageRef)
+	if err == library.ErrNotFound {
+		return "", fmt.Errorf("image does not exist in the library: %s", imageRef)
+	}
 	if err != nil {
 		return "", err
-	}
-	if !existOk {
-		return "", fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
 	imagePath := ""
