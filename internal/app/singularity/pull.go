@@ -32,8 +32,8 @@ var (
 	// pull was aborted
 	ErrLibraryPullUnsigned = errors.New("failed to verify container")
 
-	// ErrLibraryPullNoSign indicates that requested image has no sign.
-	ErrLibraryPullNoSign = errors.New("image has no sign")
+	// ErrLibraryPullNoSign indicates that requested image has no signature.
+	ErrLibraryPullNoSign = errors.New("image has no signature")
 )
 
 // LibraryPull will download the image specified by file from the library specified by libraryURI.
@@ -68,7 +68,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 		return fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
-	// check if image has a sign
+	// check if image has a signature
 	if !unauthenticated && (libraryImage.Signed != nil && !*libraryImage.Signed) {
 		return ErrLibraryPullNoSign
 	}
