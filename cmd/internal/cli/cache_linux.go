@@ -14,7 +14,7 @@ import (
 
 func init() {
 	cmdManager.RegisterCmd(CacheCmd)
-	cmdManager.RegisterSubCmd(CacheCmd, CacheCleanCmd)
+	cmdManager.RegisterSubCmd(CacheCmd, cacheCleanCmd)
 	cmdManager.RegisterSubCmd(CacheCmd, CacheListCmd)
 }
 
