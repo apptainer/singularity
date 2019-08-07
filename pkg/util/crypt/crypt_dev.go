@@ -24,6 +24,13 @@ import (
 // Device describes a crypt device
 type Device struct{}
 
+// Pre-defined error(s)
+var (
+	// ErrUnsupportedCryptsetupVersion is the error raised when the available version
+	// of cryptsetup is not compatible with the Singularity encryption mechanism.
+	ErrUnsupportedCryptsetupVersion = errors.New("available cryptsetup is not supported")
+)
+
 // createLoop attaches the specified file to the next available loop
 // device and sets the sizelimit on it
 func createLoop(path string, offset, size uint64) (string, error) {
@@ -67,6 +74,26 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 		return err
 	}
 
+	return nil
+}
+
+func checkCryptsetupVersion(cryptsetup string) error {
+	if cryptsetup == "" {
+		return fmt.Errorf("binary path not defined")
+	}
+
+	cmd := exec.Command(cryptsetup, "--version")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to run cryptsetup --version: %s", err)
+	}
+
+	if !strings.Contains(string(out), "cryptsetup 2.") {
+		return ErrUnsupportedCryptsetupVersion
+	}
+
+	// We successfully ran cryptsetup --version and we know that the
+	// version is compatible with our needs.
 	return nil
 }
 
@@ -143,6 +170,10 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		err = checkCryptsetupVersion(cryptsetup)
+		if err == ErrUnsupportedCryptsetupVersion {
+			return "", err
+		}
 		return "", fmt.Errorf("unable to format crypt device: %s: %s", cryptF.Name(), string(out))
 	}
 
@@ -253,6 +284,10 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 			}
 			if strings.Contains(string(out), "Device already exists") {
 				continue
+			}
+			err = checkCryptsetupVersion(cryptsetup)
+			if err == ErrUnsupportedCryptsetupVersion {
+				return "", err
 			}
 
 			return "", fmt.Errorf("cryptsetup open failed: %s: %v", string(out), err)
