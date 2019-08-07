@@ -7,6 +7,7 @@ package e2e
 
 import (
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -38,12 +39,17 @@ func WriteTempFile(dir, pattern, content string) (string, error) {
 //
 // This function shall not set the environment variable to specify the
 // image cache location since it would create thread safety problems.
-func MakeCacheDir(t *testing.T, baseDir string) string {
-	dir, err := fs.MakeTmpDir(baseDir, "imgcache-", 0755)
+func MakeCacheDir(t *testing.T, baseDir string) (string, func(t *testing.T)) {
+	dir, err := fs.MakeTmpDir(baseDir, "e2e-imgcache-", 0755)
 	err = errors.Wrapf(err, "creating temporary image cache directory at %s", baseDir)
 	if err != nil {
 		t.Fatalf("failed to create image cache directory: %+v", err)
 	}
 
-	return dir
+	return dir, func(t *testing.T) {
+		err := os.RemoveAll(dir)
+		if err != nil {
+			t.Fatalf("failed to delete temporary image cache: %s", err)
+		}
+	}
 }

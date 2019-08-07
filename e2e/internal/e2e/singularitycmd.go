@@ -437,8 +437,20 @@ func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
 		// shall update the test configuration and set s.cacheDir and
 		// make sure the directory is properly deleted.
 		if s.cacheDir == "" {
-			s.cacheDir = MakeCacheDir(t, "")
-			defer os.RemoveAll(s.cacheDir)
+			// cleanCache is a function that will delete the image cache
+			// and fail the test if it cannot be deleted.
+			imgCacheDir, cleanCache := MakeCacheDir(t, "")
+			s.cacheDir = imgCacheDir
+			defer func() {
+				// Tests may switch back and forth between privileged
+				// and unprivileged mode so if this specific test is
+				// privileged, we ensure that we delete the image cache
+				// with privileged rights.
+				if s.privileged {
+					cleanCache = Privileged(cleanCache)
+				}
+				cleanCache(t)
+			}()
 		}
 		cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, s.cacheDir)
 		cmd.Env = append(cmd.Env, cacheDirEnv)
