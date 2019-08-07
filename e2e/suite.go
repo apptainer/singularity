@@ -17,36 +17,22 @@ import (
 	"syscall"
 	"testing"
 
-	singularityinspect "github.com/sylabs/singularity/e2e/inspect"
-
-	singularityverify "github.com/sylabs/singularity/e2e/verify"
-
 	"github.com/sylabs/singularity/e2e/actions"
-
+	singularitycache "github.com/sylabs/singularity/e2e/cache"
 	"github.com/sylabs/singularity/e2e/docker"
-
 	singularityenv "github.com/sylabs/singularity/e2e/env"
-
 	"github.com/sylabs/singularity/e2e/help"
-
 	"github.com/sylabs/singularity/e2e/imgbuild"
-
+	singularityinspect "github.com/sylabs/singularity/e2e/inspect"
 	"github.com/sylabs/singularity/e2e/instance"
-
 	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
-
-	"github.com/sylabs/singularity/e2e/pull"
-
-	"github.com/sylabs/singularity/e2e/push"
-
-	"github.com/sylabs/singularity/e2e/remote"
-
-	version "github.com/sylabs/singularity/e2e/version"
-
 	"github.com/sylabs/singularity/e2e/oci"
-
+	"github.com/sylabs/singularity/e2e/pull"
+	"github.com/sylabs/singularity/e2e/push"
+	"github.com/sylabs/singularity/e2e/remote"
+	singularityverify "github.com/sylabs/singularity/e2e/verify"
+	"github.com/sylabs/singularity/e2e/version"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
@@ -156,6 +142,7 @@ func Run(t *testing.T) {
 		"REMOTE":   remote.RunE2ETests(testenv),
 		"VERIFY":   singularityverify.RunE2ETests(testenv),
 		"VERSION":  version.RunE2ETests(testenv),
+		"CACHE":    singularitycache.RunE2ETests(testenv),
 	}
 
 	for name, fn := range suites {

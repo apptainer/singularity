@@ -17,7 +17,7 @@ type TestEnv struct {
 	KeyringDir    string
 }
 
-// RunSingularity is a convinience wrapper for the standalone
+// RunSingularity is a convenient wrapper for the standalone
 // RunSingularity function, ensuring that RunSingularity gets called
 // with the correct singularity path as specified by the test
 // environment.
