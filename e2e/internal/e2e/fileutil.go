@@ -6,20 +6,11 @@
 package e2e
 
 import (
-	"fmt"
 	"io/ioutil"
-	"os"
+	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
-)
-
-var (
-	// cacheDirPriv is the directory the cachedir gets set to when running privileged.
-	cacheDirPriv = ""
-	// cacheDirUnpriv is the directory the cachedir gets set to when running unprivileged.
-	cacheDirUnpriv = ""
 )
 
 // WriteTempFile creates and populates a temporary file in the specified
@@ -42,26 +33,17 @@ func WriteTempFile(dir, pattern, content string) (string, error) {
 	return tmpfile.Name(), nil
 }
 
-// MakeCacheDirs creates cache directories for privileged and unprivileged
-// tests. Also set SINGULARITY_CACHEDIR environment variable for unprivileged
-// context.
-func MakeCacheDirs(baseDir string) error {
-	if cacheDirPriv == "" {
-		dir, err := fs.MakeTmpDir(baseDir, "privcache-", 0755)
-		err = errors.Wrapf(err, "creating temporary privileged cache directory at %s", baseDir)
-		if err != nil {
-			return fmt.Errorf("failed to create privileged cache directory: %+v", err)
-		}
-		cacheDirPriv = dir
+// MakeCacheDir creates a temporary image cache directory that can then be
+// used for the execution of a e2e test.
+//
+// This function shall not set the environment variable to specify the
+// image cache location since it would create thread safety problems.
+func MakeCacheDir(t *testing.T, baseDir string) string {
+	dir, err := fs.MakeTmpDir(baseDir, "imgcache-", 0755)
+	err = errors.Wrapf(err, "creating temporary image cache directory at %s", baseDir)
+	if err != nil {
+		t.Fatalf("failed to create image cache directory: %+v", err)
 	}
-	if cacheDirUnpriv == "" {
-		dir, err := fs.MakeTmpDir(baseDir, "unprivcache-", 0755)
-		err = errors.Wrapf(err, "creating temporary unprivileged cache directory at %s", baseDir)
-		if err != nil {
-			return fmt.Errorf("failed to create unprivileged cache directory: %+v", err)
-		}
-		cacheDirUnpriv = dir
-		os.Setenv(cache.DirEnv, cacheDirUnpriv)
-	}
-	return nil
+
+	return dir
 }

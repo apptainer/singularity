@@ -234,7 +234,8 @@ type SingularityCmdOp func(*singularityCmd)
 type singularityCmd struct {
 	args        []string
 	envs        []string
-	dir         string
+	dir         string // Working directory to be used when executing the command
+	cacheDir    string // Directory to use as image cache directory when executing the command
 	privileged  bool
 	subtestName string
 	stdin       io.Reader
@@ -396,7 +397,7 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 	}
 }
 
-// RunSingularity executes a singularity command within an test execution
+// RunSingularity executes a singularity command within a test execution
 // context.
 //
 // cmdPath specifies the path to the singularity binary and cmdOps
@@ -430,10 +431,17 @@ func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
 		if len(cmd.Env) == 0 {
 			cmd.Env = os.Environ()
 		}
-		if s.privileged {
-			cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, cacheDirPriv)
-			cmd.Env = append(cmd.Env, cacheDirEnv)
+
+		// Each command gets by default a clean temporary image cache.
+		// If it is needed to share an image cache between tests, one
+		// shall update the test configuration and set s.cacheDir and
+		// make sure the directory is properly deleted.
+		if s.cacheDir == "" {
+			s.cacheDir = MakeCacheDir(t, "")
+			defer os.RemoveAll(s.cacheDir)
 		}
+		cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, s.cacheDir)
+		cmd.Env = append(cmd.Env, cacheDirEnv)
 
 		cmd.Dir = s.dir
 		cmd.Stdin = s.stdin
