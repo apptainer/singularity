@@ -56,7 +56,7 @@ require (
 	github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8 // indirect
 	github.com/juju/testing v0.0.0-20190613124551-e81189438503 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
-	github.com/kr/pty v1.1.3
+	github.com/kr/pty v1.1.8
 	github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
 	github.com/mattn/go-colorable v0.1.1 // indirect
 	github.com/mattn/go-runewidth v0.0.2 // indirect
