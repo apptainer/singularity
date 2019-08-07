@@ -126,11 +126,11 @@ Decompressor | Time | Speedup
 [gzip](http://golang.org/pkg/compress/gzip) (golang) | 1m28.85s | 0%
 [pgzip](https://github.com/klauspost/pgzip) (golang) | 43.48s | 104%
 
-But wait, since gzip decompression is inherently singlethreaded (aside from CRC calculation) how can it be more than 100% faster?  Because pgzip due to its design also acts as a buffer. When using ubuffered gzip, you are also waiting for io when you are decompressing. If the gzip decoder can keep up, it will always have data ready for your reader, and you will not be waiting for input to the gzip decompressor to complete.
+But wait, since gzip decompression is inherently singlethreaded (aside from CRC calculation) how can it be more than 100% faster?  Because pgzip due to its design also acts as a buffer. When using unbuffered gzip, you are also waiting for io when you are decompressing. If the gzip decoder can keep up, it will always have data ready for your reader, and you will not be waiting for input to the gzip decompressor to complete.
 
 This is pretty much an optimal situation for pgzip, but it reflects most common usecases for CPU intensive gzip usage.
 
-I haven't included [bgzf](https://godoc.org/github.com/biogo/hts/bgzf) in this comparision, since it only can decompress files created by a compatible encoder, and therefore cannot be considered a generic gzip decompressor. But if you are able to compress your files with a bgzf compatible program, you can expect it to scale beyond 100%.
+I haven't included [bgzf](https://godoc.org/github.com/biogo/hts/bgzf) in this comparison, since it only can decompress files created by a compatible encoder, and therefore cannot be considered a generic gzip decompressor. But if you are able to compress your files with a bgzf compatible program, you can expect it to scale beyond 100%.
 
-#License
+# License
 This contains large portions of code from the go repository - see GO_LICENSE for more information. The changes are released under MIT License. See LICENSE for more information.

@@ -6,26 +6,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [0.4.4] - 2019-01-30
-## Added
-- Full-stack verification of blob hashes and descriptor sizes is now done on
-  all operations, improving our hardening against bad blobs (we already did
-  some verification of layer DiffIDs but this is far more thorough).
-  openSUSE/umoci#278 openSUSE/umoci#280 openSUSE/umoci#282
-
-## [0.4.3] - 2018-11-11
-## Added
-- All umoci commands that had `--history.*` options can now decide to omit a
-  history entry with `--no-history`. Note that while this is supported for
-  commands that create layers (`umoci repack`, `umoci insert`, and `umoci raw
-  add-layer`) it is not recommended to use it for those commands since it can
-  cause other tools to become confused when inspecting the image history. The
-  primary usecase is to allow `umoci config --no-history` to leave no traces in
-  the history. See SUSE/kiwi#871. openSUSE/umoci#270
-- `umoci insert` now has a `--tag` option that allows you to non-destructively
-  insert files into an image. The semantics match `umoci config --tag`.
-  openSUSE/umoci#273
-
 ## [0.4.2] - 2018-09-11
 ## Added
 - umoci now has an exposed Go API. At the moment it's unclear whether it will
@@ -388,9 +368,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   + `repack`
   + `config`
 
-[Unreleased]: https://github.com/openSUSE/umoci/compare/v0.4.4...HEAD
-[0.4.4]: https://github.com/openSUSE/umoci/compare/v0.4.3...v0.4.4
-[0.4.3]: https://github.com/openSUSE/umoci/compare/v0.4.2...v0.4.3
+[Unreleased]: https://github.com/openSUSE/umoci/compare/v0.4.2...HEAD
 [0.4.2]: https://github.com/openSUSE/umoci/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/openSUSE/umoci/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/openSUSE/umoci/compare/v0.3.1...v0.4.0

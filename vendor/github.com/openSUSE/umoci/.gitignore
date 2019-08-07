@@ -1,4 +1,6 @@
 /umoci
 /cache
+/vendor/src
+/vendor/pkg
+/vendor/github.com/openSUSE/umoci
 /umoci.cov*
-/release

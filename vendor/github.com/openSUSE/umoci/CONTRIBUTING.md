@@ -8,14 +8,14 @@ requirements and rules-of-thumb for contributions.
 
 If you are reporting a security issue, do not create an issue or file a pull
 request on GitHub. Instead, disclose the issue responsibly by sending an email
-to <mailto:cyphar@cyphar.com>. If you feel it is necessary you may also encrypt
-your email with [Pretty Good Privacy (PGP)][pgp] using the PGP key
-[`6FA1B3E3F9A18CDCBE6A2CF54A7BE7BF70DE9B9F`][pgp-key]. *In future, the above
-email will be replaced with a mailing list as part of our ongoing effort to
-reduce the bus factor of this project.*
+to <mailto:asarai@suse.de>. If you feel it is necessary you may also encrypt
+your email with [Pretty Good Privacy (PGP)][pgp] using the PGP key [`5F36 C6C6
+1B54 6012 4A75 F5A6 9E18 AA26 7DDB 8DB4`][pgp-key]. *In future, the above email
+will be replaced with a mailing list as part of our ongoing effort to reduce
+the bus factor of this project.*
 
 [pgp]: https://en.wikipedia.org/wiki/Pretty_Good_Privacy
-[pgp-key]: http://pgp.mit.edu/pks/lookup?op=vindex&search=0x6FA1B3E3F9A18CDCBE6A2CF54A7BE7BF70DE9B9F
+[pgp-key]: http://pgp.mit.edu/pks/lookup?op=vindex&search=0x9E18AA267DDB8DB4
 
 ### Issues ###
 
@@ -26,8 +26,7 @@ information to provide, feel free to add a follow-up comment (but avoid adding
 "me too" style comments as it distracts from discussion). If you couldn't find
 an existing report for your issue, feel free to [open a new issue][issue-new].
 If you do not wish to use proprietary software to submit an issue, you may send
-an email to <mailto:cyphar@cyphar.com> and I will submit an issue on your
-behalf.
+an email to <mailto:asarai@suse.de> and I will submit an issue on your behalf.
 
 When reporting an issue, please provide the following information (to the best
 of your ability) so we can debug your issue far more easily:
@@ -49,7 +48,7 @@ of your ability) so we can debug your issue far more easily:
 
 In order to submit a change, you may [create a pull request][pr-new].  If you
 do not wish to use proprietary software to submit an pull request, you may send
-an email to <mailto:cyphar@cyphar.com> and I will submit a pull request on your
+an email to <mailto:asarai@suse.de> and I will submit a pull request on your
 behalf.
 
 All changes should be based off the latest commit of the master branch of this

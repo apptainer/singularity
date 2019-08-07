@@ -57,7 +57,7 @@ If you wish to build umoci from source, follow these steps to build in with
 ```bash
 GOPATH=$HOME
 go get -d github.com/openSUSE/umoci
-cd $GOPATH/src/github.com/openSUSE/umoci
+cd $GOPATH/github.com/openSUSE/umoci
 make install
 ```
 

@@ -350,7 +350,6 @@ func Compare(oldDh, newDh *DirectoryHierarchy, keys []Keyword) ([]InodeDelta, er
 				if err != nil {
 					return nil, err
 				}
-				//fmt.Printf("new: %q\n", path)
 
 				// Cannot take &kv because it's the iterator.
 				cEntry := new(Entry)
@@ -373,7 +372,6 @@ func Compare(oldDh, newDh *DirectoryHierarchy, keys []Keyword) ([]InodeDelta, er
 				if err != nil {
 					return nil, err
 				}
-				//fmt.Printf("old: %q\n", path)
 
 				// Cannot take &kv because it's the iterator.
 				cEntry := new(Entry)

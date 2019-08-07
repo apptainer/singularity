@@ -19,7 +19,6 @@ SHELL = /bin/bash
 # Go tools.
 GO ?= go
 GO_MD2MAN ?= go-md2man
-export GO111MODULE=off
 
 # Set up the ... lovely ... GOPATH hacks.
 PROJECT := github.com/openSUSE/umoci
@@ -40,21 +39,14 @@ VERSION := $(shell cat ./VERSION)
 COMMIT_NO := $(shell git rev-parse HEAD 2> /dev/null || true)
 COMMIT := $(if $(shell git status --porcelain --untracked-files=no),"${COMMIT_NO}-dirty","${COMMIT_NO}")
 
-# Basic build flags.
 BUILD_FLAGS ?=
+
 BASE_FLAGS := ${BUILD_FLAGS} -tags "${BUILDTAGS}"
 BASE_LDFLAGS := -s -w -X main.gitCommit=${COMMIT} -X main.version=${VERSION}
 
-# Specific build flags for build type.
 DYN_BUILD_FLAGS := ${BASE_FLAGS} -buildmode=pie -ldflags "${BASE_LDFLAGS}"
 TEST_BUILD_FLAGS := ${BASE_FLAGS} -buildmode=pie -ldflags "${BASE_LDFLAGS} -X ${PROJECT}/pkg/testutils.binaryType=test"
 STATIC_BUILD_FLAGS := ${BASE_FLAGS} -ldflags "${BASE_LDFLAGS} -extldflags '-static'"
-
-# Installation directories.
-DESTDIR ?=
-PREFIX ?=/usr
-BINDIR ?=$(PREFIX)/bin
-MANDIR ?=$(PREFIX)/share/man
 
 .DEFAULT: umoci
 
@@ -76,19 +68,12 @@ release:
 	hack/release.sh -S "$(GPG_KEYID)" -r release/$(VERSION) -v $(VERSION)
 
 .PHONY: install
-install: umoci doc
-	install -D -m0755 umoci $(DESTDIR)/$(BINDIR)/umoci
-	-for man in $(MANPAGES); do \
-		filename="$$(basename -- "$$man")"; \
-		target="$(DESTDIR)/$(MANDIR)/man$${filename##*.}/$$filename"; \
-		install -D -m0644 "$$man" "$$target"; \
-		gzip -9f "$$target"; \
-	 done
+install: $(GO_SRC)
+	$(GO) install -v ${DYN_BUILD_FLAGS} ${CMD}
 
-.PHONY: uninstall
-uninstall:
-	rm -f $(DESTDIR)/$(BINDIR)/umoci
-	-rm -f $(DESTDIR)/$(MANDIR)/man*/umoci*
+.PHONY: install.static
+install.static: $(GO_SRC)
+	$(GO) install -v ${STATIC_BUILD_FLAGS} ${CMD}
 
 .PHONY: clean
 clean:
@@ -105,15 +90,12 @@ local-validate: local-validate-git local-validate-go local-validate-reproducible
 # TODO: Remove the special-case ignored system/* warnings.
 .PHONY: local-validate-go
 local-validate-go:
-	@type gofmt     >/dev/null 2>/dev/null || (echo "ERROR: gofmt not found." && false)
+	@type gofmt    >/dev/null 2>/dev/null || (echo "ERROR: gofmt not found." && false)
 	test -z "$$(gofmt -s -l . | grep -vE '^vendor/|^third_party/' | tee /dev/stderr)"
-	@type golint    >/dev/null 2>/dev/null || (echo "ERROR: golint not found." && false)
+	@type golint   >/dev/null 2>/dev/null || (echo "ERROR: golint not found." && false)
 	test -z "$$(golint $(PROJECT)/... | grep -vE '/vendor/|/third_party/' | tee /dev/stderr)"
 	@go doc cmd/vet >/dev/null 2>/dev/null || (echo "ERROR: go vet not found." && false)
 	test -z "$$($(GO) vet $$($(GO) list $(PROJECT)/... | grep -vE '/vendor/|/third_party/') 2>&1 | tee /dev/stderr)"
-	@type gosec     >/dev/null 2>/dev/null || (echo "ERROR: gosec not found." && false)
-	test -z "$$(gosec -quiet -exclude=G301,G302,G304 $$GOPATH/$(PROJECT)/... | tee /dev/stderr)"
-	./hack/test-vendor.sh
 
 EPOCH_COMMIT ?= 97ecdbd53dcb72b7a0d62196df281f131dc9eb2f
 .PHONY: local-validate-git

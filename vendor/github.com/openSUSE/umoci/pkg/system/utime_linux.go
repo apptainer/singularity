@@ -19,8 +19,10 @@ package system
 
 import (
 	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
 )
 
@@ -33,7 +35,19 @@ func Lutimes(path string, atime, mtime time.Time) error {
 		unix.NsecToTimespec(mtime.UnixNano()),
 	}
 
-	err := unix.UtimesNanoAt(unix.AT_FDCWD, path, times, unix.AT_SYMLINK_NOFOLLOW)
+	// Split up the path.
+	dir, file := filepath.Split(path)
+	dir = filepath.Clean(dir)
+	file = filepath.Clean(file)
+
+	// Open the parent directory.
+	dirFile, err := os.OpenFile(filepath.Clean(dir), unix.O_RDONLY|unix.O_NOFOLLOW|unix.O_DIRECTORY, 0)
+	if err != nil {
+		return errors.Wrap(err, "lutimes: open parent directory")
+	}
+	defer dirFile.Close()
+
+	err = unix.UtimesNanoAt(int(dirFile.Fd()), file, times, unix.AT_SYMLINK_NOFOLLOW)
 	if err != nil {
 		return &os.PathError{Op: "lutimes", Path: path, Err: err}
 	}

@@ -46,7 +46,6 @@ func RunningInUserNS() bool {
 
 	line := string(l)
 	var a, b, c int64
-	// #nosec G104
 	fmt.Sscanf(line, "%d %d %d", &a, &b, &c)
 	if a == 0 && b == 0 && c == 4294967295 {
 		return false

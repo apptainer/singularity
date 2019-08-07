@@ -12,23 +12,16 @@ before_install:
   - sudo sh -c "apt-get -qq update && apt-get install -y gcc-multilib"
   - go get -u github.com/cpuguy83/go-md2man
   - go get -u github.com/vbatts/git-validation
-  - go get -u golang.org/x/lint/golint
-  - go get -u github.com/securego/gosec/cmd/gosec
+  - go get -u github.com/golang/lint/golint
 
 env:
-  - DOCKER_IMAGE="opensuse/leap:latest"
-  - DOCKER_IMAGE="centos:latest"
-  - DOCKER_IMAGE="debian:latest"
-  - DOCKER_IMAGE="ubuntu:latest"
+  - DOCKER_IMAGE="opensuse/amd64:42.3"
   - DOCKER_IMAGE="fedora:latest"
-
-matrix:
-  fast_finish: true
-  allow_failures:
-    - env: DOCKER_IMAGE="fedora:latest"
+  - DOCKER_IMAGE="debian:jessie"
+  - DOCKER_IMAGE="ubuntu:16.04"
 
 notifications:
-  email: false
+    email: false
 
 script:
   - chmod a+rwx . # Necessary to make Travis co-operate with Docker.

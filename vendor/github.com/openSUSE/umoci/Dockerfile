@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM opensuse/leap:latest
+FROM opensuse/amd64:42.3
 MAINTAINER "Aleksa Sarai <asarai@suse.com>"
 
 # We have to use out-of-tree repos because several packages haven't been merged
@@ -24,7 +24,7 @@ RUN zypper ar -f -p 10 -g obs://Virtualization:containers obs-vc && \
 RUN zypper -n in \
 		bats \
 		git \
-		"go>=1.11" \
+		go \
 		golang-github-cpuguy83-go-md2man \
 		go-mtree \
 		jq \
@@ -39,9 +39,8 @@ RUN zypper -n in \
 
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:$PATH
-RUN go get -u golang.org/x/lint/golint && \
-    go get -u github.com/vbatts/git-validation && \
-    go get -u github.com/securego/gosec/cmd/gosec
+RUN go get -u github.com/golang/lint/golint
+RUN go get -u github.com/vbatts/git-validation && type git-validation
 
 ENV SOURCE_IMAGE=/opensuse SOURCE_TAG=latest
 ARG DOCKER_IMAGE=opensuse/amd64:tumbleweed

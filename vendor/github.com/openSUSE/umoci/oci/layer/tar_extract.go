@@ -287,7 +287,6 @@ func (te *TarExtractor) UnpackEntry(root string, hdr *tar.Header, r io.Reader) (
 	// directory will be fixed by later archive entries.
 	if dirFi, err := te.fsEval.Lstat(dir); err == nil && path != dir {
 		// FIXME: This is really stupid.
-		// #nosec G104
 		link, _ := te.fsEval.Readlink(dir)
 		dirHdr, err := tar.FileInfoHeader(dirFi, link)
 		if err != nil {
@@ -499,18 +498,14 @@ func (te *TarExtractor) UnpackEntry(root string, hdr *tar.Header, r io.Reader) (
 		defer fh.Close()
 
 		// We need to make sure that we copy all of the bytes.
-		n, err := io.Copy(fh, r)
-		if int64(n) != hdr.Size {
-			err = io.ErrShortWrite
-		}
-		if err != nil {
-			return errors.Wrap(err, "unpack to regular file")
+		if n, err := io.Copy(fh, r); err != nil {
+			return err
+		} else if int64(n) != hdr.Size {
+			return errors.Wrap(io.ErrShortWrite, "unpack to regular file")
 		}
 
 		// Force close here so that we don't affect the metadata.
-		if err := fh.Close(); err != nil {
-			return errors.Wrap(err, "close unpacked regular file")
-		}
+		fh.Close()
 
 	// directory
 	case tar.TypeDir:

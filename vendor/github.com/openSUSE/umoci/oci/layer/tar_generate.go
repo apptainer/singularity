@@ -144,10 +144,6 @@ func (tg *tarGenerator) AddFile(name, path string) error {
 		return errors.Wrap(err, "convert fi to hdr")
 	}
 	hdr.Xattrs = map[string]string{}
-	// Usually incorrect for containers and was added in Go 1.10 causing
-	// changes to our output on a compiler bump...
-	hdr.Uname = ""
-	hdr.Gname = ""
 
 	name, err = normalise(name, fi.IsDir())
 	if err != nil {

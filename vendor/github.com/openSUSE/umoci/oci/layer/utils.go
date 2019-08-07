@@ -208,7 +208,6 @@ func CleanPath(path string) string {
 	if !filepath.IsAbs(path) {
 		path = filepath.Clean(string(os.PathSeparator) + path)
 		// This can't fail, as (by definition) all paths are relative to root.
-		// #nosec G104
 		path, _ = filepath.Rel(string(os.PathSeparator), path)
 	}
 

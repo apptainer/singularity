@@ -34,8 +34,6 @@ import (
 // fiRestore restores the state given by an os.FileInfo instance at the given
 // path by ensuring that an Lstat(path) will return as-close-to the same
 // os.FileInfo.
-//
-// #nosec G104
 func fiRestore(path string, fi os.FileInfo) {
 	// archive/tar handles the OS-specific syscall stuff required to get atime
 	// and mtime information for a file.
@@ -332,8 +330,7 @@ func foreachSubpath(path string, wrapFn WrapFunc) error {
 	// permissions because we're already in a context with filepath.Dir(path)
 	// is at least a+rx. However, because we are calling wrapFn we need to
 	// restore the original mode immediately.
-	// #nosec G104
-	_ = os.Chmod(path, fi.Mode()|0444)
+	os.Chmod(path, fi.Mode()|0444)
 	names, err := fd.Readdirnames(-1)
 	fiRestore(path, fi)
 	if err != nil {

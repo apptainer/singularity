@@ -32,7 +32,11 @@ lint: .lint
 CLEAN_FILES += .lint
 
 .lint: $(SOURCE_FILES)
-	set -e ; for dir in $$(glide novendor) ; do golint -set_exit_status $$dir ; done && touch $@
+	if [[ "$(go version |awk '{ print $3 }')" =~ ^go1\.11\. ]] ; then \
+	set -e ; for dir in $$(glide novendor) ; do golint -set_exit_status $$dir ; done && touch $@ \
+	else \
+	touch $@ ; \
+	fi
 
 .PHONY: vet
 vet: .vet .vet.tags
@@ -64,7 +68,7 @@ $(BUILD): $(SOURCE_FILES)
 
 install.tools:
 	go get -u -v github.com/Masterminds/glide
-	go get -u -v golang.org/x/lint/golint
+	if [[ "$(go version |awk '{ print $3 }')" =~ ^go1\.11\. ]] ; then go get -u golang.org/x/lint/golint ; fi
 
 ./bin:
 	mkdir -p $@

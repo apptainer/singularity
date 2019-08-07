@@ -73,7 +73,6 @@ func parseLine(line string, v ...interface{}) {
 			*e = p
 		case *int:
 			// "numbers", with conversion errors ignored because of some misbehaving configuration files.
-			// #nosec G104
 			*e, _ = strconv.Atoi(p)
 		case *[]string:
 			// Comma-separated lists.
