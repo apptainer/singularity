@@ -172,6 +172,9 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 	if err != nil {
 		err = checkCryptsetupVersion(cryptsetup)
 		if err == ErrUnsupportedCryptsetupVersion {
+			// Special case of unsupported version of cryptsetup. We return the raw error
+			// so it can propagate up and a user-friendly message be displayed. This error
+			// should trigger an error at the CLI level.
 			return "", err
 		}
 		return "", fmt.Errorf("unable to format crypt device: %s: %s", cryptF.Name(), string(out))
@@ -287,6 +290,9 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 			}
 			err = checkCryptsetupVersion(cryptsetup)
 			if err == ErrUnsupportedCryptsetupVersion {
+				// Special case of unsupported version of cryptsetup. We return the raw error
+				// so it can propagate up and a user-friendly message be displayed. This error
+				// should trigger an error at the CLI level.
 				return "", err
 			}
 
