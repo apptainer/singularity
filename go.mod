@@ -16,7 +16,7 @@ require (
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
-	github.com/containerd/containerd v1.2.6
+	github.com/containerd/containerd v1.2.7
 	github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd // indirect
 	github.com/containernetworking/cni v0.7.1
 	github.com/containernetworking/plugins v0.8.1
