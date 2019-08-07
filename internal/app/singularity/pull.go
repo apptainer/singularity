@@ -36,7 +36,7 @@ var (
 // LibraryPull will download the image specified by file from the library specified by libraryURI.
 // After downloading, the image will be checked for a valid signature and removed if it does not contain one,
 // unless specified not to by the unauthenticated bool
-func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryURI, keyServerURL, authToken, arch string, force, unauthenticated, noCache bool) error {
+func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL, authToken, arch string, force, unauthenticated, noCache bool) error {
 	if !force {
 		if _, err := os.Stat(name); err == nil {
 			return fmt.Errorf("image file already exists: %q - will not overwrite", name)
@@ -54,22 +54,26 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 	// strip leading "library://" and append default tag, as necessary
 	imageRef := library.NormalizeLibraryRef(fullURI)
 
-	imageName := uri.GetName("library://" + imageRef)
-
 	// check if image exists in library
+
 	libraryImage, err := libraryClient.GetImage(context.TODO(), arch, imageRef)
+	if err == client.ErrNotFound {
+		return fmt.Errorf("image does not exist in the library: %s (%s)", imageRef, arch)
+	}
 	if err != nil {
-		return fmt.Errorf("while getting image info: %v", err)
+		return fmt.Errorf("could not get image info: %v", err)
 	}
 
 	if noCache {
-		// Dont use cached image
+		// don't use cached image
 		sylog.Infof("Downloading library image: %s", name)
-		if err := library.DownloadImage(context.TODO(), libraryClient, name, arch, imageRef, downloadImageCallback); err != nil {
+		err := library.DownloadImage(context.TODO(), libraryClient, name, arch, imageRef, downloadImageCallback)
+		if err != nil {
 			return fmt.Errorf("unable to download image: %v", err)
 		}
 	} else {
-		// Check, and use cached image
+		// check and use cached image
+		imageName := uri.GetName("library://" + imageRef)
 		imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
 		exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName)
 		if err != nil {
@@ -80,7 +84,8 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 			go interruptCleanup(imagePath)
 
 			// call library download image helper
-			if err := library.DownloadImage(context.TODO(), libraryClient, imagePath, arch, imageRef, downloadImageCallback); err != nil {
+			err := library.DownloadImage(context.TODO(), libraryClient, imagePath, arch, imageRef, downloadImageCallback)
+			if err != nil {
 				return fmt.Errorf("unable to download image: %v", err)
 			}
 
@@ -336,6 +341,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 			if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, false, ociAuth); err != nil {
 				return fmt.Errorf("while building SIF from layers: %v", err)
 			}
+			sylog.Infof("Build complete: %s", name)
 		}
 
 		// Perms are 777 *prior* to umask

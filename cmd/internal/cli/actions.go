@@ -193,6 +193,9 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 	imageRef := libraryhelper.NormalizeLibraryRef(u)
 
 	libraryImage, err := c.GetImage(ctx, runtime.GOARCH, imageRef)
+	if err == library.ErrNotFound {
+		return "", fmt.Errorf("image does not exist in the library: %s (%s)", imageRef, runtime.GOARCH)
+	}
 	if err != nil {
 		return "", err
 	}

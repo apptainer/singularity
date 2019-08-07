@@ -16,19 +16,19 @@ import (
 )
 
 // CleanupContainer cleans up the container
-func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
-	if engine.EngineConfig.Cgroups != nil {
-		engine.EngineConfig.Cgroups.Remove()
+func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
+	if e.EngineConfig.Cgroups != nil {
+		e.EngineConfig.Cgroups.Remove()
 	}
 
-	pidFile := engine.EngineConfig.GetPidFile()
+	pidFile := e.EngineConfig.GetPidFile()
 	if pidFile != "" {
 		os.Remove(pidFile)
 	}
 
 	// if container wasn't created, delete instance files
-	if engine.EngineConfig.State.Status == ociruntime.Creating {
-		name := engine.CommonConfig.ContainerID
+	if e.EngineConfig.State.Status == ociruntime.Creating {
+		name := e.CommonConfig.ContainerID
 		file, err := instance.Get(name, instance.OciSubDir)
 		if err != nil {
 			sylog.Warningf("no instance files found for %s: %s", name, err)
@@ -55,18 +55,18 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 		desc = fmt.Sprintf("exited with code %d", status.ExitStatus())
 	}
 
-	engine.EngineConfig.State.ExitCode = &exitCode
-	engine.EngineConfig.State.ExitDesc = desc
+	e.EngineConfig.State.ExitCode = &exitCode
+	e.EngineConfig.State.ExitDesc = desc
 
-	if err := engine.updateState(ociruntime.Stopped); err != nil {
+	if err := e.updateState(ociruntime.Stopped); err != nil {
 		return err
 	}
 
-	if engine.EngineConfig.State.AttachSocket != "" {
-		os.Remove(engine.EngineConfig.State.AttachSocket)
+	if e.EngineConfig.State.AttachSocket != "" {
+		os.Remove(e.EngineConfig.State.AttachSocket)
 	}
-	if engine.EngineConfig.State.ControlSocket != "" {
-		os.Remove(engine.EngineConfig.State.ControlSocket)
+	if e.EngineConfig.State.ControlSocket != "" {
+		os.Remove(e.EngineConfig.State.ControlSocket)
 	}
 
 	return nil

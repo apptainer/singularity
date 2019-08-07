@@ -241,6 +241,7 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	}
+	sylog.Infof("Build complete: %s", dest)
 }
 
 func checkSections() error {
