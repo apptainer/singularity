@@ -101,10 +101,6 @@ func Run(t *testing.T) {
 	}
 	testenv.TestDir = name
 
-	if err := singularitye2e.MakeCacheDirs(name); err != nil {
-		t.Fatal(err)
-	}
-
 	// Build a base image for tests
 	imagePath := path.Join(name, "test.sif")
 	t.Log(imagePath)
