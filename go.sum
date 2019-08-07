@@ -214,8 +214,6 @@ github.com/sirupsen/logrus v1.0.5 h1:8c8b5uO0zS4X6RPl/sd1ENwSkIc0/H2PaHxE3udaE8I
 github.com/sirupsen/logrus v1.0.5/go.mod h1:pMByvHTf9Beacp5x1UXfOR9xyW/9antXMhjMPG0dEzc=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/cast v1.3.0/go.mod h1:Qx5cxh0v+4UWYiBimWS+eyWzqEqokIECu5etghLkUJE=
-github.com/spf13/cobra v0.0.0-20190321000552-67fc4837d267 h1:k5wQOOB9mm6XdgwnTGopZG83by3g8A2MJ7LvrP3h+/0=
-github.com/spf13/cobra v0.0.0-20190321000552-67fc4837d267/go.mod h1:3K3wKZymM7VvHMDS9+Akkh4K60UwM26emMESw8tLCHU=
 github.com/spf13/cobra v0.0.5 h1:f0B+LkLX6DtmRH1isoNA9VTtNUK9K8xYd28JNNfOv/s=
 github.com/spf13/cobra v0.0.5/go.mod h1:3K3wKZymM7VvHMDS9+Akkh4K60UwM26emMESw8tLCHU=
 github.com/spf13/jwalterweatherman v1.0.0/go.mod h1:cQK4TGJAtQXfYWX+Ddv3mKDzgVb68N+wFjFa4jdeBTo=
@@ -236,10 +234,8 @@ github.com/sylabs/scs-build-client v0.0.4 h1:y1rer0Mq+GyAFPKn0szpayJfUSTD7SGgRB3
 github.com/sylabs/scs-build-client v0.0.4/go.mod h1:TxxLkoW6RjzcQXllPAbsA5zmljX/YsHLlQ1gZ5Lkogg=
 github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec h1:dX97dpvwSAF8AFG1f33b1dUueCGc1onK94FUP5pHUsw=
 github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec/go.mod h1:nMF8PplFD5ZmDz//GHjaip7+MlQ0z4Qe0RCzaT5Xjes=
-github.com/sylabs/scs-library-client v0.2.2 h1:pHDvSduBI7F7w86N99GDULLHaryJhaCU5LBC2log0iA=
-github.com/sylabs/scs-library-client v0.2.2/go.mod h1:89vH+0RQemCEcOnaUUQwnsRVQQmupVh8VQlBbW0ZHss=
-github.com/sylabs/sif v1.0.5 h1:33QYALonFWAIfW1pr1luwyI90UyVVAn7rCJWyQDgIho=
-github.com/sylabs/sif v1.0.5/go.mod h1:YSrurscNfLqBihRfK4gWYv22UThLcwK76nXg3fLP43o=
+github.com/sylabs/scs-library-client v0.3.0 h1:ArwsgPTNWOjTufOLimdjtzeq2EIgLSacQe4Ty46TtzQ=
+github.com/sylabs/scs-library-client v0.3.0/go.mod h1:89vH+0RQemCEcOnaUUQwnsRVQQmupVh8VQlBbW0ZHss=
 github.com/sylabs/sif v1.0.6 h1:9zQYkDEJoK0N/5+j3Kj6yg0AU9dsr/JegyviK563vlI=
 github.com/sylabs/sif v1.0.6/go.mod h1:/W42wtEREMjfQCNz1HhqD2PHW8ZPqjiU7Z2pZQXTRqI=
 github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e h1:QjF5rxNgRSLHJDwKUvfYP3qOx1vTDzUi/+oSC8FXnCI=
