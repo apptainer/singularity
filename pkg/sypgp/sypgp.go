@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"text/tabwriter"
 	"time"
 
 	jsonresp "github.com/sylabs/json-resp"
@@ -570,31 +571,52 @@ func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 }
 
 // formatMROutput will take a machine readable input, and convert it to fit
-// on a 80x24 terminal.
-func formatMROutput(mrString string) string {
-	retList := "KEY ID    BITS  NAME/EMAIL\n\n"
+// on a 80x24 terminal. Returns the number of keys(int), the formated string
+// in []bytes, and a error if one occurs.
+func formatMROutput(mrString string) (int, []byte, error) {
 	count := 0
+	keyNum := 0
+	listLine := "%s\t%s\t%s\n"
+
+	retb := bytes.NewBuffer(nil)
+	tw := tabwriter.NewWriter(retb, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(tw, listLine, "KEY ID", "BITS", "NAME/EMAIL")
 
 	key := strings.Split(mrString, "\n")
 
 	for _, k := range key {
 		nk := strings.Split(k, ":")
 		for _, n := range nk {
+			if n == "info" {
+				var err error
+				keyNum, err = strconv.Atoi(nk[2])
+				if err != nil {
+					return -1, nil, fmt.Errorf("unable to check key number")
+				}
+			}
 			if n == "pub" {
-				retList += nk[1][32:] + "  " // the fingerprint
-				retList += nk[3] + "  "      // the bits
+				// The fingerprint is located at nk[1], and we only want the last 8 chars
+				fmt.Fprintf(tw, "%s\t", nk[1][32:])
+				// The key size (bits) is located at nk[3]
+				fmt.Fprintf(tw, "%s\t", nk[3])
 			}
 			if n == "uid" {
-				retList += nk[1] // the name/email
-				retList += "\n\n"
+				// And the key name/email is on the next section, on nk[1]
+				fmt.Fprintf(tw, "%s\t\n\n", nk[1])
 				count++
 			}
 		}
 	}
+	tw.Flush()
 
-	retList = fmt.Sprintf("Showing %d results\n\n%s", count, retList)
-	return retList
+	sylog.Debugf("count=%d; expect=%d\n", count, keyNum)
 
+	// Simple check to ensure the conversion was successful
+	if count != keyNum {
+		return -1, retb.Bytes(), fmt.Errorf("failed to convert machine readable to human readable output correctly")
+	}
+
+	return count, retb.Bytes(), nil
 }
 
 // SearchPubkey connects to a key server and searches for a specific key
@@ -637,7 +659,11 @@ func SearchPubkey(search, keyserverURI, authToken string, longOutput bool) error
 		}
 		fmt.Printf("%s", keyText)
 	} else {
-		fmt.Printf("%s", formatMROutput(keyText))
+		kcount, keyText, err := formatMROutput(keyText)
+		fmt.Printf("Showing %d results\n\n%s", kcount, keyText)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
