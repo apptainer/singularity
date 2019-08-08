@@ -28,7 +28,7 @@ require (
 	github.com/d2g/dhcp4client v0.0.0-20180611075603-e61299896203 // indirect
 	github.com/d2g/dhcp4server v0.0.0-20181031114812-7d4a0a7f59a5 // indirect
 	github.com/d2g/hardwareaddr v0.0.0-20190221164911-e7d9fbe030e4 // indirect
-	github.com/deislabs/oras v0.4.0
+	github.com/deislabs/oras v0.5.0
 	github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572 // indirect
 	github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
 	github.com/docker/docker-credential-helpers v0.6.0 // indirect
