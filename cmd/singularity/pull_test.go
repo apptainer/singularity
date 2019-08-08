@@ -127,16 +127,6 @@ func TestPull(t *testing.T) {
 			success:         true,
 		},
 		{
-			name:            "Unsigned_image_fail",
-			sourceSpec:      "library://sylabs/tests/unsigned:1.0.0",
-			force:           true,
-			unauthenticated: false,
-			library:         "",
-			pullDir:         "",
-			imagePath:       imagePath,
-			success:         false,
-		},
-		{
 			name:            "NotDefault",
 			sourceSpec:      "library://sylabs/tests/not-default:1.0.0",
 			force:           true,
