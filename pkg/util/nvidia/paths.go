@@ -83,15 +83,12 @@ func nvliblist(nvidiaDir string) ([]string, error) {
 // be added to mounted into container if it needs NVIDIA GPUs.
 func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
 	ldConfig, err := exec.LookPath("ldconfig")
-	ee, ok := err.(*exec.Error)
-	if ok {
-		if ee.Err == exec.ErrNotFound {
-			sylog.Debugf("could not find ldconfig in PATH: %v", err)
-			ldConfig = "ldconfig"
-		}
-		else {
-			return fmt.Errorf("could not lookup ldconfig: %v", err)
-		}
+	if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
+		sylog.Debugf("Could not find ldconfig in PATH")
+		ldConfig = "ldconfig"
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not lookup ldconfig: %v", err)
 	}
 	if envPath != "" {
 		oldPath := os.Getenv("PATH")
