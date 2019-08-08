@@ -41,7 +41,7 @@ func (c *cacheTests) testCacheClean(t *testing.T) {
 		},
 	}
 
-	imagePath := c.env.TestDir + "/busybox.sif"
+	imagePath := filepath.Join(c.env.TestDir, "busybox.sif")
 	for _, tc := range tt {
 		c.env.RunSingularity(
 			t,
