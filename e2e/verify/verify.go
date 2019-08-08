@@ -290,24 +290,6 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 }
 
 func (c *ctx) checkGroupidOption(t *testing.T) {
-	/*
-		// Create a temp directory where we can store a valid image
-		tempDir, err := ioutil.TempDir("", "")
-		if err != nil {
-			t.Fatalf("failed to create a temporary directory: %s", err)
-		}
-		defer func() {
-			err := os.RemoveAll(tempDir)
-			if err != nil {
-				t.Fatalf("failed to delete temporary directory: %s", err)
-			}
-		}()
-
-		imgPath := filepath.Join(tempDir, "imgTest.sif")
-
-		// Pull a valid image
-		e2e.PullImage(t, c.env, successURL, imgPath)
-	*/
 	cmdArgs := []string{"--groupid", "0", c.successImage}
 	c.env.RunSingularity(
 		t,
