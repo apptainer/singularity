@@ -578,8 +578,8 @@ func formatMROutput(mrString string) (int, []byte, error) {
 	keyNum := 0
 	listLine := "%s\t%s\t%s\n"
 
-	retb := bytes.NewBuffer(nil)
-	tw := tabwriter.NewWriter(retb, 0, 0, 2, ' ', 0)
+	retList := bytes.NewBuffer(nil)
+	tw := tabwriter.NewWriter(retList, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(tw, listLine, "KEY ID", "BITS", "NAME/EMAIL")
 
 	key := strings.Split(mrString, "\n")
@@ -599,24 +599,25 @@ func formatMROutput(mrString string) (int, []byte, error) {
 				fmt.Fprintf(tw, "%s\t", nk[1][32:])
 				// The key size (bits) is located at nk[3]
 				fmt.Fprintf(tw, "%s\t", nk[3])
+				count++
 			}
 			if n == "uid" {
-				// And the key name/email is on the next section, on nk[1]
+				// And the key name/email is on nk[1]
 				fmt.Fprintf(tw, "%s\t\n\n", nk[1])
-				count++
 			}
 		}
 	}
 	tw.Flush()
 
-	sylog.Debugf("count=%d; expect=%d\n", count, keyNum)
+	sylog.Debugf("key count=%d; expect=%d\n", count, keyNum)
 
 	// Simple check to ensure the conversion was successful
 	if count != keyNum {
-		return -1, retb.Bytes(), fmt.Errorf("failed to convert machine readable to human readable output correctly")
+		sylog.Debugf("expecting %d, got %d\n", keyNum, count)
+		return -1, retList.Bytes(), fmt.Errorf("failed to convert machine readable to human readable output correctly")
 	}
 
-	return count, retb.Bytes(), nil
+	return count, retList.Bytes(), nil
 }
 
 // SearchPubkey connects to a key server and searches for a specific key
