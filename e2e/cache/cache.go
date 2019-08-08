@@ -3,6 +3,7 @@ package cache
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
