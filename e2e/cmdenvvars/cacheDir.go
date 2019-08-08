@@ -20,7 +20,7 @@ type ctx struct {
 
 func (c *ctx) testSingularityCacheDir(t *testing.T) {
 	// The intent of the test is simple:
-	// - create 2 temporary directory, one where the image will be pulled and one where the
+	// - create 2 temporary directories, one where the image will be pulled and one where the
 	//   image cache should be created,
 	// - pull an image,
 	// - check whether we have the correct entry in the cache, within the directory we created.
