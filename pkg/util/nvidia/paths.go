@@ -84,9 +84,14 @@ func nvliblist(nvidiaDir string) ([]string, error) {
 func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
 	ldConfig, err := exec.LookPath("ldconfig")
 	ee, ok := err.(*exec.Error)
-	if ok && ee.Err == exec.ErrNotFound {
-		sylog.Debugf("could not find ldconfig: %v", err)
-		ldConfig = "ldconfig"
+	if ok {
+		if ee.Err == exec.ErrNotFound {
+			sylog.Debugf("could not find ldconfig in PATH: %v", err)
+			ldConfig = "ldconfig"
+		}
+		else {
+			return fmt.Errorf("could not lookup ldconfig: %v", err)
+		}
 	}
 	if envPath != "" {
 		oldPath := os.Getenv("PATH")
