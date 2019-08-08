@@ -104,7 +104,7 @@ func (c *ctx) testHelpOption(t *testing.T) {
 		e2e.WithArgs("--help"),
 		e2e.ExpectExit(
 			0,
-			e2e.ExpectOutput(e2e.ContainMatch, "Show the version for Singularity"),
+			e2e.ExpectOutput(e2e.RegexMatch, "^Show the version for Singularity"),
 		),
 	)
 }
