@@ -264,7 +264,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
-	os.Exit(exitStat)
 }
 
 func handlePullFlags(cmd *cobra.Command) {
