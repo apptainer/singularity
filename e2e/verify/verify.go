@@ -289,6 +289,66 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 	}
 }
 
+func (c *ctx) checkGroupidOption(t *testing.T) {
+	/*
+		// Create a temp directory where we can store a valid image
+		tempDir, err := ioutil.TempDir("", "")
+		if err != nil {
+			t.Fatalf("failed to create a temporary directory: %s", err)
+		}
+		defer func() {
+			err := os.RemoveAll(tempDir)
+			if err != nil {
+				t.Fatalf("failed to delete temporary directory: %s", err)
+			}
+		}()
+
+		imgPath := filepath.Join(tempDir, "imgTest.sif")
+
+		// Pull a valid image
+		e2e.PullImage(t, c.env, successURL, imgPath)
+	*/
+	cmdArgs := []string{"--groupid", "0", c.successImage}
+	c.env.RunSingularity(
+		t,
+		e2e.WithPrivileges(false),
+		e2e.WithCommand("verify"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ContainMatch, "Container is signed by 1 key(s):"),
+		),
+	)
+}
+
+func (c *ctx) checkIDOption(t *testing.T) {
+	cmdArgs := []string{"--id", "0", c.successImage}
+	c.env.RunSingularity(
+		t,
+		e2e.WithPrivileges(false),
+		e2e.WithCommand("verify"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ContainMatch, "Container is signed by 1 key(s):"),
+		),
+	)
+}
+
+func (c *ctx) checkURLOption(t *testing.T) {
+	cmdArgs := []string{"--url", "https://keys.sylabs.io", c.successImage}
+	c.env.RunSingularity(
+		t,
+		e2e.WithPrivileges(false),
+		e2e.WithCommand("verify"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ContainMatch, "Container is signed by 1 key(s):"),
+		),
+	)
+}
+
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
@@ -300,5 +360,8 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("singularityVerifyKeyNum", c.singularityVerifyKeyNum)
 		t.Run("singularityVerifySigner", c.singularityVerifySigner)
+		t.Run("singularityVerifyGroupIdOption", c.checkGroupidOption)
+		t.Run("singularityVerifyIDOption", c.checkIDOption)
+		t.Run("singularityVerifyURLOption", c.checkURLOption)
 	}
 }
