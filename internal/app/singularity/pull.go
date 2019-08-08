@@ -7,12 +7,12 @@ package singularity
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 
 	ocitypes "github.com/containers/image/types"
-	"github.com/pkg/errors"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
