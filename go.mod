@@ -74,7 +74,7 @@ require (
 	github.com/opencontainers/selinux v1.0.0-rc1
 	github.com/pelletier/go-toml v1.4.0
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2 // indirect
-	github.com/pkg/errors v0.8.0
+	github.com/pkg/errors v0.8.1
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
 	github.com/prometheus/client_golang v0.0.0-20180607123607-faf4ec335fe0 // indirect
 	github.com/prometheus/client_model v0.0.0-20171117100541-99fa1f4be8e5 // indirect
