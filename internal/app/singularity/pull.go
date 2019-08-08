@@ -7,12 +7,12 @@ package singularity
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 
 	ocitypes "github.com/containers/image/types"
+	"github.com/pkg/errors"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
@@ -68,11 +68,6 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 		return fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
-	// check if image has a signature
-	if !unauthenticated && (libraryImage.Signed != nil && !*libraryImage.Signed) {
-		return ErrLibraryPullNoSign
-	}
-
 	if noCache {
 		// Dont use cached image
 		sylog.Infof("Downloading library image: %s", name)
@@ -125,12 +120,9 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 
 	// check if we pulled from the library, if so; is it signed?
 	if !unauthenticated {
-		imageSigned, err := signing.IsSigned(name, keyServerURL, 0, false, authToken)
+		err := signing.IsSigned(name, keyServerURL, 0, false, authToken)
 		if err != nil {
-			sylog.Errorf("%v", err)
-		}
-		if !imageSigned {
-			return ErrLibraryPullUnsigned
+			return errors.Wrap(ErrLibraryPullUnsigned, err.Error())
 		}
 	} else {
 		sylog.Warningf("Skipping container verification")

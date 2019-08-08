@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
@@ -185,7 +187,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("failed to create an image cache handle")
 	}
 
-	exitStat := 0
 	i := len(args) - 1 // uri is stored in args[len(args)-1]
 	transport, ref := uri.Split(args[i])
 	if ref == "" {
@@ -225,8 +226,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 		handlePullFlags(cmd)
 
 		err := singularity.LibraryPull(imgCache, name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, force, unauthenticatedPull, disableCache)
-		if err == singularity.ErrLibraryPullUnsigned {
-			exitStat = 10
+		if errors.Cause(err) == singularity.ErrLibraryPullUnsigned {
+			sylog.Warningf("%s", err)
 		} else if err != nil {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
