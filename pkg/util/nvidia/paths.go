@@ -82,6 +82,14 @@ func nvliblist(nvidiaDir string) ([]string, error) {
 // Paths returns list of nvidia libraries and binaries that should
 // be added to mounted into container if it needs NVIDIA GPUs.
 func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
+	ldConfig, err := exec.LookPath("ldconfig")
+	if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
+		sylog.Debugf("Could not find ldconfig in PATH")
+		ldConfig = "ldconfig"
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not lookup ldconfig: %v", err)
+	}
 	if envPath != "" {
 		oldPath := os.Getenv("PATH")
 		os.Setenv("PATH", envPath)
@@ -89,7 +97,7 @@ func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
 	}
 
 	var nvidiaFiles []string
-	nvidiaFiles, err := nvidiaContainerCli("list", "--binaries", "--libraries")
+	nvidiaFiles, err = nvidiaContainerCli("list", "--binaries", "--libraries")
 	if err != nil {
 		sylog.Verbosef("nvidiaContainerCli returned: %v", err)
 		sylog.Verbosef("Falling back to nvliblist.conf")
@@ -102,7 +110,7 @@ func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
 
 	// walk through the ldconfig output and add entries which contain the filenames
 	// returned by nvidia-container-cli OR the nvliblist.conf file contents
-	out, err := exec.Command("ldconfig", "-p").Output()
+	out, err := exec.Command(ldConfig, "-p").Output()
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not execute ldconfig: %v", err)
 	}
