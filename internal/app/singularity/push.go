@@ -67,6 +67,7 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 			// err will be: "unable to verify container: %v", err
 			sylog.Warningf("%v", err)
 		}
+
 		// if its not signed, print a warning
 		if !imageSigned {
 			return ErrLibraryUnsigned

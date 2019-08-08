@@ -268,8 +268,8 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 }
 
 // IsSigned Takse a container path (cpath), and will verify that
-// container. Returns true if the container is not signed, likewise,
-// will return false if the container is signed. Also returns a error
+// container. Returns false if the container is not signed, likewise,
+// will return true if the container is signed. Also returns a error
 // if one occures, eg. "the container is not signed", or "container is
 // signed by a unknown signer".
 func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string) (bool, error) {

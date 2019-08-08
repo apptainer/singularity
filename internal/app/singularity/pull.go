@@ -31,9 +31,6 @@ var (
 	// ErrLibraryPullUnsigned indicates that the interactive portion of the
 	// pull was aborted
 	ErrLibraryPullUnsigned = errors.New("failed to verify container")
-
-	// ErrLibraryPullNoSign indicates that requested image has no signature.
-	ErrLibraryPullNoSign = errors.New("image has no signature")
 )
 
 // LibraryPull will download the image specified by file from the library specified by libraryURI.
