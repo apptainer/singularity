@@ -114,7 +114,7 @@ func TestPull(t *testing.T) {
 			library:         "",
 			pullDir:         "",
 			imagePath:       imagePath,
-			success:         false,
+			success:         true,
 		},
 		{
 			name:            "Unsigned_image",
