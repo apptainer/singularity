@@ -56,7 +56,7 @@ require (
 	github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8 // indirect
 	github.com/juju/testing v0.0.0-20190613124551-e81189438503 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
-	github.com/kr/pty v1.1.3
+	github.com/kr/pty v1.1.8
 	github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
 	github.com/mattn/go-colorable v0.1.1 // indirect
 	github.com/mattn/go-runewidth v0.0.2 // indirect
@@ -74,7 +74,7 @@ require (
 	github.com/opencontainers/selinux v1.0.0-rc1
 	github.com/pelletier/go-toml v1.2.0
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2 // indirect
-	github.com/pkg/errors v0.8.0
+	github.com/pkg/errors v0.8.1
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
 	github.com/prometheus/client_golang v0.0.0-20180607123607-faf4ec335fe0 // indirect
 	github.com/prometheus/client_model v0.0.0-20171117100541-99fa1f4be8e5 // indirect
@@ -108,7 +108,7 @@ require (
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/grpc v1.20.0 // indirect
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
-	gopkg.in/cheggaaa/pb.v1 v1.0.25
+	gopkg.in/cheggaaa/pb.v1 v1.0.28
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce // indirect
 	gopkg.in/yaml.v2 v2.2.2

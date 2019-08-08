@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 )
 
 var (
@@ -38,9 +37,6 @@ func Privileged(f func(*testing.T)) func(*testing.T) {
 			err = errors.Wrap(err, "changing group ID to 0")
 			t.Fatalf("privileges escalation failed: %+v", err)
 		}
-		// NEED FIX: it shouldn't be set/restored globally, only
-		// when executing singularity command with privileges.
-		os.Setenv(cache.DirEnv, cacheDirPriv)
 
 		defer func() {
 			if err := syscall.Setresgid(origGID, origGID, 0); err != nil {
@@ -51,8 +47,6 @@ func Privileged(f func(*testing.T)) func(*testing.T) {
 				err = errors.Wrapf(err, "changing group ID to %d", origGID)
 				t.Fatalf("privileges drop failed: %+v", err)
 			}
-			// NEED FIX: see above comment
-			os.Setenv(cache.DirEnv, cacheDirUnpriv)
 			runtime.UnlockOSThread()
 		}()
 
