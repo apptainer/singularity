@@ -6,12 +6,12 @@
 package singularity
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 
 	"github.com/deislabs/oras/pkg/context"
-	"github.com/pkg/errors"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/signing"
@@ -62,9 +62,14 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 
 	if !unauthenticated {
 		// check if the container is signed
-		err := signing.IsSigned(file, keyServerURL, 0, false, authToken)
+		imageSigned, err := signing.IsSigned(file, keyServerURL, 0, false, authToken)
 		if err != nil {
-			return errors.Wrap(ErrLibraryUnsigned, err.Error())
+			// err will be: "unable to verify container: %v", err
+			sylog.Warningf("%v", err)
+		}
+		// if its not signed, print a warning
+		if !imageSigned {
+			return ErrLibraryUnsigned
 		}
 	} else {
 		sylog.Warningf("Skipping container verifying")

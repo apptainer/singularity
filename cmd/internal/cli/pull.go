@@ -11,8 +11,6 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/pkg/errors"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
@@ -226,9 +224,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		handlePullFlags(cmd)
 
 		err := singularity.LibraryPull(imgCache, name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, force, unauthenticatedPull, disableCache)
-		if errors.Cause(err) == singularity.ErrLibraryPullUnsigned {
-			sylog.Warningf("%s", err)
-		} else if err != nil {
+		if err != nil && err != singularity.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
 	case ShubProtocol:

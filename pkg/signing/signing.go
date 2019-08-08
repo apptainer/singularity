@@ -268,22 +268,21 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 }
 
 // IsSigned Takse a container path (cpath), and will verify that
-// container. Returns error if the container is not signed, likewise,
-// will return nil if the container is signed. Also returns a error
+// container. Returns true if the container is not signed, likewise,
+// will return false if the container is signed. Also returns a error
 // if one occures, eg. "the container is not signed", or "container is
 // signed by a unknown signer".
-func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string) error {
+func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string) (bool, error) {
 	_, noLocalKey, err := Verify(cpath, keyServerURI, id, isGroup, authToken, false, false)
 	if err != nil {
-		return fmt.Errorf("unable to verify container: %s", cpath)
+		return false, fmt.Errorf("unable to verify container: %s", cpath)
 	}
 	if noLocalKey {
 		sylog.Warningf("Container might not be trusted; run 'singularity verify %s' to show who signed it", cpath)
 	} else {
 		sylog.Infof("Container is trusted - run 'singularity key list' to list your trusted keys")
 	}
-
-	return nil
+	return true, nil
 }
 
 // Verify takes a container path (cpath), and look for a verification block
