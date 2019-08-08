@@ -260,7 +260,7 @@ github.com/opencontainers/runtime-tools/error
 github.com/opencontainers/selinux/go-selinux
 # github.com/pelletier/go-toml v1.2.0
 github.com/pelletier/go-toml
-# github.com/pkg/errors v0.8.0
+# github.com/pkg/errors v0.8.1
 github.com/pkg/errors
 # github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13
 github.com/pquerna/ffjson/fflib/v1
