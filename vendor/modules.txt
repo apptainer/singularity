@@ -120,6 +120,8 @@ github.com/coreos/go-systemd/dbus
 github.com/coreos/go-systemd/activation
 # github.com/cpuguy83/go-md2man v1.0.10
 github.com/cpuguy83/go-md2man/md2man
+# github.com/creack/pty v1.1.7
+github.com/creack/pty
 # github.com/d2g/dhcp4 v0.0.0-20170904100407-a1d1b6c41b1c
 github.com/d2g/dhcp4
 # github.com/d2g/dhcp4client v0.0.0-20180611075603-e61299896203
@@ -218,7 +220,7 @@ github.com/inconshreveable/mousetrap
 github.com/j-keck/arping
 # github.com/juju/errors v0.0.0-20190207033735-e65537c515d7
 github.com/juju/errors
-# github.com/kr/pty v1.1.3
+# github.com/kr/pty v1.1.8
 github.com/kr/pty
 # github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
 github.com/kubernetes-sigs/cri-o/pkg/seccomp
@@ -258,7 +260,7 @@ github.com/opencontainers/runtime-tools/error
 github.com/opencontainers/selinux/go-selinux
 # github.com/pelletier/go-toml v1.2.0
 github.com/pelletier/go-toml
-# github.com/pkg/errors v0.8.0
+# github.com/pkg/errors v0.8.1
 github.com/pkg/errors
 # github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13
 github.com/pquerna/ffjson/fflib/v1
