@@ -6,6 +6,9 @@
 package e2e
 
 import (
+	"io/ioutil"
+	"log"
+	"os"
 	"testing"
 
 	// This import will execute a CGO section with the help of a C
@@ -20,5 +23,18 @@ import (
 )
 
 func TestE2E(t *testing.T) {
+	targetCoverageFilePath := os.Getenv("SINGULARITY_E2E_COVERAGE")
+	if targetCoverageFilePath != "" {
+		logFile, err := os.OpenFile(targetCoverageFilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatalf("failed to create log file: %s", err)
+		}
+		defer logFile.Close()
+		log.SetOutput(logFile)
+		log.Println("List of commands called by E2E")
+	} else {
+		log.SetOutput(ioutil.Discard)
+	}
+
 	RunE2ETests(t)
 }

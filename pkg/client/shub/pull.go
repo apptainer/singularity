@@ -108,9 +108,12 @@ func DownloadImage(manifest ShubAPIResponse, filePath, shubRef string, force, no
 	if err != nil {
 		return err
 	}
+
 	// Simple check to make sure image received is the correct size
-	if bytesWritten != resp.ContentLength {
-		return fmt.Errorf("image received is not the right size. supposed to be: %v  actually: %v", resp.ContentLength, bytesWritten)
+	if resp.ContentLength == -1 {
+		sylog.Warningf("unknown image length")
+	} else if bytesWritten != resp.ContentLength {
+		return fmt.Errorf("image received is not the right size. supposed to be: %v actually: %v", resp.ContentLength, bytesWritten)
 	}
 
 	bar.Finish()

@@ -12,7 +12,7 @@ import (
 )
 
 // MonitorContainer monitors a container
-func (engine *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (syscall.WaitStatus, error) {
+func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (syscall.WaitStatus, error) {
 	var status syscall.WaitStatus
 
 	for {
