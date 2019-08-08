@@ -25,10 +25,10 @@ import (
  */
 
 // CleanupContainer cleans up the container
-func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
+func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
 
-	if engine.EngineConfig.GetDeleteImage() {
-		image := engine.EngineConfig.GetImage()
+	if e.EngineConfig.GetDeleteImage() {
+		image := e.EngineConfig.GetImage()
 		sylog.Verbosef("Removing image %s", image)
 		sylog.Infof("Cleaning up image...")
 		if err := os.RemoveAll(image); err != nil {
@@ -36,34 +36,34 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 		}
 	}
 
-	if engine.EngineConfig.Network != nil {
-		if engine.EngineConfig.GetFakeroot() {
+	if e.EngineConfig.Network != nil {
+		if e.EngineConfig.GetFakeroot() {
 			priv.Escalate()
 		}
-		if err := engine.EngineConfig.Network.DelNetworks(); err != nil {
+		if err := e.EngineConfig.Network.DelNetworks(); err != nil {
 			sylog.Errorf("%s", err)
 		}
-		if engine.EngineConfig.GetFakeroot() {
+		if e.EngineConfig.GetFakeroot() {
 			priv.Drop()
 		}
 	}
 
-	if engine.EngineConfig.Cgroups != nil {
-		if err := engine.EngineConfig.Cgroups.Remove(); err != nil {
+	if e.EngineConfig.Cgroups != nil {
+		if err := e.EngineConfig.Cgroups.Remove(); err != nil {
 			sylog.Errorf("%s", err)
 		}
 	}
 
-	if engine.EngineConfig.GetInstance() {
-		file, err := instance.Get(engine.CommonConfig.ContainerID, instance.SingSubDir)
+	if e.EngineConfig.GetInstance() {
+		file, err := instance.Get(e.CommonConfig.ContainerID, instance.SingSubDir)
 		if err != nil {
 			return err
 		}
 		return file.Delete()
 	}
 
-	if engine.EngineConfig.CryptDev != "" {
-		cleanupCrypt(engine.EngineConfig.CryptDev)
+	if e.EngineConfig.CryptDev != "" {
+		cleanupCrypt(e.EngineConfig.CryptDev)
 	}
 
 	return nil

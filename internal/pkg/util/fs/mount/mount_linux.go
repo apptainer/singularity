@@ -156,6 +156,7 @@ var authorizedFS = map[string]fsContext{
 	"proc":    {false},
 	"mqueue":  {false},
 	"cgroup":  {false},
+	"fuse":    {false},
 }
 
 var internalOptions = []string{"loop", "offset", "sizelimit", "key"}

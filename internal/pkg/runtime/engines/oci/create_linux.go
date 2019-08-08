@@ -146,25 +146,25 @@ type container struct {
 
 var statusChan = make(chan string, 1)
 
-func (engine *EngineOperations) createState(pid int) error {
-	engine.EngineConfig.Lock()
-	defer engine.EngineConfig.Unlock()
+func (e *EngineOperations) createState(pid int) error {
+	e.EngineConfig.Lock()
+	defer e.EngineConfig.Unlock()
 
-	name := engine.CommonConfig.ContainerID
+	name := e.CommonConfig.ContainerID
 
 	file, err := instance.Add(name, instance.OciSubDir)
 	if err != nil {
 		return err
 	}
 
-	engine.EngineConfig.State.Version = specs.Version
-	engine.EngineConfig.State.Bundle = engine.EngineConfig.GetBundlePath()
-	engine.EngineConfig.State.ID = engine.CommonConfig.ContainerID
-	engine.EngineConfig.State.Pid = pid
-	engine.EngineConfig.State.Status = ociruntime.Creating
-	engine.EngineConfig.State.Annotations = engine.EngineConfig.OciConfig.Annotations
+	e.EngineConfig.State.Version = specs.Version
+	e.EngineConfig.State.Bundle = e.EngineConfig.GetBundlePath()
+	e.EngineConfig.State.ID = e.CommonConfig.ContainerID
+	e.EngineConfig.State.Pid = pid
+	e.EngineConfig.State.Status = ociruntime.Creating
+	e.EngineConfig.State.Annotations = e.EngineConfig.OciConfig.Annotations
 
-	file.Config, err = json.Marshal(engine.CommonConfig)
+	file.Config, err = json.Marshal(e.CommonConfig)
 	if err != nil {
 		return err
 	}
@@ -172,16 +172,16 @@ func (engine *EngineOperations) createState(pid int) error {
 	file.User = "root"
 	file.Pid = pid
 	file.PPid = os.Getpid()
-	file.Image = filepath.Join(engine.EngineConfig.GetBundlePath(), engine.EngineConfig.OciConfig.Root.Path)
+	file.Image = filepath.Join(e.EngineConfig.GetBundlePath(), e.EngineConfig.OciConfig.Root.Path)
 
 	if err := file.Update(); err != nil {
 		return err
 	}
 
-	socketPath := engine.EngineConfig.SyncSocket
+	socketPath := e.EngineConfig.SyncSocket
 
 	if socketPath != "" {
-		data, err := json.Marshal(engine.EngineConfig.State)
+		data, err := json.Marshal(e.EngineConfig.State)
 		if err != nil {
 			sylog.Warningf("failed to marshal state data: %s", err)
 		} else if err := unix.WriteSocket(socketPath, data); err != nil {
@@ -192,39 +192,39 @@ func (engine *EngineOperations) createState(pid int) error {
 	return nil
 }
 
-func (engine *EngineOperations) updateState(status string) error {
-	engine.EngineConfig.Lock()
-	defer engine.EngineConfig.Unlock()
+func (e *EngineOperations) updateState(status string) error {
+	e.EngineConfig.Lock()
+	defer e.EngineConfig.Unlock()
 
-	file, err := instance.Get(engine.CommonConfig.ContainerID, instance.OciSubDir)
+	file, err := instance.Get(e.CommonConfig.ContainerID, instance.OciSubDir)
 	if err != nil {
 		return err
 	}
 	// do nothing if already stopped
-	if engine.EngineConfig.State.Status == ociruntime.Stopped {
+	if e.EngineConfig.State.Status == ociruntime.Stopped {
 		return nil
 	}
-	oldStatus := engine.EngineConfig.State.Status
-	engine.EngineConfig.State.Status = status
+	oldStatus := e.EngineConfig.State.Status
+	e.EngineConfig.State.Status = status
 
 	t := time.Now().UnixNano()
 
 	switch status {
 	case ociruntime.Created:
-		if engine.EngineConfig.State.CreatedAt == nil {
-			engine.EngineConfig.State.CreatedAt = &t
+		if e.EngineConfig.State.CreatedAt == nil {
+			e.EngineConfig.State.CreatedAt = &t
 		}
 	case ociruntime.Running:
-		if engine.EngineConfig.State.StartedAt == nil {
-			engine.EngineConfig.State.StartedAt = &t
+		if e.EngineConfig.State.StartedAt == nil {
+			e.EngineConfig.State.StartedAt = &t
 		}
 	case ociruntime.Stopped:
-		if engine.EngineConfig.State.FinishedAt == nil {
-			engine.EngineConfig.State.FinishedAt = &t
+		if e.EngineConfig.State.FinishedAt == nil {
+			e.EngineConfig.State.FinishedAt = &t
 		}
 	}
 
-	file.Config, err = json.Marshal(engine.CommonConfig)
+	file.Config, err = json.Marshal(e.CommonConfig)
 	if err != nil {
 		return err
 	}
@@ -233,10 +233,10 @@ func (engine *EngineOperations) updateState(status string) error {
 		return err
 	}
 
-	socketPath := engine.EngineConfig.SyncSocket
+	socketPath := e.EngineConfig.SyncSocket
 
 	if socketPath != "" {
-		data, err := json.Marshal(engine.EngineConfig.State)
+		data, err := json.Marshal(e.EngineConfig.State)
 		if err != nil {
 			sylog.Warningf("failed to marshal state data: %s", err)
 		} else if err := unix.WriteSocket(socketPath, data); err != nil {
@@ -254,7 +254,7 @@ func (engine *EngineOperations) updateState(status string) error {
 }
 
 // one shot function to wait on running or stopped status
-func (engine *EngineOperations) waitStatusUpdate() {
+func (e *EngineOperations) waitStatusUpdate() {
 	if statusChan == nil {
 		return
 	}
@@ -266,29 +266,29 @@ func (engine *EngineOperations) waitStatusUpdate() {
 }
 
 // CreateContainer creates a container
-func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
+func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 	var err error
 
-	if engine.CommonConfig.EngineName != Name {
+	if e.CommonConfig.EngineName != Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
 	rpcOps := &client.RPC{}
 	rpcOps.Client = rpc.NewClient(rpcConn)
-	rpcOps.Name = engine.CommonConfig.EngineName
+	rpcOps.Name = e.CommonConfig.EngineName
 
 	if rpcOps.Client == nil {
 		return fmt.Errorf("failed to initialize RPC client")
 	}
 
-	if err := engine.createState(pid); err != nil {
+	if err := e.createState(pid); err != nil {
 		return err
 	}
 
-	rootfs := engine.EngineConfig.OciConfig.Root.Path
+	rootfs := e.EngineConfig.OciConfig.Root.Path
 
 	if !filepath.IsAbs(rootfs) {
-		rootfs = filepath.Join(engine.EngineConfig.GetBundlePath(), rootfs)
+		rootfs = filepath.Join(e.EngineConfig.GetBundlePath(), rootfs)
 	}
 
 	resolvedRootfs, err := filepath.EvalSymlinks(rootfs)
@@ -297,7 +297,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	c := &container{
-		engine:      engine,
+		engine:      e,
 		rpcOps:      rpcOps,
 		rootfs:      resolvedRootfs,
 		rpcRoot:     fmt.Sprintf("/proc/%d/root", pid),
@@ -305,7 +305,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		devIndex:    -1,
 	}
 
-	for _, ns := range engine.EngineConfig.OciConfig.Linux.Namespaces {
+	for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
 		switch ns.Type {
 		case specs.UserNamespace:
 			c.userNS = true
@@ -317,15 +317,15 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	p := &mount.Points{}
-	if engine.EngineConfig.OciConfig.Linux.MountLabel != "" {
-		if err := p.SetContext(engine.EngineConfig.OciConfig.Linux.MountLabel); err != nil {
+	if e.EngineConfig.OciConfig.Linux.MountLabel != "" {
+		if err := p.SetContext(e.EngineConfig.OciConfig.Linux.MountLabel); err != nil {
 			return err
 		}
 	}
 
 	system := &mount.System{Points: p, Mount: c.mount}
 
-	for i, point := range engine.EngineConfig.OciConfig.Config.Mounts {
+	for i, point := range e.EngineConfig.OciConfig.Config.Mounts {
 		// cgroup creation
 		if point.Type == "cgroup" {
 			c.cgroupIndex = i
@@ -346,7 +346,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	// import OCI mount spec
-	if err := system.Points.ImportFromSpec(engine.EngineConfig.OciConfig.Config.Mounts); err != nil {
+	if err := system.Points.ImportFromSpec(e.EngineConfig.OciConfig.Config.Mounts); err != nil {
 		return err
 	}
 
@@ -362,7 +362,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	if err := proc.SetOOMScoreAdj(pid, engine.EngineConfig.OciConfig.Process.OOMScoreAdj); err != nil {
+	if err := proc.SetOOMScoreAdj(pid, e.EngineConfig.OciConfig.Process.OOMScoreAdj); err != nil {
 		return err
 	}
 
@@ -373,7 +373,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	for key, value := range engine.EngineConfig.OciConfig.Linux.Sysctl {
+	for key, value := range e.EngineConfig.OciConfig.Linux.Sysctl {
 		if err := sysctl.Set(key, value); err != nil {
 			return err
 		}
@@ -391,8 +391,8 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	if c.utsNS && engine.EngineConfig.OciConfig.Hostname != "" {
-		if _, err := rpcOps.SetHostname(engine.EngineConfig.OciConfig.Hostname); err != nil {
+	if c.utsNS && e.EngineConfig.OciConfig.Hostname != "" {
+		if _, err := rpcOps.SetHostname(e.EngineConfig.OciConfig.Hostname); err != nil {
 			return err
 		}
 	}
@@ -419,8 +419,8 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		if err == nil && (has || n.checkEnabled) {
 			enabled := false
 			if n.checkEnabled {
-				if engine.EngineConfig.OciConfig.Linux != nil {
-					for _, namespace := range engine.EngineConfig.OciConfig.Linux.Namespaces {
+				if e.EngineConfig.OciConfig.Linux != nil {
+					for _, namespace := range e.EngineConfig.OciConfig.Linux.Namespaces {
 						if n.ns == namespace.Type {
 							enabled = true
 							break
@@ -430,7 +430,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 			}
 			if has || enabled {
 				nspath := filepath.Join(path, n.nstype)
-				engine.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
+				e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
 			}
 		} else if err != nil {
 			return fmt.Errorf("failed to check %s root and container namespace: %s", n.ns, err)
@@ -447,23 +447,23 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("chroot failed: %s", err)
 	}
 
-	if engine.EngineConfig.SlavePts != -1 {
-		if err := syscall.Close(engine.EngineConfig.SlavePts); err != nil {
+	if e.EngineConfig.SlavePts != -1 {
+		if err := syscall.Close(e.EngineConfig.SlavePts); err != nil {
 			return fmt.Errorf("failed to close slave part: %s", err)
 		}
 	}
-	if engine.EngineConfig.OutputStreams[0] != -1 {
-		if err := syscall.Close(engine.EngineConfig.OutputStreams[1]); err != nil {
+	if e.EngineConfig.OutputStreams[0] != -1 {
+		if err := syscall.Close(e.EngineConfig.OutputStreams[1]); err != nil {
 			return fmt.Errorf("failed to close write output stream: %s", err)
 		}
 	}
-	if engine.EngineConfig.ErrorStreams[0] != -1 {
-		if err := syscall.Close(engine.EngineConfig.ErrorStreams[1]); err != nil {
+	if e.EngineConfig.ErrorStreams[0] != -1 {
+		if err := syscall.Close(e.EngineConfig.ErrorStreams[1]); err != nil {
 			return fmt.Errorf("failed to close write error stream: %s", err)
 		}
 	}
-	if engine.EngineConfig.InputStreams[0] != -1 {
-		if err := syscall.Close(engine.EngineConfig.InputStreams[1]); err != nil {
+	if e.EngineConfig.InputStreams[0] != -1 {
+		if err := syscall.Close(e.EngineConfig.InputStreams[1]); err != nil {
 			return fmt.Errorf("failed to close write input stream: %s", err)
 		}
 	}
