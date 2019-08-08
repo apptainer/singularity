@@ -7,6 +7,7 @@ package e2e
 
 import "testing"
 
+// TestEnv defines the environment used to execute a single e2e test.
 type TestEnv struct {
 	RunDisabled   bool
 	CmdPath       string
@@ -14,7 +15,6 @@ type TestEnv struct {
 	OrasTestImage string
 	TestDir       string
 	TestRegistry  string
-	KeyringDir    string
 }
 
 // RunSingularity is a convenient wrapper for the standalone
