@@ -41,7 +41,7 @@ func (c *cacheTests) testCacheClean(t *testing.T) {
 		},
 	}
 
-	imagePath := c.env.TestDir + "busybox.sif"
+	imagePath := c.env.TestDir + "/busybox.sif"
 	for _, tc := range tt {
 		c.env.RunSingularity(
 			t,
@@ -83,6 +83,7 @@ func ensureDirEmpty(t *testing.T, dir string) {
 		t.Fatalf("Dir %q is not empty", dir)
 	}
 }
+
 func ensureDirNotEmpty(t *testing.T, dir string) {
 	fi, err := ioutil.ReadDir(dir)
 	if err != nil {
