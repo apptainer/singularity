@@ -5,22 +5,16 @@
 
 package e2e
 
-import "testing"
-
-// TestEnv defines the environment used to execute a single e2e test.
+// TestEnv stores all the information under the control of e2e test developers,
+// from specifying which Singularity binary to use to controlling how Singularity
+// environment variables will be set.
 type TestEnv struct {
 	RunDisabled   bool
-	CmdPath       string
-	ImagePath     string
+	CmdPath       string // Path to the Singularity binary to use for the execution of a Singularity command
+	ImagePath     string // Path to the image that has to be used for the execution of a Singularity command
 	OrasTestImage string
-	TestDir       string
+	TestDir       string // Path to the directory from which a Singularity command needs to be executed
 	TestRegistry  string
-}
-
-// RunSingularity is a convenient wrapper for the standalone
-// RunSingularity function, ensuring that RunSingularity gets called
-// with the correct singularity path as specified by the test
-// environment.
-func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
-	RunSingularity(t, env.CmdPath, cmdOps...)
+	KeyringDir    string // KeyringDir sets the directory where the keyring will be created for the execution of a command (instead of using SINGULARITY_SYPGPDIR which should be avoided when running e2e tests)
+	ImgCacheDir   string // ImgCacheDir sets the location of the image cache to be used by the Singularity command to be executed (instead of using SINGULARITY_CACHE_DIR which should be avoided when running e2e tests)
 }

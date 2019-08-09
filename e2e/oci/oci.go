@@ -24,7 +24,7 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-func checkOciState(t *testing.T, cmdPath, containerID, state string) {
+func (c *ctx) checkOciState(t *testing.T, containerID, state string) {
 	checkStateFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 		s := &ociruntime.State{}
 		if err := json.Unmarshal(r.Stdout, s); err != nil {
@@ -37,9 +37,8 @@ func checkOciState(t *testing.T, cmdPath, containerID, state string) {
 		}
 	}
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		cmdPath,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci state"),
 		e2e.WithArgs(containerID),
@@ -153,7 +152,7 @@ func (c *ctx) testOciAttach(t *testing.T) {
 		e2e.ConsoleRun(),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Created)
+				c.checkOciState(t, containerID, ociruntime.Created)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -166,7 +165,7 @@ func (c *ctx) testOciAttach(t *testing.T) {
 		e2e.WithArgs(containerID),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Running)
+				c.checkOciState(t, containerID, ociruntime.Running)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -184,7 +183,7 @@ func (c *ctx) testOciAttach(t *testing.T) {
 		),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Stopped)
+				c.checkOciState(t, containerID, ociruntime.Stopped)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -220,7 +219,7 @@ func (c *ctx) testOciBasic(t *testing.T) {
 		e2e.ConsoleRun(),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Created)
+				c.checkOciState(t, containerID, ociruntime.Created)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -233,7 +232,7 @@ func (c *ctx) testOciBasic(t *testing.T) {
 		e2e.WithArgs(containerID),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Running)
+				c.checkOciState(t, containerID, ociruntime.Running)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -250,7 +249,7 @@ func (c *ctx) testOciBasic(t *testing.T) {
 		}),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Paused)
+				c.checkOciState(t, containerID, ociruntime.Paused)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -267,7 +266,7 @@ func (c *ctx) testOciBasic(t *testing.T) {
 		}),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Running)
+				c.checkOciState(t, containerID, ociruntime.Running)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -296,7 +295,7 @@ func (c *ctx) testOciBasic(t *testing.T) {
 		e2e.WithArgs("-t", "2", containerID, "KILL"),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Stopped)
+				c.checkOciState(t, containerID, ociruntime.Stopped)
 			}
 		}),
 		e2e.ExpectExit(0),
