@@ -15,11 +15,16 @@ type cacheTests struct {
 
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &cacheTests{
-		env: env,
-	}
-
 	return func(t *testing.T) {
+		if env.ImgCacheDir == "" {
+			cacheDir, cleanup := e2e.MakeCacheDir(t, "")
+			defer cleanup(t)
+			env.ImgCacheDir = cacheDir
+		}
+
+		c := &cacheTests{
+			env: env,
+		}
 		t.Run("cacheClean", c.testCacheClean)
 	}
 }
