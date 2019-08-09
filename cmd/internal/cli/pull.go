@@ -131,9 +131,7 @@ var pullAllowUnsignedFlag = cmdline.Flag{
 	Name:         "allow-unsigned",
 	ShortHand:    "U",
 	Usage:        "do not require a signed container",
-	Deprecated: `now affects only warning messages, in future will be deleted.
-Pull command no longer exits with an error code in case of unsigned image, only prints warning.`,
-	EnvKeys: []string{"ALLOW_UNSIGNED"},
+	EnvKeys:      []string{"ALLOW_UNSIGNED"},
 }
 
 // --allow-unauthenticated
@@ -187,6 +185,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("failed to create an image cache handle")
 	}
 
+	exitStat := 0
 	i := len(args) - 1 // uri is stored in args[len(args)-1]
 	transport, ref := uri.Split(args[i])
 	if ref == "" {
@@ -261,6 +260,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
+	os.Exit(exitStat)
 }
 
 func handlePullFlags(cmd *cobra.Command) {

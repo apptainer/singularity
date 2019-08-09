@@ -222,10 +222,6 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 		e2e.WithPrivileges(false),
 		e2e.WithCommand("pull"),
 		e2e.WithArgs(strings.Split(argv, " ")...),
-		// We make sure to include os.Environ() in addition of KeyringDir to find utilities such as mksquashfs.
-		// If nothing is specified with WithEnv(), the framework will pick up os.Environ(); if we need to had a
-		// new environment variable, we need to explicitly also add os.Environ()
-		e2e.WithEnv(append(os.Environ(), c.env.KeyringDir)),
 		e2e.ExpectExit(tt.expectedExitCode))
 
 	checkPullResult(t, tt)
@@ -291,15 +287,6 @@ func (c *ctx) setup(t *testing.T) {
 func (c *ctx) testPullCmd(t *testing.T) {
 	// XXX(mem): this should come from the environment
 	sylabsAdminFingerprint := "8883491F4268F173C6E5DC49EDECE4F3F38D871E"
-	tempKeyringDir, err := ioutil.TempDir(c.env.TestDir, "tempKeyringDir-")
-	if err != nil {
-		err = errors.Wrapf(err, "creating temporary keyring directory at %q", c.env.TestDir)
-		t.Fatalf("failed to create temporary directory: %+v", err)
-	}
-	defer os.RemoveAll(tempKeyringDir)
-
-	keyringEnv := "SINGULARITY_SYPGPDIR=" + tempKeyringDir
-	c.env.KeyringDir = keyringEnv
 	argv := []string{"key", "pull", sylabsAdminFingerprint}
 	out, err := exec.Command(c.env.CmdPath, argv...).CombinedOutput()
 	if err != nil {
