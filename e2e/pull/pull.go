@@ -84,7 +84,7 @@ var tests = []testStruct{
 		srcURI:           "library://sylabs/tests/unsigned:1.0.0",
 		force:            true,
 		unauthenticated:  false,
-		expectedExitCode: 10,
+		expectedExitCode: 0,
 	},
 
 	// test version specifications
