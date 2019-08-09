@@ -21,7 +21,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"text/tabwriter"
 	"time"
 
 	jsonresp "github.com/sylabs/json-resp"
@@ -570,58 +569,9 @@ func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	return el[n], nil
 }
 
-// formatMROutput will take a machine readable input, and convert it to fit
-// on a 80x24 terminal. Returns the number of keys(int), the formated string
-// in []bytes, and a error if one occurs.
-func formatMROutput(mrString string) (int, []byte, error) {
-	count := 0
-	keyNum := 0
-	listLine := "%s\t%s\t%s\n"
-
-	retList := bytes.NewBuffer(nil)
-	tw := tabwriter.NewWriter(retList, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(tw, listLine, "KEY ID", "BITS", "NAME/EMAIL")
-
-	key := strings.Split(mrString, "\n")
-
-	for _, k := range key {
-		nk := strings.Split(k, ":")
-		for _, n := range nk {
-			if n == "info" {
-				var err error
-				keyNum, err = strconv.Atoi(nk[2])
-				if err != nil {
-					return -1, nil, fmt.Errorf("unable to check key number")
-				}
-			}
-			if n == "pub" {
-				// The fingerprint is located at nk[1], and we only want the last 8 chars
-				fmt.Fprintf(tw, "%s\t", nk[1][32:])
-				// The key size (bits) is located at nk[3]
-				fmt.Fprintf(tw, "%s\t", nk[3])
-				count++
-			}
-			if n == "uid" {
-				// And the key name/email is on nk[1]
-				fmt.Fprintf(tw, "%s\t\n\n", nk[1])
-			}
-		}
-	}
-	tw.Flush()
-
-	sylog.Debugf("key count=%d; expect=%d\n", count, keyNum)
-
-	// Simple check to ensure the conversion was successful
-	if count != keyNum {
-		sylog.Debugf("expecting %d, got %d\n", keyNum, count)
-		return -1, retList.Bytes(), fmt.Errorf("failed to convert machine readable to human readable output correctly")
-	}
-
-	return count, retList.Bytes(), nil
-}
-
 // SearchPubkey connects to a key server and searches for a specific key
-func SearchPubkey(search, keyserverURI, authToken string, longOutput bool) error {
+func SearchPubkey(search, keyserverURI, authToken string) error {
+
 	// Get a Key Service client.
 	c, err := client.NewClient(&client.Config{
 		BaseURL:   keyserverURI,
@@ -653,19 +603,11 @@ func SearchPubkey(search, keyserverURI, authToken string, longOutput bool) error
 		}
 	}
 
-	if longOutput {
-		keyText, err = reformatMachineReadableOutput(keyText)
-		if err != nil {
-			return fmt.Errorf("could not reformat key output")
-		}
-		fmt.Printf("%s", keyText)
-	} else {
-		kcount, keyText, err := formatMROutput(keyText)
-		fmt.Printf("Showing %d results\n\n%s", kcount, keyText)
-		if err != nil {
-			return err
-		}
+	keyText, err = reformatMachineReadableOutput(keyText)
+	if err != nil {
+		return fmt.Errorf("could not reformat key output")
 	}
+	fmt.Printf("%v", keyText)
 
 	return nil
 }
@@ -787,7 +729,7 @@ func reformatMachineReadableOutput(keyText string) (string, error) {
 			return "", err
 		}
 
-		// check the status of each key if flags are present
+		//check the status of each key if flags are present
 		if len(featuresKey) == 7 {
 			if featuresKey[6] == "r" {
 				status = "revoked"

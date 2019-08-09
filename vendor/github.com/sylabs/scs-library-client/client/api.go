@@ -15,49 +15,55 @@ import (
 	jsonresp "github.com/sylabs/json-resp"
 )
 
-// getEntity returns the specified entity; returns ErrNotFound if entity is not
-// found, otherwise error
-func (c *Client) getEntity(ctx context.Context, entityRef string) (*Entity, error) {
+// getEntity returns the specified entity
+func (c *Client) getEntity(ctx context.Context, entityRef string) (*Entity, bool, error) {
 	url := "/v1/entities/" + entityRef
-	entJSON, err := c.apiGet(ctx, url)
+	entJSON, found, err := c.apiGet(ctx, url)
 	if err != nil {
-		return nil, err
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
 	}
 	var res EntityResponse
 	if err := json.Unmarshal(entJSON, &res); err != nil {
-		return nil, fmt.Errorf("error decoding entity: %v", err)
+		return nil, false, fmt.Errorf("error decoding entity: %v", err)
 	}
-	return &res.Data, nil
+	return &res.Data, found, nil
 }
 
-// getCollection returns the specified collection; returns ErrNotFound if
-// collection is not found, otherwise error.
-func (c *Client) getCollection(ctx context.Context, collectionRef string) (*Collection, error) {
+// getCollection returns the specified collection
+func (c *Client) getCollection(ctx context.Context, collectionRef string) (*Collection, bool, error) {
 	url := "/v1/collections/" + collectionRef
-	colJSON, err := c.apiGet(ctx, url)
+	colJSON, found, err := c.apiGet(ctx, url)
 	if err != nil {
-		return nil, err
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
 	}
 	var res CollectionResponse
 	if err := json.Unmarshal(colJSON, &res); err != nil {
-		return nil, fmt.Errorf("error decoding collection: %v", err)
+		return nil, false, fmt.Errorf("error decoding collection: %v", err)
 	}
-	return &res.Data, nil
+	return &res.Data, found, nil
 }
 
-// getContainer returns container by ref id; returns ErrNotFound if container
-// is not found, otherwise error.
-func (c *Client) getContainer(ctx context.Context, containerRef string) (*Container, error) {
+// getContainer returns container by ref id
+func (c *Client) getContainer(ctx context.Context, containerRef string) (*Container, bool, error) {
 	url := "/v1/containers/" + containerRef
-	conJSON, err := c.apiGet(ctx, url)
+	conJSON, found, err := c.apiGet(ctx, url)
 	if err != nil {
-		return nil, err
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
 	}
 	var res ContainerResponse
 	if err := json.Unmarshal(conJSON, &res); err != nil {
-		return nil, fmt.Errorf("error decoding container: %v", err)
+		return nil, false, fmt.Errorf("error decoding container: %v", err)
 	}
-	return &res.Data, nil
+	return &res.Data, found, nil
 }
 
 // createEntity creates an entity (must be authorized)
@@ -170,7 +176,6 @@ func (c *Client) getTags(ctx context.Context, containerID string) (TagMap, error
 	if err != nil {
 		return nil, fmt.Errorf("error making request to server:\n\t%v", err)
 	}
-	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		err := jsonresp.ReadError(res.Body)
 		if err != nil {
@@ -202,7 +207,6 @@ func (c *Client) setTag(ctx context.Context, containerID string, t ImageTag) err
 	if err != nil {
 		return fmt.Errorf("error making request to server:\n\t%v", err)
 	}
-	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		err := jsonresp.ReadError(res.Body)
 		if err != nil {
@@ -213,17 +217,19 @@ func (c *Client) setTag(ctx context.Context, containerID string, t ImageTag) err
 	return nil
 }
 
-// GetImage returns the Image object if exists; returns ErrNotFound if image is
-// not found, otherwise error.
-func (c *Client) GetImage(ctx context.Context, imageRef string) (*Image, error) {
+// GetImage returns the Image object if exists, otherwise returns error
+func (c *Client) GetImage(ctx context.Context, imageRef string) (*Image, bool, error) {
 	url := "/v1/images/" + imageRef
-	imgJSON, err := c.apiGet(ctx, url)
+	imgJSON, found, err := c.apiGet(ctx, url)
 	if err != nil {
-		return nil, err
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
 	}
 	var res ImageResponse
 	if err := json.Unmarshal(imgJSON, &res); err != nil {
-		return nil, fmt.Errorf("error decoding image: %v", err)
+		return nil, false, fmt.Errorf("error decoding image: %v", err)
 	}
-	return &res.Data, nil
+	return &res.Data, found, nil
 }

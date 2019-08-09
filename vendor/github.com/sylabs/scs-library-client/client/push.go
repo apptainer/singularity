@@ -110,11 +110,11 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 	c.Logger.Logf("Image hash computed as %s", imageHash)
 
 	// Find or create entity
-	entity, err := c.getEntity(ctx, entityName)
+	entity, found, err := c.getEntity(ctx, entityName)
 	if err != nil {
-		if err != ErrNotFound {
-			return err
-		}
+		return err
+	}
+	if !found {
 		c.Logger.Logf("Entity %s does not exist in library - creating it.", entityName)
 		entity, err = c.createEntity(ctx, entityName)
 		if err != nil {
@@ -124,12 +124,11 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 
 	// Find or create collection
 	qualifiedCollectionName := fmt.Sprintf("%s/%s", entityName, collectionName)
-	collection, err := c.getCollection(ctx, qualifiedCollectionName)
+	collection, found, err := c.getCollection(ctx, qualifiedCollectionName)
 	if err != nil {
-		if err != ErrNotFound {
-			return err
-		}
-		// create collection
+		return err
+	}
+	if !found {
 		c.Logger.Logf("Collection %s does not exist in library - creating it.", collectionName)
 		collection, err = c.createCollection(ctx, collectionName, entity.ID)
 		if err != nil {
@@ -139,12 +138,11 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 
 	// Find or create container
 	computedName := fmt.Sprintf("%s/%s", qualifiedCollectionName, containerName)
-	container, err := c.getContainer(ctx, computedName)
+	container, found, err := c.getContainer(ctx, computedName)
 	if err != nil {
-		if err != ErrNotFound {
-			return err
-		}
-		// Create container
+		return err
+	}
+	if !found {
 		c.Logger.Logf("Container %s does not exist in library - creating it.", containerName)
 		container, err = c.createContainer(ctx, containerName, collection.ID)
 		if err != nil {
@@ -153,12 +151,11 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 	}
 
 	// Find or create image
-	image, err := c.GetImage(ctx, computedName+":"+imageHash)
+	image, found, err := c.GetImage(ctx, computedName+":"+imageHash)
 	if err != nil {
-		if err != ErrNotFound {
-			return err
-		}
-		// Create image
+		return err
+	}
+	if !found {
 		c.Logger.Logf("Image %s does not exist in library - creating it.", imageHash)
 		image, err = c.createImage(ctx, imageHash, container.ID, description)
 		if err != nil {
@@ -207,10 +204,10 @@ func (c *Client) postFile(ctx context.Context, r io.Reader, fileSize int64, imag
 	// Content length is required by the API
 	req.ContentLength = fileSize
 	res, err := c.HTTPClient.Do(req.WithContext(ctx))
+
 	if err != nil {
 		return fmt.Errorf("error uploading file to server: %s", err.Error())
 	}
-	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		err := jsonresp.ReadError(res.Body)
 		if err != nil {
@@ -292,7 +289,6 @@ func (c *Client) postFileV2(ctx context.Context, r io.Reader, fileSize int64, im
 	if err != nil {
 		return fmt.Errorf("error uploading image: %v", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("error uploading image: HTTP status %d", resp.StatusCode)

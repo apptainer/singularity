@@ -53,7 +53,7 @@ func (c *Client) Search(ctx context.Context, args map[string]string) (*SearchRes
 		v.Set(key, value)
 	}
 
-	resJSON, err := c.apiGet(ctx, "/v1/search?"+v.Encode())
+	resJSON, _, err := c.apiGet(ctx, "/v1/search?"+v.Encode())
 	if err != nil {
 		return nil, err
 	}

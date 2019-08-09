@@ -62,12 +62,12 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	imageRef := library.NormalizeLibraryRef(b.Recipe.Header["from"])
 
-	libraryImage, err := libraryClient.GetImage(context.TODO(), imageRef)
-	if err == client.ErrNotFound {
-		return fmt.Errorf("image does not exist in the library: %s", imageRef)
-	}
+	libraryImage, existOk, err := libraryClient.GetImage(context.TODO(), imageRef)
 	if err != nil {
 		return fmt.Errorf("while getting image info: %v", err)
+	}
+	if !existOk {
+		return fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
 	imagePath := ""

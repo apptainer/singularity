@@ -75,7 +75,7 @@ var PushCmd = &cobra.Command{
 		case LibraryProtocol, "": // Handle pushing to a library
 			handlePushFlags(cmd)
 
-			err := singularity.LibraryPush(file, dest, authToken, PushLibraryURI, keyServerURL, remoteWarning, unauthenticatedPush)
+			err := singularity.LibraryPush(file, dest, authToken, PushLibraryURI, KeyServerURL, remoteWarning, unauthenticatedPush)
 			if err == singularity.ErrLibraryUnsigned {
 				fmt.Printf("TIP: You can push unsigned images with 'singularity push -U %s'.\n", file)
 				fmt.Printf("TIP: Learn how to sign your own containers by using 'singularity help sign'\n\n")
@@ -109,7 +109,7 @@ func handlePushFlags(cmd *cobra.Command) {
 	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to: %v", PushLibraryURI)
-		sylog.Debugf("using default key server url: %v", keyServerURL)
+		sylog.Debugf("using default key server url: %v", KeyServerURL)
 		return
 	} else if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
@@ -126,8 +126,8 @@ func handlePushFlags(cmd *cobra.Command) {
 
 	uri, err := endpoint.GetServiceURI("keystore")
 	if err != nil {
-		sylog.Warningf("Unable to get library service URI: %v, defaulting to %s.", err, keyServerURL)
+		sylog.Warningf("Unable to get library service URI: %v, defaulting to %s.", err, KeyServerURL)
 		return
 	}
-	keyServerURL = uri
+	KeyServerURL = uri
 }

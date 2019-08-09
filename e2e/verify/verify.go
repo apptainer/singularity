@@ -79,9 +79,7 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if !e2e.FileExists(t, tt.imagePath) {
-			t.Fatalf("image file (%s) does not exist", tt.imagePath)
-		}
+		e2e.PullImage(t, c.env, tt.imageURL, tt.imagePath)
 
 		verifyOutput := func(t *testing.T, r *e2e.SingularityCmdResult) {
 			// Get the Signatures and compare it
@@ -271,15 +269,13 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			}
 		}
 
-		if !e2e.FileExists(t, tt.imagePath) {
-			t.Fatalf("image file (%s) does not exist", tt.imagePath)
-		}
-
 		args := []string{"--json"}
 		if tt.verifyLocal {
 			args = append(args, "--local")
 		}
 		args = append(args, tt.imagePath)
+
+		e2e.PullImage(t, c.env, tt.imageURL, tt.imagePath)
 
 		// Inspect the container, and get the output
 		c.env.RunSingularity(
@@ -293,52 +289,6 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 	}
 }
 
-func (c *ctx) checkGroupidOption(t *testing.T) {
-	cmdArgs := []string{"--groupid", "0", c.successImage}
-	c.env.RunSingularity(
-		t,
-		e2e.WithPrivileges(false),
-		e2e.WithCommand("verify"),
-		e2e.WithArgs(cmdArgs...),
-		e2e.ExpectExit(
-			0,
-			e2e.ExpectOutput(e2e.RegexMatch, "^Container is signed by"),
-		),
-	)
-}
-
-func (c *ctx) checkIDOption(t *testing.T) {
-	cmdArgs := []string{"--id", "0", c.successImage}
-	c.env.RunSingularity(
-		t,
-		e2e.WithPrivileges(false),
-		e2e.WithCommand("verify"),
-		e2e.WithArgs(cmdArgs...),
-		e2e.ExpectExit(
-			0,
-			e2e.ExpectOutput(e2e.RegexMatch, "^Container is signed by"),
-		),
-	)
-}
-
-func (c *ctx) checkURLOption(t *testing.T) {
-	if !e2e.FileExists(t, c.successImage) {
-		t.Fatalf("image file (%s) does not exist", c.successImage)
-	}
-
-	cmdArgs := []string{"--url", "https://keys.sylabs.io", c.successImage}
-	c.env.RunSingularity(
-		t,
-		e2e.WithPrivileges(false),
-		e2e.WithCommand("verify"),
-		e2e.WithArgs(cmdArgs...),
-		e2e.ExpectExit(
-			0,
-			e2e.ExpectOutput(e2e.RegexMatch, "^Container is signed by"),
-		),
-	)
-}
-
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
@@ -348,14 +298,7 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
-		// We pull the two images required for the tests once
-		e2e.PullImage(t, c.env, successURL, c.successImage)
-		e2e.PullImage(t, c.env, corruptedURL, c.corruptedImage)
-
 		t.Run("singularityVerifyKeyNum", c.singularityVerifyKeyNum)
 		t.Run("singularityVerifySigner", c.singularityVerifySigner)
-		t.Run("singularityVerifyGroupIdOption", c.checkGroupidOption)
-		t.Run("singularityVerifyIDOption", c.checkIDOption)
-		t.Run("singularityVerifyURLOption", c.checkURLOption)
 	}
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-// KeySearchCmd is 'singularity key search' and look for public keys from a key server
+// KeySearchCmd is `singularity key search' and look for public keys from a key server
 var KeySearchCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
@@ -36,5 +36,5 @@ var KeySearchCmd = &cobra.Command{
 
 func doKeySearchCmd(search string, url string) error {
 	// get keyring with matching search string
-	return sypgp.SearchPubkey(search, url, authToken, keySearchLongList)
+	return sypgp.SearchPubkey(search, url, authToken)
 }

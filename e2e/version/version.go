@@ -96,19 +96,6 @@ func (c *ctx) testEqualVersion(t *testing.T) {
 	}
 }
 
-// Test the help option
-func (c *ctx) testHelpOption(t *testing.T) {
-	c.env.RunSingularity(
-		t,
-		e2e.WithCommand("version"),
-		e2e.WithArgs("--help"),
-		e2e.ExpectExit(
-			0,
-			e2e.ExpectOutput(e2e.RegexMatch, "^Show the version for Singularity"),
-		),
-	)
-}
-
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
@@ -118,6 +105,5 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("test_semantic_version", c.testSemanticVersion)
 		t.Run("test_equal_version", c.testEqualVersion)
-		t.Run("test_help_option", c.testHelpOption)
 	}
 }

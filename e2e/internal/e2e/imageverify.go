@@ -18,7 +18,7 @@ import (
 )
 
 // ImageVerify checks for an image integrity
-func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
+func ImageVerify(t *testing.T, cmdPath string, imagePath string) {
 	type testSpec struct {
 		name string
 		argv []string
@@ -73,8 +73,9 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 	}
 
 	for _, tt := range tests {
-		env.RunSingularity(
+		RunSingularity(
 			t,
+			cmdPath,
 			AsSubtest(tt.name),
 			WithCommand("exec"),
 			WithArgs(tt.argv...),
@@ -87,7 +88,7 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileDetails) {
 	if dfd.Help != nil {
 		helpPath := filepath.Join(imagePath, `/.singularity.d/runscript.help`)
-		if !FileExists(t, helpPath) {
+		if !fileExists(t, helpPath) {
 			t.Fatalf("unexpected failure: Script %v does not exist in container", helpPath)
 		}
 
@@ -116,7 +117,7 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 			file = p.Dst
 		}
 
-		if !FileExists(t, filepath.Join(imagePath, file)) {
+		if !fileExists(t, filepath.Join(imagePath, file)) {
 			t.Fatalf("unexpected failure: File %v does not exist in container", file)
 		}
 
@@ -127,7 +128,7 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 
 	if dfd.RunScript != nil {
 		scriptPath := filepath.Join(imagePath, `/.singularity.d/runscript`)
-		if !FileExists(t, scriptPath) {
+		if !fileExists(t, scriptPath) {
 			t.Fatalf("unexpected failure: Script %v does not exist in container", scriptPath)
 		}
 
@@ -138,7 +139,7 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 
 	if dfd.StartScript != nil {
 		scriptPath := filepath.Join(imagePath, `/.singularity.d/startscript`)
-		if !FileExists(t, scriptPath) {
+		if !fileExists(t, scriptPath) {
 			t.Fatalf("unexpected failure: Script %v does not exist in container", scriptPath)
 		}
 
@@ -149,7 +150,7 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 
 	if dfd.Test != nil {
 		scriptPath := filepath.Join(imagePath, `/.singularity.d/test`)
-		if !FileExists(t, scriptPath) {
+		if !fileExists(t, scriptPath) {
 			t.Fatalf("unexpected failure: Script %v does not exist in container", scriptPath)
 		}
 
@@ -159,19 +160,19 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 	}
 
 	for _, file := range dfd.Pre {
-		if !FileExists(t, file) {
+		if !fileExists(t, file) {
 			t.Fatalf("unexpected failure: %%Pre generated file %v does not exist on host", file)
 		}
 	}
 
 	for _, file := range dfd.Setup {
-		if !FileExists(t, file) {
+		if !fileExists(t, file) {
 			t.Fatalf("unexpected failure: %%Setup generated file %v does not exist on host", file)
 		}
 	}
 
 	for _, file := range dfd.Post {
-		if !FileExists(t, filepath.Join(imagePath, file)) {
+		if !fileExists(t, filepath.Join(imagePath, file)) {
 			t.Fatalf("unexpected failure: %%Post generated file %v does not exist in container", file)
 		}
 	}
@@ -181,7 +182,7 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 		// %apphelp
 		if app.Help != nil {
 			helpPath := filepath.Join(imagePath, `/scif/apps/`, app.Name, `/scif/runscript.help`)
-			if !FileExists(t, helpPath) {
+			if !fileExists(t, helpPath) {
 				t.Fatalf("unexpected failure in app %v: Script %v does not exist in app", app.Name, helpPath)
 			}
 
@@ -213,7 +214,7 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 				file = p.Dst
 			}
 
-			if !FileExists(t, filepath.Join(imagePath, "/scif/apps/", app.Name, file)) {
+			if !fileExists(t, filepath.Join(imagePath, "/scif/apps/", app.Name, file)) {
 				t.Fatalf("unexpected failure in app %v: File %v does not exist in app", app.Name, file)
 			}
 
@@ -224,7 +225,7 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 
 		// %appInstall
 		for _, file := range app.Install {
-			if !FileExists(t, filepath.Join(imagePath, "/scif/apps/", app.Name, file)) {
+			if !fileExists(t, filepath.Join(imagePath, "/scif/apps/", app.Name, file)) {
 				t.Fatalf("unexpected failure in app %v: %%Install generated file %v does not exist in container", app.Name, file)
 			}
 		}
@@ -232,7 +233,7 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 		// %appRun
 		if app.Run != nil {
 			scriptPath := filepath.Join(imagePath, "/scif/apps/", app.Name, "scif/runscript")
-			if !FileExists(t, scriptPath) {
+			if !fileExists(t, scriptPath) {
 				t.Fatalf("unexpected failure in app %v: Script %v does not exist in app", app.Name, scriptPath)
 			}
 
@@ -244,7 +245,7 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 		// %appTest
 		if app.Test != nil {
 			scriptPath := filepath.Join(imagePath, "/scif/apps/", app.Name, "scif/test")
-			if !FileExists(t, scriptPath) {
+			if !fileExists(t, scriptPath) {
 				t.Fatalf("unexpected failure in app %v: Script %v does not exist in app", app.Name, scriptPath)
 			}
 
@@ -254,6 +255,16 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 		}
 	}
 
+}
+
+func fileExists(t *testing.T, path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	} else if err != nil {
+		t.Fatalf("While stating file: %v", err)
+	}
+
+	return true
 }
 
 func verifyFile(t *testing.T, original, copy string) error {

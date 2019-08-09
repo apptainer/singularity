@@ -98,8 +98,7 @@ jobs:
             make -j$(sysctl -n hw.logicalcpu) -C ./builddir check
 
   unit_tests:
-    machine:
-      image: ubuntu-1604:201903-01
+    machine: true
     steps:
       - attach_workspace:
           at: ~/go
@@ -142,8 +141,7 @@ jobs:
             make -j$(nproc) -C ./builddir unit-test
 
   e2e_tests:
-    machine:
-      image: ubuntu-1604:201903-01
+    machine: true
     steps:
       - attach_workspace:
           at: ~/go
