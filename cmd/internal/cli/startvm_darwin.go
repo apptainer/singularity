@@ -43,7 +43,7 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		sylog.Fatalf("Filed to Stat() xhyve binary: %v", err)
 	}
 	setuid := false
-	if fi.Mode() & os.ModeSetuid == os.ModeSetuid {
+	if fi.Mode()&os.ModeSetuid == os.ModeSetuid {
 		setuid = true
 	}
 	// Default xhyve Arguments
