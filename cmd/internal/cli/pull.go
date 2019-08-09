@@ -132,6 +132,7 @@ var pullAllowUnsignedFlag = cmdline.Flag{
 	ShortHand:    "U",
 	Usage:        "do not require a signed container",
 	EnvKeys:      []string{"ALLOW_UNSIGNED"},
+	Deprecated:   `pull no longer exits with an error code in case of unsigned image. Now the flag only suppress warning message.`,
 }
 
 // --allow-unauthenticated
@@ -220,10 +221,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
 		err := singularity.LibraryPull(imgCache, name, args[i], pullLibraryURI, keyServerURL, authToken, force, unauthenticatedPull, disableCache)
-		if err == singularity.ErrLibraryPullUnsigned {
-			os.Exit(10)
-		}
-		if err != nil {
+		if err != nil && err != singularity.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
 	case ShubProtocol:
