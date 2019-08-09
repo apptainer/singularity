@@ -124,13 +124,14 @@ var pullNoHTTPSFlag = cmdline.Flag{
 }
 
 // -U|--allow-unsigned
+// Deprecated: flag currently affects only warning messages.
 var pullAllowUnsignedFlag = cmdline.Flag{
 	ID:           "pullAllowUnauthenticatedFlag",
 	Value:        &unauthenticatedPull,
 	DefaultValue: false,
 	Name:         "allow-unsigned",
 	ShortHand:    "U",
-	Usage:        "do not require a signed container",
+	Usage:        "DEPRECATED do not require a signed container",
 	EnvKeys:      []string{"ALLOW_UNSIGNED"},
 }
 
