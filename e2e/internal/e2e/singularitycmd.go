@@ -20,7 +20,6 @@ import (
 
 	expect "github.com/Netflix/go-expect"
 	"github.com/pkg/errors"
-
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 )
 
