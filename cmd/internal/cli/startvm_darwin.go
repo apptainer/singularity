@@ -37,6 +37,15 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 	// Setup some needed variables
 	hdString := fmt.Sprintf("2:0,ahci-hd,%s", sifImage)
 
+	// Check xhyve permissions
+	fi, err := os.Stat(filepath.Join(buildcfg.LIBEXECDIR, "/singularity/vm/xhyve"))
+	if err != nil {
+		sylog.Fatalf("Filed to Stat() xhyve binary: %v", err)
+	}
+	setuid := false
+	if fi.Mode() & os.ModeSetuid == os.ModeSetuid {
+		setuid = true
+	}
 	// Default xhyve Arguments
 	args := []string{
 		filepath.Join(buildcfg.LIBEXECDIR, "/singularity/vm/xhyve"),
@@ -47,7 +56,7 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		"-s", "31,lpc",
 		"-l", "com1,stdio",
 	}
-	if !NoNet {
+	if !NoNet && setuid {
 		args = append(args, "-s 3,virtio-net")
 	}
 
@@ -143,7 +152,7 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 
 	// If we disable networking, set "none" for our network
 	netip := VMIP
-	if NoNet {
+	if NoNet || !setuid {
 		netip = "none"
 	}
 
