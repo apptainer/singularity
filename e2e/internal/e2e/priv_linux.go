@@ -53,3 +53,13 @@ func Privileged(f func(*testing.T)) func(*testing.T) {
 		f(t)
 	}
 }
+
+// OrigUID returns the UID of the user running the test suite.
+func OrigUID() int {
+	return origUID
+}
+
+// OrigGID returns the GID of the user running the test suite.
+func OrigGID() int {
+	return origGID
+}

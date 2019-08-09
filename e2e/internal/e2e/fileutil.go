@@ -39,19 +39,37 @@ func WriteTempFile(dir, pattern, content string) (string, error) {
 //
 // This function shall not set the environment variable to specify the
 // image cache location since it would create thread safety problems.
-func MakeCacheDir(t *testing.T, baseDir string) (string, func(t *testing.T)) {
-	dir, err := fs.MakeTmpDir(baseDir, "e2e-imgcache-", 0755)
-	err = errors.Wrapf(err, "creating temporary image cache directory at %s", baseDir)
+func makeTempDir(t *testing.T, baseDir string, prefix string, context string) (string, func(t *testing.T)) {
+	dir, err := fs.MakeTmpDir(baseDir, prefix, 0755)
+	err = errors.Wrapf(err, "creating temporary %s at %s", context, baseDir)
 	if err != nil {
-		t.Fatalf("failed to create image cache directory: %+v", err)
+		t.Fatalf("failed to create temporary directory: %+v", err)
 	}
 
 	return dir, func(t *testing.T) {
 		err := os.RemoveAll(dir)
 		if err != nil {
-			t.Fatalf("failed to delete temporary image cache: %s", err)
+			t.Fatalf("failed to delete temporary directory: %s", err)
 		}
 	}
+}
+
+// MakeCacheDir creates a temporary image cache directory that can then be
+// used for the execution of a e2e test.
+//
+// This function shall not set the environment variable to specify the
+// image cache location since it would create thread safety problems.
+func MakeCacheDir(t *testing.T, baseDir string) (string, func(t *testing.T)) {
+	return makeTempDir(t, baseDir, "e2e-imgcache-", "image cache directory")
+}
+
+// MakeSyPGPDir creates a temporary directory that will be used to store the PGP
+// keyring for the execution of a e2e test.
+//
+// This function shall not set the environment variable to specify the
+// SYPGP directory since it would create thread safety problems.
+func MakeSyPGPDir(t *testing.T, baseDir string) (string, func(t *testing.T)) {
+	return makeTempDir(t, baseDir, "e2e-sypgp-", "SyPGP directory")
 }
 
 // FileExists return true if the file identified by the path exists, false otherwise.
