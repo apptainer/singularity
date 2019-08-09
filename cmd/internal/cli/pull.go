@@ -124,15 +124,16 @@ var pullNoHTTPSFlag = cmdline.Flag{
 }
 
 // -U|--allow-unsigned
-// Deprecated: flag currently affects only warning messages.
 var pullAllowUnsignedFlag = cmdline.Flag{
 	ID:           "pullAllowUnauthenticatedFlag",
 	Value:        &unauthenticatedPull,
 	DefaultValue: false,
 	Name:         "allow-unsigned",
 	ShortHand:    "U",
-	Usage:        "DEPRECATED do not require a signed container",
-	EnvKeys:      []string{"ALLOW_UNSIGNED"},
+	Usage:        "do not require a signed container",
+	Deprecated: `Now affects only warning messages, in future will be deleted.
+Pull command no longer exits with an error code in case of unsigned image, only prints warning.`,
+	EnvKeys: []string{"ALLOW_UNSIGNED"},
 }
 
 // --allow-unauthenticated
@@ -223,9 +224,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 	switch transport {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
-		if unauthenticatedPull {
-			sylog.Warningf("Flag -U | --allow-unsigned DEPRECATED")
-		}
 		err := singularity.LibraryPull(imgCache, name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, force, unauthenticatedPull, disableCache)
 		if err != nil && err != singularity.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
