@@ -223,7 +223,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	switch transport {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
-		err := singularity.LibraryPull(imgCache, name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, force, unauthenticatedPull, disableCache)
+		err := singularity.LibraryPull(imgCache, name, args[i], PullLibraryURI, KeyServerURL, authToken, force, unauthenticatedPull, disableCache)
 		if err != nil && err != singularity.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
