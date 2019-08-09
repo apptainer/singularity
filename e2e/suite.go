@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/actions"
-	"github.com/sylabs/singularity/e2e/cmdenvvars"
 	singularitycache "github.com/sylabs/singularity/e2e/cache"
+	"github.com/sylabs/singularity/e2e/cmdenvvars"
 	"github.com/sylabs/singularity/e2e/docker"
 	singularityenv "github.com/sylabs/singularity/e2e/env"
 	"github.com/sylabs/singularity/e2e/help"
@@ -140,7 +140,7 @@ func Run(t *testing.T) {
 		"REMOTE":     remote.RunE2ETests(testenv),
 		"VERIFY":     singularityverify.RunE2ETests(testenv),
 		"VERSION":    version.RunE2ETests(testenv),
-		"CACHE":    singularitycache.RunE2ETests(testenv),
+		"CACHE":      singularitycache.RunE2ETests(testenv),
 	}
 
 	for name, fn := range suites {
