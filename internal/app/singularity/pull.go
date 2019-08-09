@@ -120,7 +120,7 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 	if !unauthenticated {
 		imageSigned, err := signing.IsSigned(name, keyServerURL, 0, false, authToken)
 		if err != nil {
-			sylog.Errorf("%v", err)
+			sylog.Warningf("%v", err)
 		}
 		if !imageSigned {
 			return ErrLibraryPullUnsigned
