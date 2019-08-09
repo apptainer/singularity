@@ -53,3 +53,14 @@ func MakeCacheDir(t *testing.T, baseDir string) (string, func(t *testing.T)) {
 		}
 	}
 }
+
+// FileExists return true if the file identified by the path exists, false otherwise.
+func FileExists(t *testing.T, path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	} else if err != nil {
+		t.Fatalf("While stating file: %v", err)
+	}
+
+	return true
+}
