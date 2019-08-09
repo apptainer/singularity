@@ -82,7 +82,7 @@ func (t *ImageReference) newImageSource(ctx context.Context, sys *types.SystemCo
 func ParseImageName(imgCache *cache.Handle, uri string, sys *types.SystemContext) (types.ImageReference, error) {
 	ref, err := parseURI(uri)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse image name %v: %v", uri, err)
+		return nil, fmt.Errorf("unable to parse image name %v: %v", uri, err)
 	}
 
 	return ConvertReference(imgCache, ref, sys)
@@ -108,7 +108,7 @@ func parseURI(uri string) (types.ImageReference, error) {
 func ImageSHA(uri string, sys *types.SystemContext) (string, error) {
 	ref, err := parseURI(uri)
 	if err != nil {
-		return "", fmt.Errorf("Unable to parse image name %v: %v", uri, err)
+		return "", fmt.Errorf("unable to parse image name %v: %v", uri, err)
 	}
 
 	return calculateRefHash(ref, sys)

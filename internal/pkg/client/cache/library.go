@@ -6,7 +6,6 @@
 package cache
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -28,7 +27,7 @@ func getLibraryCachePath(c *Handle) (string, error) {
 	return updateCacheSubdir(c, LibraryDir)
 }
 
-// LibraryImage creates a directory inside cache.Dir() with the name of the SHA sum of the image
+// LibraryImage creates a directory inside cache.Dir() with the name of the SHA sum of the image.
 func (c *Handle) LibraryImage(sum, name string) string {
 	_, err := updateCacheSubdir(c, filepath.Join(LibraryDir, sum))
 	if err != nil {
@@ -38,7 +37,7 @@ func (c *Handle) LibraryImage(sum, name string) string {
 	return filepath.Join(c.Library, sum, name)
 }
 
-// LibraryImageExists returns whether the image with the SHA sum exists in the LibraryImage cache
+// LibraryImageExists returns whether the image with the SHA sum exists in the LibraryImage cache.
 func (c *Handle) LibraryImageExists(sum, name string) (bool, error) {
 	imagePath := c.LibraryImage(sum, name)
 	_, err := os.Stat(imagePath)
@@ -53,7 +52,7 @@ func (c *Handle) LibraryImageExists(sum, name string) (bool, error) {
 		return false, err
 	}
 	if cacheSum != sum {
-		return false, fmt.Errorf("cached file sum (%s) and expected sum (%s) does not match", cacheSum, sum)
+		return false, ErrBadChecksum
 	}
 
 	return true, nil

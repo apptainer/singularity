@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -18,7 +19,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/build/apps"
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
-	"github.com/sylabs/singularity/internal/pkg/build/copy"
+	"github.com/sylabs/singularity/internal/pkg/build/files"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
@@ -26,10 +27,12 @@ import (
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	syexec "github.com/sylabs/singularity/internal/pkg/util/exec"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/squashfs"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
 	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/image/packer"
 )
 
 // Build is an abstracted way to look at the entire build process.
@@ -105,7 +108,11 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		}
 
 		s := stage{}
-		s.b, err = types.NewBundle(conf.Opts.TmpDir, "sbuild")
+		if conf.Opts.EncryptionKey != "" {
+			s.b, err = types.NewEncryptedBundle(conf.Opts.TmpDir, "sbuild", conf.Opts.EncryptionKey)
+		} else {
+			s.b, err = types.NewBundle(conf.Opts.TmpDir, "sbuild")
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +122,7 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		s.b.Opts = conf.Opts
 		// dont need to get cp if we're skipping bootstrap
 		if !conf.Opts.Update || conf.Opts.Force {
-			if c, err := getcp(d, conf.Opts.LibraryURL, conf.Opts.LibraryAuthToken); err == nil {
+			if c, err := getcp(d); err == nil {
 				s.c = c
 			} else {
 				return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
@@ -131,12 +138,92 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 	case "sandbox":
 		b.stages[lastStageIndex].a = &assemblers.SandboxAssembler{}
 	case "sif":
-		b.stages[lastStageIndex].a = &assemblers.SIFAssembler{}
+		mksquashfsPath, err := squashfs.GetPath()
+		if err != nil {
+			return nil, fmt.Errorf("while searching for mksquashfs: %v", err)
+		}
+
+		flag, err := ensureGzipComp(b.stages[lastStageIndex].b.Path, mksquashfsPath)
+		if err != nil {
+			return nil, fmt.Errorf("while ensuring correct compression algorithm: %v", err)
+		}
+		b.stages[lastStageIndex].a = &assemblers.SIFAssembler{
+			GzipFlag:       flag,
+			MksquashfsPath: mksquashfsPath,
+		}
 	default:
 		return nil, fmt.Errorf("unrecognized output format %s", conf.Format)
 	}
 
 	return b, nil
+}
+
+// ensureGzipComp builds dummy squashfs images and checks the type of compression used
+// to deduce if we can successfully build with gzip compression. It returns an error
+// if we cannot and a boolean to indicate if the `-comp` flag is needed to specify
+// gzip compression when the final squashfs is built
+func ensureGzipComp(tmpdir, mksquashfsPath string) (bool, error) {
+	sylog.Debugf("Ensuring gzip compression for mksquashfs")
+
+	var err error
+	s := packer.NewSquashfs()
+	s.MksquashfsPath = mksquashfsPath
+
+	srcf, err := ioutil.TempFile(tmpdir, "squashfs-gzip-comp-test-src")
+	if err != nil {
+		return false, fmt.Errorf("while creating temporary file for squashfs source: %v", err)
+	}
+
+	srcf.Write([]byte("Test File Content"))
+	srcf.Close()
+
+	f, err := ioutil.TempFile(tmpdir, "squashfs-gzip-comp-test-")
+	if err != nil {
+		return false, fmt.Errorf("while creating temporary file for squashfs: %v", err)
+	}
+	f.Close()
+
+	flags := []string{"-noappend"}
+	if err := s.Create([]string{srcf.Name()}, f.Name(), flags); err != nil {
+		return false, fmt.Errorf("while creating squashfs: %v", err)
+	}
+
+	content, err := ioutil.ReadFile(f.Name())
+	if err != nil {
+		return false, fmt.Errorf("while reading test squashfs: %v", err)
+	}
+
+	comp, err := image.GetSquashfsComp(content)
+	if err != nil {
+		return false, fmt.Errorf("could not verify squashfs compression type: %v", err)
+	}
+
+	if comp == "gzip" {
+		sylog.Debugf("Gzip compression by default ensured")
+		return false, nil
+	}
+
+	flags = []string{"-noappend", "-comp", "gzip"}
+	if err := s.Create([]string{srcf.Name()}, f.Name(), flags); err != nil {
+		return false, fmt.Errorf("could not build squashfs with required gzip compression")
+	}
+
+	content, err = ioutil.ReadFile(f.Name())
+	if err != nil {
+		return false, fmt.Errorf("while reading test squashfs: %v", err)
+	}
+
+	comp, err = image.GetSquashfsComp(content)
+	if err != nil {
+		return false, fmt.Errorf("could not verify squashfs compression type: %v", err)
+	}
+
+	if comp == "gzip" {
+		sylog.Debugf("Gzip compression with -comp flag ensured")
+		return true, nil
+	}
+
+	return false, fmt.Errorf("could not build squashfs with required gzip compression")
 }
 
 // cleanUp removes remnants of build from file system unless NoCleanUp is specified
@@ -240,7 +327,7 @@ func (b *Build) Full() error {
 		return err
 	}
 
-	sylog.Infof("Build complete: %s", b.Conf.Dest)
+	sylog.Verbosef("Build complete: %s", b.Conf.Dest)
 	return nil
 }
 
@@ -251,19 +338,13 @@ func engineRequired(def types.Definition) bool {
 
 // runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle
 func runBuildEngine(b *types.Bundle) error {
-	if syscall.Getuid() != 0 && !b.Opts.Fakeroot {
-		return fmt.Errorf("Attempted to build with scripts as non-root user or without --fakeroot")
+	if syscall.Getuid() != 0 {
+		return fmt.Errorf("attempted to build with scripts as non-root user or without --fakeroot")
 	}
 
 	sylog.Debugf("Starting build engine")
 	env := []string{sylog.GetEnvVar()}
 	starter := filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter")
-	if b.Opts.Fakeroot {
-		starter = filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter-suid")
-		if _, err := os.Stat(starter); os.IsNotExist(err) {
-			return fmt.Errorf("fakeroot feature requires to install Singularity as root")
-		}
-	}
 	progname := []string{"singularity image-build"}
 	ociConfig := &oci.Config{}
 
@@ -301,7 +382,7 @@ func runBuildEngine(b *types.Bundle) error {
 	return starterCmd.Run()
 }
 
-func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, error) {
+func getcp(def types.Definition) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
 	case "library":
 		return &sources.LibraryConveyorPacker{}, nil
@@ -429,10 +510,11 @@ func (s *stage) copyFiles(b *Build) error {
 			}
 
 			// copy each file into bundle rootfs
-			transfer.Src = filepath.Join(b.stages[stageIndex].b.Rootfs(), transfer.Src)
-			transfer.Dst = filepath.Join(s.b.Rootfs(), transfer.Dst)
+			// prepend appropriate bundle path to supplied paths
+			transfer.Src = files.AddPrefix(b.stages[stageIndex].b.Rootfs(), transfer.Src)
+			transfer.Dst = files.AddPrefix(s.b.Rootfs(), transfer.Dst)
 			sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
-			if err := copy.Copy(transfer.Src, transfer.Dst); err != nil {
+			if err := files.Copy(transfer.Src, transfer.Dst); err != nil {
 				return err
 			}
 		}

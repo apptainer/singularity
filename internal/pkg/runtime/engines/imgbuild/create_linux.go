@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,28 +16,38 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/build/files"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/rpc/client"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 )
 
 // CreateContainer creates a container
-func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
-	if engine.CommonConfig.EngineName != imgbuildConfig.Name {
+func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
+	if e.CommonConfig.EngineName != imgbuildConfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
-	rpcOps := &client.RPC{}
-	rpcOps.Client = rpc.NewClient(rpcConn)
-	rpcOps.Name = engine.CommonConfig.EngineName
-
+	rpcOps := &client.RPC{
+		Client: rpc.NewClient(rpcConn),
+		Name:   e.CommonConfig.EngineName,
+	}
 	if rpcOps.Client == nil {
 		return fmt.Errorf("failed to initialiaze RPC client")
 	}
 
-	rootfs := engine.EngineConfig.Rootfs()
+	insideUserNs, setgroups := namespaces.IsInsideUserNamespace(os.Getpid())
+	// if we are running inside a user namespace, at this stage we
+	// are a root user in this user namespace, but if setgroups is
+	// denied build may not work correctly, so warn user about that
+	if insideUserNs && !setgroups {
+		sylog.Warningf("Running inside a user namespace, but setgroups is denied, build may not work correctly")
+	}
+
+	rootfs := e.EngineConfig.Rootfs()
 
 	st, err := os.Stat(rootfs)
 	if err != nil {
@@ -55,99 +65,86 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	// sensible mount point options to avoid accidental system settings override
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NOEXEC | syscall.MS_NODEV | syscall.MS_RDONLY)
-	if engine.EngineConfig.Opts.Fakeroot {
+	if insideUserNs {
 		flags = uintptr(syscall.MS_BIND | syscall.MS_REC)
 	}
 
 	sylog.Debugf("Mounting image directory %s\n", rootfs)
-	_, err = rpcOps.Mount(rootfs, sessionPath, "", syscall.MS_BIND, "errors=remount-ro")
-	if err != nil {
+	if err := rpcOps.Mount(rootfs, sessionPath, "", syscall.MS_BIND, "errors=remount-ro"); err != nil {
 		return fmt.Errorf("failed to mount directory filesystem %s: %s", rootfs, err)
 	}
 
 	dest := filepath.Join(sessionPath, "tmp")
 	sylog.Debugf("Mounting /tmp at %s\n", dest)
-	_, err = rpcOps.Mount("/tmp", dest, "", syscall.MS_BIND, "")
-	if err != nil {
+	if err := rpcOps.Mount("/tmp", dest, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
 		return fmt.Errorf("mount /tmp failed: %s", err)
 	}
 
 	dest = filepath.Join(sessionPath, "var", "tmp")
 	sylog.Debugf("Mounting /var/tmp at %s\n", dest)
-	_, err = rpcOps.Mount("/var/tmp", dest, "", syscall.MS_BIND, "")
-	if err != nil {
+	if err := rpcOps.Mount("/var/tmp", dest, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
 		return fmt.Errorf("mount /var/tmp failed: %s", err)
 	}
 
 	// run setup/files sections here to allow injection of custom /etc/hosts or /etc/resolv.conf
-	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup.Script != "" {
-		// Run %setup script here and pass rpc operations
-		// to execute script in RPC context
-		engine.runScriptSection(rpcOps, "setup", engine.EngineConfig.Recipe.BuildData.Setup, true)
+	if e.EngineConfig.RunSection("setup") && e.EngineConfig.Recipe.BuildData.Setup.Script != "" {
+		// Run %setup script here
+		e.runScriptSection("setup", e.EngineConfig.Recipe.BuildData.Setup, true)
 	}
 
-	if engine.EngineConfig.RunSection("files") {
+	if e.EngineConfig.RunSection("files") {
 		sylog.Debugf("Copying files from host")
-		if err := engine.copyFiles(rpcOps); err != nil {
+		if err := e.copyFiles(); err != nil {
 			return fmt.Errorf("unable to copy files to container fs: %v", err)
 		}
 	}
 
 	dest = filepath.Join(sessionPath, "proc")
 	sylog.Debugf("Mounting /proc at %s\n", dest)
-	_, err = rpcOps.Mount("/proc", dest, "", flags, "")
-	if err != nil {
+	if err := rpcOps.Mount("/proc", dest, "", flags, ""); err != nil {
 		return fmt.Errorf("mount proc failed: %s", err)
 	}
-	if !engine.EngineConfig.Opts.Fakeroot {
-		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
-		if err != nil {
+	if !insideUserNs {
+		if err := rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, ""); err != nil {
 			return fmt.Errorf("remount proc failed: %s", err)
 		}
 	}
 
 	dest = filepath.Join(sessionPath, "sys")
 	sylog.Debugf("Mounting /sys at %s\n", dest)
-	_, err = rpcOps.Mount("/sys", dest, "", flags, "")
-	if err != nil {
+	if err := rpcOps.Mount("/sys", dest, "", flags, ""); err != nil {
 		return fmt.Errorf("mount sys failed: %s", err)
 	}
-	if !engine.EngineConfig.Opts.Fakeroot {
-		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
-		if err != nil {
+	if !insideUserNs {
+		if err := rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, ""); err != nil {
 			return fmt.Errorf("remount sys failed: %s", err)
 		}
 	}
 
 	dest = filepath.Join(sessionPath, "dev")
 	sylog.Debugf("Mounting /dev at %s\n", dest)
-	_, err = rpcOps.Mount("/dev", dest, "", syscall.MS_BIND|syscall.MS_REC, "")
-	if err != nil {
+	if err := rpcOps.Mount("/dev", dest, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
 		return fmt.Errorf("mount /dev failed: %s", err)
 	}
 
 	dest = filepath.Join(sessionPath, "etc", "resolv.conf")
 	sylog.Debugf("Mounting /etc/resolv.conf at %s\n", dest)
-	_, err = rpcOps.Mount("/etc/resolv.conf", dest, "", flags, "")
-	if err != nil {
+	if err := rpcOps.Mount("/etc/resolv.conf", dest, "", flags, ""); err != nil {
 		return fmt.Errorf("mount /etc/resolv.conf failed: %s", err)
 	}
-	if !engine.EngineConfig.Opts.Fakeroot {
-		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
-		if err != nil {
+	if !insideUserNs {
+		if err := rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, ""); err != nil {
 			return fmt.Errorf("remount /etc/resolv.conf failed: %s", err)
 		}
 	}
 
 	dest = filepath.Join(sessionPath, "etc", "hosts")
 	sylog.Debugf("Mounting /etc/hosts at %s\n", dest)
-	_, err = rpcOps.Mount("/etc/hosts", dest, "", flags, "")
-	if err != nil {
+	if err := rpcOps.Mount("/etc/hosts", dest, "", flags, ""); err != nil {
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}
-	if !engine.EngineConfig.Opts.Fakeroot {
-		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
-		if err != nil {
+	if !insideUserNs {
+		if err := rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, ""); err != nil {
 			return fmt.Errorf("remount /etc/hosts failed: %s", err)
 		}
 	}
@@ -159,8 +156,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	sylog.Debugf("Set RPC mount propagation flag to PRIVATE")
-	_, err = rpcOps.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
-	if err != nil {
+	if err := rpcOps.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, ""); err != nil {
 		return err
 	}
 
@@ -186,15 +182,15 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	return nil
 }
 
-func (engine *EngineOperations) copyFiles(rpcOps *client.RPC) error {
-	files := types.Files{}
-	for _, f := range engine.EngineConfig.Recipe.BuildData.Files {
+func (e *EngineOperations) copyFiles() error {
+	filesSection := types.Files{}
+	for _, f := range e.EngineConfig.Recipe.BuildData.Files {
 		if f.Args == "" {
-			files = f
+			filesSection = f
 		}
 	}
 	// iterate through filetransfers
-	for _, transfer := range files.Files {
+	for _, transfer := range filesSection.Files {
 		// sanity
 		if transfer.Src == "" {
 			sylog.Warningf("Attempt to copy file with no name, skipping.")
@@ -205,9 +201,9 @@ func (engine *EngineOperations) copyFiles(rpcOps *client.RPC) error {
 			transfer.Dst = transfer.Src
 		}
 		// copy each file into bundle rootfs
-		transfer.Dst = filepath.Join(engine.EngineConfig.Rootfs(), transfer.Dst)
+		transfer.Dst = files.AddPrefix(e.EngineConfig.Rootfs(), transfer.Dst)
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
-		if _, err := rpcOps.Copy(transfer.Src, transfer.Dst); err != nil {
+		if err := files.Copy(transfer.Src, transfer.Dst); err != nil {
 			return err
 		}
 	}
@@ -216,26 +212,18 @@ func (engine *EngineOperations) copyFiles(rpcOps *client.RPC) error {
 }
 
 // runScriptSection executes the provided script by piping the
-// script to /bin/sh command, this function can execute section
-// script locally (from calling process) or in RPC context if a
-// non-nil rpcOps is provided
-func (engine *EngineOperations) runScriptSection(rpcOps *client.RPC, name string, s types.Script, setEnv bool) {
+// script to /bin/sh command.
+func (e *EngineOperations) runScriptSection(name string, s types.Script, setEnv bool) {
 	args := []string{"-ex"}
 	// trim potential trailing comment from args and append to args list
 	args = append(args, strings.Fields(strings.Split(s.Args, "#")[0])...)
 
 	envs := []string{}
 	if setEnv {
-		envs = engine.EngineConfig.OciConfig.Process.Env
+		envs = e.EngineConfig.OciConfig.Process.Env
 	}
 
 	sylog.Infof("Running %s scriptlet\n", name)
-	if rpcOps != nil {
-		if _, err := rpcOps.RunScript(s.Script, args, envs); err != nil {
-			sylog.Fatalf("failed to execute %%%s proc: %v\n", name, err)
-		}
-		return
-	}
 
 	var b bytes.Buffer
 	b.WriteString(s.Script)

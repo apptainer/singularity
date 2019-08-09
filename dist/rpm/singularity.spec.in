@@ -63,6 +63,7 @@ Requires: squashfs
 %else
 Requires: squashfs-tools
 %endif
+BuildRequires: cryptsetup
 
 # there's no golang for ppc64, just ppc64le
 ExcludeArch: ppc64
@@ -156,8 +157,7 @@ chmod 644 $RPM_BUILD_ROOT%{_sysconfdir}/singularity/actions/*
 %dir %{_localstatedir}/singularity
 %dir %{_localstatedir}/singularity/mnt
 %dir %{_localstatedir}/singularity/mnt/session
-%{_mandir}/man1/singularity.1.gz
-%{_mandir}/man1/singularity-*.1.gz
+%{_mandir}/man1/singularity*
 
 
 %changelog

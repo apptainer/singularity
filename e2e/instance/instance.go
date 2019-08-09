@@ -6,203 +6,189 @@
 package instance
 
 import (
-	"bufio"
 	"bytes"
-	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
-type testingEnv struct {
-	// base env for running tests
-	CmdPath     string `split_words:"true"`
-	TestDir     string `split_words:"true"`
-	RunDisabled bool   `default:"false"`
-	//  base image for tests
-	ImagePath string `split_words:"true"`
-}
-
-var testenv testingEnv
-
-// Sends a deterministic message to an echo server and expects the same message
-// in response.
-func echo(t *testing.T, port int) {
-	const message = "b40cbeaaea293f7e8bd40fb61f389cfca9823467\n"
-	sock, sockErr := net.Dial("tcp", "127.0.0.1:"+strconv.Itoa(port))
-	if sockErr != nil {
-		t.Fatalf("Failed to dial echo server: %v", sockErr)
-	}
-	fmt.Fprintf(sock, message)
-	response, responseErr := bufio.NewReader(sock).ReadString('\n')
-	if responseErr != nil || response != message {
-		t.Fatalf("Bad response: err = %v, response = %v", responseErr, response)
-	}
-}
-
-// Return the number of currently running instances.
-func getNumberOfInstances(t *testing.T) int {
-	stdout, _, err := listInstance(listOpts{json: true})
-	if err != nil {
-		t.Fatalf("Error listing instances: %v", err)
-	}
-	var instances instanceList
-	if err = json.Unmarshal([]byte(stdout), &instances); err != nil {
-		t.Fatalf("Error decoding JSON from listInstance: %v", err)
-	}
-	return len(instances.Instances)
+type ctx struct {
+	env        e2e.TestEnv
+	privileged bool
 }
 
 // Test that no instances are running.
-func testNoInstances(t *testing.T) {
-	if n := getNumberOfInstances(t); n != 0 {
-		t.Fatalf("There are %d instances running, but there should be 0.\n", n)
-	}
+func (c *ctx) testNoInstances(t *testing.T) {
+	c.expectedNumberOfInstances(t, 0)
 }
 
 // Test that a basic echo server instance can be started, communicated with,
 // and stopped.
-func testBasicEchoServer(t *testing.T) {
+func (c *ctx) testBasicEchoServer(t *testing.T) {
 	const instanceName = "echo1"
+
+	args := []string{c.env.ImagePath, instanceName, strconv.Itoa(instanceStartPort)}
+
 	// Start the instance.
-	_, _, err := startInstance(startOpts{}, testenv.ImagePath, instanceName, strconv.Itoa(instanceStartPort))
-	if err != nil {
-		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
-	}
-	// Try to contact the instance.
-	echo(t, instanceStartPort)
-	// Stop the instance.
-	_, _, err = stopInstance(stopOpts{}, instanceName)
-	if err != nil {
-		t.Fatalf("Failed to stop instance %s: %v", instanceName, err)
-	}
+	c.env.RunSingularity(
+		t,
+		e2e.WithCommand("instance start"),
+		e2e.WithPrivileges(c.privileged),
+		e2e.WithArgs(args...),
+		e2e.PostRun(func(t *testing.T) {
+			if t.Failed() {
+				return
+			}
+			// Try to contact the instance.
+			echo(t, instanceStartPort)
+			c.stopInstance(t, instanceName)
+		}),
+		e2e.ExpectExit(0),
+	)
 }
 
 // Test creating many instances, but don't stop them.
-func testCreateManyInstances(t *testing.T) {
+func (c *ctx) testCreateManyInstances(t *testing.T) {
 	const n = 10
+
 	// Start n instances.
 	for i := 0; i < n; i++ {
+		port := instanceStartPort + i
 		instanceName := "echo" + strconv.Itoa(i+1)
-		_, _, err := startInstance(startOpts{}, testenv.ImagePath, instanceName, strconv.Itoa(instanceStartPort+i))
-		if err != nil {
-			t.Fatalf("Failed to start instance %s: %v", instanceName, err)
-		}
+
+		c.env.RunSingularity(
+			t,
+			e2e.WithCommand("instance start"),
+			e2e.WithPrivileges(c.privileged),
+			e2e.WithArgs(c.env.ImagePath, instanceName, strconv.Itoa(port)),
+			e2e.PostRun(func(t *testing.T) {
+				echo(t, port)
+			}),
+			e2e.ExpectExit(0),
+		)
 	}
+
 	// Verify all instances started.
-	if numStarted := getNumberOfInstances(t); numStarted != n {
-		t.Fatalf("Expected %d instances, but see %d.", n, numStarted)
-	}
-	// Echo all n instances.
-	for i := 0; i < n; i++ {
-		echo(t, instanceStartPort+i)
-	}
+	c.expectedNumberOfInstances(t, n)
 }
 
 // Test stopping all running instances.
-func testStopAll(t *testing.T) {
-	_, _, err := stopInstance(stopOpts{all: true}, "")
-	if err != nil {
-		t.Fatalf("Failed to stop all instances: %v", err)
-	}
+func (c *ctx) testStopAll(t *testing.T) {
+	c.stopInstance(t, "", "--all")
 }
 
 // Test basic options like mounting a custom home directory, changing the
 // hostname, etc.
-func testBasicOptions(t *testing.T) {
+func (c *ctx) testBasicOptions(t *testing.T) {
 	const fileName = "hello"
 	const instanceName = "testbasic"
 	const testHostname = "echoserver99"
 	fileContents := []byte("world")
 
 	// Create a temporary directory to serve as a home directory.
-	dir, err := ioutil.TempDir(testenv.TestDir, "TestInstance")
+	dir, err := ioutil.TempDir(c.env.TestDir, "TestInstance")
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
 	defer os.RemoveAll(dir)
+
 	// Create and populate a temporary file.
 	tempFile := filepath.Join(dir, fileName)
 	err = ioutil.WriteFile(tempFile, fileContents, 0644)
+	err = errors.Wrapf(err, "creating temporary test file %s", tempFile)
 	if err != nil {
-		t.Fatalf("Failed to create file %s: %v", tempFile, err)
+		t.Fatalf("Failed to create file: %+v", err)
 	}
-	instanceOpts := startOpts{
-		home:     dir + ":/home/temp",
-		hostname: testHostname,
-		cleanenv: true,
-	}
+
 	// Start an instance with the temporary directory as the home directory.
-	_, _, err = startInstance(instanceOpts, testenv.ImagePath, instanceName, strconv.Itoa(instanceStartPort))
-	if err != nil {
-		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
-	}
-	// Verify we can see the file's contents from within the container.
-	stdout, _, err := execInstance(instanceName, "cat", "/home/temp/"+fileName)
-	if err != nil {
-		t.Fatalf("Error executing command on instance %s: %v", instanceName, err)
-	}
-	if !bytes.Equal(fileContents, []byte(stdout)) {
-		t.Fatalf("File contents were %s, but expected %s", stdout, string(fileContents))
-	}
-	// Verify that the hostname has been set correctly.
-	stdout, _, err = execInstance(instanceName, "hostname")
-	if err != nil {
-		t.Fatalf("Error executing command on instance %s: %v", instanceName, err)
-	}
-	if !bytes.Equal([]byte(testHostname+"\n"), []byte(stdout)) {
-		t.Fatalf("Hostname is %s, but expected %s", stdout, testHostname)
-	}
-	// Stop the container.
-	_, _, err = stopInstance(stopOpts{}, instanceName)
-	if err != nil {
-		t.Fatalf("Failed to stop instance %s: %v", instanceName, err)
-	}
+	c.env.RunSingularity(
+		t,
+		e2e.WithCommand("instance start"),
+		e2e.WithPrivileges(c.privileged),
+		e2e.WithArgs(
+			"-H", dir+":/home/temp",
+			"--hostname", testHostname,
+			"-e",
+			c.env.ImagePath,
+			instanceName,
+			strconv.Itoa(instanceStartPort),
+		),
+		e2e.PostRun(func(t *testing.T) {
+			if t.Failed() {
+				return
+			}
+
+			// Verify we can see the file's contents from within the container.
+			stdout, _, success := c.execInstance(t, instanceName, "cat", "/home/temp/"+fileName)
+			if success && !bytes.Equal(fileContents, []byte(stdout)) {
+				t.Errorf("File contents were %s, but expected %s", stdout, string(fileContents))
+			}
+
+			// Verify that the hostname has been set correctly.
+			stdout, _, success = c.execInstance(t, instanceName, "hostname")
+			if success && !bytes.Equal([]byte(testHostname+"\n"), []byte(stdout)) {
+				t.Errorf("Hostname is %s, but expected %s", stdout, testHostname)
+			}
+
+			// Stop the instance.
+			c.stopInstance(t, instanceName)
+		}),
+		e2e.ExpectExit(0),
+	)
 }
 
 // Test that contain works.
-func testContain(t *testing.T) {
+func (c *ctx) testContain(t *testing.T) {
 	const instanceName = "testcontain"
 	const fileName = "thegreattestfile"
+
 	// Create a temporary directory to serve as a contain directory.
 	dir, err := ioutil.TempDir("", "TestInstance")
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
 	defer os.RemoveAll(dir)
-	instanceOpts := startOpts{
-		contain: true,
-		workdir: dir,
-	}
-	// Start an instance with the temporary directory as the home directory.
-	_, _, err = startInstance(instanceOpts, testenv.ImagePath, instanceName, strconv.Itoa(instanceStartPort))
-	if err != nil {
-		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
-	}
-	// Touch a file within /tmp.
-	_, _, err = execInstance(instanceName, "touch", "/tmp/"+fileName)
-	if err != nil {
-		t.Fatalf("Failed to touch a file: %v", err)
-	}
-	// Stop the container.
-	_, _, err = stopInstance(stopOpts{}, instanceName)
-	if err != nil {
-		t.Fatalf("Failed to stop instance %s: %v", instanceName, err)
-	}
-	// Verify that the touched file exists outside the container.
-	if _, err = os.Stat(filepath.Join(dir, "tmp", fileName)); os.IsNotExist(err) {
-		t.Fatal("The temp file doesn't exist.")
-	}
+
+	// Start the instance.
+	c.env.RunSingularity(
+		t,
+		e2e.WithCommand("instance start"),
+		e2e.WithPrivileges(c.privileged),
+		e2e.WithArgs(
+			"-c",
+			"-W", dir,
+			c.env.ImagePath,
+			instanceName,
+			strconv.Itoa(instanceStartPort),
+		),
+		e2e.PostRun(func(t *testing.T) {
+			if t.Failed() {
+				return
+			}
+
+			// Touch a file within /tmp.
+			_, _, success := c.execInstance(t, instanceName, "touch", "/tmp/"+fileName)
+			if success {
+				// Verify that the touched file exists outside the container.
+				if _, err = os.Stat(filepath.Join(dir, "tmp", fileName)); os.IsNotExist(err) {
+					t.Errorf("The temp file doesn't exist.")
+				}
+			}
+
+			// Stop the container.
+			c.stopInstance(t, instanceName)
+		}),
+		e2e.ExpectExit(0),
+	)
 }
 
 // Test by running directly from URI
-func testInstanceFromURI(t *testing.T) {
+func (c *ctx) testInstanceFromURI(t *testing.T) {
 	instances := []struct {
 		name string
 		uri  string
@@ -215,64 +201,66 @@ func testInstanceFromURI(t *testing.T) {
 			name: "test_from_library",
 			uri:  "library://busybox",
 		},
-		{
-			name: "test_from_shub",
-			uri:  "shub://singularityhub/busybox",
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name: "test_from_shub",
+		// 	uri:  "shub://singularityhub/busybox",
+		// },
 	}
 
 	for _, i := range instances {
-		// Start an instance with the temporary directory as the home directory.
-		_, _, err := startInstance(startOpts{}, i.uri, i.name)
-		if err != nil {
-			t.Fatalf("Failed to start instance %s: %v", i.name, err)
-		}
-		// Exec id command.
-		_, _, err = execInstance(i.name, "id")
-		if err != nil {
-			t.Fatalf("Failed to run id command: %v", err)
-		}
-		// Stop the container.
-		_, _, err = stopInstance(stopOpts{}, i.name)
-		if err != nil {
-			t.Fatalf("Failed to stop instance %s: %v", i.name, err)
-		}
-	}
-}
-
-// Bootstrap to run all instance tests.
-func legacyInstanceTests(t *testing.T) {
-	e2e.EnsureImage(t)
-
-	// Define and loop through tests.
-	tests := []struct {
-		name       string
-		function   func(*testing.T)
-		privileged bool
-	}{
-		{"InitialNoInstances", testNoInstances, false},
-		{"BasicEchoServer", testBasicEchoServer, false},
-		{"BasicOptions", testBasicOptions, false},
-		{"Contain", testContain, false},
-		{"InstanceFromURI", testInstanceFromURI, false},
-		{"CreateManyInstances", testCreateManyInstances, false},
-		{"StopAll", testStopAll, false},
-		{"FinalNoInstances", testNoInstances, false},
-	}
-	for _, tt := range tests {
-		var wrappedFn func(*testing.T)
-		if tt.privileged {
-			wrappedFn = e2e.Privileged(tt.function)
-		} else {
-			wrappedFn = tt.function
-		}
-		t.Run(tt.name, wrappedFn)
+		args := []string{i.uri, i.name}
+		c.env.RunSingularity(
+			t,
+			e2e.WithCommand("instance start"),
+			e2e.WithPrivileges(c.privileged),
+			e2e.WithArgs(args...),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					return
+				}
+				c.execInstance(t, i.name, "id")
+				c.stopInstance(t, i.name)
+			}),
+			e2e.ExpectExit(0),
+		)
 	}
 }
 
 // RunE2ETests is the bootstrap to run all instance tests.
-func RunE2ETests(t *testing.T) {
-	e2e.LoadEnv(t, &testenv)
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &ctx{
+		env:        env,
+		privileged: false,
+	}
 
-	t.Run("legacy", legacyInstanceTests)
+	return func(t *testing.T) {
+		e2e.EnsureImage(t, c.env)
+
+		// Define and loop through tests.
+		tests := []struct {
+			name     string
+			function func(*testing.T)
+		}{
+			{"InitialNoInstances", c.testNoInstances},
+			{"BasicEchoServer", c.testBasicEchoServer},
+			{"BasicOptions", c.testBasicOptions},
+			{"Contain", c.testContain},
+			{"InstanceFromURI", c.testInstanceFromURI},
+			{"CreateManyInstances", c.testCreateManyInstances},
+			{"StopAll", c.testStopAll},
+			{"FinalNoInstances", c.testNoInstances},
+		}
+
+		// run unprivileged
+		for _, tt := range tests {
+			t.Run(tt.name, tt.function)
+		}
+
+		// run privileged
+		c.privileged = true
+		for _, tt := range tests {
+			t.Run("WithPriv"+tt.name, tt.function)
+		}
+	}
 }

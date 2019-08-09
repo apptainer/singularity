@@ -18,9 +18,9 @@ import (
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	legacytypes "github.com/sylabs/singularity/pkg/build/legacy"
 	legacyparser "github.com/sylabs/singularity/pkg/build/legacy/parser"
-	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 var (
@@ -159,6 +159,16 @@ var buildTmpdirFlag = cmdline.Flag{
 	EnvKeys:      []string{"TMPDIR"},
 }
 
+// --disable-cache
+var buildDisableCacheFlag = cmdline.Flag{
+	ID:           "buildDisableCacheFlag",
+	Value:        &disableCache,
+	DefaultValue: false,
+	Name:         "disable-cache",
+	Usage:        "do not use cache or create cache",
+	EnvKeys:      []string{"DISABLE_CACHE"},
+}
+
 // --nohttps
 var buildNoHTTPSFlag = cmdline.Flag{
 	ID:           "buildNoHTTPSFlag",
@@ -205,12 +215,15 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildDisableCacheFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, BuildCmd)
 
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, BuildCmd)
+
+	cmdManager.RegisterFlagForCmd(&commonEncryptFlag, BuildCmd)
 }
 
 // BuildCmd represents the build command
@@ -228,6 +241,10 @@ var BuildCmd = &cobra.Command{
 }
 
 func preRun(cmd *cobra.Command, args []string) {
+	if fakeroot && !remote {
+		fakerootExec(args)
+	}
+
 	// Always perform remote build when builder flag is set
 	if cmd.Flags().Lookup("builder").Changed {
 		cmd.Flags().Lookup("remote").Value.Set("true")
@@ -262,19 +279,19 @@ func checkBuildTarget(path string, update bool) bool {
 
 // definitionFromSpec is specifically for parsing specs for the remote builder
 // it uses a different version the the definition struct and parser
-func definitionFromSpec(spec string) (def legacytypes.Definition, err error) {
+func definitionFromSpec(spec string) (legacytypes.Definition, error) {
 
 	// Try spec as URI first
-	def, err = legacytypes.NewDefinitionFromURI(spec)
+	def, err := legacytypes.NewDefinitionFromURI(spec)
 	if err == nil {
-		return
+		return def, nil
 	}
 
 	// Try spec as local file
 	var isValid bool
 	isValid, err = legacyparser.IsValidDefinition(spec)
 	if err != nil {
-		return
+		return legacytypes.Definition{}, err
 	}
 
 	if isValid {
@@ -283,13 +300,12 @@ func definitionFromSpec(spec string) (def legacytypes.Definition, err error) {
 		var defFile *os.File
 		defFile, err = os.Open(spec)
 		if err != nil {
-			return
+			return legacytypes.Definition{}, err
 		}
 
 		defer defFile.Close()
-		def, err = legacyparser.ParseDefinitionFile(defFile)
 
-		return
+		return legacyparser.ParseDefinitionFile(defFile)
 	}
 
 	// File exists and does NOT contain a valid definition
@@ -301,7 +317,7 @@ func definitionFromSpec(spec string) (def legacytypes.Definition, err error) {
 		},
 	}
 
-	return
+	return def, nil
 }
 
 func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthConfig, err error) {
@@ -310,7 +326,7 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 
 	if dockerLogin {
 		if !usernameFlag.Changed {
-			dockerUsername, err = sypgp.AskQuestion("Enter Docker Username: ")
+			dockerUsername, err = interactive.AskQuestion("Enter Docker Username: ")
 			if err != nil {
 				return
 			}
@@ -318,7 +334,7 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 			usernameFlag.Changed = true
 		}
 
-		dockerPassword, err = sypgp.AskQuestionNoEcho("Enter Docker Password: ")
+		dockerPassword, err = interactive.AskQuestionNoEcho("Enter Docker Password: ")
 		if err != nil {
 			return
 		}

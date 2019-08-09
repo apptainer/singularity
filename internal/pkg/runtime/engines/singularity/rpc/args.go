@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -33,6 +33,14 @@ type MountArgs struct {
 	Filesystem string
 	Mountflags uintptr
 	Data       string
+}
+
+// CryptArgs defines the arguments to mount.
+type CryptArgs struct {
+	Offset    uint64
+	Loopdev   string
+	Key       []byte
+	MasterPid int
 }
 
 // ChrootArgs defines the arguments to chroot.

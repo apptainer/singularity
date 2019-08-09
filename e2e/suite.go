@@ -7,6 +7,7 @@ package e2e
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,16 +18,20 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/actions"
+	"github.com/sylabs/singularity/e2e/cmdenvvars"
 	"github.com/sylabs/singularity/e2e/docker"
 	singularityenv "github.com/sylabs/singularity/e2e/env"
 	"github.com/sylabs/singularity/e2e/help"
 	"github.com/sylabs/singularity/e2e/imgbuild"
+	singularityinspect "github.com/sylabs/singularity/e2e/inspect"
 	"github.com/sylabs/singularity/e2e/instance"
 	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/oci"
 	"github.com/sylabs/singularity/e2e/pull"
 	"github.com/sylabs/singularity/e2e/push"
 	"github.com/sylabs/singularity/e2e/remote"
-	version "github.com/sylabs/singularity/e2e/version"
+	singularityverify "github.com/sylabs/singularity/e2e/verify"
+	"github.com/sylabs/singularity/e2e/version"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
@@ -38,8 +43,10 @@ var runDisabled = flag.Bool("run_disabled", false, "run tests that have been tem
 func Run(t *testing.T) {
 	flag.Parse()
 
+	var testenv singularitye2e.TestEnv
+
 	if *runDisabled {
-		os.Setenv("E2E_RUN_DISABLED", "true")
+		testenv.RunDisabled = true
 	}
 	// init buildcfg values
 	useragent.InitValue(buildcfg.PACKAGE_NAME, buildcfg.PACKAGE_VERSION)
@@ -50,11 +57,17 @@ func Run(t *testing.T) {
 		log.Fatalf("singularity is not installed on this system: %v", err)
 	}
 
-	os.Setenv("E2E_CMD_PATH", cmdPath)
+	testenv.CmdPath = cmdPath
 
 	sysconfdir := func(fn string) string {
 		return filepath.Join(buildcfg.SYSCONFDIR, "singularity", fn)
 	}
+
+	// e2e tests need to run in a somehow agnostic environment, so we
+	// don't use environment of user executing tests in order to not
+	// wrongly interfering with cache stuff, sylabs library tokens,
+	// PGP keys
+	singularitye2e.SetupHomeDirectories(t)
 
 	// Ensure config files are installed
 	configFiles := []string{
@@ -86,44 +99,49 @@ func Run(t *testing.T) {
 	if err := os.Chmod(name, 0755); err != nil {
 		log.Fatalf("failed to chmod temporary directory: %v", err)
 	}
-	os.Setenv("E2E_TEST_DIR", name)
-
-	if err := singularitye2e.MakeCacheDirs(name); err != nil {
-		t.Fatal(err)
-	}
+	testenv.TestDir = name
 
 	// Build a base image for tests
 	imagePath := path.Join(name, "test.sif")
 	t.Log(imagePath)
-	os.Setenv("E2E_IMAGE_PATH", imagePath)
+	testenv.ImagePath = imagePath
 	defer os.Remove(imagePath)
 
-	// build test image
-	singularitye2e.EnsureImage(t)
+	// WARNING(Sylabs-team): Please DO NOT add a call to e2e.EnsureImage here.
+	// If you need the test image, add the call at the top of your
+	// own test.
 
-	// Start registry for tests
-	singularitye2e.PrepRegistry(t, name)
-	defer singularitye2e.KillRegistry(t)
+	testenv.TestRegistry = "localhost:5000"
+	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
+
+	// WARNING(Sylabs-team): Please DO NOT add a call to
+	// e2e.PrepRegistry here. If you need to access the local
+	// registry, add the call at the top of your own test.
+	//
+	// e2e.KillRegistry is called here to ensure that the registry
+	// is stopped after tests run.
+	defer singularitye2e.KillRegistry(t, testenv)
 
 	// RunE2ETests by functionality
 
-	t.Run("BUILD", imgbuild.RunE2ETests)
+	suites := map[string]func(*testing.T){
+		"ACTIONS":    actions.RunE2ETests(testenv),
+		"BUILD":      imgbuild.RunE2ETests(testenv),
+		"CMDENVVARS": cmdenvvars.RunE2ETests(testenv),
+		"DOCKER":     docker.RunE2ETests(testenv),
+		"ENV":        singularityenv.RunE2ETests(testenv),
+		"HELP":       help.RunE2ETests(testenv),
+		"INSPECT":    singularityinspect.RunE2ETests(testenv),
+		"INSTANCE":   instance.RunE2ETests(testenv),
+		"OCI":        oci.RunE2ETests(testenv),
+		"PULL":       pull.RunE2ETests(testenv),
+		"PUSH":       push.RunE2ETests(testenv),
+		"REMOTE":     remote.RunE2ETests(testenv),
+		"VERIFY":     singularityverify.RunE2ETests(testenv),
+		"VERSION":    version.RunE2ETests(testenv),
+	}
 
-	t.Run("ACTIONS", actions.RunE2ETests)
-
-	t.Run("DOCKER", docker.RunE2ETests)
-
-	t.Run("PULL", pull.RunE2ETests)
-
-	t.Run("PUSH", push.RunE2ETests)
-
-	t.Run("REMOTE", remote.RunE2ETests)
-
-	t.Run("INSTANCE", instance.RunE2ETests)
-
-	t.Run("HELP", help.RunE2ETests)
-
-	t.Run("ENV", singularityenv.RunE2ETests)
-
-	t.Run("VERSION", version.RunE2ETests)
+	for name, fn := range suites {
+		t.Run(name, fn)
+	}
 }

@@ -42,7 +42,7 @@ type Bundle struct {
 
 // Options defines build time behavior to be executed on the bundle
 type Options struct {
-	// sections are the parts of the definition to run during the build
+	// Sections are the parts of the definition to run during the build
 	Sections []string `json:"sections"`
 	// TmpDir specifies a non-standard temporary location to perform a build
 	TmpDir string
@@ -52,6 +52,9 @@ type Options struct {
 	LibraryAuthToken string `json:"libraryAuthToken"`
 	// contains docker credentials if specified
 	DockerAuthConfig *ocitypes.DockerAuthConfig
+	// EncryptionKey specifies the key used for filesystem
+	// encryption if applicable
+	EncryptionKey string `json:"encryptionKey"`
 	// noTest indicates if build should skip running the test script
 	NoTest bool `json:"noTest"`
 	// force automatically deletes an existing container at build destination while performing build
@@ -63,14 +66,14 @@ type Options struct {
 	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
 	// useful for debugging
 	NoCleanUp bool `json:"noCleanUp"`
-	// fakeroot indicates if the build engine uses the fakeroot feature
-	Fakeroot bool `json:"fakeroot"`
+	// NoCache when true, will not use any cache, or make cache.
+	NoCache bool
 	// ImgCache stores a pointer to the image cache to use
 	ImgCache *cache.Handle
 }
 
-// NewBundle creates a Bundle environment
-func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
+// Common code between NewBundle and NewEncryptedBundle
+func bundleCommon(bundleDir, bundlePrefix, encryptionKey string) (b *Bundle, err error) {
 	b = &Bundle{}
 	b.JSONObjects = make(map[string][]byte)
 
@@ -88,6 +91,8 @@ func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
 		"rootfs": "fs",
 	}
 
+	b.Opts.EncryptionKey = encryptionKey
+
 	for _, fso := range b.FSObjects {
 		if err = os.MkdirAll(filepath.Join(b.Path, fso), 0755); err != nil {
 			return
@@ -95,6 +100,17 @@ func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
 	}
 
 	return b, nil
+
+}
+
+// NewEncryptedBundle creates an Encrypted Bundle environment
+func NewEncryptedBundle(bundleDir, bundlePrefix, encryptionKey string) (b *Bundle, err error) {
+	return bundleCommon(bundleDir, bundlePrefix, encryptionKey)
+}
+
+// NewBundle creates a Bundle environment
+func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
+	return bundleCommon(bundleDir, bundlePrefix, "")
 }
 
 // Rootfs give the path to the root filesystem in the Bundle

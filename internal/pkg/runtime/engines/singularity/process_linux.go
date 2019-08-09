@@ -9,6 +9,7 @@ import (
 	"debug/elf"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -22,6 +23,7 @@ import (
 	"unsafe"
 
 	"github.com/sylabs/singularity/internal/pkg/security"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 
@@ -57,8 +59,8 @@ func elfToGoArch(elfFile *elf.File) string {
 	return "UNKNOWN"
 }
 
-func (engine *EngineOperations) checkExec() error {
-	shell := engine.EngineConfig.GetShell()
+func (e *EngineOperations) checkExec() error {
+	shell := e.EngineConfig.GetShell()
 
 	if shell == "" {
 		shell = defaultShell
@@ -69,15 +71,15 @@ func (engine *EngineOperations) checkExec() error {
 		return fmt.Errorf("shell %s doesn't exist in container", shell)
 	}
 
-	args := engine.EngineConfig.OciConfig.Process.Args
-	env := engine.EngineConfig.OciConfig.Process.Env
+	args := e.EngineConfig.OciConfig.Process.Args
+	env := e.EngineConfig.OciConfig.Process.Env
 
 	// match old behavior of searching path
 	oldpath := os.Getenv("PATH")
 	defer func() {
 		os.Setenv("PATH", oldpath)
-		engine.EngineConfig.OciConfig.Process.Args = args
-		engine.EngineConfig.OciConfig.Process.Env = env
+		e.EngineConfig.OciConfig.Process.Args = args
+		e.EngineConfig.OciConfig.Process.Env = env
 	}()
 
 	for _, keyval := range env {
@@ -146,23 +148,117 @@ func (engine *EngineOperations) checkExec() error {
 	return fmt.Errorf("no %s found inside container", args[0])
 }
 
+func runFuseDriver(name string, program []string, fd int) error {
+	sylog.Debugf("Running FUSE driver for %s as %v, fd %d", name, program, fd)
+
+	fh := os.NewFile(uintptr(fd), "fd-"+name)
+	if fh == nil {
+		// this should never happen
+		return errors.New("cannot map /dev/fuse file descriptor to a file handle")
+	}
+	// the master process does not need this file descriptor after
+	// running the program, make sure it gets closed; ignore any
+	// errors that happen here
+	defer fh.Close()
+
+	// The assumption is that the plugin prepared "Program" in such
+	// a way that it's missing the last parameter and that must
+	// correspond to /dev/fd/N. Instead of making assumptions as to
+	// how many and which file descriptors are open at this point,
+	// simply assume that it's possible to map the existing file
+	// descriptor to the name number in the new process.
+	//
+	// "newFd" should be the same as "fd", but do not assume that
+	// either.
+	newFd := fh.Fd()
+	fdDevice := fmt.Sprintf("/dev/fd/%d", newFd)
+	args := append(program, fdDevice)
+	cmd := exec.Command(args[0], args[1:]...)
+
+	// Add the /dev/fuse file descriptor to the list of file
+	// descriptors to be passed to the new process.
+	//
+	// ExtraFiles is an array of *os.File, with the position of each
+	// entry determining the resulting file descriptor number. Since
+	// we are passing /dev/fd/N above, place our file handle at
+	// position N-3, so that it gets mapped to file descriptor N in
+	// the new process (the Go library will set things up so that
+	// stdin, stdout and stderr are 0, 1, and 2, so the first
+	// element of ExtraFiles gets 3).
+	cmd.ExtraFiles = make([]*os.File, newFd-3+1)
+	cmd.ExtraFiles[newFd-3] = fh
+	// The FUSE driver will get SIGQUIT if the parent dies.
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGQUIT,
+	}
+
+	if err := cmd.Start(); err != nil {
+		sylog.Debugf("cannot start program %v: %v\n", args, err)
+		return err
+	}
+
+	return nil
+}
+
+// setupFuseDrivers runs the operations required by FUSE drivers before
+// the user process starts
+func setupFuseDrivers(engine *EngineOperations) error {
+	// close file descriptors open for FUSE mount
+	for _, name := range engine.EngineConfig.GetPluginFuseMounts() {
+		var cfg struct {
+			Fuse singularity.FuseInfo
+		}
+		if err := engine.EngineConfig.GetPluginConfig(name, &cfg); err != nil {
+			return err
+		}
+
+		if err := runFuseDriver(name, cfg.Fuse.Program, cfg.Fuse.DevFuseFd); err != nil {
+			return err
+		}
+
+		syscall.Close(cfg.Fuse.DevFuseFd)
+	}
+
+	return nil
+}
+
+// preStartProcess does the final set up before starting the user's
+// process.
+func preStartProcess(engine *EngineOperations) error {
+	// TODO(mem): most of the StartProcess method should be here, as
+	// it's doing preparation for actually starting the user
+	// process.
+	//
+	// For now it's limited to doing the final set up for FUSE
+	// drivers
+	if err := setupFuseDrivers(engine); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // StartProcess starts the process
-func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
-	isInstance := engine.EngineConfig.GetInstance()
-	bootInstance := isInstance && engine.EngineConfig.GetBootInstance()
+func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
+	if err := preStartProcess(e); err != nil {
+		return err
+	}
+
+	isInstance := e.EngineConfig.GetInstance()
+	bootInstance := isInstance && e.EngineConfig.GetBootInstance()
 	shimProcess := false
 
-	if err := os.Chdir(engine.EngineConfig.OciConfig.Process.Cwd); err != nil {
-		if err := os.Chdir(engine.EngineConfig.GetHomeDest()); err != nil {
+	if err := os.Chdir(e.EngineConfig.OciConfig.Process.Cwd); err != nil {
+		if err := os.Chdir(e.EngineConfig.GetHomeDest()); err != nil {
 			os.Chdir("/")
 		}
 	}
 
-	if err := engine.checkExec(); err != nil {
+	if err := e.checkExec(); err != nil {
 		return err
 	}
 
-	if engine.EngineConfig.File.MountDev == "minimal" || engine.EngineConfig.GetContain() {
+	if e.EngineConfig.File.MountDev == "minimal" || e.EngineConfig.GetContain() {
 		// If on a terminal, reopen /dev/console so /proc/self/fd/[0-2
 		//   will point to /dev/console.  This is needed so that tty and
 		//   ttyname() on el6 will return the correct answer.  Newer
@@ -194,14 +290,14 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 	}
 
-	args := engine.EngineConfig.OciConfig.Process.Args
-	env := engine.EngineConfig.OciConfig.Process.Env
+	args := e.EngineConfig.OciConfig.Process.Args
+	env := e.EngineConfig.OciConfig.Process.Env
 
-	if engine.EngineConfig.OciConfig.Linux != nil {
-		namespaces := engine.EngineConfig.OciConfig.Linux.Namespaces
+	if e.EngineConfig.OciConfig.Linux != nil {
+		namespaces := e.EngineConfig.OciConfig.Linux.Namespaces
 		for _, ns := range namespaces {
 			if ns.Type == specs.PIDNamespace {
-				if !engine.EngineConfig.GetNoInit() {
+				if !e.EngineConfig.GetNoInit() {
 					shimProcess = true
 				}
 				break
@@ -209,27 +305,27 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 	}
 
-	for _, img := range engine.EngineConfig.GetImageList() {
+	for _, img := range e.EngineConfig.GetImageList() {
 		if err := syscall.Close(int(img.Fd)); err != nil {
 			return fmt.Errorf("failed to close file descriptor for %s", img.Path)
 		}
 	}
 
-	for _, fd := range engine.EngineConfig.GetOpenFd() {
+	for _, fd := range e.EngineConfig.GetOpenFd() {
 		if err := syscall.Close(fd); err != nil {
 			return fmt.Errorf("aborting failed to close file descriptor: %s", err)
 		}
 	}
 
-	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
+	if err := security.Configure(&e.EngineConfig.OciConfig.Spec); err != nil {
 		return fmt.Errorf("failed to apply security configuration: %s", err)
 	}
 
-	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {
+	if (!isInstance && !shimProcess) || bootInstance || e.EngineConfig.GetInstanceJoin() {
 		err := syscall.Exec(args[0], args, env)
 		if err != nil {
 			// We know the shell exists at this point, so let's inspect its architecture
-			shell := engine.EngineConfig.GetShell()
+			shell := e.EngineConfig.GetShell()
 			if shell == "" {
 				shell = defaultShell
 			}
@@ -327,7 +423,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 						sylog.Debugf("No child process, exiting ...")
 						os.Exit(128 + int(signal))
 					}
-				} else if engine.EngineConfig.GetSignalPropagation() {
+				} else if e.EngineConfig.GetSignalPropagation() {
 					if err := syscall.Kill(cmd.Process.Pid, signal); err == syscall.ESRCH {
 						sylog.Debugf("No child process, exiting ...")
 						os.Exit(128 + int(signal))
@@ -366,12 +462,11 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 // PostStartProcess will execute code in master context after execution of container
 // process, typically to write instance state/config files or execute post start OCI hook
-func (engine *EngineOperations) PostStartProcess(pid int) error {
+func (e *EngineOperations) PostStartProcess(pid int) error {
 	sylog.Debugf("Post start process")
 
-	if engine.EngineConfig.GetInstance() {
-		uid := os.Getuid()
-		name := engine.CommonConfig.ContainerID
+	if e.EngineConfig.GetInstance() {
+		name := e.CommonConfig.ContainerID
 
 		if err := os.Chdir("/"); err != nil {
 			return fmt.Errorf("failed to change directory to /: %s", err)
@@ -382,14 +477,14 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 			return err
 		}
 
-		pw, err := user.GetPwUID(uint32(uid))
+		pw, err := user.CurrentOriginal()
 		if err != nil {
 			return err
 		}
 		file.User = pw.Name
 		file.Pid = pid
 		file.PPid = os.Getpid()
-		file.Image = engine.EngineConfig.GetImage()
+		file.Image = e.EngineConfig.GetImage()
 
 		// by default we add all namespaces except the user namespace which
 		// is added conditionally. This delegates checks to the C starter code
@@ -409,19 +504,19 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 		}
 		for _, n := range namespaces {
 			nspath := filepath.Join(path, n.nstype)
-			engine.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
+			e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
 		}
-		for _, ns := range engine.EngineConfig.OciConfig.Linux.Namespaces {
+		for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
 			if ns.Type == specs.UserNamespace {
 				nspath := filepath.Join(path, "user")
-				engine.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, nspath)
+				e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, nspath)
 				file.UserNs = true
 				break
 			}
 		}
 
 		// grab configuration to store in instance file
-		file.Config, err = json.Marshal(engine.CommonConfig)
+		file.Config, err = json.Marshal(e.CommonConfig)
 		if err != nil {
 			return err
 		}

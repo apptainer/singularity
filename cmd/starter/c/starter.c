@@ -68,13 +68,19 @@ typedef struct fdlist {
     unsigned int num;
 } fdlist_t;
 
+typedef struct stack {
+    char alloc[4096] __attribute__((aligned(16)));
+    char ptr[0];
+} fork_stack_t;
+
 /* child function called by clone to return directly to sigsetjmp in fork_ns */
 __attribute__((noinline)) static int clone_fn(void *arg) {
     siglongjmp(*(sigjmp_buf *)arg, 0);
 }
 
 __attribute__ ((returns_twice)) __attribute__((noinline)) static int fork_ns(unsigned int flags) {
-    /* clone will use the same stack layout */
+    /* setup the stack */
+    fork_stack_t stack;
     sigjmp_buf env;
 
     /*
@@ -86,7 +92,7 @@ __attribute__ ((returns_twice)) __attribute__((noinline)) static int fork_ns(uns
         return 0;
     }
     /* parent process */
-    return clone(clone_fn, env, (SIGCHLD|flags), env);
+    return clone(clone_fn, stack.ptr, (SIGCHLD|flags), env);
 }
 
 static void priv_escalate(bool keep_fsuid) {
@@ -152,7 +158,7 @@ static bool is_namespace_enter(const char *nspath, const char *selfns) {
          * errors are logged for debug purpose, and any
          * error implies to not enter in the corresponding
          * namespace, we can safely assume that if an error
-         * occured with those calls, it will also occurred
+         * occurred with those calls, it will also occurred
          * later with open/setns call in enter_namespace
          */
         if ( stat(selfns, &selfns_st) < 0 ) {
@@ -348,6 +354,65 @@ static int enter_namespace(char *nspath, int nstype) {
 
     close(ns_fd);
     return(0);
+}
+
+static void set_mappings_external(const char *name, char *cmdpath, pid_t pid, char *map) {
+    int ret;
+    char *ptr;
+    char *cmd = (char *)malloc(MAX_CMD_SIZE);
+
+    if ( !cmdpath[0] ) {
+        fatalf("%s is not installed on your system\n", name);
+    }
+
+    if ( cmd == NULL ) {
+        fatalf("memory allocation failed: %s", strerror(errno));
+    }
+    memset(cmd, 0, MAX_CMD_SIZE);
+
+    /* replace newlines by space for command execution */
+    ptr = map;
+    while ( *ptr != '\0' ) {
+        if ( *ptr == '\n' ) {
+            *ptr = 0x20;
+        }
+        ptr++;
+    }
+
+    /* prepare command line */
+    ret = snprintf(cmd, MAX_CMD_SIZE-1, "%s %d %s>/dev/null", cmdpath, pid, map);
+    if ( ret > MAX_CMD_SIZE-1 ) {
+        fatalf("%s command line truncated", name);
+    }
+
+    /* scary !? it's fine as it's never called by setuid context */
+    if ( system(cmd) < 0 ) {
+        fatalf("'%s' execution failed", cmd);
+    }
+
+    free(cmd);
+}
+
+/*
+ * write user namespace mapping via external binaries newuidmap
+ * and newgidmap. This function is only called by unprivileged
+ * installation
+ */
+static void setup_userns_mappings_external(struct container *container) {
+    struct privileges *privileges = &container->privileges;
+
+    set_mappings_external(
+        "newgidmap",
+        privileges->newgidmapPath,
+        container->pid,
+        privileges->gidMap
+    );
+    set_mappings_external(
+        "newuidmap",
+        privileges->newuidmapPath,
+        container->pid,
+        privileges->uidMap
+    );
 }
 
 /*
@@ -1094,7 +1159,7 @@ __attribute__((constructor)) static void init(void) {
 
             /*
              * use CLONE_FS here, because we want that pivot_root/chroot
-             * occuring in RPC server process also affect stage 2 process
+             * occurring in RPC server process also affect stage 2 process
              * which is the final container process
              */
             process = fork_ns(CLONE_FS);
@@ -1158,16 +1223,30 @@ __attribute__((constructor)) static void init(void) {
         /* user namespace created, write user mappings */
         if ( userns == CREATE_NAMESPACE ) {
             /* set user namespace mappings */
-            if ( sconfig->starter.hybridWorkflow && sconfig->starter.isSuid ) {
-                /*
-                 * hybrid workflow requires privileges for user mappings, we also preserve user
-                 * filesytem UID here otherwise we would get a permission denied error during
-                 * user mappings setup. User filesystem UID will be restored below by setresuid
-                 * call
-                 */
-                priv_escalate(false);
+            if ( sconfig->starter.hybridWorkflow ) {
+                if ( sconfig->starter.isSuid ) {
+                    /*
+                     * hybrid workflow requires privileges for user mappings, we also preserve user
+                     * filesytem UID here otherwise we would get a permission denied error during
+                     * user mappings setup. User filesystem UID will be restored below by setresuid
+                     * call
+                     */
+                    priv_escalate(false);
+                    setup_userns_mappings(&sconfig->container.privileges);
+                } else {
+                    /* use newuidmap/newgidmap as fallback for hybrid workflow */
+                    setup_userns_mappings_external(&sconfig->container);
+                    /*
+                     * without setuid, we could not join mount namespace below, so
+                     * we need to join the fakeroot user namespace first
+                     */
+                    if ( enter_namespace("ns/user", CLONE_NEWUSER) < 0 ) {
+                        fatalf("Failed to enter in fakeroot user namespace: %s\n", strerror(errno));
+                    }
+                }
+            } else {
+                setup_userns_mappings(&sconfig->container.privileges);
             }
-            setup_userns_mappings(&sconfig->container.privileges);
             send_event(master_socket[0]);
         }
 

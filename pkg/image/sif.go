@@ -13,7 +13,6 @@ import (
 	"syscall"
 
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 const (
@@ -22,16 +21,41 @@ const (
 
 type sifFormat struct{}
 
+func checkPartitionType(img *Image, fstype sif.Fstype, offset int64) (uint32, error) {
+	header := make([]byte, bufferSize)
+
+	if _, err := img.File.ReadAt(header, offset); err != nil {
+		return 0, fmt.Errorf("failed to read SIF partition at offset %d: %s", offset, err)
+	}
+
+	switch fstype {
+	case sif.FsSquash:
+		if _, err := CheckSquashfsHeader(header[:]); err != nil {
+			return 0, fmt.Errorf("error while checking squashfs header: %s", err)
+		}
+		return SQUASHFS, nil
+	case sif.FsExt3:
+		if _, err := CheckExt3Header(header[:]); err != nil {
+			return 0, fmt.Errorf("error while checking ext3 header: %s", err)
+		}
+		return EXT3, nil
+	case sif.FsEncryptedSquashfs:
+		return ENCRYPTSQUASHFS, nil
+	}
+
+	return 0, fmt.Errorf("unknown filesystem type %v", fstype)
+}
+
 func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	if fileinfo.IsDir() {
-		return fmt.Errorf("not a SIF file image")
+		return debugError("not a sif file image")
 	}
 	b := make([]byte, bufferSize)
 	if n, err := img.File.Read(b); err != nil || n != bufferSize {
-		return fmt.Errorf("can't read first %d bytes: %s", bufferSize, err)
+		return debugErrorf("can't read first %d bytes: %s", bufferSize, err)
 	}
 	if !bytes.Contains(b, []byte(sifMagic)) {
-		return fmt.Errorf("SIF magic not found")
+		return debugError("SIF magic not found")
 	}
 
 	// Load the SIF file
@@ -41,15 +65,21 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	}
 
 	// Check the compatibility of the image's target architecture
-	// TODO: we should check if we need to deal with compatible architectures. For example, i386 can run on amd64 and maybe some ARM processor can run <= armv6 instructions on asasrch64 (someone should double check).
+	// TODO: we should check if we need to deal with compatible architectures:
+	// For example, i386 can run on amd64 and maybe some ARM processor can run <= armv6 instructions
+	// on asasrch64 (someone should double check).
 	// TODO: The typically workflow is:
 	// 1. pull image from docker/library/shub (pull/build commands)
 	// 2. extract image file system to temp folder (build commands)
-	// 3. if definition file contains a 'executable' section, the architecture check should occur (or delegate to runtime which would fail during execution).
-	// The current code will be called by the started which will cover most of the workflow desribed above. However, SIF is currently build upon the assumption that the architecture is assigned based on the architecture defined by a Go runtime, which is not 100% compliant with the intended workflow.
+	// 3. if definition file contains a 'executable' section, the architecture check should
+	// occur (or delegate to runtime which would fail during execution).
+	// The current code will be called by the starter which will cover most of the
+	// workflow described above. However, SIF is currently build upon the assumption
+	// that the architecture is assigned based on the architecture defined by a Go
+	// runtime, which is not 100% compliant with the intended workflow.
 	sifArch := string(fimg.Header.Arch[:sif.HdrArchLen-1])
 	if sifArch != sif.HdrArchUnknown && sifArch != sif.GetSIFArch(runtime.GOARCH) {
-		sylog.Fatalf("the image's architecture (%s) is incompatible with the host (%s)", sif.GetGoArch(sifArch), runtime.GOARCH)
+		return fmt.Errorf("the image's architecture (%s) is incompatible with the host's (%s)", sif.GetGoArch(sifArch), runtime.GOARCH)
 	}
 
 	groupID := -1
@@ -74,20 +104,24 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 			continue
 		}
 
+		// checks if the partition length is greater that the file
+		// size which may reveal a corrupted image (see issue #3996)
+		if fimg.Filesize < desc.Filelen+desc.Fileoff {
+			return fmt.Errorf("SIF image %s is corrupted: wrong partition size", img.File.Name())
+		}
+
+		htype, err := checkPartitionType(img, fstype, desc.Fileoff)
+		if err != nil {
+			return fmt.Errorf("while checking system partition header: %s", err)
+		}
+
 		img.Partitions = []Section{
 			{
 				Offset: uint64(desc.Fileoff),
 				Size:   uint64(desc.Filelen),
 				Name:   RootFs,
+				Type:   htype,
 			},
-		}
-
-		if fstype == sif.FsSquash {
-			img.Partitions[0].Type = SQUASHFS
-		} else if fstype == sif.FsExt3 {
-			img.Partitions[0].Type = EXT3
-		} else {
-			return fmt.Errorf("unknown file system type: %v", fstype)
 		}
 
 		groupID = int(desc.Groupid)
@@ -112,18 +146,21 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 			if err != nil {
 				continue
 			}
+
+			if fimg.Filesize < desc.Filelen+desc.Fileoff {
+				return fmt.Errorf("SIF image %s is corrupted: wrong partition size", img.File.Name())
+			}
+
+			htype, err := checkPartitionType(img, fstype, desc.Fileoff)
+			if err != nil {
+				return fmt.Errorf("while checking data partition header: %s", err)
+			}
+
 			partition := Section{
 				Offset: uint64(desc.Fileoff),
 				Size:   uint64(desc.Filelen),
 				Name:   desc.GetName(),
-			}
-			switch fstype {
-			case sif.FsSquash:
-				partition.Type = SQUASHFS
-			case sif.FsExt3:
-				partition.Type = EXT3
-			default:
-				partition.Type = uint32(fstype)
+				Type:   htype,
 			}
 			img.Partitions = append(img.Partitions, partition)
 		} else if desc.Datatype != 0 {

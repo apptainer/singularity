@@ -1,0 +1,21 @@
+#!/bin/sh
+
+if test ! -e scripts/go-test ; then
+	echo 'E: Cannot find scripts/go-test. Abort.'
+	exit 1
+fi
+
+if test ! -d e2e ; then
+	echo 'E: Cannot find e2e directory. Abort.'
+	exit 1
+fi
+
+sudo -v
+
+sudo \
+	env -i \
+		PATH=$PATH \
+		HOME=$HOME \
+		SINGULARITY_E2E=1 \
+		SINGULARITY_E2E_COVERAGE=$SINGULARITY_E2E_COVERAGE \
+	scripts/go-test "$@" ./e2e

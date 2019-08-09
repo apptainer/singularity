@@ -6,6 +6,8 @@
 package imgbuild
 
 import (
+	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -18,15 +20,13 @@ import (
 
 var testFileContent = "Test file content\n"
 
-type testingEnv struct {
-	// base env for running tests
-	CmdPath string `split_words:"true"`
-	TestDir string `split_words:"true"`
+type imgBuildTests struct {
+	env e2e.TestEnv
 }
 
-var testenv testingEnv
+func (c *imgBuildTests) buildFrom(t *testing.T) {
+	e2e.PrepRegistry(t, c.env)
 
-func buildFrom(t *testing.T) {
 	tests := []struct {
 		name       string
 		dependency string
@@ -37,46 +37,130 @@ func buildFrom(t *testing.T) {
 		{"Debootstrap", "debootstrap", "../examples/debian/Singularity", true},
 		{"DockerURI", "", "docker://busybox", true},
 		{"DockerDefFile", "", "../examples/docker/Singularity", true},
-		{"ShubURI", "", "shub://GodloveD/busybox", true},
-		{"ShubDefFile", "", "../examples/shub/Singularity", true},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"ShubURI", "", "shub://GodloveD/busybox", true},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"ShubDefFile", "", "../examples/shub/Singularity", true},
 		{"LibraryDefFile", "", "../examples/library/Singularity", true},
-		{"OrasURI", "", "oras://localhost:5000/oras_test_sif:latest", true},
+		{"OrasURI", "", c.env.OrasTestImage, true},
 		{"Yum", "yum", "../examples/centos/Singularity", true},
 		{"Zypper", "zypper", "../examples/opensuse/Singularity", true},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
-			if tt.dependency != "" {
-				if _, err := exec.LookPath(tt.dependency); err != nil {
-					t.Skipf("%v not found in path", tt.dependency)
+		imagePath := path.Join(c.env.TestDir, "container")
+
+		// conditionally build a sandbox
+		args := []string{}
+		if tt.sandbox {
+			args = []string{"--sandbox"}
+		}
+		args = append(args, imagePath, tt.buildSpec)
+
+		c.env.RunSingularity(
+			t,
+			e2e.WithPrivileges(true),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(args...),
+			e2e.PreRun(func(t *testing.T) {
+				if tt.dependency != "" {
+					if _, err := exec.LookPath(tt.dependency); err != nil {
+						t.Skipf("%v not found in path", tt.dependency)
+					}
 				}
-			}
+			}),
+			e2e.PostRun(func(t *testing.T) {
+				defer os.RemoveAll(imagePath)
 
-			opts := e2e.BuildOpts{
-				Sandbox: tt.sandbox,
-			}
-
-			imagePath := path.Join(testenv.TestDir, "container")
-			defer os.RemoveAll(imagePath)
-
-			if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, tt.buildSpec); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
-			}
-			e2e.ImageVerify(t, testenv.CmdPath, imagePath)
-		}))
+				c.env.ImageVerify(t, imagePath)
+			}),
+			e2e.ExpectExit(0),
+		)
 	}
 }
 
-func buildLocalImage(t *testing.T) {
-	imagePath1 := path.Join(testenv.TestDir, "container1")
-	imagePath2 := path.Join(testenv.TestDir, "container2")
-	imagePath3 := path.Join(testenv.TestDir, "container3")
+func (c *imgBuildTests) nonRootBuild(t *testing.T) {
+	tests := []struct {
+		name      string
+		buildSpec string
+		sandbox   bool
+	}{
+		{
+			name:      "local sif",
+			buildSpec: "testdata/busybox.sif",
+			sandbox:   false,
+		},
+		{
+			name:      "local sif to sandbox",
+			buildSpec: "testdata/busybox.sif",
+			sandbox:   true,
+		},
+		{
+			name:      "library sif",
+			buildSpec: "library://sylabs/tests/busybox:1.0.0",
+			sandbox:   false,
+		},
+		{
+			name:      "library sif sandbox",
+			buildSpec: "library://sylabs/tests/busybox:1.0.0",
+			sandbox:   true,
+		},
+		{
+			name:      "library sif sha",
+			buildSpec: "library://sylabs/tests/busybox:sha256.8b5478b0f2962eba3982be245986eb0ea54f5164d90a65c078af5b83147009ba",
+			sandbox:   false,
+		},
+		// TODO: uncomment when shub is working
+		//{
+		//		name:      "shub busybox",
+		//		buildSpec: "shub://GodloveD/busybox",
+		//		sandbox:   false,
+		//},
+		{
+			name:      "docker busybox",
+			buildSpec: "docker://busybox:latest",
+			sandbox:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		imagePath := path.Join(c.env.TestDir, "container")
+
+		// conditionally build a sandbox
+		args := []string{}
+		if tt.sandbox {
+			args = []string{"--sandbox"}
+		}
+		args = append(args, imagePath, tt.buildSpec)
+
+		c.env.RunSingularity(
+			t,
+			e2e.WithPrivileges(false),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(args...),
+			e2e.PostRun(func(t *testing.T) {
+				defer os.RemoveAll(imagePath)
+
+				c.env.ImageVerify(t, imagePath)
+			}),
+			e2e.ExpectExit(0),
+		)
+	}
+}
+
+func (c *imgBuildTests) buildLocalImage(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	tmpdir, err := ioutil.TempDir(c.env.TestDir, "build-local-image.")
+	if err != nil {
+		t.Errorf("Cannot create temporary directory: %+v", err)
+	}
+
+	defer os.RemoveAll(tmpdir)
 
 	liDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
-		From:      imagePath1,
+		From:      c.env.ImagePath,
 	})
 	defer os.Remove(liDefFile)
 
@@ -84,80 +168,71 @@ func buildLocalImage(t *testing.T) {
 	labels["FOO"] = "bar"
 	liLabelDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
-		From:      imagePath2,
+		From:      c.env.ImagePath,
 		Labels:    labels,
 	})
 	defer os.Remove(liLabelDefFile)
 
-	type testSpec struct {
-		name      string
-		imagePath string
-		buildSpec string
-		force     bool
-		sandbox   bool
-	}
+	sandboxImage := path.Join(tmpdir, "test-sandbox")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithPrivileges(true),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--sandbox", sandboxImage, c.env.ImagePath),
+		e2e.PostRun(func(t *testing.T) {
+			c.env.ImageVerify(t, sandboxImage)
+		}),
+		e2e.ExpectExit(0),
+	)
+
+	localSandboxDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
+		Bootstrap: "localimage",
+		From:      sandboxImage,
+		Labels:    labels,
+	})
+	defer os.Remove(localSandboxDefFile)
 
 	tests := []struct {
-		name  string
-		steps []testSpec
+		name      string
+		buildSpec string
 	}{
-		{"SIFToSIF", []testSpec{
-			{"BusyBox", imagePath1, "../examples/busybox/Singularity", false, false},
-			{"SIF", imagePath2, imagePath1, false, false},
-		}},
-		{"SandboxToSIF", []testSpec{
-			{"BusyBoxSandbox", imagePath1, "../examples/busybox/Singularity", false, true},
-			{"SIF", imagePath2, imagePath1, false, false},
-		}},
-		{"LocalImage", []testSpec{
-			{"BusyBox", imagePath1, "../examples/busybox/Singularity", false, false},
-			{"LocalImage", imagePath2, liDefFile, false, false},
-			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false},
-		}},
-		{"LocalImageSandbox", []testSpec{
-			{"BusyBoxSandbox", imagePath2, "../examples/busybox/Singularity", true, true},
-			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false},
-		}},
+		{"SIFToSIF", c.env.ImagePath},
+		{"SandboxToSIF", sandboxImage},
+		{"LocalImage", liDefFile},
+		{"LocalImageLabel", liLabelDefFile},
+		{"LocalImageSandbox", localSandboxDefFile},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
-			for _, ts := range tt.steps {
-				defer os.RemoveAll(ts.imagePath)
-			}
-
-			for _, ts := range tt.steps {
-				t.Run(ts.name, e2e.Privileged(func(t *testing.T) {
-					opts := e2e.BuildOpts{
-						Force:   ts.force,
-						Sandbox: ts.sandbox,
-					}
-
-					if b, err := e2e.ImageBuild(testenv.CmdPath, opts, ts.imagePath, ts.buildSpec); err != nil {
-						t.Log(string(b))
-						t.Fatalf("unexpected failure: %v", err)
-					}
-					e2e.ImageVerify(t, testenv.CmdPath, ts.imagePath)
-				}))
-			}
-		}))
+	for i, tt := range tests {
+		imagePath := filepath.Join(tmpdir, fmt.Sprintf("image-%d", i))
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithPrivileges(true),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(imagePath, tt.buildSpec),
+			e2e.PostRun(func(t *testing.T) {
+				c.env.ImageVerify(t, imagePath)
+			}),
+			e2e.ExpectExit(0),
+		)
 	}
 }
 
-func badPath(t *testing.T) {
-	e2e.Privileged(func(t *testing.T) {
-		imagePath := path.Join(testenv.TestDir, "container")
-		defer os.RemoveAll(imagePath)
-
-		if b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, "/some/dumb/path"); err == nil {
-			t.Log(string(b))
-			t.Fatal("unexpected success")
-		}
-	})(t)
+func (c *imgBuildTests) badPath(t *testing.T) {
+	imagePath := path.Join(c.env.TestDir, "container")
+	c.env.RunSingularity(
+		t,
+		e2e.WithPrivileges(true),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(imagePath, "/some/dumb/path"),
+		e2e.ExpectExit(255),
+	)
 }
 
-func buildMultiStageDefinition(t *testing.T) {
-	tmpfile, err := e2e.WriteTempFile(testenv.TestDir, "testFile-", testFileContent)
+func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
+	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -331,31 +406,36 @@ func buildMultiStageDefinition(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
+		imagePath := path.Join(c.env.TestDir, "container")
+		defFile := e2e.PrepareMultiStageDefFile(tt.dfd)
 
-			defFile := e2e.PrepareMultiStageDefFile(tt.dfd)
-			defer os.Remove(defFile)
+		args := []string{}
+		if tt.force {
+			args = append([]string{"--force"}, args...)
+		}
+		if tt.sandbox {
+			args = append([]string{"--sandbox"}, args...)
+		}
+		args = append(args, imagePath, defFile)
 
-			opts := e2e.BuildOpts{
-				Sandbox: tt.sandbox,
-			}
+		c.env.RunSingularity(
+			t,
+			e2e.WithPrivileges(true),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(args...),
+			e2e.PostRun(func(t *testing.T) {
+				defer os.Remove(defFile)
+				defer os.RemoveAll(imagePath)
 
-			imagePath := path.Join(testenv.TestDir, "container")
-			defer os.RemoveAll(imagePath)
-
-			if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, defFile); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
-			}
-
-			e2e.DefinitionImageVerify(t, testenv.CmdPath, imagePath, tt.correct)
-		}))
+				e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.correct)
+			}),
+			e2e.ExpectExit(0),
+		)
 	}
-
 }
 
-func buildDefinition(t *testing.T) {
-	tmpfile, err := e2e.WriteTempFile(testenv.TestDir, "testFile-", testFileContent)
+func (c *imgBuildTests) buildDefinition(t *testing.T) {
+	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -443,14 +523,14 @@ func buildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Pre: []string{
-				filepath.Join(testenv.TestDir, "PreFile1"),
+				filepath.Join(c.env.TestDir, "PreFile1"),
 			},
 		}},
 		{"Setup", false, true, e2e.DefFileDetails{
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Setup: []string{
-				filepath.Join(testenv.TestDir, "SetupFile1"),
+				filepath.Join(c.env.TestDir, "SetupFile1"),
 			},
 		}},
 		{"Post", false, true, e2e.DefFileDetails{
@@ -623,41 +703,52 @@ func buildDefinition(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
+		imagePath := path.Join(c.env.TestDir, "container")
+		defFile := e2e.PrepareDefFile(tt.dfd)
 
-			defFile := e2e.PrepareDefFile(tt.dfd)
-			defer os.Remove(defFile)
+		args := []string{}
+		if tt.force {
+			args = append([]string{"--force"}, args...)
+		}
+		if tt.sandbox {
+			args = append([]string{"--sandbox"}, args...)
+		}
+		args = append(args, imagePath, defFile)
 
-			opts := e2e.BuildOpts{
-				Sandbox: tt.sandbox,
-			}
+		c.env.RunSingularity(
+			t,
+			e2e.WithPrivileges(true),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(args...),
+			e2e.PostRun(func(t *testing.T) {
+				defer os.Remove(defFile)
+				defer os.RemoveAll(imagePath)
 
-			imagePath := path.Join(testenv.TestDir, "container")
-			defer os.RemoveAll(imagePath)
-
-			if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, defFile); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
-			}
-			e2e.DefinitionImageVerify(t, testenv.CmdPath, imagePath, tt.dfd)
-		}))
+				e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.dfd)
+			}),
+			e2e.ExpectExit(0),
+		)
 	}
 }
 
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	e2e.LoadEnv(t, &testenv)
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &imgBuildTests{
+		env: env,
+	}
 
-	t.Log(testenv)
-
-	// builds from definition file and URI
-	t.Run("From", buildFrom)
-	// build and image from an existing image
-	t.Run("FromLocalImage", buildLocalImage)
-	// try to build from a non existen path
-	t.Run("badPath", badPath)
-	// builds from definition template
-	t.Run("Definition", buildDefinition)
-	// multistage build from definition templates
-	t.Run("MultiStage", buildMultiStageDefinition)
+	return func(t *testing.T) {
+		// builds from definition file and URI
+		t.Run("From", c.buildFrom)
+		// build and image from an existing image
+		t.Run("FromLocalImage", c.buildLocalImage)
+		// build sifs from non-root
+		t.Run("NonRootBuild", c.nonRootBuild)
+		// try to build from a non existen path
+		t.Run("badPath", c.badPath)
+		// builds from definition template
+		t.Run("Definition", c.buildDefinition)
+		// multistage build from definition templates
+		t.Run("MultiStage", c.buildMultiStageDefinition)
+	}
 }

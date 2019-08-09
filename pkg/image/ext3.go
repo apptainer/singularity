@@ -50,15 +50,15 @@ func CheckExt3Header(b []byte) (uint64, error) {
 	einfo := &extFSInfo{}
 
 	if uintptr(offset)+unsafe.Sizeof(einfo) >= uintptr(len(b)) {
-		return offset, fmt.Errorf("can't find ext3 information header")
+		return offset, debugError("can't find ext3 information header")
 	}
 	buffer := bytes.NewReader(b[offset:])
 
 	if err := binary.Read(buffer, binary.LittleEndian, einfo); err != nil {
-		return offset, fmt.Errorf("can't read the top of the image")
+		return offset, debugError("can't read the top of the image")
 	}
 	if !bytes.Equal(einfo.Magic[:], []byte(extMagic)) {
-		return offset, fmt.Errorf(notValidExt3ImageMessage)
+		return offset, debugError(notValidExt3ImageMessage)
 	}
 	if einfo.Compat&compatHasJournal == 0 {
 		return offset, fmt.Errorf(notValidExt3ImageMessage)
@@ -75,11 +75,11 @@ func CheckExt3Header(b []byte) (uint64, error) {
 
 func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 	if fileinfo.IsDir() {
-		return fmt.Errorf("not an ext3 image")
+		return debugError("not an ext3 image")
 	}
 	b := make([]byte, bufferSize)
 	if n, err := img.File.Read(b); err != nil || n != bufferSize {
-		return fmt.Errorf("can't read first %d bytes: %s", bufferSize, err)
+		return debugErrorf("can't read first %d bytes: %s", bufferSize, err)
 	}
 	offset, err := CheckExt3Header(b)
 	if err != nil {

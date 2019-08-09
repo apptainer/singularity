@@ -8,6 +8,7 @@ package sources
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/sylabs/scs-library-client/client"
@@ -38,7 +39,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	authToken := b.Opts.LibraryAuthToken
 
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	// check for custom library from definition
@@ -61,36 +62,53 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	imageRef := library.NormalizeLibraryRef(b.Recipe.Header["from"])
 
-	libraryImage, existOk, err := libraryClient.GetImage(context.TODO(), imageRef)
+	libraryImage, err := libraryClient.GetImage(context.TODO(), imageRef)
+	if err == client.ErrNotFound {
+		return fmt.Errorf("image does not exist in the library: %s", imageRef)
+	}
 	if err != nil {
 		return fmt.Errorf("while getting image info: %v", err)
 	}
-	if !existOk {
-		return fmt.Errorf("image does not exist in the library: %s", imageRef)
-	}
 
+	imagePath := ""
 	imageName := uri.GetName("library://" + imageRef)
-	imagePath := b.Opts.ImgCache.LibraryImage(libraryImage.Hash, imageName)
 
-	if exists, err := b.Opts.ImgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
-		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-	} else if !exists {
-		sylog.Infof("Downloading library image")
-
-		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, imageRef); err != nil {
-			return fmt.Errorf("unable to Download Image: %v", err)
+	if cp.b.Opts.NoCache {
+		file, err := ioutil.TempFile(cp.b.Path, "sbuild-tmp-cache-")
+		if err != nil {
+			return fmt.Errorf("unable to create tmp file: %v", err)
 		}
 
-		if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
-			return fmt.Errorf("Error getting ImageHash: %v", err)
-		} else if cacheFileHash != libraryImage.Hash {
-			return fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+		imagePath = file.Name()
+
+		sylog.Infof("Downloading library image to tmp cache: %s", imagePath)
+
+		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, imageRef); err != nil {
+			return fmt.Errorf("unable to download image: %v", err)
+		}
+	} else {
+		imagePath = b.Opts.ImgCache.LibraryImage(libraryImage.Hash, imageName)
+
+		if exists, err := b.Opts.ImgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+			return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+		} else if !exists {
+			sylog.Infof("Downloading library image")
+
+			if err := library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, imageRef); err != nil {
+				return fmt.Errorf("unable to download image: %v", err)
+			}
+
+			if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
+				return fmt.Errorf("error getting image hash: %v", err)
+			} else if cacheFileHash != libraryImage.Hash {
+				return fmt.Errorf("cached file hash(%s) and expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+			}
 		}
 	}
 
 	// insert base metadata before unpacking fs
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)

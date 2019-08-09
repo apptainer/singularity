@@ -330,28 +330,54 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 	return err
 }
 
-func doHeader(h string, d *types.Definition) (err error) {
+func doHeader(h string, d *types.Definition) error {
 	h = strings.TrimSpace(h)
 	toks := strings.Split(h, "\n")
 	header := make(map[string]string)
+	keyCont, valCont := "", ""
 
 	for _, line := range toks {
+		var key, val string
 		// skip empty or comment lines
 		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
+			if len(keyCont) > 0 {
+				d.Header[keyCont] = valCont
+				keyCont, valCont = "", ""
+			}
 			continue
 		}
 
 		// trim any comments on header lines
 		trimLine := strings.Split(line, "#")[0]
+		if len(valCont) == 0 {
+			linetoks := strings.SplitN(trimLine, ":", 2)
+			if len(linetoks) == 1 {
+				return fmt.Errorf("header key %s had no val", linetoks[0])
+			}
 
-		linetoks := strings.SplitN(trimLine, ":", 2)
-		if len(linetoks) == 1 {
-			return fmt.Errorf("header key %s had no val", linetoks[0])
+			key, val = strings.ToLower(strings.TrimSpace(linetoks[0])), strings.TrimSpace(linetoks[1])
+		} else {
+			key, val = keyCont, valCont+strings.TrimSpace(trimLine)
+			keyCont, valCont = "", ""
 		}
-
-		key, val := strings.ToLower(strings.TrimSpace(linetoks[0])), strings.TrimSpace(linetoks[1])
+		// continuation
+		if strings.HasSuffix(val, "\\") {
+			keyCont = key
+			valCont = strings.TrimSuffix(val, "\\")
+			if strings.HasSuffix(valCont, "\\n") {
+				valCont = strings.TrimSuffix(valCont, "\\n") + "\n"
+			}
+			continue
+		}
 		if _, ok := validHeaders[key]; !ok {
-			return fmt.Errorf("invalid header keyword found: %s", key)
+			rgx := regexp.MustCompile(`\d+$`)
+			tmpKey := rgx.ReplaceAllString(key, "&n")
+			if ok = tmpKey != key; ok {
+				_, ok = validHeaders[tmpKey]
+			}
+			if !ok {
+				return fmt.Errorf("invalid header keyword found: %s", key)
+			}
 		}
 		header[key] = val
 	}
@@ -360,7 +386,8 @@ func doHeader(h string, d *types.Definition) (err error) {
 	if len(header) != 0 {
 		d.Header = header
 	}
-	return
+
+	return nil
 }
 
 // ParseDefinitionFile receives a reader from a definition file
@@ -513,15 +540,22 @@ var appSections = map[string]bool{
 // validHeaders just contains a list of all the valid headers a definition file
 // could contain. If any others are found, an error will generate
 var validHeaders = map[string]bool{
-	"bootstrap":  true,
-	"from":       true,
-	"includecmd": true,
-	"mirrorurl":  true,
-	"updateurl":  true,
-	"osversion":  true,
-	"include":    true,
-	"library":    true,
-	"registry":   true,
-	"namespace":  true,
-	"stage":      true,
+	"bootstrap":   true,
+	"from":        true,
+	"includecmd":  true,
+	"mirrorurl":   true,
+	"updateurl":   true,
+	"osversion":   true,
+	"include":     true,
+	"library":     true,
+	"registry":    true,
+	"namespace":   true,
+	"stage":       true,
+	"product":     true,
+	"user":        true,
+	"regcode":     true,
+	"productpgp":  true,
+	"registerurl": true,
+	"modules":     true,
+	"otherurl&n":  true,
 }

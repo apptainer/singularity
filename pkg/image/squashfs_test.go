@@ -131,3 +131,44 @@ func TestSFSOpenMode(t *testing.T) {
 		t.Fatal("openMode(false) returned the wrong value")
 	}
 }
+
+func TestSquashfsCompression(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		comp string
+	}{
+		{
+			name: "version 4 header",
+			path: "./testdata/squashfs.v4",
+			comp: "gzip",
+		},
+		{
+			name: "version 3 header",
+			path: "./testdata/squashfs.v3",
+			comp: "gzip",
+		},
+		{
+			name: "version 4 header lzo comp",
+			path: "./testdata/squashfs.lzo",
+			comp: "lzo",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := ioutil.ReadFile(tt.path)
+			if err != nil {
+				t.Errorf("Failed to read file: %v", err)
+			}
+
+			comp, err := GetSquashfsComp(b)
+			if err != nil {
+				t.Errorf("While looking for compression type: %v", err)
+			}
+			if comp != tt.comp {
+				t.Errorf("Incorrect compression found")
+			}
+		})
+	}
+}

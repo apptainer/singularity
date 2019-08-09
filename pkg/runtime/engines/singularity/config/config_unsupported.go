@@ -17,3 +17,14 @@ type EngineConfig struct {
 	OciConfig *oci.Config `json:"ociConfig"`
 	File      *FileConfig `json:"-"`
 }
+
+// NewConfig returns singularity.EngineConfig with a parsed FileConfig
+func NewConfig() *EngineConfig {
+	ret := &EngineConfig{
+		JSON:      &JSONConfig{},
+		OciConfig: &oci.Config{},
+		File:      &FileConfig{},
+	}
+
+	return ret
+}

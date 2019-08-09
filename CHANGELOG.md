@@ -9,7 +9,15 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.2.1
+# Changes Since v3.3.0
+
+## New features / functionalities
+
+  - Added support for multiline variables in singularity def-files
+  - Added support for 'indexed' def-file variables (like arrays)
+  - Added support for SUSE SLE Products
+  - Added the def-file variables:
+      product, user, regcode, productpgp, registerurl, modules,	otherurl (indexed)
 
 # v3.3.0 - [2019.06.17]
 

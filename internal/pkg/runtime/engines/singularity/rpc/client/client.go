@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,8 +6,10 @@
 package client
 
 import (
+	"encoding/gob"
 	"net/rpc"
 	"os"
+	"syscall"
 
 	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
 	"github.com/sylabs/singularity/pkg/util/loop"
@@ -19,8 +21,8 @@ type RPC struct {
 	Name   string
 }
 
-// Mount calls tme mount RPC using the supplied arguments.
-func (t *RPC) Mount(source string, target string, filesystem string, flags uintptr, data string) (int, error) {
+// Mount calls the mount RPC using the supplied arguments.
+func (t *RPC) Mount(source string, target string, filesystem string, flags uintptr, data string) error {
 	arguments := &args.MountArgs{
 		Source:     source,
 		Target:     target,
@@ -28,8 +30,30 @@ func (t *RPC) Mount(source string, target string, filesystem string, flags uintp
 		Mountflags: flags,
 		Data:       data,
 	}
-	var reply int
-	err := t.Client.Call(t.Name+".Mount", arguments, &reply)
+
+	var mountErr error
+
+	err := t.Client.Call(t.Name+".Mount", arguments, &mountErr)
+	// RPC communication will take precedence over mount error
+	if err == nil {
+		err = mountErr
+	}
+
+	return err
+}
+
+// Decrypt calls the DeCrypt RPC using the supplied arguments.
+func (t *RPC) Decrypt(offset uint64, path string, key []byte, masterPid int) (string, error) {
+	arguments := &args.CryptArgs{
+		Offset:    offset,
+		Loopdev:   path,
+		Key:       key,
+		MasterPid: masterPid,
+	}
+
+	var reply string
+	err := t.Client.Call(t.Name+".Decrypt", arguments, &reply)
+
 	return reply, err
 }
 
@@ -98,4 +122,10 @@ func (t *RPC) Chdir(dir string) (int, error) {
 	var reply int
 	err := t.Client.Call(t.Name+".Chdir", arguments, &reply)
 	return reply, err
+}
+
+func init() {
+	var sysErrnoType syscall.Errno
+	// register syscall.Errno as a type we need to get back
+	gob.Register(sysErrnoType)
 }

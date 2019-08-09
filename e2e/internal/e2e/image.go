@@ -10,17 +10,10 @@ import (
 	"testing"
 )
 
-var testenv = struct {
-	CmdPath   string `split_words:"true"` // singularity program
-	ImagePath string `split_words:"true"` // base image for tests
-}{}
-
 // EnsureImage checks if e2e test image is already built or built
 // it otherwise.
-func EnsureImage(t *testing.T) {
-	LoadEnv(t, &testenv)
-
-	switch _, err := os.Stat(testenv.ImagePath); {
+func EnsureImage(t *testing.T, env TestEnv) {
+	switch _, err := os.Stat(env.ImagePath); {
 	case err == nil:
 		// OK: file exists, return
 		return
@@ -31,17 +24,39 @@ func EnsureImage(t *testing.T) {
 	default:
 		// FATAL: something else is wrong
 		t.Fatalf("Failed when checking image %q: %+v\n",
-			testenv.ImagePath,
+			env.ImagePath,
 			err)
 	}
 
-	RunSingularity(
+	env.RunSingularity(
 		t,
-		"BuildTestImage",
-		WithoutSubTest(),
 		WithPrivileges(true),
 		WithCommand("build"),
-		WithArgs("--force", testenv.ImagePath, "testdata/Singularity"),
+		WithArgs("--force", env.ImagePath, "testdata/Singularity"),
+		ExpectExit(0),
+	)
+}
+
+// PullImage will pull a test image.
+func PullImage(t *testing.T, env TestEnv, imageURL string, path string) {
+	switch _, err := os.Stat(path); {
+	case err == nil:
+		// OK: file exists, return
+		return
+
+	case os.IsNotExist(err):
+		// OK: file does not exist, continue
+
+	default:
+		// FATAL: something else is wrong
+		t.Fatalf("Failed when checking image %q: %+v\n", path, err)
+	}
+
+	env.RunSingularity(
+		t,
+		WithPrivileges(false),
+		WithCommand("pull"),
+		WithArgs("--force", "--allow-unsigned", path, imageURL),
 		ExpectExit(0),
 	)
 }

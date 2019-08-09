@@ -23,7 +23,7 @@ const pullTimeout = 7200
 
 // DownloadImage image will download a shub image to a path. This will not try
 // to cache it, or use cache.
-func DownloadImage(filePath, shubRef string, force, noHTTPS bool) error {
+func DownloadImage(manifest ShubAPIResponse, filePath, shubRef string, force, noHTTPS bool) error {
 	sylog.Debugf("Downloading container from Shub")
 	if !force {
 		if _, err := os.Stat(filePath); err == nil {
@@ -36,20 +36,14 @@ func DownloadImage(filePath, shubRef string, force, noHTTPS bool) error {
 		sylog.Fatalf("Invalid shub URI")
 	}
 
-	ShubURI, err := shubParseReference(shubRef)
+	shubURI, err := ShubParseReference(shubRef)
 	if err != nil {
-		return fmt.Errorf("Failed to parse shub URI: %v", err)
+		return fmt.Errorf("failed to parse shub uri: %v", err)
 	}
 
 	if filePath == "" {
-		filePath = fmt.Sprintf("%s_%s.simg", ShubURI.container, ShubURI.tag)
+		filePath = fmt.Sprintf("%s_%s.simg", shubURI.container, shubURI.tag)
 		sylog.Infof("Download filename not provided. Downloading to: %s\n", filePath)
-	}
-
-	// Get the image manifest
-	manifest, err := getManifest(ShubURI, noHTTPS)
-	if err != nil {
-		return fmt.Errorf("Failed to get manifest from Shub: %v", err)
 	}
 
 	// Get the image based on the manifest
@@ -114,14 +108,17 @@ func DownloadImage(filePath, shubRef string, force, noHTTPS bool) error {
 	if err != nil {
 		return err
 	}
+
 	// Simple check to make sure image received is the correct size
-	if bytesWritten != resp.ContentLength {
-		return fmt.Errorf("Image received is not the right size. Supposed to be: %v  Actually: %v", resp.ContentLength, bytesWritten)
+	if resp.ContentLength == -1 {
+		sylog.Warningf("unknown image length")
+	} else if bytesWritten != resp.ContentLength {
+		return fmt.Errorf("image received is not the right size. supposed to be: %v actually: %v", resp.ContentLength, bytesWritten)
 	}
 
 	bar.Finish()
 
-	sylog.Debugf("Download complete\n")
+	sylog.Debugf("Download complete: %s\n", filePath)
 
 	return nil
 }

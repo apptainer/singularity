@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -30,7 +30,7 @@ func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	src := `shub://` + b.Recipe.Header["from"]
 
-	//create file for image download
+	// create file for image download
 	f, err := ioutil.TempFile(cp.b.Path, "shub-img")
 	if err != nil {
 		return
@@ -39,14 +39,25 @@ func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	cp.b.FSObjects["shubImg"] = f.Name()
 
+	shubURIRef, err := shub.ShubParseReference(src)
+	if err != nil {
+		return fmt.Errorf("failed to parse shub uri: %s", err)
+	}
+
+	// Get the image manifest
+	manifest, err := shub.GetManifest(shubURIRef, cp.b.Opts.NoHTTPS)
+	if err != nil {
+		return fmt.Errorf("failed to get manifest for: %s: %s", src, err)
+	}
+
 	// get image from singularity hub
-	if err = shub.DownloadImage(cp.b.FSObjects["shubImg"], src, true, cp.b.Opts.NoHTTPS); err != nil {
-		sylog.Fatalf("failed to Get from %s: %v\n", src, err)
+	if err := shub.DownloadImage(manifest, cp.b.FSObjects["shubImg"], src, true, cp.b.Opts.NoHTTPS); err != nil {
+		return fmt.Errorf("unable to get image from: %s: %v", src, err)
 	}
 
 	// insert base metadata before unpacking fs
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	cp.LocalPacker, err = GetLocalPacker(cp.b.FSObjects["shubImg"], cp.b)

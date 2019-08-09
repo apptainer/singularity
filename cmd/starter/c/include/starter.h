@@ -21,9 +21,10 @@
 
 #define MAX_JSON_SIZE       128*1024
 #define MAX_MAP_SIZE        4096
-#define MAX_NS_PATH_SIZE    PATH_MAX
+#define MAX_PATH_SIZE       PATH_MAX
 #define MAX_GID             32
 #define MAX_STARTER_FDS     1024
+#define MAX_CMD_SIZE        MAX_PATH_SIZE+MAX_MAP_SIZE+64
 
 #ifndef PR_SET_NO_NEW_PRIVS
 #define PR_SET_NO_NEW_PRIVS 38
@@ -94,13 +95,13 @@ struct namespace {
     bool bringLoopbackInterface;
 
     /* namespaces inodes paths used to join namespaces */
-    char network[MAX_NS_PATH_SIZE];
-    char mount[MAX_NS_PATH_SIZE];
-    char user[MAX_NS_PATH_SIZE];
-    char ipc[MAX_NS_PATH_SIZE];
-    char uts[MAX_NS_PATH_SIZE];
-    char cgroup[MAX_NS_PATH_SIZE];
-    char pid[MAX_NS_PATH_SIZE];
+    char network[MAX_PATH_SIZE];
+    char mount[MAX_PATH_SIZE];
+    char user[MAX_PATH_SIZE];
+    char ipc[MAX_PATH_SIZE];
+    char uts[MAX_PATH_SIZE];
+    char cgroup[MAX_PATH_SIZE];
+    char pid[MAX_PATH_SIZE];
 };
 
 /* container privileges */
@@ -112,6 +113,10 @@ struct privileges {
     char uidMap[MAX_MAP_SIZE];
     char gidMap[MAX_MAP_SIZE];
     bool allowSetgroups;
+
+    /* path to external newuidmap/newgidmap binaries */
+    char newuidmapPath[MAX_PATH_SIZE];
+    char newgidmapPath[MAX_PATH_SIZE];
 
     /* uid/gids set for container process execution */
     uid_t targetUID;

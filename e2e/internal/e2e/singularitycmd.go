@@ -9,14 +9,17 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"syscall"
 	"testing"
 	"time"
 
 	expect "github.com/Netflix/go-expect"
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 )
 
@@ -32,25 +35,145 @@ type SingularityCmdResult struct {
 	FullCmd string
 }
 
-// ExpectOutput tests if the command output stream contains the
-// pattern string.
-func ExpectOutput(pattern string) SingularityCmdResultOp {
+// MatchType defines the type of match for ExpectOuput and ExpectError
+// functions
+type MatchType uint8
+
+const (
+	// ContainMatch is for contain match
+	ContainMatch MatchType = iota
+	// ExactMatch is for exact match
+	ExactMatch
+	// RegexMatch is for regular expression match
+	RegexMatch
+)
+
+func (m MatchType) String() string {
+	switch m {
+	case ContainMatch:
+		return "ContainMatch"
+	case ExactMatch:
+		return "ExactMatch"
+	case RegexMatch:
+		return "RegexMatch"
+	default:
+		return "unknown match"
+	}
+}
+
+// streamType defines a stream type
+type streamType uint8
+
+const (
+	// outputStream is the command output stream
+	outputStream streamType = iota
+	// errorStream is the command error stream
+	errorStream
+)
+
+func (r *SingularityCmdResult) expectMatch(mt MatchType, stream streamType, pattern string) error {
+	var output string
+	var streamName string
+
+	switch stream {
+	case outputStream:
+		output = string(r.Stdout)
+		streamName = "output"
+	case errorStream:
+		output = string(r.Stderr)
+		streamName = "error"
+	}
+
+	switch mt {
+	case ContainMatch:
+		if !strings.Contains(output, pattern) {
+			return errors.Errorf(
+				"Command %q:\nExpect %s stream contains:\n%s\nCommand %s stream:\n%s",
+				r.FullCmd, streamName, pattern, streamName, output,
+			)
+		}
+	case ExactMatch:
+		// get rid of the trailing newline
+		if strings.TrimSuffix(output, "\n") != pattern {
+			return errors.Errorf(
+				"Command %q:\nExpect %s stream exact match:\n%s\nCommand %s output:\n%s",
+				r.FullCmd, streamName, pattern, streamName, output,
+			)
+		}
+	case RegexMatch:
+		matched, err := regexp.MatchString(pattern, output)
+		if err != nil {
+			return errors.Errorf(
+				"compilation of regular expression %q failed: %s",
+				pattern, err,
+			)
+		}
+		if !matched {
+			return errors.Errorf(
+				"Command %q:\nExpect %s stream match regular expression:\n%s\nCommand %s output:\n%s",
+				r.FullCmd, streamName, pattern, streamName, output,
+			)
+		}
+	}
+
+	return nil
+}
+
+// ExpectOutput tests if the command output stream match the
+// pattern string based on the type of match.
+func ExpectOutput(mt MatchType, pattern string) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
-		stdout := string(r.Stdout)
-		if !strings.Contains(stdout, pattern) {
-			t.Errorf("unexpected output for %q, got %s instead of %s", r.FullCmd, stdout, pattern)
+		err := r.expectMatch(mt, outputStream, pattern)
+		err = errors.Wrapf(err, "matching %q of type %s in output stream", pattern, mt)
+		if err != nil {
+			t.Errorf("failed to match pattern: %+v", err)
 		}
 	}
 }
 
-// ExpectError tests if the command error stream contains the
-// pattern string.
-func ExpectError(pattern string) SingularityCmdResultOp {
+// ExpectOutputf tests if the command output stream match the
+// formatted string pattern based on the type of match.
+func ExpectOutputf(mt MatchType, formatPattern string, a ...interface{}) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
-		stderr := string(r.Stderr)
-		if !strings.Contains(stderr, pattern) {
-			t.Errorf("unexpected error for %q, got %s instead of %s", r.FullCmd, stderr, pattern)
+		pattern := fmt.Sprintf(formatPattern, a...)
+		err := r.expectMatch(mt, outputStream, pattern)
+		err = errors.Wrapf(err, "matching %q of type %s in output stream", pattern, mt)
+		if err != nil {
+			t.Errorf("failed to match pattern: %+v", err)
 		}
+	}
+}
+
+// ExpectError tests if the command error stream match the
+// pattern string based on the type of match.
+func ExpectError(mt MatchType, pattern string) SingularityCmdResultOp {
+	return func(t *testing.T, r *SingularityCmdResult) {
+		err := r.expectMatch(mt, errorStream, pattern)
+		err = errors.Wrapf(err, "matching %q of type %s in output stream", pattern, mt)
+		if err != nil {
+			t.Errorf("failed to match pattern: %+v", err)
+		}
+	}
+}
+
+// ExpectErrorf tests if the command error stream match the
+// pattern string based on the type of match.
+func ExpectErrorf(mt MatchType, formatPattern string, a ...interface{}) SingularityCmdResultOp {
+	return func(t *testing.T, r *SingularityCmdResult) {
+		pattern := fmt.Sprintf(formatPattern, a...)
+		err := r.expectMatch(mt, errorStream, pattern)
+		err = errors.Wrapf(err, "matching %q of type %s in output stream", pattern, mt)
+		if err != nil {
+			t.Errorf("failed to match pattern: %+v", err)
+		}
+	}
+}
+
+// GetStreams gets command stdout and stderr result.
+func GetStreams(stdout *string, stderr *string) SingularityCmdResultOp {
+	return func(t *testing.T, r *SingularityCmdResult) {
+		*stdout = string(r.Stdout)
+		*stderr = string(r.Stderr)
 	}
 }
 
@@ -63,9 +186,10 @@ type SingularityConsoleOp func(*testing.T, *expect.Console)
 func ConsoleExpectf(format string, args ...interface{}) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
 		if o, err := c.Expectf(format, args...); err != nil {
+			err = errors.Wrap(err, "checking console output")
 			expected := fmt.Sprintf(format, args...)
 			t.Logf("\nConsole output: %s\nExpected output: %s", o, expected)
-			t.Errorf("error while reading from the console: %s", err)
+			t.Errorf("error while reading from the console: %+v", err)
 		}
 	}
 }
@@ -75,8 +199,9 @@ func ConsoleExpectf(format string, args ...interface{}) SingularityConsoleOp {
 func ConsoleExpect(s string) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
 		if o, err := c.ExpectString(s); err != nil {
+			err = errors.Wrap(err, "checking console output")
 			t.Logf("\nConsole output: %s\nExpected output: %s", o, s)
-			t.Errorf("error while reading from the console: %s", err)
+			t.Errorf("error while reading from the console: %+v", err)
 		}
 	}
 }
@@ -85,7 +210,8 @@ func ConsoleExpect(s string) SingularityConsoleOp {
 func ConsoleSend(s string) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
 		if _, err := c.Send(s); err != nil {
-			t.Errorf("error while writing string to the console: %s", err)
+			err = errors.Wrapf(err, "sending %q to console", s)
+			t.Errorf("error while writing string to the console: %+v", err)
 		}
 	}
 }
@@ -94,7 +220,8 @@ func ConsoleSend(s string) SingularityConsoleOp {
 func ConsoleSendLine(s string) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
 		if _, err := c.SendLine(s); err != nil {
-			t.Errorf("error while writing string to the console: %s", err)
+			err = errors.Wrapf(err, "sending line %q to console", s)
+			t.Errorf("error while writing string to the console: %+v", err)
 		}
 	}
 }
@@ -105,20 +232,29 @@ type SingularityCmdOp func(*singularityCmd)
 
 // singularityCmd defines a Singularity command execution test.
 type singularityCmd struct {
-	args       []string
-	envs       []string
-	dir        string
-	privileged bool
-	subTest    bool
-	stdin      io.Reader
-	preFn      func(*testing.T)
-	postFn     func(*testing.T)
-	consoleFn  SingularityCmdOp
-	console    *expect.Console
-	resultFn   SingularityCmdOp
-	result     *SingularityCmdResult
-	waitErr    error
-	t          *testing.T
+	args        []string
+	envs        []string
+	dir         string // Working directory to be used when executing the command
+	cacheDir    string // Directory to use as image cache directory when executing the command
+	sypgpDir    string // Directory to use for the creation of a temporary PGP keyring
+	privileged  bool
+	subtestName string
+	stdin       io.Reader
+	preFn       func(*testing.T)
+	postFn      func(*testing.T)
+	consoleFn   SingularityCmdOp
+	console     *expect.Console
+	resultFn    SingularityCmdOp
+	result      *SingularityCmdResult
+	waitErr     error
+	t           *testing.T
+}
+
+// AsSubtest requests the command to be run as a subtest
+func AsSubtest(name string) SingularityCmdOp {
+	return func(s *singularityCmd) {
+		s.subtestName = name
+	}
 }
 
 // WithCommand sets the singularity command to execute.
@@ -171,14 +307,6 @@ func WithPrivileges(privileged bool) SingularityCmdOp {
 func WithStdin(r io.Reader) SingularityCmdOp {
 	return func(s *singularityCmd) {
 		s.stdin = r
-	}
-}
-
-// WithoutSubTest marks singularity command as not being
-// part of a subtest. May be useful for e2e helpers.
-func WithoutSubTest() SingularityCmdOp {
-	return func(s *singularityCmd) {
-		s.subTest = false
 	}
 }
 
@@ -237,28 +365,28 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 			return
 		}
 
-		err := s.waitErr
-		switch x := err.(type) {
+		cause := errors.Cause(s.waitErr)
+		switch x := cause.(type) {
 		case *exec.ExitError:
 			if status, ok := x.Sys().(syscall.WaitStatus); ok {
 				if code != status.ExitStatus() {
 					t.Logf("\n%q output:\n%s%s\n", r.FullCmd, string(r.Stderr), string(r.Stdout))
-					t.Errorf("got %d as exit code and was expecting %d)", status.ExitStatus(), code)
+					t.Errorf("got %d as exit code and was expecting %d: %+v", status.ExitStatus(), code, s.waitErr)
 					return
 				}
 			}
 		default:
-			if err != nil {
-				t.Errorf("command execution of %q failed: %s", r.FullCmd, err)
+			if s.waitErr != nil {
+				t.Errorf("command execution of %q failed: %+v", r.FullCmd, s.waitErr)
 				return
 			}
 		}
 
-		if code == 0 && err != nil {
+		if code == 0 && s.waitErr != nil {
 			t.Logf("\n%q output:\n%s%s\n", r.FullCmd, string(r.Stderr), string(r.Stdout))
 			t.Errorf("unexpected failure while executing %q", r.FullCmd)
 			return
-		} else if code != 0 && err == nil {
+		} else if code != 0 && s.waitErr == nil {
 			t.Logf("\n%q output:\n%s%s\n", r.FullCmd, string(r.Stderr), string(r.Stdout))
 			t.Errorf("unexpected success while executing %q", r.FullCmd)
 			return
@@ -270,16 +398,15 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 	}
 }
 
-// RunSingularity executes a singularity command within an test execution
+// RunSingularity executes a singularity command within a test execution
 // context.
-func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
-	if name == "" {
-		t.Errorf("you must provide a test name")
-		return
-	}
-
+//
+// cmdPath specifies the path to the singularity binary and cmdOps
+// provides a list of operations to be executed before or after running
+// the command.
+func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
+	cmdPath := env.CmdPath
 	s := new(singularityCmd)
-	s.subTest = true
 
 	for _, op := range cmdOps {
 		op(s)
@@ -291,7 +418,7 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 
 	fn := func(t *testing.T) {
 		s.result = new(SingularityCmdResult)
-		s.result.FullCmd = fmt.Sprintf("singularity %s", strings.Join(s.args, " "))
+		s.result.FullCmd = fmt.Sprintf("%s %s", cmdPath, strings.Join(s.args, " "))
 
 		var (
 			stdout bytes.Buffer
@@ -300,16 +427,65 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 
 		s.t = t
 
-		cmd := exec.Command("singularity", s.args...)
+		cmd := exec.Command(cmdPath, s.args...)
 
 		cmd.Env = s.envs
 		if len(cmd.Env) == 0 {
 			cmd.Env = os.Environ()
 		}
-		if s.privileged {
-			cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, cacheDirPriv)
-			cmd.Env = append(cmd.Env, cacheDirEnv)
+
+		// Each command gets by default a clean temporary image cache.
+		// If it is needed to share an image cache between tests, or to manually
+		// set the directory to be used, one shall set the ImgCacheDir of the test
+		// environment. Doing so will overwrite the default creation of an image cache
+		// for the command to be executed.In that context, it is the developer's
+		// responsibility to ensure that the directory is correctly deleted upon successful
+		// or unsuccessful completion of the test.
+		if env.ImgCacheDir != "" {
+			s.cacheDir = env.ImgCacheDir
 		}
+
+		if s.cacheDir == "" {
+			// cleanCache is a function that will delete the image cache
+			// and fail the test if it cannot be deleted.
+			imgCacheDir, cleanCache := MakeCacheDir(t, "")
+			s.cacheDir = imgCacheDir
+			defer func() {
+				// Tests may switch back and forth between privileged
+				// and unprivileged mode so if this specific test is
+				// privileged, we ensure that we delete the image cache
+				// with privileged rights.
+				if s.privileged {
+					cleanCache = Privileged(cleanCache)
+				}
+				cleanCache(t)
+			}()
+		}
+		cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, s.cacheDir)
+		cmd.Env = append(cmd.Env, cacheDirEnv)
+
+		// Each command gets by default a clean temporary PGP keyring.
+		// If it is needed to share a keyring between tests, one shall
+		// update the test configuration and set s.sypgpDir and make
+		// sure the directory is properly deleted once the test completed.
+		if s.sypgpDir == "" {
+			// cleanKeyring is a function that will delete the temporary
+			// PGP keyring and fail the test if it cannot be deleted.
+			keyringDir, cleanSyPGPDir := MakeSyPGPDir(t, "")
+			s.sypgpDir = keyringDir
+			defer func() {
+				// Tests may switch back and forth between privileged and
+				// unprivileged mode so if this specific test is
+				// privileged, we ensure that we delete the temporary
+				// keyring with privileged rights.
+				if s.privileged {
+					cleanSyPGPDir = Privileged(cleanSyPGPDir)
+				}
+				cleanSyPGPDir(t)
+			}()
+		}
+		sypgpDirEnv := fmt.Sprintf("%s=%s", "SINGULARITY_SYPGPDIR", s.sypgpDir)
+		cmd.Env = append(cmd.Env, sypgpDirEnv)
 
 		cmd.Dir = s.dir
 		cmd.Stdin = s.stdin
@@ -319,12 +495,14 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 		if s.consoleFn != nil {
 			var err error
 
-			s.console, err = expect.NewConsole(
+			s.console, err = expect.NewTestConsole(
+				t,
 				expect.WithStdout(cmd.Stdout),
 				expect.WithDefaultTimeout(1*time.Second),
 			)
+			err = errors.Wrap(err, "creating expect console")
 			if err != nil {
-				t.Errorf("console initialization failed: %s", err)
+				t.Errorf("console initialization failed: %+v", err)
 				return
 			}
 			defer s.console.Close()
@@ -352,9 +530,14 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 			defer s.postFn(t)
 		}
 
+		if os.Getenv("SINGULARITY_E2E_COVERAGE") != "" {
+			log.Printf("COVERAGE: %q", s.result.FullCmd)
+		}
 		t.Logf("Running command %q", s.result.FullCmd)
+
 		if err := cmd.Start(); err != nil {
-			t.Errorf("command execution of %q failed: %s", s.result.FullCmd, err)
+			err = errors.Wrapf(err, "running command %q", s.result.FullCmd)
+			t.Errorf("command execution of %q failed: %+v", s.result.FullCmd, err)
 			return
 		}
 
@@ -366,7 +549,7 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 			}
 		}
 
-		s.waitErr = cmd.Wait()
+		s.waitErr = errors.Wrapf(cmd.Wait(), "waiting for command %q", s.result.FullCmd)
 		s.result.Stdout = stdout.Bytes()
 		s.result.Stderr = stderr.Bytes()
 		s.resultFn(s)
@@ -375,8 +558,9 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 	if s.privileged {
 		fn = Privileged(fn)
 	}
-	if s.subTest {
-		t.Run(name, fn)
+
+	if s.subtestName != "" {
+		t.Run(s.subtestName, fn)
 	} else {
 		fn(t)
 	}

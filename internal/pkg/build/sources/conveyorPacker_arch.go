@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -77,12 +77,12 @@ func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	instList, err := getPacmanBaseList()
 	if err != nil {
-		return fmt.Errorf("While generating the installation list: %v", err)
+		return fmt.Errorf("while generating the installation list: %v", err)
 	}
 
 	pacConf, err := cp.getPacConf(pacmanConfURL)
 	if err != nil {
-		return fmt.Errorf("While getting pacman config: %v", err)
+		return fmt.Errorf("while getting pacman config: %v", err)
 	}
 
 	args := []string{"-C", pacConf, "-c", "-d", "-G", "-M", cp.b.Rootfs(), "haveged"}
@@ -94,7 +94,7 @@ func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("\n\tPacstrap Path: %s\n\tPac Conf: %s\n\tRootfs: %s\n\tInstall List: %s\n", pacstrapPath, pacConf, cp.b.Rootfs(), instList)
 
 	if err = pacCmd.Run(); err != nil {
-		return fmt.Errorf("While pacstrapping: %v", err)
+		return fmt.Errorf("while pacstrapping: %v", err)
 	}
 
 	//Pacman package signing setup
@@ -102,7 +102,7 @@ func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("While setting up package signing: %v", err)
+		return fmt.Errorf("while setting up package signing: %v", err)
 	}
 
 	//Clean up haveged
@@ -110,7 +110,7 @@ func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("While cleaning up packages: %v", err)
+		return fmt.Errorf("while cleaning up packages: %v", err)
 	}
 
 	return nil
@@ -120,12 +120,12 @@ func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
 func (cp *ArchConveyorPacker) Pack() (b *types.Bundle, err error) {
 	err = cp.insertBaseEnv()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting base environment: %v", err)
+		return nil, fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	err = cp.insertRunScript()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting runscript: %v", err)
+		return nil, fmt.Errorf("while inserting runscript: %v", err)
 	}
 
 	return cp.b, nil
@@ -161,7 +161,7 @@ func (cp *ArchConveyorPacker) getPacConf(pacmanConfURL string) (pacConf string, 
 
 	resp, err := http.Get(pacmanConfURL)
 	if err != nil {
-		return "", fmt.Errorf("While performing http request: %v", err)
+		return "", fmt.Errorf("while performing http request: %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -172,7 +172,7 @@ func (cp *ArchConveyorPacker) getPacConf(pacmanConfURL string) (pacConf string, 
 
 	//Simple check to make sure file received is the correct size
 	if bytesWritten != resp.ContentLength {
-		return "", fmt.Errorf("File received is not the right size. Supposed to be: %v  Actually: %v", resp.ContentLength, bytesWritten)
+		return "", fmt.Errorf("file received is not the right size. supposed to be: %v actually: %v", resp.ContentLength, bytesWritten)
 	}
 
 	return pacConfFile.Name(), nil

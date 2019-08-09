@@ -10,28 +10,31 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
-	"strings"
 	"syscall"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	"github.com/sylabs/singularity/pkg/image/packer"
+	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
 // SIFAssembler doesnt store anything
 type SIFAssembler struct {
+	GzipFlag       bool
+	MksquashfsPath string
 }
 
-func createSIF(path string, definition, ociConf []byte, squashfile string) (err error) {
+type encryptionOptions struct {
+	keyURI    string
+	plaintext []byte
+}
+
+func createSIF(path string, definition, ociConf []byte, squashfile string, encOpts *encryptionOptions) (err error) {
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -90,13 +93,40 @@ func createSIF(path string, definition, ociConf []byte, squashfile string) (err 
 	parinput.Fp = fp
 	parinput.Size = fi.Size()
 
-	err = parinput.SetPartExtra(sif.FsSquash, sif.PartPrimSys, sif.GetSIFArch(runtime.GOARCH))
+	sifType := sif.FsSquash
+
+	if encOpts != nil {
+		sifType = sif.FsEncryptedSquashfs
+	}
+
+	err = parinput.SetPartExtra(sifType, sif.PartPrimSys, sif.GetSIFArch(runtime.GOARCH))
 	if err != nil {
 		return
 	}
 
 	// add this descriptor input element to the list
 	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
+
+	if encOpts != nil {
+		data, err := crypt.EncryptKey(encOpts.keyURI, encOpts.plaintext)
+		if err != nil {
+			return fmt.Errorf("while encrypting filesystem key: %s", err)
+		}
+
+		if data != nil {
+			// TODO(mem): replace sif.DataGeneric with
+			// something specific to encryption keys
+			syspartID := uint32(len(cinfo.InputDescr))
+			part := sif.DescriptorInput{
+				Datatype: sif.DataGeneric,
+				Groupid:  sif.DescrDefaultGroup,
+				Link:     syspartID,
+				Data:     data,
+				Size:     int64(len(data)),
+			}
+			cinfo.InputDescr = append(cinfo.InputDescr, part)
+		}
+	}
 
 	// remove anything that may exist at the build destination at last moment
 	os.RemoveAll(path)
@@ -116,73 +146,71 @@ func createSIF(path string, definition, ociConf []byte, squashfile string) (err 
 	return nil
 }
 
-func getMksquashfsPath() (string, error) {
-	// Parse singularity configuration file
-	c := &singularityConfig.FileConfig{}
-	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
-		return "", fmt.Errorf("Unable to parse singularity.conf file: %s", err)
-	}
-
-	// p is either "" or the string value in the conf file
-	p := c.MksquashfsPath
-
-	// If the path contains the binary name use it as is, otherwise add mksquashfs via filepath.Join
-	if !strings.HasSuffix(c.MksquashfsPath, "mksquashfs") {
-		p = filepath.Join(c.MksquashfsPath, "mksquashfs")
-	}
-
-	// exec.LookPath functions on absolute paths (ignoring $PATH) as well
-	return exec.LookPath(p)
-}
-
 // Assemble creates a SIF image from a Bundle
-func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
+func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	sylog.Infof("Creating SIF file...")
 
-	mksquashfs, err := getMksquashfsPath()
-	if err != nil {
-		return fmt.Errorf("While searching for mksquashfs: %v", err)
-	}
+	s := packer.NewSquashfs()
+	s.MksquashfsPath = a.MksquashfsPath
 
 	f, err := ioutil.TempFile(b.Path, "squashfs-")
-	squashfsPath := f.Name() + ".img"
+	if err != nil {
+		return fmt.Errorf("while creating temporary file for squashfs: %v", err)
+	}
+
+	fsPath := f.Name()
 	f.Close()
-	os.Remove(f.Name())
-	os.Remove(squashfsPath)
-	defer os.Remove(squashfsPath)
+	defer os.Remove(fsPath)
 
-	args := []string{b.Rootfs(), squashfsPath, "-noappend"}
-
+	flags := []string{"-noappend"}
 	// build squashfs with all-root flag when building as a user
 	if syscall.Getuid() != 0 {
-		args = append(args, "-all-root")
+		flags = append(flags, "-all-root")
+	}
+	// specify compression if needed
+	if a.GzipFlag {
+		flags = append(flags, "-comp", "gzip")
 	}
 
-	mksquashfsCmd := exec.Command(mksquashfs, args...)
-	stderr, err := mksquashfsCmd.StderrPipe()
+	if err := s.Create([]string{b.Rootfs()}, fsPath, flags); err != nil {
+		return fmt.Errorf("while creating squashfs: %v", err)
+	}
+
+	var encOpts *encryptionOptions
+
+	if b.Opts.EncryptionKey != "" {
+		plaintext, err := crypt.NewPlaintextKey(b.Opts.EncryptionKey)
+		if err != nil {
+			return fmt.Errorf("unable to obtain encryption key: %+v", err)
+		}
+
+		// A dm-crypt device needs to be created with squashfs
+		cryptDev := &crypt.Device{}
+
+		// TODO (schebro): Fix #3876
+		// Detach the following code from the squashfs creation. SIF can be
+		// created first and encrypted after. This gives the flexibility to
+		// encrypt an existing SIF
+		loopPath, err := cryptDev.EncryptFilesystem(fsPath, plaintext)
+		if err != nil {
+			return fmt.Errorf("unable to encrypt filesystem at %s: %+v", fsPath, err)
+		}
+
+		fsPath = loopPath
+
+		encOpts = &encryptionOptions{
+			keyURI:    b.Opts.EncryptionKey,
+			plaintext: plaintext,
+		}
+
+	}
+
+	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, encOpts)
 	if err != nil {
-		return fmt.Errorf("While setting up stderr pipe: %v", err)
+		return fmt.Errorf("while creating SIF: %v", err)
 	}
 
-	if err := mksquashfsCmd.Start(); err != nil {
-		return fmt.Errorf("While starting mksquashfs: %v", err)
-	}
-
-	errOut, err := ioutil.ReadAll(stderr)
-	if err != nil {
-		return fmt.Errorf("While reading mksquashfs stderr: %v", err)
-	}
-
-	if err := mksquashfsCmd.Wait(); err != nil {
-		return fmt.Errorf("While running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
-	}
-
-	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], squashfsPath)
-	if err != nil {
-		return fmt.Errorf("While creating SIF: %v", err)
-	}
-
-	return
+	return nil
 }
 
 // changeOwner check the command being called with sudo with the environment

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -66,7 +66,7 @@ func PutConfig(ecl EclConfig, confPath string) (err error) {
 
 // ValidateConfig makes sure paths from configs are fully resolved and that
 // values from an execgroup are logically correct.
-func (ecl *EclConfig) ValidateConfig() (err error) {
+func (ecl *EclConfig) ValidateConfig() error {
 	m := map[string]bool{}
 
 	for _, v := range ecl.ExecGroups {
@@ -99,7 +99,8 @@ func (ecl *EclConfig) ValidateConfig() (err error) {
 			}
 		}
 	}
-	return
+
+	return nil
 }
 
 // checkWhiteList evaluates authorization by requiring at least 1 entity
@@ -203,7 +204,7 @@ func shouldRun(ecl *EclConfig, fp *os.File) (ok bool, err error) {
 		return checkBlackList(fp, egroup)
 	}
 
-	return false, fmt.Errorf("ECL config file invalid")
+	return false, fmt.Errorf("ecl config file invalid")
 }
 
 // ShouldRun determines if a container should run according to its execgroup rules

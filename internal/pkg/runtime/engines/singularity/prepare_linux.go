@@ -21,7 +21,7 @@ import (
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/fakeroot"
+	fakerootutil "github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
@@ -30,6 +30,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/syecl"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/image"
@@ -49,9 +50,9 @@ var nsProcName = map[specs.LinuxNamespaceType]string{
 
 // prepareUserCaps is responsible for checking that user's requested
 // capabilities are authorized
-func (e *EngineOperations) prepareUserCaps() error {
-	uid := os.Getuid()
+func (e *EngineOperations) prepareUserCaps(enforced bool) error {
 	commonCaps := make([]string, 0)
+	commonUnauthorizedCaps := make([]string, 0)
 
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 
@@ -66,7 +67,7 @@ func (e *EngineOperations) prepareUserCaps() error {
 		return fmt.Errorf("while parsing capability config data: %s", err)
 	}
 
-	pw, err := user.GetPwUID(uint32(uid))
+	pw, err := user.Current()
 	if err != nil {
 		return err
 	}
@@ -77,34 +78,56 @@ func (e *EngineOperations) prepareUserCaps() error {
 	}
 	caps = append(caps, e.EngineConfig.OciConfig.Process.Capabilities.Permitted...)
 
-	authorizedCaps, unauthorizedCaps := capConfig.CheckUserCaps(pw.Name, caps)
-	if len(unauthorizedCaps) > 0 {
-		sylog.Warningf("not authorized to add capability: %s", strings.Join(unauthorizedCaps, ","))
-	}
-	if len(authorizedCaps) > 0 {
-		sylog.Debugf("User capabilities %s added", strings.Join(authorizedCaps, ","))
-		commonCaps = authorizedCaps
-	}
-
-	groups, err := os.Getgroups()
-	if err != nil {
-		return err
-	}
-
-	for _, g := range groups {
-		gr, err := user.GetGrGID(uint32(g))
-		if err != nil {
-			sylog.Debugf("Ignoring group %d: %s", g, err)
-			continue
-		}
-		authorizedCaps, _ := capConfig.CheckGroupCaps(gr.Name, caps)
+	if enforced {
+		authorizedCaps, unauthorizedCaps := capConfig.CheckUserCaps(pw.Name, caps)
 		if len(authorizedCaps) > 0 {
-			sylog.Debugf("%s group capabilities %s added", gr.Name, strings.Join(authorizedCaps, ","))
-			commonCaps = append(commonCaps, authorizedCaps...)
+			sylog.Debugf("User capabilities %s added", strings.Join(authorizedCaps, ","))
+			commonCaps = authorizedCaps
 		}
+		if len(unauthorizedCaps) > 0 {
+			commonUnauthorizedCaps = append(commonUnauthorizedCaps, unauthorizedCaps...)
+		}
+
+		groups, err := os.Getgroups()
+		if err != nil {
+			return err
+		}
+
+		for _, g := range groups {
+			gr, err := user.GetGrGID(uint32(g))
+			if err != nil {
+				sylog.Debugf("Ignoring group %d: %s", g, err)
+				continue
+			}
+			authorizedCaps, unauthorizedCaps := capConfig.CheckGroupCaps(gr.Name, caps)
+			if len(authorizedCaps) > 0 {
+				sylog.Debugf("%s group capabilities %s added", gr.Name, strings.Join(authorizedCaps, ","))
+				commonCaps = append(commonCaps, authorizedCaps...)
+			}
+			if len(unauthorizedCaps) > 0 {
+				commonUnauthorizedCaps = append(commonUnauthorizedCaps, unauthorizedCaps...)
+			}
+		}
+	} else {
+		commonCaps = caps
 	}
 
 	commonCaps = capabilities.RemoveDuplicated(commonCaps)
+	commonUnauthorizedCaps = capabilities.RemoveDuplicated(commonUnauthorizedCaps)
+
+	// remove authorized capabilities from unauthorized capabilities list
+	// to end with the really unauthorized capabilities
+	for _, c := range commonCaps {
+		for i := len(commonUnauthorizedCaps) - 1; i >= 0; i-- {
+			if commonUnauthorizedCaps[i] == c {
+				commonUnauthorizedCaps = append(commonUnauthorizedCaps[:i], commonUnauthorizedCaps[i+1:]...)
+				break
+			}
+		}
+	}
+	if len(commonUnauthorizedCaps) > 0 {
+		sylog.Warningf("not authorized to add capability: %s", strings.Join(commonUnauthorizedCaps, ","))
+	}
 
 	caps, ignoredCaps = capabilities.Split(e.EngineConfig.GetDropCaps())
 	if len(ignoredCaps) > 0 {
@@ -324,7 +347,8 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 			return err
 		}
 	} else {
-		if err := e.prepareUserCaps(); err != nil {
+		enforced := starterConfig.GetIsSUID()
+		if err := e.prepareUserCaps(enforced); err != nil {
 			return err
 		}
 	}
@@ -336,24 +360,41 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	}
 
 	if e.EngineConfig.GetFakeroot() {
-		baseID := e.EngineConfig.File.FakerootBaseID
-		allowedUsers := e.EngineConfig.File.FakerootAllowedUsers
-		idRange, err := fakeroot.GetIDRange(baseID, allowedUsers)
-		if err != nil {
-			return err
+		if !starterConfig.GetIsSUID() {
+			// no SUID workflow, check if newuidmap/newgidmap are present
+			sylog.Verbosef("Fakeroot requested with unprivileged workflow, fallback to newuidmap/newgidmap")
+			sylog.Debugf("Search for newuidmap binary")
+			if err := starterConfig.SetNewUIDMapPath(); err != nil {
+				return err
+			}
+			sylog.Debugf("Search for newgidmap binary")
+			if err := starterConfig.SetNewGIDMapPath(); err != nil {
+				return err
+			}
 		}
+
+		uid := uint32(os.Getuid())
+		gid := uint32(os.Getgid())
+
+		e.EngineConfig.OciConfig.AddLinuxUIDMapping(uid, 0, 1)
+		idRange, err := fakerootutil.GetIDRange(fakerootutil.SubUIDFile, uid)
+		if err != nil {
+			return fmt.Errorf("could not use fakeroot: %s", err)
+		}
+		e.EngineConfig.OciConfig.AddLinuxUIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
+		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
+
+		e.EngineConfig.OciConfig.AddLinuxGIDMapping(gid, 0, 1)
+		idRange, err = fakerootutil.GetIDRange(fakerootutil.SubGIDFile, uid)
+		if err != nil {
+			return fmt.Errorf("could not use fakeroot: %s", err)
+		}
+		e.EngineConfig.OciConfig.AddLinuxGIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
+		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
 
 		e.EngineConfig.OciConfig.SetupPrivileged(true)
 
 		e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, "")
-
-		e.EngineConfig.OciConfig.AddLinuxUIDMapping(uint32(os.Getuid()), 0, 1)
-		e.EngineConfig.OciConfig.AddLinuxUIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
-		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
-
-		e.EngineConfig.OciConfig.AddLinuxGIDMapping(uint32(os.Getgid()), 0, 1)
-		e.EngineConfig.OciConfig.AddLinuxGIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
-		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
 
 		starterConfig.SetHybridWorkflow(true)
 		starterConfig.SetAllowSetgroups(true)
@@ -420,7 +461,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	// 2. a user must use SUID workflow to join an instance
 	//    started without user namespace
 	if starterConfig.GetIsSUID() && !suidRequired {
-		return fmt.Errorf("joining user namespace with SUID workflow is not allowed")
+		return fmt.Errorf("joining user namespace with suid workflow is not allowed")
 	} else if !starterConfig.GetIsSUID() && suidRequired {
 		return fmt.Errorf("a setuid installation is required to join this instance")
 	}
@@ -556,22 +597,19 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		}
 	}
 
-	// get starter binary in use
-	dest, err := mainthread.Readlink("/proc/self/exe")
+	path, err = filepath.Abs("comm")
 	if err != nil {
-		return fmt.Errorf("failed to read /proc/self/exe link: %s", err)
+		return fmt.Errorf("failed to determine absolute path for comm: %s", err)
 	}
-	// should be either starter-suid or starter
-	exe := filepath.Base(dest)
-	path = filepath.Join("..", strconv.Itoa(file.PPid), "comm")
-	b, err := ioutil.ReadFile(path)
+
+	// we must read "sinit\n"
+	b, err := ioutil.ReadFile("comm")
 	if err != nil {
 		return fmt.Errorf("failed to read %s: %s", path, err)
 	}
-	// check that the right starter binary is used according
-	// to namespace configuration and joined instance
-	if exe != strings.Trim(string(b), "\n") {
-		return fmt.Errorf("%s not found in %s, wrong instance process", exe, path)
+	// check that we are currently joining sinit process
+	if "sinit" != strings.Trim(string(b), "\n") {
+		return fmt.Errorf("sinit not found in %s, wrong instance process", path)
 	}
 
 	// tell starter that we are joining an instance
@@ -613,10 +651,20 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 			return err
 		}
 	} else {
-		if err := e.prepareUserCaps(); err != nil {
+		if err := e.prepareUserCaps(suidRequired); err != nil {
 			return err
 		}
 	}
+
+	// set UID/GID for the fakeroot context
+	if instanceEngineConfig.GetFakeroot() {
+		starterConfig.SetTargetUID(0)
+		starterConfig.SetTargetGID([]int{0})
+	}
+
+	// restore HOME environment variable to match the
+	// one set during instance start
+	e.EngineConfig.OciConfig.AddProcessEnv("HOME", instanceEngineConfig.GetHomeDest())
 
 	// restore apparmor profile or apply a new one if provided
 	param := security.GetParam(e.EngineConfig.GetSecurity(), "apparmor")
@@ -673,13 +721,13 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("bad engine configuration provided")
 	}
 
-	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
+	configurationFile := files.GetSysConfigFile()
 	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
 		return fmt.Errorf("Unable to parse singularity.conf file: %s", err)
 	}
 
 	if !e.EngineConfig.File.AllowSetuid && starterConfig.GetIsSUID() {
-		return fmt.Errorf("SUID workflow disabled by administrator")
+		return fmt.Errorf("suid workflow disabled by administrator")
 	}
 
 	if starterConfig.GetIsSUID() {
@@ -751,6 +799,42 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 
 	// determine if engine need to propagate signals across processes
 	e.checkSignalPropagation()
+
+	// We must call this here because at this point we haven't
+	// spawned the master process nor the RPC server. The assumption
+	// is that this function runs in stage 1 and that even if it's a
+	// separate process, it's created in such a way that it's
+	// sharing its file descriptor table with the wrapper / stage 2.
+	//
+	// At this point we do not have elevated privileges. We assume
+	// that the user running singularity has access to /dev/fuse
+	// (typically it's 0666, or 0660 belonging to a group that
+	// allows the user to read and write to it).
+	if err := openDevFuse(e, starterConfig); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// openDevFuse is a helper function that opens /dev/fuse once for each
+// plugin that wants to mount a FUSE filesystem.
+func openDevFuse(e *EngineOperations, starterConfig *starter.Config) error {
+	for _, name := range e.EngineConfig.GetPluginFuseMounts() {
+		fd, err := syscall.Open("/dev/fuse", syscall.O_RDWR, 0)
+		if err != nil {
+			sylog.Debugf("Calling open: %+v\n", err)
+			return err
+		}
+
+		err = e.EngineConfig.SetPluginFuseFd(name, fd)
+		if err != nil {
+			sylog.Debugf("Unable to setup plugin %s fd: %+v\n", name, err)
+			return err
+		}
+
+		starterConfig.KeepFileDescriptor(fd)
+	}
 
 	return nil
 }
@@ -881,21 +965,21 @@ func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, 
 		if authorized, err := imgObject.AuthorizedPath(e.EngineConfig.File.LimitContainerPaths); err != nil {
 			return nil, err
 		} else if !authorized {
-			return nil, fmt.Errorf("Singularity image is not in an allowed configured path")
+			return nil, fmt.Errorf("singularity image is not in an allowed configured path")
 		}
 	}
 	if len(e.EngineConfig.File.LimitContainerGroups) != 0 {
 		if authorized, err := imgObject.AuthorizedGroup(e.EngineConfig.File.LimitContainerGroups); err != nil {
 			return nil, err
 		} else if !authorized {
-			return nil, fmt.Errorf("Singularity image is not owned by required group(s)")
+			return nil, fmt.Errorf("singularity image is not owned by required group(s)")
 		}
 	}
 	if len(e.EngineConfig.File.LimitContainerOwners) != 0 {
 		if authorized, err := imgObject.AuthorizedOwner(e.EngineConfig.File.LimitContainerOwners); err != nil {
 			return nil, err
 		} else if !authorized {
-			return nil, fmt.Errorf("Singularity image is not owned by required user(s)")
+			return nil, fmt.Errorf("singularity image is not owned by required user(s)")
 		}
 	}
 

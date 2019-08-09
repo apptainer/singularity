@@ -6,7 +6,6 @@
 package singularity
 
 import (
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 	"github.com/sylabs/singularity/pkg/image"
 )
 
@@ -36,7 +35,6 @@ type FileConfig struct {
 	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
 	SessiondirMaxSize       uint     `default:"16" directive:"sessiondir max size"`
-	FakerootBaseID          uint64   `default:"4227858432" directive:"fakeroot base id"`
 	MountDev                string   `default:"yes" authorized:"yes,no,minimal" directive:"mount dev"`
 	EnableOverlay           string   `default:"try" authorized:"yes,no,try" directive:"enable overlay"`
 	BindPath                []string `default:"/etc/localtime,/etc/hosts" directive:"bind path"`
@@ -44,12 +42,12 @@ type FileConfig struct {
 	LimitContainerGroups    []string `directive:"limit container groups"`
 	LimitContainerPaths     []string `directive:"limit container paths"`
 	AutofsBugPath           []string `directive:"autofs bug path"`
-	FakerootAllowedUsers    []string `directive:"fakeroot allowed users"`
 	RootDefaultCapabilities string   `default:"full" authorized:"full,file,no" directive:"root default capabilities"`
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 	CniConfPath             string   `directive:"cni configuration path"`
 	CniPluginPath           string   `directive:"cni plugin path"`
 	MksquashfsPath          string   `directive:"mksquashfs path"`
+	CryptsetupPath          string   `directive:"cryptsetup path"`
 }
 
 // JSONConfig stores engine specific confguration that is allowed to be set by the user
@@ -77,6 +75,7 @@ type JSONConfig struct {
 	Network           string        `json:"network,omitempty"`
 	DNS               string        `json:"dns,omitempty"`
 	Cwd               string        `json:"cwd,omitempty"`
+	EncryptionKey     []byte        `json:"encryptionKey,omitempty"`
 	TargetUID         int           `json:"targetUID,omitempty"`
 	WritableImage     bool          `json:"writableImage,omitempty"`
 	WritableTmpfs     bool          `json:"writableTmpfs,omitempty"`
@@ -97,17 +96,6 @@ type JSONConfig struct {
 	SignalPropagation bool          `json:"signalPropagation,omitempty"`
 }
 
-// NewConfig returns singularity.EngineConfig with a parsed FileConfig
-func NewConfig() *EngineConfig {
-	ret := &EngineConfig{
-		JSON:      &JSONConfig{},
-		OciConfig: &oci.Config{},
-		File:      &FileConfig{},
-	}
-
-	return ret
-}
-
 // SetImage sets the container image path to be used by EngineConfig.JSON.
 func (e *EngineConfig) SetImage(name string) {
 	e.JSON.Image = name
@@ -116,6 +104,16 @@ func (e *EngineConfig) SetImage(name string) {
 // GetImage retrieves the container image path.
 func (e *EngineConfig) GetImage() string {
 	return e.JSON.Image
+}
+
+// SetKey sets the key for the image's system partition
+func (e *EngineConfig) SetEncryptionKey(key []byte) {
+	e.JSON.EncryptionKey = key
+}
+
+// GetKey retrieves the key for image's system partition
+func (e *EngineConfig) GetEncryptionKey() []byte {
+	return e.JSON.EncryptionKey
 }
 
 // SetWritableImage defines the container image as writable or not.

@@ -5,16 +5,16 @@
 
 package e2e
 
-import (
-	"testing"
-
-	"github.com/kelseyhightower/envconfig"
-)
-
-// LoadEnv loads environment variables prefixed with
-// E2E into env structure.
-func LoadEnv(t *testing.T, env interface{}) {
-	if err := envconfig.Process("E2E", env); err != nil {
-		t.Fatalf("Failed to load environment: %+v\n", err)
-	}
+// TestEnv stores all the information under the control of e2e test developers,
+// from specifying which Singularity binary to use to controlling how Singularity
+// environment variables will be set.
+type TestEnv struct {
+	RunDisabled   bool
+	CmdPath       string // Path to the Singularity binary to use for the execution of a Singularity command
+	ImagePath     string // Path to the image that has to be used for the execution of a Singularity command
+	OrasTestImage string
+	TestDir       string // Path to the directory from which a Singularity command needs to be executed
+	TestRegistry  string
+	KeyringDir    string // KeyringDir sets the directory where the keyring will be created for the execution of a command (instead of using SINGULARITY_SYPGPDIR which should be avoided when running e2e tests)
+	ImgCacheDir   string // ImgCacheDir sets the location of the image cache to be used by the Singularity command to be executed (instead of using SINGULARITY_CACHE_DIR which should be avoided when running e2e tests)
 }

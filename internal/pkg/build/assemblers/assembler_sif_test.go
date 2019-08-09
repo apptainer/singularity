@@ -7,12 +7,14 @@ package assemblers_test
 
 import (
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/pkg/build/types"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
@@ -35,9 +37,14 @@ func TestSIFAssemblerDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	mksquashfsPath, err := exec.LookPath("mksquashfs")
+	if err != nil {
+		t.Fatalf("could not find mksquashfs: %v", err)
+	}
+
 	b, err := types.NewBundle("", "sbuild-SIFAssembler")
 	if err != nil {
-		return
+		t.Fatalf("unable to make bundle: %v", err)
 	}
 
 	b.Recipe, err = types.NewDefinitionFromURI(assemblerDockerURI)
@@ -46,8 +53,8 @@ func TestSIFAssemblerDocker(t *testing.T) {
 	}
 
 	// set a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCacheDir := testCache.MakeDir(t, "")
+	defer testCache.DeleteDir(t, imgCacheDir)
 	imgCache, err := cache.NewHandle(imgCacheDir)
 	if err != nil {
 		t.Fatalf("failed to create an image cache handle: %s", err)
@@ -65,7 +72,9 @@ func TestSIFAssemblerDocker(t *testing.T) {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerDockerURI, err)
 	}
 
-	a := &assemblers.SIFAssembler{}
+	a := &assemblers.SIFAssembler{
+		MksquashfsPath: mksquashfsPath,
+	}
 
 	err = a.Assemble(b, assemblerDockerDest)
 	if err != nil {
@@ -77,12 +86,19 @@ func TestSIFAssemblerDocker(t *testing.T) {
 
 // TestSIFAssemblerShub sees if we can build a SIF image from an image from a Singularity registry
 func TestSIFAssemblerShub(t *testing.T) {
+	// TODO(mem): reenable this; disabled while shub is down
+	t.Skip("Skipping tests that access singularity hub")
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	mksquashfsPath, err := exec.LookPath("mksquashfs")
+	if err != nil {
+		t.Fatalf("could not find mksquashfs: %v", err)
+	}
+
 	b, err := types.NewBundle("", "sbuild-SIFAssembler")
 	if err != nil {
-		return
+		t.Fatalf("unable to make bundle: %v", err)
 	}
 
 	b.Recipe, err = types.NewDefinitionFromURI(assemblerShubURI)
@@ -101,7 +117,9 @@ func TestSIFAssemblerShub(t *testing.T) {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerShubURI, err)
 	}
 
-	a := &assemblers.SIFAssembler{}
+	a := &assemblers.SIFAssembler{
+		MksquashfsPath: mksquashfsPath,
+	}
 
 	err = a.Assemble(b, assemblerShubDest)
 	if err != nil {

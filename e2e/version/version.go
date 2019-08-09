@@ -10,18 +10,14 @@ import (
 	"testing"
 
 	"github.com/blang/semver"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/sylabs/singularity/internal/pkg/test/exec"
+	"github.com/pkg/errors"
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
-type testingEnv struct {
-	// base env for running tests
-	CmdPath     string `split_words:"true"`
-	TestDir     string `split_words:"true"`
-	RunDisabled bool   `default:"false"`
+type ctx struct {
+	env e2e.TestEnv
 }
 
-var testenv testingEnv
 var tests = []struct {
 	name string
 	args []string
@@ -31,66 +27,97 @@ var tests = []struct {
 }
 
 //Test that this version uses the semantic version format
-func testSemanticVersion(t *testing.T) {
+func (c *ctx) testSemanticVersion(t *testing.T) {
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := exec.Command(testenv.CmdPath, tt.args...)
-			res := cmd.Run(t)
-			if res.Error != nil {
-				t.Fatalf("Failed to obtain version: %+v", res.String())
-			}
-			outputVersion := strings.TrimPrefix(string(res.Stdout()), "singularity version ")
-			outputVersion = strings.TrimSpace(outputVersion)
-			if semanticVersion, err := semver.Make(outputVersion); err != nil {
+
+		checkSemanticVersionFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
+			outputVer := strings.TrimPrefix(string(r.Stdout), "singularity version ")
+			outputVer = strings.TrimSpace(outputVer)
+			if semanticVersion, err := semver.Make(outputVer); err != nil {
 				t.Log(semanticVersion)
-				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
+				t.Errorf("no semantic version valid for %s command", tt.name)
 			}
-		})
+		}
+
+		c.env.RunSingularity(
+			t,
+			e2e.WithArgs(tt.args...),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					t.Log("Failed to obtain version")
+				}
+			}),
+			e2e.ExpectExit(0, checkSemanticVersionFn),
+		)
 	}
 }
 
 //Test that both versions when running: singularity --version and
 // singularity version give the same result
-func testEqualVersion(t *testing.T) {
+func (c *ctx) testEqualVersion(t *testing.T) {
 	var tmpVersion = ""
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := exec.Command(testenv.CmdPath, tt.args...)
-			res := cmd.Run(t)
-			if res.Error != nil {
-				t.Fatalf("Failed to obtain version: %+v", res.String())
-			}
-			outputVersion := strings.TrimPrefix(string(res.Stdout()), "singularity version ")
-			outputVersion = strings.TrimSpace(outputVersion)
 
-			semanticVersion, err := semver.Make(string(outputVersion))
+		checkEqualVersionFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
+			outputVer := strings.TrimPrefix(string(r.Stdout), "singularity version ")
+			outputVer = strings.TrimSpace(outputVer)
+			semanticVersion, err := semver.Make(outputVer)
 			if err != nil {
-				t.Log(semanticVersion)
-				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
+				err = errors.Wrapf(err, "creating semver version from %q", outputVer)
+				t.Fatalf("Creating semver version: %+v", err)
 			}
 			if tmpVersion != "" {
 				versionTmp, err := semver.Make(tmpVersion)
 				if err != nil {
-					t.Fatalf("FAIL: %s", err)
+					err = errors.Wrapf(err, "creating semver version from %q", tmpVersion)
+					t.Fatalf("Creating semver version: %+v", err)
 				}
 				//compare versions and see if they are equal
 				if semanticVersion.Compare(versionTmp) != 0 {
-					t.Fatalf("FAIL: singularity version command and singularity --version give a non-matching version result")
+					err = errors.Wrapf(err, "comparing versions %q and %q", outputVer, tmpVersion)
+					t.Fatalf("singularity version command and singularity --version give a non-matching version result: %+v", err)
 				}
 			} else {
-				tmpVersion = outputVersion
+				tmpVersion = outputVer
 			}
-		})
+		}
+
+		c.env.RunSingularity(
+			t,
+			e2e.WithArgs(tt.args...),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					t.Log("Failed to obtain version")
+				}
+			}),
+			e2e.ExpectExit(0, checkEqualVersionFn),
+		)
+
 	}
 }
 
+// Test the help option
+func (c *ctx) testHelpOption(t *testing.T) {
+	c.env.RunSingularity(
+		t,
+		e2e.WithCommand("version"),
+		e2e.WithArgs("--help"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.RegexMatch, "^Show the version for Singularity"),
+		),
+	)
+}
+
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	err := envconfig.Process("E2E", &testenv)
-	if err != nil {
-		t.Fatal(err)
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &ctx{
+		env: env,
 	}
 
-	t.Run("test_semantic_version", testSemanticVersion)
-	t.Run("test_equal_version", testEqualVersion)
+	return func(t *testing.T) {
+		t.Run("test_semantic_version", c.testSemanticVersion)
+		t.Run("test_equal_version", c.testEqualVersion)
+		t.Run("test_help_option", c.testHelpOption)
+	}
 }

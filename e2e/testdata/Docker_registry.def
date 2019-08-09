@@ -16,11 +16,15 @@ from: registry:2.7.1
     fi
     dockerd --iptables=false --ip-forward=false --ip-masq=false --storage-driver=vfs &
     /.singularity.d/runscript &
-    sleep 2
-    if ! -z ${DELETE_BRIDGE}; then
+    # wait until docker registry is up
+    while ! wget -q -O /dev/null 127.0.0.1:5000 ; do sleep 0.2; done
+    if [ ! -z "${DELETE_BRIDGE}" ]; then
         ip link set docker0 down || kill -TERM 1
         brctl delbr docker0
     fi
     docker pull busybox || kill -TERM 1
     docker tag busybox localhost:5000/my-busybox || kill -TERM 1
     docker push localhost:5000/my-busybox || kill -TERM 1
+    # e2e PrepRegistry will repeatedly trying to connect to this port
+    # giving indication that it can start
+    nc -l -p 5111

@@ -51,7 +51,7 @@ func OciCreate(containerID string, args *OciArgs) error {
 	configJSON := filepath.Join(absBundle, "config.json")
 	fb, err := os.Open(configJSON)
 	if err != nil {
-		return fmt.Errorf("OCI specification file %q is missing or cannot be read", configJSON)
+		return fmt.Errorf("oci specification file %q is missing or cannot be read", configJSON)
 	}
 
 	data, err := ioutil.ReadAll(fb)

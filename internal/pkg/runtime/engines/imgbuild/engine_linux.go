@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,21 +8,17 @@ package imgbuild
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/engine"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/server"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
-	"github.com/sylabs/singularity/pkg/util/namespaces"
 )
 
-// EngineOperations implements the engines.EngineOperations interface for
+// EngineOperations implements the the engine.Operations interface for
 // the image build process
 type EngineOperations struct {
 	CommonConfig *config.Common               `json:"-"`
@@ -44,26 +40,10 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if e.EngineConfig.OciConfig.Generator.Config != &e.EngineConfig.OciConfig.Spec {
 		return fmt.Errorf("bad engine configuration provided")
 	}
-
-	configurationFile := filepath.Join(buildcfg.SYSCONFDIR, "/singularity/singularity.conf")
-
-	// check for ownership of singularity.conf
-	if starterConfig.GetIsSUID() && !fs.IsOwner(configurationFile, 0) {
-		return fmt.Errorf("%s must be owned by root", configurationFile)
+	if starterConfig.GetIsSUID() {
+		return fmt.Errorf("imgbuild engine can't run with SUID workflow")
 	}
-
-	fileConfig := &singularity.FileConfig{}
-	if err := config.Parser(configurationFile, fileConfig); err != nil {
-		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
-	}
-
-	if !fileConfig.AllowSetuid && e.EngineConfig.Bundle.Opts.Fakeroot {
-		return fmt.Errorf("fakeroot requires to set 'allow setuid = yes' in %s", configurationFile)
-	}
-	if !starterConfig.GetIsSUID() && os.Getuid() != 0 {
-		return fmt.Errorf("unable to run imgbuild engine as non-root user or without --fakeroot")
-	}
-	if starterConfig.GetIsSUID() && !e.EngineConfig.Bundle.Opts.Fakeroot {
+	if os.Getuid() != 0 {
 		return fmt.Errorf("unable to run imgbuild engine as non-root user or without --fakeroot")
 	}
 
@@ -71,37 +51,6 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
 	e.EngineConfig.OciConfig.SetupPrivileged(true)
-
-	if e.EngineConfig.Bundle.Opts.Fakeroot {
-		baseID := fileConfig.FakerootBaseID
-		allowedUsers := fileConfig.FakerootAllowedUsers
-		idRange, err := fakeroot.GetIDRange(baseID, allowedUsers)
-		if err != nil {
-			return err
-		}
-		e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, "")
-
-		e.EngineConfig.OciConfig.AddLinuxUIDMapping(uint32(os.Getuid()), 0, 1)
-		e.EngineConfig.OciConfig.AddLinuxUIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
-		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
-
-		e.EngineConfig.OciConfig.AddLinuxGIDMapping(uint32(os.Getgid()), 0, 1)
-		e.EngineConfig.OciConfig.AddLinuxGIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
-		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
-
-		starterConfig.SetHybridWorkflow(true)
-		starterConfig.SetAllowSetgroups(true)
-
-		starterConfig.SetTargetUID(0)
-		starterConfig.SetTargetGID([]int{0})
-	} else if insideUserNs, setgroups := namespaces.IsInsideUserNamespace(os.Getpid()); insideUserNs && setgroups {
-		// we are currently running in a user namespace, if setgroups is
-		// allowed we assume this process can fake the root user, if it's not
-		// the case, it will fail later in C starter code
-		e.EngineConfig.Bundle.Opts.Fakeroot = true
-		starterConfig.SetTargetUID(0)
-		starterConfig.SetTargetGID([]int{0})
-	}
 
 	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
 
@@ -120,4 +69,17 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	starterConfig.SetMasterPropagateMount(true)
 
 	return nil
+}
+
+func init() {
+	engine.RegisterOperations(
+		imgbuildConfig.Name,
+		&EngineOperations{
+			EngineConfig: &imgbuildConfig.EngineConfig{},
+		},
+	)
+	engine.RegisterRPCMethods(
+		imgbuildConfig.Name,
+		new(server.Methods),
+	)
 }

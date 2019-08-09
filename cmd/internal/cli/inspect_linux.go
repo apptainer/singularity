@@ -64,7 +64,7 @@ var inspectAppsListFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "list-apps",
 	ShortHand:    "",
-	Usage:        "list all apps in a contianer",
+	Usage:        "list all apps in a container",
 }
 
 // --app
@@ -426,7 +426,7 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 
 	b, err := cmd.Output()
 	if err != nil {
-		sylog.Fatalf("Unable to prossess command: %s: %s", err, b)
+		sylog.Fatalf("Unable to process command: %s: %s", err, b)
 	}
 
 	return string(b), nil

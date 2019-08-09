@@ -67,7 +67,7 @@ type FilePair struct {
 }
 
 // ImageBuild builds an image based on the Opts
-func ImageBuild(cmdPath string, opts BuildOpts, imagePath, buildSpec string) ([]byte, error) {
+func (env TestEnv) ImageBuild(opts BuildOpts, imagePath, buildSpec string) ([]byte, error) {
 	var argv []string
 	argv = append(argv, "build")
 	if opts.Force {
@@ -78,7 +78,7 @@ func ImageBuild(cmdPath string, opts BuildOpts, imagePath, buildSpec string) ([]
 	}
 	argv = append(argv, imagePath, buildSpec)
 
-	cmd := exec.Command(cmdPath, argv...)
+	cmd := exec.Command(env.CmdPath, argv...)
 	cmd.Env = opts.Env
 
 	return cmd.CombinedOutput()

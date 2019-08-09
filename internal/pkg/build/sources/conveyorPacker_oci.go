@@ -89,7 +89,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 			cp.srcRef, err = ociarchive.ParseReference(ref)
 		} else {
 			// As non-root we need to do a dumb tar extraction first
-			tmpDir, err := ioutil.TempDir("", "temp-oci-")
+			tmpDir, err := ioutil.TempDir(cp.b.Opts.TmpDir, "temp-oci-")
 			if err != nil {
 				return fmt.Errorf("could not create temporary oci directory: %v", err)
 			}
@@ -113,17 +113,19 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		}
 
 	default:
-		return fmt.Errorf("OCI ConveyorPacker does not support %s", b.Recipe.Header["bootstrap"])
+		return fmt.Errorf("oci conveyorPacker does not support %s", b.Recipe.Header["bootstrap"])
 	}
 
 	if err != nil {
-		return fmt.Errorf("Invalid image source: %v", err)
+		return fmt.Errorf("invalid image source: %v", err)
 	}
 
-	// Grab the modified source ref from the cache
-	cp.srcRef, err = ociclient.ConvertReference(b.Opts.ImgCache, cp.srcRef, cp.sysCtx)
-	if err != nil {
-		return err
+	if !cp.b.Opts.NoCache {
+		// Grab the modified source ref from the cache
+		cp.srcRef, err = ociclient.ConvertReference(b.Opts.ImgCache, cp.srcRef, cp.sysCtx)
+		if err != nil {
+			return err
+		}
 	}
 
 	// To to do the RootFS extraction we also have to have a location that
@@ -147,27 +149,27 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 func (cp *OCIConveyorPacker) Pack() (*sytypes.Bundle, error) {
 	err := cp.unpackTmpfs()
 	if err != nil {
-		return nil, fmt.Errorf("While unpacking tmpfs: %v", err)
+		return nil, fmt.Errorf("while unpacking tmpfs: %v", err)
 	}
 
 	err = cp.insertBaseEnv()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting base environment: %v", err)
+		return nil, fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	err = cp.insertRunScript()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting runscript: %v", err)
+		return nil, fmt.Errorf("while inserting runscript: %v", err)
 	}
 
 	err = cp.insertEnv()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting docker specific environment: %v", err)
+		return nil, fmt.Errorf("while inserting docker specific environment: %v", err)
 	}
 
 	err = cp.insertOCIConfig()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting oci config: %v", err)
+		return nil, fmt.Errorf("while inserting oci config: %v", err)
 	}
 
 	return cp.b, nil

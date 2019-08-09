@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -44,12 +44,12 @@ type ShubAPIResponse struct {
 	Name    string `json:"name"`
 	Tag     string `json:"tag"`
 	Version string `json:"version"`
+	Commit  string `json:"commit"`
 }
 
-// getManifest will return the image manifest for a container uri
+// GetManifest will return the image manifest for a container uri
 // from Singularity Hub.
-func getManifest(uri ShubURI, noHTTPS bool) (manifest ShubAPIResponse, err error) {
-
+func GetManifest(uri ShubURI, noHTTPS bool) (ShubAPIResponse, error) {
 	// Create a new http Hub client
 	httpc := http.Client{
 		Timeout: 30 * time.Second,
@@ -80,10 +80,10 @@ func getManifest(uri ShubURI, noHTTPS bool) (manifest ShubAPIResponse, err error
 	// Do the request, if status isn't success, return error
 	res, err := httpc.Do(req)
 	if res == nil {
-		return ShubAPIResponse{}, fmt.Errorf("No response received from singularity hub")
+		return ShubAPIResponse{}, fmt.Errorf("no response received from singularity hub")
 	}
 	if res.StatusCode == http.StatusNotFound {
-		return ShubAPIResponse{}, fmt.Errorf("The requested manifest was not found in singularity hub")
+		return ShubAPIResponse{}, fmt.Errorf("the requested manifest was not found in singularity hub")
 	}
 	sylog.Debugf("%s response received, beginning manifest download\n", res.Status)
 
@@ -102,11 +102,10 @@ func getManifest(uri ShubURI, noHTTPS bool) (manifest ShubAPIResponse, err error
 		return ShubAPIResponse{}, err
 	}
 
+	var manifest ShubAPIResponse
+
 	err = json.Unmarshal(body, &manifest)
 	sylog.Debugf("manifest image name: %v\n", manifest.Name)
-	if err != nil {
-		return ShubAPIResponse{}, err
-	}
 
-	return
+	return manifest, err
 }
