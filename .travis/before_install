@@ -11,7 +11,9 @@ fi
 sudo apt-get update
 echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | \
         sudo tee /etc/default/docker > /dev/null
-sudo service docker restart
+# sudo service docker restart
+sudo systemctl --no-pager restart docker.service
+sudo systemctl --no-pager status docker.service
 sleep 5
 if [[ "$OS_TYPE" = "opensuse" ]]; then
     DOCKER_HUB_URI="${OS_TYPE}/leap:$OS_VERSION"
