@@ -18,7 +18,7 @@ import (
 )
 
 // ImageVerify checks for an image integrity
-func ImageVerify(t *testing.T, cmdPath string, imagePath string) {
+func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 	type testSpec struct {
 		name string
 		argv []string
@@ -73,9 +73,8 @@ func ImageVerify(t *testing.T, cmdPath string, imagePath string) {
 	}
 
 	for _, tt := range tests {
-		RunSingularity(
+		env.RunSingularity(
 			t,
-			cmdPath,
 			AsSubtest(tt.name),
 			WithCommand("exec"),
 			WithArgs(tt.argv...),
