@@ -131,7 +131,7 @@ var pullAllowUnsignedFlag = cmdline.Flag{
 	Name:         "allow-unsigned",
 	ShortHand:    "U",
 	Usage:        "do not require a signed container",
-	Deprecated: `Now affects only warning messages, in future will be deleted.
+	Deprecated: `now affects only warning messages, in future will be deleted.
 Pull command no longer exits with an error code in case of unsigned image, only prints warning.`,
 	EnvKeys: []string{"ALLOW_UNSIGNED"},
 }
