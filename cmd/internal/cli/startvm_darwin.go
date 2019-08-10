@@ -156,7 +156,9 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		netip = "none"
 	}
 
-	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 sing_img_name=%s sing_user=%s sing_cwd=%s singularity_action=%s ipv4=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, filepath.Base(sifImage), userInfo, cwdDir, singAction, netip, cliExtra, strings.Join(singBinds, "|"))
+	msglvl := sylog.GetLevel()
+
+	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 sing_img_name=%s sing_user=%s sing_cwd=%s singularity_action=%s ipv4=%s msglvl=%v singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, filepath.Base(sifImage), userInfo, cwdDir, singAction, netip, msglvl, cliExtra, strings.Join(singBinds, "|"))
 
 	// Add our actual kexec entry
 	args = append(args, "-f", kexecArgs)
