@@ -29,7 +29,7 @@ func main() {
 
 	manifest, err := json.Marshal(pl.Manifest)
 	if err != nil {
-		sylog.Fatalf("While marshalling manifest to json: %s", err)
+		sylog.Fatalf("While marshaling manifest to json: %s", err)
 	}
 
 	if err := ioutil.WriteFile(args[1], manifest, 0644); err != nil {
