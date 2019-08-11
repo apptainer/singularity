@@ -186,16 +186,27 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 }
 
 func handleShub(imgCache *cache.Handle, u string) (string, error) {
-	imageName := uri.GetName(u)
-	imagePath := imgCache.ShubImage("hash", imageName)
+	shubURI, err := shub.ShubParseReference(u)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse shub uri: %s", err)
+	}
 
-	exists, err := imgCache.ShubImageExists("hash", imageName)
+	// Get the image manifest
+	manifest, err := shub.GetManifest(shubURI, noHTTPS)
+	if err != nil {
+		return "", fmt.Errorf("failed to get manifest for: %s: %s", u, err)
+	}
+
+	imageName := uri.GetName(u)
+	imagePath := imgCache.ShubImage(manifest.Commit, imageName)
+
+	exists, err := imgCache.ShubImageExists(manifest.Commit, imageName)
 	if err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	}
 	if !exists {
 		sylog.Infof("Downloading shub image")
-		err := shub.DownloadImage(imagePath, u, true, noHTTPS)
+		err := shub.DownloadImage(manifest, imagePath, u, true, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}

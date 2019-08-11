@@ -920,7 +920,7 @@ func ImportPrivateKey(entity *openpgp.Entity) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Key with fingerprint %X succesfully added to the keyring\n", entity.PrimaryKey.Fingerprint)
+		fmt.Printf("Key with fingerprint %X successfully added to the keyring\n", entity.PrimaryKey.Fingerprint)
 	} else {
 		fmt.Printf("The key you want to add with fingerprint %X already belongs to the keyring\n", entity.PrimaryKey.Fingerprint)
 	}
@@ -955,7 +955,7 @@ func ImportPubKey(entity *openpgp.Entity) error {
 		if err = entity.Serialize(publicFilePath); err != nil {
 			return err
 		}
-		fmt.Printf("Key with fingerprint %X succesfully added to the keyring\n", entity.PrimaryKey.Fingerprint)
+		fmt.Printf("Key with fingerprint %X successfully added to the keyring\n", entity.PrimaryKey.Fingerprint)
 	} else {
 		fmt.Printf("The key you want to add with fingerprint %X already belongs to the keyring\n", entity.PrimaryKey.Fingerprint)
 	}
