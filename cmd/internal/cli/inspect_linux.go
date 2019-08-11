@@ -64,7 +64,7 @@ var inspectAppsListFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "list-apps",
 	ShortHand:    "",
-	Usage:        "list all apps in a contianer",
+	Usage:        "list all apps in a container",
 }
 
 // --app
