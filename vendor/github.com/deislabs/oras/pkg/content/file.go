@@ -20,8 +20,7 @@ import (
 
 // ensure interface
 var (
-	_ content.Provider = &FileStore{}
-	_ content.Ingester = &FileStore{}
+	_ ProvideIngester = &FileStore{}
 )
 
 // FileStore provides content from the file system

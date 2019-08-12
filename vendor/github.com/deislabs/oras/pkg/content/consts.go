@@ -20,3 +20,9 @@ const (
 	// AnnotationUnpack is the annotation key for indication of unpacking
 	AnnotationUnpack = "io.deis.oras.content.unpack"
 )
+
+const (
+	// OCIImageIndexFile is the file name of the index from the OCI Image Layout Specification
+	// Reference: https://github.com/opencontainers/image-spec/blob/master/image-layout.md#indexjson-file
+	OCIImageIndexFile = "index.json"
+)

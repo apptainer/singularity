@@ -13,6 +13,7 @@ import (
 
 type pushOpts struct {
 	config              *ocispec.Descriptor
+	configMediaType     string
 	configAnnotations   map[string]string
 	manifestAnnotations map[string]string
 	validateName        func(desc ocispec.Descriptor) error
@@ -32,6 +33,14 @@ type PushOpt func(o *pushOpts) error
 func WithConfig(config ocispec.Descriptor) PushOpt {
 	return func(o *pushOpts) error {
 		o.config = &config
+		return nil
+	}
+}
+
+// WithConfigMediaType overrides the config media type
+func WithConfigMediaType(mediaType string) PushOpt {
+	return func(o *pushOpts) error {
+		o.configMediaType = mediaType
 		return nil
 	}
 }

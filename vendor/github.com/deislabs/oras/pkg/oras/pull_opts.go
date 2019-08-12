@@ -3,15 +3,19 @@ package oras
 import (
 	"context"
 
+	orascontent "github.com/deislabs/oras/pkg/content"
+
 	"github.com/containerd/containerd/images"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type pullOpts struct {
-	allowedMediaTypes []string
-	dispatch          func(context.Context, images.Handler, ...ocispec.Descriptor) error
-	baseHandlers      []images.Handler
-	callbackHandlers  []images.Handler
+	allowedMediaTypes      []string
+	dispatch               func(context.Context, images.Handler, ...ocispec.Descriptor) error
+	baseHandlers           []images.Handler
+	callbackHandlers       []images.Handler
+	contentProvideIngester orascontent.ProvideIngester
+	filterName             func(ocispec.Descriptor) bool
 }
 
 // PullOpt allows callers to set options on the oras pull
@@ -19,7 +23,8 @@ type PullOpt func(o *pullOpts) error
 
 func pullOptsDefaults() *pullOpts {
 	return &pullOpts{
-		dispatch: images.Dispatch,
+		dispatch:   images.Dispatch,
+		filterName: filterName,
 	}
 }
 
@@ -59,6 +64,25 @@ func WithPullBaseHandler(handlers ...images.Handler) PullOpt {
 func WithPullCallbackHandler(handlers ...images.Handler) PullOpt {
 	return func(o *pullOpts) error {
 		o.callbackHandlers = append(o.callbackHandlers, handlers...)
+		return nil
+	}
+}
+
+// WithContentProvideIngester opt to the provided Provider and Ingester
+// for file system I/O, including caches.
+func WithContentProvideIngester(store orascontent.ProvideIngester) PullOpt {
+	return func(o *pullOpts) error {
+		o.contentProvideIngester = store
+		return nil
+	}
+}
+
+// WithPullEmptyNameAllowed allows pulling blobs with empty name.
+func WithPullEmptyNameAllowed() PullOpt {
+	return func(o *pullOpts) error {
+		o.filterName = func(ocispec.Descriptor) bool {
+			return true
+		}
 		return nil
 	}
 }

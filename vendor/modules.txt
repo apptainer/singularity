@@ -1,4 +1,4 @@
-# github.com/Microsoft/go-winio v0.4.7
+# github.com/Microsoft/go-winio v0.4.11
 github.com/Microsoft/go-winio
 # github.com/Microsoft/hcsshim v0.8.6
 github.com/Microsoft/hcsshim
@@ -40,9 +40,18 @@ github.com/containerd/containerd/content
 github.com/containerd/containerd/errdefs
 github.com/containerd/containerd/log
 github.com/containerd/containerd/remotes
+github.com/containerd/containerd/content/local
 github.com/containerd/containerd/platforms
-# github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd
+github.com/containerd/containerd/filters
+github.com/containerd/containerd/sys
+# github.com/containerd/continuity v0.0.0-20181203112020-004b46473808
 github.com/containerd/continuity/pathdriver
+github.com/containerd/continuity
+github.com/containerd/continuity/devices
+github.com/containerd/continuity/driver
+github.com/containerd/continuity/proto
+github.com/containerd/continuity/sysx
+github.com/containerd/continuity/syscallx
 # github.com/containernetworking/cni v0.7.1
 github.com/containernetworking/cni/libcni
 github.com/containernetworking/cni/pkg/types
@@ -126,11 +135,11 @@ github.com/creack/pty
 github.com/d2g/dhcp4
 # github.com/d2g/dhcp4client v0.0.0-20180611075603-e61299896203
 github.com/d2g/dhcp4client
-# github.com/deislabs/oras v0.4.0
+# github.com/deislabs/oras v0.6.0
 github.com/deislabs/oras/pkg/content
 github.com/deislabs/oras/pkg/context
 github.com/deislabs/oras/pkg/oras
-# github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572
+# github.com/docker/distribution v2.7.1+incompatible
 github.com/docker/distribution/registry/api/errcode
 github.com/docker/distribution/registry/api/v2
 github.com/docker/distribution/registry/client
@@ -142,7 +151,7 @@ github.com/docker/distribution/registry/storage/cache
 github.com/docker/distribution/registry/storage/cache/memory
 github.com/docker/distribution/digestset
 github.com/docker/distribution/metrics
-# github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
+# github.com/docker/docker v1.14.0-0.20190131205458-8a43b7bb99cd
 github.com/docker/docker/pkg/system
 github.com/docker/docker/client
 github.com/docker/docker/pkg/mount
@@ -163,15 +172,16 @@ github.com/docker/docker/pkg/idtools
 github.com/docker/docker/api/types/mount
 github.com/docker/docker/api/types/blkiodev
 github.com/docker/docker/api/types/strslice
+github.com/docker/docker/errdefs
 github.com/docker/docker/api/types/swarm/runtime
-# github.com/docker/docker-credential-helpers v0.6.0
+# github.com/docker/docker-credential-helpers v0.6.1
 github.com/docker/docker-credential-helpers/client
 github.com/docker/docker-credential-helpers/credentials
-# github.com/docker/go-connections v0.3.0
+# github.com/docker/go-connections v0.4.0
 github.com/docker/go-connections/tlsconfig
 github.com/docker/go-connections/sockets
 github.com/docker/go-connections/nat
-# github.com/docker/go-metrics v0.0.0-20180209012529-399ea8c73916
+# github.com/docker/go-metrics v0.0.0-20181218153428-b84716841b82
 github.com/docker/go-metrics
 # github.com/docker/go-units v0.3.3
 github.com/docker/go-units
@@ -195,14 +205,13 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
-# github.com/google/go-cmp v0.2.0
+# github.com/google/go-cmp v0.3.0
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
+github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/gorilla/context v1.1.1
-github.com/gorilla/context
-# github.com/gorilla/mux v1.6.2
+# github.com/gorilla/mux v1.7.0
 github.com/gorilla/mux
 # github.com/gorilla/websocket v1.4.0
 github.com/gorilla/websocket
@@ -220,6 +229,8 @@ github.com/inconshreveable/mousetrap
 github.com/j-keck/arping
 # github.com/juju/errors v0.0.0-20190207033735-e65537c515d7
 github.com/juju/errors
+# github.com/konsorten/go-windows-terminal-sequences v1.0.1
+github.com/konsorten/go-windows-terminal-sequences
 # github.com/kr/pty v1.1.8
 github.com/kr/pty
 # github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
@@ -238,7 +249,7 @@ github.com/matttproud/golang_protobuf_extensions/pbutil
 github.com/mtrmac/gpgme
 # github.com/opencontainers/go-digest v1.0.0-rc1
 github.com/opencontainers/go-digest
-# github.com/opencontainers/image-spec v0.0.0-20180411145040-e562b0440392
+# github.com/opencontainers/image-spec v1.0.1
 github.com/opencontainers/image-spec/specs-go/v1
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/schema
@@ -265,16 +276,17 @@ github.com/pkg/errors
 # github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13
 github.com/pquerna/ffjson/fflib/v1
 github.com/pquerna/ffjson/fflib/v1/internal
-# github.com/prometheus/client_golang v0.0.0-20180607123607-faf4ec335fe0
+# github.com/prometheus/client_golang v0.9.2
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/promhttp
-# github.com/prometheus/client_model v0.0.0-20171117100541-99fa1f4be8e5
+github.com/prometheus/client_golang/prometheus/internal
+# github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.0.0-20180518154759-7600349dcfe1
+# github.com/prometheus/common v0.2.0
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/model
 github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
-# github.com/prometheus/procfs v0.0.0-20180612222113-7d6f385de8be
+# github.com/prometheus/procfs v0.0.0-20190129233650-316cf8ccfec5
 github.com/prometheus/procfs
 github.com/prometheus/procfs/nfs
 github.com/prometheus/procfs/xfs
@@ -287,7 +299,7 @@ github.com/safchain/ethtool
 github.com/satori/go.uuid
 # github.com/seccomp/libseccomp-golang v0.9.0
 github.com/seccomp/libseccomp-golang
-# github.com/sirupsen/logrus v1.0.5
+# github.com/sirupsen/logrus v1.3.0
 github.com/sirupsen/logrus
 # github.com/spf13/cobra v0.0.5
 github.com/spf13/cobra
@@ -342,7 +354,7 @@ golang.org/x/sync/errgroup
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8
+# google.golang.org/genproto v0.0.0-20190128161407-8ac453e89fca
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.20.0
 google.golang.org/grpc/codes

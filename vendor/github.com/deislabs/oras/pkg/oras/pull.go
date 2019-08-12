@@ -48,7 +48,7 @@ func fetchContent(ctx context.Context, fetcher remotes.Fetcher, desc ocispec.Des
 	lock := &sync.Mutex{}
 	picker := images.HandlerFunc(func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
 		if isAllowedMediaType(desc.MediaType, opts.allowedMediaTypes...) {
-			if name, ok := orascontent.ResolveName(desc); ok && len(name) > 0 {
+			if opts.filterName(desc) {
 				lock.Lock()
 				defer lock.Unlock()
 				descriptors = append(descriptors, desc)
@@ -57,9 +57,13 @@ func fetchContent(ctx context.Context, fetcher remotes.Fetcher, desc ocispec.Des
 		}
 		return nil, nil
 	})
-	store := newHybridStoreFromIngester(ingester)
+
+	store := opts.contentProvideIngester
+	if store == nil {
+		store = newHybridStoreFromIngester(ingester)
+	}
 	handlers := []images.Handler{
-		filterHandler(opts.allowedMediaTypes...),
+		filterHandler(opts, opts.allowedMediaTypes...),
 	}
 	handlers = append(handlers, opts.baseHandlers...)
 	handlers = append(handlers,
@@ -76,13 +80,13 @@ func fetchContent(ctx context.Context, fetcher remotes.Fetcher, desc ocispec.Des
 	return descriptors, nil
 }
 
-func filterHandler(allowedMediaTypes ...string) images.HandlerFunc {
+func filterHandler(opts *pullOpts, allowedMediaTypes ...string) images.HandlerFunc {
 	return func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
 		switch {
 		case isAllowedMediaType(desc.MediaType, ocispec.MediaTypeImageManifest, ocispec.MediaTypeImageIndex):
 			return nil, nil
 		case isAllowedMediaType(desc.MediaType, allowedMediaTypes...):
-			if name, ok := orascontent.ResolveName(desc); ok && len(name) > 0 {
+			if opts.filterName(desc) {
 				return nil, nil
 			}
 			log.G(ctx).Warnf("blob no name: %v", desc.Digest)
@@ -122,4 +126,9 @@ func dispatchBFS(ctx context.Context, handler images.Handler, descs ...ocispec.D
 		descs = append(descs, children...)
 	}
 	return nil
+}
+
+func filterName(desc ocispec.Descriptor) bool {
+	name, ok := orascontent.ResolveName(desc)
+	return ok && len(name) > 0
 }
