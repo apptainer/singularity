@@ -295,7 +295,7 @@ func handleNet(imgCache *cache.Handle, u string) (string, error) {
 	}
 	if !exists {
 		sylog.Infof("Downloading network image")
-		err := net.DownloadImage(imagePath, u, true)
+		err := net.DownloadImage(imagePath, u)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
