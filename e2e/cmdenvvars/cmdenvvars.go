@@ -87,9 +87,8 @@ func (c *ctx) testSingularitySypgpDir(t *testing.T) {
 		}
 	}()
 
-	// Create a new pair of keys. We make sure we use RunSingularity to ensure that
-	// it does the expected things.
-	cmdArgs := []string{"list"} // The command will actually not do much but create the keyring
+	// Run 'key list' to initialize the keyring.
+	cmdArgs := []string{"list"}
 	c.env.KeyringDir = keyringDir
 	c.env.RunSingularity(
 		t,
