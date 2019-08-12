@@ -61,12 +61,13 @@ var (
 		Usage:        "operate in dry run mode and do not actually clean the cache",
 	}
 
-	// --force
+	// -f|--force
 	cacheCleanForceFlag = cmdline.Flag{
 		ID:           "cacheCleanForceFlag",
 		Value:        &cacheCleanForce,
 		DefaultValue: false,
 		Name:         "force",
+		ShortHand:    "f",
 		Usage:        "suppress any prompts and clean the cache",
 	}
 
