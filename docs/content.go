@@ -334,7 +334,10 @@ Enterprise Performance Computing (EPC)`
   Capabilities allow you to have fine grained control over the permissions that
   your containers need to run.
 
-  NOTE: capability add/drop commands requires root to run.`
+  NOTE: capability add/drop commands require root to run. Granting capabilities 
+  to users allows them to escalate privilege inside the container and will
+  likely give them a route to priviledge escalation on the host system as well.
+  Do not add capabilities to users who should not have root on the host system.`
 	CapabilityExample string = `
   All group commands have their own help output:
 
