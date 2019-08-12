@@ -336,7 +336,7 @@ Enterprise Performance Computing (EPC)`
 
   NOTE: capability add/drop commands require root to run. Granting capabilities 
   to users allows them to escalate privilege inside the container and will
-  likely give them a route to priviledge escalation on the host system as well.
+  likely give them a route to privilege escalation on the host system as well.
   Do not add capabilities to users who should not have root on the host system.`
 	CapabilityExample string = `
   All group commands have their own help output:
