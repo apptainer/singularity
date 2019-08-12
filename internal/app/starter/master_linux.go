@@ -63,7 +63,6 @@ func startContainer(masterSocket int, containerPid int, e *engine.Engine, fatalC
 	}); ok {
 		_, err := conn.Read(data)
 		if err != nil {
-
 			if err != io.EOF {
 				fatalChan <- fmt.Errorf("error while reading master socket data: %s", err)
 				return
