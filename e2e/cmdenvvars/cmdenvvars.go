@@ -76,7 +76,7 @@ func (c *ctx) testSingularityCacheDir(t *testing.T) {
 
 func (c *ctx) testSingularitySypgpDir(t *testing.T) {
 	// Create a temporary directory to be used for a keyring
-	keyringDir, err := ioutil.TempDir("", "")
+	keyringDir, err := ioutil.TempDir("", "e2e-sypgp-env-")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
 	}
@@ -89,35 +89,26 @@ func (c *ctx) testSingularitySypgpDir(t *testing.T) {
 
 	// Create a new pair of keys. We make sure we use RunSingularity to ensure that
 	// it does the expected things.
-	genCmdArgs := []string{"newpair"}
-	inputs := []e2e.SingularityConsoleOp{
-		e2e.ConsoleSendLine("test keypair"),         // Name of the new key pair
-		e2e.ConsoleSendLine("geoffroy@sylabs.io"),   // Email of the new key pair
-		e2e.ConsoleSendLine("Singularity E2E test"), // Comment for the new key pair
-		e2e.ConsoleSendLine("e2etest"),              // Passphrase for the new key pair
-		e2e.ConsoleSendLine("e2etest"),              // Re-enter the passphrase
-		e2e.ConsoleSendLine("n"),                    // Do not push to the keystore
-	}
+	cmdArgs := []string{"list"} // The command will actually not do much but create the keyring
 	c.env.KeyringDir = keyringDir
 	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(false),
 		e2e.WithCommand("key"),
-		e2e.ConsoleRun(inputs...),
-		e2e.WithArgs(genCmdArgs...),
+		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(0),
 	)
 
-	listCmdArgs := []string{"list"}
-	c.env.RunSingularity(
-		t,
-		e2e.WithPrivileges(false),
-		e2e.WithCommand("key"),
-		e2e.WithArgs(listCmdArgs...),
-		e2e.ExpectExit(0,
-			e2e.ExpectOutput(e2e.ContainMatch, "0) U: test keypair (Singularity E2E test) <geoffroy@sylabs.io>"),
-		),
-	)
+	pubKeyringPath := filepath.Join(keyringDir, "pgp-public")
+	if _, err := os.Stat(pubKeyringPath); os.IsNotExist(err) {
+		t.Fatalf("failed to find keyring (expected: %s)", pubKeyringPath)
+	}
+
+	privKeyringPath := filepath.Join(keyringDir, "pgp-secret")
+	if _, err := os.Stat(privKeyringPath); os.IsNotExist(err) {
+		t.Fatalf("failed to find keyring (expected: %s)", privKeyringPath)
+	}
+
 }
 
 // RunE2ETests is the bootstrap to run all instance tests.
