@@ -32,6 +32,7 @@ func (c *ctx) singularityKeyList(t *testing.T) {
 		t,
 		e2e.WithCommand("key"),
 		e2e.WithArgs("list"),
+		e2e.WithSypgpDir(c.keyRing),
 		e2e.ExpectExit(0, printOut),
 	)
 }
@@ -61,6 +62,7 @@ func (c *ctx) singularityKeyNewpair(t *testing.T) {
 			e2e.ConsoleRun(tt.consoleOps...),
 			e2e.WithCommand("key"),
 			e2e.WithArgs("newpair"),
+			e2e.WithSypgpDir(c.keyRing),
 			e2e.ExpectExit(0),
 		)
 	}
@@ -112,6 +114,7 @@ func (c *ctx) singularityKeyExport(t *testing.T) {
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
 			e2e.ConsoleRun(tt.consoleOps...),
+			e2e.WithSypgpDir(c.keyRing),
 			e2e.ExpectExit(0),
 		)
 	}
@@ -186,6 +189,7 @@ func (c *ctx) singularityKeyImport(t *testing.T) {
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
 			e2e.ConsoleRun(tt.consoleOps...),
+			e2e.WithSypgpDir(c.keyRing),
 			e2e.ExpectExit(tt.expectExit),
 		)
 	}
