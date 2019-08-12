@@ -146,6 +146,7 @@ var pullAllowUnsignedFlag = cmdline.Flag{
 	ShortHand:    "U",
 	Usage:        "do not require a signed container",
 	EnvKeys:      []string{"ALLOW_UNSIGNED"},
+	Deprecated:   `pull no longer exits with an error code in case of unsigned image. Now the flag only suppress warning message.`,
 }
 
 // --allow-unauthenticated
@@ -221,6 +222,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 		name = filepath.Join(pullDir, name)
 	}
 
+	if !force {
+		if _, err := os.Stat(name); err == nil {
+			sylog.Fatalf("Image file already exists: %q - will not overwrite", name)
+		}
+	}
+
 	// monitor for OS signals and remove invalid file
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -234,15 +241,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 	switch transport {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
-		err := singularity.LibraryPull(imgCache, name, args[i], pullLibraryURI, keyServerURL, authToken, pullArch, force, unauthenticatedPull, disableCache)
-		if err == singularity.ErrLibraryPullUnsigned {
-			os.Exit(10)
-		}
-		if err != nil {
+		err := singularity.LibraryPull(imgCache, name, args[i], pullLibraryURI, keyServerURL, authToken, pullArch, unauthenticatedPull, disableCache)
+		if err != nil && err != singularity.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
 	case ShubProtocol:
-		err := singularity.PullShub(imgCache, name, args[i], force, noHTTPS, disableCache)
+		err := singularity.PullShub(imgCache, name, args[i], noHTTPS, disableCache)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
@@ -257,7 +261,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}
 	case HTTPProtocol, HTTPSProtocol:
-		err := net.DownloadImage(name, args[i], force)
+		err := net.DownloadImage(name, args[i])
 		if err != nil {
 			sylog.Fatalf("While pulling from image from http(s): %v\n", err)
 		}
@@ -267,7 +271,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
-		err = singularity.OciPull(imgCache, name, args[i], tmpDir, ociAuth, force, noHTTPS, disableCache)
+		err = singularity.OciPull(imgCache, name, args[i], tmpDir, ociAuth, noHTTPS, disableCache)
 		if err != nil {
 			sylog.Fatalf("While making image from oci registry: %v", err)
 		}
