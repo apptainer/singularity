@@ -102,7 +102,7 @@ func startContainer(masterSocket int, containerPid int, e *engine.Engine, fatalC
 	}
 }
 
-// Master initializes a runtime engine and runs it
+// Master initializes a runtime engine and runs it.
 func Master(rpcSocket, masterSocket int, containerPid int, e *engine.Engine) {
 	var status syscall.WaitStatus
 	fatalChan := make(chan error, 1)
