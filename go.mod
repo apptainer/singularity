@@ -91,7 +91,7 @@ require (
 	github.com/sylabs/scs-build-client v0.0.4
 	github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
 	github.com/sylabs/scs-library-client v0.3.0
-	github.com/sylabs/sif v1.0.6
+	github.com/sylabs/sif v1.0.7
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
 	github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6 // indirect
 	github.com/vishvananda/netns v0.0.0-20171111001504-be1fbeda1936 // indirect
