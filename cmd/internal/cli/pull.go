@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -226,7 +227,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	switch transport {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
-		err := singularity.LibraryPull(imgCache, name, args[i], pullLibraryURI, keyServerURL, authToken, unauthenticatedPull, disableCache)
+		err := singularity.LibraryPull(context.TODO(), imgCache, name, args[i], pullLibraryURI, keyServerURL, authToken, unauthenticatedPull, disableCache)
 		if err != nil && err != singularity.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}

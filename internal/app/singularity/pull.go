@@ -35,7 +35,7 @@ var (
 // LibraryPull will download the image specified by file from the library specified by libraryURI.
 // After downloading, the image will be checked for a valid signature and removed if it does not contain one,
 // unless specified not to by the unauthenticated bool
-func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL, authToken string, unauthenticated, noCache bool) error {
+func LibraryPull(ctx context.Context, imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL, authToken string, unauthenticated, noCache bool) error {
 	libraryClient, err := client.NewClient(&client.Config{
 		BaseURL:   libraryURI,
 		AuthToken: authToken,
@@ -48,7 +48,7 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 	imageRef := library.NormalizeLibraryRef(fullURI)
 
 	// check if image exists in library
-	libraryImage, err := libraryClient.GetImage(context.TODO(), imageRef)
+	libraryImage, err := libraryClient.GetImage(ctx, imageRef)
 	if err == client.ErrNotFound {
 		return fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
@@ -59,7 +59,7 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 	if noCache {
 		// don't use cached image
 		sylog.Infof("Downloading library image: %s", name)
-		err := library.DownloadImage(context.TODO(), libraryClient, name, imageRef, downloadImageCallback)
+		err := library.DownloadImage(ctx, libraryClient, name, imageRef, downloadImageCallback)
 		if err != nil {
 			return fmt.Errorf("unable to download image: %v", err)
 		}
@@ -76,7 +76,7 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 			go interruptCleanup(imagePath)
 
 			// call library download image helper
-			err := library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback)
+			err := library.DownloadImage(ctx, libraryClient, imagePath, imageRef, downloadImageCallback)
 			if err != nil {
 				return fmt.Errorf("unable to download image: %v", err)
 			}
