@@ -53,7 +53,9 @@ func (c *ctx) testSingularityCacheDir(t *testing.T) {
 	imgName := "testImg.sif"
 	imgPath := filepath.Join(c.env.TestDir, imgName)
 	cmdArgs := []string{imgPath, "library://alpine:latest"}
-	// Pull an image
+
+	// Build the image. We make sure to use RunSingularity since the goal here is to check
+	// whether it does the correct thing or not.
 	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(false),
@@ -72,6 +74,52 @@ func (c *ctx) testSingularityCacheDir(t *testing.T) {
 	}
 }
 
+func (c *ctx) testSingularitySypgpDir(t *testing.T) {
+	// Create a temporary directory to be used for a keyring
+	keyringDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s", err)
+	}
+	defer func() {
+		err := os.RemoveAll(keyringDir)
+		if err != nil {
+			t.Fatalf("failed to delete temporary directory %s: %s", keyringDir, err)
+		}
+	}()
+
+	// Create a new pair of keys. We make sure we use RunSingularity to ensure that
+	// it does the expected things.
+	genCmdArgs := []string{"newpair"}
+	inputs := []e2e.SingularityConsoleOp{
+		e2e.ConsoleSendLine("test keypair"),         // Name of the new key pair
+		e2e.ConsoleSendLine("geoffroy@sylabs.io"),   // Email of the new key pair
+		e2e.ConsoleSendLine("Singularity E2E test"), // Comment for the new key pair
+		e2e.ConsoleSendLine("e2etest"),              // Passphrase for the new key pair
+		e2e.ConsoleSendLine("e2etest"),              // Re-enter the passphrase
+		e2e.ConsoleSendLine("n"),                    // Do not push to the keystore
+	}
+	c.env.KeyringDir = keyringDir
+	c.env.RunSingularity(
+		t,
+		e2e.WithPrivileges(false),
+		e2e.WithCommand("key"),
+		e2e.ConsoleRun(inputs...),
+		e2e.WithArgs(genCmdArgs...),
+		e2e.ExpectExit(0),
+	)
+
+	listCmdArgs := []string{"list"}
+	c.env.RunSingularity(
+		t,
+		e2e.WithPrivileges(false),
+		e2e.WithCommand("key"),
+		e2e.WithArgs(listCmdArgs...),
+		e2e.ExpectExit(0,
+			e2e.ExpectOutput(e2e.ContainMatch, "0) U: test keypair (Singularity E2E test) <geoffroy@sylabs.io>"),
+		),
+	)
+}
+
 // RunE2ETests is the bootstrap to run all instance tests.
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
@@ -80,5 +128,6 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 
 	return func(t *testing.T) {
 		t.Run("testSingularityCacheDir", c.testSingularityCacheDir)
+		t.Run("testSingularitySypgpDir", c.testSingularitySypgpDir)
 	}
 }
