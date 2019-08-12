@@ -24,6 +24,13 @@ import (
 // Device describes a crypt device
 type Device struct{}
 
+// Pre-defined error(s)
+var (
+	// ErrUnsupportedCryptsetupVersion is the error raised when the available version
+	// of cryptsetup is not compatible with the Singularity encryption mechanism.
+	ErrUnsupportedCryptsetupVersion = errors.New("available cryptsetup is not supported")
+)
+
 // createLoop attaches the specified file to the next available loop
 // device and sets the sizelimit on it
 func createLoop(path string, offset, size uint64) (string, error) {
@@ -70,6 +77,26 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 	return nil
 }
 
+func checkCryptsetupVersion(cryptsetup string) error {
+	if cryptsetup == "" {
+		return fmt.Errorf("binary path not defined")
+	}
+
+	cmd := exec.Command(cryptsetup, "--version")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to run cryptsetup --version: %s", err)
+	}
+
+	if !strings.Contains(string(out), "cryptsetup 2.") {
+		return ErrUnsupportedCryptsetupVersion
+	}
+
+	// We successfully ran cryptsetup --version and we know that the
+	// version is compatible with our needs.
+	return nil
+}
+
 // EncryptFilesystem takes the path to a file containing a non-encrypted
 // filesystem, encrypts it using the provided key, and returns a path to
 // a file that can be later used as an encrypted volume with cryptsetup.
@@ -90,17 +117,17 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 	defer cryptF.Close()
 
 	// Truncate the file taking the squashfs size and crypt header
-	// into account. With the options specified below
-	// (--luks2-metadata-size 64k, --luks2-keyslots-size 512k) the
-	// LUKS header is less than 1MB in size. Slightly over-allocate
+	// into account. With the options specified below the LUKS header
+	// is less than 16MB in size. Slightly over-allocate
 	// to compensate for the encryption overhead itself.
 	//
 	// TODO(mem): the encryption overhead might depend on the size
 	// of the data we are encrypting. For very large images, we
 	// might not be overallocating enough. Figure out what's the
 	// actual percentage we need to overallocate.
-	devSize := fSize + 1*1024*1024
+	devSize := fSize + 16*1024*1024
 
+	sylog.Debugf("Total device size for encrypted image: %d", devSize)
 	err = os.Truncate(cryptF.Name(), devSize)
 	if err != nil {
 		sylog.Debugf("Unable to truncate crypt file to size %d", devSize)
@@ -128,7 +155,7 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 		return "", err
 	}
 
-	cmd := exec.Command(cryptsetup, "luksFormat", "--batch-mode", "--type", "luks2", "--key-file", "-", "--luks2-metadata-size", "64k", "--luks2-keyslots-size", "512k", loop)
+	cmd := exec.Command(cryptsetup, "luksFormat", "--batch-mode", "--type", "luks2", "--key-file", "-", loop)
 	stdin, err := cmd.StdinPipe()
 
 	if err != nil {
@@ -141,9 +168,16 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 	}()
 
 	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
-	err = cmd.Run()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("unable to format crypt device: %s", cryptF.Name())
+		err = checkCryptsetupVersion(cryptsetup)
+		if err == ErrUnsupportedCryptsetupVersion {
+			// Special case of unsupported version of cryptsetup. We return the raw error
+			// so it can propagate up and a user-friendly message be displayed. This error
+			// should trigger an error at the CLI level.
+			return "", err
+		}
+		return "", fmt.Errorf("unable to format crypt device: %s: %s", cryptF.Name(), string(out))
 	}
 
 	nextCrypt, err := crypt.Open(key, loop)
@@ -254,9 +288,16 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 			if strings.Contains(string(out), "Device already exists") {
 				continue
 			}
-			return "", err
-		}
+			err = checkCryptsetupVersion(cryptsetup)
+			if err == ErrUnsupportedCryptsetupVersion {
+				// Special case of unsupported version of cryptsetup. We return the raw error
+				// so it can propagate up and a user-friendly message be displayed. This error
+				// should trigger an error at the CLI level.
+				return "", err
+			}
 
+			return "", fmt.Errorf("cryptsetup open failed: %s: %v", string(out), err)
+		}
 		sylog.Debugf("Successfully opened encrypted device %s", path)
 		return nextCrypt, nil
 	}

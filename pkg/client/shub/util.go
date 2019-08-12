@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -34,16 +34,18 @@ func isShubPullRef(shubRef string) bool {
 	return shubRef == found
 }
 
-// shubParseReference accepts a valid Shub reference string and parses its content
+// ShubParseReference accepts a valid Shub reference string and parses its content
 // It will return an error if the given URI is not valid,
 // otherwise it will parse the contents into a ShubURI struct
-func shubParseReference(src string) (uri ShubURI, err error) {
+func ShubParseReference(src string) (ShubURI, error) {
+	uri := ShubURI{}
+
 	ShubRef := strings.TrimPrefix(src, "shub://")
 	refParts := strings.Split(ShubRef, "/")
 
 	if l := len(refParts); l > 2 {
 		// more than two pieces indicates a custom registry
-		uri.registry = strings.Join(refParts[:l-2], "") + shubAPIRoute
+		uri.registry = strings.Join(refParts[:l-2], "/") + shubAPIRoute
 		uri.user = refParts[l-2]
 		src = refParts[l-1]
 	} else if l == 2 {
@@ -52,7 +54,7 @@ func shubParseReference(src string) (uri ShubURI, err error) {
 		uri.user = refParts[l-2]
 		src = refParts[l-1]
 	} else if l < 2 {
-		return ShubURI{}, errors.New("Not a valid Shub reference")
+		return ShubURI{}, errors.New("not a valid Shub reference")
 	}
 
 	// look for an @ and split if it exists

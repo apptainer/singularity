@@ -44,12 +44,12 @@ type ShubAPIResponse struct {
 	Name    string `json:"name"`
 	Tag     string `json:"tag"`
 	Version string `json:"version"`
+	Commit  string `json:"commit"`
 }
 
-// getManifest will return the image manifest for a container uri
+// GetManifest will return the image manifest for a container uri
 // from Singularity Hub.
-func getManifest(uri ShubURI, noHTTPS bool) (ShubAPIResponse, error) {
-
+func GetManifest(uri ShubURI, noHTTPS bool) (ShubAPIResponse, error) {
 	// Create a new http Hub client
 	httpc := http.Client{
 		Timeout: 30 * time.Second,

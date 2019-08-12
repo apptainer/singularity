@@ -10,7 +10,7 @@ const (
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RemoteUse   string = `remote <subcommand>`
+	RemoteUse   string = `remote [remote options...]`
 	RemoteShort string = `Manage singularity remote endpoints`
 	RemoteLong  string = `
   The 'remote' commands allow you to manage Singularity remote endpoints through 
@@ -24,17 +24,18 @@ const (
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote add command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RemoteAddUse   string = `add <remote_name> <remote_URI>`
+	RemoteAddUse   string = `add [add options...] <remote_name> <remote_URI>`
 	RemoteAddShort string = `Create a new singularity remote endpoint`
 	RemoteAddLong  string = `
-  The 'remote add' command allows you to create a new remote endpoint to be used 
-  for Singularity remote services.`
+	The 'remote add' command allows you to create a new remote endpoint to be
+	be used for singularity remote services. Authentication with a newly created
+	endpoint will occur automatically.`
 	RemoteAddExample string = `
   $ singularity remote add SylabsCloud cloud.sylabs.io`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote remove command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RemoteRemoveUse   string = `remove <remote_name>`
+	RemoteRemoveUse   string = `remove [remove options...] <remote_name>`
 	RemoteRemoveShort string = `Remove an existing singularity remote endpoint`
 	RemoteRemoveLong  string = `
   The 'remote remove' command allows you to remove an existing remote endpoint 
@@ -44,7 +45,7 @@ const (
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote use command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RemoteUseUse   string = `use <remote_name>`
+	RemoteUseUse   string = `use [use options...] <remote_name>`
 	RemoteUseShort string = `Set a singularity remote endpoint to be actively used`
 	RemoteUseLong  string = `
   The 'remote use' command sets the remote to be used by default by any command
@@ -64,7 +65,7 @@ const (
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote login command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RemoteLoginUse   string = `login [remote_name]`
+	RemoteLoginUse   string = `login [login options...] <remote_name>`
 	RemoteLoginShort string = `Log into a singularity remote endpoint using an authentication token`
 	RemoteLoginLong  string = `
   The 'remote login' command allows you to set an authentication token for a

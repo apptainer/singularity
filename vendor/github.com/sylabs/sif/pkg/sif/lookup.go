@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -152,6 +152,28 @@ func (fimg *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, e
 	return descrs, indexes, nil
 }
 
+// GetLinkedDescrsByType searches for descriptors that point to "id", only returns the specified type
+func (fimg *FileImage) GetLinkedDescrsByType(ID uint32, dataType Datatype) ([]*Descriptor, []int, error) {
+	var descrs []*Descriptor
+	var indexes []int
+
+	for i, v := range fimg.DescrArr {
+		if !v.Used {
+			continue
+		}
+		if v.Datatype == dataType && v.Link == ID {
+			indexes = append(indexes, i)
+			descrs = append(descrs, &fimg.DescrArr[i])
+		}
+	}
+
+	if len(descrs) == 0 {
+		return nil, nil, ErrNotFound
+	}
+
+	return descrs, indexes, nil
+}
+
 // GetFromLinkedDescr searches for descriptors that point to "id"
 func (fimg *FileImage) GetFromLinkedDescr(ID uint32) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
@@ -252,6 +274,12 @@ func (descr *Descriptor) GetData(fimg *FileImage) []byte {
 			return nil
 		}
 		return data
+	}
+
+	if descr.Fileoff+descr.Filelen > int64(len(fimg.Filedata)) {
+		// there's not enough data in the file to account for the indicated
+		// payload. Is the header corrupted?
+		return nil
 	}
 
 	return fimg.Filedata[descr.Fileoff : descr.Fileoff+descr.Filelen]

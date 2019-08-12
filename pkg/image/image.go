@@ -6,6 +6,7 @@
 package image
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -36,12 +37,28 @@ const (
 	bufferSize   = 2048
 )
 
+// debugError represents an error considered for debugging
+// purpose rather than real error, this helps to distinguish
+// those errors between real image format error during
+// initializer loop.
+type debugError string
+
+func (e debugError) Error() string { return string(e) }
+
+func debugErrorf(format string, a ...interface{}) error {
+	e := fmt.Sprintf(format, a...)
+	return debugError(e)
+}
+
+// ErrUnknownFormat represents an unknown image format error.
+var ErrUnknownFormat = errors.New("image format not recognized")
+
 var registeredFormats = []struct {
 	name   string
 	format format
 }{
-	{"sif", &sifFormat{}},
 	{"sandbox", &sandboxFormat{}},
+	{"sif", &sifFormat{}},
 	{"squashfs", &squashfsFormat{}},
 	{"ext3", &ext3Format{}},
 }
@@ -159,7 +176,7 @@ func ResolvePath(path string) (string, error) {
 
 // Init initializes an image object based on given path.
 func Init(path string, writable bool) (*Image, error) {
-	sylog.Debugf("Entering image format intializer")
+	sylog.Debugf("Image format detection")
 
 	resolvedPath, err := ResolvePath(path)
 	if err != nil {
@@ -172,7 +189,7 @@ func Init(path string, writable bool) (*Image, error) {
 	}
 
 	for _, rf := range registeredFormats {
-		sylog.Debugf("Check for image format %s", rf.name)
+		sylog.Debugf("Check for %s image format", rf.name)
 
 		img.Writable = writable
 
@@ -197,11 +214,17 @@ func Init(path string, writable bool) (*Image, error) {
 		}
 
 		err = rf.format.initializer(img, fileinfo)
-		if err != nil {
+		if _, ok := err.(debugError); ok {
 			sylog.Debugf("%s format initializer returned: %s", rf.name, err)
 			_ = img.File.Close()
 			continue
+		} else if err != nil {
+			_ = img.File.Close()
+			return nil, err
 		}
+
+		sylog.Debugf("%s image format detected", rf.name)
+
 		if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, img.File.Fd(), syscall.F_SETFD, syscall.O_CLOEXEC); err != 0 {
 			sylog.Warningf("failed to set O_CLOEXEC flags on image")
 		}
@@ -211,5 +234,5 @@ func Init(path string, writable bool) (*Image, error) {
 
 		return img, nil
 	}
-	return nil, fmt.Errorf("image format not recognized")
+	return nil, ErrUnknownFormat
 }

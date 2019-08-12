@@ -36,7 +36,7 @@ const (
 func getCacheHandle() *cache.Handle {
 	h, err := cache.NewHandle(os.Getenv(cache.DirEnv))
 	if err != nil {
-		sylog.Fatalf("failed to create an image cache handle: %s", err)
+		sylog.Fatalf("Failed to create an image cache handle: %s", err)
 	}
 	return h
 }
@@ -191,12 +191,12 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 
 	imageRef := libraryhelper.NormalizeLibraryRef(u)
 
-	libraryImage, existOk, err := c.GetImage(ctx, imageRef)
+	libraryImage, err := c.GetImage(ctx, imageRef)
+	if err == library.ErrNotFound {
+		return "", fmt.Errorf("image does not exist in the library: %s", imageRef)
+	}
 	if err != nil {
 		return "", err
-	}
-	if !existOk {
-		return "", fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
 	imagePath := ""
@@ -239,6 +239,17 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 func handleShub(imgCache *cache.Handle, u string) (string, error) {
 	imagePath := ""
 
+	shubURI, err := shub.ShubParseReference(u)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse shub uri: %s", err)
+	}
+
+	// Get the image manifest
+	manifest, err := shub.GetManifest(shubURI, noHTTPS)
+	if err != nil {
+		return "", fmt.Errorf("failed to get manifest for: %s: %s", u, err)
+	}
+
 	if disableCache {
 		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
 		if err != nil {
@@ -247,21 +258,21 @@ func handleShub(imgCache *cache.Handle, u string) (string, error) {
 		imagePath = file.Name()
 
 		sylog.Infof("Downloading shub image")
-		err = shub.DownloadImage(imagePath, u, true, noHTTPS)
+		err = shub.DownloadImage(manifest, imagePath, u, true, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
 	} else {
 		imageName := uri.GetName(u)
-		imagePath = imgCache.ShubImage("hash", imageName)
+		imagePath = imgCache.ShubImage(manifest.Commit, imageName)
 
-		exists, err := imgCache.ShubImageExists("hash", imageName)
+		exists, err := imgCache.ShubImageExists(manifest.Commit, imageName)
 		if err != nil {
 			return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 		}
 		if !exists {
 			sylog.Infof("Downloading shub image")
-			err := shub.DownloadImage(imagePath, u, true, noHTTPS)
+			err := shub.DownloadImage(manifest, imagePath, u, true, noHTTPS)
 			if err != nil {
 				sylog.Fatalf("%v\n", err)
 			}
@@ -284,7 +295,7 @@ func handleNet(imgCache *cache.Handle, u string) (string, error) {
 	}
 	if !exists {
 		sylog.Infof("Downloading network image")
-		err := net.DownloadImage(imagePath, u, true)
+		err := net.DownloadImage(imagePath, u)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
