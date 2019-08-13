@@ -29,6 +29,10 @@ func getLibraryCachePath(c *Handle) (string, error) {
 
 // LibraryImage creates a directory inside cache.Dir() with the name of the SHA sum of the image.
 func (c *Handle) LibraryImage(sum, name string) string {
+	if c.disabled {
+		return ""
+	}
+
 	_, err := updateCacheSubdir(c, filepath.Join(LibraryDir, sum))
 	if err != nil {
 		return ""
@@ -39,6 +43,10 @@ func (c *Handle) LibraryImage(sum, name string) string {
 
 // LibraryImageExists returns whether the image with the SHA sum exists in the LibraryImage cache.
 func (c *Handle) LibraryImageExists(sum, name string) (bool, error) {
+	if c.disabled {
+		return false, nil
+	}
+
 	imagePath := c.LibraryImage(sum, name)
 	_, err := os.Stat(imagePath)
 	if os.IsNotExist(err) {

@@ -26,6 +26,9 @@ const (
 	// for image downloads to be cached in
 	DirEnv = "SINGULARITY_CACHEDIR"
 
+	// DisableCacheEnv specifies whether the image should be used
+	DisableCacheEnv = "SINGULARITY_DISABLE_CACHE"
+
 	// CacheDir specifies the name of the directory relative to the
 	// singularity data directory where images are cached in by
 	// default.
@@ -72,6 +75,9 @@ type Handle struct {
 
 	// Oras provides the location of the ORAS cache
 	Oras string
+
+	// disabled specifies if the test is disabled
+	disabled bool
 }
 
 // NewHandle initializes a new cache within a given directory. It does not set
@@ -82,6 +88,14 @@ type Handle struct {
 // empty string, the image cache will be located to the default location, i.e.,
 // $HOME/.singularity.
 func NewHandle(baseDir string) (*Handle, error) {
+	newCache := new(Handle)
+
+	if os.Getenv(DisableCacheEnv) == "1" {
+		newCache.disabled = true
+		return newCache, nil
+	}
+
+	newCache.disabled = false
 	if baseDir == "" {
 		baseDir = getCacheBasedir()
 	}
@@ -102,7 +116,6 @@ func NewHandle(baseDir string) (*Handle, error) {
 		return nil, fmt.Errorf("failed initializing caching directory: %s", err)
 	}
 
-	newCache := new(Handle)
 	newCache.baseDir = baseDir
 	newCache.rootDir = rootDir
 	newCache.Library, err = getLibraryCachePath(newCache)
@@ -172,6 +185,11 @@ func (c *Handle) GetBasedir() string {
 	return c.baseDir
 }
 
+// IsDisabled returns true if the cache is disabled
+func (c *Handle) IsDisabled() bool {
+	return c.disabled
+}
+
 // updateCacheSubdir update/create a sub-cache (directory) within the cache,
 // for example, the 'shub' cache.
 func updateCacheSubdir(c *Handle, subdir string) (string, error) {
@@ -218,6 +236,10 @@ func initCacheDir(dir string) error {
 // cleanAllCaches is an utility function that wipes all files in the
 // cache directory, will return a error if one occurs
 func (c *Handle) cleanAllCaches() {
+	if c.disabled {
+		return
+	}
+
 	cacheDirs := map[string]string{
 		"library": c.Library,
 		"oci":     c.OciTemp,

@@ -20,6 +20,10 @@ func TestLibrary(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	if os.Getenv(DisableCacheEnv) == "1" {
+		t.Skip("Caching is disabled")
+	}
+
 	tests := []struct {
 		name        string
 		dir         string
@@ -60,6 +64,10 @@ func TestLibrary(t *testing.T) {
 func TestLibraryImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	if os.Getenv(DisableCacheEnv) == "1" {
+		t.Skip("Caching is disabled")
+	}
 
 	tempImageCache, err := ioutil.TempDir("", "image-cache-")
 	if err != nil {
@@ -132,6 +140,10 @@ func createValidFakeImageInCache(t *testing.T, c *Handle) (string, string, strin
 func TestLibraryImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	if os.Getenv(DisableCacheEnv) == "1" {
+		t.Skip("Caching is disabled")
+	}
 
 	imageCacheDir, err := ioutil.TempDir("", "image-cache-")
 	if err != nil {

@@ -20,6 +20,10 @@ func TestShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	if os.Getenv(DisableCacheEnv) == "1" {
+		t.Skip("Caching is disabled")
+	}
+
 	tests := []struct {
 		name        string
 		dir         string
@@ -62,6 +66,10 @@ func TestShubImageExists(t *testing.T) {
 	t.Skip("Skipping tests that access singularity hub")
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	if os.Getenv(DisableCacheEnv) == "1" {
+		t.Skip("Caching is disabled")
+	}
 
 	tempImageCache, err := ioutil.TempDir("", "image-cache-")
 	if err != nil {

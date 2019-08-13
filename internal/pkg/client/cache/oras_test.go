@@ -20,6 +20,10 @@ func TestOrasImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	if os.Getenv(DisableCacheEnv) == "1" {
+		t.Skip("Caching is disabled")
+	}
+
 	// Create a clean empty image cache
 	imageCacheDir, err := ioutil.TempDir("", "image-cache-")
 	if err != nil {
