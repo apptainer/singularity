@@ -22,6 +22,7 @@ type Registry interface {
 	Pull(ctx context.Context, from, to string) error
 }
 
+// Library is a Registry implementation for Sylabs Cloud Library.
 type Library struct {
 	keystoreURI string
 
@@ -29,6 +30,7 @@ type Library struct {
 	cache  *cache.Handle
 }
 
+// NewLibrary initializes and returns new Library ready to  be used.
 func NewLibrary(client *scs.Client, cache *cache.Handle, keystoreURI string) *Library {
 	return &Library{
 		keystoreURI: keystoreURI,
@@ -60,20 +62,18 @@ func (l *Library) Pull(ctx context.Context, from, to string) error {
 		}
 	} else {
 		// check and use cached image
-		imagePath := l.cache.LibraryImage(imageMeta.Hash, uri.GetName("library://"+libraryPath))
-		err := l.copyFromCache(imageMeta.Hash, imagePath, to)
-		if err != nil && err != errNotInCache {
-			return fmt.Errorf("could not copy image from cache: %v", err)
-		}
+		imageName := uri.GetName("library://" + libraryPath)
+		err := l.copyFromCache(imageMeta.Hash, imageName, to)
 		if err == errNotInCache {
-			err := l.pullAndVerify(ctx, imageMeta, libraryPath, imagePath)
+			imagePath := l.cache.LibraryImage(imageMeta.Hash, imageName)
+			err = l.pullAndVerify(ctx, imageMeta, libraryPath, imagePath)
 			if err != nil {
 				return fmt.Errorf("could not pull image: %v", err)
 			}
-			err = l.copyFromCache(imageMeta.Hash, imagePath, to)
-			if err != nil {
-				return fmt.Errorf("could not copy image from cache: %v", err)
-			}
+			err = l.copyFromCache(imageMeta.Hash, imageName, to)
+		}
+		if err != nil {
+			return fmt.Errorf("could not copy image from cache: %v", err)
 		}
 	}
 
@@ -87,6 +87,9 @@ func (l *Library) Pull(ctx context.Context, from, to string) error {
 	return nil
 }
 
+// pullAndVerify downloads library image and verifies it by comparing checksum
+// in imgMeta with actual checksum of the downloaded file. The resulting image
+// will be saved to the location provided.
 func (l *Library) pullAndVerify(ctx context.Context, imgMeta *scs.Image, from, to string) error {
 	sylog.Infof("Downloading library image")
 	go interruptCleanup(to)
@@ -106,10 +109,12 @@ func (l *Library) pullAndVerify(ctx context.Context, imgMeta *scs.Image, from, t
 	return nil
 }
 
-func (l *Library) copyFromCache(hash, from, to string) error {
-	exists, err := l.cache.LibraryImageExists(hash, from)
+// copyFromCache checks whether an image with the given name and checksum exists in the cache.
+// If so, the image will be copied to the location provided.
+func (l *Library) copyFromCache(hash, name, to string) error {
+	exists, err := l.cache.LibraryImageExists(hash, name)
 	if err != nil {
-		return fmt.Errorf("unable to check if %s exists: %v", from, err)
+		return fmt.Errorf("unable to check if %s exists: %v", name, err)
 	}
 	if !exists {
 		return errNotInCache
@@ -123,13 +128,13 @@ func (l *Library) copyFromCache(hash, from, to string) error {
 	}
 	defer dstFile.Close()
 
+	from := l.cache.LibraryImage(hash, name)
 	srcFile, err := os.Open(from)
 	if err != nil {
 		return fmt.Errorf("while opening cached image: %v", err)
 	}
 	defer srcFile.Close()
 
-	// Copy SIF from cache
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
 		return fmt.Errorf("while copying image from cache: %v", err)
