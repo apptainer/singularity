@@ -13,6 +13,7 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
+	"strconv"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -90,12 +91,16 @@ type Handle struct {
 func NewHandle(baseDir string) (*Handle, error) {
 	newCache := new(Handle)
 
-	if os.Getenv(DisableEnv) == "1" {
-		newCache.disabled = true
+	// Check whether the cache is disabled by the user.
+	var err error
+	newCache.disabled, err = strconv.ParseBool(os.Getenv(DisableEnv)) // strconv.ParseBool() on an empty string returns false
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse environment variable %s", DisableEnv)
+	}
+	if newCache.disabled {
 		return newCache, nil
 	}
 
-	newCache.disabled = false
 	if baseDir == "" {
 		baseDir = getCacheBasedir()
 	}
