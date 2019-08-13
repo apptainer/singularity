@@ -27,7 +27,7 @@ const (
 	DirEnv = "SINGULARITY_CACHEDIR"
 
 	// DisableCacheEnv specifies whether the image should be used
-	DisableCacheEnv = "SINGULARITY_DISABLE_CACHE"
+	DisableEnv = "SINGULARITY_DISABLE_CACHE"
 
 	// CacheDir specifies the name of the directory relative to the
 	// singularity data directory where images are cached in by
@@ -90,7 +90,7 @@ type Handle struct {
 func NewHandle(baseDir string) (*Handle, error) {
 	newCache := new(Handle)
 
-	if os.Getenv(DisableCacheEnv) == "1" {
+	if os.Getenv(DisableEnv) == "1" {
 		newCache.disabled = true
 		return newCache, nil
 	}

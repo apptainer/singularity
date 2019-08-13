@@ -18,7 +18,7 @@ func TestOciBlob(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	if os.Getenv(DisableCacheEnv) == "1" {
+	if os.Getenv(DisableEnv) == "1" {
 		t.Skip("Caching is disabled")
 	}
 
@@ -63,7 +63,7 @@ func TestOciTemp(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	if os.Getenv(DisableCacheEnv) == "1" {
+	if os.Getenv(DisableEnv) == "1" {
 		t.Skip("Caching is disabled")
 	}
 
@@ -108,7 +108,7 @@ func TestOciTempExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	if os.Getenv(DisableCacheEnv) == "1" {
+	if os.Getenv(DisableEnv) == "1" {
 		t.Skip("Caching is disabled")
 	}
 

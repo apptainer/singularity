@@ -20,7 +20,7 @@ func TestLibrary(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	if os.Getenv(DisableCacheEnv) == "1" {
+	if os.Getenv(DisableEnv) == "1" {
 		t.Skip("Caching is disabled")
 	}
 
@@ -65,7 +65,7 @@ func TestLibraryImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	if os.Getenv(DisableCacheEnv) == "1" {
+	if os.Getenv(DisableEnv) == "1" {
 		t.Skip("Caching is disabled")
 	}
 
@@ -141,7 +141,7 @@ func TestLibraryImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	if os.Getenv(DisableCacheEnv) == "1" {
+	if os.Getenv(DisableEnv) == "1" {
 		t.Skip("Caching is disabled")
 	}
 
