@@ -64,16 +64,19 @@ func (l *Library) Pull(ctx context.Context, from, to string) error {
 		// check and use cached image
 		imageName := uri.GetName("library://" + libraryPath)
 		err := l.copyFromCache(imageMeta.Hash, imageName, to)
-		if err == errNotInCache {
+		if err != nil {
+			if err != errNotInCache {
+				return fmt.Errorf("could not copy image from cache: %v", err)
+			}
 			imagePath := l.cache.LibraryImage(imageMeta.Hash, imageName)
-			err = l.pullAndVerify(ctx, imageMeta, libraryPath, imagePath)
+			err := l.pullAndVerify(ctx, imageMeta, libraryPath, imagePath)
 			if err != nil {
 				return fmt.Errorf("could not pull image: %v", err)
 			}
 			err = l.copyFromCache(imageMeta.Hash, imageName, to)
-		}
-		if err != nil {
-			return fmt.Errorf("could not copy image from cache: %v", err)
+			if err != nil {
+				return fmt.Errorf("could not copy image from cache: %v", err)
+			}
 		}
 	}
 
