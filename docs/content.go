@@ -566,10 +566,7 @@ Enterprise Performance Computing (EPC)`
       oras://registry/namespace/image:tag
 
   http, https: Pull an image using the http(s?) protocol
-      https://library.sylabs.io/v1/imagefile/library/default/alpine:latest
-
-  NOTE: if you pulled a unsigned container from the library, Singularity
-  will exit 10. To avoid this, use the '--allow-unsigned' flag with 'pull'.`
+      https://library.sylabs.io/v1/imagefile/library/default/alpine:latest`
 	PullExample string = `
   From Sylabs cloud library
   $ singularity pull alpine.sif library://alpine:latest
