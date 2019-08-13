@@ -596,7 +596,7 @@ func formatMROutput(mrString string) (int, []byte, error) {
 			}
 			if n == "pub" {
 				// The fingerprint is located at nk[1], and we only want the last 8 chars
-				fmt.Fprintf(tw, "%s\t", nk[1][32:])
+				fmt.Fprintf(tw, "%s\t", nk[1][len(nk[1])-8:])
 				// The key size (bits) is located at nk[3]
 				fmt.Fprintf(tw, "%s\t", nk[3])
 				count++
