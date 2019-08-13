@@ -95,6 +95,8 @@ func (c *Config) AddUserCaps(user string, caps []string) error {
 		}
 		if !present {
 			c.Users[user] = append(c.Users[user], cap)
+			sylog.Warningf("Adding '%s' capability will likely allow user %s to escalate privilege on the host", cap, user)
+			sylog.Warningf("Use 'singularity capability drop --user %s %s' to reverse this action if necessary", user, cap)
 		} else {
 			sylog.Warningf("Won't add capability '%s', already assigned to user %s", cap, user)
 		}
