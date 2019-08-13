@@ -53,7 +53,9 @@ func (c *ctx) testSingularityCacheDir(t *testing.T) {
 	imgName := "testImg.sif"
 	imgPath := filepath.Join(c.env.TestDir, imgName)
 	cmdArgs := []string{imgPath, "library://alpine:latest"}
-	// Pull an image
+
+	// Build the image. We make sure to use RunSingularity since the goal here is to check
+	// whether it does the correct thing or not.
 	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(false),
@@ -72,6 +74,42 @@ func (c *ctx) testSingularityCacheDir(t *testing.T) {
 	}
 }
 
+func (c *ctx) testSingularitySypgpDir(t *testing.T) {
+	// Create a temporary directory to be used for a keyring
+	keyringDir, err := ioutil.TempDir("", "e2e-sypgp-env-")
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s", err)
+	}
+	defer func() {
+		err := os.RemoveAll(keyringDir)
+		if err != nil {
+			t.Fatalf("failed to delete temporary directory %s: %s", keyringDir, err)
+		}
+	}()
+
+	// Run 'key list' to initialize the keyring.
+	cmdArgs := []string{"list"}
+	c.env.KeyringDir = keyringDir
+	c.env.RunSingularity(
+		t,
+		e2e.WithPrivileges(false),
+		e2e.WithCommand("key"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.ExpectExit(0),
+	)
+
+	pubKeyringPath := filepath.Join(keyringDir, "pgp-public")
+	if _, err := os.Stat(pubKeyringPath); os.IsNotExist(err) {
+		t.Fatalf("failed to find keyring (expected: %s)", pubKeyringPath)
+	}
+
+	privKeyringPath := filepath.Join(keyringDir, "pgp-secret")
+	if _, err := os.Stat(privKeyringPath); os.IsNotExist(err) {
+		t.Fatalf("failed to find keyring (expected: %s)", privKeyringPath)
+	}
+
+}
+
 // RunE2ETests is the bootstrap to run all instance tests.
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
@@ -80,5 +118,6 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 
 	return func(t *testing.T) {
 		t.Run("testSingularityCacheDir", c.testSingularityCacheDir)
+		t.Run("testSingularitySypgpDir", c.testSingularitySypgpDir)
 	}
 }
