@@ -6,9 +6,9 @@ if [ -z "$OS_TYPE" ]; then
 fi
 
 sudo mkdir -p /etc/systemd/system/docker.service.d
-sudo echo "[Service]"  >> /etc/systemd/system/docker.service.d/docker.conf
-sudo echo "ExecStart=" >> /etc/systemd/system/docker.service.d/docker.conf
-sudo echo "ExecStart=/usr/bin/dockerd -H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper" >> /etc/systemd/system/docker.service.d/docker.conf
+echo "[Service]"  | sudo tee -a /etc/systemd/system/docker.service.d/docker.conf >/dev/null
+echo "ExecStart=" | sudo tee -a /etc/systemd/system/docker.service.d/docker.conf >/dev/null
+echo "ExecStart=/usr/bin/dockerd -H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper" | sudo tee -a /etc/systemd/system/docker.service.d/docker.conf >/dev/null
 
 sudo apt-get update
 sudo systemctl daemon-reload
