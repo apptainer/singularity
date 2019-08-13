@@ -5,10 +5,10 @@ if [ -z "$OS_TYPE" ]; then
     exit
 fi
 
-mkdir -p /etc/systemd/system/docker.service.d
-echo "[Service]"  >> /etc/systemd/system/docker.service.d/docker.conf
-echo "ExecStart=" >> /etc/systemd/system/docker.service.d/docker.conf
-echo "ExecStart=/usr/bin/dockerd -H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper" >> /etc/systemd/system/docker.service.d/docker.conf
+sudo mkdir -p /etc/systemd/system/docker.service.d
+sudo echo "[Service]"  >> /etc/systemd/system/docker.service.d/docker.conf
+sudo echo "ExecStart=" >> /etc/systemd/system/docker.service.d/docker.conf
+sudo echo "ExecStart=/usr/bin/dockerd -H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper" >> /etc/systemd/system/docker.service.d/docker.conf
 
 sudo apt-get update
 sudo systemctl daemon-reload
