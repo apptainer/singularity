@@ -123,13 +123,3 @@ $(cgroups_config_INSTALL): $(cgroups_config)
 INSTALLFILES += $(cgroups_config_INSTALL)
 
 
-# remote config file
-remote_config := $(SOURCEDIR)/etc/remote.yaml
-
-remote_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/remote.yaml
-$(remote_config_INSTALL): $(remote_config)
-	@echo " INSTALL" $@
-	$(V)install -d $(@D)
-	$(V)install -m 0644 $< $@
-
-INSTALLFILES += $(remote_config_INSTALL)

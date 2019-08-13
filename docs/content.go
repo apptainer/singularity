@@ -334,7 +334,10 @@ Enterprise Performance Computing (EPC)`
   Capabilities allow you to have fine grained control over the permissions that
   your containers need to run.
 
-  NOTE: capability add/drop commands requires root to run.`
+  NOTE: capability add/drop commands require root to run. Granting capabilities 
+  to users allows them to escalate privilege inside the container and will
+  likely give them a route to privilege escalation on the host system as well.
+  Do not add capabilities to users who should not have root on the host system.`
 	CapabilityExample string = `
   All group commands have their own help output:
 
@@ -551,7 +554,7 @@ Enterprise Performance Computing (EPC)`
 	PullShort string = `Pull an image from a URI`
 	PullLong  string = `
   The 'pull' command allows you to download or build a container from a given
-  URI.  Supported URIs include:
+  URI. Supported URIs include:
 
   library: Pull an image from the currently configured library
       library://user/collection/container[:tag]
@@ -559,11 +562,14 @@ Enterprise Performance Computing (EPC)`
   docker: Pull an image from Docker Hub
       docker://user/image:tag
     
-  shub: Pull an image from Singularity Hub to CWD
+  shub: Pull an image from Singularity Hub
       shub://user/image:tag
 
   oras: Pull a SIF image from a supporting OCI registry
-      oras://registry/namespace/image:tag`
+      oras://registry/namespace/image:tag
+
+  http, https: Pull an image using the http(s?) protocol
+      https://library.sylabs.io/v1/imagefile/library/default/alpine:latest`
 	PullExample string = `
   From Sylabs cloud library
   $ singularity pull alpine.sif library://alpine:latest
