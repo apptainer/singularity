@@ -77,30 +77,34 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 	return nil
 }
 
-func checkCryptsetupVersion(cryptsetup string) error {
+func checkCryptsetupVersion(cryptsetup string) (string, error) {
 	if cryptsetup == "" {
-		return fmt.Errorf("binary path not defined")
+		return "", fmt.Errorf("binary path not defined")
 	}
 
 	cmd := exec.Command(cryptsetup, "--version")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("failed to run cryptsetup --version: %s", err)
+		return "", fmt.Errorf("failed to run cryptsetup --version: %s", err)
 	}
 
+	s := strings.Split(string(out), "cryptsetup ")
+	version := s[1]
+
 	if !strings.Contains(string(out), "cryptsetup 2.") {
-		return ErrUnsupportedCryptsetupVersion
+		return version, ErrUnsupportedCryptsetupVersion
 	}
 
 	// We successfully ran cryptsetup --version and we know that the
 	// version is compatible with our needs.
-	return nil
+	return version, nil
 }
 
 // EncryptFilesystem takes the path to a file containing a non-encrypted
 // filesystem, encrypts it using the provided key, and returns a path to
 // a file that can be later used as an encrypted volume with cryptsetup.
 func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) {
+
 	f, err := os.Stat(path)
 	if err != nil {
 		return "", fmt.Errorf("failed getting size of %s", path)
@@ -170,12 +174,12 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		err = checkCryptsetupVersion(cryptsetup)
+		version, err := checkCryptsetupVersion(cryptsetup)
 		if err == ErrUnsupportedCryptsetupVersion {
 			// Special case of unsupported version of cryptsetup. We return the raw error
 			// so it can propagate up and a user-friendly message be displayed. This error
 			// should trigger an error at the CLI level.
-			return "", err
+			return "", fmt.Errorf("Min required cryptsetup version: 2.0.0, Found version %s", version)
 		}
 		return "", fmt.Errorf("unable to format crypt device: %s: %s", cryptF.Name(), string(out))
 	}
@@ -288,12 +292,12 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 			if strings.Contains(string(out), "Device already exists") {
 				continue
 			}
-			err = checkCryptsetupVersion(cryptsetup)
+			version, err := checkCryptsetupVersion(cryptsetup)
 			if err == ErrUnsupportedCryptsetupVersion {
 				// Special case of unsupported version of cryptsetup. We return the raw error
 				// so it can propagate up and a user-friendly message be displayed. This error
 				// should trigger an error at the CLI level.
-				return "", err
+				return "", fmt.Errorf("Min required cryptsetup version: 2.0.0, Found version %s", version)
 			}
 
 			return "", fmt.Errorf("cryptsetup open failed: %s: %v", string(out), err)
