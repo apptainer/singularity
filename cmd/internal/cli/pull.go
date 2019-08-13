@@ -13,6 +13,7 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
+	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
@@ -186,31 +187,31 @@ func pullRun(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("Failed to create an image cache handle")
 	}
 
-	i := len(args) - 1 // uri is stored in args[len(args)-1]
-	transport, ref := uri.Split(args[i])
+	pullFrom := args[len(args)-1]
+	transport, ref := uri.Split(pullFrom)
 	if ref == "" {
-		sylog.Fatalf("Bad URI %s", args[i])
+		sylog.Fatalf("Bad URI %s", pullFrom)
 	}
 
-	name := pullImageName
-	if name == "" {
-		name = args[0]
+	pullTo := pullImageName
+	if pullTo == "" {
+		pullTo = args[0]
 		if len(args) == 1 {
 			if transport == "" {
-				name = uri.GetName("library://" + args[i])
+				pullTo = uri.GetName("library://" + pullFrom)
 			} else {
-				name = uri.GetName(args[i]) // TODO: If not library/shub & no name specified, simply put to cache
+				pullTo = uri.GetName(pullFrom) // TODO: If not library/shub & no name specified, simply put to cache
 			}
 		}
 	}
 
 	if pullDir != "" {
-		name = filepath.Join(pullDir, name)
+		pullTo = filepath.Join(pullDir, pullTo)
 	}
 
 	if !force {
-		if _, err := os.Stat(name); err == nil {
-			sylog.Fatalf("Image file already exists: %q - will not overwrite", name)
+		if _, err := os.Stat(pullTo); err == nil {
+			sylog.Fatalf("Image file already exists: %q - will not overwrite", pullTo)
 		}
 	}
 
@@ -222,17 +223,30 @@ func pullRun(cmd *cobra.Command, args []string) {
 		sylog.Debugf("Removing incomplete file because of receiving Termination signal")
 		os.Remove(fileName)
 		os.Exit(1)
-	}(name)
+	}(pullTo)
 
 	switch transport {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
-		err := singularity.LibraryPull(context.TODO(), imgCache, name, args[i], pullLibraryURI, keyServerURL, authToken, unauthenticatedPull, disableCache)
+
+		libraryClient, err := client.NewClient(&client.Config{
+			BaseURL:   pullLibraryURI,
+			AuthToken: authToken,
+		})
+		if err != nil {
+			sylog.Fatalf("Could not initialize library client: %v", err)
+		}
+
+		lib := singularity.NewLibrary(libraryClient, imgCache, keyServerURL)
+		err = lib.Pull(context.TODO(), pullFrom, pullTo)
 		if err != nil && err != singularity.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
+		if err == singularity.ErrLibraryPullUnsigned {
+			sylog.Warningf("Skipping container verification")
+		}
 	case ShubProtocol:
-		err := singularity.PullShub(imgCache, name, args[i], noHTTPS, disableCache)
+		err := singularity.PullShub(imgCache, pullTo, pullFrom, noHTTPS, disableCache)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
@@ -242,12 +256,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 		}
 
-		err = singularity.OrasPull(imgCache, name, ref, force, ociAuth)
+		err = singularity.OrasPull(imgCache, pullTo, ref, force, ociAuth)
 		if err != nil {
 			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}
 	case HTTPProtocol, HTTPSProtocol:
-		err := net.DownloadImage(name, args[i])
+		err := net.DownloadImage(pullTo, pullFrom)
 		if err != nil {
 			sylog.Fatalf("While pulling from image from http(s): %v\n", err)
 		}
@@ -257,7 +271,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
-		err = singularity.OciPull(imgCache, name, args[i], tmpDir, ociAuth, noHTTPS, disableCache)
+		err = singularity.OciPull(imgCache, pullTo, pullFrom, tmpDir, ociAuth, noHTTPS, disableCache)
 		if err != nil {
 			sylog.Fatalf("While making image from oci registry: %v", err)
 		}
@@ -290,7 +304,7 @@ func handlePullFlags(cmd *cobra.Command) {
 
 	keystoreURI, err := endpoint.GetServiceURI("keystore")
 	if err != nil {
-		sylog.Warningf("Unable to get library service URI: %v, defaulting to %s.", err, keyServerURL)
+		sylog.Warningf("Unable to get library service URI: %v, defaulting to %s", err, keyServerURL)
 		return
 	}
 	keyServerURL = keystoreURI

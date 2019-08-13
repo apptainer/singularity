@@ -6,126 +6,27 @@
 package singularity
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 
 	ocitypes "github.com/containers/image/types"
-	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
-	"github.com/sylabs/singularity/internal/pkg/library"
 	"github.com/sylabs/singularity/internal/pkg/oras"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	shub "github.com/sylabs/singularity/pkg/client/shub"
-	"github.com/sylabs/singularity/pkg/signing"
-	pb "gopkg.in/cheggaaa/pb.v1"
+	"gopkg.in/cheggaaa/pb.v1"
 )
 
 var (
 	// ErrLibraryPullUnsigned indicates that the interactive portion of the pull was aborted.
 	ErrLibraryPullUnsigned = errors.New("failed to verify container")
 )
-
-// LibraryPull will download the image specified by file from the library specified by libraryURI.
-// After downloading, the image will be checked for a valid signature and removed if it does not contain one,
-// unless specified not to by the unauthenticated bool
-func LibraryPull(ctx context.Context, imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL, authToken string, unauthenticated, noCache bool) error {
-	libraryClient, err := client.NewClient(&client.Config{
-		BaseURL:   libraryURI,
-		AuthToken: authToken,
-	})
-	if err != nil {
-		return fmt.Errorf("error initializing library client: %v", err)
-	}
-
-	// strip leading "library://" and append default tag, as necessary
-	imageRef := library.NormalizeLibraryRef(fullURI)
-
-	// check if image exists in library
-	libraryImage, err := libraryClient.GetImage(ctx, imageRef)
-	if err == client.ErrNotFound {
-		return fmt.Errorf("image does not exist in the library: %s", imageRef)
-	}
-	if err != nil {
-		return fmt.Errorf("could not get image info: %v", err)
-	}
-
-	if noCache {
-		// don't use cached image
-		sylog.Infof("Downloading library image: %s", name)
-		err := library.DownloadImage(ctx, libraryClient, name, imageRef, downloadImageCallback)
-		if err != nil {
-			return fmt.Errorf("unable to download image: %v", err)
-		}
-	} else {
-		// check and use cached image
-		imageName := uri.GetName("library://" + imageRef)
-		imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
-		exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName)
-		if err != nil {
-			return fmt.Errorf("unable to check if %s exists: %v", imagePath, err)
-		}
-		if !exists {
-			sylog.Infof("Downloading library image")
-			go interruptCleanup(imagePath)
-
-			// call library download image helper
-			err := library.DownloadImage(ctx, libraryClient, imagePath, imageRef, downloadImageCallback)
-			if err != nil {
-				return fmt.Errorf("unable to download image: %v", err)
-			}
-
-			if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
-				return fmt.Errorf("error getting image hash: %v", err)
-			} else if cacheFileHash != libraryImage.Hash {
-				return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, libraryImage.Hash)
-			}
-		}
-
-		// Perms are 777 *prior* to umask in order to allow image to be
-		// executed with its leading shebang like a script
-		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
-		if err != nil {
-			return fmt.Errorf("while opening destination file: %v", err)
-		}
-		defer dstFile.Close()
-
-		srcFile, err := os.Open(imagePath)
-		if err != nil {
-			return fmt.Errorf("while opening cached image: %v", err)
-		}
-		defer srcFile.Close()
-
-		// Copy SIF from cache
-		_, err = io.Copy(dstFile, srcFile)
-		if err != nil {
-			return fmt.Errorf("while copying image from cache: %v", err)
-		}
-	}
-
-	// check if we pulled from the library, if so; is it signed?
-	if !unauthenticated {
-		imageSigned, err := signing.IsSigned(name, keyServerURL, 0, false, authToken)
-		if err != nil {
-			sylog.Warningf("%v", err)
-		}
-		if !imageSigned {
-			return ErrLibraryPullUnsigned
-		}
-	} else {
-		sylog.Warningf("Skipping container verification")
-	}
-
-	sylog.Infof("Download complete: %s\n", name)
-
-	return nil
-}
 
 // PullShub will download a image from shub, and cache it. Next time
 // that container is downloaded this will just use that cached image.
@@ -190,9 +91,8 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, noHTTPS, 
 	return nil
 }
 
-// downloadImageCallback is called to display progress bar while downloading
-// image from library
-func downloadImageCallback(totalSize int64, r io.Reader, w io.Writer) error {
+// printProgress is called to display progress bar while downloading image from library.
+func printProgress(totalSize int64, r io.Reader, w io.Writer) error {
 	bar := pb.New64(totalSize).SetUnits(pb.U_BYTES)
 	bar.ShowTimeLeft = true
 	bar.ShowSpeed = true

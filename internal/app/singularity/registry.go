@@ -1,0 +1,138 @@
+package singularity
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"os"
+
+	scs "github.com/sylabs/scs-library-client/client"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/library"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/uri"
+	"github.com/sylabs/singularity/pkg/signing"
+)
+
+var errNotInCache = fmt.Errorf("image was not found in cache")
+
+// Registry represents image registries and common operations
+// performed, e.g pull and push.
+type Registry interface {
+	Pull(ctx context.Context, from, to string) error
+}
+
+type Library struct {
+	keystoreURI string
+
+	client *scs.Client
+	cache  *cache.Handle
+}
+
+func NewLibrary(client *scs.Client, cache *cache.Handle, keystoreURI string) *Library {
+	return &Library{
+		keystoreURI: keystoreURI,
+		client:      client,
+		cache:       cache,
+	}
+}
+
+// Pull will download the image from the library.
+// After downloading, the image will be checked for a valid signature.
+func (l *Library) Pull(ctx context.Context, from, to string) error {
+	// strip leading "library://" and append default tag, as necessary
+	libraryPath := library.NormalizeLibraryRef(from)
+
+	// check if image exists in library
+	imageMeta, err := l.client.GetImage(ctx, libraryPath)
+	if err == scs.ErrNotFound {
+		return fmt.Errorf("image %s does not exist in the library", libraryPath)
+	}
+	if err != nil {
+		return fmt.Errorf("could not get image info: %v", err)
+	}
+
+	if l.cache == nil {
+		// don't use cached image
+		err := l.pullAndVerify(ctx, imageMeta, libraryPath, to)
+		if err != nil {
+			return fmt.Errorf("unable to download image: %v", err)
+		}
+	} else {
+		// check and use cached image
+		imagePath := l.cache.LibraryImage(imageMeta.Hash, uri.GetName("library://"+libraryPath))
+		err := l.copyFromCache(imageMeta.Hash, imagePath, to)
+		if err != nil && err != errNotInCache {
+			return fmt.Errorf("could not copy image from cache: %v", err)
+		}
+		if err == errNotInCache {
+			err := l.pullAndVerify(ctx, imageMeta, libraryPath, imagePath)
+			if err != nil {
+				return fmt.Errorf("could not pull image: %v", err)
+			}
+			err = l.copyFromCache(imageMeta.Hash, imagePath, to)
+			if err != nil {
+				return fmt.Errorf("could not copy image from cache: %v", err)
+			}
+		}
+	}
+
+	_, err = signing.IsSigned(to, l.keystoreURI, 0, false, l.client.AuthToken)
+	if err != nil {
+		sylog.Warningf("%v", err)
+		return ErrLibraryPullUnsigned
+	}
+
+	sylog.Infof("Download complete: %s\n", to)
+	return nil
+}
+
+func (l *Library) pullAndVerify(ctx context.Context, imgMeta *scs.Image, from, to string) error {
+	sylog.Infof("Downloading library image")
+	go interruptCleanup(to)
+
+	err := library.DownloadImage(ctx, l.client, to, from, printProgress)
+	if err != nil {
+		return fmt.Errorf("unable to download image: %v", err)
+	}
+
+	fileHash, err := scs.ImageHash(to)
+	if err != nil {
+		return fmt.Errorf("error getting image hash: %v", err)
+	}
+	if fileHash != imgMeta.Hash {
+		return fmt.Errorf("file hash(%s) and expected hash(%s) does not match", fileHash, imgMeta.Hash)
+	}
+	return nil
+}
+
+func (l *Library) copyFromCache(hash, from, to string) error {
+	exists, err := l.cache.LibraryImageExists(hash, from)
+	if err != nil {
+		return fmt.Errorf("unable to check if %s exists: %v", from, err)
+	}
+	if !exists {
+		return errNotInCache
+	}
+
+	// Perms are 777 *prior* to umask in order to allow image to be
+	// executed with its leading shebang like a script
+	dstFile, err := os.OpenFile(to, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+	if err != nil {
+		return fmt.Errorf("while opening destination file: %v", err)
+	}
+	defer dstFile.Close()
+
+	srcFile, err := os.Open(from)
+	if err != nil {
+		return fmt.Errorf("while opening cached image: %v", err)
+	}
+	defer srcFile.Close()
+
+	// Copy SIF from cache
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return fmt.Errorf("while copying image from cache: %v", err)
+	}
+	return nil
+}
