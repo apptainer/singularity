@@ -18,6 +18,8 @@ func TestNet(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	chechIfCacheDisabled(t)
+
 	tests := []struct {
 		name        string
 		dir         string
@@ -58,6 +60,8 @@ func TestNet(t *testing.T) {
 func TestNetImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	chechIfCacheDisabled(t)
 
 	tempImageCache, err := ioutil.TempDir("", "image-cache-")
 	if err != nil {
