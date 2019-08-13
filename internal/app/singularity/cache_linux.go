@@ -14,7 +14,7 @@ var (
 
 func normalizeCacheList(cacheList []string) ([]string, error) {
 	all := false
-	list := []string{}
+	var list []string
 
 	for _, e := range cacheList {
 		switch e {
