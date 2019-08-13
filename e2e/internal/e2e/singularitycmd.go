@@ -265,13 +265,6 @@ func WithCommand(command string) SingularityCmdOp {
 	}
 }
 
-// WithSypgpDir sets the singularity command to execute.
-func WithSypgpDir(sypgpdir string) SingularityCmdOp {
-	return func(s *singularityCmd) {
-		s.sypgpDir = sypgpdir
-	}
-}
-
 // WithArgs sets the singularity command arguments.
 func WithArgs(args ...string) SingularityCmdOp {
 	return func(s *singularityCmd) {

@@ -61,7 +61,6 @@ func (c *ctx) singularityKeyList(t *testing.T) {
 			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
-			e2e.WithSypgpDir(c.keyRing),
 			e2e.ExpectExit(0, e2e.ExpectOutput(e2e.RegexMatch, tt.stdout)),
 		)
 	}
@@ -117,7 +116,6 @@ func (c *ctx) singularityKeySearch(t *testing.T) {
 			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
-			e2e.WithSypgpDir(c.keyRing),
 			e2e.ExpectExit(0, e2e.ExpectOutput(e2e.RegexMatch, tt.stdout)),
 		)
 	}
@@ -156,7 +154,6 @@ func (c *ctx) singularityKeyNewpair(t *testing.T) {
 			e2e.ConsoleRun(buildConsoleLines(tt.consoleOps...)...),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
-			e2e.WithSypgpDir(c.keyRing),
 			e2e.ExpectExit(0, e2e.ExpectOutput(e2e.RegexMatch, tt.stdout)),
 		)
 	}
@@ -218,7 +215,6 @@ func (c *ctx) singularityKeyExport(t *testing.T) {
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
 			e2e.ConsoleRun(buildConsoleLines(tt.consoleOps...)...),
-			e2e.WithSypgpDir(c.keyRing),
 			e2e.ExpectExit(0, e2e.ExpectOutput(e2e.ContainMatch, tt.stdout)),
 		)
 	}
@@ -306,7 +302,6 @@ func (c *ctx) singularityKeyImport(t *testing.T) {
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
 			e2e.ConsoleRun(buildConsoleLines(tt.consoleOps...)...),
-			e2e.WithSypgpDir(c.keyRing),
 			e2e.ExpectExit(tt.expectExit, e2e.ExpectOutput(e2e.ContainMatch, tt.stdout)),
 		)
 	}
@@ -348,6 +343,7 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
+		c.env.KeyringDir = c.keyRing
 		t.Run("keyCmd", c.singularityKeyCmd) // Run all the tests in order
 	}
 }
