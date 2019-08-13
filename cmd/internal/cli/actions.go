@@ -36,7 +36,7 @@ const (
 func getCacheHandle() *cache.Handle {
 	h, err := cache.NewHandle(os.Getenv(cache.DirEnv))
 	if err != nil {
-		sylog.Fatalf("failed to create an image cache handle: %s", err)
+		sylog.Fatalf("Failed to create an image cache handle: %s", err)
 	}
 	return h
 }
@@ -191,12 +191,12 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 
 	imageRef := libraryhelper.NormalizeLibraryRef(u)
 
-	libraryImage, existOk, err := c.GetImage(ctx, imageRef)
+	libraryImage, err := c.GetImage(ctx, imageRef)
+	if err == library.ErrNotFound {
+		return "", fmt.Errorf("image does not exist in the library: %s", imageRef)
+	}
 	if err != nil {
 		return "", err
-	}
-	if !existOk {
-		return "", fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
 	imagePath := ""
@@ -295,7 +295,7 @@ func handleNet(imgCache *cache.Handle, u string) (string, error) {
 	}
 	if !exists {
 		sylog.Infof("Downloading network image")
-		err := net.DownloadImage(imagePath, u, true)
+		err := net.DownloadImage(imagePath, u)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
