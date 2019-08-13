@@ -92,10 +92,16 @@ func NewHandle(baseDir string) (*Handle, error) {
 	newCache := new(Handle)
 
 	// Check whether the cache is disabled by the user.
+
+	// strconv.ParseBool("") raises an error so we cannot directly use strconv.ParseBool(os.Getenv(DisableEnv))
+	envCacheDisabled := os.Getenv(DisableEnv)
+	if envCacheDisabled == "" {
+		envCacheDisabled = "0"
+	}
 	var err error
-	newCache.disabled, err = strconv.ParseBool(os.Getenv(DisableEnv)) // strconv.ParseBool() on an empty string returns false
+	newCache.disabled, err = strconv.ParseBool(envCacheDisabled)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse environment variable %s", DisableEnv)
+		return nil, fmt.Errorf("failed to parse environment variable %s: %s", DisableEnv, err)
 	}
 	if newCache.disabled {
 		return newCache, nil

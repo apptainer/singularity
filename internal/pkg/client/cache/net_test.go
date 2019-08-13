@@ -18,9 +18,7 @@ func TestNet(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	if os.Getenv(DisableEnv) == "1" {
-		t.Skip("Caching is disabled")
-	}
+	chechIfCacheDisabled(t)
 
 	tests := []struct {
 		name        string
@@ -63,9 +61,7 @@ func TestNetImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	if os.Getenv(DisableEnv) == "1" {
-		t.Skip("Caching is disabled")
-	}
+	chechIfCacheDisabled(t)
 
 	tempImageCache, err := ioutil.TempDir("", "image-cache-")
 	if err != nil {
