@@ -5,12 +5,13 @@ if [ -z "$OS_TYPE" ]; then
     exit
 fi
 
-# run docker as shown at
-#  https://djw8605.github.io/2016/05/03/building-centos-packages-on-travisci/
+mkdir -p /etc/systemd/system/docker.service.d
+echo "[Service]"  >> /etc/systemd/system/docker.service.d/docker.conf
+echo "ExecStart=" >> /etc/systemd/system/docker.service.d/docker.conf
+echo "ExecStart=/usr/bin/dockerd -H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper" >> /etc/systemd/system/docker.service.d/docker.conf
 
 sudo apt-get update
-echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | \
-        sudo tee /etc/default/docker > /dev/null
+sudo systemctl daemon-reload
 sudo service docker restart
 sleep 5
 if [[ "$OS_TYPE" = "opensuse" ]]; then
