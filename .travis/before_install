@@ -9,12 +9,26 @@ fi
 #  https://djw8605.github.io/2016/05/03/building-centos-packages-on-travisci/
 
 sudo apt-get update
-echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | \
-        sudo tee /etc/default/docker > /dev/null
-# sudo service docker restart
+
+# Add systemd drop-in to pass flags to dockerd; the environment variable
+# set in /etc/default/docker doesn't seem to be working anymore
+#
+# XXX(mem): the .socket unit for socket activation is still there, but
+# we are not passing -H fd:// here. Will there be issues related to
+# that?
+
+sudo mkdir -p /etc/systemd/system/docker.service.d
+echo '[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd -H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper
+' | sudo tee /etc/systemd/system/docker.service.d/docker.conf >/dev/null
+
+sudo systemctl daemon-reload
 sudo systemctl --no-pager restart docker.service
 sudo systemctl --no-pager status docker.service
+
 sleep 5
+
 if [[ "$OS_TYPE" = "opensuse" ]]; then
     DOCKER_HUB_URI="${OS_TYPE}/leap:$OS_VERSION"
 else
