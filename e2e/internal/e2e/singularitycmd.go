@@ -398,74 +398,6 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 	}
 }
 
-func (env TestEnv) setCmdEnvVars(t *testing.T, s *singularityCmd, cmd *exec.Cmd) {
-	// Each command gets by default a clean temporary image cache.
-	// If it is needed to share an image cache between tests, or to manually
-	// set the directory to be used, one shall set the ImgCacheDir of the test
-	// environment. Doing so will overwrite the default creation of an image cache
-	// for the command to be executed. In that context, it is the developer's
-	// responsibility to ensure that the directory is correctly deleted upon successful
-	// or unsuccessful completion of the test.
-	if env.ImgCacheDir != "" {
-		s.cacheDir = env.ImgCacheDir
-	}
-
-	if s.cacheDir == "" {
-		// cleanCache is a function that will delete the image cache
-		// and fail the test if it cannot be deleted.
-		imgCacheDir, cleanCache := MakeCacheDir(t, "")
-		s.cacheDir = imgCacheDir
-		defer func() {
-			// Tests may switch back and forth between privileged
-			// and unprivileged mode so if this specific test is
-			// privileged, we ensure that we delete the image cache
-			// with privileged rights.
-			if s.privileged {
-				cleanCache = Privileged(cleanCache)
-			}
-			cleanCache(t)
-		}()
-	}
-	cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, s.cacheDir)
-	cmd.Env = append(cmd.Env, cacheDirEnv)
-
-	// Each command gets by default a clean temporary PGP keyring.
-	// If it is needed to share a keyring between tests, or to manually
-	// set the directory to be used, one shall set the KeyringDir of the
-	// test environment. Doing so will overwrite the default creation of
-	// a keyring for the command to be executed/ In that context, it is
-	// the developer's responsibility to ensure that the directory is
-	// correctly deleted upon successful or unsuccessful completion of the
-	// test.
-	if env.KeyringDir != "" {
-		s.sypgpDir = env.KeyringDir
-	}
-
-	if s.sypgpDir == "" {
-		// cleanKeyring is a function that will delete the temporary
-		// PGP keyring and fail the test if it cannot be deleted.
-		keyringDir, cleanSyPGPDir := MakeSyPGPDir(t, "")
-		s.sypgpDir = keyringDir
-		defer func() {
-			// Tests may switch back and forth between privileged and
-			// unprivileged mode so if this specific test is
-			// privileged, we ensure that we delete the temporary
-			// keyring with privileged rights.
-			if s.privileged {
-				cleanSyPGPDir = Privileged(cleanSyPGPDir)
-			}
-			cleanSyPGPDir(t)
-		}()
-	}
-	sypgpDirEnv := fmt.Sprintf("%s=%s", "SINGULARITY_SYPGPDIR", s.sypgpDir)
-	cmd.Env = append(cmd.Env, sypgpDirEnv)
-
-	// We check if we need to disable the cache
-	if env.DisableCache {
-		cmd.Env = append(cmd.Env, "SINGULARITY_DISABLE_CACHE=1")
-	}
-}
-
 // RunSingularity executes a singularity command within a test execution
 // context.
 //
@@ -502,7 +434,71 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 			cmd.Env = os.Environ()
 		}
 
-		env.setCmdEnvVars(t, s, cmd)
+		// Each command gets by default a clean temporary image cache.
+		// If it is needed to share an image cache between tests, or to manually
+		// set the directory to be used, one shall set the ImgCacheDir of the test
+		// environment. Doing so will overwrite the default creation of an image cache
+		// for the command to be executed. In that context, it is the developer's
+		// responsibility to ensure that the directory is correctly deleted upon successful
+		// or unsuccessful completion of the test.
+		if env.ImgCacheDir != "" {
+			s.cacheDir = env.ImgCacheDir
+		}
+
+		if s.cacheDir == "" {
+			// cleanCache is a function that will delete the image cache
+			// and fail the test if it cannot be deleted.
+			imgCacheDir, cleanCache := MakeCacheDir(t, "")
+			s.cacheDir = imgCacheDir
+			defer func() {
+				// Tests may switch back and forth between privileged
+				// and unprivileged mode so if this specific test is
+				// privileged, we ensure that we delete the image cache
+				// with privileged rights.
+				if s.privileged {
+					cleanCache = Privileged(cleanCache)
+				}
+				cleanCache(t)
+			}()
+		}
+		cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, s.cacheDir)
+		cmd.Env = append(cmd.Env, cacheDirEnv)
+
+		// Each command gets by default a clean temporary PGP keyring.
+		// If it is needed to share a keyring between tests, or to manually
+		// set the directory to be used, one shall set the KeyringDir of the
+		// test environment. Doing so will overwrite the default creation of
+		// a keyring for the command to be executed/ In that context, it is
+		// the developer's responsibility to ensure that the directory is
+		// correctly deleted upon successful or unsuccessful completion of the
+		// test.
+		if env.KeyringDir != "" {
+			s.sypgpDir = env.KeyringDir
+		}
+
+		if s.sypgpDir == "" {
+			// cleanKeyring is a function that will delete the temporary
+			// PGP keyring and fail the test if it cannot be deleted.
+			keyringDir, cleanSyPGPDir := MakeSyPGPDir(t, "")
+			s.sypgpDir = keyringDir
+			defer func() {
+				// Tests may switch back and forth between privileged and
+				// unprivileged mode so if this specific test is
+				// privileged, we ensure that we delete the temporary
+				// keyring with privileged rights.
+				if s.privileged {
+					cleanSyPGPDir = Privileged(cleanSyPGPDir)
+				}
+				cleanSyPGPDir(t)
+			}()
+		}
+		sypgpDirEnv := fmt.Sprintf("%s=%s", "SINGULARITY_SYPGPDIR", s.sypgpDir)
+		cmd.Env = append(cmd.Env, sypgpDirEnv)
+
+		// We check if we need to disable the cache
+		if env.DisableCache {
+			cmd.Env = append(cmd.Env, "SINGULARITY_DISABLE_CACHE=1")
+		}
 
 		cmd.Dir = s.dir
 		cmd.Stdin = s.stdin
