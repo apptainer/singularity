@@ -82,7 +82,7 @@ require (
 	github.com/prometheus/procfs v0.0.0-20180612222113-7d6f385de8be // indirect
 	github.com/safchain/ethtool v0.0.0-20180504150752-6e3f4faa84e1 // indirect
 	github.com/satori/go.uuid v1.2.0
-	github.com/seccomp/libseccomp-golang v0.9.0
+	github.com/seccomp/libseccomp-golang v0.9.1
 	github.com/sirupsen/logrus v1.0.5 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
