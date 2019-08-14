@@ -73,7 +73,7 @@ require (
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/opencontainers/runtime-spec v0.0.0-20180913141938-5806c3563733
 	github.com/opencontainers/runtime-tools v0.7.0
-	github.com/opencontainers/selinux v1.2.2
+	github.com/opencontainers/selinux v1.3.0
 	github.com/pelletier/go-toml v1.4.0
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2 // indirect
 	github.com/pkg/errors v0.8.1
