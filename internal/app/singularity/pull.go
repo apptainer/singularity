@@ -88,11 +88,9 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 			}
 		}
 
-		// Perms are 777 *prior* to umask in order to allow image to be
-		// executed with its leading shebang like a script
-		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+		dstFile, err := library.PrepOutputImage(name)
 		if err != nil {
-			return fmt.Errorf("while opening destination file: %v", err)
+			return err
 		}
 		defer dstFile.Close()
 
@@ -166,11 +164,9 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, noHTTPS, 
 			sylog.Infof("Use image from cache")
 		}
 
-		// Perms are 777 *prior* to umask in order to allow image to be
-		// executed with its leading shebang like a script
-		dstFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+		dstFile, err := library.PrepOutputImage(filePath)
 		if err != nil {
-			return fmt.Errorf("while opening destination file: %v", err)
+			return err
 		}
 		defer dstFile.Close()
 
@@ -252,17 +248,9 @@ func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *oci
 		sylog.Infof("Using cached image")
 	}
 
-	flags := os.O_CREATE | os.O_TRUNC | os.O_WRONLY
-	if !force {
-		// fail if file was created after previous check with Stat()
-		flags |= os.O_EXCL
-	}
-
-	// Perms are 777 *prior* to umask in order to allow image to be
-	// executed with its leading shebang like a script
-	dstFile, err := os.OpenFile(name, flags, 0777)
+	dstFile, err := library.PrepOutputImage(name)
 	if err != nil {
-		return fmt.Errorf("while opening destination file: %v", err)
+		return err
 	}
 	defer dstFile.Close()
 
@@ -318,10 +306,9 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 			sylog.Infof("Build complete: %s", name)
 		}
 
-		// Perms are 777 *prior* to umask
-		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+		dstFile, err := library.PrepOutputImage(name)
 		if err != nil {
-			return fmt.Errorf("unable to open file for writing: %s: %v", name, err)
+			return err
 		}
 		defer dstFile.Close()
 
