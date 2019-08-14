@@ -769,7 +769,7 @@ func formatMROutputLongList(mrString string) (int, []byte, error) {
 				} else if nk[6] == "d" {
 					keyStatus = "[disabled]"
 				} else if nk[6] == "e" {
-					keyStatus = "[xpired]"
+					keyStatus = "[expired]"
 				} else {
 					keyStatus = "[enabled]"
 				}
