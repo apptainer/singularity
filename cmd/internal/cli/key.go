@@ -18,7 +18,8 @@ const (
 )
 
 var (
-	keyServerURI string // -u command line option
+	keyServerURI      string // -u command line option
+	keySearchLongList bool   // -l option for long-list
 )
 
 // -u|--url
@@ -30,6 +31,16 @@ var keyServerURIFlag = cmdline.Flag{
 	ShortHand:    "u",
 	Usage:        "specify the key server URL",
 	EnvKeys:      []string{"URL"},
+}
+
+// -l|--long-list
+var keySearchLongListFlag = cmdline.Flag{
+	ID:           "keySearchLongListFlag",
+	Value:        &keySearchLongList,
+	DefaultValue: false,
+	Name:         "long-list",
+	ShortHand:    "l",
+	Usage:        "output long list when searching for keys",
 }
 
 func init() {
@@ -44,6 +55,7 @@ func init() {
 	cmdManager.RegisterSubCmd(KeyCmd, KeyExportCmd)
 
 	cmdManager.RegisterFlagForCmd(&keyServerURIFlag, KeySearchCmd, KeyPushCmd, KeyPullCmd)
+	cmdManager.RegisterFlagForCmd(&keySearchLongListFlag, KeySearchCmd)
 }
 
 // KeyCmd is the 'key' command that allows management of key stores

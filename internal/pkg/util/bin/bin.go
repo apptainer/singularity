@@ -35,7 +35,7 @@ var (
 // returns a non-nil error.
 func Cryptsetup() (string, error) {
 	cache.Do(func() {
-		cfgpath := filepath.Join(buildcfg.SINGULARITY_CONFDIR, "singularity.conf")
+		cfgpath := buildcfg.SINGULARITY_CONF_FILE
 		cache.cryptsetup, cache.err = cryptsetup(cfgpath)
 		sylog.Debugf("Using cryptsetup at %q", cache.cryptsetup)
 	})

@@ -28,21 +28,14 @@ import (
 )
 
 var (
-	// ErrLibraryPullUnsigned indicates that the interactive portion of the
-	// pull was aborted
+	// ErrLibraryPullUnsigned indicates that the interactive portion of the pull was aborted.
 	ErrLibraryPullUnsigned = errors.New("failed to verify container")
 )
 
 // LibraryPull will download the image specified by file from the library specified by libraryURI.
 // After downloading, the image will be checked for a valid signature and removed if it does not contain one,
 // unless specified not to by the unauthenticated bool
-func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryURI, keyServerURL, authToken string, force, unauthenticated, noCache bool) error {
-	if !force {
-		if _, err := os.Stat(name); err == nil {
-			return fmt.Errorf("image file already exists: %q - will not overwrite", name)
-		}
-	}
-
+func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL, authToken string, unauthenticated, noCache bool) error {
 	libraryClient, err := client.NewClient(&client.Config{
 		BaseURL:   libraryURI,
 		AuthToken: authToken,
@@ -54,25 +47,25 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 	// strip leading "library://" and append default tag, as necessary
 	imageRef := library.NormalizeLibraryRef(fullURI)
 
-	imageName := uri.GetName("library://" + imageRef)
-
 	// check if image exists in library
-	libraryImage, existOk, err := libraryClient.GetImage(context.TODO(), imageRef)
-	if err != nil {
-		return fmt.Errorf("while getting image info: %v", err)
-	}
-	if !existOk {
+	libraryImage, err := libraryClient.GetImage(context.TODO(), imageRef)
+	if err == client.ErrNotFound {
 		return fmt.Errorf("image does not exist in the library: %s", imageRef)
+	}
+	if err != nil {
+		return fmt.Errorf("could not get image info: %v", err)
 	}
 
 	if noCache {
-		// Dont use cached image
+		// don't use cached image
 		sylog.Infof("Downloading library image: %s", name)
-		if err := library.DownloadImage(context.TODO(), libraryClient, name, imageRef, downloadImageCallback); err != nil {
+		err := library.DownloadImage(context.TODO(), libraryClient, name, imageRef, downloadImageCallback)
+		if err != nil {
 			return fmt.Errorf("unable to download image: %v", err)
 		}
 	} else {
-		// Check, and use cached image
+		// check and use cached image
+		imageName := uri.GetName("library://" + imageRef)
 		imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
 		exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName)
 		if err != nil {
@@ -83,7 +76,8 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 			go interruptCleanup(imagePath)
 
 			// call library download image helper
-			if err := library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
+			err := library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback)
+			if err != nil {
 				return fmt.Errorf("unable to download image: %v", err)
 			}
 
@@ -119,7 +113,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 	if !unauthenticated {
 		imageSigned, err := signing.IsSigned(name, keyServerURL, 0, false, authToken)
 		if err != nil {
-			sylog.Errorf("%v", err)
+			sylog.Warningf("%v", err)
 		}
 		if !imageSigned {
 			return ErrLibraryPullUnsigned
@@ -135,13 +129,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 
 // PullShub will download a image from shub, and cache it. Next time
 // that container is downloaded this will just use that cached image.
-func PullShub(imgCache *cache.Handle, filePath string, shubRef string, force, noHTTPS, noCache bool) (err error) {
-	if !force {
-		if _, err := os.Stat(filePath); err == nil {
-			return fmt.Errorf("image file already exists: %q - will not overwrite", filePath)
-		}
-	}
-
+func PullShub(imgCache *cache.Handle, filePath string, shubRef string, noHTTPS, noCache bool) (err error) {
 	shubURI, err := shub.ShubParseReference(shubRef)
 	if err != nil {
 		return fmt.Errorf("failed to parse shub uri: %s", err)
@@ -228,12 +216,6 @@ func downloadImageCallback(totalSize int64, r io.Reader, w io.Writer) error {
 // OrasPull will download the image specified by the provided oci reference and store
 // it at the location specified by file, it will use credentials if supplied
 func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *ocitypes.DockerAuthConfig) error {
-	if !force {
-		if _, err := os.Stat(name); err == nil {
-			return fmt.Errorf("image file already exists: %q - will not overwrite", name)
-		}
-	}
-
 	sum, err := oras.ImageSHA(ref, ociAuth)
 	if err != nil {
 		return fmt.Errorf("failed to get checksum for %s: %s", ref, err)
@@ -302,13 +284,7 @@ func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *oci
 }
 
 // OciPull will build a SIF image from the specified oci URI
-func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, force, noHTTPS, noCache bool) error {
-	if !force {
-		if _, err := os.Stat(name); err == nil {
-			return fmt.Errorf("image file: %q already exists - will not overwrite", name)
-		}
-	}
-
+func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCache bool) error {
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify:    noHTTPS,
 		DockerInsecureSkipTLSVerify: noHTTPS,

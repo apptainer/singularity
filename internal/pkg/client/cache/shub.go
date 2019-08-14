@@ -27,6 +27,10 @@ func getShubCachePath(c *Handle) (string, error) {
 
 // ShubImage creates a directory inside cache.Dir() with the name of the SHA sum of the image
 func (c *Handle) ShubImage(sum, name string) string {
+	if c.disabled {
+		return ""
+	}
+
 	_, err := updateCacheSubdir(c, filepath.Join(ShubDir, sum))
 	if err != nil {
 		return ""
@@ -37,6 +41,10 @@ func (c *Handle) ShubImage(sum, name string) string {
 
 // ShubImageExists returns whether the image with the SHA sum exists in the ShubImage cache
 func (c *Handle) ShubImageExists(sum, name string) (bool, error) {
+	if c.disabled {
+		return false, nil
+	}
+
 	_, err := os.Stat(c.ShubImage(sum, name))
 	if os.IsNotExist(err) {
 		return false, nil
