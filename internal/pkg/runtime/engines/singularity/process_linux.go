@@ -92,7 +92,7 @@ func (e *EngineOperations) checkExec() error {
 		e.EngineConfig.OciConfig.Process.Env = env
 	}()
 
-	engine.setPathEnv()
+	e.setPathEnv()
 
 	// If args[0] is an absolute path, exec.LookPath() looks for
 	// this file directly instead of within PATH
@@ -153,7 +153,7 @@ func (e *EngineOperations) checkExec() error {
 	return fmt.Errorf("no %s found inside container", args[0])
 }
 
-func (engine *EngineOperations) runFuseDriver(name string, program []string, fd int) error {
+func (e *EngineOperations) runFuseDriver(name string, program []string, fd int) error {
 	sylog.Debugf("Running FUSE driver for %s as %v, fd %d", name, program, fd)
 
 	fh := os.NewFile(uintptr(fd), "fd-"+name)
@@ -184,7 +184,7 @@ func (engine *EngineOperations) runFuseDriver(name string, program []string, fd 
 	defer func() {
 		os.Setenv("PATH", oldpath)
 	}()
-	engine.setPathEnv()
+	e.setPathEnv()
 
 	cmd := exec.Command(args[0], args[1:]...)
 
@@ -215,17 +215,17 @@ func (engine *EngineOperations) runFuseDriver(name string, program []string, fd 
 
 // setupFuseDrivers runs the operations required by FUSE drivers before
 // the user process starts
-func setupFuseDrivers(engine *EngineOperations) error {
+func setupFuseDrivers(e *EngineOperations) error {
 	// close file descriptors open for FUSE mount
-	for _, name := range engine.EngineConfig.GetPluginFuseMounts() {
+	for _, name := range e.EngineConfig.GetPluginFuseMounts() {
 		var cfg struct {
 			Fuse singularity.FuseInfo
 		}
-		if err := engine.EngineConfig.GetPluginConfig(name, &cfg); err != nil {
+		if err := e.EngineConfig.GetPluginConfig(name, &cfg); err != nil {
 			return err
 		}
 
-		if err := engine.runFuseDriver(name, cfg.Fuse.Program, cfg.Fuse.DevFuseFd); err != nil {
+		if err := e.runFuseDriver(name, cfg.Fuse.Program, cfg.Fuse.DevFuseFd); err != nil {
 			return err
 		}
 
@@ -237,14 +237,14 @@ func setupFuseDrivers(engine *EngineOperations) error {
 
 // preStartProcess does the final set up before starting the user's
 // process.
-func preStartProcess(engine *EngineOperations) error {
+func preStartProcess(e *EngineOperations) error {
 	// TODO(mem): most of the StartProcess method should be here, as
 	// it's doing preparation for actually starting the user
 	// process.
 	//
 	// For now it's limited to doing the final set up for FUSE
 	// drivers
-	if err := setupFuseDrivers(engine); err != nil {
+	if err := setupFuseDrivers(e); err != nil {
 		return err
 	}
 
