@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -654,14 +653,14 @@ func SearchPubkey(search, keyserverURI, authToken string, longOutput bool) error
 	}
 
 	if longOutput {
-		keyText, err = reformatMachineReadableOutput(keyText)
+		kcount, keyList, err := formatMROutputLongList(keyText)
 		if err != nil {
 			return fmt.Errorf("could not reformat key output")
 		}
-		fmt.Printf("%s", keyText)
+		fmt.Printf("Showing %d results\n\n%s", kcount, keyList)
 	} else {
-		kcount, keyText, err := formatMROutput(keyText)
-		fmt.Printf("Showing %d results\n\n%s", kcount, keyText)
+		kcount, keyList, err := formatMROutput(keyText)
+		fmt.Printf("Showing %d results\n\n%s", kcount, keyList)
 		if err != nil {
 			return err
 		}
@@ -703,112 +702,108 @@ func getEncryptionAlgorithmName(n string) (string, error) {
 //function to obtain a date format from linux epoch time
 func date(s string) (string, error) {
 	if s == "" {
-		return "NULL", nil
+		return "[ultimate]", nil
 	}
 	if s == "none" {
-		return s + "\t\t\t", nil
+		return s, nil
 	}
 	c, _ := strconv.ParseInt(s, 10, 64)
-	ret := fmt.Sprintf("%v", time.Unix(c, 0))
+	ret := time.Unix(c, 0).String()
 
 	return ret, nil
 }
 
-// reformatMachineReadableOutput reformats the key search output that is in machine readable format
+// formatMROutputLongList reformats the key search output that is in machine readable format
 // see the output format in: https://tools.ietf.org/html/draft-shaw-openpgp-hkp-00#section-5.2
-func reformatMachineReadableOutput(keyText string) (string, error) {
-	var output = "\n\t\tFINGERPRINT\t\tALGORITHM  SIZE (BITS)\t\t  CREATION DATE\t\t\tEXPIRATION DATE\t\t\tSTATUS\t\t\tNAME/EMAIL" + "\n"
+func formatMROutputLongList(mrString string) (int, []byte, error) {
+	listLine := "%s\t%s\t%s\t%s\t%s\t%s\t%s\n"
 
-	rePubkey := regexp.MustCompile("pub:(.*)\n")
-	keys := rePubkey.FindAllString(keyText, -1)
+	retList := bytes.NewBuffer(nil)
+	tw := tabwriter.NewWriter(retList, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(tw, listLine, "FINGERPRINT", "ALGORITHM", "BITS", "CREATION DATE", "EXPIRATION DATE", "STATUS", "NAME/EMAIL")
 
-	var featuresKey []string
+	count := 0
+	keyNum := 0
 
-	// for every key obtain the features: fingerprint, algorithm, size, creation date, expiration date, status and user(email)
-	for _, key := range keys {
-		var emailList = ""
+	key := strings.Split(mrString, "\n")
 
-		detailsKey := strings.Split(key, ":")
+	var (
+		keyFingerprint string
+		keyBit         string
+		keyName        string
+		keyType        string
+		keyDateCreated string
+		keyDateExpired string
+		keyStatus      string
+		keyReady       bool
+	)
 
-		for _, detail := range detailsKey {
-			d := strings.TrimSpace(detail)
-			if d != "" {
-				featuresKey = append(featuresKey, d)
+	for _, k := range key {
+		nk := strings.Split(k, ":")
+		for _, n := range nk {
+			if n == "info" {
+				var err error
+				keyNum, err = strconv.Atoi(nk[2])
+				if err != nil {
+					return -1, nil, fmt.Errorf("unable to check key number")
+				}
+			}
+			if n == "pub" {
+				keyFingerprint = nk[1]
+				keyBit = nk[3]
+				var err error
+				keyType, err = getEncryptionAlgorithmName(nk[2])
+				if err != nil {
+					panic(err)
+				}
+				keyDateCreated, err = date(nk[4])
+				if err != nil {
+					panic(err)
+				}
+				keyDateExpired, err = date(nk[5])
+				if err != nil {
+					panic(err)
+				}
+				if nk[6] == "r" {
+					keyStatus = "[revoked]"
+				} else if nk[6] == "d" {
+					keyStatus = "[disabled]"
+				} else if nk[6] == "e" {
+					keyStatus = "[xpired]"
+				} else {
+					keyStatus = "[enabled]"
+				}
+				count++
+			}
+			if n == "uid" {
+				keyName = nk[1]
+				keyReady = true
 			}
 		}
-
-		fingerprint := featuresKey[1]
-
-		// regular expression to obtain the fingerprint of every key
-		reFingerprint := regexp.MustCompile("(" + fingerprint + ")[\\s+\\S]+?(::(\npub|\\s+$))")
-		emails := reFingerprint.FindAllString(keyText, -1)
-
-		// regular expression to obtain the email or emails from every key
-		reFormatEmail := regexp.MustCompile("uid:" + "\\w(.)+::")
-		userEmails := reFormatEmail.FindAllString(emails[0], -1)
-
-		for _, email := range userEmails {
-			detailsEmail := strings.Split(email, ":")
-
-			if emailList != "" {
-				emailList = emailList + "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" + detailsEmail[1] + "\n"
-			} else {
-				emailList = detailsEmail[1] + "\n"
-			}
-
-		}
-
-		algorithm, err := getEncryptionAlgorithmName(featuresKey[2])
-		if err != nil {
-			return "", err
-		}
-
-		size := featuresKey[3]
-
-		if len(size) < 4 {
-			size = size + " "
-		}
-		creationDate := featuresKey[4]
-		expiryDate := "none"
-
-		status := "enabled"
-
-		if len(featuresKey) >= 6 {
-			expiryDate = featuresKey[5]
-		}
-
-		creationTimestamp, err := date(creationDate)
-		if err != nil {
-			return "", err
-		}
-
-		expirationTimestamp, err := date(expiryDate)
-		if err != nil {
-			return "", err
-		}
-
-		// check the status of each key if flags are present
-		if len(featuresKey) == 7 {
-			if featuresKey[6] == "r" {
-				status = "revoked"
-			}
-			if featuresKey[6] == "d" {
-				status = "disabled"
-			}
-			if featuresKey[6] == "e" {
-				status = "expired"
-			}
-		}
-
-		featuresKey = []string{}
-
-		if status == "revoked" {
-			output = output + "\n" + fingerprint + "  " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "\t" + status + "\t\t" + emailList
-		} else {
-			output = output + "\n" + fingerprint + "  " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "\t\t" + status + "\t\t" + emailList
+		if keyReady {
+			fmt.Fprintf(tw, listLine, keyFingerprint, keyType, keyBit, keyDateCreated, keyDateExpired, keyStatus, keyName)
+			fmt.Fprintf(tw, "\t\t\t\t\t\t\n")
+			keyFingerprint = ""
+			keyBit = ""
+			keyName = ""
+			keyType = ""
+			keyDateCreated = ""
+			keyDateExpired = ""
+			keyStatus = ""
+			keyReady = false
 		}
 	}
-	return output, nil
+	tw.Flush()
+
+	sylog.Debugf("key count=%d; expect=%d\n", count, keyNum)
+
+	// Simple check to ensure the conversion was successful
+	if count != keyNum {
+		sylog.Debugf("expecting %d, got %d\n", keyNum, count)
+		return -1, retList.Bytes(), fmt.Errorf("failed to convert machine readable to human readable output correctly")
+	}
+
+	return count, retList.Bytes(), nil
 }
 
 // FetchPubkey pulls a public key from the Key Service.
