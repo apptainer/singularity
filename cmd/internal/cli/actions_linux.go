@@ -132,7 +132,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	engineConfig := singularityConfig.NewConfig()
 
-	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
+	configurationFile := buildcfg.SINGULARITY_CONF_FILE
 	if err := config.Parser(configurationFile, engineConfig.File); err != nil {
 		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
 	}
@@ -231,7 +231,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Verbosef("binding nvidia files into container")
 		}
 
-		libs, bins, err := nvidia.Paths(buildcfg.SINGULARITY_CONFDIR, userPath)
+		libs, bins, err := nvidia.Paths(buildcfg.NVIDIALIBS_FILE, userPath)
 		if err != nil {
 			sylog.Warningf("Unable to capture NVIDIA bind points: %v", err)
 		} else {

@@ -59,12 +59,15 @@ func nvidiaContainerCli(args ...string) ([]string, error) {
 	return libs, nil
 }
 
-// nvliblist returns libraries listed in nvliblist.conf which is located in nvidiaDir.
-func nvliblist(nvidiaDir string) ([]string, error) {
-	nvliblistPath := filepath.Join(nvidiaDir, "nvliblist.conf")
-	file, err := os.Open(nvliblistPath)
+// nvliblist returns the libraries specified in the file specified by
+// nvliblistFile.
+//
+// Blank lines and lines starting with # are ignored; the rest of them
+// are assumed to contain the path to a library.
+func nvliblist(nvliblistFile string) ([]string, error) {
+	file, err := os.Open(nvliblistFile)
 	if err != nil {
-		return nil, fmt.Errorf("could not open %s: %v", nvliblistPath, err)
+		return nil, fmt.Errorf("could not open %s: %v", nvliblistFile, err)
 	}
 	defer file.Close()
 
@@ -81,7 +84,15 @@ func nvliblist(nvidiaDir string) ([]string, error) {
 
 // Paths returns list of nvidia libraries and binaries that should
 // be added to mounted into container if it needs NVIDIA GPUs.
-func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
+func Paths(nvliblistFile string, envPath string) ([]string, []string, error) {
+	ldConfig, err := exec.LookPath("ldconfig")
+	if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
+		sylog.Debugf("Could not find ldconfig in PATH")
+		ldConfig = "ldconfig"
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not lookup ldconfig: %v", err)
+	}
 	if envPath != "" {
 		oldPath := os.Getenv("PATH")
 		os.Setenv("PATH", envPath)
@@ -89,12 +100,12 @@ func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
 	}
 
 	var nvidiaFiles []string
-	nvidiaFiles, err := nvidiaContainerCli("list", "--binaries", "--libraries")
+	nvidiaFiles, err = nvidiaContainerCli("list", "--binaries", "--libraries")
 	if err != nil {
 		sylog.Verbosef("nvidiaContainerCli returned: %v", err)
 		sylog.Verbosef("Falling back to nvliblist.conf")
 
-		nvidiaFiles, err = nvliblist(nvidiaDir)
+		nvidiaFiles, err = nvliblist(nvliblistFile)
 		if err != nil {
 			return nil, nil, fmt.Errorf("could not read nvliblist.conf: %v", err)
 		}
@@ -102,7 +113,7 @@ func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
 
 	// walk through the ldconfig output and add entries which contain the filenames
 	// returned by nvidia-container-cli OR the nvliblist.conf file contents
-	out, err := exec.Command("ldconfig", "-p").Output()
+	out, err := exec.Command(ldConfig, "-p").Output()
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not execute ldconfig: %v", err)
 	}

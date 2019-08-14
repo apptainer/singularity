@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"path/filepath"
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -48,7 +47,7 @@ func (e *EngineOperations) Config() config.EngineConfig {
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	g := generate.Generator{Config: &specs.Spec{}}
 
-	configurationFile := filepath.Join(buildcfg.SYSCONFDIR, "/singularity/singularity.conf")
+	configurationFile := buildcfg.SINGULARITY_CONF_FILE
 
 	// check for ownership of singularity.conf
 	if starterConfig.GetIsSUID() && !fs.IsOwner(configurationFile, 0) {

@@ -720,7 +720,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("bad engine configuration provided")
 	}
 
-	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
+	configurationFile := buildcfg.SINGULARITY_CONF_FILE
 	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
 		return fmt.Errorf("Unable to parse singularity.conf file: %s", err)
 	}

@@ -32,7 +32,7 @@ func IsNetPullRef(libraryRef string) bool {
 
 // DownloadImage will retrieve an image from the Container Library,
 // saving it into the specified file
-func DownloadImage(filePath string, libraryURL string, Force bool) error {
+func DownloadImage(filePath string, libraryURL string) error {
 
 	if !IsNetPullRef(libraryURL) {
 		return fmt.Errorf("not a valid url reference: %s", libraryURL)
@@ -45,12 +45,6 @@ func DownloadImage(filePath string, libraryURL string, Force bool) error {
 
 	url := libraryURL
 	sylog.Debugf("Pulling from URL: %s\n", url)
-
-	if !Force {
-		if _, err := os.Stat(filePath); err == nil {
-			return fmt.Errorf("image file already exists - will not overwrite")
-		}
-	}
 
 	client := &http.Client{
 		Timeout: pullTimeout * time.Second,

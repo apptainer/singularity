@@ -25,6 +25,8 @@ func TestNewHandle(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	chechIfCacheDisabled(t)
+
 	tests := []struct {
 		name     string
 		dir      string
@@ -59,6 +61,8 @@ func TestNewHandle(t *testing.T) {
 func TestCleanAllCaches(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	chechIfCacheDisabled(t)
 
 	imageCacheDir, err := ioutil.TempDir("", "image-cache-")
 	if err != nil {
@@ -102,6 +106,8 @@ func TestCleanAllCaches(t *testing.T) {
 func TestRoot(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	chechIfCacheDisabled(t)
 
 	scratchDir, err := ioutil.TempDir("", "")
 	if err != nil {
