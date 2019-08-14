@@ -16,7 +16,7 @@ require (
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
-	github.com/containerd/containerd v1.2.6
+	github.com/containerd/containerd v1.2.7
 	github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd // indirect
 	github.com/containernetworking/cni v0.7.1
 	github.com/containernetworking/plugins v0.8.1
@@ -71,7 +71,7 @@ require (
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/opencontainers/runtime-spec v0.0.0-20180913141938-5806c3563733
 	github.com/opencontainers/runtime-tools v0.6.0
-	github.com/opencontainers/selinux v1.0.0-rc1
+	github.com/opencontainers/selinux v1.3.0
 	github.com/pelletier/go-toml v1.4.0
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2 // indirect
 	github.com/pkg/errors v0.8.1
@@ -82,7 +82,7 @@ require (
 	github.com/prometheus/procfs v0.0.0-20180612222113-7d6f385de8be // indirect
 	github.com/safchain/ethtool v0.0.0-20180504150752-6e3f4faa84e1 // indirect
 	github.com/satori/go.uuid v1.2.0
-	github.com/seccomp/libseccomp-golang v0.9.0
+	github.com/seccomp/libseccomp-golang v0.9.1
 	github.com/sirupsen/logrus v1.0.5 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
