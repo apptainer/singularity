@@ -12,6 +12,7 @@
 # Contributors:
 
     - Adam Hughes <adam@sylabs.io>, <stickmanica@gmail.com>
+    - Adam Simpson <asimpson@nvidia.com>, <adambsimpson@gmail.com>
     - Afif Elghraoui <afif.elghraoui@nih.gov>
     - Amanda Duffy <aduffy@lenovo.com>
     - Ángel Bejarano <abejarano@ontropos.com>
