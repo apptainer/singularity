@@ -212,10 +212,11 @@ func pullRun(cmd *cobra.Command, args []string) {
 		// image already exist
 		if !force {
 			sylog.Fatalf("Image file already exists: %q - will not overwrite", name)
-		}
-		sylog.Debugf("Removing overridden file: %s", name)
-		if err := os.Remove(name); err != nil {
-			sylog.Fatalf("Unable to remove %q: %s", name, err)
+		} else {
+			sylog.Debugf("Removing overridden file: %s", name)
+			if err := os.Remove(name); err != nil {
+				sylog.Fatalf("Unable to remove %q: %s", name, err)
+			}
 		}
 	}
 
