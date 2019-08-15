@@ -88,9 +88,11 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 			}
 		}
 
-		dstFile, err := library.PrepOutputImage(name)
+		// Perms are 777 *prior* to umask in order to allow image to be
+		// executed with its leading shebang like a script
+		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
 		if err != nil {
-			return err
+			return fmt.Errorf("while opening destination file: %v", err)
 		}
 		defer dstFile.Close()
 
@@ -164,9 +166,11 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, noHTTPS, 
 			sylog.Infof("Use image from cache")
 		}
 
-		dstFile, err := library.PrepOutputImage(filePath)
+		// Perms are 777 *prior* to umask in order to allow image to be
+		// executed with its leading shebang like a script
+		dstFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
 		if err != nil {
-			return err
+			return fmt.Errorf("while opening destination file: %v", err)
 		}
 		defer dstFile.Close()
 
@@ -248,9 +252,11 @@ func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *oci
 		sylog.Infof("Using cached image")
 	}
 
-	dstFile, err := library.PrepOutputImage(name)
+	// Perms are 777 *prior* to umask in order to allow image to be
+	// executed with its leading shebang like a script
+	dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
 	if err != nil {
-		return err
+		return fmt.Errorf("while opening destination file: %v", err)
 	}
 	defer dstFile.Close()
 
@@ -306,9 +312,11 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 			sylog.Infof("Build complete: %s", name)
 		}
 
-		dstFile, err := library.PrepOutputImage(name)
+		// Perms are 777 *prior* to umask in order to allow image to be
+		// executed with its leading shebang like a script
+		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
 		if err != nil {
-			return err
+			return fmt.Errorf("while opening destination file: %v", err)
 		}
 		defer dstFile.Close()
 

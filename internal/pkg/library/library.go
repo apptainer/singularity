@@ -41,9 +41,9 @@ func DownloadImage(ctx context.Context, c *client.Client, imagePath, libraryRef 
 	}
 
 	// open destination file for writing
-	f, err := PrepOutputImage(imagePath)
+	f, err := os.OpenFile(imagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0777)
 	if err != nil {
-		return err
+		return fmt.Errorf("error opening file %s for writing: %v", imagePath, err)
 	}
 	defer f.Close()
 
@@ -122,25 +122,4 @@ func SearchLibrary(ctx context.Context, c *client.Client, value string) error {
 	}
 
 	return nil
-}
-
-// PrepOutputImage will take a path to a file, and ensure its permission of
-// 777, and return it as *os.File.
-// TODO: maybe theres a better place for this?...
-func PrepOutputImage(path string) (*os.File, error) {
-	// Perms are 777 *prior* to umask in order to allow image to be
-	// executed with its leading shebang like a script
-	destFile, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
-	if err != nil {
-		return nil, fmt.Errorf("while opening destination file: %s", err)
-	}
-
-	// Ensure the file permission is 777. If path already exist, os.OpenFile
-	// will **not** apply the specified permission of 0777.
-	err = destFile.Chmod(0777)
-	if err != nil {
-		return nil, fmt.Errorf("failed to change file permission: %s", err)
-	}
-
-	return destFile, nil
 }
