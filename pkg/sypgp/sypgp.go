@@ -495,7 +495,7 @@ func (keyring *Handle) GenKeyPair(keyServiceURI, authToken string, bitLen int) (
 
 	entity, err := keyring.genKeyPair(name, comment, email, passphrase, bitLen)
 	if err != nil {
-		// Print the missing newline if theres a error
+		// Print the missing newline if there’s a error
 		fmt.Printf("\n")
 		return nil, err
 	}
