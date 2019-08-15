@@ -65,7 +65,7 @@ func TestOrasImage(t *testing.T) {
 	}
 	validImagePath = filepath.Join(newBasedir, validImageName)
 
-	c, err := NewHandle(imageCacheDir)
+	c, err := NewHandle(Context{BaseDir: imageCacheDir})
 	if err != nil {
 		t.Fatalf("failed to create an image cache handle: %s", err)
 	}
