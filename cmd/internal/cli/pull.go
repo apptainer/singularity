@@ -54,7 +54,7 @@ var (
 	pullArch string
 )
 
-// --library
+// --arch
 var pullArchFlag = cmdline.Flag{
 	ID:           "pullArchFlag",
 	Value:        &pullArch,

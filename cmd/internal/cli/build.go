@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/sylabs/singularity/pkg/cmdline"
@@ -25,6 +26,7 @@ import (
 
 var (
 	remote         bool
+	buildArch      string
 	builderURL     string
 	detached       bool
 	libraryURL     string
@@ -116,6 +118,16 @@ var buildRemoteFlag = cmdline.Flag{
 	ShortHand:    "r",
 	Usage:        "build image remotely (does not require root)",
 	EnvKeys:      []string{"REMOTE"},
+}
+
+// --arch
+var buildArchFlag = cmdline.Flag{
+	ID:           "buildArchFlag",
+	Value:        &buildArch,
+	DefaultValue: runtime.GOARCH,
+	Name:         "arch",
+	Usage:        "Architecture for remote build",
+	EnvKeys:      []string{"BUILD_ARCH"},
 }
 
 // -d|--detached
@@ -212,6 +224,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildNoHTTPSFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildNoTestFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildRemoteFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildArchFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
