@@ -37,6 +37,15 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 	// Setup some needed variables
 	hdString := fmt.Sprintf("2:0,ahci-hd,%s", sifImage)
 
+	// Check xhyve permissions
+	fi, err := os.Stat(filepath.Join(buildcfg.LIBEXECDIR, "/singularity/vm/xhyve"))
+	if err != nil {
+		sylog.Fatalf("Filed to Stat() xhyve binary: %v", err)
+	}
+	setuid := false
+	if fi.Mode()&os.ModeSetuid == os.ModeSetuid {
+		setuid = true
+	}
 	// Default xhyve Arguments
 	args := []string{
 		filepath.Join(buildcfg.LIBEXECDIR, "/singularity/vm/xhyve"),
@@ -46,6 +55,9 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		"-s", "0:0,hostbridge",
 		"-s", "31,lpc",
 		"-l", "com1,stdio",
+	}
+	if !NoNet && setuid {
+		args = append(args, "-s 3,virtio-net")
 	}
 
 	// Bind mounts
@@ -138,7 +150,15 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		sylog.Fatalf("Error getting working directory: %s", err)
 	}
 
-	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 sing_img_name=%s sing_user=%s sing_cwd=%s singularity_action=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, filepath.Base(sifImage), userInfo, cwdDir, singAction, cliExtra, strings.Join(singBinds, "|"))
+	// If we disable networking, set "none" for our network
+	netip := VMIP
+	if NoNet || !setuid {
+		netip = "none"
+	}
+
+	msglvl := sylog.GetLevel()
+
+	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 sing_img_name=%s sing_user=%s sing_cwd=%s singularity_action=%s ipv4=%s msglvl=%v singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, filepath.Base(sifImage), userInfo, cwdDir, singAction, netip, msglvl, cliExtra, strings.Join(singBinds, "|"))
 
 	// Add our actual kexec entry
 	args = append(args, "-f", kexecArgs)

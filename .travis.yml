@@ -1,7 +1,7 @@
 language: go
 
 sudo: required
-dist: trusty
+dist: xenial
 
 go:
   - "1.11"

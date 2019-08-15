@@ -30,7 +30,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/syecl"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/image"
@@ -721,7 +720,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("bad engine configuration provided")
 	}
 
-	configurationFile := files.GetSysConfigFile()
+	configurationFile := buildcfg.SINGULARITY_CONF_FILE
 	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
 		return fmt.Errorf("Unable to parse singularity.conf file: %s", err)
 	}

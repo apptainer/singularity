@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 )
 
 // testSecurityUnpriv tests security flag fuctionality for singularity exec without elevated privileges
@@ -91,7 +91,7 @@ func testSecurityPriv(t *testing.T) {
 
 // testSecurityConfOwnership tests checks on config files ownerships
 func testSecurityConfOwnership(t *testing.T) {
-	configFile := files.GetSysConfigFile()
+	configFile := buildcfg.SINGULARITY_CONF_FILE
 	// Change file ownership (do not try this at home)
 	err := os.Chown(configFile, 1001, 0)
 	if err != nil {
