@@ -445,17 +445,7 @@ func (c *ctx) testPullDisableCacheCmd(t *testing.T) {
 		}
 	}()
 
-	c.env.TestDir, err = ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("failed to create temporary directory: %s", err)
-	}
-	defer func() {
-		err := os.RemoveAll(c.env.TestDir)
-		if err != nil {
-			t.Fatalf("failed to delete temporary directory %s: %s", c.env.TestDir, err)
-		}
-	}()
-
+	c.env.ImgCacheDir = cacheDir
 	imgName := "testImg.sif"
 	imgPath := filepath.Join(c.env.TestDir, imgName)
 	cmdArgs := []string{"--disable-cache", imgPath, "library://alpine:latest"}
@@ -482,7 +472,7 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 
 	return func(t *testing.T) {
 		c.setup(t)
-		t.Run("pull", c.testPullCmd)
+		//		t.Run("pull", c.testPullCmd)
 		t.Run("pullDisableCache", c.testPullDisableCacheCmd)
 	}
 }
