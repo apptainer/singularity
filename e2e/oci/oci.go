@@ -72,7 +72,7 @@ func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 			g.SetProcessTerminal(true)
 			// NEED FIX: disable seccomp for circleci, ubuntu trusty
 			// doesn't support syscalls _llseek and _newselect
-			g.Config.Linux.Seccomp = nil
+			// g.Config.Linux.Seccomp = nil
 
 			err = g.SaveToFile(ociConfig, generate.ExportOptions{})
 			if err != nil {
