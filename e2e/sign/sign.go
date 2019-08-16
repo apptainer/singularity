@@ -118,7 +118,7 @@ func (c *ctx) singularitySignKeyidxOption(t *testing.T) {
 func (c *ctx) generateKeypair(t *testing.T) {
 	keyGenInput := []e2e.SingularityConsoleOp{
 		e2e.ConsoleSendLine("e2e sign test key"),
-		e2e.ConsoleSendLine("geoffroy@sylabs.io"),
+		e2e.ConsoleSendLine("jdoe@sylabs.io"),
 		e2e.ConsoleSendLine("sign e2e test"),
 		e2e.ConsoleSendLine("passphrase"),
 		e2e.ConsoleSendLine("passphrase"),
