@@ -205,7 +205,7 @@ func (c *cacheTests) testInteractiveCacheCmds(t *testing.T) {
 		// Each test get its own clean cache directory
 		cacheDir, cleanup := e2e.MakeCacheDir(t, "")
 		defer cleanup(t)
-		h, err := cache.NewHandle(cache.Config{cacheDir})
+		h, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
 		if err != nil {
 			t.Fatalf("Could not create image cache handle: %v", err)
 		}
