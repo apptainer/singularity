@@ -46,7 +46,7 @@ func TestNewHandle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewHandle(Context{BaseDir: tt.dir})
+			c, err := NewHandle(Config{BaseDir: tt.dir})
 			if err != nil {
 				t.Fatalf("failed to create new image cache handle: %s", err)
 			}
@@ -70,7 +70,7 @@ func TestCleanAllCaches(t *testing.T) {
 	}
 	defer os.RemoveAll(imageCacheDir)
 
-	c, err := NewHandle(Context{BaseDir: imageCacheDir})
+	c, err := NewHandle(Config{BaseDir: imageCacheDir})
 	if err != nil {
 		t.Fatalf("failed to create new image cache handle: %s", err)
 	}
@@ -143,7 +143,7 @@ func TestRoot(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			imgCache, err := NewHandle(Context{BaseDir: tt.basedir})
+			imgCache, err := NewHandle(Config{BaseDir: tt.basedir})
 			if err != nil {
 				t.Fatalf("failed to create new image cache: %s", err)
 			}

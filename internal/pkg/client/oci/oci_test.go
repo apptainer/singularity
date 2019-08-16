@@ -236,7 +236,7 @@ func TestConvertReference(t *testing.T) {
 
 	cacheDir, _, ref := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
-	imgCache, err := cache.NewHandle(cache.Context{BaseDir: cacheDir})
+	imgCache, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
 	if err != nil {
 		t.Fatalf("failed to create an image cache handle")
 	}
@@ -294,7 +294,7 @@ func TestImageNameAndImageSHA(t *testing.T) {
 	// We create a dummy OCI cache to run all our tests
 	cacheDir, _, _ := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
-	imgCache, err := cache.NewHandle(cache.Context{BaseDir: cacheDir})
+	imgCache, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
@@ -409,7 +409,7 @@ func TestNewImageSource(t *testing.T) {
 	// We create a minimalistic image reference that is valid enough for testing
 	cacheDir, _, ref := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
-	imgCache, err := cache.NewHandle(cache.Context{BaseDir: cacheDir})
+	imgCache, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
 	if err != nil {
 		t.Fatalf("failed to create an image cache handle: %s", err)
 	}
