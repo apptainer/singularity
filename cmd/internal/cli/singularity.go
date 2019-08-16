@@ -196,7 +196,7 @@ func createConfDir(d string) {
 		if os.IsExist(err) {
 			sylog.Debugf("%s already exits. Not creating.", d)
 		} else {
-			sylog.Fatalf("Error attempting to create %s: %s", d, err)
+			sylog.Warningf("Could not create %s: %s", d, err)
 		}
 	} else {
 		sylog.Debugf("Created %s", d)
