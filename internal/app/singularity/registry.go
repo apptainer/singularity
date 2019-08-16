@@ -15,12 +15,6 @@ import (
 
 var errNotInCache = fmt.Errorf("image was not found in cache")
 
-// Registry represents image registries and common operations
-// performed, e.g pull and push.
-type Registry interface {
-	Pull(ctx context.Context, from, to string) error
-}
-
 // Library is a Registry implementation for Sylabs Cloud Library.
 type Library struct {
 	keystoreURI string
