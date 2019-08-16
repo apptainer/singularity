@@ -1,7 +1,0 @@
-[  
-   {  
-      "Header":"Bootstrap: shub\nFrom: shub://<registry>/<username>/<container-name>:<tag>@digest\n"
-   }
-]
-
-

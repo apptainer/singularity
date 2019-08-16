@@ -1,2 +1,0 @@
-from: /path/to/container/file/or/directory
-bootstrap: localimage

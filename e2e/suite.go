@@ -17,23 +17,42 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/actions"
-	singularitycache "github.com/sylabs/singularity/e2e/cache"
-	"github.com/sylabs/singularity/e2e/cmdenvvars"
-	"github.com/sylabs/singularity/e2e/docker"
-	singularityenv "github.com/sylabs/singularity/e2e/env"
-	"github.com/sylabs/singularity/e2e/help"
-	"github.com/sylabs/singularity/e2e/imgbuild"
+	singularitykey "github.com/sylabs/singularity/e2e/key"
+
 	singularityinspect "github.com/sylabs/singularity/e2e/inspect"
-	"github.com/sylabs/singularity/e2e/instance"
-	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/oci"
-	"github.com/sylabs/singularity/e2e/pull"
-	"github.com/sylabs/singularity/e2e/push"
-	"github.com/sylabs/singularity/e2e/remote"
+
 	singularityverify "github.com/sylabs/singularity/e2e/verify"
+
+	"github.com/sylabs/singularity/e2e/actions"
+
+	singularitycache "github.com/sylabs/singularity/e2e/cache"
+
+	"github.com/sylabs/singularity/e2e/cmdenvvars"
+
+	"github.com/sylabs/singularity/e2e/docker"
+
+	singularityenv "github.com/sylabs/singularity/e2e/env"
+
+	"github.com/sylabs/singularity/e2e/help"
+
+	"github.com/sylabs/singularity/e2e/imgbuild"
+
+	"github.com/sylabs/singularity/e2e/instance"
+
+	"github.com/sylabs/singularity/e2e/oci"
+
+	"github.com/sylabs/singularity/e2e/pull"
+
+	"github.com/sylabs/singularity/e2e/push"
+
+	"github.com/sylabs/singularity/e2e/remote"
+
 	"github.com/sylabs/singularity/e2e/version"
+
+	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
+
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
@@ -126,6 +145,7 @@ func Run(t *testing.T) {
 	// RunE2ETests by functionality
 
 	suites := map[string]func(*testing.T){
+		"KEY":        singularitykey.RunE2ETests(testenv),
 		"ACTIONS":    actions.RunE2ETests(testenv),
 		"BUILD":      imgbuild.RunE2ETests(testenv),
 		"CMDENVVARS": cmdenvvars.RunE2ETests(testenv),
