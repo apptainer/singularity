@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sylabs/scs-library-client/client"
 	scs "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/library"
@@ -24,12 +25,17 @@ type Library struct {
 }
 
 // NewLibrary initializes and returns new Library ready to  be used.
-func NewLibrary(client *scs.Client, cache *cache.Handle, keystoreURI string) *Library {
+func NewLibrary(scsConfig *scs.Config, cache *cache.Handle, keystoreURI string) (*Library, error) {
+	libraryClient, err := client.NewClient(scsConfig)
+	if err != nil {
+		return nil, fmt.Errorf("could not initialize library client: %v", err)
+	}
+
 	return &Library{
 		keystoreURI: keystoreURI,
-		client:      client,
+		client:      libraryClient,
 		cache:       cache,
-	}
+	}, nil
 }
 
 // Pull will download the image from the library.

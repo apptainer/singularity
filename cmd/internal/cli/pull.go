@@ -235,18 +235,19 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
 
-		libraryClient, err := client.NewClient(&client.Config{
-			BaseURL:   pullLibraryURI,
-			AuthToken: authToken,
-		})
-		if err != nil {
-			sylog.Fatalf("Could not initialize library client: %v", err)
-		}
-
 		if disableCache {
 			imgCache = nil
 		}
-		lib := singularity.NewLibrary(libraryClient, imgCache, keyServerURL)
+
+		libraryConfig := &client.Config{
+			BaseURL:   pullLibraryURI,
+			AuthToken: authToken,
+		}
+		lib, err := singularity.NewLibrary(libraryConfig, imgCache, keyServerURL)
+		if err != nil {
+			sylog.Fatalf("Could not initialize library: %v", err)
+		}
+
 		err = lib.Pull(context.TODO(), pullFrom, pullTo)
 		if err != nil && err != singularity.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
