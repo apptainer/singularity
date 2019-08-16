@@ -34,10 +34,11 @@ const (
 )
 
 func getCacheHandle() *cache.Handle {
-	h, err := cache.NewHandle(os.Getenv(cache.DirEnv))
+	h, err := cache.NewHandle(cache.Config{BaseDir: os.Getenv(cache.DirEnv)})
 	if err != nil {
 		sylog.Fatalf("Failed to create an image cache handle: %s", err)
 	}
+
 	return h
 }
 
