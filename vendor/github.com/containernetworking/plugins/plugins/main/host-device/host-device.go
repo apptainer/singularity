@@ -218,14 +218,23 @@ func moveLinkOut(containerNs ns.NetNS, ifName string) error {
 		}
 
 		// Devices can be renamed only when down
-		if err := netlink.LinkSetDown(dev); err != nil {
+		if err = netlink.LinkSetDown(dev); err != nil {
 			return fmt.Errorf("failed to set %q down: %v", ifName, err)
 		}
+
 		// Rename device to it's original name
-		if err := netlink.LinkSetName(dev, dev.Attrs().Alias); err != nil {
+		if err = netlink.LinkSetName(dev, dev.Attrs().Alias); err != nil {
 			return fmt.Errorf("failed to restore %q to original name %q: %v", ifName, dev.Attrs().Alias, err)
 		}
-		if err := netlink.LinkSetNsFd(dev, int(defaultNs.Fd())); err != nil {
+		defer func() {
+			if err != nil {
+				// if moving device to host namespace fails, we should revert device name
+				// to ifName to make sure that device can be found in retries
+				_ = netlink.LinkSetName(dev, ifName)
+			}
+		}()
+
+		if err = netlink.LinkSetNsFd(dev, int(defaultNs.Fd())); err != nil {
 			return fmt.Errorf("failed to move %q to host netns: %v", dev.Attrs().Alias, err)
 		}
 		return nil
