@@ -11,10 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Modifications by: Sylabs Inc.
-// Add u+w if we aren't root to allow extraction
-//
 
 package image
 
@@ -241,7 +237,7 @@ func unpackLayerEntry(dest string, header *tar.Header, reader io.Reader, entries
 		parent := filepath.Dir(header.Name)
 		parentPath := filepath.Join(dest, parent)
 		if _, err2 := os.Lstat(parentPath); err2 != nil && os.IsNotExist(err2) {
-			if err3 := os.MkdirAll(parentPath, 0755); err3 != nil {
+			if err3 := os.MkdirAll(parentPath, 0750); err3 != nil {
 				return false, err3
 			}
 		}
@@ -277,13 +273,6 @@ func unpackLayerEntry(dest string, header *tar.Header, reader io.Reader, entries
 		}
 	}
 
-	// SINGULARITY_PATCH
-	// Add u+w if we aren't root to allow extractions
-	extraPerms := os.FileMode(0000)
-	if os.Getuid() != 0 {
-		extraPerms = 0600
-	}
-
 	switch header.Typeflag {
 	case tar.TypeDir:
 		fi, err := os.Lstat(path)
@@ -295,23 +284,23 @@ func unpackLayerEntry(dest string, header *tar.Header, reader io.Reader, entries
 			if err != nil && !os.IsNotExist(err) {
 				return false, err
 			}
-			err = os.MkdirAll(path, info.Mode()|extraPerms)
+			err = os.MkdirAll(path, info.Mode())
 			if err != nil {
 				return false, err
 			}
 		}
 
 	case tar.TypeReg, tar.TypeRegA:
-		f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, info.Mode()|extraPerms)
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, info.Mode())
 		if err != nil {
 			return false, errors.Wrap(err, "unable to open file")
 		}
 
 		if _, err := io.Copy(f, reader); err != nil {
-			f.Close()
+			defer f.Close()
 			return false, errors.Wrap(err, "unable to copy")
 		}
-		f.Close()
+		defer f.Close()
 
 	case tar.TypeLink:
 		target := filepath.Join(dest, header.Linkname)

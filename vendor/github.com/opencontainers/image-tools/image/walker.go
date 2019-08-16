@@ -186,7 +186,7 @@ func (w *pathWalker) walk(f walkFunc) error {
 			return f(rel, info, eofReader{})
 		}
 
-		file, err := os.Open(path)
+		file, err := os.Open(path) // nolint: errcheck, gosec
 		if err != nil {
 			return errors.Wrap(err, "unable to open file") // os.Open includes the path
 		}
@@ -208,7 +208,7 @@ func (w *pathWalker) get(desc v1.Descriptor, dst io.Writer) (int64, error) {
 		return 0, fmt.Errorf("object is dir")
 	}
 
-	fp, err := os.Open(name)
+	fp, err := os.Open(name) // nolint: errcheck, gosec
 	if err != nil {
 		return 0, errors.Wrapf(err, "get failed")
 	}
@@ -233,7 +233,7 @@ func (w *pathWalker) find(path string, ff findFunc) error {
 		return fmt.Errorf("object is dir")
 	}
 
-	file, err := os.Open(name)
+	file, err := os.Open(name) // nolint: errcheck, gosec
 	if err != nil {
 		return errors.Wrap(err, "unable to open file") // os.Open includes the path
 	}

@@ -45,7 +45,7 @@ func Autodetect(path string) (string, error) {
 		return TypeImageLayout, nil
 	}
 
-	f, err := os.Open(path)
+	f, err := os.Open(path) // nolint: errcheck, gosec
 	if err != nil {
 		return "", errors.Wrap(err, "unable to open file") // os.Open includes the filename
 	}

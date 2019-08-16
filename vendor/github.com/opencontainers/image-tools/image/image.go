@@ -41,7 +41,7 @@ func ValidateZip(src string, refs []string, out *log.Logger) error {
 
 // ValidateFile opens the tar file given by the filename, then calls ValidateReader
 func ValidateFile(tarFile string, refs []string, out *log.Logger) error {
-	f, err := os.Open(tarFile)
+	f, err := os.Open(tarFile) // nolint: errcheck, gosec
 	if err != nil {
 		return errors.Wrap(err, "unable to open file")
 	}
@@ -160,7 +160,7 @@ func UnpackZip(src, dest, platform string, refs []string) error {
 
 // UnpackFile opens the file pointed by tarFileName and calls Unpack on it.
 func UnpackFile(tarFileName, dest, platform string, refs []string) error {
-	f, err := os.Open(tarFileName)
+	f, err := os.Open(tarFileName) // nolint: errcheck, gosec
 	if err != nil {
 		return errors.Wrap(err, "unable to open file")
 	}
@@ -245,7 +245,7 @@ func CreateRuntimeBundleZip(src, dest, root, platform string, refs []string) err
 // CreateRuntimeBundleFile opens the file pointed by tarFile and calls
 // CreateRuntimeBundle.
 func CreateRuntimeBundleFile(tarFile, dest, root, platform string, refs []string) error {
-	f, err := os.Open(tarFile)
+	f, err := os.Open(tarFile) // nolint: errcheck, gosec
 	if err != nil {
 		return errors.Wrap(err, "unable to open file")
 	}
@@ -320,7 +320,7 @@ func createBundle(w walker, m *v1.Manifest, dest, rootfs string) (retErr error) 
 
 	if _, err = os.Stat(dest); err != nil {
 		if os.IsNotExist(err) {
-			if err2 := os.MkdirAll(dest, 0755); err2 != nil {
+			if err2 := os.MkdirAll(dest, 0750); err2 != nil {
 				return err2
 			}
 			defer func() {
@@ -382,7 +382,7 @@ func filterManifest(w walker, Manifests []v1.Descriptor, platform string) ([]*v1
 	}
 
 	if len(manifests) == 0 {
-		return manifests, fmt.Errorf("There is no matching manifest")
+		return manifests, fmt.Errorf("there is no matching manifest")
 	}
 
 	return manifests, nil
