@@ -57,7 +57,7 @@ func (c *cacheTests) testCacheClean(t *testing.T) {
 			t,
 			e2e.AsSubtest(tc.name),
 			e2e.PreRun(func(t *testing.T) {
-				h, err := cache.NewHandle(c.env.ImgCacheDir)
+				h, err := cache.NewHandle(cache.Config{BaseDir: c.env.ImgCacheDir})
 				if err != nil {
 					t.Fatalf("Could not create image cache handle: %v", err)
 				}
@@ -73,7 +73,7 @@ func (c *cacheTests) testCacheClean(t *testing.T) {
 				e2e.ConsoleSendLine(tc.send),
 			),
 			e2e.PostRun(func(t *testing.T) {
-				h, err := cache.NewHandle(c.env.ImgCacheDir)
+				h, err := cache.NewHandle(cache.Config{BaseDir: c.env.ImgCacheDir})
 				if err != nil {
 					t.Fatalf("Could not create image cache handle: %v", err)
 				}

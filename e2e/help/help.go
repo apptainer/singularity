@@ -169,16 +169,55 @@ func (c *ctx) testFailure(t *testing.T) {
 
 }
 
+// Expected first lines of the help command output based on what options is used
+const (
+	helpExpectedOutput     = ""
+	helpHelpExpectedOutput = "Help about any command"
+)
+
 func (c *ctx) testSingularity(t *testing.T) {
 	tests := []struct {
-		name string
-		argv []string
-		exit int
+		name           string
+		argv           []string
+		expectedOutput string // Part of the output that is expected
+		exit           int
 	}{
-		{"NoCommand", []string{}, 1},
-		{"FlagShort", []string{"-h"}, 0},
-		{"FlagLong", []string{"--help"}, 0},
-		{"Command", []string{"help"}, 0},
+		{
+			name:           "NoCommand",
+			argv:           []string{},
+			expectedOutput: helpExpectedOutput,
+			exit:           1,
+		},
+		{
+			name:           "FlagShort",
+			argv:           []string{"-h"},
+			expectedOutput: helpExpectedOutput,
+			exit:           0,
+		},
+		{
+			name:           "FlagLong",
+			argv:           []string{"--help"},
+			expectedOutput: helpExpectedOutput,
+			exit:           0,
+		},
+		{
+			name:           "Command",
+			argv:           []string{"help"},
+			expectedOutput: helpExpectedOutput,
+			exit:           0,
+		},
+		{
+			name:           "CommandAndLongFlag",
+			argv:           []string{"help", "--help"},
+			expectedOutput: helpHelpExpectedOutput,
+			exit:           0,
+		},
+		{
+			name:           "CommandAndShortFlag",
+			argv:           []string{"help", "-h"},
+			expectedOutput: helpHelpExpectedOutput,
+			exit:           0,
+		},
 	}
 
 	for _, tt := range tests {
@@ -192,8 +231,14 @@ func (c *ctx) testSingularity(t *testing.T) {
 			}
 		}
 
-		c.env.RunSingularity(t, e2e.AsSubtest(tt.name), e2e.WithArgs(tt.argv...),
-			e2e.ExpectExit(tt.exit, printSuccessOrFailureFn))
+		c.env.RunSingularity(t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithArgs(tt.argv...),
+			e2e.ExpectExit(tt.exit,
+				printSuccessOrFailureFn,
+				e2e.ExpectOutput(e2e.RegexMatch, `^`+tt.expectedOutput),
+			),
+		)
 	}
 
 }

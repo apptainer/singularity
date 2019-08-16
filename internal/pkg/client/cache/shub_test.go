@@ -44,7 +44,7 @@ func TestShub(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewHandle(tt.dir)
+			c, err := NewHandle(Config{BaseDir: tt.dir})
 			if err != nil {
 				t.Fatalf("failed to create new image cache handle: %s", err)
 			}
@@ -73,7 +73,7 @@ func TestShubImageExists(t *testing.T) {
 	}
 	os.RemoveAll(tempImageCache)
 
-	c, err := NewHandle(tempImageCache)
+	c, err := NewHandle(Config{BaseDir: tempImageCache})
 	if err != nil {
 		t.Fatalf("failed to create a new image cache handle: %s", err)
 	}
