@@ -38,6 +38,16 @@ const (
 	CacheDir = "cache"
 )
 
+// Config describes the requested configuration requested when a new handle is created,
+// as defined by the user through command flags and environment variables.
+type Config struct {
+	// BaseDir specifies the location where the user wants the cache to be created.
+	BaseDir string
+
+	// Disable specifies whether the user request the cache to be disabled by default.
+	Disable bool
+}
+
 // Handle is an structure representing a cache
 type Handle struct {
 	// basedir is the base directory of the image cache. By default, it is set
@@ -88,7 +98,7 @@ type Handle struct {
 // impacting other threads (e.g., while running unit tests). If baseDir is an
 // empty string, the image cache will be located to the default location, i.e.,
 // $HOME/.singularity.
-func NewHandle(baseDir string) (*Handle, error) {
+func NewHandle(cfg Config) (*Handle, error) {
 	newCache := new(Handle)
 
 	// Check whether the cache is disabled by the user.
@@ -99,14 +109,24 @@ func NewHandle(baseDir string) (*Handle, error) {
 		envCacheDisabled = "0"
 	}
 	var err error
+	// We check if the environment variable to disable the cache is set
 	newCache.disabled, err = strconv.ParseBool(envCacheDisabled)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse environment variable %s: %s", DisableEnv, err)
 	}
+	// If the cache is not already disabled, we check if the configuration that was passed in
+	// request the cache to be disabled
+	if !newCache.disabled && cfg.Disable {
+		newCache.disabled = true
+	}
+	// If the cache is disabled, we stop here. Basically we return a valid handle that is not fully initialized
+	// since it would create the directories required by an enabled cache.
 	if newCache.disabled {
 		return newCache, nil
 	}
 
+	// cfg is what is requested so we should not change any value that it contains
+	baseDir := cfg.BaseDir
 	if baseDir == "" {
 		baseDir = getCacheBasedir()
 	}

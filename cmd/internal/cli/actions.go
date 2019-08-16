@@ -33,11 +33,15 @@ const (
 	defaultPath = "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 )
 
-func getCacheHandle() *cache.Handle {
-	h, err := cache.NewHandle(os.Getenv(cache.DirEnv))
+func getCacheHandle(cfg cache.Config) *cache.Handle {
+	h, err := cache.NewHandle(cache.Config{
+		BaseDir: os.Getenv(cache.DirEnv),
+		Disable: cfg.Disable,
+	})
 	if err != nil {
 		sylog.Fatalf("Failed to create an image cache handle: %s", err)
 	}
+
 	return h
 }
 
@@ -50,7 +54,7 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	os.Setenv("PATH", defaultPath)
 
 	// create an handle for the current image cache
-	imgCache := getCacheHandle()
+	imgCache := getCacheHandle(cache.Config{})
 	if imgCache == nil {
 		sylog.Fatalf("failed to create a new image cache handle")
 	}
