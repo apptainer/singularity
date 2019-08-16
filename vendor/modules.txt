@@ -273,17 +273,18 @@ github.com/opencontainers/image-tools/image
 # github.com/opencontainers/runc v0.1.1
 github.com/opencontainers/runc/libcontainer/system
 github.com/opencontainers/runc/libcontainer/user
-# github.com/opencontainers/runtime-spec v0.0.0-20180913141938-5806c3563733
+# github.com/opencontainers/runtime-spec v0.1.2-0.20181111125026-1722abf79c2f
 github.com/opencontainers/runtime-spec/specs-go
-# github.com/opencontainers/runtime-tools v0.7.0
+# github.com/opencontainers/runtime-tools v0.9.0
 github.com/opencontainers/runtime-tools/generate
 github.com/opencontainers/runtime-tools/generate/seccomp
 github.com/opencontainers/runtime-tools/validate
 github.com/opencontainers/runtime-tools/filepath
 github.com/opencontainers/runtime-tools/specerror
 github.com/opencontainers/runtime-tools/error
-# github.com/opencontainers/selinux v1.3.0
+# github.com/opencontainers/selinux v1.0.0-rc1
 github.com/opencontainers/selinux/go-selinux
+github.com/opencontainers/selinux/go-selinux/label
 # github.com/pelletier/go-toml v1.4.0
 github.com/pelletier/go-toml
 # github.com/pkg/errors v0.8.1

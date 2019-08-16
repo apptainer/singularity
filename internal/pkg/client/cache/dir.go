@@ -41,8 +41,11 @@ const (
 // Config describes the requested configuration requested when a new handle is created,
 // as defined by the user through command flags and environment variables.
 type Config struct {
-	// Location where the user wants the cache to be created.
+	// BaseDir specifies the location where the user wants the cache to be created.
 	BaseDir string
+
+	// Disable specifies whether the user request the cache to be disabled by default.
+	Disable bool
 }
 
 // Handle is an structure representing a cache
@@ -106,10 +109,18 @@ func NewHandle(cfg Config) (*Handle, error) {
 		envCacheDisabled = "0"
 	}
 	var err error
+	// We check if the environment variable to disable the cache is set
 	newCache.disabled, err = strconv.ParseBool(envCacheDisabled)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse environment variable %s: %s", DisableEnv, err)
 	}
+	// If the cache is not already disabled, we check if the configuration that was passed in
+	// request the cache to be disabled
+	if !newCache.disabled && cfg.Disable {
+		newCache.disabled = true
+	}
+	// If the cache is disabled, we stop here. Basically we return a valid handle that is not fully initialized
+	// since it would create the directories required by an enabled cache.
 	if newCache.disabled {
 		return newCache, nil
 	}
