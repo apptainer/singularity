@@ -3,13 +3,12 @@ package singularity
 import (
 	"context"
 	"fmt"
-	"io"
-	"os"
 
 	scs "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/signing"
 )
@@ -123,22 +122,10 @@ func (l *Library) copyFromCache(hash, name, to string) error {
 		return errNotInCache
 	}
 
+	from := l.cache.LibraryImage(hash, name)
 	// Perms are 777 *prior* to umask in order to allow image to be
 	// executed with its leading shebang like a script
-	dstFile, err := os.OpenFile(to, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
-	if err != nil {
-		return fmt.Errorf("while opening destination file: %v", err)
-	}
-	defer dstFile.Close()
-
-	from := l.cache.LibraryImage(hash, name)
-	srcFile, err := os.Open(from)
-	if err != nil {
-		return fmt.Errorf("while opening cached image: %v", err)
-	}
-	defer srcFile.Close()
-
-	_, err = io.Copy(dstFile, srcFile)
+	err = fs.CopyFile(from, to, 0777)
 	if err != nil {
 		return fmt.Errorf("while copying image from cache: %v", err)
 	}

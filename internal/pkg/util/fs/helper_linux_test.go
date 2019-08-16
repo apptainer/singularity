@@ -6,6 +6,7 @@
 package fs
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -332,5 +333,91 @@ func TestMakeTempFile(t *testing.T) {
 		if !strings.HasPrefix(fileName, expectedPrefix) {
 			t.Fatalf("%s: unexpected prefix returned in path %s, expected %s", tt.name, fileName, expectedPrefix)
 		}
+	}
+}
+
+func TestCopyFile(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	testData := []byte("Hello, Singularity!")
+
+	tmpDir, err := ioutil.TempDir("", "copy-file")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// defer os.RemoveAll(tmpDir)
+
+	source := filepath.Join(tmpDir, "source")
+	err = ioutil.WriteFile(source, testData, 0644)
+	if err != nil {
+		t.Fatalf("failed to create test source file: %v", err)
+	}
+
+	tt := []struct {
+		name        string
+		from        string
+		to          string
+		mode        os.FileMode
+		expectError string
+	}{
+		{
+			name:        "non existent source",
+			from:        filepath.Join(tmpDir, "not-there"),
+			to:          filepath.Join(tmpDir, "invalid"),
+			mode:        0644,
+			expectError: "no such file or directory",
+		},
+		{
+			name:        "non existent target",
+			from:        source,
+			to:          filepath.Join(os.TempDir(), "not-there", "invalid"),
+			mode:        0644,
+			expectError: "no such file or directory",
+		},
+		{
+			name: "change mode",
+			from: source,
+			to:   filepath.Join(tmpDir, "executable"),
+			mode: 0755,
+		},
+		{
+			name: "simple copy",
+			from: source,
+			to:   filepath.Join(tmpDir, "copy"),
+			mode: 0644,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			err := CopyFile(tc.from, tc.to, tc.mode)
+			if tc.expectError == "" && err != nil {
+				t.Fatalf("expected no error, but got %v", err)
+			}
+			if tc.expectError != "" && err == nil {
+				t.Fatalf("expected error, but got nil")
+			}
+			if err != nil && !strings.Contains(err.Error(), tc.expectError) {
+				t.Fatalf("expected error to contain %q, but got %q", tc.expectError, err)
+			}
+
+			if tc.expectError == "" {
+				actual, err := ioutil.ReadFile(tc.to)
+				if err != nil {
+					t.Fatalf("could not read copied file: %v", err)
+				}
+				if !bytes.Equal(actual, testData) {
+					t.Fatalf("copied content mismatch")
+				}
+				fi, err := os.Stat(tc.to)
+				if err != nil {
+					t.Fatalf("could not read copied file info")
+				}
+				if fi.Mode() != tc.mode {
+					t.Fatalf("expected %s mode, but gor %s", tc.mode, fi.Mode())
+				}
+			}
+		})
 	}
 }
