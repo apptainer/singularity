@@ -24,6 +24,8 @@ github.com/Microsoft/hcsshim/internal/safefile
 github.com/Netflix/go-expect
 # github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
 github.com/alexflint/go-filemutex
+# github.com/apex/log v1.1.1
+github.com/apex/log
 # github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
 github.com/beorn7/perks/quantile
 # github.com/blang/semver v3.5.1+incompatible
@@ -32,7 +34,7 @@ github.com/blang/semver
 github.com/buger/jsonparser
 # github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
 github.com/containerd/cgroups
-# github.com/containerd/containerd v1.2.6
+# github.com/containerd/containerd v1.2.7
 github.com/containerd/containerd/reference
 github.com/containerd/containerd/remotes/docker
 github.com/containerd/containerd/images
@@ -40,6 +42,7 @@ github.com/containerd/containerd/content
 github.com/containerd/containerd/errdefs
 github.com/containerd/containerd/log
 github.com/containerd/containerd/remotes
+github.com/containerd/containerd/version
 github.com/containerd/containerd/platforms
 # github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd
 github.com/containerd/continuity/pathdriver
@@ -122,6 +125,8 @@ github.com/coreos/go-systemd/activation
 github.com/cpuguy83/go-md2man/md2man
 # github.com/creack/pty v1.1.7
 github.com/creack/pty
+# github.com/cyphar/filepath-securejoin v0.2.2
+github.com/cyphar/filepath-securejoin
 # github.com/d2g/dhcp4 v0.0.0-20170904100407-a1d1b6c41b1c
 github.com/d2g/dhcp4
 # github.com/d2g/dhcp4client v0.0.0-20180611075603-e61299896203
@@ -220,13 +225,19 @@ github.com/inconshreveable/mousetrap
 github.com/j-keck/arping
 # github.com/juju/errors v0.0.0-20190207033735-e65537c515d7
 github.com/juju/errors
+# github.com/klauspost/compress v1.4.1
+github.com/klauspost/compress/flate
+# github.com/klauspost/cpuid v1.2.0
+github.com/klauspost/cpuid
+# github.com/klauspost/pgzip v1.2.1
+github.com/klauspost/pgzip
 # github.com/kr/pty v1.1.8
 github.com/kr/pty
 # github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
 github.com/kubernetes-sigs/cri-o/pkg/seccomp
-# github.com/mattn/go-colorable v0.1.1
+# github.com/mattn/go-colorable v0.1.2
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.5
+# github.com/mattn/go-isatty v0.0.8
 github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.2
 github.com/mattn/go-runewidth
@@ -236,6 +247,21 @@ github.com/mattn/go-shellwords
 github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c
 github.com/mtrmac/gpgme
+# github.com/openSUSE/umoci v0.4.2
+github.com/openSUSE/umoci
+github.com/openSUSE/umoci/oci/layer
+github.com/openSUSE/umoci/pkg/idtools
+github.com/openSUSE/umoci/oci/cas/dir
+github.com/openSUSE/umoci/oci/casext
+github.com/openSUSE/umoci/oci/config/generate
+github.com/openSUSE/umoci/oci/cas
+github.com/openSUSE/umoci/oci/config/convert
+github.com/openSUSE/umoci/pkg/fseval
+github.com/openSUSE/umoci/pkg/system
+github.com/openSUSE/umoci/pkg/testutils
+github.com/openSUSE/umoci/pkg/unpriv
+github.com/openSUSE/umoci/third_party/shared
+github.com/openSUSE/umoci/third_party/user
 # github.com/opencontainers/go-digest v1.0.0-rc1
 github.com/opencontainers/go-digest
 # github.com/opencontainers/image-spec v0.0.0-20180411145040-e562b0440392
@@ -249,14 +275,14 @@ github.com/opencontainers/runc/libcontainer/system
 github.com/opencontainers/runc/libcontainer/user
 # github.com/opencontainers/runtime-spec v0.0.0-20180913141938-5806c3563733
 github.com/opencontainers/runtime-spec/specs-go
-# github.com/opencontainers/runtime-tools v0.6.0
+# github.com/opencontainers/runtime-tools v0.7.0
 github.com/opencontainers/runtime-tools/generate
 github.com/opencontainers/runtime-tools/generate/seccomp
 github.com/opencontainers/runtime-tools/validate
 github.com/opencontainers/runtime-tools/filepath
 github.com/opencontainers/runtime-tools/specerror
 github.com/opencontainers/runtime-tools/error
-# github.com/opencontainers/selinux v1.0.0-rc1
+# github.com/opencontainers/selinux v1.3.0
 github.com/opencontainers/selinux/go-selinux
 # github.com/pelletier/go-toml v1.4.0
 github.com/pelletier/go-toml
@@ -279,6 +305,8 @@ github.com/prometheus/procfs
 github.com/prometheus/procfs/nfs
 github.com/prometheus/procfs/xfs
 github.com/prometheus/procfs/internal/util
+# github.com/rootless-containers/proto v0.1.0
+github.com/rootless-containers/proto/go-proto
 # github.com/russross/blackfriday v1.5.2
 github.com/russross/blackfriday
 # github.com/safchain/ethtool v0.0.0-20180504150752-6e3f4faa84e1
@@ -308,6 +336,12 @@ github.com/sylabs/sif/pkg/sif
 github.com/sylabs/sif/internal/app/siftool
 # github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e
 github.com/syndtr/gocapability/capability
+# github.com/urfave/cli v1.21.0
+github.com/urfave/cli
+# github.com/vbatts/go-mtree v0.4.4
+github.com/vbatts/go-mtree
+github.com/vbatts/go-mtree/pkg/govis
+github.com/vbatts/go-mtree/xattr
 # github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6
 github.com/vishvananda/netlink
 github.com/vishvananda/netlink/nl
@@ -321,7 +355,7 @@ github.com/xeipuuv/gojsonreference
 github.com/xeipuuv/gojsonschema
 # go4.org v0.0.0-20180417224846-9599cf28b011
 go4.org/errorutil
-# golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
+# golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734 => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
 golang.org/x/crypto/ssh/terminal
 golang.org/x/crypto/openpgp
 golang.org/x/crypto/openpgp/clearsign
@@ -331,10 +365,11 @@ golang.org/x/crypto/openpgp/errors
 golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/cast5
 golang.org/x/crypto/openpgp/elgamal
-# golang.org/x/net v0.0.0-20190311183353-d8887717615a
+golang.org/x/crypto/ripemd160
+# golang.org/x/net v0.0.0-20190620200207-3b0461eec859
 golang.org/x/net/context/ctxhttp
-golang.org/x/net/proxy
 golang.org/x/net/context
+golang.org/x/net/proxy
 golang.org/x/net/internal/socks
 # golang.org/x/sync v0.0.0-20190423024810-112230192c58
 golang.org/x/sync/errgroup

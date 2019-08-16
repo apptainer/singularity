@@ -38,6 +38,10 @@ func getOciTempCachePath(c *Handle) (string, error) {
 
 // OciTempImage creates a OciTempDir/sum directory and returns the abs path of the image
 func (c *Handle) OciTempImage(sum, name string) string {
+	if c.disabled {
+		return ""
+	}
+
 	_, err := updateCacheSubdir(c, filepath.Join(OciTempDir, sum))
 	if err != nil {
 		return ""
@@ -48,6 +52,10 @@ func (c *Handle) OciTempImage(sum, name string) string {
 
 // OciTempExists returns whether the image with the given sha sum exists in the OciTemp() cache
 func (c *Handle) OciTempExists(sum, name string) (bool, error) {
+	if c.disabled {
+		return false, nil
+	}
+
 	_, err := os.Stat(c.OciTempImage(sum, name))
 	if os.IsNotExist(err) {
 		return false, nil

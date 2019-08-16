@@ -1,4 +1,0 @@
-bootstrap: zypper
-osversion: 42.2
-mirrorurl: http://download.opensuse.org/distribution/leap/%{OSVERSION}/repo/oss/
-include: somepackage

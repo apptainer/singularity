@@ -209,9 +209,15 @@ func pullRun(cmd *cobra.Command, args []string) {
 		pullTo = filepath.Join(pullDir, pullTo)
 	}
 
-	if !force {
-		if _, err := os.Stat(pullTo); err == nil {
+	_, err := os.Stat(pullTo)
+	if !os.IsNotExist(err) {
+		// image already exists
+		if !force {
 			sylog.Fatalf("Image file already exists: %q - will not overwrite", pullTo)
+		}
+		sylog.Debugf("Removing overridden file: %s", pullTo)
+		if err := os.Remove(pullTo); err != nil {
+			sylog.Fatalf("Unable to remove %q: %s", pullTo, err)
 		}
 	}
 

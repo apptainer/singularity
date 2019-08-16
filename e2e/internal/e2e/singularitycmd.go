@@ -495,6 +495,11 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 		sypgpDirEnv := fmt.Sprintf("%s=%s", "SINGULARITY_SYPGPDIR", s.sypgpDir)
 		cmd.Env = append(cmd.Env, sypgpDirEnv)
 
+		// We check if we need to disable the cache
+		if env.DisableCache {
+			cmd.Env = append(cmd.Env, "SINGULARITY_DISABLE_CACHE=1")
+		}
+
 		cmd.Dir = s.dir
 		cmd.Stdin = s.stdin
 		cmd.Stdout = &stdout
