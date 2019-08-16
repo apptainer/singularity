@@ -1,4 +1,0 @@
-bootstrap: debootstrap
-osversion: xenial
-mirrorurl: http://us.archive.ubuntu.com/ubuntu/
-include: somepackage

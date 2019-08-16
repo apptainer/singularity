@@ -19,7 +19,7 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-func (c *ctx) testSingularityCacheDir(t *testing.T) {
+func (c *ctx) testSingularityImgCache(t *testing.T, disableCache bool) {
 	// The intent of the test is simple:
 	// - create 2 temporary directories, one where the image will be pulled and one where the
 	//   image cache should be created,
@@ -27,7 +27,7 @@ func (c *ctx) testSingularityCacheDir(t *testing.T) {
 	// - check whether we have the correct entry in the cache, within the directory we created.
 	// If the file is in our cache, it means the e2e framework correctly set the SINGULARITY_CACHE_DIR
 	// while executing the pull command.
-	cacheDir, err := ioutil.TempDir("", "")
+	cacheDir, err := ioutil.TempDir("", "e2e-imgcache-")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
 	}
@@ -49,6 +49,10 @@ func (c *ctx) testSingularityCacheDir(t *testing.T) {
 		}
 	}()
 
+	if disableCache {
+		c.env.DisableCache = true
+	}
+
 	c.env.ImgCacheDir = cacheDir
 	imgName := "testImg.sif"
 	imgPath := filepath.Join(c.env.TestDir, imgName)
@@ -64,14 +68,29 @@ func (c *ctx) testSingularityCacheDir(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 
-	shasum, err := client.ImageHash(imgPath)
-	if err != nil {
-		t.Fatalf("failed to get sha256sum for %s", imgPath)
+	if !disableCache {
+		shasum, err := client.ImageHash(imgPath)
+		if err != nil {
+			t.Fatalf("failed to get sha256sum for %s", imgPath)
+		}
+		cacheEntryPath := filepath.Join(cacheDir, "cache", "library", shasum, "alpine_latest.sif")
+		if _, err := os.Stat(cacheEntryPath); os.IsNotExist(err) {
+			t.Fatalf("cache entry is missing (expected: %s)", cacheEntryPath)
+		}
+	} else {
+		cacheEntryPath := filepath.Join(cacheDir, "cache")
+		if _, err := os.Stat(cacheEntryPath); !os.IsNotExist(err) {
+			t.Fatalf("cache created while disabled (%s exists)", cacheEntryPath)
+		}
 	}
-	cacheEntryPath := filepath.Join(cacheDir, "cache", "library", shasum, "alpine_latest.sif")
-	if _, err := os.Stat(cacheEntryPath); os.IsNotExist(err) {
-		t.Fatalf("cache entry is missing (expected: %s)", cacheEntryPath)
-	}
+}
+
+func (c *ctx) testSingularityCacheDir(t *testing.T) {
+	c.testSingularityImgCache(t, false)
+}
+
+func (c *ctx) testSingularityDisableCache(t *testing.T) {
+	c.testSingularityImgCache(t, true)
 }
 
 func (c *ctx) testSingularitySypgpDir(t *testing.T) {
@@ -118,6 +137,7 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 
 	return func(t *testing.T) {
 		t.Run("testSingularityCacheDir", c.testSingularityCacheDir)
+		t.Run("testSingularityDisableDir", c.testSingularityDisableCache)
 		t.Run("testSingularitySypgpDir", c.testSingularitySypgpDir)
 	}
 }
