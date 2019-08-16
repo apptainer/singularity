@@ -67,7 +67,6 @@ type mrKeyList struct {
 	keyDateCreated string
 	keyDateExpired string
 	keyStatus      string
-	err            error
 	keyCount       int
 	keyReady       bool
 }
@@ -734,13 +733,19 @@ func getKeyInfoFromList(keyList *mrKeyList, lines []string, index string) error 
 	var errRet error
 
 	if index == "pub" {
+		// Get the fingerprint for the key
 		keyList.keyFingerprint = lines[1]
+
+		// Get the bit length for the key
 		keyList.keyBit = lines[3]
+
 		var err error
+		// Get the key type
 		keyList.keyType, err = getEncryptionAlgorithmName(lines[2])
 		if err != nil {
 			errRet = err
 		}
+
 		// Get the date created for the key
 		keyList.keyDateCreated = date(lines[4])
 
@@ -757,6 +762,9 @@ func getKeyInfoFromList(keyList *mrKeyList, lines []string, index string) error 
 		} else {
 			keyList.keyStatus = "[enabled]"
 		}
+
+		// Only count the key if it has a fingerprint. Otherwise
+		// dont count it.
 		keyList.keyCount++
 	}
 	if index == "uid" {
