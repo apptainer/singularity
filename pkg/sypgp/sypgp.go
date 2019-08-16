@@ -57,6 +57,21 @@ type Handle struct {
 	path string
 }
 
+// mrKeyList contains all the key info, used for decoding
+// the MR output from 'key search'
+type mrKeyList struct {
+	keyFingerprint string
+	keyBit         string
+	keyName        string
+	keyType        string
+	keyDateCreated string
+	keyDateExpired string
+	keyStatus      string
+	err            error
+	keyCount       int
+	keyReady       bool
+}
+
 func (e *KeyExistsError) Error() string {
 	return fmt.Sprintf("the key with fingerprint %X already belongs to the keyring", e.fingerprint)
 }
@@ -654,10 +669,10 @@ func SearchPubkey(search, keyserverURI, authToken string, longOutput bool) error
 
 	if longOutput {
 		kcount, keyList, err := formatMROutputLongList(keyText)
+		fmt.Printf("Showing %d results\n\n%s", kcount, keyList)
 		if err != nil {
 			return fmt.Errorf("could not reformat key output")
 		}
-		fmt.Printf("Showing %d results\n\n%s", kcount, keyList)
 	} else {
 		kcount, keyList, err := formatMROutput(keyText)
 		fmt.Printf("Showing %d results\n\n%s", kcount, keyList)
@@ -700,17 +715,59 @@ func getEncryptionAlgorithmName(n string) (string, error) {
 }
 
 //function to obtain a date format from linux epoch time
-func date(s string) (string, error) {
+func date(s string) string {
 	if s == "" {
-		return "[ultimate]", nil
+		return "[ultimate]"
 	}
 	if s == "none" {
-		return s, nil
+		return s
 	}
 	c, _ := strconv.ParseInt(s, 10, 64)
 	ret := time.Unix(c, 0).String()
 
-	return ret, nil
+	return ret
+}
+
+// getKeyInfoFromList takes the lines, from strings.Split(), and a index of lines. Appends
+// the output into keyList. Returns a error if one occurs.
+func getKeyInfoFromList(keyList *mrKeyList, lines []string, index string) error {
+	var errRet error
+
+	if index == "pub" {
+		keyList.keyFingerprint = lines[1]
+		keyList.keyBit = lines[3]
+		var err error
+		keyList.keyType, err = getEncryptionAlgorithmName(lines[2])
+		if err != nil {
+			errRet = err
+		}
+		// Get the date created for the key
+		keyList.keyDateCreated = date(lines[4])
+
+		// Get the expiration date for the key
+		keyList.keyDateExpired = date(lines[5])
+
+		// Get the key status
+		if lines[6] == "r" {
+			keyList.keyStatus = "[revoked]"
+		} else if lines[6] == "d" {
+			keyList.keyStatus = "[disabled]"
+		} else if lines[6] == "e" {
+			keyList.keyStatus = "[expired]"
+		} else {
+			keyList.keyStatus = "[enabled]"
+		}
+		keyList.keyCount++
+	}
+	if index == "uid" {
+		// Get the name of the key
+		keyList.keyName = lines[1]
+
+		// After we get the name, the key is ready to print!
+		keyList.keyReady = true
+	}
+
+	return errRet
 }
 
 // formatMROutputLongList reformats the key search output that is in machine readable format
@@ -722,21 +779,9 @@ func formatMROutputLongList(mrString string) (int, []byte, error) {
 	tw := tabwriter.NewWriter(retList, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(tw, listLine, "FINGERPRINT", "ALGORITHM", "BITS", "CREATION DATE", "EXPIRATION DATE", "STATUS", "NAME/EMAIL")
 
-	count := 0
 	keyNum := 0
-
 	key := strings.Split(mrString, "\n")
-
-	var (
-		keyFingerprint string
-		keyBit         string
-		keyName        string
-		keyType        string
-		keyDateCreated string
-		keyDateExpired string
-		keyStatus      string
-		keyReady       bool
-	)
+	var keyList mrKeyList
 
 	for _, k := range key {
 		nk := strings.Split(k, ":")
@@ -748,62 +793,28 @@ func formatMROutputLongList(mrString string) (int, []byte, error) {
 					return -1, nil, fmt.Errorf("unable to check key number")
 				}
 			}
-			if n == "pub" {
-				keyFingerprint = nk[1]
-				keyBit = nk[3]
-				var err error
-				keyType, err = getEncryptionAlgorithmName(nk[2])
-				if err != nil {
-					panic(err)
-				}
-				keyDateCreated, err = date(nk[4])
-				if err != nil {
-					panic(err)
-				}
-				keyDateExpired, err = date(nk[5])
-				if err != nil {
-					panic(err)
-				}
-				if nk[6] == "r" {
-					keyStatus = "[revoked]"
-				} else if nk[6] == "d" {
-					keyStatus = "[disabled]"
-				} else if nk[6] == "e" {
-					keyStatus = "[expired]"
-				} else {
-					keyStatus = "[enabled]"
-				}
-				count++
-			}
-			if n == "uid" {
-				keyName = nk[1]
-				keyReady = true
+			err := getKeyInfoFromList(&keyList, nk, n)
+			if err != nil {
+				return -1, nil, fmt.Errorf("failed to get entity from list: %s", err)
 			}
 		}
-		if keyReady {
-			fmt.Fprintf(tw, listLine, keyFingerprint, keyType, keyBit, keyDateCreated, keyDateExpired, keyStatus, keyName)
+		if keyList.keyReady {
+			fmt.Fprintf(tw, listLine, keyList.keyFingerprint, keyList.keyType, keyList.keyBit, keyList.keyDateCreated, keyList.keyDateExpired, keyList.keyStatus, keyList.keyName)
 			fmt.Fprintf(tw, "\t\t\t\t\t\t\n")
-			keyFingerprint = ""
-			keyBit = ""
-			keyName = ""
-			keyType = ""
-			keyDateCreated = ""
-			keyDateExpired = ""
-			keyStatus = ""
-			keyReady = false
+			keyList = mrKeyList{keyCount: keyList.keyCount}
 		}
 	}
 	tw.Flush()
 
-	sylog.Debugf("key count=%d; expect=%d\n", count, keyNum)
+	sylog.Debugf("key count=%d; expect=%d\n", keyList.keyCount, keyNum)
 
 	// Simple check to ensure the conversion was successful
-	if count != keyNum {
-		sylog.Debugf("expecting %d, got %d\n", keyNum, count)
+	if keyList.keyCount != keyNum {
+		sylog.Debugf("expecting %d, got %d\n", keyNum, keyList.keyCount)
 		return -1, retList.Bytes(), fmt.Errorf("failed to convert machine readable to human readable output correctly")
 	}
 
-	return count, retList.Bytes(), nil
+	return keyList.keyCount, retList.Bytes(), nil
 }
 
 // FetchPubkey pulls a public key from the Key Service.
