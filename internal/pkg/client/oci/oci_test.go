@@ -236,7 +236,7 @@ func TestConvertReference(t *testing.T) {
 
 	cacheDir, _, ref := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
-	imgCache, err := cache.NewHandlecache.Context{BaseDir: cacheDir})
+	imgCache, err := cache.NewHandle(cache.Context{BaseDir: cacheDir})
 	if err != nil {
 		t.Fatalf("failed to create an image cache handle")
 	}
