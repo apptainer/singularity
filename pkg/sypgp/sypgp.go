@@ -34,19 +34,23 @@ import (
 	"golang.org/x/crypto/openpgp/packet"
 )
 
-const helpAuth = `Access token is expired or missing. To update or obtain a token:
+const (
+	helpAuth = `Access token is expired or missing. To update or obtain a token:
   1) View configured remotes using "singularity remote list"
   2) Identify default remote. It will be listed with square brackets.
   3) Login to default remote with "singularity remote login <RemoteName>"
 `
-const helpPush = `  4) Push key using "singularity key push %[1]X"
+	helpPush = `  4) Push key using "singularity key push %[1]X"
 `
+)
 
-var errNotEncrypted = errors.New("key is not encrypted")
+var (
+	errNotEncrypted = errors.New("key is not encrypted")
 
-// ErrEmptyKeyring is the error when the public, or private keyring
-// empty.
-var ErrEmptyKeyring = errors.New("keyring is empty")
+	// ErrEmptyKeyring is the error when the public, or private keyring
+	// empty.
+	ErrEmptyKeyring = errors.New("keyring is empty")
+)
 
 // KeyExistsError is a type representing an error associated to a specific key.
 type KeyExistsError struct {
@@ -441,8 +445,10 @@ func (keyring *Handle) genKeyPair(name, comment, email, passphrase string) (*ope
 	}
 
 	// Encrypt private key
-	if err = EncryptKey(entity, passphrase); err != nil {
-		return nil, err
+	if passphrase != "" {
+		if err = EncryptKey(entity, passphrase); err != nil {
+			return nil, err
+		}
 	}
 
 	// Store key parts in local key caches
@@ -514,12 +520,8 @@ func (keyring *Handle) GenKeyPair(keyServiceURI string, authToken string) (*open
 	return entity, nil
 }
 
-// DecryptKey decrypts a private key provided a pass phrase
+// DecryptKey decrypts a private key provided a pass phrase.
 func DecryptKey(k *openpgp.Entity, message string) error {
-	if !k.PrivateKey.Encrypted {
-		return errNotEncrypted
-	}
-
 	if message == "" {
 		message = "Enter key passphrase : "
 	}
