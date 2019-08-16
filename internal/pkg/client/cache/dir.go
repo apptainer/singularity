@@ -38,6 +38,13 @@ const (
 	CacheDir = "cache"
 )
 
+// Config describes the requested configuration requested when a new handle is created,
+// as defined by the user through command flags and environment variables.
+type Config struct {
+	// Location where the user wants the cache to be created.
+	BaseDir string
+}
+
 // Handle is an structure representing a cache
 type Handle struct {
 	// basedir is the base directory of the image cache. By default, it is set
@@ -88,7 +95,7 @@ type Handle struct {
 // impacting other threads (e.g., while running unit tests). If baseDir is an
 // empty string, the image cache will be located to the default location, i.e.,
 // $HOME/.singularity.
-func NewHandle(baseDir string) (*Handle, error) {
+func NewHandle(cfg Config) (*Handle, error) {
 	newCache := new(Handle)
 
 	// Check whether the cache is disabled by the user.
@@ -107,6 +114,8 @@ func NewHandle(baseDir string) (*Handle, error) {
 		return newCache, nil
 	}
 
+	// cfg is what is requested so we should not change any value that it contains
+	baseDir := cfg.BaseDir
 	if baseDir == "" {
 		baseDir = getCacheBasedir()
 	}
