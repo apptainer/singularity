@@ -71,9 +71,9 @@ require (
 	github.com/opencontainers/image-spec v0.0.0-20180411145040-e562b0440392
 	github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74
 	github.com/opencontainers/runc v0.1.1 // indirect
-	github.com/opencontainers/runtime-spec v0.0.0-20180913141938-5806c3563733
-	github.com/opencontainers/runtime-tools v0.7.0
-	github.com/opencontainers/selinux v1.3.0
+	github.com/opencontainers/runtime-spec v0.1.2-0.20181111125026-1722abf79c2f
+	github.com/opencontainers/runtime-tools v0.9.0
+	github.com/opencontainers/selinux v1.0.0-rc1
 	github.com/pelletier/go-toml v1.4.0
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2 // indirect
 	github.com/pkg/errors v0.8.1
