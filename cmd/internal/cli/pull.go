@@ -243,6 +243,9 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Could not initialize library client: %v", err)
 		}
 
+		if disableCache {
+			imgCache = nil
+		}
 		lib := singularity.NewLibrary(libraryClient, imgCache, keyServerURL)
 		err = lib.Pull(context.TODO(), pullFrom, pullTo)
 		if err != nil && err != singularity.ErrLibraryPullUnsigned {
