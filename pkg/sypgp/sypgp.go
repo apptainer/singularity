@@ -48,8 +48,6 @@ var errNotEncrypted = errors.New("key is not encrypted")
 // empty.
 var ErrEmptyKeyring = errors.New("keyring is empty")
 
-var ErrInvalidBitLen = errors.New("invalid bit length")
-
 // KeyExistsError is a type representing an error associated to a specific key.
 type KeyExistsError struct {
 	fingerprint [20]byte
@@ -463,11 +461,6 @@ func (keyring *Handle) genKeyPair(name, comment, email, passphrase string, bitLe
 func (keyring *Handle) GenKeyPair(keyServiceURI, authToken string, bitLen int) (*openpgp.Entity, error) {
 	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
-	}
-
-	// Fail early if the bit length is invalid
-	if bitLen < 1024 || bitLen > 4096 {
-		return nil, ErrInvalidBitLen
 	}
 
 	name, err := interactive.AskQuestion("Enter your name (e.g., John Doe) : ")
