@@ -35,7 +35,7 @@ var (
 // LibraryPull will download the image specified by file from the library specified by libraryURI.
 // After downloading, the image will be checked for a valid signature and removed if it does not contain one,
 // unless specified not to by the unauthenticated bool
-func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL, authToken string, unauthenticated, noCache bool) error {
+func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL, authToken string, unauthenticated bool) error {
 	libraryClient, err := client.NewClient(&client.Config{
 		BaseURL:   libraryURI,
 		AuthToken: authToken,
@@ -56,7 +56,7 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 		return fmt.Errorf("could not get image info: %v", err)
 	}
 
-	if noCache {
+	if imgCache.IsDisabled() {
 		// don't use cached image
 		sylog.Infof("Downloading library image: %s", name)
 		err := library.DownloadImage(context.TODO(), libraryClient, name, imageRef, downloadImageCallback)
@@ -127,7 +127,7 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 
 // PullShub will download a image from shub, and cache it. Next time
 // that container is downloaded this will just use that cached image.
-func PullShub(imgCache *cache.Handle, filePath string, shubRef string, noHTTPS, noCache bool) (err error) {
+func PullShub(imgCache *cache.Handle, filePath string, shubRef string, noHTTPS bool) (err error) {
 	shubURI, err := shub.ShubParseReference(shubRef)
 	if err != nil {
 		return fmt.Errorf("failed to parse shub uri: %s", err)
@@ -142,7 +142,7 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, noHTTPS, 
 	imageName := uri.GetName(shubRef)
 	imagePath := imgCache.ShubImage(manifest.Commit, imageName)
 
-	if noCache {
+	if imgCache.IsDisabled() {
 		// Dont use cached image
 		if err := shub.DownloadImage(manifest, filePath, shubRef, true, noHTTPS); err != nil {
 			return err
@@ -272,7 +272,7 @@ func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *oci
 }
 
 // OciPull will build a SIF image from the specified oci URI
-func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCache bool) error {
+func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS bool) error {
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify:    noHTTPS,
 		DockerInsecureSkipTLSVerify: noHTTPS,
@@ -284,8 +284,8 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 		return fmt.Errorf("failed to get checksum for %s: %s", imageURI, err)
 	}
 
-	if noCache {
-		if err := convertDockerToSIF(imgCache, imageURI, name, tmpDir, noHTTPS, true, ociAuth); err != nil {
+	if imgCache.IsDisabled() {
+		if err := convertDockerToSIF(imgCache, imageURI, name, tmpDir, noHTTPS, ociAuth); err != nil {
 			return fmt.Errorf("while building SIF from layers: %v", err)
 		}
 	} else {
@@ -300,7 +300,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 			sylog.Infof("Converting OCI blobs to SIF format")
 			go interruptCleanup(imgName)
 
-			if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, false, ociAuth); err != nil {
+			if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, ociAuth); err != nil {
 				return fmt.Errorf("while building SIF from layers: %v", err)
 			}
 			sylog.Infof("Build complete: %s", name)
@@ -328,7 +328,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 	return nil
 }
 
-func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir string, noHTTPS, noCache bool, authConf *ocitypes.DockerAuthConfig) error {
+func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir string, noHTTPS bool, authConf *ocitypes.DockerAuthConfig) error {
 	if imgCache == nil {
 		return fmt.Errorf("image cache is undefined")
 	}
@@ -340,7 +340,7 @@ func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir str
 			Format: "sif",
 			Opts: types.Options{
 				TmpDir:           tmpDir,
-				NoCache:          noCache,
+				NoCache:          imgCache.IsDisabled(),
 				NoTest:           true,
 				NoHTTPS:          noHTTPS,
 				DockerAuthConfig: authConf,

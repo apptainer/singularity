@@ -466,6 +466,20 @@ func (di *DescriptorInput) SetSignExtra(hash Hashtype, entity string) error {
 	return nil
 }
 
+// SetCryptoMsgExtra serializes the message format and type info into a binary buffer
+func (di *DescriptorInput) SetCryptoMsgExtra(format Formattype, message Messagetype) error {
+	extra := CryptoMessage{
+		Formattype:  format,
+		Messagetype: message,
+	}
+
+	// serialize the message data for integration with the base descriptor input
+	if err := binary.Write(&di.Extra, binary.LittleEndian, extra); err != nil {
+		return err
+	}
+	return nil
+}
+
 // SetName sets the byte array field "Name" to the value of string "name"
 func (d *Descriptor) SetName(name string) {
 	copy(d.Name[:], []byte(name))
