@@ -130,13 +130,14 @@ type Datatype int32
 
 // List of supported SIF data types
 const (
-	DataDeffile     Datatype = iota + 0x4001 // definition file data object
-	DataEnvVar                               // environment variables data object
-	DataLabels                               // JSON labels data object
-	DataPartition                            // file system data object
-	DataSignature                            // signing/verification data object
-	DataGenericJSON                          // generic JSON meta-data
-	DataGeneric                              // generic / raw data
+	DataDeffile       Datatype = iota + 0x4001 // definition file data object
+	DataEnvVar                                 // environment variables data object
+	DataLabels                                 // JSON labels data object
+	DataPartition                              // file system data object
+	DataSignature                              // signing/verification data object
+	DataGenericJSON                            // generic JSON meta-data
+	DataGeneric                                // generic / raw data
+	DataCryptoMessage                          // cryptographic message data object
 )
 
 // Fstype represents the different SIF file system types found in partition data objects
@@ -172,6 +173,27 @@ const (
 	HashSHA512
 	HashBLAKE2S
 	HashBLAKE2B
+)
+
+// Formattype represents the different formats used to store cryptographic message objects
+type Formattype int32
+
+// List of supported cryptographic message formats
+const (
+	FormatOpenPGP Formattype = iota + 1
+	FormatPEM
+)
+
+// Messagetype represents the different messages stored within cryptographic message objects
+type Messagetype int32
+
+// List of supported cryptographic message formats
+const (
+	// openPGP formatted messages
+	MessageClearSignature Messagetype = 0x100
+
+	// PEM formatted messages
+	MessageRSAOAEP Messagetype = 0x200
 )
 
 // SIF data object deletation strategies
@@ -230,6 +252,12 @@ type GenericJSON struct {
 
 // Generic represents the SIF generic data object descriptor
 type Generic struct {
+}
+
+// CryptoMessage represents the SIF crypto message object descriptor
+type CryptoMessage struct {
+	Formattype  Formattype
+	Messagetype Messagetype
 }
 
 // Header describes a loaded SIF file
