@@ -20,6 +20,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/containernetworking/plugins/pkg/utils"
 	"github.com/containernetworking/plugins/pkg/utils/sysctl"
 	"github.com/coreos/go-iptables/iptables"
 )
@@ -172,7 +173,7 @@ func genToplevelDnatChain() chain {
 func genDnatChain(netName, containerID string) chain {
 	return chain{
 		table:       "nat",
-		name:        formatChainName("DN-", netName, containerID),
+		name:        utils.MustFormatChainNameWithPrefix(netName, containerID, "DN-"),
 		entryChains: []string{TopLevelDNATChainName},
 	}
 }
@@ -323,11 +324,9 @@ func enableLocalnetRouting(ifName string) error {
 // genOldSnatChain is no longer used, but used to be created. We'll try and
 // tear it down in case the plugin version changed between ADD and DEL
 func genOldSnatChain(netName, containerID string) chain {
-	name := formatChainName("SN-", netName, containerID)
-
 	return chain{
 		table:       "nat",
-		name:        name,
+		name:        utils.MustFormatChainNameWithPrefix(netName, containerID, "SN-"),
 		entryChains: []string{OldTopLevelSNATChainName},
 	}
 }

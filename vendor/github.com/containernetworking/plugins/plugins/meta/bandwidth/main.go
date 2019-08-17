@@ -15,7 +15,6 @@
 package main
 
 import (
-	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 
@@ -28,8 +27,12 @@ import (
 
 	"github.com/containernetworking/plugins/pkg/ip"
 	"github.com/containernetworking/plugins/pkg/ns"
+	"github.com/containernetworking/plugins/pkg/utils"
 	bv "github.com/containernetworking/plugins/pkg/utils/buildversion"
 )
+
+const maxIfbDeviceLength = 15
+const ifbDevicePrefix = "bwp"
 
 // BandwidthEntry corresponds to a single entry in the bandwidth argument,
 // see CONVENTIONS.md
@@ -111,14 +114,8 @@ func validateRateAndBurst(rate int, burst int) error {
 	return nil
 }
 
-func getIfbDeviceName(networkName string, containerId string) (string, error) {
-	hash := sha1.New()
-	_, err := hash.Write([]byte(networkName + containerId))
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%x", hash.Sum(nil))[:4], nil
+func getIfbDeviceName(networkName string, containerId string) string {
+	return utils.MustFormatHashWithPrefix(maxIfbDeviceLength, ifbDevicePrefix, networkName+containerId)
 }
 
 func getMTU(deviceName string) (int, error) {
@@ -205,10 +202,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 			return err
 		}
 
-		ifbDeviceName, err := getIfbDeviceName(conf.Name, args.ContainerID)
-		if err != nil {
-			return err
-		}
+		ifbDeviceName := getIfbDeviceName(conf.Name, args.ContainerID)
 
 		err = CreateIfb(ifbDeviceName, mtu)
 		if err != nil {
@@ -239,10 +233,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	ifbDeviceName, err := getIfbDeviceName(conf.Name, args.ContainerID)
-	if err != nil {
-		return err
-	}
+	ifbDeviceName := getIfbDeviceName(conf.Name, args.ContainerID)
 
 	if err := TeardownIfb(ifbDeviceName); err != nil {
 		return err
@@ -343,10 +334,7 @@ func cmdCheck(args *skel.CmdArgs) error {
 		latency := latencyInUsec(latencyInMillis)
 		limitInBytes := limit(uint64(rateInBytes), latency, uint32(burstInBytes))
 
-		ifbDeviceName, err := getIfbDeviceName(bwConf.Name, args.ContainerID)
-		if err != nil {
-			return err
-		}
+		ifbDeviceName := getIfbDeviceName(bwConf.Name, args.ContainerID)
 
 		ifbDevice, err := netlink.LinkByName(ifbDeviceName)
 		if err != nil {
