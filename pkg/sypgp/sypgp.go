@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -60,6 +59,20 @@ type KeyExistsError struct {
 // Handle is a structure representing a keyring
 type Handle struct {
 	path string
+}
+
+// mrKeyList contains all the key info, used for decoding
+// the MR output from 'key search'
+type mrKeyList struct {
+	keyFingerprint string
+	keyBit         string
+	keyName        string
+	keyType        string
+	keyDateCreated string
+	keyDateExpired string
+	keyStatus      string
+	keyCount       int
+	keyReady       bool
 }
 
 func (e *KeyExistsError) Error() string {
@@ -656,14 +669,14 @@ func SearchPubkey(search, keyserverURI, authToken string, longOutput bool) error
 	}
 
 	if longOutput {
-		keyText, err = reformatMachineReadableOutput(keyText)
+		kcount, keyList, err := formatMROutputLongList(keyText)
+		fmt.Printf("Showing %d results\n\n%s", kcount, keyList)
 		if err != nil {
 			return fmt.Errorf("could not reformat key output")
 		}
-		fmt.Printf("%s", keyText)
 	} else {
-		kcount, keyText, err := formatMROutput(keyText)
-		fmt.Printf("Showing %d results\n\n%s", kcount, keyText)
+		kcount, keyList, err := formatMROutput(keyText)
+		fmt.Printf("Showing %d results\n\n%s", kcount, keyList)
 		if err != nil {
 			return err
 		}
@@ -703,114 +716,115 @@ func getEncryptionAlgorithmName(n string) (string, error) {
 }
 
 //function to obtain a date format from linux epoch time
-func date(s string) (string, error) {
+func date(s string) string {
 	if s == "" {
-		return "NULL", nil
+		return "[ultimate]"
 	}
 	if s == "none" {
-		return s + "\t\t\t", nil
+		return s
 	}
 	c, _ := strconv.ParseInt(s, 10, 64)
-	ret := fmt.Sprintf("%v", time.Unix(c, 0))
+	ret := time.Unix(c, 0).String()
 
-	return ret, nil
+	return ret
 }
 
-// reformatMachineReadableOutput reformats the key search output that is in machine readable format
-// see the output format in: https://tools.ietf.org/html/draft-shaw-openpgp-hkp-00#section-5.2
-func reformatMachineReadableOutput(keyText string) (string, error) {
-	var output = "\n\t\tFINGERPRINT\t\tALGORITHM  SIZE (BITS)\t\t  CREATION DATE\t\t\tEXPIRATION DATE\t\t\tSTATUS\t\t\tNAME/EMAIL" + "\n"
+// getKeyInfoFromList takes the lines, from strings.Split(), and a index of lines. Appends
+// the output into keyList. Returns a error if one occurs.
+func getKeyInfoFromList(keyList *mrKeyList, lines []string, index string) error {
+	var errRet error
 
-	rePubkey := regexp.MustCompile("pub:(.*)\n")
-	keys := rePubkey.FindAllString(keyText, -1)
+	if index == "pub" {
+		// Get the fingerprint for the key
+		keyList.keyFingerprint = lines[1]
 
-	var featuresKey []string
+		// Get the bit length for the key
+		keyList.keyBit = lines[3]
 
-	// for every key obtain the features: fingerprint, algorithm, size, creation date, expiration date, status and user(email)
-	for _, key := range keys {
-		var emailList = ""
-
-		detailsKey := strings.Split(key, ":")
-
-		for _, detail := range detailsKey {
-			d := strings.TrimSpace(detail)
-			if d != "" {
-				featuresKey = append(featuresKey, d)
-			}
-		}
-
-		fingerprint := featuresKey[1]
-
-		// regular expression to obtain the fingerprint of every key
-		reFingerprint := regexp.MustCompile("(" + fingerprint + ")[\\s+\\S]+?(::(\npub|\\s+$))")
-		emails := reFingerprint.FindAllString(keyText, -1)
-
-		// regular expression to obtain the email or emails from every key
-		reFormatEmail := regexp.MustCompile("uid:" + "\\w(.)+::")
-		userEmails := reFormatEmail.FindAllString(emails[0], -1)
-
-		for _, email := range userEmails {
-			detailsEmail := strings.Split(email, ":")
-
-			if emailList != "" {
-				emailList = emailList + "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" + detailsEmail[1] + "\n"
-			} else {
-				emailList = detailsEmail[1] + "\n"
-			}
-
-		}
-
-		algorithm, err := getEncryptionAlgorithmName(featuresKey[2])
+		var err error
+		// Get the key type
+		keyList.keyType, err = getEncryptionAlgorithmName(lines[2])
 		if err != nil {
-			return "", err
+			errRet = err
 		}
 
-		size := featuresKey[3]
+		// Get the date created for the key
+		keyList.keyDateCreated = date(lines[4])
 
-		if len(size) < 4 {
-			size = size + " "
-		}
-		creationDate := featuresKey[4]
-		expiryDate := "none"
+		// Get the expiration date for the key
+		keyList.keyDateExpired = date(lines[5])
 
-		status := "enabled"
-
-		if len(featuresKey) >= 6 {
-			expiryDate = featuresKey[5]
-		}
-
-		creationTimestamp, err := date(creationDate)
-		if err != nil {
-			return "", err
-		}
-
-		expirationTimestamp, err := date(expiryDate)
-		if err != nil {
-			return "", err
-		}
-
-		// check the status of each key if flags are present
-		if len(featuresKey) == 7 {
-			if featuresKey[6] == "r" {
-				status = "revoked"
-			}
-			if featuresKey[6] == "d" {
-				status = "disabled"
-			}
-			if featuresKey[6] == "e" {
-				status = "expired"
-			}
-		}
-
-		featuresKey = []string{}
-
-		if status == "revoked" {
-			output = output + "\n" + fingerprint + "  " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "\t" + status + "\t\t" + emailList
+		// Get the key status
+		if lines[6] == "r" {
+			keyList.keyStatus = "[revoked]"
+		} else if lines[6] == "d" {
+			keyList.keyStatus = "[disabled]"
+		} else if lines[6] == "e" {
+			keyList.keyStatus = "[expired]"
 		} else {
-			output = output + "\n" + fingerprint + "  " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "\t\t" + status + "\t\t" + emailList
+			keyList.keyStatus = "[enabled]"
+		}
+
+		// Only count the key if it has a fingerprint. Otherwise
+		// dont count it.
+		keyList.keyCount++
+	}
+	if index == "uid" {
+		// Get the name of the key
+		keyList.keyName = lines[1]
+
+		// After we get the name, the key is ready to print!
+		keyList.keyReady = true
+	}
+
+	return errRet
+}
+
+// formatMROutputLongList reformats the key search output that is in machine readable format
+// see the output format in: https://tools.ietf.org/html/draft-shaw-openpgp-hkp-00#section-5.2
+func formatMROutputLongList(mrString string) (int, []byte, error) {
+	listLine := "%s\t%s\t%s\t%s\t%s\t%s\t%s\n"
+
+	retList := bytes.NewBuffer(nil)
+	tw := tabwriter.NewWriter(retList, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(tw, listLine, "FINGERPRINT", "ALGORITHM", "BITS", "CREATION DATE", "EXPIRATION DATE", "STATUS", "NAME/EMAIL")
+
+	keyNum := 0
+	key := strings.Split(mrString, "\n")
+	var keyList mrKeyList
+
+	for _, k := range key {
+		nk := strings.Split(k, ":")
+		for _, n := range nk {
+			if n == "info" {
+				var err error
+				keyNum, err = strconv.Atoi(nk[2])
+				if err != nil {
+					return -1, nil, fmt.Errorf("unable to check key number")
+				}
+			}
+			err := getKeyInfoFromList(&keyList, nk, n)
+			if err != nil {
+				return -1, nil, fmt.Errorf("failed to get entity from list: %s", err)
+			}
+		}
+		if keyList.keyReady {
+			fmt.Fprintf(tw, listLine, keyList.keyFingerprint, keyList.keyType, keyList.keyBit, keyList.keyDateCreated, keyList.keyDateExpired, keyList.keyStatus, keyList.keyName)
+			fmt.Fprintf(tw, "\t\t\t\t\t\t\n")
+			keyList = mrKeyList{keyCount: keyList.keyCount}
 		}
 	}
-	return output, nil
+	tw.Flush()
+
+	sylog.Debugf("key count=%d; expect=%d\n", keyList.keyCount, keyNum)
+
+	// Simple check to ensure the conversion was successful
+	if keyList.keyCount != keyNum {
+		sylog.Debugf("expecting %d, got %d\n", keyNum, keyList.keyCount)
+		return -1, retList.Bytes(), fmt.Errorf("failed to convert machine readable to human readable output correctly")
+	}
+
+	return keyList.keyCount, retList.Bytes(), nil
 }
 
 // FetchPubkey pulls a public key from the Key Service.

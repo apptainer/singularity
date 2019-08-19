@@ -29,11 +29,16 @@ import (
 // Adds the output of stderr to exec.ExitError
 type Error struct {
 	exec.ExitError
-	cmd exec.Cmd
-	msg string
+	cmd        exec.Cmd
+	msg        string
+	proto      Protocol
+	exitStatus *int //for overriding
 }
 
 func (e *Error) ExitStatus() int {
+	if e.exitStatus != nil {
+		return *e.exitStatus
+	}
 	return e.Sys().(syscall.WaitStatus).ExitStatus()
 }
 
@@ -44,8 +49,8 @@ func (e *Error) Error() string {
 // IsNotExist returns true if the error is due to the chain or rule not existing
 func (e *Error) IsNotExist() bool {
 	return e.ExitStatus() == 1 &&
-		(e.msg == "iptables: Bad rule (does a matching rule exist in that chain?).\n" ||
-			e.msg == "iptables: No chain/target/match by that name.\n")
+		(e.msg == fmt.Sprintf("%s: Bad rule (does a matching rule exist in that chain?).\n", getIptablesCommand(e.proto)) ||
+			e.msg == fmt.Sprintf("%s: No chain/target/match by that name.\n", getIptablesCommand(e.proto)))
 }
 
 // Protocol to differentiate between IPv4 and IPv6
@@ -57,10 +62,29 @@ const (
 )
 
 type IPTables struct {
-	path     string
-	proto    Protocol
-	hasCheck bool
-	hasWait  bool
+	path           string
+	proto          Protocol
+	hasCheck       bool
+	hasWait        bool
+	hasRandomFully bool
+	v1             int
+	v2             int
+	v3             int
+	mode           string // the underlying iptables operating mode, e.g. nf_tables
+}
+
+// Stat represents a structured statistic entry.
+type Stat struct {
+	Packets     uint64     `json:"pkts"`
+	Bytes       uint64     `json:"bytes"`
+	Target      string     `json:"target"`
+	Protocol    string     `json:"prot"`
+	Opt         string     `json:"opt"`
+	Input       string     `json:"in"`
+	Output      string     `json:"out"`
+	Source      *net.IPNet `json:"source"`
+	Destination *net.IPNet `json:"destination"`
+	Options     string     `json:"options"`
 }
 
 // New creates a new IPTables.
@@ -76,15 +100,21 @@ func NewWithProtocol(proto Protocol) (*IPTables, error) {
 	if err != nil {
 		return nil, err
 	}
-	checkPresent, waitPresent, err := getIptablesCommandSupport(path)
-	if err != nil {
-		return nil, fmt.Errorf("error checking iptables version: %v", err)
-	}
+	vstring, err := getIptablesVersionString(path)
+	v1, v2, v3, mode, err := extractIptablesVersion(vstring)
+
+	checkPresent, waitPresent, randomFullyPresent := getIptablesCommandSupport(v1, v2, v3)
+
 	ipt := IPTables{
-		path:     path,
-		proto:    proto,
-		hasCheck: checkPresent,
-		hasWait:  waitPresent,
+		path:           path,
+		proto:          proto,
+		hasCheck:       checkPresent,
+		hasWait:        waitPresent,
+		hasRandomFully: randomFullyPresent,
+		v1:             v1,
+		v2:             v2,
+		v3:             v3,
+		mode:           mode,
 	}
 	return &ipt, nil
 }
@@ -248,6 +278,63 @@ func (ipt *IPTables) Stats(table, chain string) ([][]string, error) {
 	return rows, nil
 }
 
+// ParseStat parses a single statistic row into a Stat struct. The input should
+// be a string slice that is returned from calling the Stat method.
+func (ipt *IPTables) ParseStat(stat []string) (parsed Stat, err error) {
+	// For forward-compatibility, expect at least 10 fields in the stat
+	if len(stat) < 10 {
+		return parsed, fmt.Errorf("stat contained fewer fields than expected")
+	}
+
+	// Convert the fields that are not plain strings
+	parsed.Packets, err = strconv.ParseUint(stat[0], 0, 64)
+	if err != nil {
+		return parsed, fmt.Errorf(err.Error(), "could not parse packets")
+	}
+	parsed.Bytes, err = strconv.ParseUint(stat[1], 0, 64)
+	if err != nil {
+		return parsed, fmt.Errorf(err.Error(), "could not parse bytes")
+	}
+	_, parsed.Source, err = net.ParseCIDR(stat[7])
+	if err != nil {
+		return parsed, fmt.Errorf(err.Error(), "could not parse source")
+	}
+	_, parsed.Destination, err = net.ParseCIDR(stat[8])
+	if err != nil {
+		return parsed, fmt.Errorf(err.Error(), "could not parse destination")
+	}
+
+	// Put the fields that are strings
+	parsed.Target = stat[2]
+	parsed.Protocol = stat[3]
+	parsed.Opt = stat[4]
+	parsed.Input = stat[5]
+	parsed.Output = stat[6]
+	parsed.Options = stat[9]
+
+	return parsed, nil
+}
+
+// StructuredStats returns statistics as structured data which may be further
+// parsed and marshaled.
+func (ipt *IPTables) StructuredStats(table, chain string) ([]Stat, error) {
+	rawStats, err := ipt.Stats(table, chain)
+	if err != nil {
+		return nil, err
+	}
+
+	structStats := []Stat{}
+	for _, rawStat := range rawStats {
+		stat, err := ipt.ParseStat(rawStat)
+		if err != nil {
+			return nil, err
+		}
+		structStats = append(structStats, stat)
+	}
+
+	return structStats, nil
+}
+
 func (ipt *IPTables) executeList(args []string) ([]string, error) {
 	var stdout bytes.Buffer
 	if err := ipt.runWithOutput(args, &stdout); err != nil {
@@ -255,8 +342,26 @@ func (ipt *IPTables) executeList(args []string) ([]string, error) {
 	}
 
 	rules := strings.Split(stdout.String(), "\n")
+
+	// strip trailing newline
 	if len(rules) > 0 && rules[len(rules)-1] == "" {
 		rules = rules[:len(rules)-1]
+	}
+
+	// nftables mode doesn't return an error code when listing a non-existent
+	// chain. Patch that up.
+	if len(rules) == 0 && ipt.mode == "nf_tables" {
+		v := 1
+		return nil, &Error{
+			cmd:        exec.Cmd{Args: args},
+			msg:        fmt.Sprintf("%s: No chain/target/match by that name.\n", getIptablesCommand(ipt.proto)),
+			proto:      ipt.proto,
+			exitStatus: &v,
+		}
+	}
+
+	for i, rule := range rules {
+		rules[i] = filterRuleOutput(rule)
 	}
 
 	return rules, nil
@@ -268,6 +373,8 @@ func (ipt *IPTables) NewChain(table, chain string) error {
 	return ipt.run("-t", table, "-N", chain)
 }
 
+const existsErr = 1
+
 // ClearChain flushed (deletes all rules) in the specified table/chain.
 // If the chain does not exist, a new one will be created
 func (ipt *IPTables) ClearChain(table, chain string) error {
@@ -277,7 +384,7 @@ func (ipt *IPTables) ClearChain(table, chain string) error {
 	switch {
 	case err == nil:
 		return nil
-	case eok && eerr.ExitStatus() == 1:
+	case eok && eerr.ExitStatus() == existsErr:
 		// chain already exists. Flush (clear) it.
 		return ipt.run("-t", table, "-F", chain)
 	default:
@@ -299,6 +406,16 @@ func (ipt *IPTables) DeleteChain(table, chain string) error {
 // ChangePolicy changes policy on chain to target
 func (ipt *IPTables) ChangePolicy(table, chain, target string) error {
 	return ipt.run("-t", table, "-P", chain, target)
+}
+
+// Check if the underlying iptables command supports the --random-fully flag
+func (ipt *IPTables) HasRandomFully() bool {
+	return ipt.hasRandomFully
+}
+
+// Return version components of the underlying iptables command
+func (ipt *IPTables) GetIptablesVersion() (int, int, int) {
+	return ipt.v1, ipt.v2, ipt.v3
 }
 
 // run runs an iptables command with the given arguments, ignoring
@@ -336,7 +453,7 @@ func (ipt *IPTables) runWithOutput(args []string, stdout io.Writer) error {
 	if err := cmd.Run(); err != nil {
 		switch e := err.(type) {
 		case *exec.ExitError:
-			return &Error{*e, cmd, stderr.String()}
+			return &Error{*e, cmd, stderr.String(), ipt.proto, nil}
 		default:
 			return err
 		}
@@ -355,45 +472,40 @@ func getIptablesCommand(proto Protocol) string {
 }
 
 // Checks if iptables has the "-C" and "--wait" flag
-func getIptablesCommandSupport(path string) (bool, bool, error) {
-	vstring, err := getIptablesVersionString(path)
-	if err != nil {
-		return false, false, err
-	}
-
-	v1, v2, v3, err := extractIptablesVersion(vstring)
-	if err != nil {
-		return false, false, err
-	}
-
-	return iptablesHasCheckCommand(v1, v2, v3), iptablesHasWaitCommand(v1, v2, v3), nil
+func getIptablesCommandSupport(v1 int, v2 int, v3 int) (bool, bool, bool) {
+	return iptablesHasCheckCommand(v1, v2, v3), iptablesHasWaitCommand(v1, v2, v3), iptablesHasRandomFully(v1, v2, v3)
 }
 
-// getIptablesVersion returns the first three components of the iptables version.
-// e.g. "iptables v1.3.66" would return (1, 3, 66, nil)
-func extractIptablesVersion(str string) (int, int, int, error) {
-	versionMatcher := regexp.MustCompile("v([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+// getIptablesVersion returns the first three components of the iptables version
+// and the operating mode (e.g. nf_tables or legacy)
+// e.g. "iptables v1.3.66" would return (1, 3, 66, legacy, nil)
+func extractIptablesVersion(str string) (int, int, int, string, error) {
+	versionMatcher := regexp.MustCompile(`v([0-9]+)\.([0-9]+)\.([0-9]+)(?:\s+\((\w+))?`)
 	result := versionMatcher.FindStringSubmatch(str)
 	if result == nil {
-		return 0, 0, 0, fmt.Errorf("no iptables version found in string: %s", str)
+		return 0, 0, 0, "", fmt.Errorf("no iptables version found in string: %s", str)
 	}
 
 	v1, err := strconv.Atoi(result[1])
 	if err != nil {
-		return 0, 0, 0, err
+		return 0, 0, 0, "", err
 	}
 
 	v2, err := strconv.Atoi(result[2])
 	if err != nil {
-		return 0, 0, 0, err
+		return 0, 0, 0, "", err
 	}
 
 	v3, err := strconv.Atoi(result[3])
 	if err != nil {
-		return 0, 0, 0, err
+		return 0, 0, 0, "", err
 	}
 
-	return v1, v2, v3, nil
+	mode := "legacy"
+	if result[4] != "" {
+		mode = result[4]
+	}
+	return v1, v2, v3, mode, nil
 }
 
 // Runs "iptables --version" to get the version string
@@ -436,6 +548,20 @@ func iptablesHasWaitCommand(v1 int, v2 int, v3 int) bool {
 	return false
 }
 
+// Checks if an iptables version is after 1.6.2, when --random-fully was added
+func iptablesHasRandomFully(v1 int, v2 int, v3 int) bool {
+	if v1 > 1 {
+		return true
+	}
+	if v1 == 1 && v2 > 6 {
+		return true
+	}
+	if v1 == 1 && v2 == 6 && v3 >= 2 {
+		return true
+	}
+	return false
+}
+
 // Checks if a rule specification exists for a table
 func (ipt *IPTables) existsForOldIptables(table, chain string, rulespec []string) (bool, error) {
 	rs := strings.Join(append([]string{"-A", chain}, rulespec...), " ")
@@ -446,4 +572,27 @@ func (ipt *IPTables) existsForOldIptables(table, chain string, rulespec []string
 		return false, err
 	}
 	return strings.Contains(stdout.String(), rs), nil
+}
+
+// counterRegex is the regex used to detect nftables counter format
+var counterRegex = regexp.MustCompile(`^\[([0-9]+):([0-9]+)\] `)
+
+// filterRuleOutput works around some inconsistencies in output.
+// For example, when iptables is in legacy vs. nftables mode, it produces
+// different results.
+func filterRuleOutput(rule string) string {
+	out := rule
+
+	// work around an output difference in nftables mode where counters
+	// are output in iptables-save format, rather than iptables -S format
+	// The string begins with "[0:0]"
+	//
+	// Fixes #49
+	if groups := counterRegex.FindStringSubmatch(out); groups != nil {
+		// drop the brackets
+		out = out[len(groups[0]):]
+		out = fmt.Sprintf("%s -c %s %s", out, groups[1], groups[2])
+	}
+
+	return out
 }

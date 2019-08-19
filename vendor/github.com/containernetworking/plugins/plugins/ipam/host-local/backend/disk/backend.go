@@ -19,10 +19,10 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/containernetworking/plugins/plugins/ipam/host-local/backend"
-	"runtime"
 )
 
 const lastIPFilePrefix = "last_reserved_ip."
@@ -170,6 +170,35 @@ func (s *Store) ReleaseByID(id string, ifname string) error {
 		found, err = s.ReleaseByKey(id, ifname, match)
 	}
 	return err
+}
+
+// GetByID returns the IPs which have been allocated to the specific ID
+func (s *Store) GetByID(id string, ifname string) []net.IP {
+	var ips []net.IP
+
+	match := strings.TrimSpace(id) + LineBreak + ifname
+	// matchOld for backwards compatibility
+	matchOld := strings.TrimSpace(id)
+
+	// walk through all ips in this network to get the ones which belong to a specific ID
+	_ = filepath.Walk(s.dataDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
+		}
+		data, err := ioutil.ReadFile(path)
+		if err != nil {
+			return nil
+		}
+		if strings.TrimSpace(string(data)) == match || strings.TrimSpace(string(data)) == matchOld {
+			_, ipString := filepath.Split(path)
+			if ip := net.ParseIP(ipString); ip != nil {
+				ips = append(ips, ip)
+			}
+		}
+		return nil
+	})
+
+	return ips
 }
 
 func GetEscapedPath(dataDir string, fname string) string {

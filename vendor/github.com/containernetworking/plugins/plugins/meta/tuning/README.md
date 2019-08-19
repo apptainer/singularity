@@ -61,3 +61,13 @@ The following [CNI_ARGS](https://github.com/containernetworking/cni/blob/master/
 
 Note: You may add `IgnoreUnknown=true` to allow loose CNI argument verification (see CNI's issue[#560](https://github.com/containernetworking/cni/issues/560)).
 
+The plugin also support following [capability argument](https://github.com/containernetworking/cni/blob/master/CONVENTIONS.md).
+
+* `mac`: Pass MAC addresses for CNI interface
+
+The following [args conventions](https://github.com/containernetworking/cni/blob/master/CONVENTIONS.md#args-in-network-config) are supported:
+
+* `mac` (string, optional): MAC address (i.e. hardware address) of interface
+* `mtu` (integer, optional): MTU of interface
+* `promisc` (bool, optional): Change the promiscuous mode of interface
+* `sysctl` (object, optional): Change system controls
