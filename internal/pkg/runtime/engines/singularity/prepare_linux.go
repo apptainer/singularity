@@ -720,7 +720,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("bad engine configuration provided")
 	}
 
-	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
+	configurationFile := buildcfg.SINGULARITY_CONF_FILE
 	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
 		return fmt.Errorf("Unable to parse singularity.conf file: %s", err)
 	}
@@ -798,6 +798,42 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 
 	// determine if engine need to propagate signals across processes
 	e.checkSignalPropagation()
+
+	// We must call this here because at this point we haven't
+	// spawned the master process nor the RPC server. The assumption
+	// is that this function runs in stage 1 and that even if it's a
+	// separate process, it's created in such a way that it's
+	// sharing its file descriptor table with the wrapper / stage 2.
+	//
+	// At this point we do not have elevated privileges. We assume
+	// that the user running singularity has access to /dev/fuse
+	// (typically it's 0666, or 0660 belonging to a group that
+	// allows the user to read and write to it).
+	if err := openDevFuse(e, starterConfig); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// openDevFuse is a helper function that opens /dev/fuse once for each
+// plugin that wants to mount a FUSE filesystem.
+func openDevFuse(e *EngineOperations, starterConfig *starter.Config) error {
+	for _, name := range e.EngineConfig.GetPluginFuseMounts() {
+		fd, err := syscall.Open("/dev/fuse", syscall.O_RDWR, 0)
+		if err != nil {
+			sylog.Debugf("Calling open: %+v\n", err)
+			return err
+		}
+
+		err = e.EngineConfig.SetPluginFuseFd(name, fd)
+		if err != nil {
+			sylog.Debugf("Unable to setup plugin %s fd: %+v\n", name, err)
+			return err
+		}
+
+		starterConfig.KeepFileDescriptor(fd)
+	}
 
 	return nil
 }

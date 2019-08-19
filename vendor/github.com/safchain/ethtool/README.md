@@ -33,6 +33,7 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+	defer ethHandle.Close()
 
 	// Retrieve tx from eth0
 	stats, err := ethHandle.Stats("eth0")

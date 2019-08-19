@@ -6,20 +6,12 @@
 package e2e
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
+	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
-)
-
-var (
-	// cacheDirPriv is the directory the cachedir gets set to when running privileged.
-	cacheDirPriv = ""
-	// cacheDirUnpriv is the directory the cachedir gets set to when running unprivileged.
-	cacheDirUnpriv = ""
 )
 
 // WriteTempFile creates and populates a temporary file in the specified
@@ -42,26 +34,51 @@ func WriteTempFile(dir, pattern, content string) (string, error) {
 	return tmpfile.Name(), nil
 }
 
-// MakeCacheDirs creates cache directories for privileged and unprivileged
-// tests. Also set SINGULARITY_CACHEDIR environment variable for unprivileged
-// context.
-func MakeCacheDirs(baseDir string) error {
-	if cacheDirPriv == "" {
-		dir, err := fs.MakeTmpDir(baseDir, "privcache-", 0755)
-		err = errors.Wrapf(err, "creating temporary privileged cache directory at %s", baseDir)
-		if err != nil {
-			return fmt.Errorf("failed to create privileged cache directory: %+v", err)
-		}
-		cacheDirPriv = dir
+// MakeCacheDir creates a temporary image cache directory that can then be
+// used for the execution of a e2e test.
+//
+// This function shall not set the environment variable to specify the
+// image cache location since it would create thread safety problems.
+func makeTempDir(t *testing.T, baseDir string, prefix string, context string) (string, func(t *testing.T)) {
+	dir, err := fs.MakeTmpDir(baseDir, prefix, 0755)
+	err = errors.Wrapf(err, "creating temporary %s at %s", context, baseDir)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %+v", err)
 	}
-	if cacheDirUnpriv == "" {
-		dir, err := fs.MakeTmpDir(baseDir, "unprivcache-", 0755)
-		err = errors.Wrapf(err, "creating temporary unprivileged cache directory at %s", baseDir)
+
+	return dir, func(t *testing.T) {
+		err := os.RemoveAll(dir)
 		if err != nil {
-			return fmt.Errorf("failed to create unprivileged cache directory: %+v", err)
+			t.Fatalf("failed to delete temporary directory: %s", err)
 		}
-		cacheDirUnpriv = dir
-		os.Setenv(cache.DirEnv, cacheDirUnpriv)
 	}
-	return nil
+}
+
+// MakeCacheDir creates a temporary image cache directory that can then be
+// used for the execution of a e2e test.
+//
+// This function shall not set the environment variable to specify the
+// image cache location since it would create thread safety problems.
+func MakeCacheDir(t *testing.T, baseDir string) (string, func(t *testing.T)) {
+	return makeTempDir(t, baseDir, "e2e-imgcache-", "image cache directory")
+}
+
+// MakeSyPGPDir creates a temporary directory that will be used to store the PGP
+// keyring for the execution of a e2e test.
+//
+// This function shall not set the environment variable to specify the
+// SYPGP directory since it would create thread safety problems.
+func MakeSyPGPDir(t *testing.T, baseDir string) (string, func(t *testing.T)) {
+	return makeTempDir(t, baseDir, "e2e-sypgp-", "SyPGP directory")
+}
+
+// FileExists return true if the file identified by the path exists, false otherwise.
+func FileExists(t *testing.T, path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	} else if err != nil {
+		t.Fatalf("While stating file: %v", err)
+	}
+
+	return true
 }

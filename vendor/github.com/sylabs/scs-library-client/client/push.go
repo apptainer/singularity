@@ -89,7 +89,7 @@ func calculateChecksums(r io.Reader) (string, string, int64, error) {
 // Container Library, The timeout value for this operation is set within
 // the context. It is recommended to use a large value (ie. 1800 seconds) to
 // prevent timeout when uploading large images.
-func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, tags []string, description string, callback UploadCallback) error {
+func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path, arch string, tags []string, description string, callback UploadCallback) error {
 
 	entityName, collectionName, containerName, parsedTags := ParseLibraryPath(path)
 	if len(parsedTags) != 0 {
@@ -110,11 +110,11 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 	c.Logger.Logf("Image hash computed as %s", imageHash)
 
 	// Find or create entity
-	entity, found, err := c.getEntity(ctx, entityName)
+	entity, err := c.getEntity(ctx, entityName)
 	if err != nil {
-		return err
-	}
-	if !found {
+		if err != ErrNotFound {
+			return err
+		}
 		c.Logger.Logf("Entity %s does not exist in library - creating it.", entityName)
 		entity, err = c.createEntity(ctx, entityName)
 		if err != nil {
@@ -124,11 +124,12 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 
 	// Find or create collection
 	qualifiedCollectionName := fmt.Sprintf("%s/%s", entityName, collectionName)
-	collection, found, err := c.getCollection(ctx, qualifiedCollectionName)
+	collection, err := c.getCollection(ctx, qualifiedCollectionName)
 	if err != nil {
-		return err
-	}
-	if !found {
+		if err != ErrNotFound {
+			return err
+		}
+		// create collection
 		c.Logger.Logf("Collection %s does not exist in library - creating it.", collectionName)
 		collection, err = c.createCollection(ctx, collectionName, entity.ID)
 		if err != nil {
@@ -138,11 +139,12 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 
 	// Find or create container
 	computedName := fmt.Sprintf("%s/%s", qualifiedCollectionName, containerName)
-	container, found, err := c.getContainer(ctx, computedName)
+	container, err := c.getContainer(ctx, computedName)
 	if err != nil {
-		return err
-	}
-	if !found {
+		if err != ErrNotFound {
+			return err
+		}
+		// Create container
 		c.Logger.Logf("Container %s does not exist in library - creating it.", containerName)
 		container, err = c.createContainer(ctx, containerName, collection.ID)
 		if err != nil {
@@ -151,11 +153,12 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 	}
 
 	// Find or create image
-	image, found, err := c.GetImage(ctx, computedName+":"+imageHash)
+	image, err := c.GetImage(ctx, arch, computedName+":"+imageHash)
 	if err != nil {
-		return err
-	}
-	if !found {
+		if err != ErrNotFound {
+			return err
+		}
+		// Create image
 		c.Logger.Logf("Image %s does not exist in library - creating it.", imageHash)
 		image, err = c.createImage(ctx, imageHash, container.ID, description)
 		if err != nil {
@@ -165,7 +168,7 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 
 	if !image.Uploaded {
 		c.Logger.Log("Now uploading to the library")
-		if c.isV2API(ctx) {
+		if c.apiAtLeast(ctx, APIVersionV2Upload) {
 			// use v2 post file api
 			metadata := map[string]string{
 				"md5sum": md5Checksum,
@@ -182,6 +185,12 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 	}
 
 	c.Logger.Logf("Setting tags against uploaded image")
+
+	if c.apiAtLeast(ctx, APIVersionV2ArchTags) {
+		return c.setTagsV2(ctx, container.ID, arch, image.ID, append(tags, parsedTags...))
+	}
+	c.Logger.Logf("This library does not support multiple architecture per tag.")
+	c.Logger.Logf("This tag will replace any already uploaded with the same name.")
 	return c.setTags(ctx, container.ID, image.ID, append(tags, parsedTags...))
 }
 
@@ -204,10 +213,10 @@ func (c *Client) postFile(ctx context.Context, r io.Reader, fileSize int64, imag
 	// Content length is required by the API
 	req.ContentLength = fileSize
 	res, err := c.HTTPClient.Do(req.WithContext(ctx))
-
 	if err != nil {
 		return fmt.Errorf("error uploading file to server: %s", err.Error())
 	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		err := jsonresp.ReadError(res.Body)
 		if err != nil {
@@ -275,6 +284,7 @@ func (c *Client) postFileV2(ctx context.Context, r io.Reader, fileSize int64, im
 
 	req.ContentLength = fileSize
 	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("x-amz-meta-client-md5sum", metadata["md5sum"])
 
 	// redirect log output from retryablehttp to our logger
 	l := loggingAdapter{
@@ -289,6 +299,7 @@ func (c *Client) postFileV2(ctx context.Context, r io.Reader, fileSize int64, im
 	if err != nil {
 		return fmt.Errorf("error uploading image: %v", err)
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("error uploading image: HTTP status %d", resp.StatusCode)

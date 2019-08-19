@@ -7,7 +7,7 @@ jobs:
   get_source:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.12.7-stretch
+      - image: sylabsio/golang:1.12.9-stretch
     steps:
       - checkout
       - persist_to_workspace:
@@ -18,7 +18,7 @@ jobs:
   cache_go_mod:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.12.7-stretch
+      - image: sylabsio/golang:1.12.9-stretch
     steps:
       - attach_workspace:
           at: /go
@@ -36,7 +36,7 @@ jobs:
   go112-stretch:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.12.7-stretch
+      - image: sylabsio/golang:1.12.9-stretch
     steps:
       - attach_workspace:
           at: /go
@@ -53,7 +53,7 @@ jobs:
   go112-alpine:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.12.7-alpine
+      - image: sylabsio/golang:1.12.9-alpine
     steps:
       - attach_workspace:
           at: /go
@@ -67,7 +67,7 @@ jobs:
           command: |-
             make -j$(nproc) -C ./builddir check
 
-  go-macos:
+  go112-macos:
     macos:
       xcode: "10.2.0"
     working_directory: /Users/distiller/go/src/github.com/sylabs/singularity
@@ -76,11 +76,17 @@ jobs:
       - run:
           name: Setup environment
           command: |-
-            echo 'export GOPATH=$HOME/go'        >> $BASH_ENV
-            echo 'export PATH=$GOPATH/bin:$PATH' >> $BASH_ENV
+            echo 'export GOPATH=$HOME/go'      >> $BASH_ENV
+            echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
+            echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> $BASH_ENV
       - run:
-          name: Install dependencies
-          command: brew install go
+          name: Update Go to 1.12.9
+          working_directory: /tmp
+          command: |-
+            curl -LO https://dl.google.com/go/go1.12.9.darwin-amd64.tar.gz
+            sudo rm -rf /usr/local/go
+            sudo tar -C /usr/local -xzf go1.12.9.darwin-amd64.tar.gz
+            sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
       - run:
           name: Build Singularity
           command: |-
@@ -92,7 +98,8 @@ jobs:
             make -j$(sysctl -n hw.logicalcpu) -C ./builddir check
 
   unit_tests:
-    machine: true
+    machine:
+      image: ubuntu-1604:201903-01
     steps:
       - attach_workspace:
           at: ~/go
@@ -104,12 +111,12 @@ jobs:
             echo 'export GOBIN=$HOME/go/bin' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
       - run:
-          name: Update Go to 1.12.7
+          name: Update Go to 1.12.9
           working_directory: /tmp
           command: |-
-            wget https://dl.google.com/go/go1.12.7.linux-amd64.tar.gz
+            wget https://dl.google.com/go/go1.12.9.linux-amd64.tar.gz
             sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.12.7.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.12.9.linux-amd64.tar.gz
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
             sudo chown -R circleci:circleci ~/go
       - run:
@@ -135,7 +142,8 @@ jobs:
             make -j$(nproc) -C ./builddir unit-test
 
   e2e_tests:
-    machine: true
+    machine:
+      image: ubuntu-1604:201903-01
     steps:
       - attach_workspace:
           at: ~/go
@@ -158,12 +166,12 @@ jobs:
             echo 'export SINGULARITY_E2E=1' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
       - run:
-          name: Update Go to 1.12.7
+          name: Update Go to 1.12.9
           working_directory: /tmp
           command: |-
-            wget https://dl.google.com/go/go1.12.7.linux-amd64.tar.gz
+            wget https://dl.google.com/go/go1.12.9.linux-amd64.tar.gz
             sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.12.7.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.12.9.linux-amd64.tar.gz
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
             sudo chown -R circleci:circleci ~/go
       - run:
@@ -203,7 +211,7 @@ workflows:
       - go112-alpine:
           requires:
             - cache_go_mod
-      - go-macos:
+      - go112-macos:
           requires:
             - get_source
       - unit_tests:

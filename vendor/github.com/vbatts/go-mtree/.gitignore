@@ -1,0 +1,6 @@
+*~
+.cli.test
+.lint
+.test
+.vet
+gomtree

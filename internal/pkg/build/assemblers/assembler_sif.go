@@ -114,16 +114,21 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encOp
 		}
 
 		if data != nil {
-			// TODO(mem): replace sif.DataGeneric with
-			// something specific to encryption keys
 			syspartID := uint32(len(cinfo.InputDescr))
 			part := sif.DescriptorInput{
-				Datatype: sif.DataGeneric,
+				Datatype: sif.DataCryptoMessage,
 				Groupid:  sif.DescrDefaultGroup,
 				Link:     syspartID,
 				Data:     data,
 				Size:     int64(len(data)),
 			}
+
+			// extra data needed for the creation of a signature descriptor
+			err := part.SetCryptoMsgExtra(sif.FormatPEM, sif.MessageRSAOAEP)
+			if err != nil {
+				return err
+			}
+
 			cinfo.InputDescr = append(cinfo.InputDescr, part)
 		}
 	}

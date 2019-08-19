@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -152,6 +152,28 @@ func (fimg *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, e
 	return descrs, indexes, nil
 }
 
+// GetLinkedDescrsByType searches for descriptors that point to "id", only returns the specified type
+func (fimg *FileImage) GetLinkedDescrsByType(ID uint32, dataType Datatype) ([]*Descriptor, []int, error) {
+	var descrs []*Descriptor
+	var indexes []int
+
+	for i, v := range fimg.DescrArr {
+		if !v.Used {
+			continue
+		}
+		if v.Datatype == dataType && v.Link == ID {
+			indexes = append(indexes, i)
+			descrs = append(descrs, &fimg.DescrArr[i])
+		}
+	}
+
+	if len(descrs) == 0 {
+		return nil, nil, ErrNotFound
+	}
+
+	return descrs, indexes, nil
+}
+
 // GetFromLinkedDescr searches for descriptors that point to "id"
 func (fimg *FileImage) GetFromLinkedDescr(ID uint32) ([]*Descriptor, []int, error) {
 	var descrs []*Descriptor
@@ -254,6 +276,12 @@ func (descr *Descriptor) GetData(fimg *FileImage) []byte {
 		return data
 	}
 
+	if descr.Fileoff+descr.Filelen > int64(len(fimg.Filedata)) {
+		// there's not enough data in the file to account for the indicated
+		// payload. Is the header corrupted?
+		return nil
+	}
+
 	return fimg.Filedata[descr.Fileoff : descr.Fileoff+descr.Filelen]
 }
 
@@ -345,6 +373,36 @@ func (descr *Descriptor) GetEntityString() (string, error) {
 	}
 
 	return fmt.Sprintf("%0X", fingerprint[:20]), nil
+}
+
+// GetFormatType extracts the Formattype field from the Extra field of a Cryptographic Message Descriptor
+func (descr *Descriptor) GetFormatType() (Formattype, error) {
+	if descr.Datatype != DataCryptoMessage {
+		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", descr.Datatype)
+	}
+
+	var cinfo CryptoMessage
+	b := bytes.NewReader(descr.Extra[:])
+	if err := binary.Read(b, binary.LittleEndian, &cinfo); err != nil {
+		return -1, fmt.Errorf("while extracting Crypto extra info: %s", err)
+	}
+
+	return cinfo.Formattype, nil
+}
+
+// GetMessageType extracts the Messagetype field from the Extra field of a Cryptographic Message Descriptor
+func (descr *Descriptor) GetMessageType() (Messagetype, error) {
+	if descr.Datatype != DataCryptoMessage {
+		return -1, fmt.Errorf("expected DataCryptoMessage, got %v", descr.Datatype)
+	}
+
+	var cinfo CryptoMessage
+	b := bytes.NewReader(descr.Extra[:])
+	if err := binary.Read(b, binary.LittleEndian, &cinfo); err != nil {
+		return -1, fmt.Errorf("while extracting Crypto extra info: %s", err)
+	}
+
+	return cinfo.Messagetype, nil
 }
 
 // GetPartPrimSys returns the primary system partition if present. There should

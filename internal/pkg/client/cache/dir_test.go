@@ -25,6 +25,8 @@ func TestNewHandle(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	chechIfCacheDisabled(t)
+
 	tests := []struct {
 		name     string
 		dir      string
@@ -44,7 +46,7 @@ func TestNewHandle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewHandle(tt.dir)
+			c, err := NewHandle(Config{BaseDir: tt.dir})
 			if err != nil {
 				t.Fatalf("failed to create new image cache handle: %s", err)
 			}
@@ -60,13 +62,15 @@ func TestCleanAllCaches(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	chechIfCacheDisabled(t)
+
 	imageCacheDir, err := ioutil.TempDir("", "image-cache-")
 	if err != nil {
 		t.Fatalf("failed to create a temporary image cache")
 	}
 	defer os.RemoveAll(imageCacheDir)
 
-	c, err := NewHandle(imageCacheDir)
+	c, err := NewHandle(Config{BaseDir: imageCacheDir})
 	if err != nil {
 		t.Fatalf("failed to create new image cache handle: %s", err)
 	}
@@ -103,6 +107,8 @@ func TestRoot(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	chechIfCacheDisabled(t)
+
 	scratchDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
@@ -137,7 +143,7 @@ func TestRoot(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			imgCache, err := NewHandle(tt.basedir)
+			imgCache, err := NewHandle(Config{BaseDir: tt.basedir})
 			if err != nil {
 				t.Fatalf("failed to create new image cache: %s", err)
 			}

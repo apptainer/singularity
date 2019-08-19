@@ -17,11 +17,17 @@ import (
 	"syscall"
 	"testing"
 
+	singularitykey "github.com/sylabs/singularity/e2e/key"
+
 	singularityinspect "github.com/sylabs/singularity/e2e/inspect"
 
 	singularityverify "github.com/sylabs/singularity/e2e/verify"
 
 	"github.com/sylabs/singularity/e2e/actions"
+
+	singularitycache "github.com/sylabs/singularity/e2e/cache"
+
+	"github.com/sylabs/singularity/e2e/cmdenvvars"
 
 	"github.com/sylabs/singularity/e2e/docker"
 
@@ -33,7 +39,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/instance"
 
-	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/oci"
 
 	"github.com/sylabs/singularity/e2e/pull"
 
@@ -41,9 +47,9 @@ import (
 
 	"github.com/sylabs/singularity/e2e/remote"
 
-	version "github.com/sylabs/singularity/e2e/version"
+	"github.com/sylabs/singularity/e2e/version"
 
-	"github.com/sylabs/singularity/e2e/oci"
+	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 
@@ -115,10 +121,6 @@ func Run(t *testing.T) {
 	}
 	testenv.TestDir = name
 
-	if err := singularitye2e.MakeCacheDirs(name); err != nil {
-		t.Fatal(err)
-	}
-
 	// Build a base image for tests
 	imagePath := path.Join(name, "test.sif")
 	t.Log(imagePath)
@@ -143,19 +145,22 @@ func Run(t *testing.T) {
 	// RunE2ETests by functionality
 
 	suites := map[string]func(*testing.T){
-		"ACTIONS":  actions.RunE2ETests(testenv),
-		"BUILD":    imgbuild.RunE2ETests(testenv),
-		"DOCKER":   docker.RunE2ETests(testenv),
-		"ENV":      singularityenv.RunE2ETests(testenv),
-		"HELP":     help.RunE2ETests(testenv),
-		"INSPECT":  singularityinspect.RunE2ETests(testenv),
-		"INSTANCE": instance.RunE2ETests(testenv),
-		"OCI":      oci.RunE2ETests(testenv),
-		"PULL":     pull.RunE2ETests(testenv),
-		"PUSH":     push.RunE2ETests(testenv),
-		"REMOTE":   remote.RunE2ETests(testenv),
-		"VERIFY":   singularityverify.RunE2ETests(testenv),
-		"VERSION":  version.RunE2ETests(testenv),
+		"KEY":        singularitykey.RunE2ETests(testenv),
+		"ACTIONS":    actions.RunE2ETests(testenv),
+		"BUILD":      imgbuild.RunE2ETests(testenv),
+		"CMDENVVARS": cmdenvvars.RunE2ETests(testenv),
+		"DOCKER":     docker.RunE2ETests(testenv),
+		"ENV":        singularityenv.RunE2ETests(testenv),
+		"HELP":       help.RunE2ETests(testenv),
+		"INSPECT":    singularityinspect.RunE2ETests(testenv),
+		"INSTANCE":   instance.RunE2ETests(testenv),
+		"OCI":        oci.RunE2ETests(testenv),
+		"PULL":       pull.RunE2ETests(testenv),
+		"PUSH":       push.RunE2ETests(testenv),
+		"REMOTE":     remote.RunE2ETests(testenv),
+		"VERIFY":     singularityverify.RunE2ETests(testenv),
+		"VERSION":    version.RunE2ETests(testenv),
+		"CACHE":      singularitycache.RunE2ETests(testenv),
 	}
 
 	for name, fn := range suites {

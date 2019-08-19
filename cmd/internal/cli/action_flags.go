@@ -28,6 +28,7 @@ var (
 	CgroupsPath     string
 	VMRAM           string
 	VMCPU           string
+	VMIP            string
 	ContainLibsPath []string
 	encryptionKey   string
 
@@ -44,6 +45,7 @@ var (
 	NoNvidia        bool
 	VM              bool
 	VMErr           bool
+	NoNet           bool
 	IsSyOS          bool
 	disableCache    bool
 
@@ -259,6 +261,27 @@ var actionVMCPUFlag = cmdline.Flag{
 	Usage:        "Number of CPU cores to allocate to Virtual Machine (implies --vm)",
 	Tag:          "<CPU #>",
 	EnvKeys:      []string{"VM_CPU"},
+}
+
+// --vm-ip
+var actionVMIPFlag = cmdline.Flag{
+	ID:           "actionVMIPFlag",
+	Value:        &VMIP,
+	DefaultValue: "dhcp",
+	Name:         "vm-ip",
+	Usage:        "IP Address to assign for container usage. Defaults to DHCP within bridge network.",
+	Tag:          "<IP Address>",
+	EnvKeys:      []string{"VM_IP"},
+}
+
+// --nonet
+var actionNONETFlag = cmdline.Flag{
+	ID:           "actionNONETFlag",
+	Value:        &NoNet,
+	DefaultValue: false,
+	Name:         "nonet",
+	Usage:        "Disable VM network handling",
+	EnvKeys:      []string{"VM_NONET"},
 }
 
 // hidden flag to handle SINGULARITY_CONTAINLIBS environment variable
@@ -641,6 +664,8 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionApplyCgroupsFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionVMRAMFlag, actionsCmd...)
 	cmdManager.RegisterFlagForCmd(&actionVMCPUFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionVMIPFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNONETFlag, actionsCmd...)
 	cmdManager.RegisterFlagForCmd(&actionContainLibsFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, actionsInstanceCmd...)
@@ -672,7 +697,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionDropCapsFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionAllowSetuidFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionPwdFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&commonEncryptFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&commonEncryptFlag, actionsInstanceCmd...)
 
 	for _, cmd := range actionsCmd {
 		plugin.AddFlagHooks(cmd.Flags())

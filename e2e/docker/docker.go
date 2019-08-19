@@ -107,7 +107,7 @@ func (c *ctx) testDockerPulls(t *testing.T) {
 					if path == tmpContainerFile {
 						path = filepath.Join(tmpPath, tmpContainerFile)
 					}
-					e2e.ImageVerify(t, c.env.CmdPath, path)
+					c.env.ImageVerify(t, path)
 				}
 			}),
 			e2e.ExpectExit(tt.exit),
@@ -215,7 +215,7 @@ func (c *ctx) testDockerWhiteoutSymlink(t *testing.T) {
 			if t.Failed() {
 				return
 			}
-			e2e.ImageVerify(t, c.env.CmdPath, imagePath)
+			c.env.ImageVerify(t, imagePath)
 		}),
 		e2e.ExpectExit(0),
 	)
@@ -293,7 +293,7 @@ func (c *ctx) testDockerDefFile(t *testing.T) {
 					return
 				}
 
-				e2e.ImageVerify(t, c.env.CmdPath, imagePath)
+				c.env.ImageVerify(t, imagePath)
 			}),
 			e2e.ExpectExit(0),
 		)
@@ -356,7 +356,7 @@ func (c *ctx) testDockerRegistry(t *testing.T) {
 					return
 				}
 
-				e2e.ImageVerify(t, c.env.CmdPath, imagePath)
+				c.env.ImageVerify(t, imagePath)
 			}),
 			e2e.ExpectExit(tt.exit),
 		)

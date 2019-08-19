@@ -9,7 +9,7 @@ $(singularity_build_config): $(BUILDDIR)/config.h
 CLEANFILES += $(singularity_build_config)
 
 # singularity
-singularity_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep "$(SOURCEDIR)" "$(SOURCEDIR)/cmd/singularity")
+singularity_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep "$(SOURCEDIR)" "$(GO_TAGS)" "$(SOURCEDIR)/cmd/singularity")
 
 singularity := $(BUILDDIR)/singularity
 $(singularity): $(singularity_build_config) $(singularity_SOURCE)
@@ -66,3 +66,15 @@ $(config_INSTALL): $(config)
 
 INSTALLFILES += $(config_INSTALL)
 ALL += $(config)
+
+# remote config file
+remote_config := $(SOURCEDIR)/etc/remote.yaml
+
+remote_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/remote.yaml
+$(remote_config_INSTALL): $(remote_config)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
+
+INSTALLFILES += $(remote_config_INSTALL)
+

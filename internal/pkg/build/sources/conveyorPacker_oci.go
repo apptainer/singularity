@@ -28,7 +28,6 @@ import (
 	"github.com/containers/image/signature"
 	"github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	imagetools "github.com/opencontainers/image-tools/image"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
@@ -290,10 +289,8 @@ func (cp *OCIConveyorPacker) extractArchive(src string, dst string) error {
 	}
 }
 
-func (cp *OCIConveyorPacker) unpackTmpfs() (err error) {
-	refs := []string{"name=tmp"}
-	err = imagetools.UnpackLayout(cp.b.Path, cp.b.Rootfs(), "amd64", refs)
-	return err
+func (cp *OCIConveyorPacker) unpackTmpfs() error {
+	return unpackRootfs(cp.b, cp.tmpfsRef, cp.sysCtx)
 }
 
 func (cp *OCIConveyorPacker) insertBaseEnv() (err error) {

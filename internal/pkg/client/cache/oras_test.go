@@ -20,6 +20,8 @@ func TestOrasImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	chechIfCacheDisabled(t)
+
 	// Create a clean empty image cache
 	imageCacheDir, err := ioutil.TempDir("", "image-cache-")
 	if err != nil {
@@ -63,7 +65,7 @@ func TestOrasImage(t *testing.T) {
 	}
 	validImagePath = filepath.Join(newBasedir, validImageName)
 
-	c, err := NewHandle(imageCacheDir)
+	c, err := NewHandle(Config{BaseDir: imageCacheDir})
 	if err != nil {
 		t.Fatalf("failed to create an image cache handle: %s", err)
 	}

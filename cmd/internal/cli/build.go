@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/sylabs/singularity/pkg/cmdline"
@@ -19,12 +20,13 @@ import (
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
-	legacytypes "github.com/sylabs/singularity/pkg/build/legacy"
-	legacyparser "github.com/sylabs/singularity/pkg/build/legacy/parser"
+	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/build/types/parser"
 )
 
 var (
 	remote         bool
+	buildArch      string
 	builderURL     string
 	detached       bool
 	libraryURL     string
@@ -116,6 +118,16 @@ var buildRemoteFlag = cmdline.Flag{
 	ShortHand:    "r",
 	Usage:        "build image remotely (does not require root)",
 	EnvKeys:      []string{"REMOTE"},
+}
+
+// --arch
+var buildArchFlag = cmdline.Flag{
+	ID:           "buildArchFlag",
+	Value:        &buildArch,
+	DefaultValue: runtime.GOARCH,
+	Name:         "arch",
+	Usage:        "Architecture for remote build",
+	EnvKeys:      []string{"BUILD_ARCH"},
 }
 
 // -d|--detached
@@ -212,6 +224,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildNoHTTPSFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildNoTestFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildRemoteFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildArchFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
@@ -279,19 +292,19 @@ func checkBuildTarget(path string, update bool) bool {
 
 // definitionFromSpec is specifically for parsing specs for the remote builder
 // it uses a different version the the definition struct and parser
-func definitionFromSpec(spec string) (legacytypes.Definition, error) {
+func definitionFromSpec(spec string) (types.Definition, error) {
 
 	// Try spec as URI first
-	def, err := legacytypes.NewDefinitionFromURI(spec)
+	def, err := types.NewDefinitionFromURI(spec)
 	if err == nil {
 		return def, nil
 	}
 
 	// Try spec as local file
 	var isValid bool
-	isValid, err = legacyparser.IsValidDefinition(spec)
+	isValid, err = parser.IsValidDefinition(spec)
 	if err != nil {
-		return legacytypes.Definition{}, err
+		return types.Definition{}, err
 	}
 
 	if isValid {
@@ -300,17 +313,17 @@ func definitionFromSpec(spec string) (legacytypes.Definition, error) {
 		var defFile *os.File
 		defFile, err = os.Open(spec)
 		if err != nil {
-			return legacytypes.Definition{}, err
+			return types.Definition{}, err
 		}
 
 		defer defFile.Close()
 
-		return legacyparser.ParseDefinitionFile(defFile)
+		return parser.ParseDefinitionFile(defFile)
 	}
 
 	// File exists and does NOT contain a valid definition
 	// local image or sandbox
-	def = legacytypes.Definition{
+	def = types.Definition{
 		Header: map[string]string{
 			"bootstrap": "localimage",
 			"from":      spec,

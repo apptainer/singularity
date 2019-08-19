@@ -20,6 +20,8 @@ func TestShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	chechIfCacheDisabled(t)
+
 	tests := []struct {
 		name        string
 		dir         string
@@ -42,7 +44,7 @@ func TestShub(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewHandle(tt.dir)
+			c, err := NewHandle(Config{BaseDir: tt.dir})
 			if err != nil {
 				t.Fatalf("failed to create new image cache handle: %s", err)
 			}
@@ -63,13 +65,15 @@ func TestShubImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	chechIfCacheDisabled(t)
+
 	tempImageCache, err := ioutil.TempDir("", "image-cache-")
 	if err != nil {
 		t.Fatal("failed to create temporary image cache directory:", err)
 	}
 	os.RemoveAll(tempImageCache)
 
-	c, err := NewHandle(tempImageCache)
+	c, err := NewHandle(Config{BaseDir: tempImageCache})
 	if err != nil {
 		t.Fatalf("failed to create a new image cache handle: %s", err)
 	}
