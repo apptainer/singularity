@@ -28,10 +28,17 @@ var (
 			handleKeyNewPairEndpoint()
 
 			genOpts := sypgp.GenKeyPairOptions{
-				Name:     keyNewPairName,
-				Email:    keyNewPairEmail,
-				Comment:  keyNewPairComment,
-				Password: keyNewPairPassword,
+				Name:    keyNewPairName,
+				Email:   keyNewPairEmail,
+				Comment: keyNewPairComment,
+			}
+
+			// checks if password flag was passed
+			pwdF := cmd.Flags().Lookup(KeyNewPairPasswordFlag.Name)
+			if pwdF != nil {
+				if pwdF.Changed {
+					genOpts.Password = &keyNewPairPassword
+				}
 			}
 
 			if _, err := keyring.GenKeyPair(keyServerURI, authToken, genOpts); err != nil {
@@ -76,11 +83,11 @@ var (
 		Usage:        "keys comment",
 	}
 
-	keyNewPairPassword     *string
+	keyNewPairPassword     string
 	KeyNewPairPasswordFlag = &cmdline.Flag{
 		ID:           "KeyNewPairPasswordFlag",
-		Value:        keyNewPairPassword,
-		DefaultValue: nil,
+		Value:        &keyNewPairPassword,
+		DefaultValue: "",
 		Name:         "password",
 		ShortHand:    "p",
 		Usage:        "keys password",
