@@ -72,7 +72,7 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 			sylog.Warningf("Removing cached image: %s: cache could be corrupted", imagePath)
 			err := os.Remove(imagePath)
 			if err != nil {
-				return fmt.Errorf("unable to remove corrupted cache: %v", err)
+				return fmt.Errorf("unable to remove corrupted image from cache: %s", err)
 			}
 		} else if err != nil {
 			return fmt.Errorf("unable to check if %s exists: %v", imagePath, err)
