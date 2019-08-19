@@ -45,7 +45,13 @@ var keySearchLongListFlag = cmdline.Flag{
 
 func init() {
 	cmdManager.RegisterCmd(KeyCmd)
+
 	cmdManager.RegisterSubCmd(KeyCmd, KeyNewPairCmd)
+	cmdManager.RegisterFlagForCmd(KeyNewPairNameFlag, KeyNewPairCmd)
+	cmdManager.RegisterFlagForCmd(KeyNewPairEmailFlag, KeyNewPairCmd)
+	cmdManager.RegisterFlagForCmd(KeyNewPairCommentFlag, KeyNewPairCmd)
+	cmdManager.RegisterFlagForCmd(KeyNewPairPasswordFlag, KeyNewPairCmd)
+
 	cmdManager.RegisterSubCmd(KeyCmd, KeyListCmd)
 	cmdManager.RegisterSubCmd(KeyCmd, KeySearchCmd)
 	cmdManager.RegisterSubCmd(KeyCmd, KeyPullCmd)

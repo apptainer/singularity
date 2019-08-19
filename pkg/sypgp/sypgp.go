@@ -57,6 +57,14 @@ type Handle struct {
 	path string
 }
 
+// GenKeyPairOptions parameters needed for generating new key pair.
+type GenKeyPairOptions struct {
+	Name     string
+	Email    string
+	Comment  string
+	Password *string
+}
+
 // mrKeyList contains all the key info, used for decoding
 // the MR output from 'key search'
 type mrKeyList struct {
@@ -445,17 +453,19 @@ func (keyring *Handle) RemovePubKey(toDelete string) error {
 	return keyring.storePubKeyring(newKeyList)
 }
 
-func (keyring *Handle) genKeyPair(name, comment, email, passphrase string) (*openpgp.Entity, error) {
+func (keyring *Handle) genKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
-	entity, err := openpgp.NewEntity(name, comment, email, conf)
+	entity, err := openpgp.NewEntity(opts.Name, opts.Comment, opts.Email, conf)
 	if err != nil {
 		return nil, err
 	}
 
-	// Encrypt private key
-	if err = EncryptKey(entity, passphrase); err != nil {
-		return nil, err
+	if opts.Password != nil && *opts.Password != "" {
+		// Encrypt private key
+		if err = EncryptKey(entity, *opts.Password); err != nil {
+			return nil, err
+		}
 	}
 
 	// Store key parts in local key caches
@@ -471,35 +481,48 @@ func (keyring *Handle) genKeyPair(name, comment, email, passphrase string) (*ope
 }
 
 // GenKeyPair generates an PGP key pair and store them in the sypgp home folder
-func (keyring *Handle) GenKeyPair(keyServiceURI string, authToken string) (*openpgp.Entity, error) {
+func (keyring *Handle) GenKeyPair(keyServiceURI string, authToken string, opts GenKeyPairOptions) (*openpgp.Entity, error) {
 	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
 	}
 
-	name, err := interactive.AskQuestion("Enter your name (e.g., John Doe) : ")
-	if err != nil {
-		return nil, err
+	if opts.Name == "" {
+		n, err := interactive.AskQuestion("Enter your name (e.g., John Doe) : ")
+		if err != nil {
+			return nil, err
+		}
+
+		opts.Name = n
 	}
 
-	email, err := interactive.AskQuestion("Enter your email address (e.g., john.doe@example.com) : ")
-	if err != nil {
-		return nil, err
+	if opts.Email == "" {
+		e, err := interactive.AskQuestion("Enter your email address (e.g., john.doe@example.com) : ")
+		if err != nil {
+			return nil, err
+		}
+		opts.Email = e
 	}
 
-	comment, err := interactive.AskQuestion("Enter optional comment (e.g., development keys) : ")
-	if err != nil {
-		return nil, err
+	if opts.Comment == "" {
+		c, err := interactive.AskQuestion("Enter optional comment (e.g., development keys) : ")
+		if err != nil {
+			return nil, err
+		}
+		opts.Comment = c
 	}
 
-	// get a password
-	passphrase, err := interactive.GetPassphrase("Enter a passphrase : ", 3)
-	if err != nil {
-		return nil, err
+	if opts.Password == nil {
+		// get a password
+		p, err := interactive.GetPassphrase("Enter a passphrase : ", 3)
+		if err != nil {
+			return nil, err
+		}
+		opts.Password = &p
 	}
 
 	fmt.Printf("Generating Entity and OpenPGP Key Pair... ")
 
-	entity, err := keyring.genKeyPair(name, comment, email, passphrase)
+	entity, err := keyring.genKeyPair(opts)
 	if err != nil {
 		return nil, err
 	}

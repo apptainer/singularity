@@ -12,29 +12,80 @@ import (
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-// KeyNewPairCmd is 'singularity key newpair' and generate a new OpenPGP key pair
-var KeyNewPairCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(0),
-	DisableFlagsInUseLine: true,
-	PreRun:                sylabsToken,
-	Run: func(cmd *cobra.Command, args []string) {
-		keyring := sypgp.NewHandle("")
-		handleKeyNewPairEndpoint()
+var (
 
-		if _, err := keyring.GenKeyPair(keyServerURI, authToken); err != nil {
-			sylog.Errorf("creating newpair failed: %v", err)
-			os.Exit(2)
-		}
-	},
+	// KeyNewPairCmd is 'singularity key newpair' and generate a new OpenPGP key pair
+	KeyNewPairCmd = &cobra.Command{
+		Args:                  cobra.ExactArgs(0),
+		DisableFlagsInUseLine: true,
+		PreRun:                sylabsToken,
+		Run: func(cmd *cobra.Command, args []string) {
+			keyring := sypgp.NewHandle("")
+			handleKeyNewPairEndpoint()
 
-	Use:     docs.KeyNewPairUse,
-	Short:   docs.KeyNewPairShort,
-	Long:    docs.KeyNewPairLong,
-	Example: docs.KeyNewPairExample,
-}
+			genOpts := sypgp.GenKeyPairOptions{
+				Name:     keyNewPairName,
+				Email:    keyNewPairEmail,
+				Comment:  keyNewPairComment,
+				Password: keyNewPairPassword,
+			}
+
+			if _, err := keyring.GenKeyPair(keyServerURI, authToken, genOpts); err != nil {
+				sylog.Errorf("creating newpair failed: %v", err)
+				os.Exit(2)
+			}
+		},
+
+		Use:     docs.KeyNewPairUse,
+		Short:   docs.KeyNewPairShort,
+		Long:    docs.KeyNewPairLong,
+		Example: docs.KeyNewPairExample,
+	}
+
+	keyNewPairName     string
+	KeyNewPairNameFlag = &cmdline.Flag{
+		ID:           "KeyNewPairNameFlag",
+		Value:        &keyNewPairName,
+		DefaultValue: "",
+		Name:         "name",
+		ShortHand:    "n",
+		Usage:        "keys owner name",
+	}
+
+	keyNewPairEmail     string
+	KeyNewPairEmailFlag = &cmdline.Flag{
+		ID:           "KeyNewPairEmailFlag",
+		Value:        &keyNewPairEmail,
+		DefaultValue: "",
+		Name:         "email",
+		ShortHand:    "e",
+		Usage:        "keys owner email",
+	}
+
+	keyNewPairComment     string
+	KeyNewPairCommentFlag = &cmdline.Flag{
+		ID:           "KeyNewPairCommentFlag",
+		Value:        &keyNewPairComment,
+		DefaultValue: "",
+		Name:         "comment",
+		ShortHand:    "c",
+		Usage:        "keys comment",
+	}
+
+	keyNewPairPassword     *string
+	KeyNewPairPasswordFlag = &cmdline.Flag{
+		ID:           "KeyNewPairPasswordFlag",
+		Value:        &keyNewPairPassword,
+		DefaultValue: nil,
+		Name:         "password",
+		ShortHand:    "p",
+		Usage:        "keys password",
+	}
+)
 
 func handleKeyNewPairEndpoint() {
 	// if we can load config and if default endpoint is set, use that
