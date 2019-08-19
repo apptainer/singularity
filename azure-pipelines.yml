@@ -1,0 +1,56 @@
+# Go
+# Build your Go project.
+# Add steps that test, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/go
+
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  GO111MODULE: 'on'
+  GOROOT: '/usr/local/go1.11' # Go installation path
+  GOPATH: '$(system.defaultWorkingDirectory)/gopath' # Go workspace path
+  GOBIN:  '$(GOPATH)/bin' # Go binaries path
+  modulePath: '$(GOPATH)/src/github.com/$(build.repository.name)' # Path to the module's code
+
+steps:
+- script: |
+    mkdir -p '$(GOBIN)'
+    mkdir -p '$(GOPATH)/pkg'
+    mkdir -p '$(modulePath)'
+    shopt -s extglob
+    shopt -s dotglob
+    mv !(gopath) '$(modulePath)'
+    echo '##vso[task.prependpath]$(GOBIN)'
+    echo '##vso[task.prependpath]$(GOROOT)/bin'
+  displayName: 'Set up the Go workspace'
+
+- script: |
+    sudo apt-get install -f -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev cryptsetup
+    go version
+    mconfig -v --prefix=$PWD/tmp
+  workingDirectory: '$(modulePath)'
+  displayName: 'Configure'
+
+- script: |
+    make
+  workingDirectory: '$(modulePath)/builddir'
+  displayName: 'Build'
+
+- script: |
+    make check
+  workingDirectory: '$(modulePath)/builddir'
+  displayName: 'Lint'
+
+- script: |
+    make unit-test
+  workingDirectory: '$(modulePath)/builddir'
+  displayName: 'Unit test'
+
+- script: |
+    sudo make install
+  workingDirectory: '$(modulePath)/builddir'
+  displayName: 'Install'
