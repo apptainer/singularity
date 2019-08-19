@@ -48,7 +48,7 @@ var (
 	keyServerURL = "https://keys.sylabs.io"
 	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it.
 	unauthenticatedPull bool
-	// PullDir is the path that the containers will be pulled to, if set.
+	// pullDir is the path that the containers will be pulled to, if set.
 	pullDir string
 	// pullArch is the architecture for which containers will be pulled from the
 	// SCS library
