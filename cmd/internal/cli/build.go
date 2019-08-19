@@ -43,6 +43,7 @@ var (
 	dockerLogin    bool
 	noCleanUp      bool
 	fakeroot       bool
+	encrypt        bool
 )
 
 // -s|--sandbox
@@ -212,6 +213,16 @@ var buildFakerootFlag = cmdline.Flag{
 	EnvKeys:      []string{"FAKEROOT"},
 }
 
+// -e|--encrypt
+var buildEncryptFlag = cmdline.Flag{
+	ID:           "buildEncryptFlag",
+	Value:        &encrypt,
+	DefaultValue: false,
+	Name:         "encrypt",
+	ShortHand:    "e",
+	Usage:        "build an image with an encrypted file system",
+}
+
 func init() {
 	cmdManager.RegisterCmd(BuildCmd)
 
@@ -231,6 +242,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildDisableCacheFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildEncryptFlag, BuildCmd)
 
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, BuildCmd)
