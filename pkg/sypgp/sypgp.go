@@ -933,14 +933,15 @@ func (keyring *Handle) ExportPrivateKey(kpath string, armor bool) error {
 		return err
 	}
 
-	pass, err := interactive.AskQuestionNoEcho("Enter key passphrase : ")
-	if err != nil {
-		return err
-	}
-
-	err = RecryptKey(entityToExport, []byte(pass))
-	if err != nil {
-		return err
+	if entityToExport.PrivateKey.Encrypted {
+		pass, err := interactive.AskQuestionNoEcho("Enter key passphrase : ")
+		if err != nil {
+			return err
+		}
+		err = RecryptKey(entityToExport, []byte(pass))
+		if err != nil {
+			return err
+		}
 	}
 
 	// Create the file that we will be exporting to
