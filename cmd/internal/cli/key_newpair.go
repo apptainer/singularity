@@ -79,7 +79,7 @@ var (
 	keyNewPairPassword     *string
 	KeyNewPairPasswordFlag = &cmdline.Flag{
 		ID:           "KeyNewPairPasswordFlag",
-		Value:        &keyNewPairPassword,
+		Value:        keyNewPairPassword,
 		DefaultValue: nil,
 		Name:         "password",
 		ShortHand:    "p",
