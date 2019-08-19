@@ -59,9 +59,9 @@ type Handle struct {
 
 // GenKeyPairOptions parameters needed for generating new key pair.
 type GenKeyPairOptions struct {
-	Name     string
-	Email    string
-	Comment  string
+	Name     *string
+	Email    *string
+	Comment  *string
 	Password *string
 }
 
@@ -456,7 +456,7 @@ func (keyring *Handle) RemovePubKey(toDelete string) error {
 func (keyring *Handle) genKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
-	entity, err := openpgp.NewEntity(opts.Name, opts.Comment, opts.Email, conf)
+	entity, err := openpgp.NewEntity(*opts.Name, *opts.Comment, *opts.Email, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -486,29 +486,29 @@ func (keyring *Handle) GenKeyPair(keyServiceURI string, authToken string, opts G
 		return nil, err
 	}
 
-	if opts.Name == "" {
+	if opts.Name == nil {
 		n, err := interactive.AskQuestion("Enter your name (e.g., John Doe) : ")
 		if err != nil {
 			return nil, err
 		}
 
-		opts.Name = n
+		opts.Name = &n
 	}
 
-	if opts.Email == "" {
+	if opts.Email == nil {
 		e, err := interactive.AskQuestion("Enter your email address (e.g., john.doe@example.com) : ")
 		if err != nil {
 			return nil, err
 		}
-		opts.Email = e
+		opts.Email = &e
 	}
 
-	if opts.Comment == "" {
+	if opts.Comment == nil {
 		c, err := interactive.AskQuestion("Enter optional comment (e.g., development keys) : ")
 		if err != nil {
 			return nil, err
 		}
-		opts.Comment = c
+		opts.Comment = &c
 	}
 
 	if opts.Password == nil {
