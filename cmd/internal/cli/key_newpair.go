@@ -30,23 +30,16 @@ var (
 			genOpts := sypgp.GenKeyPairOptions{}
 
 			// checks if flags were passed
-			nameF := cmd.Flag(KeyNewPairNameFlag.Name)
-			if nameF != nil && nameF.Changed {
+			if cmd.Flags().Changed(KeyNewPairNameFlag.Name) {
 				genOpts.Name = &keyNewPairName
 			}
-
-			emailF := cmd.Flag(KeyNewPairEmailFlag.Name)
-			if emailF != nil && emailF.Changed {
+			if cmd.Flags().Changed(KeyNewPairEmailFlag.Name) {
 				genOpts.Email = &keyNewPairEmail
 			}
-
-			commentF := cmd.Flag(KeyNewPairCommentFlag.Name)
-			if commentF != nil && commentF.Changed {
+			if cmd.Flags().Changed(KeyNewPairCommentFlag.Name) {
 				genOpts.Comment = &keyNewPairComment
 			}
-
-			pwdF := cmd.Flag(KeyNewPairPasswordFlag.Name)
-			if pwdF != nil && pwdF.Changed {
+			if cmd.Flags().Changed(KeyNewPairPasswordFlag.Name) {
 				genOpts.Password = &keyNewPairPassword
 			}
 
