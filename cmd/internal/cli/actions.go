@@ -204,7 +204,7 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 	}
 
 	imagePath := ""
-	if disableCache {
+	if imgCache.IsDisabled() {
 		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
 		if err != nil {
 			return "", fmt.Errorf("unable to create tmp file: %v", err)

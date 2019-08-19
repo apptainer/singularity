@@ -9,6 +9,8 @@ import (
 	"os"
 	"strconv"
 	"testing"
+
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 const (
@@ -22,7 +24,7 @@ const (
 // SINGULARITY_DISABLE_CACHE environment variable is set. If it is set, it will
 // skip the current tests since exercising the cache when caching is disabled is
 // not supported.
-func chechIfCacheDisabled(t *testing.T) {
+func (c *Handle) checkIfCacheDisabled(t *testing.T) {
 	envValue := os.Getenv(DisableEnv)
 	if envValue == "" {
 		envValue = "0"
@@ -33,5 +35,15 @@ func chechIfCacheDisabled(t *testing.T) {
 	}
 	if disabled {
 		t.Skip("Caching is disabled")
+	}
+
+	// Before running the test we make sure that the test environment
+	// did not implicitly disable the cache.
+	if c.IsDisabled() {
+		writable, _ := fs.IsWritable(c.GetBasedir())
+		if !writable {
+			t.Skip("cache's base directory is not writable; cache is disabled")
+		}
+		t.Skip("cache disabled")
 	}
 }

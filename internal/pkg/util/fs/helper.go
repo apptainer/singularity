@@ -172,3 +172,22 @@ func MakeTmpFile(basedir, pattern string, mode os.FileMode) (*os.File, error) {
 	}
 	return f, nil
 }
+
+// IsWritable returns true of the directory that is passed in is writable
+func IsWritable(dir string) (bool, error) {
+	info, err := os.Stat(dir)
+	if err != nil {
+		return false, err
+	}
+
+	if !info.IsDir() {
+		return false, fmt.Errorf("%s is not a directory", dir)
+	}
+
+	// Check whether the user bit for write permission is set
+	if info.Mode().Perm()&(1<<(uint(7))) == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
