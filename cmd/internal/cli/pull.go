@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -182,7 +183,7 @@ var PullCmd = &cobra.Command{
 }
 
 func pullRun(cmd *cobra.Command, args []string) {
-	imgCache := getCacheHandle()
+	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 	if imgCache == nil {
 		sylog.Fatalf("Failed to create an image cache handle")
 	}
@@ -235,10 +236,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
 
-		if disableCache {
-			imgCache = nil
-		}
-
 		libraryConfig := &client.Config{
 			BaseURL:   pullLibraryURI,
 			AuthToken: authToken,
@@ -256,7 +253,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Warningf("Skipping container verification")
 		}
 	case ShubProtocol:
-		err := singularity.PullShub(imgCache, pullTo, pullFrom, noHTTPS, disableCache)
+		err := singularity.PullShub(imgCache, pullTo, pullFrom, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
@@ -281,7 +278,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
-		err = singularity.OciPull(imgCache, pullTo, pullFrom, tmpDir, ociAuth, noHTTPS, disableCache)
+		err = singularity.OciPull(imgCache, pullTo, pullFrom, tmpDir, ociAuth, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While making image from oci registry: %v", err)
 		}

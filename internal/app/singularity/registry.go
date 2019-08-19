@@ -53,7 +53,7 @@ func (l *Library) Pull(ctx context.Context, from, to string) error {
 		return fmt.Errorf("could not get image info: %v", err)
 	}
 
-	if l.cache == nil {
+	if l.cache.IsDisabled() {
 		// don't use cached image
 		err := l.pullAndVerify(ctx, imageMeta, libraryPath, to)
 		if err != nil {
