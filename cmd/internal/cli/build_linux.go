@@ -20,6 +20,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/fakeroot/config"
@@ -142,7 +143,7 @@ func run(cmd *cobra.Command, args []string) {
 			// build from sif downloaded in tmp location
 			defer func() {
 				sylog.Debugf("Building sandbox from downloaded SIF")
-				imgCache := getCacheHandle()
+				imgCache := getCacheHandle(cache.Config{})
 				if imgCache == nil {
 					sylog.Fatalf("failed to create an image cache handle")
 				}
@@ -185,7 +186,7 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	} else {
-		imgCache := getCacheHandle()
+		imgCache := getCacheHandle(cache.Config{})
 		if imgCache == nil {
 			sylog.Fatalf("failed to create an image cache handle")
 		}

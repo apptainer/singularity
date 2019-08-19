@@ -26,7 +26,7 @@ import (
 	client "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	types "github.com/sylabs/singularity/pkg/build/legacy"
+	"github.com/sylabs/singularity/pkg/build/types"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 

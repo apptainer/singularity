@@ -1,4 +1,4 @@
-# github.com/Microsoft/go-winio v0.4.7
+# github.com/Microsoft/go-winio v0.4.11
 github.com/Microsoft/go-winio
 # github.com/Microsoft/hcsshim v0.8.6
 github.com/Microsoft/hcsshim
@@ -54,7 +54,7 @@ github.com/containernetworking/cni/pkg/skel
 github.com/containernetworking/cni/pkg/version
 github.com/containernetworking/cni/pkg/types/020
 github.com/containernetworking/cni/pkg/invoke
-# github.com/containernetworking/plugins v0.8.1
+# github.com/containernetworking/plugins v0.8.2
 github.com/containernetworking/plugins/plugins/ipam/dhcp
 github.com/containernetworking/plugins/plugins/ipam/host-local
 github.com/containernetworking/plugins/plugins/ipam/static
@@ -116,7 +116,7 @@ github.com/containers/storage/pkg/pools
 github.com/containers/storage/pkg/promise
 github.com/containers/storage/pkg/system
 github.com/containers/storage/pkg/mount
-# github.com/coreos/go-iptables v0.3.0
+# github.com/coreos/go-iptables v0.4.2
 github.com/coreos/go-iptables/iptables
 # github.com/coreos/go-systemd v0.0.0-20180511133405-39ca1b05acc7
 github.com/coreos/go-systemd/dbus
@@ -129,7 +129,7 @@ github.com/creack/pty
 github.com/cyphar/filepath-securejoin
 # github.com/d2g/dhcp4 v0.0.0-20170904100407-a1d1b6c41b1c
 github.com/d2g/dhcp4
-# github.com/d2g/dhcp4client v0.0.0-20180611075603-e61299896203
+# github.com/d2g/dhcp4client v1.0.0
 github.com/d2g/dhcp4client
 # github.com/deislabs/oras v0.4.0
 github.com/deislabs/oras/pkg/content
@@ -194,7 +194,7 @@ github.com/godbus/dbus
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
-# github.com/golang/protobuf v1.2.0
+# github.com/golang/protobuf v1.3.1
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
@@ -273,9 +273,9 @@ github.com/opencontainers/image-tools/image
 # github.com/opencontainers/runc v0.1.1
 github.com/opencontainers/runc/libcontainer/system
 github.com/opencontainers/runc/libcontainer/user
-# github.com/opencontainers/runtime-spec v0.0.0-20180913141938-5806c3563733
+# github.com/opencontainers/runtime-spec v0.1.2-0.20181111125026-1722abf79c2f
 github.com/opencontainers/runtime-spec/specs-go
-# github.com/opencontainers/runtime-tools v0.7.0
+# github.com/opencontainers/runtime-tools v0.9.0
 github.com/opencontainers/runtime-tools/generate
 github.com/opencontainers/runtime-tools/generate/seccomp
 github.com/opencontainers/runtime-tools/validate
@@ -284,6 +284,7 @@ github.com/opencontainers/runtime-tools/specerror
 github.com/opencontainers/runtime-tools/error
 # github.com/opencontainers/selinux v1.3.0
 github.com/opencontainers/selinux/go-selinux
+github.com/opencontainers/selinux/go-selinux/label
 # github.com/pelletier/go-toml v1.4.0
 github.com/pelletier/go-toml
 # github.com/pkg/errors v0.8.1
@@ -309,13 +310,13 @@ github.com/prometheus/procfs/internal/util
 github.com/rootless-containers/proto/go-proto
 # github.com/russross/blackfriday v1.5.2
 github.com/russross/blackfriday
-# github.com/safchain/ethtool v0.0.0-20180504150752-6e3f4faa84e1
+# github.com/safchain/ethtool v0.0.0-20190326074333-42ed695e3de8
 github.com/safchain/ethtool
 # github.com/satori/go.uuid v1.2.0
 github.com/satori/go.uuid
 # github.com/seccomp/libseccomp-golang v0.9.0
 github.com/seccomp/libseccomp-golang
-# github.com/sirupsen/logrus v1.0.5
+# github.com/sirupsen/logrus v1.0.6
 github.com/sirupsen/logrus
 # github.com/spf13/cobra v0.0.5
 github.com/spf13/cobra
@@ -330,7 +331,7 @@ github.com/sylabs/scs-build-client/client
 github.com/sylabs/scs-key-client/client
 # github.com/sylabs/scs-library-client v0.4.1
 github.com/sylabs/scs-library-client/client
-# github.com/sylabs/sif v1.0.7
+# github.com/sylabs/sif v1.0.8
 github.com/sylabs/sif/pkg/siftool
 github.com/sylabs/sif/pkg/sif
 github.com/sylabs/sif/internal/app/siftool
@@ -345,7 +346,7 @@ github.com/vbatts/go-mtree/xattr
 # github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6
 github.com/vishvananda/netlink
 github.com/vishvananda/netlink/nl
-# github.com/vishvananda/netns v0.0.0-20171111001504-be1fbeda1936
+# github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc
 github.com/vishvananda/netns
 # github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f
 github.com/xeipuuv/gojsonpointer
@@ -373,7 +374,7 @@ golang.org/x/net/proxy
 golang.org/x/net/internal/socks
 # golang.org/x/sync v0.0.0-20190423024810-112230192c58
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223
+# golang.org/x/sys v0.0.0-20190616124812-15dcb6c0061f
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
