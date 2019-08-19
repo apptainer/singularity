@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	singularitykey "github.com/sylabs/singularity/e2e/key"
+	"github.com/sylabs/singularity/e2e/run"
 
 	singularityinspect "github.com/sylabs/singularity/e2e/inspect"
 
@@ -158,6 +159,7 @@ func Run(t *testing.T) {
 		"PULL":       pull.RunE2ETests(testenv),
 		"PUSH":       push.RunE2ETests(testenv),
 		"REMOTE":     remote.RunE2ETests(testenv),
+		"RUN":        run.CmdE2ETests(testenv),
 		"VERIFY":     singularityverify.RunE2ETests(testenv),
 		"VERSION":    version.RunE2ETests(testenv),
 		"CACHE":      singularitycache.RunE2ETests(testenv),
