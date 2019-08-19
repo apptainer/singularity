@@ -517,6 +517,18 @@ func (keyring *Handle) GenKeyPair(keyServiceURI string, authToken string, opts G
 		if err != nil {
 			return nil, err
 		}
+		if p == "" {
+			a, err := interactive.AskYNQuestion("n", "WARNING: if there is no password set, your key is not secure. Do you want to continue? [y/n]")
+			if err != nil {
+				return nil, err
+			}
+
+			if a == "n" {
+				return nil, errors.New("empty passphrase")
+			}
+
+		}
+
 		opts.Password = &p
 	}
 
