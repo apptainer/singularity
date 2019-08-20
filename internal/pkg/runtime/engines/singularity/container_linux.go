@@ -1570,8 +1570,6 @@ func (c *container) addScratchMount(system *mount.System) error {
 }
 
 func (c *container) addCwdMount(system *mount.System) error {
-	cwd := ""
-
 	if c.engine.EngineConfig.GetContain() {
 		sylog.Verbosef("Not mounting current directory: container was requested")
 		return nil
@@ -1583,19 +1581,12 @@ func (c *container) addCwdMount(system *mount.System) error {
 	if c.engine.EngineConfig.OciConfig.Process == nil {
 		return nil
 	}
-	cwd = c.engine.EngineConfig.OciConfig.Process.Cwd
-	if err := os.Chdir(cwd); err != nil {
-		if os.IsNotExist(err) {
-			sylog.Debugf("Container working directory %s doesn't exist, will retry after chroot", cwd)
-		} else {
-			sylog.Warningf("Could not set container working directory %s: %s", cwd, err)
-		}
-		return nil
-	}
 	current, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("could not obtain current directory path: %s", err)
 	}
+	sylog.Debugf("Using %s as current working directory", current)
+
 	switch current {
 	case "/", "/etc", "/bin", "/mnt", "/usr", "/var", "/opt", "/sbin", "/lib", "/lib64":
 		sylog.Verbosef("Not mounting CWD within operating system directory: %s", current)
@@ -1606,10 +1597,10 @@ func (c *container) addCwdMount(system *mount.System) error {
 		return nil
 	}
 	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
-	if err := system.Points.AddBind(mount.CwdTag, current, cwd, flags); err == nil {
-		system.Points.AddRemount(mount.CwdTag, cwd, flags)
-		c.checkDest = append(c.checkDest, cwd)
-		sylog.Verbosef("Default mount: %v: to the container", cwd)
+	if err := system.Points.AddBind(mount.CwdTag, current, current, flags); err == nil {
+		system.Points.AddRemount(mount.CwdTag, current, flags)
+		c.checkDest = append(c.checkDest, current)
+		sylog.Verbosef("Default mount: %v: to the container", current)
 	} else {
 		sylog.Warningf("Could not bind CWD to container %s: %s", current, err)
 	}
