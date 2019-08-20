@@ -69,6 +69,8 @@ func Add(containerFile, dataFile string, opts AddOptions) error {
 		d = sif.DataGenericJSON
 	case 7:
 		d = sif.DataGeneric
+	case 8:
+		d = sif.DataCryptoMessage
 	default:
 		log.Printf("error: -datatype flag is required with a valid range\n\n")
 		return fmt.Errorf("usage")
