@@ -1,8 +1,0 @@
-[  
-   {  
-      "Header":"Bootstrap: zypper\nOSVersion: 42.2\nMirrorURL: http://download.opensuse.org/distribution/leap/%{OSVERSION}/repo/oss/\nInclude: somepackage\n"
-   }
-]
-
-
-

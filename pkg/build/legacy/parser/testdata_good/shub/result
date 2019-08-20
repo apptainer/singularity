@@ -1,2 +1,0 @@
-bootstrap: shub
-from: shub://<registry>/<username>/<container-name>:<tag>@digest

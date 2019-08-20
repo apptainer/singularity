@@ -19,7 +19,7 @@ import (
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
-	"github.com/sylabs/singularity/pkg/image"
+	imgutil "github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
@@ -54,7 +54,7 @@ func EnsureRootPriv(cmd *cobra.Command, args []string) {
 }
 
 func convertImage(filename string, unsquashfsPath string) (string, error) {
-	img, err := image.Init(filename, false)
+	img, err := imgutil.Init(filename, false)
 	if err != nil {
 		return "", fmt.Errorf("could not open image %s: %s", filename, err)
 	}
@@ -65,12 +65,12 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 	}
 
 	// squashfs only
-	if img.Partitions[0].Type != image.SQUASHFS {
+	if img.Partitions[0].Type != imgutil.SQUASHFS {
 		return "", fmt.Errorf("not a squashfs root filesystem")
 	}
 
 	// create a reader for rootfs partition
-	reader, err := image.NewPartitionReader(img, "", 0)
+	reader, err := imgutil.NewPartitionReader(img, "", 0)
 	if err != nil {
 		return "", fmt.Errorf("could not extract root filesystem: %s", err)
 	}
@@ -258,12 +258,35 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		BindPaths = append(BindPaths, nvidia.IpcsPath(userPath)...)
 	}
 
-	plaintextKey, err := crypt.PlaintextKey(encryptionKey, engineConfig.GetImage())
-	if err != nil {
-		sylog.Fatalf("Cannot retrieve key from image %s: %+v", engineConfig.GetImage(), err)
-	}
+	// early check for key material before we start engine so we can fail fast if missing
+	// we do not need this check when joining a running instance, just for starting a container
+	if !engineConfig.GetInstanceJoin() {
+		sylog.Debugf("Checking for encrypted system partition")
+		img, err := imgutil.Init(engineConfig.GetImage(), false)
+		if err != nil {
+			sylog.Fatalf("could not open image %s: %s", engineConfig.GetImage(), err)
+		}
+		defer img.File.Close()
 
-	engineConfig.SetEncryptionKey(plaintextKey)
+		if !img.HasRootFs() {
+			sylog.Fatalf("no root filesystem found in %s", engineConfig.GetImage())
+		}
+
+		// ensure we have decryption material
+		if img.Partitions[0].Type == imgutil.ENCRYPTSQUASHFS {
+			sylog.Debugf("Encrypted container filesystem detected")
+			if encryptionKey == "" {
+				sylog.Fatalf("Trying to run encrypted container without supplying key material for decryption.")
+			}
+
+			plaintextKey, err := crypt.PlaintextKey(encryptionKey, engineConfig.GetImage())
+			if err != nil {
+				sylog.Fatalf("Cannot retrieve key from image %s: %+v", engineConfig.GetImage(), err)
+			}
+
+			engineConfig.SetEncryptionKey(plaintextKey)
+		}
+	}
 
 	engineConfig.SetBindPath(BindPaths)
 	if FuseCmd != nil {

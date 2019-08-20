@@ -9,11 +9,13 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -48,7 +50,20 @@ var (
 	unauthenticatedPull bool
 	// pullDir is the path that the containers will be pulled to, if set.
 	pullDir string
+	// pullArch is the architecture for which containers will be pulled from the
+	// SCS library
+	pullArch string
 )
+
+// --arch
+var pullArchFlag = cmdline.Flag{
+	ID:           "pullArchFlag",
+	Value:        &pullArch,
+	DefaultValue: runtime.GOARCH,
+	Name:         "arch",
+	Usage:        "Architecture to pull from library",
+	EnvKeys:      []string{"PULL_ARCH"},
+}
 
 // --library
 var pullLibraryURIFlag = cmdline.Flag{
@@ -165,6 +180,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullAllowUnsignedFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullArchFlag, PullCmd)
 }
 
 // PullCmd singularity pull
@@ -180,7 +196,7 @@ var PullCmd = &cobra.Command{
 }
 
 func pullRun(cmd *cobra.Command, args []string) {
-	imgCache := getCacheHandle()
+	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 	if imgCache == nil {
 		sylog.Fatalf("Failed to create an image cache handle")
 	}
@@ -207,9 +223,16 @@ func pullRun(cmd *cobra.Command, args []string) {
 		name = filepath.Join(pullDir, name)
 	}
 
-	if !force {
-		if _, err := os.Stat(name); err == nil {
+	_, err := os.Stat(name)
+	if !os.IsNotExist(err) {
+		// image already exist
+		if !force {
 			sylog.Fatalf("Image file already exists: %q - will not overwrite", name)
+		} else {
+			sylog.Debugf("Removing overridden file: %s", name)
+			if err := os.Remove(name); err != nil {
+				sylog.Fatalf("Unable to remove %q: %s", name, err)
+			}
 		}
 	}
 
@@ -226,12 +249,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 	switch transport {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
-		err := singularity.LibraryPull(imgCache, name, args[i], pullLibraryURI, keyServerURL, authToken, unauthenticatedPull, disableCache)
+		err := singularity.LibraryPull(imgCache, name, args[i], pullLibraryURI, keyServerURL, authToken, pullArch, unauthenticatedPull)
 		if err != nil && err != singularity.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
 	case ShubProtocol:
-		err := singularity.PullShub(imgCache, name, args[i], noHTTPS, disableCache)
+		err := singularity.PullShub(imgCache, name, args[i], noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
@@ -256,7 +279,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
-		err = singularity.OciPull(imgCache, name, args[i], tmpDir, ociAuth, noHTTPS, disableCache)
+		err = singularity.OciPull(imgCache, name, args[i], tmpDir, ociAuth, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While making image from oci registry: %v", err)
 		}

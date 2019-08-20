@@ -16,7 +16,8 @@ import (
 const (
 	pathVersion = "/version"
 	// API version that supports extended image uploadfunctionality
-	APIVersionV2 = "2.0.0-alpha"
+	APIVersionV2Upload   = "2.0.0-alpha.1"
+	APIVersionV2ArchTags = "2.0.0-alpha.2"
 )
 
 // VersionInfo contains version information.
@@ -45,8 +46,8 @@ func (c *Client) GetVersion(ctx context.Context) (vi VersionInfo, err error) {
 	return vi, nil
 }
 
-// isV2API returns true if cloud-library server supports V2 (or greater) API
-func (c *Client) isV2API(ctx context.Context) bool {
+// apiAtLeast returns true if cloud-library server supports requested (or greater) API version
+func (c *Client) apiAtLeast(ctx context.Context, reqVersion string) bool {
 	// query cloud-library server for supported api version
 	vi, err := c.GetVersion(ctx)
 	if err != nil || vi.APIVersion == "" {
@@ -60,7 +61,7 @@ func (c *Client) isV2API(ctx context.Context) bool {
 		c.Logger.Logf("Unable to decode remote API version: %v", err)
 		return false
 	}
-	minRequiredVers, err := semver.Make(APIVersionV2)
+	minRequiredVers, err := semver.Make(reqVersion)
 	if err != nil {
 		c.Logger.Logf("Unable to decode minimum required version: %v", err)
 		return false
