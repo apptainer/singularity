@@ -89,7 +89,7 @@ func calculateChecksums(r io.Reader) (string, string, int64, error) {
 // Container Library, The timeout value for this operation is set within
 // the context. It is recommended to use a large value (ie. 1800 seconds) to
 // prevent timeout when uploading large images.
-func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, tags []string, description string, callback UploadCallback) error {
+func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path, arch string, tags []string, description string, callback UploadCallback) error {
 
 	entityName, collectionName, containerName, parsedTags := ParseLibraryPath(path)
 	if len(parsedTags) != 0 {
@@ -153,7 +153,7 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 	}
 
 	// Find or create image
-	image, err := c.GetImage(ctx, computedName+":"+imageHash)
+	image, err := c.GetImage(ctx, arch, computedName+":"+imageHash)
 	if err != nil {
 		if err != ErrNotFound {
 			return err
@@ -168,7 +168,7 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 
 	if !image.Uploaded {
 		c.Logger.Log("Now uploading to the library")
-		if c.isV2API(ctx) {
+		if c.apiAtLeast(ctx, APIVersionV2Upload) {
 			// use v2 post file api
 			metadata := map[string]string{
 				"md5sum": md5Checksum,
@@ -185,6 +185,12 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path string, 
 	}
 
 	c.Logger.Logf("Setting tags against uploaded image")
+
+	if c.apiAtLeast(ctx, APIVersionV2ArchTags) {
+		return c.setTagsV2(ctx, container.ID, arch, image.ID, append(tags, parsedTags...))
+	}
+	c.Logger.Logf("This library does not support multiple architecture per tag.")
+	c.Logger.Logf("This tag will replace any already uploaded with the same name.")
 	return c.setTags(ctx, container.ID, image.ID, append(tags, parsedTags...))
 }
 
@@ -278,6 +284,7 @@ func (c *Client) postFileV2(ctx context.Context, r io.Reader, fileSize int64, im
 
 	req.ContentLength = fileSize
 	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("x-amz-meta-client-md5sum", metadata["md5sum"])
 
 	// redirect log output from retryablehttp to our logger
 	l := loggingAdapter{

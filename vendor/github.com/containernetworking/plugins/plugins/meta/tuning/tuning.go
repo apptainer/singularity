@@ -43,9 +43,24 @@ type TuningConf struct {
 	Mac     string            `json:"mac,omitempty"`
 	Promisc bool              `json:"promisc,omitempty"`
 	Mtu     int               `json:"mtu,omitempty"`
+
+	RuntimeConfig struct {
+		Mac string `json:"mac,omitempty"`
+	} `json:"runtimeConfig,omitempty"`
+	Args *struct {
+		A *IPAMArgs `json:"cni"`
+	} `json:"args"`
 }
 
-type MACEnvArgs struct {
+type IPAMArgs struct {
+	SysCtl  *map[string]string `json:"sysctl"`
+	Mac     *string            `json:"mac,omitempty"`
+	Promisc *bool              `json:"promisc,omitempty"`
+	Mtu     *int               `json:"mtu,omitempty"`
+}
+
+// MacEnvArgs represents CNI_ARG
+type MacEnvArgs struct {
 	types.CommonArgs
 	MAC types.UnmarshallableString `json:"mac,omitempty"`
 }
@@ -56,9 +71,9 @@ func parseConf(data []byte, envArgs string) (*TuningConf, error) {
 		return nil, fmt.Errorf("failed to load netconf: %v", err)
 	}
 
-	// Parse custom MAC from both env args
+	// Parse custom Mac from both env args
 	if envArgs != "" {
-		e := MACEnvArgs{}
+		e := MacEnvArgs{}
 		err := types.LoadArgs(envArgs, &e)
 		if err != nil {
 			return nil, err
@@ -67,6 +82,33 @@ func parseConf(data []byte, envArgs string) (*TuningConf, error) {
 		if e.MAC != "" {
 			conf.Mac = string(e.MAC)
 		}
+	}
+
+	// Parse custom Mac from RuntimeConfig
+	if conf.RuntimeConfig.Mac != "" {
+		conf.Mac = conf.RuntimeConfig.Mac
+	}
+
+	// Get args
+	if conf.Args != nil && conf.Args.A != nil {
+		if conf.Args.A.SysCtl != nil {
+			for k, v := range *conf.Args.A.SysCtl {
+				conf.SysCtl[k] = v
+			}
+		}
+
+		if conf.Args.A.Mac != nil {
+			conf.Mac = *conf.Args.A.Mac
+		}
+
+		if conf.Args.A.Promisc != nil {
+			conf.Promisc = *conf.Args.A.Promisc
+		}
+
+		if conf.Args.A.Mtu != nil {
+			conf.Mtu = *conf.Args.A.Mtu
+		}
+
 	}
 
 	return &conf, nil
@@ -83,15 +125,7 @@ func changeMacAddr(ifName string, newMacAddr string) error {
 		return fmt.Errorf("failed to get %q: %v", ifName, err)
 	}
 
-	err = netlink.LinkSetDown(link)
-	if err != nil {
-		return fmt.Errorf("failed to set %q down: %v", ifName, err)
-	}
-	err = netlink.LinkSetHardwareAddr(link, addr)
-	if err != nil {
-		return fmt.Errorf("failed to set %q address to %q: %v", ifName, newMacAddr, err)
-	}
-	return netlink.LinkSetUp(link)
+	return netlink.LinkSetHardwareAddr(link, addr)
 }
 
 func updateResultsMacAddr(config TuningConf, ifName string, newMacAddr string) {
@@ -230,7 +264,7 @@ func cmdCheck(args *skel.CmdArgs) error {
 
 	err = ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
 		// Check each configured value vs what's currently in the container
-		for key, conf_value := range tuningConf.SysCtl {
+		for key, confValue := range tuningConf.SysCtl {
 			fileName := filepath.Join("/proc/sys", strings.Replace(key, ".", "/", -1))
 			fileName = filepath.Clean(fileName)
 
@@ -238,9 +272,9 @@ func cmdCheck(args *skel.CmdArgs) error {
 			if err != nil {
 				return err
 			}
-			cur_value := strings.TrimSuffix(string(contents), "\n")
-			if conf_value != cur_value {
-				return fmt.Errorf("Error: Tuning configured value of %s is %s, current value is %s", fileName, conf_value, cur_value)
+			curValue := strings.TrimSuffix(string(contents), "\n")
+			if confValue != curValue {
+				return fmt.Errorf("Error: Tuning configured value of %s is %s, current value is %s", fileName, confValue, curValue)
 			}
 		}
 

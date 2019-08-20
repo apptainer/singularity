@@ -34,12 +34,12 @@ func WriteTempFile(dir, pattern, content string) (string, error) {
 	return tmpfile.Name(), nil
 }
 
-// MakeCacheDir creates a temporary image cache directory that can then be
+// MakeTempDir creates a temporary image cache directory that can then be
 // used for the execution of a e2e test.
 //
 // This function shall not set the environment variable to specify the
 // image cache location since it would create thread safety problems.
-func makeTempDir(t *testing.T, baseDir string, prefix string, context string) (string, func(t *testing.T)) {
+func MakeTempDir(t *testing.T, baseDir string, prefix string, context string) (string, func(t *testing.T)) {
 	dir, err := fs.MakeTmpDir(baseDir, prefix, 0755)
 	err = errors.Wrapf(err, "creating temporary %s at %s", context, baseDir)
 	if err != nil {
@@ -60,7 +60,7 @@ func makeTempDir(t *testing.T, baseDir string, prefix string, context string) (s
 // This function shall not set the environment variable to specify the
 // image cache location since it would create thread safety problems.
 func MakeCacheDir(t *testing.T, baseDir string) (string, func(t *testing.T)) {
-	return makeTempDir(t, baseDir, "e2e-imgcache-", "image cache directory")
+	return MakeTempDir(t, baseDir, "e2e-imgcache-", "image cache directory")
 }
 
 // MakeSyPGPDir creates a temporary directory that will be used to store the PGP
@@ -69,11 +69,11 @@ func MakeCacheDir(t *testing.T, baseDir string) (string, func(t *testing.T)) {
 // This function shall not set the environment variable to specify the
 // SYPGP directory since it would create thread safety problems.
 func MakeSyPGPDir(t *testing.T, baseDir string) (string, func(t *testing.T)) {
-	return makeTempDir(t, baseDir, "e2e-sypgp-", "SyPGP directory")
+	return MakeTempDir(t, baseDir, "e2e-sypgp-", "SyPGP directory")
 }
 
-// FileExists return true if the file identified by the path exists, false otherwise.
-func FileExists(t *testing.T, path string) bool {
+// PathExists return true if the path (file or directory) exists, false otherwise.
+func PathExists(t *testing.T, path string) bool {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false
 	} else if err != nil {
@@ -81,4 +81,10 @@ func FileExists(t *testing.T, path string) bool {
 	}
 
 	return true
+}
+
+// FileExists return true if the file identified by the path exists, false otherwise.
+func FileExists(t *testing.T, path string) bool {
+	// todo: we should check if it is a file
+	return PathExists(t, path)
 }

@@ -19,27 +19,25 @@ import (
 
 	"github.com/sylabs/singularity/e2e/security"
 
-	singularitykey "github.com/sylabs/singularity/e2e/key"
-
-	singularityinspect "github.com/sylabs/singularity/e2e/inspect"
-
-	singularityverify "github.com/sylabs/singularity/e2e/verify"
-
 	"github.com/sylabs/singularity/e2e/actions"
 
-	singularitycache "github.com/sylabs/singularity/e2e/cache"
+	"github.com/sylabs/singularity/e2e/cache"
 
 	"github.com/sylabs/singularity/e2e/cmdenvvars"
 
 	"github.com/sylabs/singularity/e2e/docker"
 
-	singularityenv "github.com/sylabs/singularity/e2e/env"
-
 	"github.com/sylabs/singularity/e2e/help"
 
 	"github.com/sylabs/singularity/e2e/imgbuild"
 
+	"github.com/sylabs/singularity/e2e/inspect"
+
 	"github.com/sylabs/singularity/e2e/instance"
+
+	"github.com/sylabs/singularity/e2e/internal/e2e"
+
+	"github.com/sylabs/singularity/e2e/key"
 
 	"github.com/sylabs/singularity/e2e/oci"
 
@@ -47,13 +45,19 @@ import (
 
 	"github.com/sylabs/singularity/e2e/push"
 
+	"github.com/sylabs/singularity/e2e/regressions"
+
 	"github.com/sylabs/singularity/e2e/remote"
+
+	"github.com/sylabs/singularity/e2e/sign"
+
+	"github.com/sylabs/singularity/e2e/verify"
 
 	"github.com/sylabs/singularity/e2e/version"
 
-	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
-
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+
+	singularityenv "github.com/sylabs/singularity/e2e/env"
 
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
@@ -65,7 +69,7 @@ var runDisabled = flag.Bool("run_disabled", false, "run tests that have been tem
 func Run(t *testing.T) {
 	flag.Parse()
 
-	var testenv singularitye2e.TestEnv
+	var testenv e2e.TestEnv
 
 	if *runDisabled {
 		testenv.RunDisabled = true
@@ -89,7 +93,7 @@ func Run(t *testing.T) {
 	// don't use environment of user executing tests in order to not
 	// wrongly interfering with cache stuff, sylabs library tokens,
 	// PGP keys
-	singularitye2e.SetupHomeDirectories(t)
+	e2e.SetupHomeDirectories(t)
 
 	// Ensure config files are installed
 	configFiles := []string{
@@ -114,7 +118,7 @@ func Run(t *testing.T) {
 	if err != nil {
 		log.Fatalf("failed to create temporary directory: %v", err)
 	}
-	defer singularitye2e.Privileged(func(t *testing.T) {
+	defer e2e.Privileged(func(t *testing.T) {
 		os.RemoveAll(name)
 	})(t)
 
@@ -142,28 +146,29 @@ func Run(t *testing.T) {
 	//
 	// e2e.KillRegistry is called here to ensure that the registry
 	// is stopped after tests run.
-	defer singularitye2e.KillRegistry(t, testenv)
+	defer e2e.KillRegistry(t, testenv)
 
 	// RunE2ETests by functionality
-
 	suites := map[string]func(*testing.T){
-		"SECURITY":   security.RunE2ETests(testenv),
-		"KEY":        singularitykey.RunE2ETests(testenv),
-		"ACTIONS":    actions.RunE2ETests(testenv),
-		"BUILD":      imgbuild.RunE2ETests(testenv),
-		"CMDENVVARS": cmdenvvars.RunE2ETests(testenv),
-		"DOCKER":     docker.RunE2ETests(testenv),
-		"ENV":        singularityenv.RunE2ETests(testenv),
-		"HELP":       help.RunE2ETests(testenv),
-		"INSPECT":    singularityinspect.RunE2ETests(testenv),
-		"INSTANCE":   instance.RunE2ETests(testenv),
-		"OCI":        oci.RunE2ETests(testenv),
-		"PULL":       pull.RunE2ETests(testenv),
-		"PUSH":       push.RunE2ETests(testenv),
-		"REMOTE":     remote.RunE2ETests(testenv),
-		"VERIFY":     singularityverify.RunE2ETests(testenv),
-		"VERSION":    version.RunE2ETests(testenv),
-		"CACHE":      singularitycache.RunE2ETests(testenv),
+		"SECURITY":    security.RunE2ETests(testenv),
+		"ACTIONS":     actions.RunE2ETests(testenv),
+		"BUILD":       imgbuild.RunE2ETests(testenv),
+		"CACHE":       cache.RunE2ETests(testenv),
+		"CMDENVVARS":  cmdenvvars.RunE2ETests(testenv),
+		"DOCKER":      docker.RunE2ETests(testenv),
+		"ENV":         singularityenv.RunE2ETests(testenv),
+		"HELP":        help.RunE2ETests(testenv),
+		"INSPECT":     inspect.RunE2ETests(testenv),
+		"INSTANCE":    instance.RunE2ETests(testenv),
+		"KEY":         key.RunE2ETests(testenv),
+		"OCI":         oci.RunE2ETests(testenv),
+		"PULL":        pull.RunE2ETests(testenv),
+		"PUSH":        push.RunE2ETests(testenv),
+		"REMOTE":      remote.RunE2ETests(testenv),
+		"SIGN":        sign.RunE2ETests(testenv),
+		"VERIFY":      verify.RunE2ETests(testenv),
+		"VERSION":     version.RunE2ETests(testenv),
+		"REGRESSIONS": regressions.RunE2ETests(testenv),
 	}
 
 	for name, fn := range suites {

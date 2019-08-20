@@ -206,20 +206,30 @@ func getEncryptionKeyFromImage(fn string) ([]byte, error) {
 		return nil, errors.Wrapf(err, "retrieving primary system partition from %s", fn)
 	}
 
-	descr, _, err := img.GetFromLinkedDescr(primDescr.ID)
+	descr, _, err := img.GetLinkedDescrsByType(primDescr.ID, sif.DataCryptoMessage)
 	if err != nil {
 		return nil, errors.Wrapf(err, "retrieving linked descriptors for primary system partition from %s", fn)
 	}
 
 	for _, d := range descr {
-		if d.Datatype != sif.DataGeneric {
+		format, err := d.GetFormatType()
+		if err != nil {
+			return nil, errors.Wrapf(err, "while retrieving cryptographic message format")
+		}
+
+		message, err := d.GetMessageType()
+		if err != nil {
+			return nil, errors.Wrapf(err, "while retrieving cryptographic message type")
+		}
+
+		// currently only support one type of message
+		if format != sif.FormatPEM || message != sif.MessageRSAOAEP {
 			continue
 		}
 
-		// TODO(mem): add a specific data type for encrypted
-		// keys. For now, assume the first generic descriptor
-		// linking to the primary system partition contains the
-		// key
+		// TODO(ian): For now, assume the first linked message is what we
+		// are looking for. We should consider what we want to do in the
+		// case of multiple linked messages
 		data := d.GetData(&img)
 		if data == nil {
 			return nil, errors.Wrapf(ErrNoEncryptedKeyData, "retrieving encrypted key data from %s", fn)
