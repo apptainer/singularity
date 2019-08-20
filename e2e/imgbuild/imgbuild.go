@@ -741,7 +741,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 		e2e.ConsoleSendLine(passphrase),
 	}
 	imgPath1 := filepath.Join(c.env.TestDir, "encrypted_cmdline_option.sif")
-	cmdArgs := []string{"--passphrase", imgPath1, "library://alpine:latest"}
+	cmdArgs := []string{"-e", "--passphrase", imgPath1, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("build"),
@@ -753,7 +753,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	// Second with the environment variable
 	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PASSPHRASE", passphrase)
 	imgPath2 := filepath.Join(c.env.TestDir, "encrypted_env_var.sif")
-	cmdArgs = []string{imgPath2, "library://alpine:latest"}
+	cmdArgs = []string{"-e", imgPath2, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("build"),
