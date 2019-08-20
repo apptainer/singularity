@@ -24,6 +24,10 @@ type imgBuildTests struct {
 	env e2e.TestEnv
 }
 
+const (
+	passphrase = "e2e-passphrase"
+)
+
 func (c *imgBuildTests) buildFrom(t *testing.T) {
 	e2e.PrepRegistry(t, c.env)
 
@@ -731,6 +735,34 @@ func (c *imgBuildTests) buildDefinition(t *testing.T) {
 	}
 }
 
+func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
+	// First with the command line argument
+	passphraseInput := []e2e.SingularityConsoleOp{
+		e2e.ConsoleSendLine(passphrase),
+	}
+	imgPath1 := filepath.Join(c.env.TestDir, "encrypted_cmdline_option.sif")
+	cmdArgs := []string{"--passphrase", imgPath1, "library://alpine:latest"}
+	c.env.RunSingularity(
+		t,
+		e2e.WithCommand("build"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.ConsoleRun(passphraseInput...),
+		e2e.ExpectExit(0),
+	)
+
+	// Second with the environment variable
+	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PASSPHRASE", passphrase)
+	imgPath2 := filepath.Join(c.env.TestDir, "encrypted_env_var.sif")
+	cmdArgs = []string{imgPath2, "library://alpine:latest"}
+	c.env.RunSingularity(
+		t,
+		e2e.WithCommand("build"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
+		e2e.ExpectExit(0),
+	)
+}
+
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &imgBuildTests{
@@ -750,5 +782,7 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 		t.Run("Definition", c.buildDefinition)
 		// multistage build from definition templates
 		t.Run("MultiStage", c.buildMultiStageDefinition)
+		// build encrypted images
+		t.Run("buildEncryptPassphrase", c.buildEncryptPassphrase)
 	}
 }
