@@ -116,6 +116,11 @@ func run(cmd *cobra.Command, args []string) {
 	}
 
 	if remote {
+		// building encrypted containers on the remote builder is not currently supported
+		if encrypt {
+			sylog.Fatalf("Building encrypted container with the remote builder is not currently supported.")
+		}
+
 		handleRemoteBuildFlags(cmd)
 
 		// Submiting a remote build requires a valid authToken
@@ -186,6 +191,17 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	} else {
+		// ensure passphrase or key was supplied with encrypt option
+		if encrypt && !cmd.Flags().Lookup("encryption-key").Changed {
+			sylog.Fatalf("Unable to encrypt container, no passphrase or key path specified.")
+		}
+
+		// ensure we do not build an encrypted container if encrypt option is not specified
+		if !encrypt && cmd.Flags().Lookup("encryption-key").Changed {
+			sylog.Warningf("Encryption key environment variable found, but -e was not specified. NOT encrypting container.")
+			encryptionKey = ""
+		}
+
 		imgCache := getCacheHandle(cache.Config{})
 		if imgCache == nil {
 			sylog.Fatalf("failed to create an image cache handle")
