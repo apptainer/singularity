@@ -735,6 +735,20 @@ func (c *imgBuildTests) buildDefinition(t *testing.T) {
 	}
 }
 
+func (c *imgBuildTests) ensureImageIsEncrypted(t *testing.T, imgPath string) {
+	sifID := "3" // Which SIF descriptor slots contains encryption information
+	cmdArgs := []string{"list", sifID, imgPath}
+	c.env.RunSingularity(
+		t,
+		e2e.WithCommand("sif"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.RegexMatch, "^something something"),
+		),
+	)
+}
+
 func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	// First with the command line argument
 	passphraseInput := []e2e.SingularityConsoleOp{
@@ -749,6 +763,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 		e2e.ConsoleRun(passphraseInput...),
 		e2e.ExpectExit(0),
 	)
+	c.ensureImageIsEncrypted(t, imgPath1)
 
 	// Second with the environment variable
 	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PASSPHRASE", passphrase)
@@ -761,6 +776,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
 		e2e.ExpectExit(0),
 	)
+	c.ensureImageIsEncrypted(t, imgPath2)
 }
 
 // RunE2ETests is the main func to trigger the test suite
