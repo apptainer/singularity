@@ -49,7 +49,7 @@ func (l *Library) Pull(ctx context.Context, from, to string) error {
 	// check if image exists in library
 	imageMeta, err := l.client.GetImage(ctx, l.arch, libraryPath)
 	if err == scs.ErrNotFound {
-		return fmt.Errorf("image %s does not exist in the library", libraryPath)
+		return fmt.Errorf("image %s (%s) does not exist in the library", libraryPath, l.arch)
 	}
 	if err != nil {
 		return fmt.Errorf("could not get image info: %v", err)
