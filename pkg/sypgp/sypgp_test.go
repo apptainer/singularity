@@ -515,13 +515,6 @@ func TestPrintEntities(t *testing.T) {
 	}
 }
 
-const (
-	dummyPassPhrase  = "fakepassphrase"
-	validKeyGenInput = "A tester\ntest@my.info\n\n" + dummyPassPhrase + "\n" + dummyPassPhrase + "\nn\n"
-	myToken          = "MyToken"
-	myURI            = "MyURI"
-)
-
 func TestGenKeyPair(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -529,18 +522,13 @@ func TestGenKeyPair(t *testing.T) {
 	// Prepare all the answers that GenKeyPair() is expecting.
 	tests := []struct {
 		name      string
-		input     string
+		options   GenKeyPairOptions
 		shallPass bool
 	}{
 		{
 			name:      "valid case",
-			input:     validKeyGenInput,
+			options:   GenKeyPairOptions{Name: "teste", Email: "test@my.info", Comment: "", Password: ""},
 			shallPass: true,
-		},
-		{
-			name:      "passphrases not matching",
-			input:     "Another tester\ntest2@my.info\n\nfakepassphrase\nfakepassphrase2\nfakepassphrase\nfakepassphrase2\nfakepassphrase\nfakepassphrase2\nn\n",
-			shallPass: false,
 		},
 	}
 
@@ -555,32 +543,7 @@ func TestGenKeyPair(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup the input file that will act as stdin
-			tempFile, err := ioutil.TempFile("", "inputFile-")
-			if err != nil {
-				t.Fatal("failed to create temporary file:", err)
-			}
-			defer tempFile.Close()
-			defer os.Remove(tempFile.Name())
-
-			_, err = tempFile.Write([]byte(tt.input))
-			if err != nil {
-				t.Fatalf("failed to write to %s: %s", tempFile.Name(), err)
-			}
-
-			// reposition to the beginning of the file to have something to read
-			_, err = tempFile.Seek(0, 0)
-			if err != nil {
-				t.Fatalf("failed to reposition to beginning of file %s: %s", tempFile.Name(), err)
-			}
-
-			// Redirect stdin
-			savedStdin := os.Stdin
-			defer func() {
-				os.Stdin = savedStdin
-			}()
-			os.Stdin = tempFile
-
-			_, err = keyring.GenKeyPair(myURI, myToken)
+			_, err = keyring.GenKeyPair(tt.options)
 			if tt.shallPass && err != nil {
 				t.Fatalf("valid case %s failed: %s", tt.name, err)
 			}
