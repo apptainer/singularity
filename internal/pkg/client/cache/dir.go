@@ -131,8 +131,7 @@ func NewHandle(cfg Config) (*Handle, error) {
 		baseDir = getCacheBasedir()
 	}
 	// We check if we can write to the basedir, if not we disable the caching mechanism
-	writable, _ := fs.IsWritable(baseDir)
-	if !writable {
+	if !fs.IsWritable(baseDir) {
 		newCache.disabled = true
 		return newCache, nil
 	}

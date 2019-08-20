@@ -336,10 +336,26 @@ func TestMakeTempFile(t *testing.T) {
 }
 
 func TestIsWritable(t *testing.T) {
+	test.EnsurePrivilege(t)
+
+	// Directories owned by root, we will check later if the unprivileged user can access it.
+	validRoot755Dir, err := MakeTmpDir("", "", 0755)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s: %s", validRoot755Dir, err)
+	}
+	defer os.RemoveAll(validRoot755Dir)
+
+	validRoot777Dir, err := MakeTmpDir("", "", 0777)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s: %s", validRoot777Dir, err)
+	}
+	defer os.RemoveAll(validRoot777Dir)
+
+	// Fall back under the unprivileged user.
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	// We make a temporary directory where all the different cases will be tested
+	// We make a temporary directory where all the different cases will be tested.
 	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
@@ -372,52 +388,51 @@ func TestIsWritable(t *testing.T) {
 	tests := []struct {
 		name           string
 		path           string
-		shallPass      bool
 		expectedResult bool
 	}{
 		{
 			name:           "empty path",
 			path:           "",
-			shallPass:      false,
 			expectedResult: false,
 		},
 		{
 			name:           "writable path",
 			path:           validWritablePath,
-			shallPass:      true,
 			expectedResult: true,
 		},
 		{
 			name:           "700 directory",
 			path:           valid700Dir,
-			shallPass:      true,
 			expectedResult: true,
 		},
 		{
 			name:           "555 directory",
 			path:           valid555Dir,
-			shallPass:      true,
 			expectedResult: false,
+		},
+		{
+			name:           "root-owned 755 directory",
+			path:           validRoot755Dir,
+			expectedResult: false,
+		},
+		{
+			name:           "root-owned 777 directory",
+			path:           validRoot777Dir,
+			expectedResult: true,
 		},
 		{
 			name:           "not writable path",
 			path:           validNotWritablePath,
-			shallPass:      true,
 			expectedResult: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			writable, err := IsWritable(tt.path)
-			if tt.shallPass && err != nil {
-				t.Fatalf("test %s expected to succeed but failed: %s", tt.name, err)
-			}
-			if !tt.shallPass && err == nil {
-				t.Fatalf("test %s expected to fail but succeeded", tt.name)
-			}
+			test.DropPrivilege(t)
+			writable := IsWritable(tt.path)
 			if tt.expectedResult != writable {
-				t.Fatalf("test %s returned %v instead of %v", tt.name, writable, tt.expectedResult)
+				t.Fatalf("test %s returned %v instead of %v (%s)", tt.name, writable, tt.expectedResult, tt.path)
 			}
 		})
 	}

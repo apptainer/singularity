@@ -40,8 +40,7 @@ func (c *Handle) checkIfCacheDisabled(t *testing.T) {
 	// Before running the test we make sure that the test environment
 	// did not implicitly disable the cache.
 	if c.IsDisabled() {
-		writable, _ := fs.IsWritable(c.GetBasedir())
-		if !writable {
+		if !fs.IsWritable(c.GetBasedir()) {
 			t.Skip("cache's base directory is not writable; cache is disabled")
 		}
 		t.Skip("cache disabled")
