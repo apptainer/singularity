@@ -43,7 +43,7 @@ func run(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("Unable to build from %s: %v", spec, err)
 	}
 
-	b, err := remotebuilder.New(dest, libraryURL, def, detached, force, builderURL, authToken)
+	b, err := remotebuilder.New(dest, libraryURL, def, detached, force, builderURL, authToken, buildArch)
 	if err != nil {
 		sylog.Fatalf("Failed to create builder: %v", err)
 	}

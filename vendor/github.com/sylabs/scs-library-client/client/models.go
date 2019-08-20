@@ -118,18 +118,22 @@ func (c Collection) LibraryURI() string {
 // a particular container
 type Container struct {
 	BaseModel
-	ID              string            `json:"id"`
-	Name            string            `json:"name"`
-	Description     string            `json:"description"`
-	FullDescription string            `json:"fullDescription"`
-	Collection      string            `json:"collection"`
-	Images          []string          `json:"images"`
-	ImageTags       map[string]string `json:"imageTags"`
-	Size            int64             `json:"size"`
-	DownloadCount   int64             `json:"downloadCount"`
-	Stars           int               `json:"stars"`
-	Private         bool              `json:"private"`
-	ReadOnly        bool              `json:"readOnly"`
+	ID              string   `json:"id"`
+	Name            string   `json:"name"`
+	Description     string   `json:"description"`
+	FullDescription string   `json:"fullDescription"`
+	Collection      string   `json:"collection"`
+	Images          []string `json:"images"`
+	// This base TagMap without architecture support is for old clients only
+	// (Singularity <=3.3) to preserve non-architecture-aware behavior
+	ImageTags TagMap `json:"imageTags"`
+	// We now have a 2 level map for new clients, keeping tags per architecture
+	ArchTags      ArchTagMap `json:"archTags"`
+	Size          int64      `json:"size"`
+	DownloadCount int64      `json:"downloadCount"`
+	Stars         int        `json:"stars"`
+	Private       bool       `json:"private"`
+	ReadOnly      bool       `json:"readOnly"`
 	// CustomData can hold a user-provided string for integration purposes
 	// not used by the library itself.
 	CustomData string `json:"customData"`
@@ -217,5 +221,22 @@ type ImageTag struct {
 	ImageID string
 }
 
-// TagMap - A map of tags to imageIDs for a container
+// TagMap is a mapping of a string tag, to an ObjectID that refers to an Image
+// e.g. { "latest": 507f1f77bcf86cd799439011 }
 type TagMap map[string]string
+
+// ArchImageTag - A simple mapping from a architecture and tag string to bson
+// ID. Not stored in the DB but used by API calls setting tags
+type ArchImageTag struct {
+	Arch    string
+	Tag     string
+	ImageID string
+}
+
+// ArchTagMap is a mapping of a string architecture to a TagMap, and hence to
+// Images.
+// e.g. {
+//			"amd64":    { "latest": 507f1f77bcf86cd799439011 },
+//			"ppc64le":  { "latest": 507f1f77bcf86cd799439012 },
+//		}
+type ArchTagMap map[string]TagMap
