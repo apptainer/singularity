@@ -69,7 +69,13 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 		imageName := uri.GetName("library://" + imageRef)
 		imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
 		exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName)
-		if err != nil {
+		if err == cache.ErrBadChecksum {
+			sylog.Warningf("Removing cached image: %s: cache could be corrupted", imagePath)
+			err := os.Remove(imagePath)
+			if err != nil {
+				return fmt.Errorf("unable to remove corrupted image from cache: %s", err)
+			}
+		} else if err != nil {
 			return fmt.Errorf("unable to check if %s exists: %v", imagePath, err)
 		}
 		if !exists {
