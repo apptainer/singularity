@@ -59,10 +59,10 @@ type Handle struct {
 
 // GenKeyPairOptions parameters needed for generating new key pair.
 type GenKeyPairOptions struct {
-	Name     *string
-	Email    *string
-	Comment  *string
-	Password *string
+	Name     string
+	Email    string
+	Comment  string
+	Password string
 }
 
 // mrKeyList contains all the key info, used for decoding
@@ -456,14 +456,14 @@ func (keyring *Handle) RemovePubKey(toDelete string) error {
 func (keyring *Handle) genKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
-	entity, err := openpgp.NewEntity(*opts.Name, *opts.Comment, *opts.Email, conf)
+	entity, err := openpgp.NewEntity(opts.Name, opts.Comment, opts.Email, conf)
 	if err != nil {
 		return nil, err
 	}
 
-	if opts.Password != nil && *opts.Password != "" {
+	if opts.Password != "" {
 		// Encrypt private key
-		if err = EncryptKey(entity, *opts.Password); err != nil {
+		if err = EncryptKey(entity, opts.Password); err != nil {
 			return nil, err
 		}
 	}
@@ -481,82 +481,14 @@ func (keyring *Handle) genKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, erro
 }
 
 // GenKeyPair generates an PGP key pair and store them in the sypgp home folder
-func (keyring *Handle) GenKeyPair(keyServiceURI string, authToken string, opts GenKeyPairOptions) (*openpgp.Entity, error) {
+func (keyring *Handle) GenKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, error) {
 	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
 	}
 
-	if opts.Name == nil {
-		n, err := interactive.AskQuestion("Enter your name (e.g., John Doe) : ")
-		if err != nil {
-			return nil, err
-		}
-
-		opts.Name = &n
-	}
-
-	if opts.Email == nil {
-		e, err := interactive.AskQuestion("Enter your email address (e.g., john.doe@example.com) : ")
-		if err != nil {
-			return nil, err
-		}
-		opts.Email = &e
-	}
-
-	if opts.Comment == nil {
-		c, err := interactive.AskQuestion("Enter optional comment (e.g., development keys) : ")
-		if err != nil {
-			return nil, err
-		}
-		opts.Comment = &c
-	}
-
-	if opts.Password == nil {
-		// get a password
-		p, err := interactive.GetPassphrase("Enter a passphrase : ", 3)
-		if err != nil {
-			return nil, err
-		}
-		if p == "" {
-			a, err := interactive.AskYNQuestion("n", "WARNING: if there is no password set, your key is not secure. Do you want to continue? [y/n] ")
-			if err != nil {
-				return nil, err
-			}
-
-			if a == "n" {
-				return nil, errors.New("empty passphrase")
-			}
-
-		}
-
-		opts.Password = &p
-	}
-
-	fmt.Printf("Generating Entity and OpenPGP Key Pair... ")
-
 	entity, err := keyring.genKeyPair(opts)
 	if err != nil {
 		return nil, err
-	}
-
-	fmt.Printf("done\n")
-
-	// Ask to push the new key to the keystore
-	ans, err := interactive.AskYNQuestion("y", "Would you like to push it to the keystore? [Y,n] ")
-	switch {
-	case err != nil:
-		fmt.Fprintf(os.Stderr, "Not pushing newly created key to keystore: %s\n", err)
-
-	case ans == "y":
-		err = PushPubkey(entity, keyServiceURI, authToken)
-		if err != nil {
-			fmt.Printf("Failed to push newly created key to keystore: %s\n", err)
-		} else {
-			fmt.Printf("Key successfully pushed to: %s\n", keyServiceURI)
-		}
-
-	default:
-		fmt.Printf("NOT pushing newly created key to: %s\n", keyServiceURI)
 	}
 
 	return entity, nil
