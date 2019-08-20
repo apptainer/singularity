@@ -472,7 +472,7 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 
 	return func(t *testing.T) {
 		c.setup(t)
-		//		t.Run("pull", c.testPullCmd)
+		t.Run("pull", c.testPullCmd)
 		t.Run("pullDisableCache", c.testPullDisableCacheCmd)
 	}
 }
