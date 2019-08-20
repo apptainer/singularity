@@ -127,7 +127,7 @@ jobs:
             # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
             sudo killall -9 apt-get || true && \
             sudo apt-get update -y && \
-            sudo apt-get install -f -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
+            sudo apt-get install -f -y build-essential debootstrap libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
       - run:
           name: Build and Install Singularity
           command: |-
@@ -182,7 +182,7 @@ jobs:
             # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
             sudo killall -9 apt-get || true && \
             sudo apt-get update -y && \
-            sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev cryptsetup
+            sudo apt-get install -y build-essential debootstrap libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev cryptsetup
       - run:
           name: Build and Install singularity
           command: |-
