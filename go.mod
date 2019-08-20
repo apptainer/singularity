@@ -62,7 +62,7 @@ require (
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/opencontainers/runtime-spec v0.1.2-0.20181111125026-1722abf79c2f
 	github.com/opencontainers/runtime-tools v0.9.0
-	github.com/opencontainers/selinux v1.0.0-rc1
+	github.com/opencontainers/selinux v1.3.0
 	github.com/pelletier/go-toml v1.4.0
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2 // indirect
 	github.com/pkg/errors v0.8.1
@@ -81,7 +81,7 @@ require (
 	github.com/sylabs/json-resp v0.5.0
 	github.com/sylabs/scs-build-client v0.0.4
 	github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
-	github.com/sylabs/scs-library-client v0.3.0
+	github.com/sylabs/scs-library-client v0.4.1
 	github.com/sylabs/sif v1.0.8
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
 	github.com/urfave/cli v1.21.0 // indirect

@@ -13,6 +13,7 @@ import (
 
 	"github.com/deislabs/oras/pkg/context"
 	"github.com/sylabs/scs-library-client/client"
+	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/signing"
 	pb "gopkg.in/cheggaaa/pb.v1"
@@ -60,6 +61,11 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 		return fmt.Errorf("unable to open: %v: %v", file, err)
 	}
 
+	arch, err := sifArch(file)
+	if err != nil {
+		return err
+	}
+
 	if !unauthenticated {
 		// check if the container is signed
 		imageSigned, err := signing.IsSigned(file, keyServerURL, 0, false, authToken)
@@ -97,5 +103,17 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 	}
 	defer f.Close()
 
-	return libraryClient.UploadImage(context.Background(), f, r.Host+r.Path, r.Tags, "No Description", &progressCallback{})
+	return libraryClient.UploadImage(context.Background(), f, r.Host+r.Path, arch, r.Tags, "No Description", &progressCallback{})
+}
+
+func sifArch(filename string) (string, error) {
+	fimg, err := sif.LoadContainer(filename, true)
+	if err != nil {
+		return "", fmt.Errorf("unable to open: %v: %v", filename, err)
+	}
+	arch := sif.GetGoArch(string(fimg.Header.Arch[:sif.HdrArchLen-1]))
+	if arch == "unknown" {
+		return arch, fmt.Errorf("unknown architecture in SIF file")
+	}
+	return arch, nil
 }

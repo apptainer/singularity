@@ -148,8 +148,10 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	}
 
 	// Decrypt key if needed
-	if err = sypgp.DecryptKey(entity, ""); err != nil {
-		return fmt.Errorf("could not decrypt private key, wrong password?")
+	if entity.PrivateKey.Encrypted {
+		if err = sypgp.DecryptKey(entity, ""); err != nil {
+			return fmt.Errorf("could not decrypt private key, wrong password?")
+		}
 	}
 
 	// load the container

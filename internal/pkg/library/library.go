@@ -30,7 +30,7 @@ func NormalizeLibraryRef(libraryRef string) string {
 }
 
 // DownloadImage is a helper function to wrap library image download operation
-func DownloadImage(ctx context.Context, c *client.Client, imagePath, libraryRef string, callback progressCallback) error {
+func DownloadImage(ctx context.Context, c *client.Client, imagePath, arch, libraryRef string, callback progressCallback) error {
 	// reassemble "stripped" library ref for scs-library-client
 	validLibraryRef := "library:///" + libraryRef
 
@@ -53,7 +53,7 @@ func DownloadImage(ctx context.Context, c *client.Client, imagePath, libraryRef 
 	}
 
 	// call library client to download image
-	err = c.DownloadImage(ctx, f, r.Path, tag, callback)
+	err = c.DownloadImage(ctx, f, arch, r.Path, tag, callback)
 	if err != nil {
 		// delete incomplete image file in the event of failure
 		os.Remove(imagePath)
@@ -66,8 +66,8 @@ func DownloadImage(ctx context.Context, c *client.Client, imagePath, libraryRef 
 
 // DownloadImageNoProgress downloads an image from the library without
 // displaying a progress bar while doing so
-func DownloadImageNoProgress(ctx context.Context, c *client.Client, imagePath, libraryRef string) error {
-	return DownloadImage(ctx, c, imagePath, libraryRef, nil)
+func DownloadImageNoProgress(ctx context.Context, c *client.Client, imagePath, arch, libraryRef string) error {
+	return DownloadImage(ctx, c, imagePath, arch, libraryRef, nil)
 }
 
 // SearchLibrary searches the library and outputs results to stdout
