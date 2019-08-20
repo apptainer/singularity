@@ -131,6 +131,8 @@ github.com/cyphar/filepath-securejoin
 github.com/d2g/dhcp4
 # github.com/d2g/dhcp4client v1.0.0
 github.com/d2g/dhcp4client
+# github.com/davecgh/go-spew v1.1.1
+github.com/davecgh/go-spew/spew
 # github.com/deislabs/oras v0.4.0
 github.com/deislabs/oras/pkg/content
 github.com/deislabs/oras/pkg/context
@@ -289,6 +291,8 @@ github.com/opencontainers/selinux/go-selinux/label
 github.com/pelletier/go-toml
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
 # github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13
 github.com/pquerna/ffjson/fflib/v1
 github.com/pquerna/ffjson/fflib/v1/internal
@@ -323,6 +327,9 @@ github.com/spf13/cobra
 github.com/spf13/cobra/doc
 # github.com/spf13/pflag v1.0.3
 github.com/spf13/pflag
+# github.com/stretchr/testify v1.3.0
+github.com/stretchr/testify/require
+github.com/stretchr/testify/assert
 # github.com/sylabs/json-resp v0.5.0
 github.com/sylabs/json-resp
 # github.com/sylabs/scs-build-client v0.0.4
