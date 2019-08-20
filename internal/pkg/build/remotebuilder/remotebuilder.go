@@ -47,7 +47,7 @@ type RemoteBuilder struct {
 }
 
 // New creates a RemoteBuilder with the specified details.
-func New(imagePath, libraryURL string, d types.Definition, isDetached, force bool, builderAddr, authToken string) (rb *RemoteBuilder, err error) {
+func New(imagePath, libraryURL string, d types.Definition, isDetached, force bool, builderAddr, authToken, buildArch string) (rb *RemoteBuilder, err error) {
 	bc, err := buildclient.New(&buildclient.Config{
 		BaseURL:   builderAddr,
 		AuthToken: authToken,
@@ -68,8 +68,10 @@ func New(imagePath, libraryURL string, d types.Definition, isDetached, force boo
 		Definition:  d,
 		IsDetached:  isDetached,
 		AuthToken:   authToken,
-		// TODO - set CPU architecture, RAM requirements, singularity version, etc.
-		//BuilderRequirements: map[string]string{},
+		// TODO - set RAM requirements, singularity version, etc.
+		BuilderRequirements: map[string]string{
+			"arch": buildArch,
+		},
 	}, nil
 }
 
@@ -147,7 +149,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 
 		imageRef := library.NormalizeLibraryRef(bi.LibraryRef)
 
-		if err = library.DownloadImageNoProgress(ctx, c, rb.ImagePath, imageRef); err != nil {
+		if err = library.DownloadImageNoProgress(ctx, c, rb.ImagePath, rb.BuilderRequirements["arch"], imageRef); err != nil {
 			return errors.Wrap(err, "failed to pull image file")
 		}
 	}

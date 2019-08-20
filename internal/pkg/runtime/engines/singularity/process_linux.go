@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/sylabs/singularity/internal/pkg/security"
@@ -521,7 +522,17 @@ func (e *EngineOperations) PostStartProcess(pid int) error {
 			return err
 		}
 
-		return file.Update()
+		err = file.Update()
+
+		// send SIGUSR1 to the parent process in order to tell it
+		// to detach container process and run as instance.
+		// Sleep a bit in case child would exit
+		time.Sleep(100 * time.Millisecond)
+		if err := syscall.Kill(os.Getppid(), syscall.SIGUSR1); err != nil {
+			return err
+		}
+
+		return err
 	}
 	return nil
 }

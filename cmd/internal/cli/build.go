@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/sylabs/singularity/pkg/cmdline"
@@ -25,6 +26,7 @@ import (
 
 var (
 	remote         bool
+	buildArch      string
 	builderURL     string
 	detached       bool
 	libraryURL     string
@@ -41,6 +43,7 @@ var (
 	dockerLogin    bool
 	noCleanUp      bool
 	fakeroot       bool
+	encrypt        bool
 )
 
 // -s|--sandbox
@@ -116,6 +119,16 @@ var buildRemoteFlag = cmdline.Flag{
 	ShortHand:    "r",
 	Usage:        "build image remotely (does not require root)",
 	EnvKeys:      []string{"REMOTE"},
+}
+
+// --arch
+var buildArchFlag = cmdline.Flag{
+	ID:           "buildArchFlag",
+	Value:        &buildArch,
+	DefaultValue: runtime.GOARCH,
+	Name:         "arch",
+	Usage:        "Architecture for remote build",
+	EnvKeys:      []string{"BUILD_ARCH"},
 }
 
 // -d|--detached
@@ -200,6 +213,16 @@ var buildFakerootFlag = cmdline.Flag{
 	EnvKeys:      []string{"FAKEROOT"},
 }
 
+// -e|--encrypt
+var buildEncryptFlag = cmdline.Flag{
+	ID:           "buildEncryptFlag",
+	Value:        &encrypt,
+	DefaultValue: false,
+	Name:         "encrypt",
+	ShortHand:    "e",
+	Usage:        "build an image with an encrypted file system",
+}
+
 func init() {
 	cmdManager.RegisterCmd(BuildCmd)
 
@@ -212,12 +235,14 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildNoHTTPSFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildNoTestFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildRemoteFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildArchFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildDisableCacheFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildEncryptFlag, BuildCmd)
 
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, BuildCmd)

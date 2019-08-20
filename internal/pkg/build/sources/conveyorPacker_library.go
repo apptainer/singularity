@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/library"
@@ -62,9 +63,9 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	imageRef := library.NormalizeLibraryRef(b.Recipe.Header["from"])
 
-	libraryImage, err := libraryClient.GetImage(context.TODO(), imageRef)
+	libraryImage, err := libraryClient.GetImage(context.TODO(), runtime.GOARCH, imageRef)
 	if err == client.ErrNotFound {
-		return fmt.Errorf("image does not exist in the library: %s", imageRef)
+		return fmt.Errorf("image does not exist in the library: %s (%s)", imageRef, runtime.GOARCH)
 	}
 	if err != nil {
 		return fmt.Errorf("while getting image info: %v", err)
@@ -83,7 +84,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 
 		sylog.Infof("Downloading library image to tmp cache: %s", imagePath)
 
-		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, imageRef); err != nil {
+		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, runtime.GOARCH, imageRef); err != nil {
 			return fmt.Errorf("unable to download image: %v", err)
 		}
 	} else {
@@ -94,7 +95,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		} else if !exists {
 			sylog.Infof("Downloading library image")
 
-			if err := library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, imageRef); err != nil {
+			if err := library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, runtime.GOARCH, imageRef); err != nil {
 				return fmt.Errorf("unable to download image: %v", err)
 			}
 

@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
@@ -100,7 +101,7 @@ func cleanCache() error {
 	}
 
 	// create a handle to access the current image cache
-	imgCache := getCacheHandle()
+	imgCache := getCacheHandle(cache.Config{})
 	err := singularity.CleanSingularityCache(imgCache, !cacheCleanDry, cacheCleanTypes, cacheCleanNames)
 	if err != nil {
 		return fmt.Errorf("could not clean cache: %v", err)
