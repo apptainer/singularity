@@ -9,13 +9,15 @@ package e2e
 // from specifying which Singularity binary to use to controlling how Singularity
 // environment variables will be set.
 type TestEnv struct {
-	CmdPath       string // Path to the Singularity binary to use for the execution of a Singularity command
-	ImagePath     string // Path to the image that has to be used for the execution of a Singularity command
-	OrasTestImage string
-	TestDir       string // Path to the directory from which a Singularity command needs to be executed
-	TestRegistry  string
-	KeyringDir    string // KeyringDir sets the directory where the keyring will be created for the execution of a command (instead of using SINGULARITY_SYPGPDIR which should be avoided when running e2e tests)
-	ImgCacheDir   string // ImgCacheDir sets the location of the image cache to be used by the Singularity command to be executed (instead of using SINGULARITY_CACHE_DIR which should be avoided when running e2e tests)
-	RunDisabled   bool
-	DisableCache  bool // DisableCache can be set to disable the cache during the execution of a e2e command
+	CmdPath           string // Path to the Singularity binary to use for the execution of a Singularity command
+	ImagePath         string // Path to the image that has to be used for the execution of a Singularity command
+	OrasTestImage     string
+	TestDir           string // Path to the directory from which a Singularity command needs to be executed
+	TestRegistry      string
+	KeyringDir        string // KeyringDir sets the directory where the keyring will be created for the execution of a command (instead of using SINGULARITY_SYPGPDIR which should be avoided when running e2e tests)
+	ImgCacheDir       string // ImgCacheDir sets the location of the image cache to be used by the Singularity command to be executed (instead of using SINGULARITY_CACHE_DIR which should be avoided when running e2e tests)
+	EncryptPassphrase string // EncryptPassphrase can be used to specify the value of the SINGULARITY_ENCRYPTION_PASSPHRASE environment variable
+	EncryptPemPath    string // EncryptPemPath can be used to specify the value of the SINGULARITY_ENCRYPTION_PEM_PATH environment variable
+	RunDisabled       bool
+	DisableCache      bool // DisableCache can be set to disable the cache during the execution of a e2e command
 }
