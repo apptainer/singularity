@@ -255,12 +255,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 			BaseURL:   pullLibraryURI,
 			AuthToken: authToken,
 		}
-		lib, err := singularity.NewLibrary(libraryConfig, imgCache, pullArch, keyServerURL)
+		lib, err := singularity.NewLibrary(libraryConfig, imgCache, keyServerURL)
 		if err != nil {
 			sylog.Fatalf("Could not initialize library: %v", err)
 		}
 
-		err = lib.Pull(context.TODO(), pullFrom, pullTo)
+		err = lib.Pull(context.TODO(), pullFrom, pullTo, pullArch)
 		if err != nil && err != singularity.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
