@@ -80,7 +80,7 @@ require (
 	github.com/sylabs/json-resp v0.5.0
 	github.com/sylabs/scs-build-client v0.0.4
 	github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
-	github.com/sylabs/scs-library-client v0.3.0
+	github.com/sylabs/scs-library-client v0.4.1
 	github.com/sylabs/sif v1.0.8
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
 	github.com/urfave/cli v1.21.0 // indirect

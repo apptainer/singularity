@@ -433,6 +433,37 @@ func orasPushNoCheck(file, ref string) error {
 	return nil
 }
 
+func (c *ctx) testPullDisableCacheCmd(t *testing.T) {
+	cacheDir, err := ioutil.TempDir("", "e2e-imgcache-")
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s", err)
+	}
+	defer func() {
+		err := os.RemoveAll(cacheDir)
+		if err != nil {
+			t.Fatalf("failed to delete temporary directory %s: %s", cacheDir, err)
+		}
+	}()
+
+	c.env.ImgCacheDir = cacheDir
+	imgName := "testImg.sif"
+	imgPath := filepath.Join(c.env.TestDir, imgName)
+	cmdArgs := []string{"--disable-cache", imgPath, "library://alpine:latest"}
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithPrivileges(false),
+		e2e.WithCommand("pull"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.ExpectExit(0),
+	)
+
+	cacheEntryPath := filepath.Join(cacheDir, "cache")
+	if _, err := os.Stat(cacheEntryPath); !os.IsNotExist(err) {
+		t.Fatalf("cache created while disabled (%s exists)", cacheEntryPath)
+	}
+}
+
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
@@ -442,5 +473,6 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	return func(t *testing.T) {
 		c.setup(t)
 		t.Run("pull", c.testPullCmd)
+		t.Run("pullDisableCache", c.testPullDisableCacheCmd)
 	}
 }
