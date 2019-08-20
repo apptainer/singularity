@@ -19,13 +19,14 @@ var errNotInCache = fmt.Errorf("image was not found in cache")
 // Library is a Registry implementation for Sylabs Cloud Library.
 type Library struct {
 	keystoreURI string
+	arch        string
 
 	client *scs.Client
 	cache  *cache.Handle
 }
 
 // NewLibrary initializes and returns new Library ready to  be used.
-func NewLibrary(scsConfig *scs.Config, cache *cache.Handle, keystoreURI string) (*Library, error) {
+func NewLibrary(scsConfig *scs.Config, cache *cache.Handle, keystoreURI, arch string) (*Library, error) {
 	libraryClient, err := client.NewClient(scsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("could not initialize library client: %v", err)
@@ -33,6 +34,7 @@ func NewLibrary(scsConfig *scs.Config, cache *cache.Handle, keystoreURI string) 
 
 	return &Library{
 		keystoreURI: keystoreURI,
+		arch:        arch,
 		client:      libraryClient,
 		cache:       cache,
 	}, nil
@@ -45,7 +47,7 @@ func (l *Library) Pull(ctx context.Context, from, to string) error {
 	libraryPath := library.NormalizeLibraryRef(from)
 
 	// check if image exists in library
-	imageMeta, err := l.client.GetImage(ctx, libraryPath)
+	imageMeta, err := l.client.GetImage(ctx, l.arch, libraryPath)
 	if err == scs.ErrNotFound {
 		return fmt.Errorf("image %s does not exist in the library", libraryPath)
 	}
@@ -96,7 +98,7 @@ func (l *Library) pullAndVerify(ctx context.Context, imgMeta *scs.Image, from, t
 	sylog.Infof("Downloading library image")
 	go interruptCleanup(to)
 
-	err := library.DownloadImage(ctx, l.client, to, from, printProgress)
+	err := library.DownloadImage(ctx, l.client, to, l.arch, from, printProgress)
 	if err != nil {
 		return fmt.Errorf("unable to download image: %v", err)
 	}

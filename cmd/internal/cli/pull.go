@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -51,7 +52,20 @@ var (
 	unauthenticatedPull bool
 	// pullDir is the path that the containers will be pulled to, if set.
 	pullDir string
+	// pullArch is the architecture for which containers will be pulled from the
+	// SCS library.
+	pullArch string
 )
+
+// --arch
+var pullArchFlag = cmdline.Flag{
+	ID:           "pullArchFlag",
+	Value:        &pullArch,
+	DefaultValue: runtime.GOARCH,
+	Name:         "arch",
+	Usage:        "architecture to pull from library",
+	EnvKeys:      []string{"PULL_ARCH"},
+}
 
 // --library
 var pullLibraryURIFlag = cmdline.Flag{
@@ -168,6 +182,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullAllowUnsignedFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullArchFlag, PullCmd)
 }
 
 // PullCmd singularity pull
@@ -240,7 +255,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			BaseURL:   pullLibraryURI,
 			AuthToken: authToken,
 		}
-		lib, err := singularity.NewLibrary(libraryConfig, imgCache, keyServerURL)
+		lib, err := singularity.NewLibrary(libraryConfig, imgCache, pullArch, keyServerURL)
 		if err != nil {
 			sylog.Fatalf("Could not initialize library: %v", err)
 		}
