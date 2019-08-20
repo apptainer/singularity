@@ -35,8 +35,8 @@ github.com/bugsnag/bugsnag-go v1.5.1/go.mod h1:2oa8nejYd4cQ/b0hMIopN0lCRxU0bueqR
 github.com/bugsnag/panicwrap v1.2.0 h1:OzrKrRvXis8qEvOkfcxNcYbOd2O7xXS2nnKMEMABFQA=
 github.com/bugsnag/panicwrap v1.2.0/go.mod h1:D/8v3kj0zr8ZAKg1AQ6crr+5VwKN5eIywRkfhyM/+dE=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
-github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb h1:NbTtlERiUsSc6Mbe02Cobgn7tjaSaF6okRFW7FCT0JY=
-github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb/go.mod h1:X9rLEHIqSf/wfK8NsPqxJmeZgW4pcfzdXITDrUSJ6uI=
+github.com/containerd/cgroups v0.0.0-20190717030353-c4b9ac5c7601 h1:6xW3ogNpFIly0umJGEKzFfGDNUk5rXFE1lJ3/gBmz3U=
+github.com/containerd/cgroups v0.0.0-20190717030353-c4b9ac5c7601/go.mod h1:X9rLEHIqSf/wfK8NsPqxJmeZgW4pcfzdXITDrUSJ6uI=
 github.com/containerd/containerd v1.2.7 h1:8lqLbl7u1j3MmiL9cJ/O275crSq7bfwUayvvatEupQk=
 github.com/containerd/containerd v1.2.7/go.mod h1:bC6axHOhabU15QhwfG7w5PipXdVtMXFTttgp+kVtyUA=
 github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd h1:AqPnRJG7BcXlRtISATdp/XsD4cwZK6MdeMxFQ2hGFdw=

@@ -32,7 +32,7 @@ github.com/beorn7/perks/quantile
 github.com/blang/semver
 # github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23
 github.com/buger/jsonparser
-# github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
+# github.com/containerd/cgroups v0.0.0-20190717030353-c4b9ac5c7601
 github.com/containerd/cgroups
 # github.com/containerd/containerd v1.2.7
 github.com/containerd/containerd/reference
