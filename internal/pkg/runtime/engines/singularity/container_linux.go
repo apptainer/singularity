@@ -1273,7 +1273,14 @@ func (c *container) addHomeStagingDir(system *mount.System, source string, dest 
 
 	homeStage, _ = c.session.GetPath(dest)
 
-	if !c.engine.EngineConfig.GetContain() || c.engine.EngineConfig.GetCustomHome() {
+	bindSource := !c.engine.EngineConfig.GetContain() || c.engine.EngineConfig.GetCustomHome()
+
+	// use the session home directory is the user home directory doesn't exist (issue #4208)
+	if _, err := os.Stat(source); os.IsNotExist(err) {
+		bindSource = false
+	}
+
+	if bindSource {
 		sylog.Debugf("Staging home directory (%v) at %v\n", source, homeStage)
 
 		if err := system.Points.AddBind(mount.HomeTag, source, homeStage, flags); err != nil {
