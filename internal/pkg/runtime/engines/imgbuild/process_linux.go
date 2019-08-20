@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/user"
 	"strings"
 	"syscall"
 
@@ -80,14 +79,12 @@ func (e *EngineOperations) cleanEnv() {
 	// clean environment
 	e.EngineConfig.OciConfig.Spec.Process.Env = nil
 
-	// During image build process (run typically as root), home destination
-	// is /root
+	// during image build process, home destination is /root as
+	// build engine is usable only by root or fakeroot, fakeroot
+	// already take care of binding the real user home directory
+	// to /root, so we don't need to query user database to determine
+	// home directory as it's always /root
 	homeDest := "/root"
-	usr, err := user.Current()
-
-	if err == nil {
-		homeDest = usr.HomeDir
-	}
 
 	// add relevant environment variables back
 	env.SetContainerEnv(&generator, environment, true, homeDest)
