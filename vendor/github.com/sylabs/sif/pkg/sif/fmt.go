@@ -74,6 +74,8 @@ func datatypeStr(dtype Datatype) string {
 		return "JSON.Generic"
 	case DataGeneric:
 		return "Generic/Raw"
+	case DataCryptoMessage:
+		return "Cryptographic Message"
 	}
 	return "Unknown data-type"
 }
@@ -127,6 +129,28 @@ func hashtypeStr(htype Hashtype) string {
 	return "Unknown hash-type"
 }
 
+// formattypeStr returns a string representation of a format type
+func formattypeStr(ftype Formattype) string {
+	switch ftype {
+	case FormatOpenPGP:
+		return "OpenPGP"
+	case FormatPEM:
+		return "PEM"
+	}
+	return "Unknown format-type"
+}
+
+// messagetypeStr returns a string representation of a message type
+func messagetypeStr(mtype Messagetype) string {
+	switch mtype {
+	case MessageClearSignature:
+		return "Clear Signature"
+	case MessageRSAOAEP:
+		return "RSA-OAEP"
+	}
+	return "Unknown message-type"
+}
+
 // FmtDescrList formats the output of a list of all active descriptors from a SIF file
 func (fimg *FileImage) FmtDescrList() string {
 	s := fmt.Sprintf("%-4s %-8s %-8s %-26s %s\n", "ID", "|GROUP", "|LINK", "|SIF POSITION (start-end)", "|TYPE")
@@ -164,6 +188,10 @@ func (fimg *FileImage) FmtDescrList() string {
 			case DataSignature:
 				h, _ := v.GetHashType()
 				s += fmt.Sprintf("|%s (%s)\n", datatypeStr(v.Datatype), hashtypeStr(h))
+			case DataCryptoMessage:
+				f, _ := v.GetFormatType()
+				m, _ := v.GetMessageType()
+				s += fmt.Sprintf("|%s (%s/%s)\n", datatypeStr(v.Datatype), formattypeStr(f), messagetypeStr(m))
 			default:
 				s += fmt.Sprintf("|%s\n", datatypeStr(v.Datatype))
 			}
@@ -219,6 +247,11 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 				e, _ := v.GetEntityString()
 				s += fmt.Sprintln("  Hashtype: ", hashtypeStr(h))
 				s += fmt.Sprintln("  Entity:   ", e)
+			case DataCryptoMessage:
+				f, _ := v.GetFormatType()
+				m, _ := v.GetMessageType()
+				s += fmt.Sprintln("  Fmttype:  ", formattypeStr(f))
+				s += fmt.Sprintln("  Msgtype:  ", messagetypeStr(m))
 			}
 
 			return s

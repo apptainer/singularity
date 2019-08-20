@@ -39,6 +39,12 @@ type TagsResponse struct {
 	Error *jsonresp.Error `json:"error,omitempty"`
 }
 
+// ArchTagsResponse - Response from the API for a v2 tags request (with arch)
+type ArchTagsResponse struct {
+	Data  ArchTagMap      `json:"data"`
+	Error *jsonresp.Error `json:"error,omitempty"`
+}
+
 // SearchResults - Results structure for searches
 type SearchResults struct {
 	Entities    []Entity     `json:"entity"`

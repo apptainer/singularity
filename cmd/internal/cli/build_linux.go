@@ -13,12 +13,14 @@ import (
 	"os"
 	osExec "os/exec"
 	"path/filepath"
+	"runtime"
 	"syscall"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/fakeroot/config"
@@ -100,6 +102,11 @@ func run(cmd *cobra.Command, args []string) {
 		buildFormat = "sandbox"
 	}
 
+	if buildArch != runtime.GOARCH && !remote {
+		sylog.Fatalf("Requested architecture (%s) does not match host (%s). Cannot build locally.", buildArch, runtime.GOARCH)
+		cmd.Flags().Lookup("arch").Value.Set(runtime.GOARCH)
+	}
+
 	dest := args[0]
 	spec := args[1]
 
@@ -109,6 +116,11 @@ func run(cmd *cobra.Command, args []string) {
 	}
 
 	if remote {
+		// building encrypted containers on the remote builder is not currently supported
+		if encrypt {
+			sylog.Fatalf("Building encrypted container with the remote builder is not currently supported.")
+		}
+
 		handleRemoteBuildFlags(cmd)
 
 		// Submiting a remote build requires a valid authToken
@@ -136,7 +148,7 @@ func run(cmd *cobra.Command, args []string) {
 			// build from sif downloaded in tmp location
 			defer func() {
 				sylog.Debugf("Building sandbox from downloaded SIF")
-				imgCache := getCacheHandle()
+				imgCache := getCacheHandle(cache.Config{})
 				if imgCache == nil {
 					sylog.Fatalf("failed to create an image cache handle")
 				}
@@ -170,7 +182,7 @@ func run(cmd *cobra.Command, args []string) {
 			}()
 		}
 
-		b, err := remotebuilder.New(dest, libraryURL, def, detached, force, builderURL, authToken)
+		b, err := remotebuilder.New(dest, libraryURL, def, detached, force, builderURL, authToken, buildArch)
 		if err != nil {
 			sylog.Fatalf("Failed to create builder: %v", err)
 		}
@@ -179,7 +191,18 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	} else {
-		imgCache := getCacheHandle()
+		// ensure passphrase or key was supplied with encrypt option
+		if encrypt && !cmd.Flags().Lookup("encryption-key").Changed {
+			sylog.Fatalf("Unable to encrypt container, no passphrase or key path specified.")
+		}
+
+		// ensure we do not build an encrypted container if encrypt option is not specified
+		if !encrypt && cmd.Flags().Lookup("encryption-key").Changed {
+			sylog.Warningf("Encryption key environment variable found, but -e was not specified. NOT encrypting container.")
+			encryptionKey = ""
+		}
+
+		imgCache := getCacheHandle(cache.Config{})
 		if imgCache == nil {
 			sylog.Fatalf("failed to create an image cache handle")
 		}
