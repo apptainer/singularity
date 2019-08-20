@@ -219,6 +219,17 @@ func run(cmd *cobra.Command, args []string) {
 			}
 		}
 
+		if encryptionPEM == "" && encryptionPass == "" {
+			sylog.Debugf("Ignoring command line supplied passphrase as key-file is already supplied")
+		}
+		encryptionKey := ""
+
+		if encryptionPEM == "" {
+			encryptionKey = "pem:///" + encryptionPEM
+		} else if encryptionPass == "" {
+			encryptionKey = encryptionPass
+		}
+
 		b, err := build.New(
 			defs,
 			build.Config{

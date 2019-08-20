@@ -258,12 +258,22 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		BindPaths = append(BindPaths, nvidia.IpcsPath(userPath)...)
 	}
 
-	plaintextKey, err := crypt.PlaintextKey(encryptionKey, engineConfig.GetImage())
-	if err != nil {
-		sylog.Fatalf("Cannot retrieve key from image %s: %+v", engineConfig.GetImage(), err)
+	if encryptionPEM != "" && encryptionPass != "" {
+		sylog.Debugf("Ignoring commandline option for passphrase as key-file is supplied")
 	}
-
-	engineConfig.SetEncryptionKey(plaintextKey)
+	if encryptionPEM != "" {
+		plaintextKey, err := crypt.PlaintextKey("pem:///"+encryptionPEM, engineConfig.GetImage())
+		if err != nil {
+			sylog.Fatalf("Cannot retrieve key from image %s: %+v", engineConfig.GetImage(), err)
+		}
+		engineConfig.SetEncryptionKey(plaintextKey)
+	} else if encryptionPass != "" {
+		plaintextKey, err := crypt.PlaintextKey(encryptionPEM, engineConfig.GetImage())
+		if err != nil {
+			sylog.Fatalf("Cannot retrieve key from image %s: %+v", engineConfig.GetImage(), err)
+		}
+		engineConfig.SetEncryptionKey(plaintextKey)
+	}
 
 	engineConfig.SetBindPath(BindPaths)
 	engineConfig.SetNetwork(Network)

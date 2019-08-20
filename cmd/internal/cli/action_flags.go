@@ -30,7 +30,8 @@ var (
 	VMCPU           string
 	VMIP            string
 	ContainLibsPath []string
-	encryptionKey   string
+	encryptionPEM   string
+	encryptionPass  string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -295,14 +296,24 @@ var actionContainLibsFlag = cmdline.Flag{
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
-// hidden flag to handle SINGULARITY_ENCRYPTION_KEY environment variable
-var commonEncryptFlag = cmdline.Flag{
-	ID:           "actionEncryptionKey",
-	Value:        &encryptionKey,
+// flag to handle SINGULARITY_ENCRYPTION_PEMPATH environment variable
+var pemEncryptFlag = cmdline.Flag{
+	ID:           "actionEncryptionPEM",
+	Value:        &encryptionPEM,
 	DefaultValue: "",
-	Name:         "encryption-key",
-	Hidden:       true,
-	EnvKeys:      []string{"ENCRYPTION_KEY"},
+	Name:         "pempath",
+	Hidden:       false,
+	EnvKeys:      []string{"ENCRYPTION_PEMPATH"},
+}
+
+// flag to handle SINGULARITY_ENCRYPTION_PASSPHRASE environment variable
+var passEncryptFlag = cmdline.Flag{
+	ID:           "actionEncryptionPass",
+	Value:        &encryptionPass,
+	DefaultValue: "",
+	Name:         "passphrase",
+	Hidden:       false,
+	EnvKeys:      []string{"ENCRYPTION_PASSPHRASE"},
 }
 
 // hidden flags to handle docker credentials
@@ -697,7 +708,8 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionDropCapsFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionAllowSetuidFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionPwdFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&commonEncryptFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&pemEncryptFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&passEncryptFlag, actionsInstanceCmd...)
 
 	for _, cmd := range actionsCmd {
 		plugin.AddFlagHooks(cmd.Flags())
