@@ -66,14 +66,13 @@ func startup() {
 	case C.MASTER:
 		sylog.Verbosef("Execute master process\n")
 
-		isInstance := sconfig.GetInstance()
 		pid := sconfig.GetContainerPid()
 
 		if err := sconfig.Release(); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 
-		starter.Master(int(C.rpc_socket[0]), int(C.master_socket[0]), isInstance, pid, e)
+		starter.Master(int(C.rpc_socket[0]), int(C.master_socket[0]), pid, e)
 	case C.RPC_SERVER:
 		sylog.Verbosef("Serve RPC requests\n")
 
