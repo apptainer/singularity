@@ -523,11 +523,19 @@ func TestGenKeyPair(t *testing.T) {
 	tests := []struct {
 		name      string
 		options   GenKeyPairOptions
+		encrypted bool
 		shallPass bool
 	}{
 		{
-			name:      "valid case",
+			name:      "valid case, not encrypted",
 			options:   GenKeyPairOptions{Name: "teste", Email: "test@my.info", Comment: "", Password: ""},
+			encrypted: false,
+			shallPass: true,
+		},
+		{
+			name:      "valid case, encrypted",
+			options:   GenKeyPairOptions{Name: "teste", Email: "test@my.info", Comment: "", Password: "1234"},
+			encrypted: true,
 			shallPass: true,
 		},
 	}
@@ -543,12 +551,16 @@ func TestGenKeyPair(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup the input file that will act as stdin
-			_, err = keyring.GenKeyPair(tt.options)
+			e, err := keyring.GenKeyPair(tt.options)
 			if tt.shallPass && err != nil {
 				t.Fatalf("valid case %s failed: %s", tt.name, err)
 			}
 			if !tt.shallPass && err == nil {
 				t.Fatalf("invalid case %s succeeded", tt.name)
+			}
+
+			if e.PrivateKey.Encrypted != tt.encrypted {
+				t.Fatalf("expected encrypted: %t got: %t", tt.encrypted, e.PrivateKey.Encrypted)
 			}
 		})
 	}
