@@ -21,18 +21,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-// KeyNewPairCmd is 'singularity key newpair' and generate a new OpenPGP key pair
-var KeyNewPairCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(0),
-	DisableFlagsInUseLine: true,
-	PreRun:                sylabsToken,
-	Run: func(cmd *cobra.Command, args []string) {
-		keyring := sypgp.NewHandle("")
-		handleKeyNewPairEndpoint()
-
-		if _, err := keyring.GenKeyPair(keyServerURI, authToken, keyNewpairBitLength); err != nil {
-			sylog.Errorf("creating newpair failed: %v", err)
-			os.Exit(2)
 var (
 	keyNewPairName     string
 	KeyNewPairNameFlag = &cmdline.Flag{
@@ -111,6 +99,7 @@ func runNewPairCmd(cmd *cobra.Command, args []string) {
 		sylog.Errorf("could not collect user input: %v", err)
 		os.Exit(2)
 	}
+	opts.KeyLength = keyNewpairBitLength
 
 	fmt.Printf("Generating Entity and OpenPGP Key Pair... ")
 	key, err := keyring.GenKeyPair(opts.GenKeyPairOptions)

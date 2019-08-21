@@ -63,10 +63,11 @@ type Handle struct {
 
 // GenKeyPairOptions parameters needed for generating new key pair.
 type GenKeyPairOptions struct {
-	Name     string
-	Email    string
-	Comment  string
-	Password string
+	Name      string
+	Email     string
+	Comment   string
+	Password  string
+	KeyLength int
 }
 
 // mrKeyList contains all the key info, used for decoding
@@ -457,8 +458,8 @@ func (keyring *Handle) RemovePubKey(toDelete string) error {
 	return keyring.storePubKeyring(newKeyList)
 }
 
-func (keyring *Handle) genKeyPair(name, comment, email, passphrase string, bitLen int) (*openpgp.Entity, error) {
-	conf := &packet.Config{RSABits: bitLen, DefaultHash: crypto.SHA384}
+func (keyring *Handle) genKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, error) {
+	conf := &packet.Config{RSABits: opts.KeyLength, DefaultHash: crypto.SHA384}
 
 	entity, err := openpgp.NewEntity(opts.Name, opts.Comment, opts.Email, conf)
 	if err != nil {
@@ -485,7 +486,7 @@ func (keyring *Handle) genKeyPair(name, comment, email, passphrase string, bitLe
 }
 
 // GenKeyPair generates an PGP key pair and store them in the sypgp home folder
-func (keyring *Handle) GenKeyPair(keyServiceURI, authToken string, bitLen int) (*openpgp.Entity, error) {
+func (keyring *Handle) GenKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, error) {
 	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
 	}
