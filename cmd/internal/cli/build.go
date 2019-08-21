@@ -248,7 +248,8 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, BuildCmd)
 
-	cmdManager.RegisterFlagForCmd(&commonEncryptFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&actionPassphraseFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&actionPEMPathFlag, BuildCmd)
 }
 
 // BuildCmd represents the build command
