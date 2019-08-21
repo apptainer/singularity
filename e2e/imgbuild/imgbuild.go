@@ -736,15 +736,15 @@ func (c *imgBuildTests) buildDefinition(t *testing.T) {
 }
 
 func (c *imgBuildTests) ensureImageIsEncrypted(t *testing.T, imgPath string) {
-	sifID := "3" // Which SIF descriptor slots contains encryption information
-	cmdArgs := []string{"list", sifID, imgPath}
+	sifID := "2" // Which SIF descriptor slots contains encryption information
+	cmdArgs := []string{"info", sifID, imgPath}
 	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("sif"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(
 			0,
-			e2e.ExpectOutput(e2e.RegexMatch, "^something something"),
+			e2e.ExpectOutput(e2e.ContainMatch, "Fstype:    Encrypted squashfs"),
 		),
 	)
 }
@@ -759,6 +759,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("build"),
+		e2e.WithPrivileges(true),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ConsoleRun(passphraseInput...),
 		e2e.ExpectExit(0),
@@ -773,6 +774,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 		t,
 		e2e.WithCommand("build"),
 		e2e.WithArgs(cmdArgs...),
+		e2e.WithPrivileges(true),
 		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
 		e2e.ExpectExit(0),
 	)
