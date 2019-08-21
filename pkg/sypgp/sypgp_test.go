@@ -580,7 +580,7 @@ func TestGenKeyPair(t *testing.T) {
 			}()
 			os.Stdin = tempFile
 
-			_, err = keyring.GenKeyPair(myURI, myToken)
+			_, err = keyring.GenKeyPair(myURI, myToken, 1024)
 			if tt.shallPass && err != nil {
 				t.Fatalf("valid case %s failed: %s", tt.name, err)
 			}

@@ -19,41 +19,36 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-func (c *ctx) testSingularityImgCache(t *testing.T, disableCache bool) {
-	// The intent of the test is simple:
-	// - create 2 temporary directories, one where the image will be pulled and one where the
-	//   image cache should be created,
-	// - pull an image,
-	// - check whether we have the correct entry in the cache, within the directory we created.
-	// If the file is in our cache, it means the e2e framework correctly set the SINGULARITY_CACHE_DIR
-	// while executing the pull command.
+func setupTempDirs(t *testing.T, readOnly bool) (string, string, func(t *testing.T)) {
 	cacheDir, err := ioutil.TempDir("", "e2e-imgcache-")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
 	}
-	defer func() {
+
+	testDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		os.RemoveAll(cacheDir) // Something went wrong before we can setup a cleanup function so we do our best to manually cleanup
+		t.Fatalf("failed to create temporary directory: %s", err)
+	}
+
+	return testDir, cacheDir, func(t *testing.T) {
 		err := os.RemoveAll(cacheDir)
 		if err != nil {
 			t.Fatalf("failed to delete temporary directory %s: %s", cacheDir, err)
 		}
-	}()
 
-	c.env.TestDir, err = ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("failed to create temporary directory: %s", err)
-	}
-	defer func() {
-		err := os.RemoveAll(c.env.TestDir)
+		err = os.RemoveAll(testDir)
 		if err != nil {
-			t.Fatalf("failed to delete temporary directory %s: %s", c.env.TestDir, err)
+			t.Fatalf("failed to delete temporary directory %s: %s", testDir, err)
 		}
-	}()
+	}
+}
 
+func (c *ctx) testSingularityImgCache(t *testing.T, disableCache bool) string {
 	if disableCache {
 		c.env.DisableCache = true
 	}
 
-	c.env.ImgCacheDir = cacheDir
 	imgName := "testImg.sif"
 	imgPath := filepath.Join(c.env.TestDir, imgName)
 	cmdArgs := []string{imgPath, "library://alpine:latest"}
@@ -68,29 +63,87 @@ func (c *ctx) testSingularityImgCache(t *testing.T, disableCache bool) {
 		e2e.ExpectExit(0),
 	)
 
-	if !disableCache {
-		shasum, err := client.ImageHash(imgPath)
-		if err != nil {
-			t.Fatalf("failed to get sha256sum for %s", imgPath)
-		}
-		cacheEntryPath := filepath.Join(cacheDir, "cache", "library", shasum, "alpine_latest.sif")
-		if _, err := os.Stat(cacheEntryPath); os.IsNotExist(err) {
-			t.Fatalf("cache entry is missing (expected: %s)", cacheEntryPath)
-		}
-	} else {
-		cacheEntryPath := filepath.Join(cacheDir, "cache")
-		if _, err := os.Stat(cacheEntryPath); !os.IsNotExist(err) {
-			t.Fatalf("cache created while disabled (%s exists)", cacheEntryPath)
-		}
+	return imgPath
+}
+
+// cacheExists checks that the image cache that is associated to the test exists
+// and is valid (i.e., include the correct entry)
+func (c *ctx) cacheIsNotExist(t *testing.T, imgPath string) {
+	cacheRoot := filepath.Join(c.env.ImgCacheDir, "cache")
+	if _, err := os.Stat(cacheRoot); !os.IsNotExist(err) {
+		// The root of the cache does exists
+		t.Fatalf("cache has been incorrectly created (cache root: %s)", cacheRoot)
 	}
 }
 
 func (c *ctx) testSingularityCacheDir(t *testing.T) {
-	c.testSingularityImgCache(t, false)
+	// The intent of the test is simple:
+	// - create 2 temporary directories, one where the image will be pulled and one where the
+	//   image cache should be created,
+	// - pull an image,
+	// - check whether we have the correct entry in the cache, within the directory we created.
+	// If the file is in our cache, it means the e2e framework correctly set the SINGULARITY_CACHE_DIR
+	// while executing the pull command.
+
+	testDir, cacheDir, cleanup := setupTempDirs(t, false)
+	c.env.TestDir = testDir
+	defer cleanup(t)
+
+	c.env.ImgCacheDir = cacheDir
+	imgPath := c.testSingularityImgCache(t, false)
+
+	// The cache should exist and have the correct entry
+	shasum, err := client.ImageHash(imgPath)
+	if err != nil {
+		t.Fatalf("Cannot get the shasum for image %s: %s", imgPath, err)
+	}
+	cacheEntryPath := filepath.Join(c.env.ImgCacheDir, "cache", "library", shasum, "alpine_latest.sif")
+	if _, err := os.Stat(cacheEntryPath); os.IsNotExist(err) {
+		t.Fatalf("Cache entry %s does not exists: %s", cacheEntryPath, err)
+	}
 }
 
 func (c *ctx) testSingularityDisableCache(t *testing.T) {
-	c.testSingularityImgCache(t, true)
+	testDir, cacheDir, cleanup := setupTempDirs(t, false)
+	c.env.TestDir = testDir
+	defer cleanup(t)
+
+	c.env.ImgCacheDir = cacheDir
+	imgPath := c.testSingularityImgCache(t, true)
+
+	// the cache should not exist
+	c.cacheIsNotExist(t, imgPath)
+}
+
+// This test checks if the cache is correctly and implicitly disabled
+// when its target location is read-only.
+//
+// This use case is common in the context of Grid computing where the
+// usage of sandboxes shared between users is a common practice. In that
+// context, the home directory ends up being read-only and no caching
+// is required.
+func (c *ctx) testSingularityReadOnlyCacheDir(t *testing.T) {
+	testDir, cacheDir, cleanup := setupTempDirs(t, true)
+	c.env.TestDir = testDir
+	defer cleanup(t)
+
+	// Change the mode of the image cache to read-only
+	err := os.Chmod(cacheDir, 0444)
+	if err != nil {
+		t.Fatalf("failed to change the access mode to read-only: %s", err)
+	}
+
+	c.env.ImgCacheDir = cacheDir
+	imgPath := c.testSingularityImgCache(t, false)
+
+	// Change the mode of the image cache back so we can actually check everything
+	err = os.Chmod(cacheDir, 0755)
+	if err != nil {
+		t.Fatalf("failed to change the access mode to read-only: %s", err)
+	}
+
+	// the cache should not exist
+	c.cacheIsNotExist(t, imgPath)
 }
 
 func (c *ctx) testSingularitySypgpDir(t *testing.T) {
@@ -139,5 +192,6 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 		t.Run("testSingularityCacheDir", c.testSingularityCacheDir)
 		t.Run("testSingularityDisableDir", c.testSingularityDisableCache)
 		t.Run("testSingularitySypgpDir", c.testSingularitySypgpDir)
+		t.Run("testReadOnlyCacheDir", c.testSingularityReadOnlyCacheDir)
 	}
 }

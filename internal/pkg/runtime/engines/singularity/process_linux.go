@@ -206,8 +206,8 @@ func (e *EngineOperations) runFuseDriver(name string, program []string, fd int) 
 		Pdeathsig: syscall.SIGQUIT,
 	}
 
-	if err := cmd.Start(); err != nil {
-		sylog.Debugf("cannot start program %v: %v\n", args, err)
+	if err := cmd.Run(); err != nil {
+		sylog.Debugf("cannot run program %v: %v\n", args, err)
 		return err
 	}
 
@@ -254,6 +254,11 @@ func preStartProcess(e *EngineOperations) error {
 
 // StartProcess starts the process
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
+	// Manage all signals.
+	// Queue them until they're ready to be handled below.
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals)
+
 	if err := preStartProcess(e); err != nil {
 		return err
 	}
@@ -372,7 +377,6 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	errChan := make(chan error, 1)
 	statusChan := make(chan syscall.WaitStatus, 1)
-	signals := make(chan os.Signal, 1)
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("exec %s failed: %s", args[0], err)
@@ -400,9 +404,6 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	if _, _, err := syscall.Syscall(syscall.SYS_PRCTL, syscall.PR_SET_NAME, uintptr(ptr), 0); err != 0 {
 		return syscall.Errno(err)
 	}
-
-	// Manage all signals
-	signal.Notify(signals)
 
 	masterConn.Close()
 

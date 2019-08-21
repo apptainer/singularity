@@ -449,8 +449,8 @@ func (keyring *Handle) RemovePubKey(toDelete string) error {
 	return keyring.storePubKeyring(newKeyList)
 }
 
-func (keyring *Handle) genKeyPair(name, comment, email, passphrase string) (*openpgp.Entity, error) {
-	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
+func (keyring *Handle) genKeyPair(name, comment, email, passphrase string, bitLen int) (*openpgp.Entity, error) {
+	conf := &packet.Config{RSABits: bitLen, DefaultHash: crypto.SHA384}
 
 	entity, err := openpgp.NewEntity(name, comment, email, conf)
 	if err != nil {
@@ -477,7 +477,7 @@ func (keyring *Handle) genKeyPair(name, comment, email, passphrase string) (*ope
 }
 
 // GenKeyPair generates an PGP key pair and store them in the sypgp home folder
-func (keyring *Handle) GenKeyPair(keyServiceURI string, authToken string) (*openpgp.Entity, error) {
+func (keyring *Handle) GenKeyPair(keyServiceURI, authToken string, bitLen int) (*openpgp.Entity, error) {
 	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
 	}
@@ -505,8 +505,10 @@ func (keyring *Handle) GenKeyPair(keyServiceURI string, authToken string) (*open
 
 	fmt.Printf("Generating Entity and OpenPGP Key Pair... ")
 
-	entity, err := keyring.genKeyPair(name, comment, email, passphrase)
+	entity, err := keyring.genKeyPair(name, comment, email, passphrase, bitLen)
 	if err != nil {
+		// Print the missing newline if there’s an error
+		fmt.Printf("\n")
 		return nil, err
 	}
 
