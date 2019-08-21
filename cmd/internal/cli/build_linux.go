@@ -27,9 +27,11 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
 func fakerootExec(cmdArgs []string) {
@@ -191,15 +193,25 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	} else {
-		// ensure passphrase or key was supplied with encrypt option
-		if encrypt && !cmd.Flags().Lookup("encryption-key").Changed {
-			sylog.Fatalf("Unable to encrypt container, no passphrase or key path specified.")
-		}
 
-		// ensure we do not build an encrypted container if encrypt option is not specified
-		if !encrypt && cmd.Flags().Lookup("encryption-key").Changed {
-			sylog.Warningf("Encryption key environment variable found, but -e was not specified. NOT encrypting container.")
-			encryptionKey = ""
+		var keyInfo *crypt.KeyInfo
+		if encrypt {
+			if os.Getuid() != 0 {
+				sylog.Fatalf("You must be root to build an encrypted container")
+			}
+
+			k, err := getEncryptionMaterial(cmd)
+			if err != nil {
+				sylog.Fatalf("While handling encryption material: %v", err)
+			}
+			keyInfo = &k
+		} else {
+			passphraseFlag := cmd.Flags().Lookup("passphrase")
+			PEMFlag := cmd.Flags().Lookup("pem-path")
+			_, passphraseOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PASSPHRASE")
+			if PEMFlag.Changed || passphraseFlag.Changed || passphraseOK {
+				sylog.Warningf("Encryption related flags/env vars found, but -e was not specified. NOT encrypting container.")
+			}
 		}
 
 		imgCache := getCacheHandle(cache.Config{})
@@ -242,18 +254,18 @@ func run(cmd *cobra.Command, args []string) {
 				Format:    buildFormat,
 				NoCleanUp: noCleanUp,
 				Opts: types.Options{
-					ImgCache:         imgCache,
-					TmpDir:           tmpDir,
-					NoCache:          disableCache,
-					Update:           update,
-					Force:            force,
-					Sections:         sections,
-					NoTest:           noTest,
-					NoHTTPS:          noHTTPS,
-					LibraryURL:       libraryURL,
-					LibraryAuthToken: authToken,
-					DockerAuthConfig: authConf,
-					EncryptionKey:    encryptionKey,
+					ImgCache:          imgCache,
+					TmpDir:            tmpDir,
+					NoCache:           disableCache,
+					Update:            update,
+					Force:             force,
+					Sections:          sections,
+					NoTest:            noTest,
+					NoHTTPS:           noHTTPS,
+					LibraryURL:        libraryURL,
+					LibraryAuthToken:  authToken,
+					DockerAuthConfig:  authConf,
+					EncryptionKeyInfo: keyInfo,
 				},
 			})
 		if err != nil {
@@ -314,4 +326,49 @@ func handleBuildFlags(cmd *cobra.Command) {
 			sylog.Warningf("Unable to get library service URI: %v", err)
 		}
 	}
+}
+
+// getEncryptionMaterial handles the setting of encryption environment and flag parameters to eventually be
+// passed to the crypt package for handling.
+// This handles the SINGULARITY_ENCRYPTION_PASSPHRASE envvar outside of cobra in order to
+// prevent the need to an odd hidden flag since --passphrase is a boolean for an interactive prompt
+func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
+	passphraseFlag := cmd.Flags().Lookup("passphrase")
+	PEMFlag := cmd.Flags().Lookup("pem-path")
+	passphrase, passphraseOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PASSPHRASE")
+
+	// checks for both envvars/flags being set
+	if !PEMFlag.Changed && !(passphraseFlag.Changed || passphraseOK) {
+		sylog.Fatalf("Trying use container encryption without supplying key or passphrase.")
+	}
+
+	if PEMFlag.Changed && (passphraseFlag.Changed || passphraseOK) {
+		sylog.Warningf("Ignoring option for passphrase as key filepath is supplied")
+	}
+
+	// order of precidence:
+	// 1. PEM flag or envvar(Note flag supersedes envvar)
+	// 2. Passphrase envvar
+	// 3. Passphrase flag
+
+	if PEMFlag.Changed {
+		return crypt.KeyInfo{Format: crypt.PEM, Path: encryptionPEMPath}, nil
+	}
+
+	if passphraseOK {
+		return crypt.KeyInfo{Format: crypt.Passphrase, Material: passphrase}, nil
+	}
+
+	if passphraseFlag.Changed {
+		passphrase, err := interactive.AskQuestionNoEcho("Enter encryption passphrase: ")
+		if err != nil {
+			return crypt.KeyInfo{}, err
+		}
+		if passphrase == "" {
+			sylog.Fatalf("Cannot encrypt container with empty passphrase")
+		}
+		return crypt.KeyInfo{Format: crypt.Passphrase, Material: passphrase}, nil
+	}
+
+	return crypt.KeyInfo{}, nil
 }

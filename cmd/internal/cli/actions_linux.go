@@ -275,11 +275,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		// ensure we have decryption material
 		if img.Partitions[0].Type == imgutil.ENCRYPTSQUASHFS {
 			sylog.Debugf("Encrypted container filesystem detected")
-			if encryptionKey == "" {
-				sylog.Fatalf("Trying to run encrypted container without supplying key material for decryption.")
+
+			keyInfo, err := getEncryptionMaterial(cobraCmd)
+			if err != nil {
+				sylog.Fatalf("While handling encryption material: %v", err)
 			}
 
-			plaintextKey, err := crypt.PlaintextKey(encryptionKey, engineConfig.GetImage())
+			plaintextKey, err := crypt.PlaintextKey(keyInfo, engineConfig.GetImage())
 			if err != nil {
 				sylog.Fatalf("Cannot retrieve key from image %s: %+v", engineConfig.GetImage(), err)
 			}
