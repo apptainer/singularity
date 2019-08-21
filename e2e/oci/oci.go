@@ -332,6 +332,76 @@ func (c *ctx) testOciBasic(t *testing.T) {
 	)
 }
 
+func (c *ctx) testOciHelp(t *testing.T) {
+	tests := []struct {
+		name          string
+		expectedRegex string
+	}{
+		{
+			name:          "attach",
+			expectedRegex: `^Attach console to a running container process \(root user only\)`,
+		},
+		{
+			name:          "create",
+			expectedRegex: `^Create a container from a bundle directory \(root user only\)`,
+		},
+		{
+			name:          "delete",
+			expectedRegex: `^Delete container \(root user only\)`,
+		},
+		{
+			name:          "exec",
+			expectedRegex: `^Execute a command within container \(root user only\)`,
+		},
+		{
+			name:          "kill",
+			expectedRegex: `^Kill a container \(root user only\)`,
+		},
+		{
+			name:          "mount",
+			expectedRegex: `^Mount create an OCI bundle from SIF image \(root user only\)`,
+		},
+		{
+			name:          "pause",
+			expectedRegex: `^Suspends all processes inside the container \(root user only\)`,
+		},
+		{
+			name:          "resume",
+			expectedRegex: `^Resumes all processes previously paused inside the container \(root user only\)`,
+		},
+		{
+			name:          "run",
+			expectedRegex: `^Create/start/attach/delete a container from a bundle directory \(root user only\)`,
+		},
+		{
+			name:          "start",
+			expectedRegex: `^Start container process \(root user only\)`,
+		},
+		{
+			name:          "umount",
+			expectedRegex: `^Umount delete bundle \(root user only\)`,
+		},
+		{
+			name:          "update",
+			expectedRegex: `^Update container cgroups resources \(root user only\)`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c.env.RunSingularity(
+				t,
+				e2e.WithCommand("oci"),
+				e2e.WithArgs([]string{tt.name, "--help"}...),
+				e2e.ExpectExit(
+					0,
+					e2e.ExpectOutput(e2e.RegexMatch, tt.expectedRegex),
+				),
+			)
+		})
+	}
+}
+
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
@@ -342,5 +412,6 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 		t.Run("Basic", c.testOciBasic)
 		t.Run("Attach", c.testOciAttach)
 		t.Run("Run", c.testOciRun)
+		t.Run("Help", c.testOciHelp)
 	}
 }
