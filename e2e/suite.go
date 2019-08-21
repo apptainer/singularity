@@ -35,8 +35,6 @@ import (
 
 	"github.com/sylabs/singularity/e2e/instance"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-
 	"github.com/sylabs/singularity/e2e/key"
 
 	"github.com/sylabs/singularity/e2e/oci"
@@ -55,9 +53,11 @@ import (
 
 	"github.com/sylabs/singularity/e2e/version"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-
 	singularityenv "github.com/sylabs/singularity/e2e/env"
+
+	"github.com/sylabs/singularity/e2e/internal/e2e"
+
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )

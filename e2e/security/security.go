@@ -22,7 +22,6 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 	tests := []struct {
 		name       string
 		image      string
-		action     string
 		argv       []string
 		opts       []string
 		expectExit int
@@ -31,32 +30,28 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 		{
 			name:       "Set_uid",
 			image:      c.env.ImagePath,
-			action:     "exec",
-			argv:       []string{"id", "-u", "|", "grep", "99"},
+			argv:       []string{"id", "-u"},
 			opts:       []string{"--security", "uid:99"},
 			expectExit: 255,
 		},
 		{
 			name:       "Set_gid",
 			image:      c.env.ImagePath,
-			action:     "exec",
-			argv:       []string{"id", "-g", "|", "grep", "99"},
-			opts:       []string{"gid:99"},
+			argv:       []string{"id", "-g"},
+			opts:       []string{"--security", "gid:99"},
 			expectExit: 255,
 		},
 		// seccomp from json file
 		{
 			name:       "SecComp_BlackList",
 			image:      c.env.ImagePath,
-			action:     "exec",
 			argv:       []string{"mkdir", "/tmp/foo"},
 			opts:       []string{"--security", "seccomp:./security/testdata/seccomp-profile.json"},
-			expectExit: 159,
+			expectExit: 159, // process should be killed with SIGSYS (128+31)
 		},
 		{
 			name:       "SecComp_true",
 			image:      c.env.ImagePath,
-			action:     "exec",
 			argv:       []string{"true"},
 			opts:       []string{"--security", "seccomp:./security/testdata/seccomp-profile.json"},
 			expectExit: 0,
@@ -65,7 +60,6 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 		{
 			name:       "capabilities_keep_true",
 			image:      c.env.ImagePath,
-			action:     "exec",
 			argv:       []string{"ping", "-c", "1", "8.8.8.8"},
 			opts:       []string{"--keep-privs"},
 			expectExit: 255,
@@ -73,14 +67,12 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 		{
 			name:       "capabilities_keep-false",
 			image:      c.env.ImagePath,
-			action:     "exec",
 			argv:       []string{"ping", "-c", "1", "8.8.8.8"},
 			expectExit: 2,
 		},
 		{
 			name:       "capabilities_drop",
 			image:      c.env.ImagePath,
-			action:     "exec",
 			argv:       []string{"ping", "-c", "1", "8.8.8.8"},
 			opts:       []string{"--drop-caps", "CAP_NET_RAW"},
 			expectExit: 2,
@@ -110,27 +102,30 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 		name       string
 		argv       []string
 		opts       []string
+		expectOut  string
 		expectExit int
 	}{
 		// taget UID/GID
 		{
 			name:       "Set_uid",
-			argv:       []string{"id", "-u", "|", "grep", "99"},
+			argv:       []string{"id", "-u"},
 			opts:       []string{"--security", "uid:99"},
-			expectExit: 1,
+			expectOut:  "99",
+			expectExit: 0,
 		},
 		{
 			name:       "Set_gid",
-			argv:       []string{"id", "-g", "|", "grep", "99"},
+			argv:       []string{"id", "-g"},
 			opts:       []string{"--security", "gid:99"},
-			expectExit: 1,
+			expectOut:  "99",
+			expectExit: 0,
 		},
 		// seccomp from json file
 		{
 			name:       "SecComp_BlackList",
 			argv:       []string{"mkdir", "/tmp/foo"},
 			opts:       []string{"--security", "seccomp:./testdata/seccomp-profile.json"},
-			expectExit: 159,
+			expectExit: 159, // process should be killed with SIGSYS (128+31)
 		},
 		{
 			name:       "SecComp_true",
@@ -165,7 +160,7 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(optArgs...),
-			e2e.ExpectExit(tt.expectExit),
+			e2e.ExpectExit(tt.expectExit, e2e.ExpectOutput(e2e.ExactMatch, tt.expectOut)),
 		)
 
 	}
