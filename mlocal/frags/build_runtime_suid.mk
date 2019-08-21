@@ -12,7 +12,7 @@ $(starter_suid): $(BUILDDIR)/.clean-starter $(singularity_build_config) $(starte
 
 $(starter_suid_INSTALL): $(starter_suid)
 	@if [ `id -u` -ne 0 ] ; then \
-		echo "SUID is useful when running as root only, aborting"; \
+		echo "SUID binary requires to execute make install as root, use sudo make install to finish installation"; \
 		exit 1 ; \
 	fi
 	@echo " INSTALL SUID" $@
