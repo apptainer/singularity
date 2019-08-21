@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 // IsFile check if name component is regular file
@@ -203,4 +205,10 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 		return fmt.Errorf("could not copy file: %v", err)
 	}
 	return nil
+}
+
+// IsWritable returns true of the directory that is passed in is writable by the
+// the current user.
+func IsWritable(dir string) bool {
+	return unix.Access(dir, unix.W_OK) == nil
 }

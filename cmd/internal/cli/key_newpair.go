@@ -24,7 +24,7 @@ var KeyNewPairCmd = &cobra.Command{
 		keyring := sypgp.NewHandle("")
 		handleKeyNewPairEndpoint()
 
-		if _, err := keyring.GenKeyPair(keyServerURI, authToken); err != nil {
+		if _, err := keyring.GenKeyPair(keyServerURI, authToken, keyNewpairBitLength); err != nil {
 			sylog.Errorf("creating newpair failed: %v", err)
 			os.Exit(2)
 		}
