@@ -53,18 +53,18 @@
 
 
 # BlockIO restriction configuration
-[blockIO]
+# [blockIO]
   # Specifies tasks' weight in the given cgroup while competing with the cgroup's child cgroups, CFQ scheduler only
-  leafWeight = 10
+  # leafWeight = 10
 
   # Specifies per cgroup weight
-  weight = 10
+  # weight = 10
 
   # Weight per cgroup per device, can override BlkioWeight
   # - major is the device's major number.
   # - minor is the device's minor number.
   # - weight is the bandwidth rate for the device.
-	# - leafWeight is the bandwidth rate for the device while competing with the cgroup's child cgroups, CFQ scheduler only
+  # - leafWeight is the bandwidth rate for the device while competing with the cgroup's child cgroups, CFQ scheduler only
   # [[blockIO.weightDevice]]
   #   major = 7
   #   minor = 0
@@ -72,9 +72,9 @@
   #   leafWeight = 10
 
   # IO read rate limit per cgroup per device, bytes per second
-	# - major is the device's major number.
-	# - minor is the device's minor number.
-	# - rate is the IO rate limit per cgroup per device
+  # - major is the device's major number.
+  # - minor is the device's minor number.
+  # - rate is the IO rate limit per cgroup per device
   # [[blockIO.throttleReadBpsDevice]]
   #   major = 7
   #   minor = 0

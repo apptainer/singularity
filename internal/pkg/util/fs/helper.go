@@ -7,11 +7,14 @@ package fs
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 // IsFile check if name component is regular file
@@ -171,4 +174,41 @@ func MakeTmpFile(basedir, pattern string, mode os.FileMode) (*os.File, error) {
 		return nil, fmt.Errorf("failed to change permission of %s: %s", f.Name(), err)
 	}
 	return f, nil
+}
+
+// CopyFile copies file to the provided location making sure the resulting
+// file has permission bits set to the mode.
+func CopyFile(from, to string, mode os.FileMode) (err error) {
+	dstFile, err := MakeTmpFile(filepath.Dir(to), "", mode)
+	if err != nil {
+		return fmt.Errorf("could not create temp file: %v", err)
+	}
+
+	defer func() {
+		dstFile.Close()
+		if err == nil {
+			if e := os.Rename(dstFile.Name(), to); e != nil {
+				err = fmt.Errorf("could not rename temp file: %v", err)
+			}
+		}
+		os.Remove(dstFile.Name())
+	}()
+
+	srcFile, err := os.Open(from)
+	if err != nil {
+		return fmt.Errorf("could not open file to copy: %v", err)
+	}
+	defer srcFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return fmt.Errorf("could not copy file: %v", err)
+	}
+	return nil
+}
+
+// IsWritable returns true of the directory that is passed in is writable by the
+// the current user.
+func IsWritable(dir string) bool {
+	return unix.Access(dir, unix.W_OK) == nil
 }
