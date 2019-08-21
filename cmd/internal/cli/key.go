@@ -18,8 +18,9 @@ const (
 )
 
 var (
-	keyServerURI      string // -u command line option
-	keySearchLongList bool   // -l option for long-list
+	keyServerURI        string // -u command line option
+	keySearchLongList   bool   // -l option for long-list
+	keyNewpairBitLength int    // -b option for bit length
 )
 
 // -u|--url
@@ -43,6 +44,16 @@ var keySearchLongListFlag = cmdline.Flag{
 	Usage:        "output long list when searching for keys",
 }
 
+// -b|--bit-length
+var keyNewpairBitLengthFlag = cmdline.Flag{
+	ID:           "keyNewpairBitLengthFlag",
+	Value:        &keyNewpairBitLength,
+	DefaultValue: 4096,
+	Name:         "bit-length",
+	ShortHand:    "b",
+	Usage:        "specify key bit length",
+}
+
 func init() {
 	cmdManager.RegisterCmd(KeyCmd)
 
@@ -63,6 +74,7 @@ func init() {
 
 	cmdManager.RegisterFlagForCmd(&keyServerURIFlag, KeySearchCmd, KeyPushCmd, KeyPullCmd)
 	cmdManager.RegisterFlagForCmd(&keySearchLongListFlag, KeySearchCmd)
+	cmdManager.RegisterFlagForCmd(&keyNewpairBitLengthFlag, KeyNewPairCmd)
 }
 
 // KeyCmd is the 'key' command that allows management of key stores
