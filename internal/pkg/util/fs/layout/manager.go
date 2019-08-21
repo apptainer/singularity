@@ -247,8 +247,9 @@ func (m *Manager) sync() error {
 			if e == d {
 				path = m.rootPath + p
 				if ovDir, ok := m.ovDirs[p]; ok {
-					if _, err := os.Stat(ovDir); err != nil {
-						path = ovDir
+					ovPath := m.rootPath + ovDir
+					if _, err := os.Stat(ovPath); err != nil {
+						path = ovPath
 					}
 				}
 				break
