@@ -28,7 +28,7 @@ var (
 		Value:        &keyNewPairName,
 		DefaultValue: "",
 		Name:         "name",
-		ShortHand:    "n",
+		ShortHand:    "N",
 		Usage:        "keys owner name",
 	}
 
@@ -38,7 +38,7 @@ var (
 		Value:        &keyNewPairEmail,
 		DefaultValue: "",
 		Name:         "email",
-		ShortHand:    "e",
+		ShortHand:    "E",
 		Usage:        "keys owner email",
 	}
 
@@ -48,7 +48,7 @@ var (
 		Value:        &keyNewPairComment,
 		DefaultValue: "",
 		Name:         "comment",
-		ShortHand:    "c",
+		ShortHand:    "C",
 		Usage:        "keys comment",
 	}
 
@@ -58,7 +58,7 @@ var (
 		Value:        &keyNewPairPassword,
 		DefaultValue: "",
 		Name:         "password",
-		ShortHand:    "p",
+		ShortHand:    "P",
 		Usage:        "keys password",
 	}
 
@@ -68,7 +68,7 @@ var (
 		Value:        &keyNewPairPush,
 		DefaultValue: false,
 		Name:         "push",
-		ShortHand:    "u",
+		ShortHand:    "U",
 		Usage:        "push generated key to a keystore",
 	}
 
