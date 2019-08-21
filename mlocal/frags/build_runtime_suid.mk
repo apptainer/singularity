@@ -11,6 +11,10 @@ $(starter_suid): $(BUILDDIR)/.clean-starter $(singularity_build_config) $(starte
 		-o $@ $(SOURCEDIR)/cmd/starter/main_linux.go
 
 $(starter_suid_INSTALL): $(starter_suid)
+	@if [ `id -u` -ne 0 ] ; then \
+		echo "SUID is useful when running as root only, aborting"; \
+		exit 1 ; \
+	fi
 	@echo " INSTALL SUID" $@
 	$(V)install -d $(@D)
 	$(V)install -m 4755 $(starter_suid) $(starter_suid_INSTALL)
