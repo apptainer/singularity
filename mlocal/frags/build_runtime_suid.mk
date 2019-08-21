@@ -11,7 +11,7 @@ $(starter_suid): $(BUILDDIR)/.clean-starter $(singularity_build_config) $(starte
 		-o $@ $(SOURCEDIR)/cmd/starter/main_linux.go
 
 $(starter_suid_INSTALL): $(starter_suid)
-	@if [ `id -u` -ne 0 ] ; then \
+	@if [ `id -u` -ne 0 -a -z "${RPM_BUILD_ROOT}" ] ; then \
 		echo "SUID binary requires to execute make install as root, use sudo make install to finish installation"; \
 		exit 1 ; \
 	fi
