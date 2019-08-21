@@ -108,8 +108,8 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		}
 
 		s := stage{}
-		if conf.Opts.EncryptionKey != "" {
-			s.b, err = types.NewEncryptedBundle(conf.Opts.TmpDir, "sbuild", conf.Opts.EncryptionKey)
+		if conf.Opts.EncryptionKeyInfo != nil {
+			s.b, err = types.NewEncryptedBundle(conf.Opts.TmpDir, "sbuild", conf.Opts.EncryptionKeyInfo)
 		} else {
 			s.b, err = types.NewBundle(conf.Opts.TmpDir, "sbuild")
 		}
