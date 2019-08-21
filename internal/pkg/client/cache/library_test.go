@@ -20,8 +20,6 @@ func TestLibrary(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	chechIfCacheDisabled(t)
-
 	tests := []struct {
 		name        string
 		dir         string
@@ -48,6 +46,11 @@ func TestLibrary(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create new image cache handle: %s", err)
 			}
+
+			// Before running the test we make sure that the test environment
+			// did not implicitly disable the cache.
+			c.checkIfCacheDisabled(t)
+
 			if tt.needCleanup {
 				defer c.cleanAllCaches()
 			}
@@ -63,8 +66,6 @@ func TestLibraryImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	chechIfCacheDisabled(t)
-
 	tempImageCache, err := ioutil.TempDir("", "image-cache-")
 	if err != nil {
 		t.Fatal("failed to create temporary image cache")
@@ -75,6 +76,10 @@ func TestLibraryImage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create new image cache handle: %s", err)
 	}
+
+	// Before running the test we make sure that the test environment
+	// did not implicitly disable the cache.
+	c.checkIfCacheDisabled(t)
 
 	// LibraryImage just return a string and there is no definition of what
 	// could be a bad string.
@@ -137,8 +142,6 @@ func TestLibraryImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	chechIfCacheDisabled(t)
-
 	imageCacheDir, err := ioutil.TempDir("", "image-cache-")
 	if err != nil {
 		t.Fatal("failed to create temporary image cache directory")
@@ -148,6 +151,10 @@ func TestLibraryImageExists(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create new image cache handle: %s", err)
 	}
+
+	// Before running the test we make sure that the test environment
+	// did not implicitly disable the cache.
+	c.checkIfCacheDisabled(t)
 
 	// Invalid cases
 	_, err = c.LibraryImageExists("", "")

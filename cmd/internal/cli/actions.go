@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
 
 	ocitypes "github.com/containers/image/types"
@@ -195,16 +196,16 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 
 	imageRef := libraryhelper.NormalizeLibraryRef(u)
 
-	libraryImage, err := c.GetImage(ctx, imageRef)
+	libraryImage, err := c.GetImage(ctx, runtime.GOARCH, imageRef)
 	if err == library.ErrNotFound {
-		return "", fmt.Errorf("image does not exist in the library: %s", imageRef)
+		return "", fmt.Errorf("image does not exist in the library: %s (%s)", imageRef, runtime.GOARCH)
 	}
 	if err != nil {
 		return "", err
 	}
 
 	imagePath := ""
-	if disableCache {
+	if imgCache.IsDisabled() {
 		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
 		if err != nil {
 			return "", fmt.Errorf("unable to create tmp file: %v", err)
@@ -212,7 +213,7 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 		imagePath = file.Name()
 		sylog.Infof("Downloading library image to tmp cache: %s", imagePath)
 
-		if err = libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, imageRef); err != nil {
+		if err = libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, runtime.GOARCH, imageRef); err != nil {
 			return "", fmt.Errorf("unable to download image: %v", err)
 		}
 
@@ -225,7 +226,7 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 		} else if !exists {
 			sylog.Infof("Downloading library image")
 
-			if err := libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, imageRef); err != nil {
+			if err := libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, runtime.GOARCH, imageRef); err != nil {
 				return "", fmt.Errorf("unable to download image: %v", err)
 			}
 

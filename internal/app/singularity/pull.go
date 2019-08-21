@@ -35,7 +35,7 @@ var (
 // LibraryPull will download the image specified by file from the library specified by libraryURI.
 // After downloading, the image will be checked for a valid signature and removed if it does not contain one,
 // unless specified not to by the unauthenticated bool
-func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL, authToken string, unauthenticated bool) error {
+func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL, authToken, arch string, unauthenticated bool) error {
 	libraryClient, err := client.NewClient(&client.Config{
 		BaseURL:   libraryURI,
 		AuthToken: authToken,
@@ -48,9 +48,10 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 	imageRef := library.NormalizeLibraryRef(fullURI)
 
 	// check if image exists in library
-	libraryImage, err := libraryClient.GetImage(context.TODO(), imageRef)
+
+	libraryImage, err := libraryClient.GetImage(context.TODO(), arch, imageRef)
 	if err == client.ErrNotFound {
-		return fmt.Errorf("image does not exist in the library: %s", imageRef)
+		return fmt.Errorf("image does not exist in the library: %s (%s)", imageRef, arch)
 	}
 	if err != nil {
 		return fmt.Errorf("could not get image info: %v", err)
@@ -59,7 +60,7 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 	if imgCache.IsDisabled() {
 		// don't use cached image
 		sylog.Infof("Downloading library image: %s", name)
-		err := library.DownloadImage(context.TODO(), libraryClient, name, imageRef, downloadImageCallback)
+		err := library.DownloadImage(context.TODO(), libraryClient, name, arch, imageRef, downloadImageCallback)
 		if err != nil {
 			return fmt.Errorf("unable to download image: %v", err)
 		}
@@ -68,7 +69,13 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 		imageName := uri.GetName("library://" + imageRef)
 		imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
 		exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName)
-		if err != nil {
+		if err == cache.ErrBadChecksum {
+			sylog.Warningf("Removing cached image: %s: cache could be corrupted", imagePath)
+			err := os.Remove(imagePath)
+			if err != nil {
+				return fmt.Errorf("unable to remove corrupted image from cache: %s", err)
+			}
+		} else if err != nil {
 			return fmt.Errorf("unable to check if %s exists: %v", imagePath, err)
 		}
 		if !exists {
@@ -76,7 +83,7 @@ func LibraryPull(imgCache *cache.Handle, name, fullURI, libraryURI, keyServerURL
 			go interruptCleanup(imagePath)
 
 			// call library download image helper
-			err := library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback)
+			err := library.DownloadImage(context.TODO(), libraryClient, imagePath, arch, imageRef, downloadImageCallback)
 			if err != nil {
 				return fmt.Errorf("unable to download image: %v", err)
 			}

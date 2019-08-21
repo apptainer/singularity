@@ -1,0 +1,47 @@
+bootstrap: docker
+from: ubuntu:16.04
+stage: build
+
+%post
+    apt-get update
+    apt-get install -y --no-install-recommends gcc libc6-dev
+
+    cat > /bad.c <<EOF
+#include <stdio.h>
+#include <unistd.h>
+
+void __attribute__ ((constructor)) setup(void) {
+    fprintf(stderr, "BAD NSS CALL\n");
+    _exit(255);
+}
+EOF
+
+    gcc -Wall -shared -fPIC -o /bad.so -Wl,-soname,libnss_bad.so.2 /bad.c
+
+    cat > /nsswitch.conf <<EOF
+aliases:        bad
+passwd:         bad
+group:          bad
+initgroups:     bad
+publickey:      bad
+shadow:         bad
+gshadow:        bad
+hosts:          bad
+networks:       bad
+protocols:      bad
+services:       bad
+ethers:         bad
+rpc:            bad
+netgroup:       bad
+EOF
+
+bootstrap: docker
+from: ubuntu:16.04
+stage: final
+
+%files from build
+    /bad.so /lib/x86_64-linux-gnu/libnss_bad.so.2
+    /nsswitch.conf /etc/nsswitch.conf
+
+%post
+    true

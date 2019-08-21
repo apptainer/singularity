@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 // IsFile check if name component is regular file
@@ -171,4 +173,10 @@ func MakeTmpFile(basedir, pattern string, mode os.FileMode) (*os.File, error) {
 		return nil, fmt.Errorf("failed to change permission of %s: %s", f.Name(), err)
 	}
 	return f, nil
+}
+
+// IsWritable returns true of the directory that is passed in is writable by the
+// the current user.
+func IsWritable(dir string) bool {
+	return unix.Access(dir, unix.W_OK) == nil
 }
