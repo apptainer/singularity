@@ -146,7 +146,7 @@ func Run(t *testing.T) {
 		"PULL":        pull.RunE2ETests(testenv),
 		"PUSH":        push.RunE2ETests(testenv),
 		"REMOTE":      remote.RunE2ETests(testenv),
-		"RUN":        run.CmdE2ETests(testenv),
+		"RUN":         run.CmdE2ETests(testenv),
 		"SIGN":        sign.RunE2ETests(testenv),
 		"VERIFY":      verify.RunE2ETests(testenv),
 		"VERSION":     version.RunE2ETests(testenv),
