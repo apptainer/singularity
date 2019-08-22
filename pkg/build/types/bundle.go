@@ -13,6 +13,7 @@ import (
 	ocitypes "github.com/containers/image/types"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
 // Bundle is the temporary build environment used during the image
@@ -52,9 +53,10 @@ type Options struct {
 	LibraryAuthToken string `json:"libraryAuthToken"`
 	// contains docker credentials if specified
 	DockerAuthConfig *ocitypes.DockerAuthConfig
-	// EncryptionKey specifies the key used for filesystem
+	// EncryptionKeyInfo specifies the key used for filesystem
 	// encryption if applicable
-	EncryptionKey string `json:"encryptionKey"`
+	// A nil value indicated encryption should not occur
+	EncryptionKeyInfo *crypt.KeyInfo
 	// noTest indicates if build should skip running the test script
 	NoTest bool `json:"noTest"`
 	// force automatically deletes an existing container at build destination while performing build
@@ -73,7 +75,7 @@ type Options struct {
 }
 
 // Common code between NewBundle and NewEncryptedBundle
-func bundleCommon(bundleDir, bundlePrefix, encryptionKey string) (b *Bundle, err error) {
+func bundleCommon(bundleDir, bundlePrefix string, keyInfo *crypt.KeyInfo) (b *Bundle, err error) {
 	b = &Bundle{}
 	b.JSONObjects = make(map[string][]byte)
 
@@ -91,7 +93,7 @@ func bundleCommon(bundleDir, bundlePrefix, encryptionKey string) (b *Bundle, err
 		"rootfs": "fs",
 	}
 
-	b.Opts.EncryptionKey = encryptionKey
+	b.Opts.EncryptionKeyInfo = keyInfo
 
 	for _, fso := range b.FSObjects {
 		if err = os.MkdirAll(filepath.Join(b.Path, fso), 0755); err != nil {
@@ -104,13 +106,13 @@ func bundleCommon(bundleDir, bundlePrefix, encryptionKey string) (b *Bundle, err
 }
 
 // NewEncryptedBundle creates an Encrypted Bundle environment
-func NewEncryptedBundle(bundleDir, bundlePrefix, encryptionKey string) (b *Bundle, err error) {
-	return bundleCommon(bundleDir, bundlePrefix, encryptionKey)
+func NewEncryptedBundle(bundleDir, bundlePrefix string, keyInfo *crypt.KeyInfo) (b *Bundle, err error) {
+	return bundleCommon(bundleDir, bundlePrefix, keyInfo)
 }
 
 // NewBundle creates a Bundle environment
 func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
-	return bundleCommon(bundleDir, bundlePrefix, "")
+	return bundleCommon(bundleDir, bundlePrefix, nil)
 }
 
 // Rootfs give the path to the root filesystem in the Bundle

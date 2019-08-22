@@ -12,25 +12,25 @@ import (
 
 // actionflags.go contains flag variables for action-like commands to draw from
 var (
-	AppName         string
-	BindPaths       []string
-	HomePath        string
-	OverlayPath     []string
-	ScratchPath     []string
-	WorkdirPath     string
-	PwdPath         string
-	ShellPath       string
-	Hostname        string
-	Network         string
-	NetworkArgs     []string
-	DNS             string
-	Security        []string
-	CgroupsPath     string
-	VMRAM           string
-	VMCPU           string
-	VMIP            string
-	ContainLibsPath []string
-	encryptionKey   string
+	AppName           string
+	BindPaths         []string
+	HomePath          string
+	OverlayPath       []string
+	ScratchPath       []string
+	WorkdirPath       string
+	PwdPath           string
+	ShellPath         string
+	Hostname          string
+	Network           string
+	NetworkArgs       []string
+	DNS               string
+	Security          []string
+	CgroupsPath       string
+	VMRAM             string
+	VMCPU             string
+	VMIP              string
+	ContainLibsPath   []string
+	encryptionPEMPath string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -48,6 +48,7 @@ var (
 	NoNet           bool
 	IsSyOS          bool
 	disableCache    bool
+	EnterPassphrase bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -295,14 +296,23 @@ var actionContainLibsFlag = cmdline.Flag{
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
-// hidden flag to handle SINGULARITY_ENCRYPTION_KEY environment variable
-var commonEncryptFlag = cmdline.Flag{
-	ID:           "actionEncryptionKey",
-	Value:        &encryptionKey,
+// --passphrase
+var actionPassphraseFlag = cmdline.Flag{
+	ID:           "actionEncryptionPassphrase",
+	Value:        &EnterPassphrase,
+	DefaultValue: false,
+	Name:         "passphrase",
+	Usage:        "Enter a passphrase for an encrypted contaner",
+}
+
+// --pem-path
+var actionPEMPathFlag = cmdline.Flag{
+	ID:           "actionEncryptionPEMPath",
+	Value:        &encryptionPEMPath,
 	DefaultValue: "",
-	Name:         "encryption-key",
-	Hidden:       true,
-	EnvKeys:      []string{"ENCRYPTION_KEY"},
+	Name:         "pem-path",
+	Usage:        "Enter an path to a PEM formated RSA key for an encrypted container",
+	EnvKeys:      []string{"ENCRYPTION_PEM_PATH"},
 }
 
 // hidden flags to handle docker credentials
@@ -697,7 +707,8 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionDropCapsFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionAllowSetuidFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionPwdFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&commonEncryptFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionPassphraseFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionPEMPathFlag, actionsInstanceCmd...)
 
 	for _, cmd := range actionsCmd {
 		plugin.AddFlagHooks(cmd.Flags())

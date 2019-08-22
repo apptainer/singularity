@@ -81,3 +81,4 @@
     - Westley Kurtzer <westley@sylabs.io>, <westleyk@nym.hush.com>
     - Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>
     - Yaroslav Halchenko <debian@onerussian.com>
+    - Onur Yılmaz <csonuryilmaz@gmail.com>
