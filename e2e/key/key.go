@@ -315,6 +315,84 @@ func (c *ctx) singularityResetKeyring(t *testing.T) {
 	}
 }
 
+func (c *ctx) singularityKeyPush(t *testing.T) {
+	tests := []struct {
+		name          string
+		cmdArgs       []string
+		expectedExit  int
+		expectedRegex string
+	}{
+		{
+			name:          "help",
+			cmdArgs:       []string{"--help"},
+			expectedExit:  0,
+			expectedRegex: `^Upload a public key to a key server`,
+		},
+	}
+	for _, tt := range tests {
+		c.singularityResetKeyring(t) // Remove the tmp keyring before each import
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithCommand("key"),
+			e2e.WithArgs(append([]string{"push"}, tt.cmdArgs...)...),
+			e2e.ExpectExit(tt.expectedExit, e2e.ExpectOutput(e2e.RegexMatch, tt.expectedRegex)),
+		)
+	}
+}
+
+func (c *ctx) singularityKeyPull(t *testing.T) {
+	tests := []struct {
+		name          string
+		cmdArgs       []string
+		expectedExit  int
+		expectedRegex string
+	}{
+		{
+			name:          "help",
+			cmdArgs:       []string{"--help"},
+			expectedExit:  0,
+			expectedRegex: `^Download a public key from a key server`,
+		},
+	}
+	for _, tt := range tests {
+		c.singularityResetKeyring(t) // Remove the tmp keyring before each import
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithCommand("key"),
+			e2e.WithArgs(append([]string{"pull"}, tt.cmdArgs...)...),
+			e2e.ExpectExit(tt.expectedExit, e2e.ExpectOutput(e2e.RegexMatch, tt.expectedRegex)),
+		)
+	}
+}
+
+func (c *ctx) singularityKeyRemove(t *testing.T) {
+	tests := []struct {
+		name          string
+		cmdArgs       []string
+		expectedExit  int
+		expectedRegex string
+	}{
+		{
+			name:          "help",
+			cmdArgs:       []string{"--help"},
+			expectedExit:  0,
+			expectedRegex: `^Remove a local public key from your keyring`,
+		},
+	}
+	for _, tt := range tests {
+		c.singularityResetKeyring(t) // Remove the tmp keyring before each import
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithCommand("key"),
+			e2e.WithArgs(append([]string{"remove"}, tt.cmdArgs...)...),
+			e2e.ExpectExit(tt.expectedExit, e2e.ExpectOutput(e2e.RegexMatch, tt.expectedRegex)),
+		)
+	}
+}
+
 // Run the 'key' tests in order
 func (c *ctx) singularityKeyCmd(t *testing.T) {
 	c.singularityKeySearch(t)
@@ -325,6 +403,9 @@ func (c *ctx) singularityKeyCmd(t *testing.T) {
 	c.singularityKeyExport(t)
 	c.singularityKeyImport(t)
 	c.singularityKeyList(t)
+	c.singularityKeyPull(t)
+	c.singularityKeyPush(t)
+	c.singularityKeyRemove(t)
 }
 
 // RunE2ETests is the main func to trigger the test suite
