@@ -771,7 +771,7 @@ func checkCryptsetupVersion() error {
 }
 
 // buildEncryptPassphrase is exercising the build command for encrypted containers
-// while using a passphrase. Not that it covers both the normal case and when the
+// while using a passphrase. Note that it covers both the normal case and when the
 // version of cryptsetup available is not compliant.
 func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	// Expected results for a successful command execution
