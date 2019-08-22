@@ -19,43 +19,43 @@ import (
 
 	"github.com/sylabs/singularity/e2e/security"
 
-	"github.com/sylabs/singularity/e2e/actions"
-
-	"github.com/sylabs/singularity/e2e/cache"
-
-	"github.com/sylabs/singularity/e2e/cmdenvvars"
-
-	"github.com/sylabs/singularity/e2e/docker"
-
-	"github.com/sylabs/singularity/e2e/help"
-
-	"github.com/sylabs/singularity/e2e/imgbuild"
-
-	"github.com/sylabs/singularity/e2e/inspect"
-
-	"github.com/sylabs/singularity/e2e/instance"
-
-	"github.com/sylabs/singularity/e2e/key"
-
-	"github.com/sylabs/singularity/e2e/oci"
-
-	"github.com/sylabs/singularity/e2e/pull"
-
-	"github.com/sylabs/singularity/e2e/push"
-
-	"github.com/sylabs/singularity/e2e/regressions"
-
-	"github.com/sylabs/singularity/e2e/remote"
-
-	"github.com/sylabs/singularity/e2e/run"
-
-	"github.com/sylabs/singularity/e2e/sign"
-
-	"github.com/sylabs/singularity/e2e/verify"
-
-	"github.com/sylabs/singularity/e2e/version"
-
-	singularityenv "github.com/sylabs/singularity/e2e/env"
+	//	"github.com/sylabs/singularity/e2e/actions"
+	//
+	//	"github.com/sylabs/singularity/e2e/cache"
+	//
+	//	"github.com/sylabs/singularity/e2e/cmdenvvars"
+	//
+	//	"github.com/sylabs/singularity/e2e/docker"
+	//
+	//	"github.com/sylabs/singularity/e2e/help"
+	//
+	//	"github.com/sylabs/singularity/e2e/imgbuild"
+	//
+	//	"github.com/sylabs/singularity/e2e/inspect"
+	//
+	//	"github.com/sylabs/singularity/e2e/instance"
+	//
+	//	"github.com/sylabs/singularity/e2e/key"
+	//
+	//	"github.com/sylabs/singularity/e2e/oci"
+	//
+	//	"github.com/sylabs/singularity/e2e/pull"
+	//
+	//	"github.com/sylabs/singularity/e2e/push"
+	//
+	//	"github.com/sylabs/singularity/e2e/regressions"
+	//
+	//	"github.com/sylabs/singularity/e2e/remote"
+	//
+	//	"github.com/sylabs/singularity/e2e/run"
+	//
+	//	"github.com/sylabs/singularity/e2e/sign"
+	//
+	//	"github.com/sylabs/singularity/e2e/verify"
+	//
+	//	"github.com/sylabs/singularity/e2e/version"
+	//
+	//	singularityenv "github.com/sylabs/singularity/e2e/env"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 
@@ -152,26 +152,26 @@ func Run(t *testing.T) {
 
 	// RunE2ETests by functionality
 	suites := map[string]func(*testing.T){
-		"SECURITY":    security.RunE2ETests(testenv),
-		"ACTIONS":     actions.RunE2ETests(testenv),
-		"BUILD":       imgbuild.RunE2ETests(testenv),
-		"CACHE":       cache.RunE2ETests(testenv),
-		"CMDENVVARS":  cmdenvvars.RunE2ETests(testenv),
-		"DOCKER":      docker.RunE2ETests(testenv),
-		"ENV":         singularityenv.RunE2ETests(testenv),
-		"HELP":        help.RunE2ETests(testenv),
-		"INSPECT":     inspect.RunE2ETests(testenv),
-		"INSTANCE":    instance.RunE2ETests(testenv),
-		"KEY":         key.RunE2ETests(testenv),
-		"OCI":         oci.RunE2ETests(testenv),
-		"PULL":        pull.RunE2ETests(testenv),
-		"PUSH":        push.RunE2ETests(testenv),
-		"REMOTE":      remote.RunE2ETests(testenv),
-		"RUN":         run.CmdE2ETests(testenv),
-		"SIGN":        sign.RunE2ETests(testenv),
-		"VERIFY":      verify.RunE2ETests(testenv),
-		"VERSION":     version.RunE2ETests(testenv),
-		"REGRESSIONS": regressions.RunE2ETests(testenv),
+		"SECURITY": security.RunE2ETests(testenv),
+		//"ACTIONS":     actions.RunE2ETests(testenv),
+		//"BUILD":       imgbuild.RunE2ETests(testenv),
+		//"CACHE":       cache.RunE2ETests(testenv),
+		//"CMDENVVARS":  cmdenvvars.RunE2ETests(testenv),
+		//"DOCKER":      docker.RunE2ETests(testenv),
+		//"ENV":         singularityenv.RunE2ETests(testenv),
+		//"HELP":        help.RunE2ETests(testenv),
+		//"INSPECT":     inspect.RunE2ETests(testenv),
+		//"INSTANCE":    instance.RunE2ETests(testenv),
+		//"KEY":         key.RunE2ETests(testenv),
+		//"OCI":         oci.RunE2ETests(testenv),
+		//"PULL":        pull.RunE2ETests(testenv),
+		//"PUSH":        push.RunE2ETests(testenv),
+		//"REMOTE":      remote.RunE2ETests(testenv),
+		//"RUN":         run.CmdE2ETests(testenv),
+		//"SIGN":        sign.RunE2ETests(testenv),
+		//"VERIFY":      verify.RunE2ETests(testenv),
+		//"VERSION":     version.RunE2ETests(testenv),
+		//"REGRESSIONS": regressions.RunE2ETests(testenv),
 	}
 
 	for name, fn := range suites {

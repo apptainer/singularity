@@ -7,6 +7,7 @@ package security
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -14,7 +15,8 @@ import (
 )
 
 type ctx struct {
-	env e2e.TestEnv
+	env     e2e.TestEnv
+	pingImg string
 }
 
 // testSecurityUnpriv tests the security flag fuctionality for singularity exec without elevated privileges
@@ -29,14 +31,12 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 		// taget UID/GID
 		{
 			name:       "Set_uid",
-			image:      c.env.ImagePath,
 			argv:       []string{"id", "-u"},
 			opts:       []string{"--security", "uid:99"},
 			expectExit: 255,
 		},
 		{
 			name:       "Set_gid",
-			image:      c.env.ImagePath,
 			argv:       []string{"id", "-g"},
 			opts:       []string{"--security", "gid:99"},
 			expectExit: 255,
@@ -44,14 +44,12 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 		// seccomp from json file
 		{
 			name:       "SecComp_BlackList",
-			image:      c.env.ImagePath,
 			argv:       []string{"mkdir", "/tmp/foo"},
 			opts:       []string{"--security", "seccomp:./security/testdata/seccomp-profile.json"},
 			expectExit: 159, // process should be killed with SIGSYS (128+31)
 		},
 		{
 			name:       "SecComp_true",
-			image:      c.env.ImagePath,
 			argv:       []string{"true"},
 			opts:       []string{"--security", "seccomp:./security/testdata/seccomp-profile.json"},
 			expectExit: 0,
@@ -59,20 +57,17 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 		// capabilities
 		{
 			name:       "capabilities_keep_true",
-			image:      c.env.ImagePath,
 			argv:       []string{"ping", "-c", "1", "8.8.8.8"},
 			opts:       []string{"--keep-privs"},
 			expectExit: 255,
 		},
 		{
 			name:       "capabilities_keep-false",
-			image:      c.env.ImagePath,
 			argv:       []string{"ping", "-c", "1", "8.8.8.8"},
 			expectExit: 2,
 		},
 		{
 			name:       "capabilities_drop",
-			image:      c.env.ImagePath,
 			argv:       []string{"ping", "-c", "1", "8.8.8.8"},
 			opts:       []string{"--drop-caps", "CAP_NET_RAW"},
 			expectExit: 2,
@@ -82,7 +77,7 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 	for _, tt := range tests {
 		optArgs := []string{}
 		optArgs = append(optArgs, tt.opts...)
-		optArgs = append(optArgs, c.env.ImagePath)
+		optArgs = append(optArgs, c.pingImg)
 		optArgs = append(optArgs, tt.argv...)
 
 		c.env.RunSingularity(
@@ -102,7 +97,7 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 		name       string
 		argv       []string
 		opts       []string
-		expectOut  string
+		expectOp   e2e.SingularityCmdResultOp
 		expectExit int
 	}{
 		// taget UID/GID
@@ -110,14 +105,14 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 			name:       "Set_uid",
 			argv:       []string{"id", "-u"},
 			opts:       []string{"--security", "uid:99"},
-			expectOut:  "99",
+			expectOp:   e2e.ExpectOutput(e2e.ExactMatch, "99"),
 			expectExit: 0,
 		},
 		{
 			name:       "Set_gid",
 			argv:       []string{"id", "-g"},
 			opts:       []string{"--security", "gid:99"},
-			expectOut:  "99",
+			expectOp:   e2e.ExpectOutput(e2e.ExactMatch, "99"),
 			expectExit: 0,
 		},
 		// seccomp from json file
@@ -151,7 +146,7 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 	for _, tt := range tests {
 		optArgs := []string{}
 		optArgs = append(optArgs, tt.opts...)
-		optArgs = append(optArgs, c.env.ImagePath)
+		optArgs = append(optArgs, c.pingImg)
 		optArgs = append(optArgs, tt.argv...)
 
 		c.env.RunSingularity(
@@ -160,7 +155,7 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(optArgs...),
-			e2e.ExpectExit(tt.expectExit, e2e.ExpectOutput(e2e.ExactMatch, tt.expectOut)),
+			e2e.ExpectExit(tt.expectExit, tt.expectOp),
 		)
 
 	}
@@ -200,11 +195,13 @@ func (c *ctx) testSecurityConfOwnership(t *testing.T) {
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
-		env: env,
+		env:     env,
+		pingImg: filepath.Join(env.TestDir, "ubuntu-ping.sif"),
 	}
 
 	return func(t *testing.T) {
-		e2e.PullImage(t, env, "library://westleyk/tests/ubuntu_ping:v1.0", env.ImagePath)
+		e2e.PullImage(t, env, "library://sylabs/tests/ubuntu_ping:v1.0", c.pingImg)
+		defer os.Remove(c.pingImg)
 
 		t.Run("singularitySecurityUnpriv", c.testSecurityUnpriv)
 		t.Run("singularitySecurityPriv", c.testSecurityPriv)

@@ -72,10 +72,6 @@ const (
 )
 
 func (r *SingularityCmdResult) expectMatch(mt MatchType, stream streamType, pattern string) error {
-	if pattern == "" {
-		return nil
-	}
-
 	var output string
 	var streamName string
 
