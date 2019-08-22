@@ -189,7 +189,7 @@ func FileExists(path string) (bool, error) {
 
 // CopyFile copies file to the provided location. To honor umask
 // correctly, the to file must not exist.
-func CopyFile(from, to string, mode os.FileMode) error {
+func CopyFile(from, to string, mode os.FileMode) (err error) {
 	exist, err := FileExists(to)
 	if err != nil {
 		return err
@@ -202,7 +202,12 @@ func CopyFile(from, to string, mode os.FileMode) error {
 	if err != nil {
 		return fmt.Errorf("could not open file: %s: %s", to, err)
 	}
-	defer dstFile.Close()
+	defer func() {
+		dstFile.Close()
+		if err != nil {
+			os.Remove(to)
+		}
+	}()
 
 	srcFile, err := os.Open(from)
 	if err != nil {
@@ -212,9 +217,9 @@ func CopyFile(from, to string, mode os.FileMode) error {
 
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
-		os.Remove(to)
 		return fmt.Errorf("could not copy file: %v", err)
 	}
+
 	return nil
 }
 
