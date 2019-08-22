@@ -30,7 +30,7 @@ type SIFAssembler struct {
 }
 
 type encryptionOptions struct {
-	keyURI    string
+	keyInfo   crypt.KeyInfo
 	plaintext []byte
 }
 
@@ -108,7 +108,7 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encOp
 	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
 
 	if encOpts != nil {
-		data, err := crypt.EncryptKey(encOpts.keyURI, encOpts.plaintext)
+		data, err := crypt.EncryptKey(encOpts.keyInfo, encOpts.plaintext)
 		if err != nil {
 			return fmt.Errorf("while encrypting filesystem key: %s", err)
 		}
@@ -183,8 +183,8 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 
 	var encOpts *encryptionOptions
 
-	if b.Opts.EncryptionKey != "" {
-		plaintext, err := crypt.NewPlaintextKey(b.Opts.EncryptionKey)
+	if b.Opts.EncryptionKeyInfo != nil {
+		plaintext, err := crypt.NewPlaintextKey(*b.Opts.EncryptionKeyInfo)
 		if err != nil {
 			return fmt.Errorf("unable to obtain encryption key: %+v", err)
 		}
@@ -204,7 +204,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 		fsPath = loopPath
 
 		encOpts = &encryptionOptions{
-			keyURI:    b.Opts.EncryptionKey,
+			keyInfo:   *b.Opts.EncryptionKeyInfo,
 			plaintext: plaintext,
 		}
 

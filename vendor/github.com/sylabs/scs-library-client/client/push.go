@@ -284,7 +284,6 @@ func (c *Client) postFileV2(ctx context.Context, r io.Reader, fileSize int64, im
 
 	req.ContentLength = fileSize
 	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("x-amz-meta-client-md5sum", metadata["md5sum"])
 
 	// redirect log output from retryablehttp to our logger
 	l := loggingAdapter{
