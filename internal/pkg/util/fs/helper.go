@@ -187,8 +187,9 @@ func FileExists(path string) (bool, error) {
 	return true, nil
 }
 
-// CopyFile copies file to the provided location. To honor umask
-// correctly, the to file must not exist.
+// CopyFile copies file to the provided location making sure the resulting
+// file has permission bits set to the mode prior to umask. To honor umask
+// correctly the resulting file must not exist.
 func CopyFile(from, to string, mode os.FileMode) (err error) {
 	exist, err := FileExists(to)
 	if err != nil {
