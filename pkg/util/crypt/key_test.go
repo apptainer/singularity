@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	unsupportedURI = "test://justarandominvaliduri"
-	invalidPem     = "pem://nothing"
+	invalidPemPath = "nothing"
+	testPassphrase = "test"
 )
 
 func TestNewPlaintextKey(t *testing.T) {
@@ -24,29 +24,29 @@ func TestNewPlaintextKey(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		keyURI        string
+		keyInfo       KeyInfo
 		expectedError error
 	}{
 		{
-			name:          "empty URI",
-			keyURI:        "",
-			expectedError: nil,
-		},
-		{
-			name:          "unsupported URI",
-			keyURI:        unsupportedURI,
+			name:          "unknown format",
+			keyInfo:       KeyInfo{Format: Unknown},
 			expectedError: ErrUnsupportedKeyURI,
 		},
 		{
+			name:          "passphrase",
+			keyInfo:       KeyInfo{Format: Passphrase, Material: testPassphrase},
+			expectedError: nil,
+		},
+		{
 			name:          "invalid pem",
-			keyURI:        invalidPem,
+			keyInfo:       KeyInfo{Format: PEM, Path: invalidPemPath},
 			expectedError: nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := NewPlaintextKey(tt.keyURI)
+			_, err := NewPlaintextKey(tt.keyInfo)
 			// We do not always use predefined errors so when dealing with errors, we compare the text associated
 			// to the error.
 			if (err != nil && tt.expectedError != nil && err.Error() != tt.expectedError.Error()) ||
@@ -63,33 +63,33 @@ func TestEncryptKey(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		keyURI        string
+		keyInfo       KeyInfo
 		plaintext     []byte
 		expectedError error
 	}{
 		{
-			name:          "empty URI",
-			keyURI:        "",
-			plaintext:     []byte(""),
-			expectedError: nil,
-		},
-		{
-			name:          "unsupported URI",
-			keyURI:        unsupportedURI,
+			name:          "unknown format",
+			keyInfo:       KeyInfo{Format: Unknown},
 			plaintext:     []byte(""),
 			expectedError: ErrUnsupportedKeyURI,
 		},
 		{
-			name:          "invalid pem",
-			keyURI:        invalidPem,
+			name:          "passphrase",
+			keyInfo:       KeyInfo{Format: Passphrase, Material: testPassphrase},
 			plaintext:     []byte(""),
-			expectedError: errors.Wrap(fmt.Errorf("open : no such file or directory"), "loading public key for key encryption"),
+			expectedError: nil,
+		},
+		{
+			name:          "invalid pem",
+			keyInfo:       KeyInfo{Format: PEM, Path: invalidPemPath},
+			plaintext:     []byte(""),
+			expectedError: errors.Wrap(fmt.Errorf("open nothing: no such file or directory"), "loading public key for key encryption"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := EncryptKey(tt.keyURI, tt.plaintext)
+			_, err := EncryptKey(tt.keyInfo, tt.plaintext)
 			// We do not always use predefined errors so when dealing with errors, we compare the text associated
 			// to the error.
 			if (err != nil && tt.expectedError != nil && err.Error() != tt.expectedError.Error()) ||
@@ -112,29 +112,29 @@ func TestPlaintextKey(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		keyURI        string
+		keyInfo       KeyInfo
 		expectedError error
 	}{
 		{
-			name:          "empty URI",
-			keyURI:        "",
-			expectedError: nil,
-		},
-		{
-			name:          "unsupported URI",
-			keyURI:        unsupportedURI,
+			name:          "unknown format",
+			keyInfo:       KeyInfo{Format: Unknown},
 			expectedError: ErrUnsupportedKeyURI,
 		},
 		{
+			name:          "passphrase",
+			keyInfo:       KeyInfo{Format: Passphrase, Material: testPassphrase},
+			expectedError: nil,
+		},
+		{
 			name:          "invalid pem",
-			keyURI:        invalidPem,
-			expectedError: errors.Wrap(fmt.Errorf("open : no such file or directory"), "loading private key for key decryption"),
+			keyInfo:       KeyInfo{Format: PEM, Path: invalidPemPath},
+			expectedError: errors.Wrap(fmt.Errorf("open nothing: no such file or directory"), "loading private key for key decryption"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := PlaintextKey(tt.keyURI, noimage)
+			_, err := PlaintextKey(tt.keyInfo, noimage)
 			// We do not always use predefined errors so when dealing with errors, we compare the text associated
 			// to the error.
 			if (err != nil && tt.expectedError != nil && err.Error() != tt.expectedError.Error()) ||

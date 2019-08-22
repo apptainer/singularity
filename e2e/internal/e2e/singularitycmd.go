@@ -393,7 +393,9 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 		}
 
 		for _, op := range resultOps {
-			op(t, r)
+			if op != nil {
+				op(t, r)
+			}
 		}
 	}
 }
