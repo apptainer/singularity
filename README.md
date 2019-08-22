@@ -12,7 +12,7 @@
 
 Singularity is an open source container platform designed to be simple, fast, and secure. Singularity is optimized for [EPC](https://www.sylabs.io/2018/09/singularity-is-enterprise-performance-computing/) and HPC workloads, allowing untrusted users to run untrusted containers in a trusted way.
 
-Check out [who is using Singularity](https://www.sylabs.io/singularity/whos-using-singularity/) and some [use cases of Singularity](https://www.sylabs.io/category/how-tos/) on our website.
+Check out [who is using Singularity](https://www.sylabs.io/singularity/whos-using-singularity/) and some [use cases of Singularity](https://sylabs.io/case-studies) on our website.
 
 ## Getting Started with Singularity
 
