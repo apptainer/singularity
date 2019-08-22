@@ -201,7 +201,7 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 
 	dstFile, err := os.OpenFile(to, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mode)
 	if err != nil {
-		return fmt.Errorf("could not open file: %s: %s", to, err)
+		return fmt.Errorf("could not open %s: %v", to, err)
 	}
 	defer func() {
 		dstFile.Close()
