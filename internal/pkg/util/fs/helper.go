@@ -212,6 +212,7 @@ func CopyFile(from, to string, mode os.FileMode) error {
 
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
+		os.Remove(to)
 		return fmt.Errorf("could not copy file: %v", err)
 	}
 	return nil

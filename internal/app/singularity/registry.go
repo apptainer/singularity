@@ -122,7 +122,6 @@ func (l *Library) pullAndVerify(ctx context.Context, imgMeta *scs.Image, from, t
 func (l *Library) copyFromCache(hash, name, to string) error {
 	exists, err := l.cache.LibraryImageExists(hash, name)
 	if err == cache.ErrBadChecksum {
-		sylog.Debugf("cache hash does not match, removing old cache...")
 		sylog.Warningf("Removing cached image: %s: cache could be corrupted", name)
 		err := os.Remove(l.cache.LibraryImage(hash, name))
 		if err != nil {
