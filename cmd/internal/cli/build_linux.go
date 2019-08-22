@@ -349,6 +349,15 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 	// 4. Passphrase envvar
 
 	if PEMFlag.Changed {
+		exists, err := fs.FileExists(encryptionPEMPath)
+		if err != nil {
+			sylog.Fatalf("Unable to verify existence of %s: %v", encryptionPEMPath, err)
+		}
+
+		if !exists {
+			sylog.Fatalf("Specified PEM file %s: does not exist.", encryptionPEMPath)
+		}
+
 		sylog.Verbosef("Using pem path flag for encrypted container")
 		return crypt.KeyInfo{Format: crypt.PEM, Path: encryptionPEMPath}, nil
 	}
@@ -366,6 +375,15 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 	}
 
 	if pemPathEnvOK {
+		exists, err := fs.FileExists(encryptionPEMPath)
+		if err != nil {
+			sylog.Fatalf("Unable to verify existence of %s: %v", encryptionPEMPath, err)
+		}
+
+		if !exists {
+			sylog.Fatalf("Specified PEM file %s: does not exist.", encryptionPEMPath)
+		}
+
 		sylog.Verbosef("Using pem path environment variable for encrypted container")
 		return crypt.KeyInfo{Format: crypt.PEM, Path: pemPathEnv}, nil
 	}
