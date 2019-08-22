@@ -6,6 +6,12 @@
 package imgbuild
 
 import (
+	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"encoding/asn1"
+	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -770,6 +776,160 @@ func checkCryptsetupVersion() error {
 	return nil
 }
 
+// Code from https://github.com/sylabs/edge-agent/blob/master/pkg/keys/keys.go
+// I do not want to introduce that dependency here
+const (
+	defaultKeySize = 2048
+)
+
+func generateRSAKey(keySize int) (*rsa.PrivateKey, error) {
+	reader := rand.Reader
+
+	if keySize == 0 {
+		keySize = defaultKeySize
+	}
+
+	key, err := rsa.GenerateKey(reader, keySize)
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to generate RSA key: %v", err)
+	}
+
+	return key, nil
+}
+
+// Code from https://github.com/sylabs/edge-agent/blob/master/pkg/keys/keys.go
+// I do not want to introduce that dependency here
+func publicPEM(key *rsa.PrivateKey) (string, error) {
+	var buf bytes.Buffer
+
+	if key == nil {
+		return "", errors.New("cannot encode nil key")
+	}
+
+	err := key.Validate()
+	if err != nil {
+		return "", fmt.Errorf("cannot encode invalid key: %v", err)
+	}
+
+	asn1Bytes, err := asn1.Marshal(key.PublicKey)
+	if err != nil {
+		return "", fmt.Errorf("unable to encode public key: %v", err)
+	}
+
+	var pemkey = &pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: asn1Bytes,
+	}
+
+	err = pem.Encode(&buf, pemkey)
+	if err != nil {
+		return "", fmt.Errorf("error encoding key: %v", err)
+	}
+
+	return buf.String(), nil
+}
+
+// Code from https://github.com/sylabs/edge-agent/blob/master/pkg/keys/keys.go
+// I do not want to introduce that dependency here
+func savePublicPEM(fileName string, key *rsa.PrivateKey) error {
+	pem, err := publicPEM(key)
+	if err != nil {
+		return err
+	}
+
+	pemfile, err := os.Create(fileName)
+	if err != nil {
+		return fmt.Errorf("unable to create key file: %v", err)
+	}
+	defer pemfile.Close()
+
+	_, err = pemfile.WriteString(pem)
+	if err != nil {
+		return fmt.Errorf("error writing key to file: %v", err)
+	}
+
+	return nil
+}
+
+func (c *imgBuildTests) generatePemFile(t *testing.T) string {
+	// Temporary file to save the PEM file
+	tempPemFile, err := ioutil.TempFile(c.env.TestDir, "pem-")
+	if err != nil {
+		t.Fatalf("failed to create temporary file: %s", err)
+	}
+	tempPemFile.Close()
+	// File is deleted when the e2e framework deletes TestDir
+
+	rsaKey, err := generateRSAKey(2048)
+	if err != nil {
+		t.Fatalf("failed to generate RSA key: %s", err)
+	}
+
+	err = savePublicPEM(tempPemFile.Name(), rsaKey)
+	if err != nil {
+		t.Fatalf("failed to generate PEM file: %s", err)
+	}
+
+	return tempPemFile.Name()
+}
+
+func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
+	// Expected results for a successful command execution
+	expectedExitCode := 0
+	expectedStderr := ""
+
+	// Generate the PEM file
+	pemFile := c.generatePemFile(t)
+
+	// If the version of cryptsetup is not compatible with Singularity encryption,
+	// the build commands are expected to fail
+	err := checkCryptsetupVersion()
+	if err != nil {
+		expectedExitCode = 255
+		// todo: fix the problen with catching stderr, until then we do not do a real check
+		//expectedStderr = "FATAL:   While performing build: unable to encrypt filesystem at /tmp/sbuild-718337349/squashfs-770818633: available cryptsetup is not supported"
+		expectedStderr = ""
+	}
+
+	imgPath1 := filepath.Join(c.env.TestDir, "encrypted_cmdline_option.sif")
+	cmdArgs := []string{"-e", "--pem-path", pemFile, imgPath1, "library://alpine:latest"}
+	c.env.RunSingularity(
+		t,
+		e2e.WithCommand("build"),
+		e2e.WithPrivileges(true),
+		e2e.WithArgs(cmdArgs...),
+		e2e.ExpectExit(
+			expectedExitCode,
+			e2e.ExpectError(e2e.ContainMatch, expectedStderr),
+		),
+	)
+	// If the command was supposed to succeed, we check the image
+	if expectedExitCode == 0 {
+		c.ensureImageIsEncrypted(t, imgPath1)
+	}
+
+	// Second with the environment variable
+	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PEM_PATH", pemFile)
+	imgPath2 := filepath.Join(c.env.TestDir, "encrypted_env_var.sif")
+	cmdArgs = []string{"-e", imgPath2, "library://alpine:latest"}
+	c.env.RunSingularity(
+		t,
+		e2e.WithCommand("build"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.WithPrivileges(true),
+		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
+		e2e.ExpectExit(
+			expectedExitCode,
+			e2e.ExpectError(e2e.ContainMatch, expectedStderr),
+		),
+	)
+	// If the command was supposed to succeed, we check the image
+	if expectedExitCode == 0 {
+		c.ensureImageIsEncrypted(t, imgPath2)
+	}
+}
+
 // buildEncryptPassphrase is exercising the build command for encrypted containers
 // while using a passphrase. Not that it covers both the normal case and when the
 // version of cryptsetup available is not compliant.
@@ -829,6 +989,21 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	if expectedExitCode == 0 {
 		c.ensureImageIsEncrypted(t, imgPath2)
 	}
+
+	// Finally a test that must fail: try to specify the passphrase on the command line
+	cmdArgs = []string{"-e", "--passphrase", passphrase, imgPath2, "library://alpine:latest"}
+	c.env.RunSingularity(
+		t,
+		e2e.WithCommand("build"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.WithPrivileges(true),
+		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
+		e2e.ExpectExit(
+			1,
+			e2e.ExpectError(e2e.RegexMatch, `^Error for command \"build\": accepts 2 arg\(s\), received 3`),
+		),
+	)
+
 }
 
 // RunE2ETests is the main func to trigger the test suite
@@ -852,5 +1027,6 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 		t.Run("MultiStage", c.buildMultiStageDefinition)
 		// build encrypted images
 		t.Run("buildEncryptPassphrase", c.buildEncryptPassphrase)
+		t.Run("buildEncryptPemFile", c.buildEncryptPemFile)
 	}
 }
