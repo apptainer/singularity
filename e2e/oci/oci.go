@@ -391,6 +391,7 @@ func (c *ctx) testOciHelp(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c.env.RunSingularity(
 				t,
+				e2e.AsSubtest(tt.name),
 				e2e.WithCommand("oci"),
 				e2e.WithArgs([]string{tt.name, "--help"}...),
 				e2e.ExpectExit(
