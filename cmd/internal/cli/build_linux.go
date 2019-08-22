@@ -195,7 +195,7 @@ func run(cmd *cobra.Command, args []string) {
 	} else {
 
 		var keyInfo *crypt.KeyInfo
-		if encrypt {
+		if encrypt || EnterPassphrase || cmd.Flags().Lookup("pem-path").Changed {
 			if os.Getuid() != 0 {
 				sylog.Fatalf("You must be root to build an encrypted container")
 			}
@@ -206,11 +206,10 @@ func run(cmd *cobra.Command, args []string) {
 			}
 			keyInfo = &k
 		} else {
-			passphraseFlag := cmd.Flags().Lookup("passphrase")
-			PEMFlag := cmd.Flags().Lookup("pem-path")
-			_, passphraseOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PASSPHRASE")
-			if PEMFlag.Changed || passphraseFlag.Changed || passphraseOK {
-				sylog.Warningf("Encryption related flags/env vars found, but -e was not specified. NOT encrypting container.")
+			_, passphraseEnvOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PASSPHRASE")
+			_, pemPathEnvOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PEM_PATH")
+			if passphraseEnvOK || pemPathEnvOK {
+				sylog.Warningf("Encryption related env vars found, but --encrypt was not specified. NOT encrypting container.")
 			}
 		}
 
@@ -330,36 +329,32 @@ func handleBuildFlags(cmd *cobra.Command) {
 
 // getEncryptionMaterial handles the setting of encryption environment and flag parameters to eventually be
 // passed to the crypt package for handling.
-// This handles the SINGULARITY_ENCRYPTION_PASSPHRASE envvar outside of cobra in order to
-// prevent the need to an odd hidden flag since --passphrase is a boolean for an interactive prompt
+// This handles the SINGULARITY_ENCRYPTION_PASSPHRASE/PEM_PATH envvars outside of cobra in order to
+// enforce the unique flag/env precidence for the encryption flow
 func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 	passphraseFlag := cmd.Flags().Lookup("passphrase")
 	PEMFlag := cmd.Flags().Lookup("pem-path")
-	passphrase, passphraseOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PASSPHRASE")
+	passphraseEnv, passphraseEnvOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PASSPHRASE")
+	pemPathEnv, pemPathEnvOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PEM_PATH")
 
-	// checks for both envvars/flags being set
-	if !PEMFlag.Changed && !(passphraseFlag.Changed || passphraseOK) {
-		sylog.Fatalf("Trying use container encryption without supplying key or passphrase.")
-	}
-
-	if PEMFlag.Changed && (passphraseFlag.Changed || passphraseOK) {
-		sylog.Warningf("Ignoring option for passphrase as key filepath is supplied")
+	// checks for no flags/envvars being set
+	if !(PEMFlag.Changed || pemPathEnvOK || passphraseFlag.Changed || passphraseEnvOK) {
+		sylog.Fatalf("Unable to use container encryption. Must supply encryption material through enironment variables or flags.")
 	}
 
 	// order of precidence:
-	// 1. PEM flag or envvar(Note flag supersedes envvar)
-	// 2. Passphrase envvar
-	// 3. Passphrase flag
+	// 1. PEM flag
+	// 2. Passphrase flag
+	// 3. PEM envvar
+	// 4. Passphrase envvar
 
 	if PEMFlag.Changed {
+		sylog.Verbosef("Using pem path flag for encrypted container")
 		return crypt.KeyInfo{Format: crypt.PEM, Path: encryptionPEMPath}, nil
 	}
 
-	if passphraseOK {
-		return crypt.KeyInfo{Format: crypt.Passphrase, Material: passphrase}, nil
-	}
-
 	if passphraseFlag.Changed {
+		sylog.Verbosef("Using interactive passphrase entry for encrypted container")
 		passphrase, err := interactive.AskQuestionNoEcho("Enter encryption passphrase: ")
 		if err != nil {
 			return crypt.KeyInfo{}, err
@@ -368,6 +363,16 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 			sylog.Fatalf("Cannot encrypt container with empty passphrase")
 		}
 		return crypt.KeyInfo{Format: crypt.Passphrase, Material: passphrase}, nil
+	}
+
+	if pemPathEnvOK {
+		sylog.Verbosef("Using pem path environment variable for encrypted container")
+		return crypt.KeyInfo{Format: crypt.PEM, Path: pemPathEnv}, nil
+	}
+
+	if passphraseEnvOK {
+		sylog.Verbosef("Using passphrase environment variable for encrypted container")
+		return crypt.KeyInfo{Format: crypt.Passphrase, Material: passphraseEnv}, nil
 	}
 
 	return crypt.KeyInfo{}, nil
