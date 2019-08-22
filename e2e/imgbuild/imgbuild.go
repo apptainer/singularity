@@ -6,12 +6,6 @@
 package imgbuild
 
 import (
-	"bytes"
-	"crypto/rand"
-	"crypto/rsa"
-	"encoding/asn1"
-	"encoding/pem"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -24,6 +18,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
 var testFileContent = "Test file content\n"
@@ -776,82 +771,6 @@ func checkCryptsetupVersion() error {
 	return nil
 }
 
-// Code from https://github.com/sylabs/edge-agent/blob/master/pkg/keys/keys.go
-// I do not want to introduce that dependency here
-const (
-	defaultKeySize = 2048
-)
-
-func generateRSAKey(keySize int) (*rsa.PrivateKey, error) {
-	reader := rand.Reader
-
-	if keySize == 0 {
-		keySize = defaultKeySize
-	}
-
-	key, err := rsa.GenerateKey(reader, keySize)
-
-	if err != nil {
-		return nil, fmt.Errorf("unable to generate RSA key: %v", err)
-	}
-
-	return key, nil
-}
-
-// Code from https://github.com/sylabs/edge-agent/blob/master/pkg/keys/keys.go
-// I do not want to introduce that dependency here
-func publicPEM(key *rsa.PrivateKey) (string, error) {
-	var buf bytes.Buffer
-
-	if key == nil {
-		return "", errors.New("cannot encode nil key")
-	}
-
-	err := key.Validate()
-	if err != nil {
-		return "", fmt.Errorf("cannot encode invalid key: %v", err)
-	}
-
-	asn1Bytes, err := asn1.Marshal(key.PublicKey)
-	if err != nil {
-		return "", fmt.Errorf("unable to encode public key: %v", err)
-	}
-
-	var pemkey = &pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: asn1Bytes,
-	}
-
-	err = pem.Encode(&buf, pemkey)
-	if err != nil {
-		return "", fmt.Errorf("error encoding key: %v", err)
-	}
-
-	return buf.String(), nil
-}
-
-// Code from https://github.com/sylabs/edge-agent/blob/master/pkg/keys/keys.go
-// I do not want to introduce that dependency here
-func savePublicPEM(fileName string, key *rsa.PrivateKey) error {
-	pem, err := publicPEM(key)
-	if err != nil {
-		return err
-	}
-
-	pemfile, err := os.Create(fileName)
-	if err != nil {
-		return fmt.Errorf("unable to create key file: %v", err)
-	}
-	defer pemfile.Close()
-
-	_, err = pemfile.WriteString(pem)
-	if err != nil {
-		return fmt.Errorf("error writing key to file: %v", err)
-	}
-
-	return nil
-}
-
 func (c *imgBuildTests) generatePemFile(t *testing.T) string {
 	// Temporary file to save the PEM file
 	tempPemFile, err := ioutil.TempFile(c.env.TestDir, "pem-")
@@ -861,12 +780,12 @@ func (c *imgBuildTests) generatePemFile(t *testing.T) string {
 	tempPemFile.Close()
 	// File is deleted when the e2e framework deletes TestDir
 
-	rsaKey, err := generateRSAKey(2048)
+	rsaKey, err := crypt.GenerateRSAKey(2048)
 	if err != nil {
 		t.Fatalf("failed to generate RSA key: %s", err)
 	}
 
-	err = savePublicPEM(tempPemFile.Name(), rsaKey)
+	err = crypt.SavePublicPEM(tempPemFile.Name(), rsaKey)
 	if err != nil {
 		t.Fatalf("failed to generate PEM file: %s", err)
 	}
@@ -878,6 +797,11 @@ func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
 	// Expected results for a successful command execution
 	expectedExitCode := 0
 	expectedStderr := ""
+
+	// We create a temporary directory to store the image, making sure tests
+	// will not pollute each other
+	tempDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
+	defer cleanup(t)
 
 	// Generate the PEM file
 	pemFile := c.generatePemFile(t)
@@ -892,7 +816,8 @@ func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
 		expectedStderr = ""
 	}
 
-	imgPath1 := filepath.Join(c.env.TestDir, "encrypted_cmdline_option.sif")
+	// First with the command line argument
+	imgPath1 := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
 	cmdArgs := []string{"-e", "--pem-path", pemFile, imgPath1, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -911,7 +836,7 @@ func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
 
 	// Second with the environment variable
 	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PEM_PATH", pemFile)
-	imgPath2 := filepath.Join(c.env.TestDir, "encrypted_env_var.sif")
+	imgPath2 := filepath.Join(tempDir, "encrypted_env_var.sif")
 	cmdArgs = []string{"-e", imgPath2, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -938,6 +863,11 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	expectedExitCode := 0
 	expectedStderr := ""
 
+	// We create a temporary directory to store the image, making sure tests
+	// will not pollute each other
+	tempDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
+	defer cleanup(t)
+
 	// If the version of cryptsetup is not compatible with Singularity encryption,
 	// the build commands are expected to fail
 	err := checkCryptsetupVersion()
@@ -952,7 +882,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	passphraseInput := []e2e.SingularityConsoleOp{
 		e2e.ConsoleSendLine(passphrase),
 	}
-	imgPath1 := filepath.Join(c.env.TestDir, "encrypted_cmdline_option.sif")
+	imgPath1 := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
 	cmdArgs := []string{"-e", "--passphrase", imgPath1, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -972,7 +902,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 
 	// Second with the environment variable
 	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PASSPHRASE", passphrase)
-	imgPath2 := filepath.Join(c.env.TestDir, "encrypted_env_var.sif")
+	imgPath2 := filepath.Join(tempDir, "encrypted_env_var.sif")
 	cmdArgs = []string{"-e", imgPath2, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -991,7 +921,8 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	}
 
 	// Finally a test that must fail: try to specify the passphrase on the command line
-	cmdArgs = []string{"-e", "--passphrase", passphrase, imgPath2, "library://alpine:latest"}
+	imgPath3 := filepath.Join(tempDir, "dummy_encrypted_env_var.sif")
+	cmdArgs = []string{"-e", "--passphrase", passphrase, imgPath3, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("build"),
