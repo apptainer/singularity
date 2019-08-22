@@ -94,6 +94,8 @@ var PushCmd = &cobra.Command{
 				sylog.Fatalf("Unable to push image to oci registry: %v", err)
 			}
 			sylog.Infof("Upload complete")
+		default:
+			sylog.Fatalf("Unsupported transport type: %s", transport)
 		}
 	},
 
