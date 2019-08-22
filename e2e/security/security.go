@@ -34,6 +34,8 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 			argv:       []string{"id", "-u"},
 			opts:       []string{"--security", "uid:99"},
 			expectExit: 255,
+			// TODO: add expect stderr for "uid security feature requires root privileges"
+			// pending issue: https://github.com/sylabs/singularity/issues/4280
 		},
 		{
 			name:       "Set_gid",
