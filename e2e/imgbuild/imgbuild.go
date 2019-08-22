@@ -838,20 +838,18 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
-		/*
-			// builds from definition file and URI
-			t.Run("From", c.buildFrom)
-			// build and image from an existing image
-			t.Run("FromLocalImage", c.buildLocalImage)
-			// build sifs from non-root
-			t.Run("NonRootBuild", c.nonRootBuild)
-			// try to build from a non existen path
-			t.Run("badPath", c.badPath)
-			// builds from definition template
-			t.Run("Definition", c.buildDefinition)
-			// multistage build from definition templates
-			t.Run("MultiStage", c.buildMultiStageDefinition)
-		*/
+		// builds from definition file and URI
+		t.Run("From", c.buildFrom)
+		// build and image from an existing image
+		t.Run("FromLocalImage", c.buildLocalImage)
+		// build sifs from non-root
+		t.Run("NonRootBuild", c.nonRootBuild)
+		// try to build from a non existen path
+		t.Run("badPath", c.badPath)
+		// builds from definition template
+		t.Run("Definition", c.buildDefinition)
+		// multistage build from definition templates
+		t.Run("MultiStage", c.buildMultiStageDefinition)
 		// build encrypted images
 		t.Run("buildEncryptPassphrase", c.buildEncryptPassphrase)
 	}
