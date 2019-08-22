@@ -818,7 +818,7 @@ func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
 
 	// First with the command line argument
 	imgPath1 := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
-	cmdArgs := []string{"-e", "--pem-path", pemFile, imgPath1, "library://alpine:latest"}
+	cmdArgs := []string{"--encrypt", "--pem-path", pemFile, imgPath1, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("build"),
@@ -837,7 +837,7 @@ func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
 	// Second with the environment variable
 	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PEM_PATH", pemFile)
 	imgPath2 := filepath.Join(tempDir, "encrypted_env_var.sif")
-	cmdArgs = []string{"-e", imgPath2, "library://alpine:latest"}
+	cmdArgs = []string{"--encrypt", imgPath2, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("build"),
@@ -883,7 +883,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 		e2e.ConsoleSendLine(passphrase),
 	}
 	imgPath1 := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
-	cmdArgs := []string{"-e", "--passphrase", imgPath1, "library://alpine:latest"}
+	cmdArgs := []string{"--encrypt", "--passphrase", imgPath1, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("build"),
@@ -903,7 +903,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	// Second with the environment variable
 	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PASSPHRASE", passphrase)
 	imgPath2 := filepath.Join(tempDir, "encrypted_env_var.sif")
-	cmdArgs = []string{"-e", imgPath2, "library://alpine:latest"}
+	cmdArgs = []string{"--encrypt", imgPath2, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("build"),
@@ -922,7 +922,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 
 	// Finally a test that must fail: try to specify the passphrase on the command line
 	imgPath3 := filepath.Join(tempDir, "dummy_encrypted_env_var.sif")
-	cmdArgs = []string{"-e", "--passphrase", passphrase, imgPath3, "library://alpine:latest"}
+	cmdArgs = []string{"--encrypt", "--passphrase", passphrase, imgPath3, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("build"),
