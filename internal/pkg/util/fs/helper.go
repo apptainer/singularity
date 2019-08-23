@@ -176,22 +176,38 @@ func MakeTmpFile(basedir, pattern string, mode os.FileMode) (*os.File, error) {
 	return f, nil
 }
 
-// CopyFile copies file to the provided location making sure the resulting
-// file has permission bits set to the mode.
-func CopyFile(from, to string, mode os.FileMode) (err error) {
-	dstFile, err := MakeTmpFile(filepath.Dir(to), "", mode)
-	if err != nil {
-		return fmt.Errorf("could not create temp file: %v", err)
+// FileExists simply checks if a path exists.
+func FileExists(path string) (bool, error) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
 	}
 
+	return true, nil
+}
+
+// CopyFile copies file to the provided location making sure the resulting
+// file has permission bits set to the mode prior to umask. To honor umask
+// correctly the resulting file must not exist.
+func CopyFile(from, to string, mode os.FileMode) (err error) {
+	exist, err := FileExists(to)
+	if err != nil {
+		return err
+	}
+	if exist {
+		return fmt.Errorf("file %s already exists", to)
+	}
+
+	dstFile, err := os.OpenFile(to, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mode)
+	if err != nil {
+		return fmt.Errorf("could not open %s: %v", to, err)
+	}
 	defer func() {
 		dstFile.Close()
-		if err == nil {
-			if e := os.Rename(dstFile.Name(), to); e != nil {
-				err = fmt.Errorf("could not rename temp file: %v", err)
-			}
+		if err != nil {
+			os.Remove(to)
 		}
-		os.Remove(dstFile.Name())
 	}()
 
 	srcFile, err := os.Open(from)
@@ -204,6 +220,7 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 	if err != nil {
 		return fmt.Errorf("could not copy file: %v", err)
 	}
+
 	return nil
 }
 
