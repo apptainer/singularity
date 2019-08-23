@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/asn1"
 	"encoding/pem"
 	"errors"
@@ -84,6 +85,37 @@ func SavePublicPEM(fileName string, key *rsa.PrivateKey) error {
 	defer pemfile.Close()
 
 	_, err = pemfile.WriteString(pem)
+	if err != nil {
+		return fmt.Errorf("error writing key to file: %v", err)
+	}
+
+	return nil
+}
+
+// SavePrivatePEM saves a private PEM key into a file.
+func SavePrivatePEM(fileName string, key *rsa.PrivateKey) error {
+	if key == nil {
+		return errors.New("cannot save nil key")
+	}
+
+	err := key.Validate()
+	if err != nil {
+		return fmt.Errorf("cannot save invalid key: %v", err)
+	}
+
+	outFile, err := os.Create(fileName)
+	if err != nil {
+		return fmt.Errorf("unable to create key file: %v", err)
+	}
+
+	defer outFile.Close()
+
+	var privateKey = &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	}
+
+	err = pem.Encode(outFile, privateKey)
 	if err != nil {
 		return fmt.Errorf("error writing key to file: %v", err)
 	}
