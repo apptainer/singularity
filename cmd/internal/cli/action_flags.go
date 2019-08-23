@@ -312,7 +312,6 @@ var actionPEMPathFlag = cmdline.Flag{
 	DefaultValue: "",
 	Name:         "pem-path",
 	Usage:        "Enter an path to a PEM formated RSA key for an encrypted container",
-	EnvKeys:      []string{"ENCRYPTION_PEM_PATH"},
 }
 
 // hidden flags to handle docker credentials
