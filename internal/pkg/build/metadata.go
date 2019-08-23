@@ -21,6 +21,59 @@ import (
 )
 
 func (s *stage) insertMetadata() error {
+
+	//	sylog.Infof("Adding metadata...")
+
+	// load the container
+	//	fimg, err := sif.LoadContainer(cpath, false)
+	//	if err != nil {
+	//		return fmt.Errorf("failed to load sif container file: %s", err)
+	//	}
+	//	defer fimg.UnloadContainer()
+	//
+	//	// figure out which descriptor has data to sign
+	//	descr, err := descrToSign(&fimg, id, isGroup)
+	//	if err != nil {
+	//		return fmt.Errorf("signing requires a primary partition: %s", err)
+	//	}
+
+	// signature also include data integrity check
+	//	sifhash := computeHashStr(&fimg, descr)
+
+	//	// create an ascii armored signature block
+	//	var signedmsg bytes.Buffer
+	//	plaintext, err := clearsign.Encode(&signedmsg, entity.PrivateKey, nil)
+	//	if err != nil {
+	//		return fmt.Errorf("could not build a signature block: %s", err)
+	//	}
+	//	_, err = plaintext.Write([]byte(sifhash))
+	//	if err != nil {
+	//		return fmt.Errorf("failed writing hash value to signature block: %s", err)
+	//	}
+	//	if err = plaintext.Close(); err != nil {
+	//		return fmt.Errorf("I/O error while wrapping up signature block: %s", err)
+	//	}
+
+	// finally add the signature block (for descr) as a new SIF data object
+	//	isGroup := false
+	//	var groupid, link uint32
+	//	if isGroup {
+	//		groupid = sif.DescrUnusedGroup
+	//		link = descr[0].Groupid
+	//	} else {
+	//		groupid = descr[0].Groupid
+	//		link = descr[0].ID
+	//	}
+	//
+	//	data := []byte("hello world!!! testing from the contianer")
+	//
+	//	err = sifAddMetadata(&fimg, groupid, link, entity.PrimaryKey.Fingerprint, data)
+	//	if err != nil {
+	//		return fmt.Errorf("failed adding signature block to SIF container file: %s", err)
+	//	}
+	//
+	//	fmt.Println("HELLO WORLD")
+	//
 	// insert help
 	if err := insertHelpScript(s.b); err != nil {
 		return fmt.Errorf("while inserting help script: %v", err)

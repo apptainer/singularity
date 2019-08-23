@@ -6,6 +6,7 @@
 package build
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,10 +14,13 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/build/apps"
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/files"
@@ -249,6 +253,8 @@ func (b Build) cleanUp() {
 func (b *Build) Full() error {
 	sylog.Infof("Starting build...")
 
+	labels := make(map[string]map[string]string, 1)
+
 	// monitor build for termination signal and clean up
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -316,10 +322,47 @@ func (b *Build) Full() error {
 			}
 		}
 
-		sylog.Debugf("Inserting Metadata")
-		if err := stage.insertMetadata(); err != nil {
-			return fmt.Errorf("while inserting metadata to bundle: %v", err)
+		//		sylog.Debugf("Inserting Metadata")
+		//	if err := stage.insertMetadata(); err != nil {
+		//		return fmt.Errorf("while inserting metadata to bundle: %v", err)
+		//	}
+
+		//labels["contianer-info"] = "contianer-info"
+		labels["contianer-info"] = make(map[string]string, 1)
+		labels["contianer-info"]["org.label-schema.schema-version"] = "2.0"
+
+		// build date and time, lots of time formatting
+		currentTime := time.Now()
+		year, month, day := currentTime.Date()
+		date := strconv.Itoa(day) + `_` + month.String() + `_` + strconv.Itoa(year)
+		hour, min, sec := currentTime.Clock()
+		time := strconv.Itoa(hour) + `:` + strconv.Itoa(min) + `:` + strconv.Itoa(sec)
+		zone, _ := currentTime.Zone()
+		timeString := currentTime.Weekday().String() + `_` + date + `_` + time + `_` + zone
+		labels["contianer-info"]["org.label-schema.build-date"] = timeString
+
+		// singularity version
+		labels["contianer-info"]["org.label-schema.usage.singularity.version"] = buildcfg.PACKAGE_VERSION
+
+		// help info if help exists in the definition and is run in the build
+		if stage.b.RunSection("help") && stage.b.Recipe.ImageData.Help.Script != "" {
+			labels["contianer-info"]["org.label-schema.usage"] = "/.singularity.d/runscript.help"
+			labels["contianer-info"]["org.label-schema.usage.singularity.runscript.help"] = "/.singularity.d/runscript.help"
 		}
+
+		// bootstrap header info, only if this build actually bootstrapped
+		if !stage.b.Opts.Update || stage.b.Opts.Force {
+			for key, value := range stage.b.Recipe.Header {
+				labels["contianer-info"]["org.label-schema.usage.singularity.deffile."+key] = value
+			}
+		}
+
+		labels["help-file"] = make(map[string]string, 1)
+
+		if stage.b.RunSection("help") && stage.b.Recipe.ImageData.Help.Script != "" {
+			labels["help-file"]["help"] = stage.b.Recipe.ImageData.Help.Script
+		}
+
 	}
 
 	sylog.Debugf("Calling assembler")
@@ -327,8 +370,173 @@ func (b *Build) Full() error {
 		return err
 	}
 
+	sylog.Infof("Inserting Metadata...")
+
+	var id uint32
+	id = 0
+
+	isGroup := false
+
+	// load the container
+	fimg, err := sif.LoadContainer(b.Conf.Dest, false)
+	if err != nil {
+		return fmt.Errorf("failed to load sif container file: %s", err)
+	}
+	defer fimg.UnloadContainer()
+
+	// figure out which descriptor has data to sign
+	descr, err := descrToSign(&fimg, id, isGroup)
+	if err != nil {
+		return fmt.Errorf("signing requires a primary partition: %s", err)
+	}
+
+	// finally add the signature block (for descr) as a new SIF data object
+	var groupid, link uint32
+	if isGroup {
+		groupid = sif.DescrUnusedGroup
+		link = descr[0].Groupid
+	} else {
+		groupid = descr[0].Groupid
+		link = descr[0].ID
+	}
+
+	// signature also include data integrity check
+	//	sifhash := computeHashStr(&fimg, descr)
+
+	//	data := []byte("hello world!!! testing from the contianer\n")
+
+	var entity [20]byte
+	copy(entity[:], "FINGERPRINT")
+
+	//
+	//
+	//
+
+	//	labels := make(map[string]string)
+	//
+	//	// schema version
+	//	labels["org.label-schema.schema-version"] = "1.0"
+	//
+	//	// build date and time, lots of time formatting
+	//	currentTime := time.Now()
+	//	year, month, day := currentTime.Date()
+	//	date := strconv.Itoa(day) + `_` + month.String() + `_` + strconv.Itoa(year)
+	//	hour, min, sec := currentTime.Clock()
+	//	time := strconv.Itoa(hour) + `:` + strconv.Itoa(min) + `:` + strconv.Itoa(sec)
+	//	zone, _ := currentTime.Zone()
+	//	timeString := currentTime.Weekday().String() + `_` + date + `_` + time + `_` + zone
+	//	labels["org.label-schema.build-date"] = timeString
+	//
+	//	// singularity version
+	//	labels["org.label-schema.usage.singularity.version"] = buildcfg.PACKAGE_VERSION
+	//
+	//	// help info if help exists in the definition and is run in the build
+	//	if b.RunSection("help") && b.Recipe.ImageData.Help.Script != "" {
+	//		labels["org.label-schema.usage"] = "/.singularity.d/runscript.help"
+	//		labels["org.label-schema.usage.singularity.runscript.help"] = "/.singularity.d/runscript.help"
+	//	}
+	//
+	//	// bootstrap header info, only if this build actually bootstrapped
+	//	if !b.Opts.Update || b.Opts.Force {
+	//		for key, value := range b.Recipe.Header {
+	//			labels["org.label-schema.usage.singularity.deffile."+key] = value
+	//		}
+	//	}
+
+	// Get the primary partition data size
+	primSize := make([]*sif.Descriptor, 1)
+	primSize[0], _, err = fimg.GetPartPrimSys()
+	if err != nil {
+		return fmt.Errorf("failed getting main data: %s", err)
+	}
+
+	labels["contianer-info"]["org.label-schema.image-size"] = readBytes(float64(primSize[0].Storelen))
+
+	// make new map into json
+	text, err := json.MarshalIndent(labels, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	err = sifAddMetadata(&fimg, groupid, link, entity, text)
+	if err != nil {
+		return fmt.Errorf("failed adding signature block to SIF container file: %s", err)
+	}
+
+	fmt.Println("HELLO WORLD")
+
 	sylog.Verbosef("Build complete: %s", b.Conf.Dest)
+
 	return nil
+}
+
+func readBytes(in float64) string {
+	i := 0
+	size := in
+
+	units := []string{"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
+
+	for size > 1024 {
+		size /= 1024
+		i++
+	}
+	buf := fmt.Sprintf("%.*f %s", i, size, units[i])
+
+	return buf
+}
+
+func sifAddMetadata(fimg *sif.FileImage, groupid, link uint32, fingerprint [20]byte, data []byte) error {
+	// data we need to create a signature descriptor
+	siginput := sif.DescriptorInput{
+		Datatype: sif.DataLabels,
+		Groupid:  groupid,
+		Link:     link,
+		Fname:    "image-metadata",
+		Data:     data,
+	}
+	siginput.Size = int64(binary.Size(siginput.Data))
+
+	//	// extra data needed for the creation of a signature descriptor
+	//	err := siginput.SetSignExtra(sif.HashSHA384, hex.EncodeToString(fingerprint[:]))
+	//	if err != nil {
+	//		return err
+	//	}
+
+	// add new signature data object to SIF file
+	err := fimg.AddObject(siginput)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// descrToSign determines via argument or interactively which descriptor to sign
+// TODO: put to comon place
+func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) (descr []*sif.Descriptor, err error) {
+	descr = make([]*sif.Descriptor, 1)
+
+	if id == 0 {
+		descr[0], _, err = fimg.GetPartPrimSys()
+		if err != nil {
+			return nil, fmt.Errorf("no primary partition found")
+		}
+	} else if isGroup {
+		var search = sif.Descriptor{
+			Groupid: id | sif.DescrGroupMask,
+		}
+		descr, _, err = fimg.GetFromDescr(search)
+		if err != nil {
+			return nil, fmt.Errorf("no descriptors found for groupid %v", id)
+		}
+	} else {
+		descr[0], _, err = fimg.GetFromDescrID(id)
+		if err != nil {
+			return nil, fmt.Errorf("no descriptor found for id %v", id)
+		}
+	}
+
+	return
 }
 
 // engineRequired returns true if build definition is requesting to run scripts or copy files
