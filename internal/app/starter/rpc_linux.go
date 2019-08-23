@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-// RPCServer serves runtime engine requests
+// RPCServer serves runtime engine requests.
 func RPCServer(socket int, e *engine.Engine) {
 	comm := os.NewFile(uintptr(socket), "unix")
 	conn, err := net.FileConn(comm)
