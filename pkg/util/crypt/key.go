@@ -15,7 +15,6 @@ import (
 	"encoding/pem"
 	"io"
 	"io/ioutil"
-	"net/url"
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/sif/pkg/sif"
@@ -28,6 +27,20 @@ var (
 	ErrNoPEMData            = errors.New("No PEM data")
 )
 
+const (
+	Unknown = iota
+	Passphrase
+	PEM
+)
+
+// KeyInfo contains information for passing around
+// or extracting a passphrase for an encrypted container
+type KeyInfo struct {
+	Format   int
+	Material string
+	Path     string
+}
+
 func getRandomBytes(size int) ([]byte, error) {
 	buf := make([]byte, size)
 	_, err := rand.Read(buf)
@@ -37,37 +50,27 @@ func getRandomBytes(size int) ([]byte, error) {
 	return buf, nil
 }
 
-func NewPlaintextKey(keyURI string) ([]byte, error) {
-	u, err := url.Parse(keyURI)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot parse URI %s", keyURI)
-	}
-
-	switch u.Scheme {
-	case "pem":
+func NewPlaintextKey(k KeyInfo) ([]byte, error) {
+	switch k.Format {
+	case PEM:
 		// in this case we will generate a random secret and
 		// encrypt it using the PEM key.use the PEM key to
 		// encrypt a secret
 		return getRandomBytes(64)
 
-	case "":
+	case Passphrase:
 		// return the original value unmodified
-		return []byte(keyURI), nil
+		return []byte(k.Material), nil
 
 	default:
 		return nil, ErrUnsupportedKeyURI
 	}
 }
 
-func EncryptKey(keyURI string, plaintext []byte) ([]byte, error) {
-	u, err := url.Parse(keyURI)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot parse URI %s", keyURI)
-	}
-
-	switch u.Scheme {
-	case "pem":
-		pubKey, err := loadPEMPublicKey(u.Path)
+func EncryptKey(k KeyInfo, plaintext []byte) ([]byte, error) {
+	switch k.Format {
+	case PEM:
+		pubKey, err := loadPEMPublicKey(k.Path)
 		if err != nil {
 			return nil, errors.Wrap(err, "loading public key for key encryption")
 		}
@@ -85,7 +88,7 @@ func EncryptKey(keyURI string, plaintext []byte) ([]byte, error) {
 
 		return buf.Bytes(), nil
 
-	case "":
+	case Passphrase:
 		return nil, nil
 
 	default:
@@ -93,15 +96,10 @@ func EncryptKey(keyURI string, plaintext []byte) ([]byte, error) {
 	}
 }
 
-func PlaintextKey(keyURI, image string) ([]byte, error) {
-	u, err := url.Parse(keyURI)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot parse URI %s", keyURI)
-	}
-
-	switch u.Scheme {
-	case "pem":
-		privateKey, err := loadPEMPrivateKey(u.Path)
+func PlaintextKey(k KeyInfo, image string) ([]byte, error) {
+	switch k.Format {
+	case PEM:
+		privateKey, err := loadPEMPrivateKey(k.Path)
 		if err != nil {
 			return nil, errors.Wrap(err, "loading private key for key decryption")
 		}
@@ -125,8 +123,8 @@ func PlaintextKey(keyURI, image string) ([]byte, error) {
 
 		return plaintext, nil
 
-	case "":
-		return []byte(u.Path), nil
+	case Passphrase:
+		return []byte(k.Material), nil
 
 	default:
 		return nil, ErrUnsupportedKeyURI
