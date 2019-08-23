@@ -60,6 +60,16 @@ func elfToGoArch(elfFile *elf.File) string {
 	return "UNKNOWN"
 }
 
+func (e *EngineOperations) setPathEnv() {
+	env := e.EngineConfig.OciConfig.Process.Env
+	for _, keyval := range env {
+		if strings.HasPrefix(keyval, "PATH=") {
+			os.Setenv("PATH", keyval[5:])
+			break
+		}
+	}
+}
+
 func (e *EngineOperations) checkExec() error {
 	shell := e.EngineConfig.GetShell()
 
@@ -83,12 +93,7 @@ func (e *EngineOperations) checkExec() error {
 		e.EngineConfig.OciConfig.Process.Env = env
 	}()
 
-	for _, keyval := range env {
-		if strings.HasPrefix(keyval, "PATH=") {
-			os.Setenv("PATH", keyval[5:])
-			break
-		}
-	}
+	e.setPathEnv()
 
 	// If args[0] is an absolute path, exec.LookPath() looks for
 	// this file directly instead of within PATH
@@ -149,7 +154,7 @@ func (e *EngineOperations) checkExec() error {
 	return fmt.Errorf("no %s found inside container", args[0])
 }
 
-func runFuseDriver(name string, program []string, fd int) error {
+func (e *EngineOperations) runFuseDriver(name string, program []string, fd int) error {
 	sylog.Debugf("Running FUSE driver for %s as %v, fd %d", name, program, fd)
 
 	fh := os.NewFile(uintptr(fd), "fd-"+name)
@@ -174,6 +179,14 @@ func runFuseDriver(name string, program []string, fd int) error {
 	newFd := fh.Fd()
 	fdDevice := fmt.Sprintf("/dev/fd/%d", newFd)
 	args := append(program, fdDevice)
+
+	// set PATH for the command
+	oldpath := os.Getenv("PATH")
+	defer func() {
+		os.Setenv("PATH", oldpath)
+	}()
+	e.setPathEnv()
+
 	cmd := exec.Command(args[0], args[1:]...)
 
 	// Add the /dev/fuse file descriptor to the list of file
@@ -194,7 +207,7 @@ func runFuseDriver(name string, program []string, fd int) error {
 	}
 
 	if err := cmd.Run(); err != nil {
-		sylog.Debugf("cannot run program %v: %v\n", args, err)
+		sylog.Warningf("cannot run program %v: %v\n", args, err)
 		return err
 	}
 
@@ -203,17 +216,17 @@ func runFuseDriver(name string, program []string, fd int) error {
 
 // setupFuseDrivers runs the operations required by FUSE drivers before
 // the user process starts
-func setupFuseDrivers(engine *EngineOperations) error {
+func setupFuseDrivers(e *EngineOperations) error {
 	// close file descriptors open for FUSE mount
-	for _, name := range engine.EngineConfig.GetPluginFuseMounts() {
+	for _, name := range e.EngineConfig.GetPluginFuseMounts() {
 		var cfg struct {
 			Fuse singularity.FuseInfo
 		}
-		if err := engine.EngineConfig.GetPluginConfig(name, &cfg); err != nil {
+		if err := e.EngineConfig.GetPluginConfig(name, &cfg); err != nil {
 			return err
 		}
 
-		if err := runFuseDriver(name, cfg.Fuse.Program, cfg.Fuse.DevFuseFd); err != nil {
+		if err := e.runFuseDriver(name, cfg.Fuse.Program, cfg.Fuse.DevFuseFd); err != nil {
 			return err
 		}
 
@@ -225,14 +238,14 @@ func setupFuseDrivers(engine *EngineOperations) error {
 
 // preStartProcess does the final set up before starting the user's
 // process.
-func preStartProcess(engine *EngineOperations) error {
+func preStartProcess(e *EngineOperations) error {
 	// TODO(mem): most of the StartProcess method should be here, as
 	// it's doing preparation for actually starting the user
 	// process.
 	//
 	// For now it's limited to doing the final set up for FUSE
 	// drivers
-	if err := setupFuseDrivers(engine); err != nil {
+	if err := setupFuseDrivers(e); err != nil {
 		return err
 	}
 
