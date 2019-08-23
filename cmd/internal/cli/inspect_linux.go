@@ -7,6 +7,7 @@ package cli
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -319,8 +320,11 @@ func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.
 		return nil, nil, fmt.Errorf("no primary partition found")
 	}
 
-	sigs, _, err = fimg.GetLinkedDescrsByType(descr[0].ID, sif.DataLabels)
+	//	GetFromDescrID
+	//sigs, _, err = fimg.GetLinkedDescrsByType(descr[0].ID, sif.DataLabels)
+	sigs, _, err = fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
 	if err != nil {
+		fmt.Println("DEBUG")
 		return nil, nil, fmt.Errorf("no metadata found for system partition")
 	}
 
@@ -358,6 +362,11 @@ var InspectCmd = &cobra.Command{
 			// the selected data object is hashed for comparison against signature block's
 			//	sifhash := computeHashStr(&fimg, descr)
 
+			// TODO: check all the options
+			if !runscript && !helpfile && !deffile {
+				labels = true
+			}
+
 			// Incase theres more then one metadata partition
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
@@ -372,14 +381,24 @@ var InspectCmd = &cobra.Command{
 					if err != nil {
 						sylog.Fatalf("Unable to get json for labels: %s", err)
 					}
+
+					// Format the json to look nice
+					var newJson bytes.Buffer
+					err = json.Indent(&newJson, outfilter, "", "    ")
+					if err != nil {
+						sylog.Fatalf("Unable to parse json: %s", err)
+					}
+
 					if jsonfmt {
-						fmt.Printf("== labels ==\n%s\n", outfilter)
+						fmt.Printf("%s\n", string(newJson.Bytes()))
 					} else {
+
 						var hrOut map[string]*json.RawMessage
 						err := json.Unmarshal(outfilter, &hrOut)
 						if err != nil {
 							sylog.Fatalf("Unable to get json: %s", err)
 						}
+						fmt.Printf("== labels ==\n")
 						for k := range hrOut {
 							fmt.Printf("%s: %s\n", k, *hrOut[k])
 						}
@@ -390,24 +409,44 @@ var InspectCmd = &cobra.Command{
 					if err != nil {
 						sylog.Fatalf("Unable to get json for helpfile: %s", err)
 					}
+					// Format the json to look nice
+					var newJson bytes.Buffer
+					err = json.Indent(&newJson, outfilter, "", "    ")
+					if err != nil {
+						sylog.Fatalf("Unable to parse json: %s", err)
+					}
 
 					if jsonfmt {
-						fmt.Printf("== help file ==\n%s\n", outfilter)
+						fmt.Printf("%s\n", string(newJson.Bytes()))
 					} else {
-						var hrOut map[string]*json.RawMessage
-						err := json.Unmarshal(outfilter, &hrOut)
+						hrOut, err := jsonparser.GetString(metaData, "container-help-file", "help")
 						if err != nil {
-							sylog.Fatalf("Unable to get json: %s", err)
+							sylog.Fatalf("Unable to get json for helpfile: %s", err)
 						}
-						fmt.Printf("%s\n", strings.Replace(strings.Replace(string(*hrOut["help"]), `\n`, "\n", -1), `"`, "", -1))
+						fmt.Printf("== helpfile ==\n%s\n", hrOut)
 					}
 				}
 				if runscript {
-					outfilter, _, _, err := jsonparser.Get(metaData, "contianer-runscript")
+					outfilter, _, _, err := jsonparser.Get(metaData, "container-runscript")
 					if err != nil {
 						sylog.Fatalf("Unable to get json for runscript: %s", err)
 					}
-					fmt.Printf("== runscript ==\n%s\n", outfilter)
+					// Format the json to look nice
+					var newJson bytes.Buffer
+					err = json.Indent(&newJson, outfilter, "", "    ")
+					if err != nil {
+						sylog.Fatalf("Unable to parse json: %s", err)
+					}
+
+					if jsonfmt {
+						fmt.Printf("%s\n", string(newJson.Bytes()))
+					} else {
+						hrOut, err := jsonparser.GetString(metaData, "container-runscript", "runscript")
+						if err != nil {
+							sylog.Fatalf("Unable to get json for runscript: %s", err)
+						}
+						fmt.Printf("== runscript ==\n%s\n", hrOut)
+					}
 				}
 			}
 		} else {

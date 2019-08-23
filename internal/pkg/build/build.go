@@ -357,6 +357,26 @@ func (b *Build) Full() error {
 			}
 		}
 
+		if stage.b.RunSection("labels") && len(stage.b.Recipe.ImageData.Labels) > 0 {
+			sylog.Infof("Adding labels")
+
+			// add new labels to new map and check for collisions
+			for key, value := range stage.b.Recipe.ImageData.Labels {
+				// check if label already exists
+				if _, ok := labels[key]; ok {
+					// overwrite collision if it exists and force flag is set
+					if stage.b.Opts.Force {
+						labels["contianer-info"][key] = value
+					} else {
+						sylog.Warningf("Label: %s already exists and force option is false, not overwriting", key)
+					}
+				} else {
+					// set if it doesnt
+					labels["contianer-info"][key] = value
+				}
+			}
+		}
+
 		// The help menu
 		labels["container-help-file"] = make(map[string]string, 1)
 		if stage.b.RunSection("help") && stage.b.Recipe.ImageData.Help.Script != "" {
@@ -398,14 +418,16 @@ func (b *Build) Full() error {
 	}
 
 	// finally add the signature block (for descr) as a new SIF data object
-	var groupid, link uint32
+	var groupid uint32
 	if isGroup {
 		groupid = sif.DescrUnusedGroup
-		link = descr[0].Groupid
+		//link = descr[0].Groupid
 	} else {
 		groupid = descr[0].Groupid
-		link = descr[0].ID
+		//link = descr[0].ID
 	}
+	//	fmt.Printf("GROUP: %d\n", int(groupid))
+	//	link = 0
 
 	// signature also include data integrity check
 	//	sifhash := computeHashStr(&fimg, descr)
@@ -460,17 +482,15 @@ func (b *Build) Full() error {
 	labels["contianer-info"]["org.label-schema.image-size"] = readBytes(float64(primSize[0].Storelen))
 
 	// make new map into json
-	text, err := json.MarshalIndent(labels, "", "\t")
+	text, err := json.MarshalIndent(labels, "", "    ")
 	if err != nil {
 		return err
 	}
 
-	err = sifAddMetadata(&fimg, groupid, link, entity, text)
+	err = sifAddMetadata(&fimg, groupid, uint32(0), entity, text)
 	if err != nil {
 		return fmt.Errorf("failed adding signature block to SIF container file: %s", err)
 	}
-
-	fmt.Println("HELLO WORLD")
 
 	sylog.Verbosef("Build complete: %s", b.Conf.Dest)
 
