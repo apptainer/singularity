@@ -15,23 +15,24 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/buger/jsonparser"
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/pkg/cmdline"
-
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 const listAppsCommand = "echo apps:`ls \"$app/scif/apps\" | wc -c`; for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename \"$app\"`\n        echo \"$APPNAME\"\n    fi\ndone\n"
 
 var (
+	allLabels   bool
 	labels      bool
 	deffile     bool
 	runscript   bool
@@ -75,6 +76,15 @@ var inspectAppNameFlag = cmdline.Flag{
 	Name:         "app",
 	Usage:        "inspect a specific app",
 	EnvKeys:      []string{"APP"},
+}
+
+// --all
+var inspectAllLabelsFlag = cmdline.Flag{
+	ID:           "inspectAllLabelsFlag",
+	Value:        &allLabels,
+	DefaultValue: false,
+	Name:         "all",
+	Usage:        "print all metadata for contianer",
 }
 
 // -l|--labels
@@ -157,6 +167,7 @@ var inspectJSONFlag = cmdline.Flag{
 func init() {
 	cmdManager.RegisterCmd(InspectCmd)
 
+	cmdManager.RegisterFlagForCmd(&inspectAllLabelsFlag, InspectCmd)
 	cmdManager.RegisterFlagForCmd(&inspectAppNameFlag, InspectCmd)
 	cmdManager.RegisterFlagForCmd(&inspectDeffileFlag, InspectCmd)
 	cmdManager.RegisterFlagForCmd(&inspectEnvironmentFlag, InspectCmd)
@@ -347,9 +358,57 @@ var InspectCmd = &cobra.Command{
 			// the selected data object is hashed for comparison against signature block's
 			//	sifhash := computeHashStr(&fimg, descr)
 
+			// Incase theres more then one metadata partition
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
-				fmt.Printf("%s\n", string(metaData))
+
+				if allLabels {
+					fmt.Printf("%s\n", string(metaData))
+					continue
+				}
+
+				if labels {
+					outfilter, _, _, err := jsonparser.Get(metaData, "contianer-info")
+					if err != nil {
+						sylog.Fatalf("Unable to get json for labels: %s", err)
+					}
+					if jsonfmt {
+						fmt.Printf("== labels ==\n%s\n", outfilter)
+					} else {
+						var hrOut map[string]*json.RawMessage
+						err := json.Unmarshal(outfilter, &hrOut)
+						if err != nil {
+							sylog.Fatalf("Unable to get json: %s", err)
+						}
+						for k := range hrOut {
+							fmt.Printf("%s: %s\n", k, *hrOut[k])
+						}
+					}
+				}
+				if helpfile {
+					outfilter, _, _, err := jsonparser.Get(metaData, "container-help-file")
+					if err != nil {
+						sylog.Fatalf("Unable to get json for helpfile: %s", err)
+					}
+
+					if jsonfmt {
+						fmt.Printf("== help file ==\n%s\n", outfilter)
+					} else {
+						var hrOut map[string]*json.RawMessage
+						err := json.Unmarshal(outfilter, &hrOut)
+						if err != nil {
+							sylog.Fatalf("Unable to get json: %s", err)
+						}
+						fmt.Printf("%s\n", strings.Replace(strings.Replace(string(*hrOut["help"]), `\n`, "\n", -1), `"`, "", -1))
+					}
+				}
+				if runscript {
+					outfilter, _, _, err := jsonparser.Get(metaData, "contianer-runscript")
+					if err != nil {
+						sylog.Fatalf("Unable to get json for runscript: %s", err)
+					}
+					fmt.Printf("== runscript ==\n%s\n", outfilter)
+				}
 			}
 		} else {
 			sylog.Errorf("Error while looking for metadata: %s; searching container for data instead...", err)

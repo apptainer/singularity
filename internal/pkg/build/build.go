@@ -357,12 +357,19 @@ func (b *Build) Full() error {
 			}
 		}
 
-		labels["help-file"] = make(map[string]string, 1)
-
+		// The help menu
+		labels["container-help-file"] = make(map[string]string, 1)
 		if stage.b.RunSection("help") && stage.b.Recipe.ImageData.Help.Script != "" {
-			labels["help-file"]["help"] = stage.b.Recipe.ImageData.Help.Script
+			labels["container-help-file"]["help"] = stage.b.Recipe.ImageData.Help.Script
 		}
 
+		// The runscript
+		labels["container-runscript"] = make(map[string]string, 1)
+		if stage.b.RunSection("runscript") && stage.b.Recipe.ImageData.Runscript.Script != "" {
+			labels["container-runscript"]["runscript"] = stage.b.Recipe.ImageData.Runscript.Script
+		}
+
+		// TODO: add all the other contianer-scripts here
 	}
 
 	sylog.Debugf("Calling assembler")
