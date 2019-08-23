@@ -207,7 +207,7 @@ func (e *EngineOperations) runFuseDriver(name string, program []string, fd int) 
 	}
 
 	if err := cmd.Run(); err != nil {
-		sylog.Debugf("cannot run program %v: %v\n", args, err)
+		sylog.Warningf("cannot run program %v: %v\n", args, err)
 		return err
 	}
 

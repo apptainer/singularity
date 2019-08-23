@@ -70,27 +70,27 @@ func (e *EngineConfig) SetPluginConfig(plugin string, cfg interface{}) error {
 	return nil
 }
 
-//SetFuseCmd takes input from --fusecmd flags and creates plugin objects from them to hook in to the fuse plugin support code
-func (e *EngineConfig) SetFuseCmd(fusecmd []string) error {
-	if !e.File.EnableFusecmd {
-		sylog.Fatalf("--fusecmd disabled by configuration")
+//SetFuseMount takes input from --fusemount options and creates plugin objects
+//  from them to hook in to the fuse plugin support code
+func (e *EngineConfig) SetFuseMount(fusemount []string) error {
+	if !e.File.EnableFusemount {
+		sylog.Fatalf("--fusemount disabled by configuration")
 	}
-	for _, cmd := range fusecmd {
-		//Splits the command into a list of whitespace-separated words
-		words := strings.Fields(cmd)
+
+	for _, mountspec := range fusemount {
+		words := strings.Fields(mountspec)
+
+		if !strings.HasPrefix(words[0], "container:") {
+			sylog.Fatalf("fusemount spec does not begin with 'container:': %s.\n", words[0])
+		}
+		words[0] = strings.Replace(words[0], "container:", "", 1)
+
 		if len(words) == 1 {
 			sylog.Fatalf("No whitespace separators found in command")
 		}
 
-		//The last word in the list is the mount point
+		// The last word in the list is the mount point
 		mnt := words[len(words)-1]
-
-		//The mount point must be a directory
-		if !strings.HasPrefix(mnt, "/") {
-			sylog.Fatalf("Invalid mount point %s.\n", mnt)
-		}
-
-		//Removes the mount point from the list of words
 		words = words[0 : len(words)-1]
 
 		var cfg struct {
@@ -100,10 +100,10 @@ func (e *EngineConfig) SetFuseCmd(fusecmd []string) error {
 		cfg.Fuse.MountPoint = mnt
 		cfg.Fuse.Program = words
 
-		//Choose a name that makes sure they get used in alphabetical
-		// order so the mountpoints stay in order.  Assumes no more
-		// than 1000 plugins.
-		pluginName := fmt.Sprintf("_fusecmd%03d", len(e.Plugin))
+		// Choose a name that makes sure they get used in alphabetical
+		//  order so the mountpoints stay in order.  Assumes no more
+		//  than 1000 plugins.
+		pluginName := fmt.Sprintf("_fusemount%03d", len(e.Plugin))
 
 		sylog.Verbosef("Mounting FUSE filesystem with %s %s as %s\n",
 			strings.Join(words, " "), mnt, pluginName)
