@@ -830,12 +830,13 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 		expectedStderr = ""
 	}
 
-	// First with the command line argument
+	// First with the command line argument, only using --passphrase
 	passphraseInput := []e2e.SingularityConsoleOp{
 		e2e.ConsoleSendLine(e2e.Passphrase),
 	}
-	imgPath1 := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
-	cmdArgs := []string{"--passphrase", imgPath1, "library://alpine:latest"}
+	cmdlineTestImgPath := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
+	// The image is deleted during cleanup of the tempdir
+	cmdArgs := []string{"--passphrase", cmdlineTestImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("passphrase flag"),
@@ -850,15 +851,12 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	)
 	// If the command was supposed to succeed, we check the image
 	if expectedExitCode == 0 {
-		c.ensureImageIsEncrypted(t, imgPath1)
-	}
-	err = os.Remove(imgPath1)
-	if err != nil {
-		t.Fatalf("failed to delete image: %s", err)
+		c.ensureImageIsEncrypted(t, cmdlineTestImgPath)
 	}
 
-	// First with the command line argument
-	cmdArgs = []string{"--encrypt", "--passphrase", imgPath1, "library://alpine:latest"}
+	// With the command line argument, using --encrypt and --passphrase
+	cmdlineTest2ImgPath := filepath.Join(tempDir, "encrypted_cmdline2_option.sif")
+	cmdArgs = []string{"--encrypt", "--passphrase", cmdlineTest2ImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("encrypt and passphrase flags"),
@@ -873,13 +871,13 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	)
 	// If the command was supposed to succeed, we check the image
 	if expectedExitCode == 0 {
-		c.ensureImageIsEncrypted(t, imgPath1)
+		c.ensureImageIsEncrypted(t, cmdlineTest2ImgPath)
 	}
 
-	// Second with the environment variable
+	// With the environment variable
 	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PASSPHRASE", e2e.Passphrase)
-	imgPath2 := filepath.Join(tempDir, "encrypted_env_var.sif")
-	cmdArgs = []string{"--encrypt", imgPath2, "library://alpine:latest"}
+	envvarImgPath := filepath.Join(tempDir, "encrypted_env_var.sif")
+	cmdArgs = []string{"--encrypt", envvarImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("passphrase env var"),
@@ -894,12 +892,12 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	)
 	// If the command was supposed to succeed, we check the image
 	if expectedExitCode == 0 {
-		c.ensureImageIsEncrypted(t, imgPath2)
+		c.ensureImageIsEncrypted(t, envvarImgPath)
 	}
 
 	// Finally a test that must fail: try to specify the passphrase on the command line
-	imgPath3 := filepath.Join(tempDir, "dummy_encrypted_env_var.sif")
-	cmdArgs = []string{"--encrypt", "--passphrase", e2e.Passphrase, imgPath3, "library://alpine:latest"}
+	dummyImgPath := filepath.Join(tempDir, "dummy_encrypted_env_var.sif")
+	cmdArgs = []string{"--encrypt", "--passphrase", e2e.Passphrase, dummyImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("passphrase on cmdline"),
