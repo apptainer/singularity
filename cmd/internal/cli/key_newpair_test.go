@@ -9,8 +9,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/stretchr/testify/require"
 	"github.com/sylabs/singularity/pkg/sypgp"
+
+	"gotest.tools/assert"
 )
 
 const (
@@ -51,13 +52,13 @@ func Test_collectInput_flags(t *testing.T) {
 	}
 
 	o, err := collectInput(&c)
-	require.NoError(t, err)
-	require.EqualValues(t, expectedOpts, o)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, expectedOpts, o)
 }
 
 func Test_collectInput_stdin(t *testing.T) {
 	tf, err := ioutil.TempFile("", "collect-test-")
-	require.NoError(t, err)
+	assert.NilError(t, err)
 	defer tf.Close()
 
 	oldStdin := os.Stdin
@@ -109,17 +110,17 @@ func Test_collectInput_stdin(t *testing.T) {
 	c := &cobra.Command{}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			require.NoError(t, tf.Truncate(0))
+			assert.NilError(t, tf.Truncate(0))
 			_, err := tf.Seek(0, 0)
-			require.NoError(t, err)
+			assert.NilError(t, err)
 			_, err = tf.WriteString(tt.Input)
-			require.NoError(t, err)
+			assert.NilError(t, err)
 			_, err = tf.Seek(0, 0)
-			require.NoError(t, err)
+			assert.NilError(t, err)
 
 			o, err := collectInput(c)
-			require.EqualValues(t, tt.Error, err)
-			require.EqualValues(t, tt.Options, o)
+			assert.DeepEqual(t, tt.Error, err)
+			assert.DeepEqual(t, tt.Options, o)
 		})
 	}
 }
