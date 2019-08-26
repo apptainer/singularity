@@ -12,7 +12,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/server"
 )
 
-// EngineOperations describes a runtime engine
+// EngineOperations describes a runtime engine.
 type EngineOperations struct {
 	CommonConfig *config.Common `json:"-"`
 	EngineConfig *EngineConfig  `json:"engineConfig"`
