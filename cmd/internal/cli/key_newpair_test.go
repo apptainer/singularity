@@ -119,7 +119,12 @@ func Test_collectInput_stdin(t *testing.T) {
 			assert.NilError(t, err)
 
 			o, err := collectInput(c)
-			assert.Equal(t, tt.Error, err)
+			if tt.Error != nil {
+				assert.ErrorContains(t, err, tt.Error.Error())
+			} else {
+				assert.NilError(t, err)
+			}
+
 			assert.DeepEqual(t, tt.Options, o)
 		})
 	}
