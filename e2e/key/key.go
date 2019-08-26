@@ -59,6 +59,7 @@ func (c *ctx) singularityKeyList(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
 			e2e.ExpectExit(0, e2e.ExpectOutput(e2e.RegexMatch, tt.stdout)),
@@ -114,6 +115,7 @@ func (c *ctx) singularityKeySearch(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
 			e2e.ExpectExit(0, e2e.ExpectOutput(e2e.RegexMatch, tt.stdout)),
@@ -151,6 +153,7 @@ func (c *ctx) singularityKeyNewpair(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.ConsoleRun(buildConsoleLines(tt.consoleOps...)...),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
@@ -212,6 +215,7 @@ func (c *ctx) singularityKeyExport(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
 			e2e.ConsoleRun(buildConsoleLines(tt.consoleOps...)...),
@@ -299,6 +303,7 @@ func (c *ctx) singularityKeyImport(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
 			e2e.ConsoleRun(buildConsoleLines(tt.consoleOps...)...),
@@ -327,8 +332,8 @@ func (c *ctx) singularityKeyCmd(t *testing.T) {
 	c.singularityKeyList(t)
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
 		env:                    env,
 		publicExportPath:       filepath.Join(env.TestDir, "public_key.asc"),

@@ -42,7 +42,7 @@ func CheckCryptsetupVersion() error {
 	return nil
 }
 
-// GeneratePemFile creates a new PEM file for testing purposes.
+// GeneratePemFiles creates a new PEM file for testing purposes.
 func GeneratePemFiles(t *testing.T, basedir string) (string, string) {
 	// Temporary file to save the PEM public file. The caller is in charge of cleanup
 	tempPemPubFile, err := ioutil.TempFile(basedir, "pem-pub-")

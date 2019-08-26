@@ -18,8 +18,8 @@ import (
 )
 
 type ctx struct {
-	env        e2e.TestEnv
-	privileged bool
+	env     e2e.TestEnv
+	profile e2e.Profile
 }
 
 // Test that no instances are running.
@@ -37,8 +37,8 @@ func (c *ctx) testBasicEchoServer(t *testing.T) {
 	// Start the instance.
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(c.profile),
 		e2e.WithCommand("instance start"),
-		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(args...),
 		e2e.PostRun(func(t *testing.T) {
 			if t.Failed() {
@@ -63,8 +63,8 @@ func (c *ctx) testCreateManyInstances(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
+			e2e.WithProfile(c.profile),
 			e2e.WithCommand("instance start"),
-			e2e.WithPrivileges(c.privileged),
 			e2e.WithArgs(c.env.ImagePath, instanceName, strconv.Itoa(port)),
 			e2e.PostRun(func(t *testing.T) {
 				echo(t, port)
@@ -108,8 +108,8 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 	// Start an instance with the temporary directory as the home directory.
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(c.profile),
 		e2e.WithCommand("instance start"),
-		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(
 			"-H", dir+":/home/temp",
 			"--hostname", testHostname,
@@ -157,8 +157,8 @@ func (c *ctx) testContain(t *testing.T) {
 	// Start the instance.
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(c.profile),
 		e2e.WithCommand("instance start"),
-		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(
 			"-c",
 			"-W", dir,
@@ -212,8 +212,8 @@ func (c *ctx) testInstanceFromURI(t *testing.T) {
 		args := []string{i.uri, i.name}
 		c.env.RunSingularity(
 			t,
+			e2e.WithProfile(c.profile),
 			e2e.WithCommand("instance start"),
-			e2e.WithPrivileges(c.privileged),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
 				if t.Failed() {
@@ -227,11 +227,11 @@ func (c *ctx) testInstanceFromURI(t *testing.T) {
 	}
 }
 
-// RunE2ETests is the bootstrap to run all instance tests.
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
-		env:        env,
-		privileged: false,
+		env:     env,
+		profile: e2e.UserProfile,
 	}
 
 	return func(t *testing.T) {
@@ -258,7 +258,7 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 		}
 
 		// run privileged
-		c.privileged = true
+		c.profile = e2e.RootProfile
 		for _, tt := range tests {
 			t.Run("WithPriv"+tt.name, tt.function)
 		}

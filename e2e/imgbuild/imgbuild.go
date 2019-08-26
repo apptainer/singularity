@@ -59,7 +59,7 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PreRun(func(t *testing.T) {
@@ -135,7 +135,7 @@ func (c *imgBuildTests) nonRootBuild(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(false),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
@@ -177,7 +177,7 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(true),
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs("--sandbox", sandboxImage, c.env.ImagePath),
 		e2e.PostRun(func(t *testing.T) {
@@ -209,7 +209,7 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(imagePath, tt.buildSpec),
 			e2e.PostRun(func(t *testing.T) {
@@ -224,7 +224,7 @@ func (c *imgBuildTests) badPath(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(true),
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs(imagePath, "/some/dumb/path"),
 		e2e.ExpectExit(255),
@@ -420,7 +420,7 @@ func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
@@ -717,7 +717,7 @@ func (c *imgBuildTests) buildDefinition(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
@@ -736,6 +736,7 @@ func (c *imgBuildTests) ensureImageIsEncrypted(t *testing.T, imgPath string) {
 	cmdArgs := []string{"info", sifID, imgPath}
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("sif"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(
@@ -773,8 +774,8 @@ func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
 	cmdArgs := []string{"--encrypt", "--pem-path", pemFile, imgPath1, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
-		e2e.WithPrivileges(true),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(
 			expectedExitCode,
@@ -792,9 +793,9 @@ func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
 	cmdArgs = []string{"--encrypt", imgPath2, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs(cmdArgs...),
-		e2e.WithPrivileges(true),
 		e2e.WithEnv(append(os.Environ(), pemEnvVar)),
 		e2e.ExpectExit(
 			expectedExitCode,
@@ -840,8 +841,8 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("passphrase flag"),
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
-		e2e.WithPrivileges(true),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ConsoleRun(passphraseInput...),
 		e2e.ExpectExit(
@@ -860,8 +861,8 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("encrypt and passphrase flags"),
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
-		e2e.WithPrivileges(true),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ConsoleRun(passphraseInput...),
 		e2e.ExpectExit(
@@ -881,9 +882,9 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("passphrase env var"),
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs(cmdArgs...),
-		e2e.WithPrivileges(true),
 		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
 		e2e.ExpectExit(
 			expectedExitCode,
@@ -901,9 +902,9 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("passphrase on cmdline"),
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs(cmdArgs...),
-		e2e.WithPrivileges(true),
 		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
 		e2e.ExpectExit(
 			1,
@@ -912,8 +913,8 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	)
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &imgBuildTests{
 		env: env,
 	}
