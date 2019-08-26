@@ -54,7 +54,7 @@ func (e *EngineOperations) checkCapabilities() error {
 	return nil
 }
 
-// PrepareConfig checks and prepares the runtime engine config
+// PrepareConfig checks and prepares the runtime engine config.
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if e.CommonConfig.EngineName != Name {
 		return fmt.Errorf("incorrect engine")

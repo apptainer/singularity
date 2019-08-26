@@ -93,7 +93,7 @@ func init() {
 }
 
 // main function is executed after starter.c init function.
-// Depending on value of goexecute from starter.c, Go will act differently,
+// Depending on the value of goexecute from starter.c Go will act differently,
 // e.g. it may launch container process or spawn a container monitor. Thus
 // Go runtime appears to be in a different environment based on the current
 // execution stage.
