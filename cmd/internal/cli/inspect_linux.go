@@ -7,8 +7,9 @@ package cli
 
 import (
 	"bufio"
-	"bytes"
+	//"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -16,7 +17,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/buger/jsonparser"
+	//"github.com/buger/jsonparser"
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
@@ -29,6 +30,10 @@ import (
 	"github.com/sylabs/singularity/pkg/cmdline"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
+
+// TODO: this should not be in a cli package
+
+var ErrNoMetaData = errors.New("no metadata found for system partition")
 
 const listAppsCommand = "echo apps:`ls \"$app/scif/apps\" | wc -c`; for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename \"$app\"`\n        echo \"$APPNAME\"\n    fi\ndone\n"
 
@@ -300,19 +305,19 @@ func getSigsGroup(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr
 	return
 }
 
-// TODO: same as above
-// return all signatures for "id" being unique or group id
-func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
-	if id == 0 {
-		return getSigsPrimPart(fimg)
-	} else if isGroup {
-		return getSigsGroup(fimg, id)
-	}
-	return getSigsDescr(fimg, id)
-}
+//// TODO: same as above
+//// return all signatures for "id" being unique or group id
+//func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+//	if id == 0 {
+//		return getSigsPrimPart(fimg)
+//	} else if isGroup {
+//		return getSigsGroup(fimg, id)
+//	}
+//	return getSigsDescr(fimg, id)
+//}
 
-// return all signatures for the primary partition
-func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+// getMetaData will return a dataType
+func getMetaData(fimg *sif.FileImage, dataType sif.Datatype) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
 	descr = make([]*sif.Descriptor, 1)
 
 	descr[0], _, err = fimg.GetPartPrimSys()
@@ -322,10 +327,10 @@ func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.
 
 	//	GetFromDescrID
 	//sigs, _, err = fimg.GetLinkedDescrsByType(descr[0].ID, sif.DataLabels)
-	sigs, _, err = fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
+	sigs, _, err = fimg.GetLinkedDescrsByType(uint32(0), dataType)
 	if err != nil {
 		fmt.Println("DEBUG")
-		return nil, nil, fmt.Errorf("no metadata found for system partition")
+		return nil, nil, ErrNoMetaData
 	}
 
 	return
@@ -348,237 +353,422 @@ var InspectCmd = &cobra.Command{
 			sylog.Fatalf("container not found: %s", err)
 		}
 
+		// TODO: check all the options
+		if !runscript && !helpfile && !deffile {
+			labels = true
+		}
+
 		fimg, err := sif.LoadContainer(args[0], true)
 		if err != nil {
 			sylog.Fatalf("failed to load SIF container file: %s", err)
 		}
 		defer fimg.UnloadContainer()
 
-		// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
-		sifData, _, err := getSigsForSelection(&fimg, 0, false)
-		//	sifData, descr, err := getSigsForSelection(&fimg, 0, false)
-		if err == nil {
-
-			// the selected data object is hashed for comparison against signature block's
-			//	sifhash := computeHashStr(&fimg, descr)
-
-			// TODO: check all the options
-			if !runscript && !helpfile && !deffile {
-				labels = true
+		// Inspect Labels
+		if labels {
+			sifData, _, err := getMetaData(&fimg, sif.DataLabels)
+			if err == ErrNoMetaData {
+				sylog.Warningf("No metadata partition, searching in container...")
+				inspectInContainer(args[0])
+			} else if err != nil {
+				sylog.Fatalf("Unable to get label metadata: %s", err)
 			}
 
-			// Incase theres more then one metadata partition
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
 
-				if allLabels {
+				if jsonfmt {
 					fmt.Printf("%s\n", string(metaData))
-					continue
-				}
-
-				if labels {
-					outfilter, _, _, err := jsonparser.Get(metaData, "contianer-info")
-					if err != nil {
-						sylog.Fatalf("Unable to get json for labels: %s", err)
-					}
-
-					// Format the json to look nice
-					var newJson bytes.Buffer
-					err = json.Indent(&newJson, outfilter, "", "    ")
-					if err != nil {
-						sylog.Fatalf("Unable to parse json: %s", err)
-					}
-
-					if jsonfmt {
-						fmt.Printf("%s\n", string(newJson.Bytes()))
-					} else {
-
-						var hrOut map[string]*json.RawMessage
-						err := json.Unmarshal(outfilter, &hrOut)
-						if err != nil {
-							sylog.Fatalf("Unable to get json: %s", err)
-						}
-						fmt.Printf("== labels ==\n")
-						for k := range hrOut {
-							fmt.Printf("%s: %s\n", k, *hrOut[k])
-						}
-					}
-				}
-				if helpfile {
-					outfilter, _, _, err := jsonparser.Get(metaData, "container-help-file")
-					if err != nil {
-						sylog.Fatalf("Unable to get json for helpfile: %s", err)
-					}
-					// Format the json to look nice
-					var newJson bytes.Buffer
-					err = json.Indent(&newJson, outfilter, "", "    ")
-					if err != nil {
-						sylog.Fatalf("Unable to parse json: %s", err)
-					}
-
-					if jsonfmt {
-						fmt.Printf("%s\n", string(newJson.Bytes()))
-					} else {
-						hrOut, err := jsonparser.GetString(metaData, "container-help-file", "help")
-						if err != nil {
-							sylog.Fatalf("Unable to get json for helpfile: %s", err)
-						}
-						fmt.Printf("== helpfile ==\n%s\n", hrOut)
-					}
-				}
-				if runscript {
-					outfilter, _, _, err := jsonparser.Get(metaData, "container-runscript")
-					if err != nil {
-						sylog.Fatalf("Unable to get json for runscript: %s", err)
-					}
-					// Format the json to look nice
-					var newJson bytes.Buffer
-					err = json.Indent(&newJson, outfilter, "", "    ")
-					if err != nil {
-						sylog.Fatalf("Unable to parse json: %s", err)
-					}
-
-					if jsonfmt {
-						fmt.Printf("%s\n", string(newJson.Bytes()))
-					} else {
-						hrOut, err := jsonparser.GetString(metaData, "container-runscript", "runscript")
-						if err != nil {
-							sylog.Fatalf("Unable to get json for runscript: %s", err)
-						}
-						fmt.Printf("== runscript ==\n%s\n", hrOut)
-					}
-				}
-			}
-		} else {
-			sylog.Errorf("Error while looking for metadata: %s; searching container for data instead...", err)
-
-			abspath, err := filepath.Abs(args[0])
-			if err != nil {
-				sylog.Fatalf("While determining absolute file path: %v", err)
-			}
-			name := filepath.Base(abspath)
-
-			a := []string{"/bin/sh", "-c", ""}
-
-			if listApps {
-				sylog.Debugf("Listing all apps in container")
-				a[2] += listAppsCommand
-			}
-
-			// If AppName is given fail quickly (exit) if it doesn't exist
-			if AppName != "" {
-				sylog.Debugf("Inspection of App %s Selected.", AppName)
-				a[2] += getAppCheck(AppName)
-			}
-
-			if helpfile {
-				sylog.Debugf("Inspection of helpfile selected.")
-				a[2] += getHelpCommand(AppName)
-			}
-
-			if deffile {
-				sylog.Debugf("Inspection of deffile selected.")
-				a[2] += getDefinitionCommand()
-			}
-
-			if runscript {
-				sylog.Debugf("Inspection of runscript selected.")
-				a[2] += getRunscriptCommand(AppName)
-			}
-
-			if testfile {
-				sylog.Debugf("Inspection of test selected.")
-				a[2] += getTestCommand(AppName)
-			}
-
-			if environment {
-				sylog.Debugf("Inspection of environment selected.")
-				a[2] += getEnvironmentCommand(AppName)
-			}
-
-			// Default to labels if other flags are unset, excludes --app
-			if labels || defaultToLabels() {
-				sylog.Debugf("Inspection of labels selected.")
-				a[2] += getLabelsCommand(AppName)
-			}
-
-			// Execute the compound command string.
-			fileContents, err := getFileContent(abspath, name, a)
-			if err != nil {
-				sylog.Fatalf("Could not inspect container: %v", err)
-			}
-
-			inspectObj := inspectFormat{}
-			inspectObj.Type = "container"
-			inspectObj.Attributes.Labels = make(map[string]string)
-			inspectObj.Attributes.Environment = make(map[string]string)
-
-			// Parse the command output string into sections.
-			reader := bufio.NewReader(strings.NewReader(fileContents))
-			for {
-				section, err := reader.ReadBytes('\n')
-				if err != nil {
-					break
-				}
-				parts := strings.SplitN(strings.TrimSpace(string(section)), ":", 3)
-				if len(parts) == 2 {
-					label := parts[0]
-					sizeData, errConv := strconv.Atoi(parts[1])
-					if errConv != nil {
-						sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
-					}
-					sylog.Debugf("Section %s found with %d bytes of data.", label, sizeData)
-					data := make([]byte, sizeData)
-					n, err := io.ReadFull(reader, data)
-					if n != len(data) && err != nil {
-						sylog.Fatalf("Unable to read %d bytes.", sizeData)
-					}
-					setAttribute(&inspectObj, label, string(data))
 				} else {
-					sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
-				}
-			}
-
-			// Output the inspection results (use JSON if requested).
-			if jsonfmt {
-				jsonObj, err := json.MarshalIndent(inspectObj, "", "\t")
-				if err != nil {
-					sylog.Fatalf("Could not format inspected data as JSON.")
-				}
-				fmt.Println(string(jsonObj))
-			} else {
-				if inspectObj.Attributes.Apps != "" {
-					fmt.Printf("==apps==\n")
-					fmt.Printf("%s\n", inspectObj.Attributes.Apps)
-				}
-				if inspectObj.Attributes.Helpfile != "" {
-					fmt.Println("==helpfile==\n" + inspectObj.Attributes.Helpfile)
-				}
-				if inspectObj.Attributes.Deffile != "" {
-					fmt.Println("==deffile==\n" + inspectObj.Attributes.Deffile)
-				}
-				if inspectObj.Attributes.Runscript != "" {
-					fmt.Println("==runscript==\n" + inspectObj.Attributes.Runscript)
-				}
-				if inspectObj.Attributes.Test != "" {
-					fmt.Println("==test==\n" + inspectObj.Attributes.Test)
-				}
-				if len(inspectObj.Attributes.Environment) > 0 {
-					fmt.Println("==environment==")
-					for envLabel, envValue := range inspectObj.Attributes.Environment {
-						fmt.Println("==environment:" + envLabel + "==\n" + envValue)
+					var hrOut map[string]*json.RawMessage
+					err := json.Unmarshal(metaData, &hrOut)
+					if err != nil {
+						sylog.Fatalf("Unable to get json: %s", err)
 					}
-				}
-				if len(inspectObj.Attributes.Labels) > 0 {
-					fmt.Println("==labels==")
-					for labLabel, labValue := range inspectObj.Attributes.Labels {
-						fmt.Println(labLabel + ": " + labValue)
+					fmt.Printf("== labels ==\n")
+					for k := range hrOut {
+						fmt.Printf("%s: %s\n", k, *hrOut[k])
 					}
 				}
 			}
 		}
+
+		// Inspect Deffile
+		if deffile {
+			sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
+			if err != nil {
+				sylog.Fatalf("Unable to get metadata: %s", err)
+			}
+			for _, v := range sifData {
+				metaData := v.GetData(&fimg)
+				if jsonfmt {
+					jsonOut := make(map[string]string, 1)
+					jsonOut["deffile"] = string(metaData)
+
+					text, err := json.MarshalIndent(jsonOut, "", "    ")
+					if err != nil {
+						sylog.Fatalf("Unable to marshal json: %s", err)
+					}
+					fmt.Printf("%s\n", text)
+
+				} else {
+					fmt.Printf("%s\n", string(metaData))
+				}
+
+			}
+
+		}
+
+		//
+		//		// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
+		//		//		sifData, _, err := getSigsForSelection(&fimg, 0, false)
+		//		sifData, _, err := getMetaData(&fimg, sif.DataLabels)
+		//		//	sifData, descr, err := getSigsForSelection(&fimg, 0, false)
+		//		if err == nil {
+		//
+		//			// the selected data object is hashed for comparison against signature block's
+		//			//	sifhash := computeHashStr(&fimg, descr)
+		//
+		//			// Incase theres more then one metadata partition
+		//			for _, v := range sifData {
+		//				metaData := v.GetData(&fimg)
+		//
+		//				if allLabels {
+		//					fmt.Printf("%s\n", string(metaData))
+		//					continue
+		//				}
+		//
+		//				if labels {
+		//					outfilter, _, _, err := jsonparser.Get(metaData, "contianer-info")
+		//					if err != nil {
+		//						sylog.Fatalf("Unable to get json for labels: %s", err)
+		//					}
+		//
+		//					// Format the json to look nice
+		//					var newJson bytes.Buffer
+		//					err = json.Indent(&newJson, outfilter, "", "    ")
+		//					if err != nil {
+		//						sylog.Fatalf("Unable to parse json: %s", err)
+		//					}
+		//
+		//					if jsonfmt {
+		//						fmt.Printf("%s\n", string(newJson.Bytes()))
+		//					} else {
+		//
+		//						var hrOut map[string]*json.RawMessage
+		//						err := json.Unmarshal(outfilter, &hrOut)
+		//						if err != nil {
+		//							sylog.Fatalf("Unable to get json: %s", err)
+		//						}
+		//						fmt.Printf("== labels ==\n")
+		//						for k := range hrOut {
+		//							fmt.Printf("%s: %s\n", k, *hrOut[k])
+		//						}
+		//					}
+		//				}
+		//				if helpfile {
+		//					outfilter, _, _, err := jsonparser.Get(metaData, "container-help-file")
+		//					if err != nil {
+		//						sylog.Fatalf("Unable to get json for helpfile: %s", err)
+		//					}
+		//					// Format the json to look nice
+		//					var newJson bytes.Buffer
+		//					err = json.Indent(&newJson, outfilter, "", "    ")
+		//					if err != nil {
+		//						sylog.Fatalf("Unable to parse json: %s", err)
+		//					}
+		//
+		//					if jsonfmt {
+		//						fmt.Printf("%s\n", string(newJson.Bytes()))
+		//					} else {
+		//						hrOut, err := jsonparser.GetString(metaData, "container-help-file", "help")
+		//						if err != nil {
+		//							sylog.Fatalf("Unable to get json for helpfile: %s", err)
+		//						}
+		//						fmt.Printf("== helpfile ==\n%s\n", hrOut)
+		//					}
+		//				}
+		//				if runscript {
+		//					outfilter, _, _, err := jsonparser.Get(metaData, "container-runscript")
+		//					if err != nil {
+		//						sylog.Fatalf("Unable to get json for runscript: %s", err)
+		//					}
+		//					// Format the json to look nice
+		//					var newJson bytes.Buffer
+		//					err = json.Indent(&newJson, outfilter, "", "    ")
+		//					if err != nil {
+		//						sylog.Fatalf("Unable to parse json: %s", err)
+		//					}
+		//
+		//					if jsonfmt {
+		//						fmt.Printf("%s\n", string(newJson.Bytes()))
+		//					} else {
+		//						hrOut, err := jsonparser.GetString(metaData, "container-runscript", "runscript")
+		//						if err != nil {
+		//							sylog.Fatalf("Unable to get json for runscript: %s", err)
+		//						}
+		//						fmt.Printf("== runscript ==\n%s\n", hrOut)
+		//					}
+		//				}
+		//			}
+		//		} else {
+		//			sylog.Errorf("Error while looking for metadata: %s; searching container for data instead...", err)
+		//
+		//			abspath, err := filepath.Abs(args[0])
+		//			if err != nil {
+		//				sylog.Fatalf("While determining absolute file path: %v", err)
+		//			}
+		//			name := filepath.Base(abspath)
+		//
+		//			a := []string{"/bin/sh", "-c", ""}
+		//
+		//			if listApps {
+		//				sylog.Debugf("Listing all apps in container")
+		//				a[2] += listAppsCommand
+		//			}
+		//
+		//			// If AppName is given fail quickly (exit) if it doesn't exist
+		//			if AppName != "" {
+		//				sylog.Debugf("Inspection of App %s Selected.", AppName)
+		//				a[2] += getAppCheck(AppName)
+		//			}
+		//
+		//			if helpfile {
+		//				sylog.Debugf("Inspection of helpfile selected.")
+		//				a[2] += getHelpCommand(AppName)
+		//			}
+		//
+		//			if deffile {
+		//				sylog.Debugf("Inspection of deffile selected.")
+		//				a[2] += getDefinitionCommand()
+		//			}
+		//
+		//			if runscript {
+		//				sylog.Debugf("Inspection of runscript selected.")
+		//				a[2] += getRunscriptCommand(AppName)
+		//			}
+		//
+		//			if testfile {
+		//				sylog.Debugf("Inspection of test selected.")
+		//				a[2] += getTestCommand(AppName)
+		//			}
+		//
+		//			if environment {
+		//				sylog.Debugf("Inspection of environment selected.")
+		//				a[2] += getEnvironmentCommand(AppName)
+		//			}
+		//
+		//			// Default to labels if other flags are unset, excludes --app
+		//			if labels || defaultToLabels() {
+		//				sylog.Debugf("Inspection of labels selected.")
+		//				a[2] += getLabelsCommand(AppName)
+		//			}
+		//
+		//			// Execute the compound command string.
+		//			fileContents, err := getFileContent(abspath, name, a)
+		//			if err != nil {
+		//				sylog.Fatalf("Could not inspect container: %v", err)
+		//			}
+		//
+		//			inspectObj := inspectFormat{}
+		//			inspectObj.Type = "container"
+		//			inspectObj.Attributes.Labels = make(map[string]string)
+		//			inspectObj.Attributes.Environment = make(map[string]string)
+		//
+		//			// Parse the command output string into sections.
+		//			reader := bufio.NewReader(strings.NewReader(fileContents))
+		//			for {
+		//				section, err := reader.ReadBytes('\n')
+		//				if err != nil {
+		//					break
+		//				}
+		//				parts := strings.SplitN(strings.TrimSpace(string(section)), ":", 3)
+		//				if len(parts) == 2 {
+		//					label := parts[0]
+		//					sizeData, errConv := strconv.Atoi(parts[1])
+		//					if errConv != nil {
+		//						sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
+		//					}
+		//					sylog.Debugf("Section %s found with %d bytes of data.", label, sizeData)
+		//					data := make([]byte, sizeData)
+		//					n, err := io.ReadFull(reader, data)
+		//					if n != len(data) && err != nil {
+		//						sylog.Fatalf("Unable to read %d bytes.", sizeData)
+		//					}
+		//					setAttribute(&inspectObj, label, string(data))
+		//				} else {
+		//					sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
+		//				}
+		//			}
+		//
+		//			// Output the inspection results (use JSON if requested).
+		//			if jsonfmt {
+		//				jsonObj, err := json.MarshalIndent(inspectObj, "", "\t")
+		//				if err != nil {
+		//					sylog.Fatalf("Could not format inspected data as JSON.")
+		//				}
+		//				fmt.Println(string(jsonObj))
+		//			} else {
+		//				if inspectObj.Attributes.Apps != "" {
+		//					fmt.Printf("==apps==\n")
+		//					fmt.Printf("%s\n", inspectObj.Attributes.Apps)
+		//				}
+		//				if inspectObj.Attributes.Helpfile != "" {
+		//					fmt.Println("==helpfile==\n" + inspectObj.Attributes.Helpfile)
+		//				}
+		//				if inspectObj.Attributes.Deffile != "" {
+		//					fmt.Println("==deffile==\n" + inspectObj.Attributes.Deffile)
+		//				}
+		//				if inspectObj.Attributes.Runscript != "" {
+		//					fmt.Println("==runscript==\n" + inspectObj.Attributes.Runscript)
+		//				}
+		//				if inspectObj.Attributes.Test != "" {
+		//					fmt.Println("==test==\n" + inspectObj.Attributes.Test)
+		//				}
+		//				if len(inspectObj.Attributes.Environment) > 0 {
+		//					fmt.Println("==environment==")
+		//					for envLabel, envValue := range inspectObj.Attributes.Environment {
+		//						fmt.Println("==environment:" + envLabel + "==\n" + envValue)
+		//					}
+		//				}
+		//				if len(inspectObj.Attributes.Labels) > 0 {
+		//					fmt.Println("==labels==")
+		//					for labLabel, labValue := range inspectObj.Attributes.Labels {
+		//						fmt.Println(labLabel + ": " + labValue)
+		//					}
+		//				}
+		//			}
+		//		}
 	},
 	TraverseChildren: true,
+}
+
+func inspectInContainer(path string) {
+	abspath, err := filepath.Abs(path)
+	if err != nil {
+		sylog.Fatalf("While determining absolute file path: %v", err)
+	}
+	name := filepath.Base(abspath)
+
+	a := []string{"/bin/sh", "-c", ""}
+
+	if listApps {
+		sylog.Debugf("Listing all apps in container")
+		a[2] += listAppsCommand
+	}
+
+	// If AppName is given fail quickly (exit) if it doesn't exist
+	if AppName != "" {
+		sylog.Debugf("Inspection of App %s Selected.", AppName)
+		a[2] += getAppCheck(AppName)
+	}
+
+	if helpfile {
+		sylog.Debugf("Inspection of helpfile selected.")
+		a[2] += getHelpCommand(AppName)
+	}
+
+	if deffile {
+		sylog.Debugf("Inspection of deffile selected.")
+		a[2] += getDefinitionCommand()
+	}
+
+	if runscript {
+		sylog.Debugf("Inspection of runscript selected.")
+		a[2] += getRunscriptCommand(AppName)
+	}
+
+	if testfile {
+		sylog.Debugf("Inspection of test selected.")
+		a[2] += getTestCommand(AppName)
+	}
+
+	if environment {
+		sylog.Debugf("Inspection of environment selected.")
+		a[2] += getEnvironmentCommand(AppName)
+	}
+
+	// Default to labels if other flags are unset, excludes --app
+	if labels || defaultToLabels() {
+		sylog.Debugf("Inspection of labels selected.")
+		a[2] += getLabelsCommand(AppName)
+	}
+
+	// Execute the compound command string.
+	fileContents, err := getFileContent(abspath, name, a)
+	if err != nil {
+		sylog.Fatalf("Could not inspect container: %v", err)
+	}
+
+	inspectObj := inspectFormat{}
+	inspectObj.Type = "container"
+	inspectObj.Attributes.Labels = make(map[string]string)
+	inspectObj.Attributes.Environment = make(map[string]string)
+
+	// Parse the command output string into sections.
+	reader := bufio.NewReader(strings.NewReader(fileContents))
+	for {
+		section, err := reader.ReadBytes('\n')
+		if err != nil {
+			break
+		}
+		parts := strings.SplitN(strings.TrimSpace(string(section)), ":", 3)
+		if len(parts) == 2 {
+			label := parts[0]
+			sizeData, errConv := strconv.Atoi(parts[1])
+			if errConv != nil {
+				sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
+			}
+			sylog.Debugf("Section %s found with %d bytes of data.", label, sizeData)
+			data := make([]byte, sizeData)
+			n, err := io.ReadFull(reader, data)
+			if n != len(data) && err != nil {
+				sylog.Fatalf("Unable to read %d bytes.", sizeData)
+			}
+			setAttribute(&inspectObj, label, string(data))
+		} else {
+			sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
+		}
+	}
+
+	// Output the inspection results (use JSON if requested).
+	if jsonfmt {
+		jsonObj, err := json.MarshalIndent(inspectObj, "", "\t")
+		if err != nil {
+			sylog.Fatalf("Could not format inspected data as JSON.")
+		}
+		fmt.Println(string(jsonObj))
+	} else {
+		if inspectObj.Attributes.Apps != "" {
+			fmt.Printf("==apps==\n")
+			fmt.Printf("%s\n", inspectObj.Attributes.Apps)
+		}
+		if inspectObj.Attributes.Helpfile != "" {
+			fmt.Println("==helpfile==\n" + inspectObj.Attributes.Helpfile)
+		}
+		if inspectObj.Attributes.Deffile != "" {
+			fmt.Println("==deffile==\n" + inspectObj.Attributes.Deffile)
+		}
+		if inspectObj.Attributes.Runscript != "" {
+			fmt.Println("==runscript==\n" + inspectObj.Attributes.Runscript)
+		}
+		if inspectObj.Attributes.Test != "" {
+			fmt.Println("==test==\n" + inspectObj.Attributes.Test)
+		}
+		if len(inspectObj.Attributes.Environment) > 0 {
+			fmt.Println("==environment==")
+			for envLabel, envValue := range inspectObj.Attributes.Environment {
+				fmt.Println("==environment:" + envLabel + "==\n" + envValue)
+			}
+		}
+		if len(inspectObj.Attributes.Labels) > 0 {
+			fmt.Println("==labels==")
+			for labLabel, labValue := range inspectObj.Attributes.Labels {
+				fmt.Println(labLabel + ": " + labValue)
+			}
+		}
+	}
+
 }
 
 func getFileContent(abspath, name string, args []string) (string, error) {
