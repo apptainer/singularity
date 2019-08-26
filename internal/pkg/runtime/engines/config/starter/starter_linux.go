@@ -187,12 +187,13 @@ func (c *Config) SetAllowSetgroups(allow bool) {
 	}
 }
 
-// GetJSONConfig returns pointer to JSON configuration
+// GetJSONConfig returns pointer to the engine's JSON configuration.
+// A copy of the original bytes allocated on C heap is returned.
 func (c *Config) GetJSONConfig() []byte {
 	return C.GoBytes(unsafe.Pointer(&c.config.engine.config[0]), C.int(c.config.engine.size))
 }
 
-// WriteConfig writes raw C configuration
+// WriteConfig writes raw C configuration.
 func (c *Config) Write(payload interface{}) error {
 	jsonConf, err := json.Marshal(payload)
 	if err != nil {
@@ -285,7 +286,7 @@ func setNewIDMapPath(command string, pathPointer unsafe.Pointer) error {
 	return nil
 }
 
-// SetNewUIDMapPath sets absolute path to newuidmap binary if found
+// SetNewUIDMapPath sets absolute path to newuidmap binary if found.
 func (c *Config) SetNewUIDMapPath() error {
 	return setNewIDMapPath(
 		"newuidmap",
@@ -293,7 +294,7 @@ func (c *Config) SetNewUIDMapPath() error {
 	)
 }
 
-// SetNewGIDMapPath sets absolute path to newgidmap binary if found
+// SetNewGIDMapPath sets absolute path to newgidmap binary if found.
 func (c *Config) SetNewGIDMapPath() error {
 	return setNewIDMapPath(
 		"newgidmap",
@@ -301,12 +302,12 @@ func (c *Config) SetNewGIDMapPath() error {
 	)
 }
 
-// SetNsFlags sets namespaces flag directly from flags argument
+// SetNsFlags sets namespaces flag directly from flags argument.
 func (c *Config) SetNsFlags(flags int) {
 	c.config.container.namespace.flags = C.uint(flags)
 }
 
-// SetNsFlagsFromSpec sets namespaces flag from OCI spec
+// SetNsFlagsFromSpec sets namespaces flag from OCI spec.
 func (c *Config) SetNsFlagsFromSpec(namespaces []specs.LinuxNamespace) {
 	c.config.container.namespace.flags = 0
 	for _, namespace := range namespaces {
@@ -331,7 +332,7 @@ func (c *Config) SetNsFlagsFromSpec(namespaces []specs.LinuxNamespace) {
 	}
 }
 
-// SetNsPath sets corresponding namespace to be joined
+// SetNsPath sets corresponding namespace to be joined.
 func (c *Config) SetNsPath(nstype specs.LinuxNamespaceType, path string) error {
 	cpath := unsafe.Pointer(C.CString(path))
 	l := len(path)
@@ -363,7 +364,7 @@ func (c *Config) SetNsPath(nstype specs.LinuxNamespaceType, path string) error {
 	return nil
 }
 
-// SetNsPathFromSpec sets corresponding namespace to be joined from OCI spec
+// SetNsPathFromSpec sets corresponding namespace to be joined from OCI spec.
 func (c *Config) SetNsPathFromSpec(namespaces []specs.LinuxNamespace) error {
 	for _, namespace := range namespaces {
 		if namespace.Path != "" {
@@ -400,7 +401,7 @@ func (c *Config) SetNsPathFromSpec(namespaces []specs.LinuxNamespace) error {
 }
 
 // SetCapabilities sets corresponding capability set identified by ctype
-// from a capability string list identified by ctype
+// from a capability string list identified by ctype.
 func (c *Config) SetCapabilities(ctype string, caps []string) {
 	switch ctype {
 	case capabilities.Permitted:
@@ -431,12 +432,12 @@ func (c *Config) SetCapabilities(ctype string, caps []string) {
 	}
 }
 
-// SetTargetUID sets target UID to execute the container process as user ID
+// SetTargetUID sets target UID to execute the container process as user ID.
 func (c *Config) SetTargetUID(uid int) {
 	c.config.container.privileges.targetUID = C.uid_t(uid)
 }
 
-// SetTargetGID sets target GIDs to execute container process as group IDs
+// SetTargetGID sets target GIDs to execute container process as group IDs.
 func (c *Config) SetTargetGID(gids []int) {
 	c.config.container.privileges.numGID = C.int(len(gids))
 
@@ -450,7 +451,7 @@ func (c *Config) SetTargetGID(gids []int) {
 	}
 }
 
-// Release performs a unmap on starter config and release mapped memory
+// Release performs a unmap on starter config and release mapped memory.
 func (c *Config) Release() error {
 	if C.munmap(unsafe.Pointer(c.config), C.sizeof_struct_starterConfig) != 0 {
 		return fmt.Errorf("failed to release starter memory")
