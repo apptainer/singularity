@@ -137,7 +137,7 @@ func (c *Config) SetMountPropagation(propagation string) {
 
 // SetWorkingDirectoryFd changes starter config and sets current working directory
 // to the file pointed by file descriptor fd. Starter will use this file descriptor
-// to change its working directory with fchdir before stage 1.
+// to change its working directory with fchdir after stage 1.
 func (c *Config) SetWorkingDirectoryFd(fd int) {
 	c.config.starter.workingDirectoryFd = C.int(fd)
 }
@@ -442,7 +442,7 @@ func (c *Config) SetTargetGID(gids []int) {
 // Release performs an unmap of a shared starter config and releases the mapped memory.
 // This method should be called as soon as the process doesn't need to access or modify
 // the underlying starter configuration. Attempt to modify the underlying config after
-// call to Release will result in error.
+// call to Release will result in a segmentation fault.
 func (c *Config) Release() error {
 	if C.munmap(unsafe.Pointer(c.config), C.sizeof_struct_starterConfig) != 0 {
 		return fmt.Errorf("failed to release starter memory")
