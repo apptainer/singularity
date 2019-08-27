@@ -121,6 +121,7 @@ func TestCheckExt3Header(t *testing.T) {
 		t.Fatal("impossible to load image for testing")
 	}
 	defer img.Close()
+	defer os.Remove(path)
 
 	n, err := img.Read(b)
 	if err != nil || n != bufferSize {
