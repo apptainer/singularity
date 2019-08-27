@@ -252,7 +252,7 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 func populateDefinition(sections map[string]*types.Script, files *[]types.Files, d *types.Definition) (err error) {
 	// initialize standard sections if not already created
 	// this function relies on standard sections being initialized in the map
-	for section := range validSections {
+	for section := range ValidSections {
 		if _, ok := sections[section]; !ok {
 			sections[section] = &types.Script{}
 		}
@@ -299,7 +299,7 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 	}
 
 	// remove standard sections from map
-	for s := range validSections {
+	for s := range ValidSections {
 		delete(sections, s)
 	}
 
@@ -512,9 +512,9 @@ func isEmpty(d types.Definition) bool {
 	return reflect.DeepEqual(d, emptyDef)
 }
 
-// validSections just contains a list of all the valid sections a definition file
+// ValidSections just contains a list of all the valid sections a definition file
 // could contain. If any others are found, an error will generate
-var validSections = map[string]bool{
+var ValidSections = map[string]bool{
 	"help":        true,
 	"setup":       true,
 	"files":       true,

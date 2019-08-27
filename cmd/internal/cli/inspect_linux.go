@@ -27,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
+	"github.com/sylabs/singularity/pkg/build/types/parser"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
@@ -84,6 +85,7 @@ var inspectAppNameFlag = cmdline.Flag{
 	EnvKeys:      []string{"APP"},
 }
 
+// TODO: remove this flag?
 // --all
 var inspectAllLabelsFlag = cmdline.Flag{
 	ID:           "inspectAllLabelsFlag",
@@ -329,12 +331,59 @@ func getMetaData(fimg *sif.FileImage, dataType sif.Datatype) (sigs []*sif.Descri
 	//sigs, _, err = fimg.GetLinkedDescrsByType(descr[0].ID, sif.DataLabels)
 	sigs, _, err = fimg.GetLinkedDescrsByType(uint32(0), dataType)
 	if err != nil {
-		fmt.Println("DEBUG")
 		return nil, nil, ErrNoMetaData
 	}
 
 	return
 }
+
+// parseDeffile will take a deffile content, and return the specified section.
+// Returns "" if the section does not exist.
+func parseDeffile(content string, section string) string {
+	ret := ""
+	headerFound := false
+	end := false
+
+	scanner := bufio.NewScanner(strings.NewReader(content))
+	for scanner.Scan() {
+		if headerFound {
+			for s := range parser.ValidSections {
+				if scanner.Text() == "%"+s {
+					end = true
+					break
+				}
+			}
+			if !end {
+				ret += scanner.Text()
+				ret += "\n"
+			}
+		}
+
+		if scanner.Text() == section {
+			headerFound = true
+		}
+		if end {
+			break
+		}
+	}
+
+	if scanner.Err() != nil {
+		sylog.Fatalf("error from scanner: %s\n", scanner.Err)
+	}
+
+	return ret
+}
+
+//func getDeffileData(sifData []*sif.Descriptor, sectionType string) string {
+//	ret := ""
+//
+//	for _, v := range sifData {
+//		metaData := v.GetData(&fimg)
+//		ret += parseDeffile(string(metaData), "%"+sectionType)
+//	}
+//
+//	return ret
+//}
 
 // InspectCmd represents the 'inspect' command
 // TODO: This should be in its own package, not cli
@@ -354,7 +403,7 @@ var InspectCmd = &cobra.Command{
 		}
 
 		// TODO: check all the options
-		if !runscript && !helpfile && !deffile {
+		if !runscript && !helpfile && !deffile && !testfile && !environment {
 			labels = true
 		}
 
@@ -363,6 +412,13 @@ var InspectCmd = &cobra.Command{
 			sylog.Fatalf("failed to load SIF container file: %s", err)
 		}
 		defer fimg.UnloadContainer()
+
+		var inspectData string
+		inspectDataJson := make(map[string]map[string]string, 1)
+
+		if deffile || helpfile || runscript || helpfile || environment {
+			inspectDataJson["container"] = make(map[string]string, 1)
+		}
 
 		// Inspect Labels
 		if labels {
@@ -373,22 +429,19 @@ var InspectCmd = &cobra.Command{
 			} else if err != nil {
 				sylog.Fatalf("Unable to get label metadata: %s", err)
 			}
+			inspectDataJson["labels"] = make(map[string]string, 1)
 
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
-
-				if jsonfmt {
-					fmt.Printf("%s\n", string(metaData))
-				} else {
-					var hrOut map[string]*json.RawMessage
-					err := json.Unmarshal(metaData, &hrOut)
-					if err != nil {
-						sylog.Fatalf("Unable to get json: %s", err)
-					}
-					fmt.Printf("== labels ==\n")
-					for k := range hrOut {
-						fmt.Printf("%s: %s\n", k, *hrOut[k])
-					}
+				var hrOut map[string]*json.RawMessage
+				err := json.Unmarshal(metaData, &hrOut)
+				if err != nil {
+					sylog.Fatalf("Unable to get json: %s", err)
+				}
+				inspectData += "== labels ==\n"
+				for k := range hrOut {
+					inspectData += fmt.Sprintf("%s: %s\n", k, string(*hrOut[k]))
+					inspectDataJson["labels"][k] = string(*hrOut[k])
 				}
 			}
 		}
@@ -401,22 +454,77 @@ var InspectCmd = &cobra.Command{
 			}
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
-				if jsonfmt {
-					jsonOut := make(map[string]string, 1)
-					jsonOut["deffile"] = string(metaData)
+				data := string(metaData)
+				inspectDataJson["container"]["deffile"] = data
+				inspectData += data
+			}
+		}
 
-					text, err := json.MarshalIndent(jsonOut, "", "    ")
-					if err != nil {
-						sylog.Fatalf("Unable to marshal json: %s", err)
-					}
-					fmt.Printf("%s\n", text)
-
-				} else {
-					fmt.Printf("%s\n", string(metaData))
-				}
-
+		// For %help
+		if helpfile {
+			sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
+			if err != nil {
+				sylog.Fatalf("Unable to get metadata: %s", err)
 			}
 
+			for _, v := range sifData {
+				metaData := v.GetData(&fimg)
+				data := parseDeffile(string(metaData), "%help")
+				inspectDataJson["container"]["helpfile"] = data
+				inspectData += "== helpfile ==\n" + data
+			}
+		}
+
+		// For %runscript
+		if runscript {
+			sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
+			if err != nil {
+				sylog.Fatalf("Unable to get metadata: %s", err)
+			}
+			for _, v := range sifData {
+				metaData := v.GetData(&fimg)
+				data := parseDeffile(string(metaData), "%runscript")
+				inspectDataJson["container"]["runscript"] = data
+				inspectData += "== runscript ==\n" + data
+			}
+		}
+
+		// For %test
+		if testfile {
+			sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
+			if err != nil {
+				sylog.Fatalf("Unable to get metadata: %s", err)
+			}
+			for _, v := range sifData {
+				metaData := v.GetData(&fimg)
+				data := parseDeffile(string(metaData), "%test")
+				inspectDataJson["container"]["testfile"] = data
+				inspectData += "== testfile ==\n" + data
+			}
+		}
+
+		// For %environment
+		if environment {
+			sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
+			if err != nil {
+				sylog.Fatalf("Unable to get metadata: %s", err)
+			}
+			for _, v := range sifData {
+				metaData := v.GetData(&fimg)
+				data := parseDeffile(string(metaData), "%environment")
+				inspectDataJson["container"]["environment"] = data
+				inspectData += "== environment ==\n" + data
+			}
+		}
+
+		if jsonfmt {
+			text, err := json.MarshalIndent(inspectDataJson, "", "    ")
+			if err != nil {
+				sylog.Fatalf("Unable to marshal json: %s", err)
+			}
+			fmt.Printf("%s\n", text)
+		} else {
+			fmt.Printf("%s\n", inspectData)
 		}
 
 		//

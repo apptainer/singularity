@@ -332,8 +332,8 @@ github.com/sylabs/scs-key-client/client
 # github.com/sylabs/scs-library-client v0.4.2
 github.com/sylabs/scs-library-client/client
 # github.com/sylabs/sif v1.0.8
-github.com/sylabs/sif/pkg/siftool
 github.com/sylabs/sif/pkg/sif
+github.com/sylabs/sif/pkg/siftool
 github.com/sylabs/sif/internal/app/siftool
 # github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e
 github.com/syndtr/gocapability/capability
