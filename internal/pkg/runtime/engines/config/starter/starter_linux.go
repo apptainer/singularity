@@ -23,41 +23,46 @@ import (
 	"syscall"
 	"unsafe"
 
-	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
-const (
-	searchPath = "/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin"
-)
+const searchPath = "/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin"
 
-// SConfig is the common type for C.struct_starterConfig
+// SConfig is an alias for *C.struct_starterConfig
+// (see cmd/starter/c/include/starter.h) introduced for convenience.
 type SConfig *C.struct_starterConfig
 
-// Config represents structure to manipulate C starter configuration
+// Config wraps SConfig. It is used to manipulate starter's config which
+// lies on a shared memory. Thus the Go part can update the config and
+// starter will respect it during container creation. More specifically,
+// all SetXXX methods of the Config will modify the shared memory unless
+// the Release method was called.
 type Config struct {
-	config SConfig
-	nsPath []byte
+	config SConfig // shared memory area
 }
 
-// NewConfig takes a pointer to C starter configuration and returns a
-// pointer to a Config
+// NewConfig creates a Config based on SConfig. Since SConfig is an alias for
+// *C.struct_starterConfig, the underlying memory is shared between C and Go.
 func NewConfig(config SConfig) *Config {
-	return &Config{config: config, nsPath: make([]byte, 1)}
+	return &Config{
+		config: config,
+	}
 }
 
-// GetIsSUID returns if SUID workflow is enabled or not
+// GetIsSUID returns true if SUID workflow is enabled.
 func (c *Config) GetIsSUID() bool {
 	return c.config.starter.isSuid == C.true
 }
 
-// GetContainerPid returns container process ID
+// GetContainerPid returns container PID (if any).
 func (c *Config) GetContainerPid() int {
 	return int(c.config.container.pid)
 }
 
-// SetInstance sets if starter should spawn instance or not
+// SetInstance changes starter config so that it will spawn an instance
+// instead of a regular container if the passed value is true.
 func (c *Config) SetInstance(instance bool) {
 	if instance {
 		c.config.container.isInstance = C.true
@@ -66,12 +71,8 @@ func (c *Config) SetInstance(instance bool) {
 	}
 }
 
-// GetInstance returns if container run as instance or not
-func (c *Config) GetInstance() bool {
-	return c.config.container.isInstance == C.true
-}
-
-// SetNoNewPrivs sets NO_NEW_PRIVS flag
+// SetNoNewPrivs changes starter config so that it will set NO_NEW_PRIVS
+// flag for a container before it starts up if noprivs is true.
 func (c *Config) SetNoNewPrivs(noprivs bool) {
 	if noprivs {
 		c.config.container.privileges.noNewPrivs = C.true
@@ -80,12 +81,9 @@ func (c *Config) SetNoNewPrivs(noprivs bool) {
 	}
 }
 
-// GetNoNewPrivs returns if NO_NEW_PRIVS flag is set or not
-func (c *Config) GetNoNewPrivs() bool {
-	return c.config.container.privileges.noNewPrivs == C.true
-}
-
-// SetMasterPropagateMount sets if master/container shares mount point
+// SetMasterPropagateMount changes starter config so that the mount propagation
+// between master (process that monitors container) and a container itself
+// is set to MS_SHARED if propagate is true.
 func (c *Config) SetMasterPropagateMount(propagate bool) {
 	if propagate {
 		c.config.starter.masterPropagateMount = C.true
@@ -94,12 +92,9 @@ func (c *Config) SetMasterPropagateMount(propagate bool) {
 	}
 }
 
-// GetMasterPropagateMount returns if master/container shares mount point or not
-func (c *Config) GetMasterPropagateMount() bool {
-	return c.config.starter.masterPropagateMount == 1
-}
-
-// SetNamespaceJoinOnly sets if container process join a mount namespace
+// SetNamespaceJoinOnly changes starter config so that the created process
+// will join an already running container (used for `singularity shell` and
+// `singularity oci exec`) if join is true.
 func (c *Config) SetNamespaceJoinOnly(join bool) {
 	if join {
 		c.config.container.namespace.joinOnly = C.true
@@ -108,12 +103,8 @@ func (c *Config) SetNamespaceJoinOnly(join bool) {
 	}
 }
 
-// GetNamespaceJoinOnly returns if container process join a mount namespace
-func (c *Config) GetNamespaceJoinOnly() bool {
-	return c.config.container.namespace.joinOnly == C.true
-}
-
-// SetBringLoopbackInterface sets if starter bring loopback network interface
+// SetBringLoopbackInterface changes starter config so that it will bring up
+// a loopback network interface during container creation if bring is true.
 func (c *Config) SetBringLoopbackInterface(bring bool) {
 	if bring {
 		c.config.container.namespace.bringLoopbackInterface = C.true
@@ -122,12 +113,8 @@ func (c *Config) SetBringLoopbackInterface(bring bool) {
 	}
 }
 
-// GetBringLoopbackInterface returns if starter bring loopback network interface
-func (c *Config) GetBringLoopbackInterface() bool {
-	return c.config.container.namespace.bringLoopbackInterface == C.true
-}
-
-// SetMountPropagation sets root filesystem mount propagation
+// SetMountPropagation changes starter config and sets container's root
+// filesystem mount propagation that will be respected during container creation.
 func (c *Config) SetMountPropagation(propagation string) {
 	var flags uintptr
 
@@ -148,8 +135,9 @@ func (c *Config) SetMountPropagation(propagation string) {
 	c.config.container.namespace.mountPropagation = C.ulong(flags)
 }
 
-// SetWorkingDirectoryFd sets current working directory pointed by
-// file descriptor, starter will use this file descriptor with fchdir
+// SetWorkingDirectoryFd changes starter config and sets current working directory
+// to the file pointed by file descriptor fd. Starter will use this file descriptor
+// to change its working directory with fchdir after stage 1.
 func (c *Config) SetWorkingDirectoryFd(fd int) {
 	c.config.starter.workingDirectoryFd = C.int(fd)
 }
@@ -157,7 +145,7 @@ func (c *Config) SetWorkingDirectoryFd(fd int) {
 // KeepFileDescriptor adds a file descriptor to an array of file
 // descriptor that starter will kept open. All files opened during
 // stage 1 will be shared with starter process, once stage 1 returns
-// all file descriptor which are not listed here will be closed
+// all file descriptor which are not listed here will be closed.
 func (c *Config) KeepFileDescriptor(fd int) error {
 	if c.config.starter.numfds >= C.MAX_STARTER_FDS {
 		return fmt.Errorf("maximum number of kept file descriptors reached")
@@ -168,7 +156,7 @@ func (c *Config) KeepFileDescriptor(fd int) error {
 }
 
 // SetHybridWorkflow sets the flag to tell starter container setup
-// will require an hybrid workflow. Typically used for fakeroot
+// will require an hybrid workflow. Typically used for fakeroot.
 func (c *Config) SetHybridWorkflow(hybrid bool) {
 	if hybrid {
 		c.config.starter.hybridWorkflow = C.true
@@ -177,8 +165,7 @@ func (c *Config) SetHybridWorkflow(hybrid bool) {
 	}
 }
 
-// SetAllowSetgroups allows use of setgroups syscall from user
-// namespace
+// SetAllowSetgroups allows use of setgroups syscall from user namespace.
 func (c *Config) SetAllowSetgroups(allow bool) {
 	if allow {
 		c.config.container.privileges.allowSetgroups = C.true
@@ -193,24 +180,25 @@ func (c *Config) GetJSONConfig() []byte {
 	return C.GoBytes(unsafe.Pointer(&c.config.engine.config[0]), C.int(c.config.engine.size))
 }
 
-// WriteConfig writes raw C configuration.
+// WriteConfig modifies starter config by fully updating engine json
+// configuration stored there. If json config is too big the error
+// will be returned.
 func (c *Config) Write(payload interface{}) error {
 	jsonConf, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed to marshal payload: %s", err)
 	}
+
 	size := len(jsonConf)
 	maxSize := C.MAX_JSON_SIZE - 1
-	c.config.engine.size = C.size_t(size)
-
 	if size >= maxSize {
 		return fmt.Errorf("json configuration too big %d > %d", size, maxSize)
 	}
 
-	json := C.CBytes(jsonConf)
-
-	C.memcpy(unsafe.Pointer(&c.config.engine.config[0]), json, c.config.engine.size)
-	C.free(json)
+	c.config.engine.size = C.size_t(size)
+	engineConfig := C.CBytes(jsonConf)
+	C.memcpy(unsafe.Pointer(&c.config.engine.config[0]), engineConfig, c.config.engine.size)
+	C.free(engineConfig)
 
 	return nil
 }
@@ -238,7 +226,7 @@ func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) error {
 	return nil
 }
 
-// AddGIDMappings sets user namespace GID mapping
+// AddGIDMappings sets user namespace GID mapping.
 func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) error {
 	gidMap := ""
 	for _, gid := range gids {
@@ -451,7 +439,10 @@ func (c *Config) SetTargetGID(gids []int) {
 	}
 }
 
-// Release performs a unmap on starter config and release mapped memory.
+// Release performs an unmap of a shared starter config and releases the mapped memory.
+// This method should be called as soon as the process doesn't need to access or modify
+// the underlying starter configuration. Attempt to modify the underlying config after
+// call to Release will result in a segmentation fault.
 func (c *Config) Release() error {
 	if C.munmap(unsafe.Pointer(c.config), C.sizeof_struct_starterConfig) != 0 {
 		return fmt.Errorf("failed to release starter memory")
