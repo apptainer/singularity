@@ -898,8 +898,7 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		}
 		// C starter code will position current working directory
 		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
-	}
-	if img.Type == image.SIF {
+	} else if img.Type == image.SIF {
 		// query the ECL module, proceed if an ecl config file is found
 		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
 		if err == nil {
@@ -912,6 +911,16 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 			}
 		}
 	}
+
+	// lock all ext3 partitions if any to prevent concurrent writes
+	for _, part := range img.Partitions {
+		if part.Type == image.EXT3 {
+			if err := img.LockSection(part); err != nil {
+				return fmt.Errorf("error while locking ext3 partition from %s: %s", img.Path, err)
+			}
+		}
+	}
+
 	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
 		return err
 	}
@@ -934,6 +943,16 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		if err != nil {
 			return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
 		}
+
+		// lock all ext3 partitions if any to prevent concurrent writes
+		for _, part := range img.Partitions {
+			if part.Type == image.EXT3 {
+				if err := img.LockSection(part); err != nil {
+					return fmt.Errorf("error while locking ext3 overlay partition from %s: %s", img.Path, err)
+				}
+			}
+		}
+
 		if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
 			return err
 		}
