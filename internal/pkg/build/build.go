@@ -323,14 +323,13 @@ func (b *Build) Full() error {
 			}
 		}
 
-		//		sylog.Debugf("Inserting Metadata")
-		//	if err := stage.insertMetadata(); err != nil {
-		//		return fmt.Errorf("while inserting metadata to bundle: %v", err)
-		//	}
+		sylog.Infof("Inserting scripts...")
+		if err := stage.insertMetadata(); err != nil {
+			return fmt.Errorf("while inserting metadata to bundle: %v", err)
+		}
 
 		// Only add the metadata partition if we are building a sif
 		if b.Conf.Format == "sif" {
-			//labels["contianer-info"] = "contianer-info"
 			labels["org.label-schema.schema-version"] = "2.0"
 
 			// build date and time, lots of time formatting
@@ -387,21 +386,6 @@ func (b *Build) Full() error {
 			}
 
 		}
-
-		//
-		//		// The help menu
-		//		labels["container-help-file"] = make(map[string]string, 1)
-		//		if stage.b.RunSection("help") && stage.b.Recipe.ImageData.Help.Script != "" {
-		//			labels["container-help-file"]["help"] = stage.b.Recipe.ImageData.Help.Script
-		//		}
-		//
-		//		// The runscript
-		//		labels["container-runscript"] = make(map[string]string, 1)
-		//		if stage.b.RunSection("runscript") && stage.b.Recipe.ImageData.Runscript.Script != "" {
-		//			labels["container-runscript"]["runscript"] = stage.b.Recipe.ImageData.Runscript.Script
-		//		}
-
-		// TODO: add all the other contianer-scripts here
 	}
 
 	sylog.Debugf("Calling assembler")
@@ -413,11 +397,6 @@ func (b *Build) Full() error {
 
 		sylog.Infof("Inserting Metadata...")
 
-		var id uint32
-		id = 0
-
-		isGroup := false
-
 		// load the container to add the metadata
 		fimg, err := sif.LoadContainer(b.Conf.Dest, false)
 		if err != nil {
@@ -426,65 +405,13 @@ func (b *Build) Full() error {
 		defer fimg.UnloadContainer()
 
 		// figure out which descriptor has data to sign
-		descr, err := descrToSign(&fimg, id, isGroup)
+		descr, err := getDescr(&fimg)
 		if err != nil {
 			return fmt.Errorf("no primary partition found: %s", err)
 		}
 
-		// finally add the signature block (for descr) as a new SIF data object
-		var groupid uint32
-		if isGroup {
-			groupid = sif.DescrUnusedGroup
-			//link = descr[0].Groupid
-		} else {
-			groupid = descr[0].Groupid
-			//link = descr[0].ID
-		}
-		//	fmt.Printf("GROUP: %d\n", int(groupid))
-		//	link = 0
-
-		// signature also include data integrity check
-		//	sifhash := computeHashStr(&fimg, descr)
-
-		//	data := []byte("hello world!!! testing from the contianer\n")
-
-		var entity [20]byte
-		copy(entity[:], "FINGERPRINT")
-
-		//
-		//
-		//
-
-		//	labels := make(map[string]string)
-		//
-		//	// schema version
-		//	labels["org.label-schema.schema-version"] = "1.0"
-		//
-		//	// build date and time, lots of time formatting
-		//	currentTime := time.Now()
-		//	year, month, day := currentTime.Date()
-		//	date := strconv.Itoa(day) + `_` + month.String() + `_` + strconv.Itoa(year)
-		//	hour, min, sec := currentTime.Clock()
-		//	time := strconv.Itoa(hour) + `:` + strconv.Itoa(min) + `:` + strconv.Itoa(sec)
-		//	zone, _ := currentTime.Zone()
-		//	timeString := currentTime.Weekday().String() + `_` + date + `_` + time + `_` + zone
-		//	labels["org.label-schema.build-date"] = timeString
-		//
-		//	// singularity version
-		//	labels["org.label-schema.usage.singularity.version"] = buildcfg.PACKAGE_VERSION
-		//
-		//	// help info if help exists in the definition and is run in the build
-		//	if b.RunSection("help") && b.Recipe.ImageData.Help.Script != "" {
-		//		labels["org.label-schema.usage"] = "/.singularity.d/runscript.help"
-		//		labels["org.label-schema.usage.singularity.runscript.help"] = "/.singularity.d/runscript.help"
-		//	}
-		//
-		//	// bootstrap header info, only if this build actually bootstrapped
-		//	if !b.Opts.Update || b.Opts.Force {
-		//		for key, value := range b.Recipe.Header {
-		//			labels["org.label-schema.usage.singularity.deffile."+key] = value
-		//		}
-		//	}
+		groupid := descr[0].Groupid
+		//link = descr[0].ID
 
 		// Get the primary partition data size
 		primSize := make([]*sif.Descriptor, 1)
@@ -492,7 +419,6 @@ func (b *Build) Full() error {
 		if err != nil {
 			return fmt.Errorf("failed getting main data: %s", err)
 		}
-
 		labels["org.label-schema.image-size"] = readBytes(float64(primSize[0].Storelen))
 
 		// make new map into json
@@ -502,7 +428,7 @@ func (b *Build) Full() error {
 		}
 
 		// Add the metadata
-		err = sifAddMetadata(&fimg, groupid, uint32(0), entity, text)
+		err = sifAddMetadata(&fimg, groupid, uint32(0), text)
 		if err != nil {
 			return fmt.Errorf("failed adding metadata block to SIF container file: %s", err)
 		}
@@ -529,7 +455,7 @@ func readBytes(in float64) string {
 	return buf
 }
 
-func sifAddMetadata(fimg *sif.FileImage, groupid, link uint32, fingerprint [20]byte, data []byte) error {
+func sifAddMetadata(fimg *sif.FileImage, groupid, link uint32, data []byte) error {
 	// data we need to create a signature descriptor
 	siginput := sif.DescriptorInput{
 		Datatype: sif.DataLabels,
@@ -540,12 +466,6 @@ func sifAddMetadata(fimg *sif.FileImage, groupid, link uint32, fingerprint [20]b
 	}
 	siginput.Size = int64(binary.Size(siginput.Data))
 
-	//	// extra data needed for the creation of a signature descriptor
-	//	err := siginput.SetSignExtra(sif.HashSHA384, hex.EncodeToString(fingerprint[:]))
-	//	if err != nil {
-	//		return err
-	//	}
-
 	// add new signature data object to SIF file
 	err := fimg.AddObject(siginput)
 	if err != nil {
@@ -555,30 +475,13 @@ func sifAddMetadata(fimg *sif.FileImage, groupid, link uint32, fingerprint [20]b
 	return nil
 }
 
-// descrToSign determines via argument or interactively which descriptor to sign
-// TODO: put to comon place
-func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) ([]*sif.Descriptor, error) {
+func getDescr(fimg *sif.FileImage) ([]*sif.Descriptor, error) {
 	descr := make([]*sif.Descriptor, 1)
 	var err error
 
-	if id == 0 {
-		descr[0], _, err = fimg.GetPartPrimSys()
-		if err != nil {
-			return nil, fmt.Errorf("no primary partition found")
-		}
-	} else if isGroup {
-		var search = sif.Descriptor{
-			Groupid: id | sif.DescrGroupMask,
-		}
-		descr, _, err = fimg.GetFromDescr(search)
-		if err != nil {
-			return nil, fmt.Errorf("no descriptors found for groupid %v", id)
-		}
-	} else {
-		descr[0], _, err = fimg.GetFromDescrID(id)
-		if err != nil {
-			return nil, fmt.Errorf("no descriptor found for id %v", id)
-		}
+	descr[0], _, err = fimg.GetPartPrimSys()
+	if err != nil {
+		return nil, fmt.Errorf("no primary partition found")
 	}
 
 	return descr, nil

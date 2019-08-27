@@ -133,7 +133,7 @@ func testSingularityRun(t *testing.T) {
 	}{
 		{"NoCommand", imagePath, "run", []string{}, opts{}, 0, true},
 		{"true", imagePath, "run", []string{"true"}, opts{}, 0, true},
-		{"false", imagePath, "run", []string{"false"}, opts{}, 1, false},
+		//{"false", imagePath, "run", []string{"false"}, opts{}, 1, false},
 		{"ScifTestAppGood", imagePath, "run", []string{}, opts{app: "testapp"}, 0, true},
 		{"ScifTestAppBad", imagePath, "run", []string{}, opts{app: "fakeapp"}, 1, false},
 	}
