@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
 
@@ -122,7 +123,7 @@ func StopInstance(name, user string, sig syscall.Signal, timeout time.Duration) 
 					}
 				}
 
-				fmt.Printf("Killing %s instance of %s (PID=%d) (Timeout)\n", i.Name, i.Image, i.Pid)
+				sylog.Infof("Killing %s instance of %s (PID=%d) (Timeout)\n", i.Name, i.Image, i.Pid)
 				syscall.Kill(i.Pid, syscall.SIGKILL)
 			}
 			return nil
@@ -131,7 +132,7 @@ func StopInstance(name, user string, sig syscall.Signal, timeout time.Duration) 
 }
 
 func killInstance(i *instance.File, sig syscall.Signal, stoppedPID chan<- int) {
-	fmt.Printf("Stopping %s instance of %s (PID=%d)\n", i.Name, i.Image, i.Pid)
+	sylog.Infof("Stopping %s instance of %s (PID=%d)\n", i.Name, i.Image, i.Pid)
 	syscall.Kill(i.Pid, sig)
 
 	for {
