@@ -1,10 +1,15 @@
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE.md file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package singularity
 
 import (
 	"context"
 	"fmt"
+	"os"
 
-	"github.com/sylabs/scs-library-client/client"
 	scs "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/library"
@@ -26,7 +31,7 @@ type Library struct {
 
 // NewLibrary initializes and returns new Library ready to  be used.
 func NewLibrary(scsConfig *scs.Config, cache *cache.Handle, keystoreURI string) (*Library, error) {
-	libraryClient, err := client.NewClient(scsConfig)
+	libraryClient, err := scs.NewClient(scsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("could not initialize library client: %v", err)
 	}
@@ -115,17 +120,24 @@ func (l *Library) pullAndVerify(ctx context.Context, imgMeta *scs.Image, from, t
 // If so, the image will be copied to the location provided.
 func (l *Library) copyFromCache(hash, name, to string) error {
 	exists, err := l.cache.LibraryImageExists(hash, name)
-	if err != nil {
+	if err == cache.ErrBadChecksum {
+		sylog.Warningf("Removing cached image: %s: cache could be corrupted", name)
+		err := os.Remove(l.cache.LibraryImage(hash, name))
+		if err != nil {
+			return fmt.Errorf("unable to remove corrupted image from cache: %s", err)
+		}
+	} else if err != nil {
 		return fmt.Errorf("unable to check if %s exists: %v", name, err)
 	}
+
 	if !exists {
 		return errNotInCache
 	}
 
 	from := l.cache.LibraryImage(hash, name)
-	// Perms are 777 *prior* to umask in order to allow image to be
+	// Perms are 755 *prior* to umask in order to allow image to be
 	// executed with its leading shebang like a script
-	err = fs.CopyFile(from, to, 0777)
+	err = fs.CopyFile(from, to, 0755)
 	if err != nil {
 		return fmt.Errorf("while copying image from cache: %v", err)
 	}

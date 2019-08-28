@@ -36,7 +36,7 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 
 		env.RunSingularity(
 			t,
-			WithPrivileges(true),
+			WithProfile(RootProfile),
 			WithCommand("build"),
 			WithArgs("-s", dockerImage, dockerDefinition),
 			ExpectExit(0),
@@ -46,7 +46,7 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 
 		env.RunSingularity(
 			t,
-			WithPrivileges(true),
+			WithProfile(RootProfile),
 			WithCommand("instance start"),
 			WithArgs("-w", "-B", "/sys", dockerImage, dockerInstanceName),
 			PreRun(func(t *testing.T) {
@@ -82,6 +82,7 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 
 		env.RunSingularity(
 			t,
+			WithProfile(UserProfile),
 			WithCommand("push"),
 			WithArgs(env.ImagePath, env.OrasTestImage),
 			ExpectExit(0),
@@ -99,7 +100,7 @@ func KillRegistry(t *testing.T, env TestEnv) {
 
 	env.RunSingularity(
 		t,
-		WithPrivileges(true),
+		WithProfile(RootProfile),
 		WithCommand("instance stop"),
 		WithArgs("-s", "KILL", dockerInstanceName),
 		PreRun(func(t *testing.T) {

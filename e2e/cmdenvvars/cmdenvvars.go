@@ -57,7 +57,7 @@ func (c *ctx) testSingularityImgCache(t *testing.T, disableCache bool) string {
 	// whether it does the correct thing or not.
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("pull"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(0),
@@ -164,7 +164,7 @@ func (c *ctx) testSingularitySypgpDir(t *testing.T) {
 	c.env.KeyringDir = keyringDir
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("key"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(0),
@@ -182,8 +182,8 @@ func (c *ctx) testSingularitySypgpDir(t *testing.T) {
 
 }
 
-// RunE2ETests is the bootstrap to run all instance tests.
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
 		env: env,
 	}

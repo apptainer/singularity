@@ -89,16 +89,16 @@ func Get(b []byte) (*Engine, error) {
 
 var (
 	// registeredOperations contains a map relating an Engine name to a set
-	// of operations provided by an engine
+	// of operations provided by an engine.
 	registeredOperations = make(map[string]Operations)
 
 	// registerEngineRPCMethods contains a map relating an Engine name to a set
-	// of RPC methods served by RPC server
+	// of RPC methods served by RPC server.
 	registeredRPCMethods = make(map[string]interface{})
 
 	// prevents concurrent writes for registeredOperations and registerEngineRPCMethods
 	// during RegisterOperations and RegisterRPCMethods calls because there are mainly
-	// called from multiple init() at import time
+	// called from multiple init() at import time.
 	mutex sync.Mutex
 )
 

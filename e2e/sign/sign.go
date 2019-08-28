@@ -28,7 +28,7 @@ func (c *ctx) singularitySignHelpOption(t *testing.T) {
 	c.env.KeyringDir = c.keyringDir
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("sign"),
 		e2e.WithArgs("--help"),
 		e2e.ExpectExit(
@@ -64,7 +64,7 @@ func (c *ctx) singularitySignIDOption(t *testing.T) {
 	c.env.ImgCacheDir = c.imgCache
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("sign"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ConsoleRun(c.passphraseInput...),
@@ -84,7 +84,7 @@ func (c *ctx) singularitySignGroupIDOption(t *testing.T) {
 	c.env.ImgCacheDir = c.imgCache
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("sign"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ConsoleRun(c.passphraseInput...),
@@ -104,7 +104,7 @@ func (c *ctx) singularitySignKeyidxOption(t *testing.T) {
 	c.env.ImgCacheDir = c.imgCache
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("sign"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ConsoleRun(c.passphraseInput...),
@@ -129,14 +129,15 @@ func (c *ctx) generateKeypair(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.ConsoleRun(keyGenInput...),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("key"),
 		e2e.WithArgs("newpair"),
 		e2e.ExpectExit(0),
 	)
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
 		env: env,
 	}
