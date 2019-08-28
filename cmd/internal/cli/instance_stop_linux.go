@@ -7,16 +7,31 @@ package cli
 
 import (
 	"errors"
+	"os"
+	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/signal"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
+func init() {
+	cmdManager.RegisterFlagForCmd(&instanceStopUserFlag, instanceStopCmd)
+	cmdManager.RegisterFlagForCmd(&instanceStopAllFlag, instanceStopCmd)
+	cmdManager.RegisterFlagForCmd(&instanceStopForceFlag, instanceStopCmd)
+	cmdManager.RegisterFlagForCmd(&instanceStopSignalFlag, instanceStopCmd)
+	cmdManager.RegisterFlagForCmd(&instanceStopTimeoutFlag, instanceStopCmd)
+}
+
 // -u|--user
+var instanceStopUser string
 var instanceStopUserFlag = cmdline.Flag{
 	ID:           "instanceStopUserFlag",
-	Value:        &username,
+	Value:        &instanceStopUser,
 	DefaultValue: "",
 	Name:         "user",
 	ShortHand:    "u",
@@ -26,9 +41,10 @@ var instanceStopUserFlag = cmdline.Flag{
 }
 
 // -a|--all
+var instanceStopAll bool
 var instanceStopAllFlag = cmdline.Flag{
 	ID:           "instanceStopAllFlag",
-	Value:        &stopAll,
+	Value:        &instanceStopAll,
 	DefaultValue: false,
 	Name:         "all",
 	ShortHand:    "a",
@@ -37,9 +53,10 @@ var instanceStopAllFlag = cmdline.Flag{
 }
 
 // -f|--force
+var instanceStopForce bool
 var instanceStopForceFlag = cmdline.Flag{
 	ID:           "instanceStopForceFlag",
-	Value:        &forceStop,
+	Value:        &instanceStopForce,
 	DefaultValue: false,
 	Name:         "force",
 	ShortHand:    "F",
@@ -48,9 +65,10 @@ var instanceStopForceFlag = cmdline.Flag{
 }
 
 // -s|--signal
+var instanceStopSignal string
 var instanceStopSignalFlag = cmdline.Flag{
 	ID:           "instanceStopSignalFlag",
-	Value:        &stopSignal,
+	Value:        &instanceStopSignal,
 	DefaultValue: "",
 	Name:         "signal",
 	ShortHand:    "s",
@@ -60,36 +78,49 @@ var instanceStopSignalFlag = cmdline.Flag{
 }
 
 // -t|--timeout
+var instanceStopTimeout int
 var instanceStopTimeoutFlag = cmdline.Flag{
 	ID:           "instanceStopTimeoutFlag",
-	Value:        &stopTimeout,
+	Value:        &instanceStopTimeout,
 	DefaultValue: 10,
 	Name:         "timeout",
 	ShortHand:    "t",
 	Usage:        "force kill non stopped instances after X seconds",
 }
 
-func init() {
-	cmdManager.RegisterFlagForCmd(&instanceStopUserFlag, InstanceStopCmd)
-	cmdManager.RegisterFlagForCmd(&instanceStopAllFlag, InstanceStopCmd)
-	cmdManager.RegisterFlagForCmd(&instanceStopForceFlag, InstanceStopCmd)
-	cmdManager.RegisterFlagForCmd(&instanceStopSignalFlag, InstanceStopCmd)
-	cmdManager.RegisterFlagForCmd(&instanceStopTimeoutFlag, InstanceStopCmd)
-}
-
-// InstanceStopCmd singularity instance stop
-var InstanceStopCmd = &cobra.Command{
+// singularity instance stop
+var instanceStopCmd = &cobra.Command{
+	Args:                  cobra.RangeArgs(0, 1),
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 0 && !stopAll {
-			stopInstance(args[0])
-			return nil
-		} else if stopAll {
-			stopInstance("*")
-			return nil
-		} else {
-			return errors.New("Invalid command")
+		if len(args) == 0 && !instanceStopAll {
+			return errors.New("invalid command")
 		}
+
+		uid := os.Getuid()
+		if instanceStopUser != "" && uid != 0 {
+			sylog.Fatalf("Only root user can stop user's instances")
+		}
+
+		sig := syscall.SIGINT
+		if instanceStopSignal != "" {
+			var err error
+			sig, err = signal.Convert(instanceStopSignal)
+			if err != nil {
+				sylog.Fatalf("Could not convert stop signal: %s", err)
+			}
+		}
+		if instanceStopForce {
+			sig = syscall.SIGKILL
+		}
+
+		name := "*"
+		if len(args) > 0 {
+			name = args[0]
+		}
+
+		timeout := time.Duration(instanceStopTimeout) * time.Second
+		return singularity.StopInstance(name, instanceStopUser, sig, timeout)
 	},
 
 	Use:     docs.InstanceStopUse,

@@ -6,21 +6,25 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
-type jsonList struct {
-	Instance string `json:"instance"`
-	Pid      int    `json:"pid"`
-	Image    string `json:"img"`
+func init() {
+	cmdManager.RegisterFlagForCmd(&instanceListUserFlag, instanceListCmd)
+	cmdManager.RegisterFlagForCmd(&instanceListJSONFlag, instanceListCmd)
 }
 
 // -u|--user
+var instanceListUser string
 var instanceListUserFlag = cmdline.Flag{
 	ID:           "instanceListUserFlag",
-	Value:        &username,
+	Value:        &instanceListUser,
 	DefaultValue: "",
 	Name:         "user",
 	ShortHand:    "u",
@@ -30,9 +34,10 @@ var instanceListUserFlag = cmdline.Flag{
 }
 
 // -j|--json
+var instanceListJSON bool
 var instanceListJSONFlag = cmdline.Flag{
 	ID:           "instanceListJSONFlag",
-	Value:        &jsonFormat,
+	Value:        &instanceListJSON,
 	DefaultValue: false,
 	Name:         "json",
 	ShortHand:    "j",
@@ -40,16 +45,24 @@ var instanceListJSONFlag = cmdline.Flag{
 	EnvKeys:      []string{"JSON"},
 }
 
-func init() {
-	cmdManager.RegisterFlagForCmd(&instanceListUserFlag, InstanceListCmd)
-	cmdManager.RegisterFlagForCmd(&instanceListJSONFlag, InstanceListCmd)
-}
-
-// InstanceListCmd singularity instance list
-var InstanceListCmd = &cobra.Command{
+// singularity instance list
+var instanceListCmd = &cobra.Command{
 	Args: cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
-		listInstance()
+		name := "*"
+		if len(args) > 0 {
+			name = args[0]
+		}
+
+		uid := os.Getuid()
+		if instanceListUser != "" && uid != 0 {
+			sylog.Fatalf("Only root user can list user's instances")
+		}
+
+		err := singularity.PrintInstanceList(os.Stdout, name, instanceListUser, instanceListJSON)
+		if err != nil {
+			sylog.Fatalf("Could not list instances: %v", err)
+		}
 	},
 	DisableFlagsInUseLine: true,
 
