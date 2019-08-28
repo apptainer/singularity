@@ -45,7 +45,7 @@ func (c *ctx) testRun555Cache(t *testing.T) {
 	c.env.ImgCacheDir = cacheDir
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(0),
@@ -73,8 +73,8 @@ func (c *ctx) testRunPEMEncrypted(t *testing.T) {
 	cmdArgs := []string{"--encrypt", "--pem-path", pemPubFile, imgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
-		e2e.WithPrivileges(true),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(0),
 	)
@@ -84,6 +84,7 @@ func (c *ctx) testRunPEMEncrypted(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("pem file cmdline"),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(0),
@@ -95,6 +96,7 @@ func (c *ctx) testRunPEMEncrypted(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("pem file cmdline"),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.WithEnv(append(os.Environ(), pemEnvVar)),
@@ -128,6 +130,7 @@ func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("interactive passphrase"),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ConsoleRun(passphraseInput...),
@@ -143,6 +146,7 @@ func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("env var passphrase"),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
@@ -157,6 +161,7 @@ func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("passphrase on cmdline"),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
@@ -167,8 +172,8 @@ func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
 	)
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func CmdE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
 		env: env,
 	}

@@ -31,6 +31,7 @@ func prepTest(t *testing.T, testEnv e2e.TestEnv, testName string, h *cache.Handl
 	testEnv.ImgCacheDir = h.GetBasedir()
 	testEnv.RunSingularity(
 		t,
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("pull"),
 		e2e.WithArgs([]string{"--force", imagePath, imgURL}...),
 		e2e.ExpectExit(0),
@@ -110,6 +111,7 @@ func (c *cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("cache"),
 			e2e.WithArgs(tt.options...),
 			e2e.ExpectExit(tt.exit),
@@ -212,6 +214,7 @@ func (c *cacheTests) testInteractiveCacheCmds(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tc.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("cache"),
 			e2e.WithArgs(tc.options...),
 			e2e.ConsoleRun(
@@ -293,8 +296,8 @@ func ensureCacheNotEmpty(t *testing.T, testName string, imagePath string, h *cac
 	}
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	return func(t *testing.T) {
 		c := &cacheTests{
 			env: env,
