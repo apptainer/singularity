@@ -374,7 +374,7 @@ func (c *ctx) singularityKeyRemove(t *testing.T) {
 		expectedRegex string
 	}{
 		{
-			name:          "help",
+			name:          "remove help",
 			cmdArgs:       []string{"--help"},
 			expectedExit:  0,
 			expectedRegex: `^Remove a local public key from your keyring`,
