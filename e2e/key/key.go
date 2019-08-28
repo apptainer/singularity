@@ -324,7 +324,7 @@ func (c *ctx) singularityKeyPush(t *testing.T) {
 		expectedRegex string
 	}{
 		{
-￼			name:          "push help",
+			name:          "push help",
 			cmdArgs:       []string{"--help"},
 			expectedExit:  0,
 			expectedRegex: `^Upload a public key to a key server`,
