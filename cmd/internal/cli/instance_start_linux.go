@@ -8,6 +8,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"syscall"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
@@ -71,7 +72,7 @@ func writePidFile(name string) error {
 		return fmt.Errorf("unexpected instance count: %d", len(inst))
 	}
 
-	f, err := os.OpenFile(instanceStartPidFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	f, err := os.OpenFile(instanceStartPidFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|syscall.O_NOFOLLOW, 0644)
 	if err != nil {
 		return fmt.Errorf("could not create pid file: %v", err)
 	}
