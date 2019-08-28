@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
@@ -9,32 +10,13 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 )
 
-var deleteImageCmd = &cobra.Command{
-	Args:   cobra.ExactArgs(1),
-	PreRun: sylabsToken,
-	Run: func(cmd *cobra.Command, args []string) {
-		imageRef := args[0]
-
-		libraryConfig := &client.Config{
-			BaseURL:   deleteLibraryURI,
-			AuthToken: authToken,
-		}
-
-		y, err := interactive.AskYNQuestion("n", fmt.Sprintf("Are you sure you want to delete %s [Y,n]", imageRef))
-		if err != nil {
-			sylog.Fatalf(err)
-		}
-		if y == "n" {
-			return
-		}
-
-		err = singularity.DeleteImage(libraryConfig, imageRef, deleteImageArch)
-		if err != nil {
-			sylog.Fatalf(err)
-		}
-	},
+func init() {
+	cmdManager.RegisterCmd(deleteImageCmd)
+	cmdManager.RegisterFlagForCmd(&deleteImageArchFlag, deleteImageCmd)
+	cmdManager.RegisterFlagForCmd(&deleteLibraryURIFlag, deleteImageCmd)
 }
 
 var deleteImageArch string
@@ -57,4 +39,49 @@ var deleteLibraryURIFlag = cmdline.Flag{
 	Name:         "library",
 	Usage:        "delete images from the provided library",
 	EnvKeys:      []string{"LIBRARY"},
+}
+
+var deleteImageCmd = &cobra.Command{
+	Use: "delete",
+	Args:   cobra.ExactArgs(1),
+	PreRun: sylabsToken,
+	Run: func(cmd *cobra.Command, args []string) {
+		handleDeleteFlags(cmd)
+
+		imageRef := args[0]
+		imageRef = strings.TrimPrefix(imageRef, "library://")
+
+		libraryConfig := &client.Config{
+			BaseURL:   deleteLibraryURI,
+			AuthToken: authToken,
+		}
+
+		y, err := interactive.AskYNQuestion("n", fmt.Sprintf("Are you sure you want to delete %s arch[%s] [Y,n]", imageRef, deleteImageArch))
+		if err != nil {
+			sylog.Fatalf(err.Error())
+		}
+		if y == "n" {
+			return
+		}
+
+		err = singularity.DeleteImage(libraryConfig, imageRef, deleteImageArch)
+		if err != nil {
+			sylog.Fatalf(err.Error())
+		}
+		
+		sylog.Infof("Image %s arch[%s] deleted.", imageRef, deleteImageArch)
+	},
+}
+
+ 
+func handleDeleteFlags(cmd *cobra.Command) {
+	endpoint, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
+		return
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = endpoint.Token
 }

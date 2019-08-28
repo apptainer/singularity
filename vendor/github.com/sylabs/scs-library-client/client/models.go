@@ -177,6 +177,7 @@ type Image struct {
 	Signed       *bool    `json:"signed,omitempty"`
 	Architecture *string  `json:"arch,omitempty"`
 	Fingerprints []string `json:"fingerprints,omitempty"`
+	Encrypted    *bool    `json:"encrypted,omitempty"`
 	// CustomData can hold a user-provided string for integration purposes
 	// not used by the library itself.
 	CustomData string `json:"customData"`
