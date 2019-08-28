@@ -71,7 +71,7 @@ func writePidFile(name string) error {
 		return fmt.Errorf("unexpected instance count: %d", len(inst))
 	}
 
-	f, err := os.OpenFile(instanceStartPidFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0400)
+	f, err := os.OpenFile(instanceStartPidFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return fmt.Errorf("could not create pid file: %v", err)
 	}
