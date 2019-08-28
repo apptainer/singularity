@@ -549,6 +549,7 @@ func TestGenKeyPair(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temporary directory")
 	}
+	defer os.RemoveAll(dir)
 
 	keyring := NewHandle(dir)
 

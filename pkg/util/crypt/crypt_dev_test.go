@@ -111,6 +111,7 @@ func TestEncrypt(t *testing.T) {
 					t.Fatalf("test %s expected to succeed but failed: %s", tt.name, err)
 				}
 			}
+			defer os.Remove(devPath)
 
 			if !tt.shallPass && err == nil {
 				t.Fatalf("test %s expected to fail but succeeded", tt.name)
