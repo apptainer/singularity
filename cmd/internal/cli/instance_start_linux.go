@@ -10,8 +10,8 @@ import (
 	"github.com/sylabs/singularity/docs"
 )
 
-// InstanceStartCmd singularity instance start
-var InstanceStartCmd = &cobra.Command{
+// singularity instance start
+var instanceStartCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(2),
 	PreRun:                actionPreRun,
 	DisableFlagsInUseLine: true,
