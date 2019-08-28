@@ -349,7 +349,7 @@ func (c *ctx) singularityKeyPull(t *testing.T) {
 		expectedRegex string
 	}{
 		{
-			name:          "help",
+			name:          "pull help",
 			cmdArgs:       []string{"--help"},
 			expectedExit:  0,
 			expectedRegex: `^Download a public key from a key server`,
