@@ -6,7 +6,6 @@
 package key
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -338,6 +337,7 @@ func (c *ctx) singularityKeyPush(t *testing.T) {
 	for _, tt := range tests {
 		c.env.RunSingularity(
 			t,
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(append([]string{"push"}, tt.cmdArgs...)...),
@@ -363,6 +363,7 @@ func (c *ctx) singularityKeyPull(t *testing.T) {
 	for _, tt := range tests {
 		c.env.RunSingularity(
 			t,
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(append([]string{"pull"}, tt.cmdArgs...)...),
@@ -388,6 +389,7 @@ func (c *ctx) singularityKeyRemove(t *testing.T) {
 	for _, tt := range tests {
 		c.env.RunSingularity(
 			t,
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(append([]string{"remove"}, tt.cmdArgs...)...),
@@ -440,6 +442,7 @@ func (c *ctx) singularityKeyNewpairWithLen(t *testing.T) {
 	for _, tt := range tests {
 		c.env.RunSingularity(
 			t,
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.AsSubtest(tt.name),
 			e2e.ConsoleRun(buildConsoleLines(tt.consoleOps...)...),
 			e2e.WithCommand("key"),
@@ -458,6 +461,7 @@ func (c *ctx) checkKeyLength(t *testing.T, expectedKeyLength int) {
 		cmdArgs := []string{"list"}
 		c.env.RunSingularity(
 			t,
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(cmdArgs...),
 			e2e.ExpectExit(
@@ -492,10 +496,6 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		privateExportPath:      filepath.Join(env.TestDir, "private_key.asc"),
 		privateExportASCIIPath: filepath.Join(env.TestDir, "private_ascii_key.asc"),
 		keyRing:                filepath.Join(env.TestDir, "sypgp-test-keyring"),
-	}
-
-	if err := os.Setenv("SINGULARITY_SYPGPDIR", c.keyRing); err != nil {
-		panic(fmt.Sprintf("unable to set keyring: %s", err))
 	}
 
 	return func(t *testing.T) {
