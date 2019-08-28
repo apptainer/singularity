@@ -9,9 +9,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// InstanceStartCmd fake command to satisfy actions command
+// instanceStartCmd fake command to satisfy actions command
 // group flag registration
-var InstanceStartCmd *cobra.Command
+var instanceStartCmd *cobra.Command
 
 // initPlatformDefaults customizes the default values for the flags
 // to make them appropriate for the build target
