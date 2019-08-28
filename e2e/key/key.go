@@ -381,7 +381,6 @@ func (c *ctx) singularityKeyRemove(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		c.singularityResetKeyring(t) // Remove the tmp keyring before each import
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
