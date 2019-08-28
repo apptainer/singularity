@@ -6,13 +6,9 @@
 package cli
 
 import (
-	"fmt"
-	"os"
-	"syscall"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/instance"
+	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
@@ -50,8 +46,9 @@ var instanceStartCmd = &cobra.Command{
 		execStarter(cmd, image, a, name)
 
 		if instanceStartPidFile != "" {
-			if err := writePidFile(name); err != nil {
-				sylog.Warningf("failed to write pid file: %v", err)
+			err := singularity.WriteInstancePidFile(name, instanceStartPidFile)
+			if err != nil {
+				sylog.Warningf("Failed to write pid file: %v", err)
 			}
 		}
 	},
@@ -60,27 +57,4 @@ var instanceStartCmd = &cobra.Command{
 	Short:   docs.InstanceStartShort,
 	Long:    docs.InstanceStartLong,
 	Example: docs.InstanceStartExample,
-}
-
-func writePidFile(name string) error {
-	inst, err := instance.List("", name, instance.SingSubDir)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve instance: %v", err)
-
-	}
-	if len(inst) != 1 {
-		return fmt.Errorf("unexpected instance count: %d", len(inst))
-	}
-
-	f, err := os.OpenFile(instanceStartPidFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|syscall.O_NOFOLLOW, 0644)
-	if err != nil {
-		return fmt.Errorf("could not create pid file: %v", err)
-	}
-	defer f.Close()
-
-	_, err = fmt.Fprintf(f, "%d\n", inst[0].Pid)
-	if err != nil {
-		return fmt.Errorf("could not write pid file: %v", err)
-	}
-	return nil
 }
