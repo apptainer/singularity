@@ -76,6 +76,7 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 		env.RunSingularity(
 			t,
 			AsSubtest(tt.name),
+			WithProfile(UserProfile),
 			WithCommand("exec"),
 			WithArgs(tt.argv...),
 			ExpectExit(tt.exit),

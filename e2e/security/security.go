@@ -85,6 +85,7 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(optArgs...),
 			e2e.ExpectExit(tt.expectExit),
@@ -154,7 +155,7 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(optArgs...),
 			e2e.ExpectExit(tt.expectExit, tt.expectOp),
@@ -170,6 +171,7 @@ func (c *ctx) testSecurityConfOwnership(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("non root config"),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.PreRun(func(t *testing.T) {
 			e2e.Privileged(func(t *testing.T) {
 				// Change file ownership (do not try this at home)
@@ -194,8 +196,8 @@ func (c *ctx) testSecurityConfOwnership(t *testing.T) {
 	)
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
 		env:     env,
 		pingImg: filepath.Join(env.TestDir, "ubuntu-ping.sif"),
