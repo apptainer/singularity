@@ -490,7 +490,7 @@ Enterprise Performance Computing (EPC)`
   test2           11964     /home/mibauer/singularity/sinstance/test.sif
   lolcow          11965     /home/mibauer/singularity/sinstance/lolcow.sif
 
-  $ singularity instance list test*
+  $ singularity instance list 'test*'
   DAEMON NAME      PID      CONTAINER IMAGE
   test            11963     /home/mibauer/singularity/sinstance/test.sif
   test2           11964     /home/mibauer/singularity/sinstance/test.sif
