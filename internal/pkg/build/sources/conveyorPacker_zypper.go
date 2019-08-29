@@ -17,6 +17,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/docker/docker/pkg/system"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -396,24 +397,30 @@ func (cp *ZypperConveyorPacker) genZypperConfig() (err error) {
 }
 
 func (cp *ZypperConveyorPacker) copyPseudoDevices() (err error) {
-	err = os.Mkdir(filepath.Join(cp.b.Rootfs(), "/dev"), 0775)
+	devPath := filepath.Join(cp.b.Rootfs(), "dev")
+	err = os.Mkdir(devPath, 0775)
 	if err != nil {
-		return fmt.Errorf("while creating %v: %v", filepath.Join(cp.b.Rootfs(), "/dev"), err)
+		return fmt.Errorf("while creating %v: %v", devPath, err)
 	}
 
-	devs := []string{"/dev/null", "/dev/zero", "/dev/random", "/dev/urandom"}
+	devs := []struct {
+		major int
+		minor int
+		path  string
+		mode  uint32
+	}{
+		{1, 3, "/dev/null", syscall.S_IFCHR | 0666},
+		{1, 8, "/dev/random", syscall.S_IFCHR | 0666},
+		{1, 9, "/dev/urandom", syscall.S_IFCHR | 0666},
+		{1, 5, "/dev/zero", syscall.S_IFCHR | 0666},
+	}
 
 	for _, dev := range devs {
-		cmd := exec.Command("cp", "-a", dev, filepath.Join(cp.b.Rootfs(), "/dev"))
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err = cmd.Run(); err != nil {
-			f, err := os.Create(cp.b.Rootfs() + "/.singularity.d/runscript")
-			if err != nil {
-				return fmt.Errorf("while creating %v: %v", filepath.Join(cp.b.Rootfs(), dev), err)
-			}
+		d := int((dev.major << 8) | (dev.minor & 0xff) | ((dev.minor & 0xfff00) << 12))
+		path := filepath.Join(cp.b.Rootfs(), dev.path)
 
-			defer f.Close()
+		if err := syscall.Mknod(path, dev.mode, d); err != nil {
+			return fmt.Errorf("while creating %s: %s", path, err)
 		}
 	}
 
