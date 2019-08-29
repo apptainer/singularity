@@ -6,11 +6,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
+	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/cmdline"
-	scs "github.com/sylabs/singularity/internal/pkg/remote"
 )
 
 func init() {
@@ -42,9 +43,12 @@ var deleteLibraryURIFlag = cmdline.Flag{
 }
 
 var deleteImageCmd = &cobra.Command{
-	Use: "delete",
-	Args:   cobra.ExactArgs(1),
-	PreRun: sylabsToken,
+	Use:     docs.DeleteUse,
+	Short:   docs.DeleteShort,
+	Long:    docs.DeleteLong,
+	Example: docs.DeleteExample,
+	Args:    cobra.ExactArgs(1),
+	PreRun:  sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		handleDeleteFlags(cmd)
 
@@ -56,7 +60,7 @@ var deleteImageCmd = &cobra.Command{
 			AuthToken: authToken,
 		}
 
-		y, err := interactive.AskYNQuestion("n", fmt.Sprintf("Are you sure you want to delete %s arch[%s] [Y,n]", imageRef, deleteImageArch))
+		y, err := interactive.AskYNQuestion("n", fmt.Sprintf("Are you sure you want to delete %s arch[%s] [Y,n]\n", imageRef, deleteImageArch))
 		if err != nil {
 			sylog.Fatalf(err.Error())
 		}
@@ -68,12 +72,11 @@ var deleteImageCmd = &cobra.Command{
 		if err != nil {
 			sylog.Fatalf(err.Error())
 		}
-		
+
 		sylog.Infof("Image %s arch[%s] deleted.", imageRef, deleteImageArch)
 	},
 }
 
- 
 func handleDeleteFlags(cmd *cobra.Command) {
 	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {

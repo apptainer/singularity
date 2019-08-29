@@ -325,6 +325,17 @@ Enterprise Performance Computing (EPC)`
 	KeyRemoveExample string = `
   $ singularity key remove D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// delete
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	DeleteUse   string = `delete [arch] <imageRef>`
+	DeleteShort string = `Deletes requested image from the library`
+	DeleteLong  string = `
+  The 'delete' command allows you to delete an image from a remote library.`
+	DeleteExample string = `
+  $ singularity delete --arch=amd64 library://sylabsed/examples/lolcow:1.0`
+
+
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
