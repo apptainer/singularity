@@ -29,8 +29,9 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 
 	b, err := types.NewBundle("", "sbuild-sandboxAssembler")
 	if err != nil {
-		return
+		t.Fatalf("unable to make bundle: %v", err)
 	}
+	defer os.RemoveAll(b.Path)
 
 	b.Recipe, err = types.NewDefinitionFromURI(assemblerDockerURI)
 	if err != nil {
@@ -76,8 +77,9 @@ func TestSandboxAssemblerShub(t *testing.T) {
 
 	b, err := types.NewBundle("", "sbuild-sandboxAssembler")
 	if err != nil {
-		return
+		t.Fatalf("unable to make bundle: %v", err)
 	}
+	defer os.RemoveAll(b.Path)
 
 	b.Recipe, err = types.NewDefinitionFromURI(assemblerShubURI)
 	if err != nil {
