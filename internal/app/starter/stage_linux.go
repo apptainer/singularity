@@ -15,7 +15,7 @@ import (
 )
 
 // StageOne validates and prepares container configuration which is
-// used during container creation. Updated (possibly) configuration
+// used during container creation. Updated (possibly) engine configuration
 // is wrote back into a shared sconfig so that new values will appear
 // in next stages of engine execution and in master process.
 //

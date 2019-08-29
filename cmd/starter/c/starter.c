@@ -819,7 +819,7 @@ static void chdir_to_proc_pid(pid_t pid) {
     free(buffer);
 }
 
-/* fix_streams makes bad file descriptors point to /dev/null */
+/* fix_streams makes closed stdin/stdout/stderr file descriptors point to /dev/null */
 static void fix_streams(void) {
     struct stat st;
     int i = 0;
