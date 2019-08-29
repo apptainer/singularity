@@ -7,10 +7,10 @@ Subject: [PATCH] Fix instance join regression with root user
  .../runtime/engines/singularity/prepare_linux.go    | 13 +++++++------
  1 file changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/internal/pkg/runtime/engines/singularity/prepare_linux.go b/internal/pkg/runtime/engines/singularity/prepare_linux.go
+diff --git a/internal/pkg/runtime/engine/singularity/prepare_linux.go b/internal/pkg/runtime/engine/singularity/prepare_linux.go
 index 72f177a0fd..b639ff111b 100644
---- a/internal/pkg/runtime/engines/singularity/prepare_linux.go
-+++ b/internal/pkg/runtime/engines/singularity/prepare_linux.go
+--- a/internal/pkg/runtime/engine/singularity/prepare_linux.go
++++ b/internal/pkg/runtime/engine/singularity/prepare_linux.go
 @@ -375,14 +375,18 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
  		return err
  	}
