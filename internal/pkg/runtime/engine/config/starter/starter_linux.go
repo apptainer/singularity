@@ -52,6 +52,7 @@ func NewConfig(config SConfig) *Config {
 }
 
 // GetIsSUID returns true if SUID workflow is enabled.
+// This field is set by starter at the very beginning of its execution.
 func (c *Config) GetIsSUID() bool {
 	return c.config.starter.isSuid == C.true
 }

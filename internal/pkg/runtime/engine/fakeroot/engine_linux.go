@@ -33,12 +33,12 @@ type EngineOperations struct {
 	EngineConfig *fakerootConfig.EngineConfig `json:"engineConfig"`
 }
 
-// InitConfig initializes engines config internals
+// InitConfig initializes engines config internals.
 func (e *EngineOperations) InitConfig(cfg *config.Common) {
 	e.CommonConfig = cfg
 }
 
-// Config returns the EngineConfig
+// Config returns the EngineConfig.
 func (e *EngineOperations) Config() config.EngineConfig {
 	return e.EngineConfig
 }
