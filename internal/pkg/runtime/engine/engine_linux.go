@@ -24,14 +24,25 @@ type Engine struct {
 	*config.Common
 }
 
-// Operations is an interface describing necessary operations to launch a container process.
+// Operations is an interface describing necessary operations to launch
+// a container process. Some of them may be called with elevated privilege
+// or the potential to escalate privileges. Refer to an individual method
+// documentation for a detailed description of the context in which it is called.
 type Operations interface {
-	// Config returns the current EngineConfig, used to populate the Common struct
+	// Config returns a zero value of the current EngineConfig, which
+	// depends on the implementation, used to populate the Common struct.
+	// Since this method simply return a zero value of the concrete
+	// EngineConfig, it does not matter whether or not there are any elevated
+	// privileges during this call.
 	Config() config.EngineConfig
-	// InitConfig is responsible for storing the parse config.Common inside
-	// the Operations implementation.
+	// InitConfig stores the parsed config.Common inside the Operations
+	// implementation. Since this method simply stores config.Common,
+	// it does not matter whether or not there are any elevated
+	// privileges during this call.
 	InitConfig(*config.Common)
-	// PrepareConfig is called in stage1 to validate and prepare container configuration.
+	// PrepareConfig is called during stage1 to validate and prepare
+	// container configuration. No additional privileges can be gained
+	// as any of them are already dropped by the time PrepareConfig is called.
 	PrepareConfig(*starter.Config) error
 	// CreateContainer is called in master and does mount operations, etc... to
 	// set up the container environment for the payload proc.
