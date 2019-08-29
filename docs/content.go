@@ -478,20 +478,27 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstanceListUse   string = `list [list options...]`
+	InstanceListUse   string = `list [list options...] [<instance name glob>]`
 	InstanceListShort string = `List all running and named Singularity instances`
 	InstanceListLong  string = `
   The instance list command allows you to view the Singularity container
   instances that are currently running in the background.`
 	InstanceListExample string = `
   $ singularity instance list
-  DAEMON NAME      PID      CONTAINER IMAGE
-  test            11963     /home/mibauer/singularity/sinstance/test.sif
+  INSTANCE NAME      PID       IMAGE
+  test               11963     /home/mibauer/singularity/sinstance/test.sif
+  test2              11964     /home/mibauer/singularity/sinstance/test.sif
+  lolcow             11965     /home/mibauer/singularity/sinstance/lolcow.sif
+
+  $ singularity instance list 'test*'
+  INSTANCE NAME      PID       IMAGE
+  test               11963     /home/mibauer/singularity/sinstance/test.sif
+  test2              11964     /home/mibauer/singularity/sinstance/test.sif
 
   $ sudo singularity instance list -u mibauer
-  DAEMON NAME      PID      CONTAINER IMAGE
-  test            11963     /home/mibauer/singularity/sinstance/test.sif
-  test2           16219     /home/mibauer/singularity/sinstance/test.sif`
+  INSTANCE NAME      PID       IMAGE
+  test               11963     /home/mibauer/singularity/sinstance/test.sif
+  test2              16219     /home/mibauer/singularity/sinstance/test.sif`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance start

@@ -13,7 +13,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
+	args "github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/util/loop"

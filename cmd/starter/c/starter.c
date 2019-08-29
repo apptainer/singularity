@@ -136,6 +136,7 @@ static void priv_drop(bool permanent) {
     }
 }
 
+/* set_parent_death_signal sets the signal that the calling process will get when its parent dies */
 static void set_parent_death_signal(int signo) {
     debugf("Set parent death signal to %d\n", signo);
     if ( prctl(PR_SET_PDEATHSIG, signo) < 0 ) {
@@ -623,6 +624,10 @@ static int shared_mount_namespace_init(struct namespace *nsconfig) {
     return CREATE_NAMESPACE;
 }
 
+/*
+ * is_suid returns true if this binary has suid bit set or if it
+ * has additional capabilities in extended file attributes
+ */
 static bool is_suid(void) {
     ElfW(auxv_t) *auxv;
     bool suid = 0;
@@ -814,6 +819,7 @@ static void chdir_to_proc_pid(pid_t pid) {
     free(buffer);
 }
 
+/* fix_streams makes closed stdin/stdout/stderr file descriptors point to /dev/null */
 static void fix_streams(void) {
     struct stat st;
     int i = 0;
@@ -918,7 +924,17 @@ static int get_pipe_exec_fd(void) {
     return pipe_fd;
 }
 
-/* this is the starter entrypoint executed before Go runtime in a single-thread context */
+/*
+ * Starter's entrypoint executed before Go runtime in a single-thread context.
+ *
+ * The constructor attribute causes init(void) function to be called automatically before
+ * execution enters main(). This behavior is required in order to prepare isolated environment
+ * for a container. Init will create and(or) enter requested namespaces delegating setup work
+ * to the specific engine. Init forks oneself a couple of times during execution, which allows
+ * engine to perform initialization inside the container context (RPC server) and outside of it
+ * (CreateContainer method of an engine). At the end only two processes will be left: a container
+ * process in the prepared environment and a master process which monitors container's state outside of it.
+ */
 __attribute__((constructor)) static void init(void) {
     uid_t uid = getuid();
     sigset_t mask;
@@ -992,10 +1008,10 @@ __attribute__((constructor)) static void init(void) {
             /* drop privileges permanently */
             priv_drop(true);
         }
-        /* continue execution with Go runtime in main_linux.go */
         set_parent_death_signal(SIGKILL);
         verbosef("Spawn stage 1\n");
         goexecute = STAGE1;
+        /* continue execution with Go runtime in main_linux.go */
         return;
     } else if ( process < 0 ) {
         fatalf("Failed to spawn stage 1\n");

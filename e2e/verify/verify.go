@@ -99,7 +99,7 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithPrivileges(false),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("verify"),
 			e2e.WithArgs("--json", tt.imagePath),
 			e2e.ExpectExit(tt.expectExit, verifyOutput),
@@ -285,7 +285,7 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithPrivileges(false),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("verify"),
 			e2e.WithArgs(args...),
 			e2e.ExpectExit(tt.expectExit, verifyOutput),
@@ -297,7 +297,7 @@ func (c *ctx) checkGroupidOption(t *testing.T) {
 	cmdArgs := []string{"--groupid", "0", c.successImage}
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("verify"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(
@@ -311,7 +311,7 @@ func (c *ctx) checkIDOption(t *testing.T) {
 	cmdArgs := []string{"--id", "0", c.successImage}
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("verify"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(
@@ -329,7 +329,7 @@ func (c *ctx) checkURLOption(t *testing.T) {
 	cmdArgs := []string{"--url", "https://keys.sylabs.io", c.successImage}
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("verify"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(
@@ -339,8 +339,8 @@ func (c *ctx) checkURLOption(t *testing.T) {
 	)
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
 		env:            env,
 		corruptedImage: filepath.Join(env.TestDir, "verify_corrupted.sif"),

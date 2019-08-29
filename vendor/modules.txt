@@ -34,7 +34,7 @@ github.com/blang/semver
 github.com/buger/jsonparser
 # github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
 github.com/containerd/cgroups
-# github.com/containerd/containerd v1.2.7
+# github.com/containerd/containerd v1.2.8
 github.com/containerd/containerd/reference
 github.com/containerd/containerd/remotes/docker
 github.com/containerd/containerd/images
@@ -209,7 +209,7 @@ github.com/google/go-cmp/cmp/internal/value
 github.com/gorilla/context
 # github.com/gorilla/mux v1.6.2
 github.com/gorilla/mux
-# github.com/gorilla/websocket v1.4.0
+# github.com/gorilla/websocket v1.4.1
 github.com/gorilla/websocket
 # github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce
 github.com/hashicorp/errwrap
