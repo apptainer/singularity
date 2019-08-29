@@ -115,7 +115,7 @@ func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
 	err := e2e.CheckCryptsetupVersion()
 	if err != nil {
 		expectedExitCode = 255
-		expectedStderr = "FATAL:   While performing build: unable to encrypt filesystem at /tmp/sbuild-718337349/squashfs-770818633: available cryptsetup is not supported"
+		expectedStderr = "available cryptsetup is not supported"
 	}
 
 	// Interactive command
