@@ -37,7 +37,7 @@ unit-test:
 	$(V)cd $(SOURCEDIR) && \
 		sudo -E \
 		scripts/go-test -v \
-		`$(GO) list ./... | grep -v "cmd/singularity\|pkg/network\|e2e"`
+		./...
 	@echo "       PASS"
 
 
