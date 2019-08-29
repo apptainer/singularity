@@ -709,7 +709,10 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	return nil
 }
 
-// PrepareConfig checks and prepares the runtime engine config
+// PrepareConfig checks and prepares the runtime engine config.
+// It is responsible for singularity configuration file parsing,
+// handling user input, reading capabilities, and checking what
+// namespaces are required.
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if e.CommonConfig.EngineName != singularityConfig.Name {
 		return fmt.Errorf("incorrect engine")

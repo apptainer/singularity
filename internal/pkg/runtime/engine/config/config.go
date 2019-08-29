@@ -6,12 +6,13 @@
 package config
 
 // Common provides the basis for all engine configs. Anything that can not be
-// properly described through the OCI config can be stored as generic JSON []byte
+// properly described through the OCI config can be stored as a generic JSON []byte.
 type Common struct {
-	EngineName   string       `json:"engineName"`
-	ContainerID  string       `json:"containerID"`
-	EngineConfig EngineConfig `json:"engineConfig"` // EngineConfig is the raw JSON representation of the Engine's underlying config
+	EngineName  string `json:"engineName"`
+	ContainerID string `json:"containerID"`
+	// EngineConfig is the raw JSON representation of the Engine's underlying config.
+	EngineConfig EngineConfig `json:"engineConfig"`
 }
 
-// EngineConfig is a generic interface to represent the implementations of an EngineConfig
+// EngineConfig is a generic interface to represent the implementations of an EngineConfig.
 type EngineConfig interface{}

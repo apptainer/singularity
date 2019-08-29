@@ -14,19 +14,20 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-// StageOne performs container configuration.
+// StageOne validates and prepares container configuration which is
+// used during container creation. Updated (possibly) engine configuration
+// is wrote back into a shared sconfig so that new values will appear
+// in next stages of engine execution and in master process.
+//
+// Any privileges gained from SUID flow or capabilities in
+// extended attributes are already dropped by this moment.
 func StageOne(sconfig *starterConfig.Config, e *engine.Engine) {
 	sylog.Debugf("Entering stage 1\n")
 
-	// call engine operation PrepareConfig, at this stage
-	// we are running without any privileges
 	if err := e.PrepareConfig(sconfig); err != nil {
 		sylog.Fatalf("%s\n", err)
 	}
 
-	// store (possibly) updated engine configuration in
-	// shared memory in order to pass it to stage 2 and
-	// master processes
 	if err := sconfig.Write(e.Common); err != nil {
 		sylog.Fatalf("%s", err)
 	}

@@ -18,14 +18,14 @@ type EngineOperations struct {
 	EngineConfig *singularityConfig.EngineConfig `json:"engineConfig"`
 }
 
-// InitConfig stores the pointer to config.Common
+// InitConfig stores the pointer to config.Common.
 func (e *EngineOperations) InitConfig(cfg *config.Common) {
 	e.CommonConfig = cfg
 }
 
-// Config returns a pointer to a singularity.EngineConfig literal as a
-// config.EngineConfig interface. This pointer gets stored in the Engine.Common
-// field.
+// Config returns a pointer to a singularity.EngineConfig
+// literal as a config.EngineConfig interface. This pointer
+// gets stored in the Engine.Common field.
 func (e *EngineOperations) Config() config.EngineConfig {
 	return e.EngineConfig
 }

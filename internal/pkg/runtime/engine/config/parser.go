@@ -161,15 +161,15 @@ func Parser(filepath string, f interface{}) error {
 	return nil
 }
 
-// Generate executes the template stored at fpath on object f
-func Generate(out io.Writer, tmplpath string, f interface{}) error {
-	t, err := template.ParseFiles(tmplpath)
+// Generate executes the template stored at tmplPath on object f.
+func Generate(out io.Writer, tmplPath string, f interface{}) error {
+	t, err := template.ParseFiles(tmplPath)
 	if err != nil {
 		return err
 	}
 
 	if err := t.Execute(out, f); err != nil {
-		return fmt.Errorf("unable to execute template at %s on %v: %v", tmplpath, f, err)
+		return fmt.Errorf("unable to execute template at %s on %v: %v", tmplPath, f, err)
 	}
 
 	return nil
