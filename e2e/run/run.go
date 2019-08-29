@@ -100,6 +100,13 @@ func (c *ctx) testRunPEMEncrypted(t *testing.T) {
 }
 
 func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
+	// If the version of cryptsetup is not compatible with Singularity encryption,
+	// the build commands are expected to fail
+	err := e2e.CheckCryptsetupVersion()
+	if err != nil {
+		t.Skip("cryptsetup is not compatible, skipping test")
+	}
+
 	// Expected results for a successful command execution
 	expectedExitCode := 0
 	expectedStderr := ""
@@ -108,14 +115,6 @@ func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
 	passphraseEncryptedFingerprint := "sha256.e784d01b94e4b5a42d9e9b54bc2c0400630604bb896de1e65d8c77e25ca5b5e7"
 	passphraseInput := []e2e.SingularityConsoleOp{
 		e2e.ConsoleSendLine(e2e.Passphrase),
-	}
-
-	// If the version of cryptsetup is not compatible with Singularity encryption,
-	// the build commands are expected to fail
-	err := e2e.CheckCryptsetupVersion()
-	if err != nil {
-		expectedExitCode = 255
-		expectedStderr = "available cryptsetup is not supported"
 	}
 
 	// Interactive command
