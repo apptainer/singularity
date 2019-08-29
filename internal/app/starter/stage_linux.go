@@ -9,8 +9,8 @@ import (
 	"net"
 	"os"
 
-	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/engine"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
+	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 

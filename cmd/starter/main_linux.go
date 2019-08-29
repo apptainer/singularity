@@ -18,8 +18,8 @@ import (
 	"unsafe"
 
 	"github.com/sylabs/singularity/internal/app/starter"
-	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/engine"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
+	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	_ "github.com/sylabs/singularity/internal/pkg/util/goversion"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
