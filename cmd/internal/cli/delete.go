@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
@@ -17,6 +19,7 @@ import (
 func init() {
 	cmdManager.RegisterCmd(deleteImageCmd)
 	cmdManager.RegisterFlagForCmd(&deleteImageArchFlag, deleteImageCmd)
+	cmdManager.RegisterFlagForCmd(&deleteImageTimeoutFlag, deleteImageCmd)
 	cmdManager.RegisterFlagForCmd(&deleteLibraryURIFlag, deleteImageCmd)
 }
 
@@ -30,6 +33,17 @@ var deleteImageArchFlag = cmdline.Flag{
 	Required:     true,
 	Usage:        "specify requested image arch",
 	EnvKeys:      []string{"ARCH"},
+}
+
+var deleteImageTimeout int
+var deleteImageTimeoutFlag = cmdline.Flag{
+	ID:           "deleteImageTimeoutFlag",
+	Value:        &deleteImageTimeout,
+	DefaultValue: 15,
+	Name:         "timeout",
+	ShortHand:    "T",
+	Usage:        "specify delete timeout in secods",
+	EnvKeys:      []string{"TIMEOUT"},
 }
 
 var deleteLibraryURI string
@@ -68,7 +82,8 @@ var deleteImageCmd = &cobra.Command{
 			return
 		}
 
-		err = singularity.DeleteImage(libraryConfig, imageRef, deleteImageArch)
+		ctx, _ := context.WithTimeout(context.Background(), time.Duration(deleteImageTimeout)*time.Second)
+		err = singularity.DeleteImage(ctx, libraryConfig, imageRef, deleteImageArch)
 		if err != nil {
 			sylog.Fatalf(err.Error())
 		}
@@ -79,10 +94,11 @@ var deleteImageCmd = &cobra.Command{
 
 func handleDeleteFlags(cmd *cobra.Command) {
 	endpoint, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
-		return
-	} else if err != nil {
+	if err != nil {
+		if err == scs.ErrNoDefault {
+			sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
+			return
+		}
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 
