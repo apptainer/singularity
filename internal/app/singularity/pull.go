@@ -174,7 +174,7 @@ func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *oci
 }
 
 // OciPull will build a SIF image from the specified oci URI
-func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS bool) error {
+func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCleanUp bool) error {
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify:    noHTTPS,
 		DockerInsecureSkipTLSVerify: noHTTPS,
@@ -187,7 +187,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 	}
 
 	if imgCache.IsDisabled() {
-		if err := convertDockerToSIF(imgCache, imageURI, name, tmpDir, noHTTPS, ociAuth); err != nil {
+		if err := convertDockerToSIF(imgCache, imageURI, name, tmpDir, noHTTPS, noCleanUp, ociAuth); err != nil {
 			return fmt.Errorf("while building SIF from layers: %v", err)
 		}
 	} else {
@@ -202,7 +202,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 			sylog.Infof("Converting OCI blobs to SIF format")
 			go interruptCleanup(imgName)
 
-			if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, ociAuth); err != nil {
+			if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, noCleanUp, ociAuth); err != nil {
 				return fmt.Errorf("while building SIF from layers: %v", err)
 			}
 			sylog.Infof("Build complete: %s", name)
@@ -230,7 +230,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 	return nil
 }
 
-func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir string, noHTTPS bool, authConf *ocitypes.DockerAuthConfig) error {
+func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir string, noHTTPS, noCleanUp bool, authConf *ocitypes.DockerAuthConfig) error {
 	if imgCache == nil {
 		return fmt.Errorf("image cache is undefined")
 	}
@@ -238,8 +238,9 @@ func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir str
 	b, err := build.NewBuild(
 		image,
 		build.Config{
-			Dest:   cachedImgPath,
-			Format: "sif",
+			Dest:      cachedImgPath,
+			Format:    "sif",
+			NoCleanUp: noCleanUp,
 			Opts: types.Options{
 				TmpDir:           tmpDir,
 				NoCache:          imgCache.IsDisabled(),
