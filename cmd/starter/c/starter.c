@@ -86,6 +86,8 @@ __attribute__ ((returns_twice)) __attribute__((noinline)) static int fork_ns(uns
     /*
      * sigsetjmp return 0 when called directly, and will return 1
      * after siglongjmp call in clone_fn. We always save signal mask.
+     * This is hack to make clone() behave like fork() where child
+     * continue execution from the calling point.
      */
     if ( sigsetjmp(env, 1) ) {
         /* child process will return here after siglongjmp call in clone_fn */
@@ -661,6 +663,7 @@ static bool is_suid(void) {
     return suid;
 }
 
+/* list_fd returns list of currently opened file descriptors (from /proc/self/fd) */
 static fdlist_t *list_fd(void) {
     int i = 0;
     int fd_proc;
@@ -720,11 +723,16 @@ static fdlist_t *list_fd(void) {
     return fl;
 }
 
+/*
+ * cleanup_fd closes all file descriptors that are not in
+ * master's fdlist and not in starter's fds list as well.
+ */
 static void cleanup_fd(fdlist_t *master, struct starter *starter) {
     int fd_proc;
     DIR *dir;
     struct dirent *dirent;
-    int i, fd, found;
+    int i, fd;
+    bool found;
 
     if ( ( fd_proc = open("/proc/self/fd", O_RDONLY) ) < 0 ) {
         fatalf("Failed to open /proc/self/fd: %s\n", strerror(errno));
@@ -743,12 +751,12 @@ static void cleanup_fd(fdlist_t *master, struct starter *starter) {
             continue;
         }
 
-        found = 0;
+        found = false;
 
         /* check if the file descriptor was open before stage 1 execution */
         for ( i = 0; i < master->num; i++ ) {
             if ( master->fds[i] == fd ) {
-                found++;
+                found = true;
                 break;
             }
         }
@@ -756,12 +764,12 @@ static void cleanup_fd(fdlist_t *master, struct starter *starter) {
             continue;
         }
 
-        found = 0;
+        found = false;
 
         /* check if the file descriptor need to remain opened */
         for ( i = 0; i < starter->numfds; i++ ) {
             if ( starter->fds[i] == fd ) {
-                found++;
+                found = true;
                 /* set force close on exec */
                 if ( fcntl(starter->fds[i], F_SETFD, FD_CLOEXEC) < 0 ) {
                     debugf("Can't set FD_CLOEXEC on file descriptor %d: %s\n", starter->fds[i], strerror(errno));
@@ -903,7 +911,8 @@ static void cleanenv(void) {
 
 /*
  * get_pipe_exec_fd returns the pipe file descriptor stored in
- * the PIPE_EXEC_FD environment variable
+ * the PIPE_EXEC_FD environment variable. The returned pipe contains
+ * JSON configuration for an engine to run a container.
  */
 static int get_pipe_exec_fd(void) {
     int pipe_fd;
@@ -1047,7 +1056,11 @@ __attribute__((constructor)) static void init(void) {
         verbosef("Run as instance\n");
         process = fork();
         if ( process == 0 ) {
-            /* this is the master process */
+            /*
+             * this is the master process, also a daemon
+             * detach it from the current session
+             * the parent will exit so init will become master's parent
+             */
             if ( setsid() < 0 ) {
                 fatalf("Can't set session leader: %s\n", strerror(errno));
             }
@@ -1097,7 +1110,10 @@ __attribute__((constructor)) static void init(void) {
     userns = user_namespace_init(&sconfig->container.namespace);
     switch ( userns ) {
     case NO_NAMESPACE:
-        /* user namespace not enabled, continue with privileged workflow */
+        /*
+         * user namespace not enabled, continue with privileged workflow
+         * this will fail if starter is run without suid
+         */
         priv_escalate(true);
         break;
     case ENTER_NAMESPACE:
@@ -1143,6 +1159,7 @@ __attribute__((constructor)) static void init(void) {
         /* at this stage we are PID 1 if PID namespace requested */
         set_parent_death_signal(SIGKILL);
 
+        /* close master end of the communication socket */
         close(master_socket[0]);
 
         /* initialize remaining namespaces */
@@ -1171,6 +1188,7 @@ __attribute__((constructor)) static void init(void) {
         }
 
         if ( !sconfig->container.namespace.joinOnly ) {
+            /* close master end of rpc communication socket */
             close(rpc_socket[0]);
 
             /*
@@ -1182,8 +1200,8 @@ __attribute__((constructor)) static void init(void) {
             if ( process == 0 ) {
                 set_parent_death_signal(SIGKILL);
                 verbosef("Spawn RPC server\n");
-                /* continue execution with Go runtime in main_linux.go */
                 goexecute = RPC_SERVER;
+                /* continue execution with Go runtime in main_linux.go */
                 return;
             } else if ( process > 0 ) {
                 /* stage 2 doesn't use RPC connection at all */
@@ -1206,9 +1224,9 @@ __attribute__((constructor)) static void init(void) {
             verbosef("Don't execute RPC server, joining instance\n");
         }
 
-        /* continue execution with Go runtime in main_linux.go */
         apply_container_privileges(&sconfig->container.privileges);
         goexecute = STAGE2;
+        /* continue execution with Go runtime in main_linux.go */
         return;
     } else if ( process > 0 ) {
         int cwdfd;
@@ -1216,13 +1234,18 @@ __attribute__((constructor)) static void init(void) {
         verbosef("Spawn master process\n");
         sconfig->container.pid = process;
 
-        /* case where we joined a PID namespace but create a new mount namespace (eg: kubernetes POD) */
+        /*
+         * case where we joined a PID namespace already,
+         * but a new mount namespace was requested (e.g. kubernetes POD).
+         * go back to the host's PID namespace in this case.
+         */
         if ( pidns == ENTER_NAMESPACE && is_namespace_create(&sconfig->container.namespace, CLONE_NEWNS) ) {
             if ( enter_namespace("/proc/self/ns/pid", CLONE_NEWPID) < 0 ) {
                 fatalf("Failed to enter in pid namespace: %s\n", strerror(errno));
             }
         }
 
+        /* close container end of the communication socket */
         close(master_socket[1]);
 
         /*
@@ -1243,9 +1266,9 @@ __attribute__((constructor)) static void init(void) {
                 if ( sconfig->starter.isSuid ) {
                     /*
                      * hybrid workflow requires privileges for user mappings, we also preserve user
-                     * filesytem UID here otherwise we would get a permission denied error during
+                     * filesystem UID here otherwise we would get a permission denied error during
                      * user mappings setup. User filesystem UID will be restored below by setresuid
-                     * call
+                     * call.
                      */
                     priv_escalate(false);
                     setup_userns_mappings(&sconfig->container.privileges);
@@ -1295,6 +1318,7 @@ __attribute__((constructor)) static void init(void) {
             debugf("Wait stage 2 child process\n");
             wait_child("stage 2", sconfig->container.pid, true);
         } else {
+            /* close container end of rpc communication socket */
             close(rpc_socket[1]);
 
             /*
@@ -1302,12 +1326,12 @@ __attribute__((constructor)) static void init(void) {
              * escalation from master process, because container network requires
              * privileges
              */
-            if ( sconfig->starter.isSuid && setresuid(uid, uid, 0) < 0 ) {
-                fatalf("Failed to drop privileges\n");
+            if ( sconfig->starter.isSuid  ) {
+                priv_drop(false);
             }
 
-            /* continue execution with Go runtime in main_linux.go */
             goexecute = MASTER;
+            /* continue execution with Go runtime in main_linux.go */
             return;
         }
     }
