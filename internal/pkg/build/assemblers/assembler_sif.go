@@ -200,6 +200,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 		if err != nil {
 			return fmt.Errorf("unable to encrypt filesystem at %s: %+v", fsPath, err)
 		}
+		defer os.Remove(loopPath)
 
 		fsPath = loopPath
 

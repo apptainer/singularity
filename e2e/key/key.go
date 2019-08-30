@@ -6,9 +6,9 @@
 package key
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -320,6 +320,158 @@ func (c *ctx) singularityResetKeyring(t *testing.T) {
 	}
 }
 
+func (c *ctx) singularityKeyPush(t *testing.T) {
+	tests := []struct {
+		name          string
+		cmdArgs       []string
+		expectedExit  int
+		expectedRegex string
+	}{
+		{
+			name:          "push help",
+			cmdArgs:       []string{"--help"},
+			expectedExit:  0,
+			expectedRegex: `^Upload a public key to a key server`,
+		},
+	}
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.AsSubtest(tt.name),
+			e2e.WithCommand("key"),
+			e2e.WithArgs(append([]string{"push"}, tt.cmdArgs...)...),
+			e2e.ExpectExit(tt.expectedExit, e2e.ExpectOutput(e2e.RegexMatch, tt.expectedRegex)),
+		)
+	}
+}
+
+func (c *ctx) singularityKeyPull(t *testing.T) {
+	tests := []struct {
+		name          string
+		cmdArgs       []string
+		expectedExit  int
+		expectedRegex string
+	}{
+		{
+			name:          "pull help",
+			cmdArgs:       []string{"--help"},
+			expectedExit:  0,
+			expectedRegex: `^Download a public key from a key server`,
+		},
+	}
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.AsSubtest(tt.name),
+			e2e.WithCommand("key"),
+			e2e.WithArgs(append([]string{"pull"}, tt.cmdArgs...)...),
+			e2e.ExpectExit(tt.expectedExit, e2e.ExpectOutput(e2e.RegexMatch, tt.expectedRegex)),
+		)
+	}
+}
+
+func (c *ctx) singularityKeyRemove(t *testing.T) {
+	tests := []struct {
+		name          string
+		cmdArgs       []string
+		expectedExit  int
+		expectedRegex string
+	}{
+		{
+			name:          "remove help",
+			cmdArgs:       []string{"--help"},
+			expectedExit:  0,
+			expectedRegex: `^Remove a local public key from your keyring`,
+		},
+	}
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.AsSubtest(tt.name),
+			e2e.WithCommand("key"),
+			e2e.WithArgs(append([]string{"remove"}, tt.cmdArgs...)...),
+			e2e.ExpectExit(tt.expectedExit, e2e.ExpectOutput(e2e.RegexMatch, tt.expectedRegex)),
+		)
+	}
+}
+
+func (c *ctx) singularityKeyNewpairWithLen(t *testing.T) {
+	// Create a unique keyring shared for all these tests
+	tempKeyring, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "keyring-", "")
+	defer cleanup(t)
+	c.env.KeyringDir = tempKeyring
+
+	tests := []struct {
+		name              string
+		args              []string
+		stdout            string
+		consoleOps        []string
+		expectedKeyLength int
+	}{
+		{
+			name: "newpair bitlength 1024",
+			args: []string{"newpair", "--bit-length", "1024"},
+			consoleOps: []string{
+				"e2e test key",
+				"jdoe@sylabs.io",
+				" for e2e tests",
+				"e2etests",
+				"e2etests",
+				"n",
+			},
+			expectedKeyLength: 1024,
+		},
+		{
+			name: "newpair bitlength 0",
+			args: []string{"newpair", "--bit-length", "0"},
+			consoleOps: []string{
+				"e2e test key",
+				"jdoe@sylabs.io",
+				" for e2e tests",
+				"e2etests",
+				"e2etests",
+				"n",
+			},
+			expectedKeyLength: 2048,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.AsSubtest(tt.name),
+			e2e.ConsoleRun(buildConsoleLines(tt.consoleOps...)...),
+			e2e.WithCommand("key"),
+			e2e.WithArgs(tt.args...),
+			e2e.PostRun(func(t *testing.T) {
+				c.checkKeyLength(t, tt.expectedKeyLength)
+				c.singularityResetKeyring(t)
+			}),
+			e2e.ExpectExit(0, e2e.ExpectOutput(e2e.RegexMatch, tt.stdout)),
+		)
+	}
+}
+
+func (c *ctx) checkKeyLength(t *testing.T, expectedKeyLength int) {
+	if expectedKeyLength >= 0 {
+		cmdArgs := []string{"list"}
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("key"),
+			e2e.WithArgs(cmdArgs...),
+			e2e.ExpectExit(
+				0,
+				e2e.ExpectOutput(e2e.ContainMatch, "L: "+strconv.Itoa(expectedKeyLength)),
+			),
+		)
+	}
+}
+
 // Run the 'key' tests in order
 func (c *ctx) singularityKeyCmd(t *testing.T) {
 	c.singularityKeySearch(t)
@@ -330,6 +482,9 @@ func (c *ctx) singularityKeyCmd(t *testing.T) {
 	c.singularityKeyExport(t)
 	c.singularityKeyImport(t)
 	c.singularityKeyList(t)
+	c.singularityKeyPull(t)
+	c.singularityKeyPush(t)
+	c.singularityKeyRemove(t)
 }
 
 // E2ETests is the main func to trigger the test suite
@@ -343,12 +498,9 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		keyRing:                filepath.Join(env.TestDir, "sypgp-test-keyring"),
 	}
 
-	if err := os.Setenv("SINGULARITY_SYPGPDIR", c.keyRing); err != nil {
-		panic(fmt.Sprintf("unable to set keyring: %s", err))
-	}
-
 	return func(t *testing.T) {
 		c.env.KeyringDir = c.keyRing
-		t.Run("keyCmd", c.singularityKeyCmd) // Run all the tests in order
+		t.Run("keyCmd", c.singularityKeyCmd)                       // Run all the tests in order
+		t.Run("keyNewpairWithLen", c.singularityKeyNewpairWithLen) // We run a separate test for `key newpair --bit-length` because it requires handling a keyring a specific way
 	}
 }

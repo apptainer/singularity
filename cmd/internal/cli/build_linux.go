@@ -22,8 +22,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/fakeroot/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
+	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -375,13 +375,13 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 	}
 
 	if pemPathEnvOK {
-		exists, err := fs.FileExists(encryptionPEMPath)
+		exists, err := fs.FileExists(pemPathEnv)
 		if err != nil {
-			sylog.Fatalf("Unable to verify existence of %s: %v", encryptionPEMPath, err)
+			sylog.Fatalf("Unable to verify existence of %s: %v", pemPathEnv, err)
 		}
 
 		if !exists {
-			sylog.Fatalf("Specified PEM file %s: does not exist.", encryptionPEMPath)
+			sylog.Fatalf("Specified PEM file %s: does not exist.", pemPathEnv)
 		}
 
 		sylog.Verbosef("Using pem path environment variable for encrypted container")

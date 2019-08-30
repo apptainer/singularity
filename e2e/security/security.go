@@ -12,6 +12,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
 type ctx struct {
@@ -26,6 +27,7 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 		image      string
 		argv       []string
 		opts       []string
+		preFn      func(*testing.T)
 		expectExit int
 	}{
 		// taget UID/GID
@@ -48,12 +50,14 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 			name:       "SecComp_BlackList",
 			argv:       []string{"mkdir", "/tmp/foo"},
 			opts:       []string{"--security", "seccomp:./security/testdata/seccomp-profile.json"},
+			preFn:      require.Seccomp,
 			expectExit: 159, // process should be killed with SIGSYS (128+31)
 		},
 		{
 			name:       "SecComp_true",
 			argv:       []string{"true"},
 			opts:       []string{"--security", "seccomp:./security/testdata/seccomp-profile.json"},
+			preFn:      require.Seccomp,
 			expectExit: 0,
 		},
 		// capabilities
@@ -88,6 +92,7 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(optArgs...),
+			e2e.PreRun(tt.preFn),
 			e2e.ExpectExit(tt.expectExit),
 		)
 
@@ -100,6 +105,7 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 		name       string
 		argv       []string
 		opts       []string
+		preFn      func(*testing.T)
 		expectOp   e2e.SingularityCmdResultOp
 		expectExit int
 	}{
@@ -123,12 +129,14 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 			name:       "SecComp_BlackList",
 			argv:       []string{"mkdir", "/tmp/foo"},
 			opts:       []string{"--security", "seccomp:./testdata/seccomp-profile.json"},
+			preFn:      require.Seccomp,
 			expectExit: 159, // process should be killed with SIGSYS (128+31)
 		},
 		{
 			name:       "SecComp_true",
 			argv:       []string{"true"},
 			opts:       []string{"--security", "seccomp:./testdata/seccomp-profile.json"},
+			preFn:      require.Seccomp,
 			expectExit: 0,
 		},
 		// capabilities
@@ -158,6 +166,7 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(optArgs...),
+			e2e.PreRun(tt.preFn),
 			e2e.ExpectExit(tt.expectExit, tt.expectOp),
 		)
 

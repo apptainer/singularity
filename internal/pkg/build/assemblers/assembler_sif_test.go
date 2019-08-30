@@ -46,6 +46,7 @@ func TestSIFAssemblerDocker(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to make bundle: %v", err)
 	}
+	defer os.RemoveAll(b.Path)
 
 	b.Recipe, err = types.NewDefinitionFromURI(assemblerDockerURI)
 	if err != nil {
@@ -100,6 +101,7 @@ func TestSIFAssemblerShub(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to make bundle: %v", err)
 	}
+	defer os.RemoveAll(b.Path)
 
 	b.Recipe, err = types.NewDefinitionFromURI(assemblerShubURI)
 	if err != nil {
