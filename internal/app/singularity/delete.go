@@ -15,5 +15,10 @@ func DeleteImage(ctx context.Context, scsConfig *scs.Config, imageRef, arch stri
 		return errors.Wrap(err, "couldn't create a new client")
 	}
 
-	return libraryClient.DeleteImage(ctx, imageRef, arch)
+	err = libraryClient.DeleteImage(ctx, imageRef, arch)
+	if err != nil {
+		return errors.Wrap(err, "couldn't delete requested image")
+	}
+
+	return nil
 }
