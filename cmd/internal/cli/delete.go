@@ -66,8 +66,7 @@ var deleteImageCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		handleDeleteFlags(cmd)
 
-		imageRef := args[0]
-		imageRef = strings.TrimPrefix(imageRef, "library://")
+		imageRef := strings.TrimPrefix(args[0], "library://")
 
 		libraryConfig := &client.Config{
 			BaseURL:   deleteLibraryURI,

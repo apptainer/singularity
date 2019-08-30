@@ -55,6 +55,8 @@ import (
 
 	"github.com/sylabs/singularity/e2e/version"
 
+	"github.com/sylabs/singularity/e2e/delete"
+
 	singularityenv "github.com/sylabs/singularity/e2e/env"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -172,6 +174,7 @@ func Run(t *testing.T) {
 		"VERIFY":      verify.E2ETests(testenv),
 		"VERSION":     version.E2ETests(testenv),
 		"REGRESSIONS": regressions.E2ETests(testenv),
+		"DELETE":      delete.E2ETests(testenv),
 	}
 
 	for name, fn := range suites {
