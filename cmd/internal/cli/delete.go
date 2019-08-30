@@ -86,7 +86,8 @@ var deleteImageCmd = &cobra.Command{
 			return
 		}
 
-		ctx, _ := context.WithTimeout(context.Background(), time.Duration(deleteImageTimeout)*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deleteImageTimeout)*time.Second)
+		defer cancel()
 		err = singularity.DeleteImage(ctx, libraryConfig, imageRef, deleteImageArch)
 		if err != nil {
 			sylog.Fatalf(err.Error())
