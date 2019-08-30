@@ -158,6 +158,9 @@ func (c *Config) KeepFileDescriptor(fd int) error {
 
 // SetHybridWorkflow sets the flag to tell starter container setup
 // will require an hybrid workflow. Typically used for fakeroot.
+// In hybrid workflow master process lives in host user namespace
+// with the ability to escalate privileges, while container process
+// lives in its own user namespace.
 func (c *Config) SetHybridWorkflow(hybrid bool) {
 	if hybrid {
 		c.config.starter.hybridWorkflow = C.true
