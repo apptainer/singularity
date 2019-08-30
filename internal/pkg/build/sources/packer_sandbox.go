@@ -7,8 +7,11 @@ package sources
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -25,6 +28,53 @@ type SandboxPacker struct {
 func (p *SandboxPacker) Pack() (*types.Bundle, error) {
 	rootfs := p.srcdir
 
+	// TODO: FIXME: !!!
+
+	fmt.Printf("\n\n\nNEWDATA FOR SANDBOX\n")
+
+	//
+	// Open the SIF
+	//
+
+	inspectDataJSON := make(map[string]map[string]string, 1)
+	inspectDataJSON["labels"] = make(map[string]string, 1)
+
+	p.b.Recipe.ImageData.Labels = make(map[string]string, 1)
+
+	foobar, err := ioutil.ReadFile(filepath.Join(rootfs, ".singularity.d/labels.json"))
+	if err != nil {
+		return nil, fmt.Errorf("unable to read json file: %s", err)
+	}
+	fmt.Print(string(foobar))
+
+	//fmt.Printf("BARTMP: %+v\n", p.b)
+
+	err = json.Unmarshal(foobar, &p.b.Recipe.ImageData.Labels)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unmarshal json labels: %s", err)
+	}
+
+	//	for _, v := range sifData {
+	//		metaData := v.GetData(&fimg)
+	//		err := json.Unmarshal(metaData, &b.Recipe.ImageData.Labels)
+	//		if err != nil {
+	//			sylog.Fatalf("Unable to get json: %s", err)
+	//		}
+	//
+	//		//		var hrOut map[string]*json.RawMessage
+	//		//		err := json.Unmarshal(metaData, &hrOut)
+	//		//		if err != nil {
+	//		//			sylog.Fatalf("Unable to get json: %s", err)
+	//		//		}
+	//		//		//inspectData += "== labels ==\n"
+	//		//		for k := range hrOut {
+	//		//			fmt.Printf("INFOOOOO: %s: %s\n", k, string(*hrOut[k]))
+	//		//			inspectDataJSON["labels"][k] = string(*hrOut[k])
+	//		//			b.Recipe.ImageData.Labels[k] = string(*hrOut[k])
+	//		//		}
+	//
+	//	}
+	//
 	// copy filesystem into bundle rootfs
 	sylog.Debugf("Copying file system from %s to %s in Bundle\n", rootfs, p.b.Rootfs())
 	var stderr bytes.Buffer

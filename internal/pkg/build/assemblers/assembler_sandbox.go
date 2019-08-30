@@ -7,9 +7,12 @@ package assemblers
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -23,6 +26,26 @@ type SandboxAssembler struct {
 // Assemble creates a Sandbox image from a Bundle
 func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	sylog.Infof("Creating sandbox directory...")
+
+	jsonLabels := make(map[string]string, 1)
+	// Copy the labels
+	for k, v := range b.Recipe.ImageData.Labels {
+		jsonLabels[k] = v
+		//		fmt.Printf("KEY=%s\nVAULE=%s\n", k, v)
+	}
+
+	text, err := json.MarshalIndent(jsonLabels, "", "\t")
+	//	text, err := json.MarshalIndent(b.JSONObjects, "", "\t")
+	if err != nil {
+		return fmt.Errorf("unable to marshal json: %s", err)
+	}
+
+	fmt.Println("WRITING TO: ", filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"))
+
+	err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0644)
+	if err != nil {
+		return fmt.Errorf("unable to write to labels file: %s", err)
+	}
 
 	// move bundle rootfs to sandboxdir as final sandbox
 	sylog.Debugf("Moving sandbox from %v to %v", b.Rootfs(), path)

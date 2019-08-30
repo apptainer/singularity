@@ -7,6 +7,7 @@ package assemblers
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,9 +15,11 @@ import (
 	"runtime"
 	"strconv"
 	"syscall"
+	"time"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image/packer"
@@ -215,7 +218,154 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 		return fmt.Errorf("while creating SIF: %v", err)
 	}
 
+	//
+	// Add the labels
+	//
+
+	sylog.Infof("Adding label partition...")
+
+	labels := make(map[string]string, 1)
+
+	labels["org.label-schema.schema-version"] = "2.0"
+
+	// build date and time, lots of time formatting
+	currentTime := time.Now()
+	year, month, day := currentTime.Date()
+	date := strconv.Itoa(day) + `_` + month.String() + `_` + strconv.Itoa(year)
+	hour, min, sec := currentTime.Clock()
+	time := strconv.Itoa(hour) + `:` + strconv.Itoa(min) + `:` + strconv.Itoa(sec)
+	zone, _ := currentTime.Zone()
+	timeString := currentTime.Weekday().String() + `_` + date + `_` + time + `_` + zone
+	labels["org.label-schema.build-date"] = timeString
+
+	// singularity version
+	labels["org.label-schema.usage.singularity.version"] = buildcfg.PACKAGE_VERSION
+
+	// help info if help exists in the definition and is run in the build
+	if b.RunSection("help") && b.Recipe.ImageData.Help.Script != "" {
+		labels["org.label-schema.usage"] = "/.singularity.d/runscript.help"
+		labels["org.label-schema.usage.singularity.runscript.help"] = "/.singularity.d/runscript.help"
+	}
+
+	// bootstrap header info, only if this build actually bootstrapped
+	if !b.Opts.Update || b.Opts.Force {
+		for key, value := range b.Recipe.Header {
+			labels["org.label-schema.usage.singularity.deffile."+key] = value
+		}
+	}
+
+	fmt.Printf("LOOOK HERE!!! OLD IMAGE LABELS: %+v\n", b.Recipe.ImageData.Labels)
+
+	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
+		sylog.Infof("Adding labels")
+
+		// add new labels to new map and check for collisions
+		for key, value := range b.Recipe.ImageData.Labels {
+			// check if label already exists
+			if _, ok := labels[key]; ok {
+				// overwrite collision if it exists and force flag is set
+				if b.Opts.Force {
+					labels[key] = value
+				} else {
+					sylog.Warningf("Label: %s already exists and force option is false, not overwriting", key)
+				}
+			} else {
+				// set if it doesnt
+				labels[key] = value
+			}
+		}
+	}
+
+	//
+	// write the data
+	//
+
+	sylog.Infof("Inserting Metadata... to: %s <========", path)
+
+	// load the container to add the metadata
+	fimg, err := sif.LoadContainer(path, false)
+	if err != nil {
+		return fmt.Errorf("failed to load sif container file: %s", err)
+	}
+	defer fimg.UnloadContainer()
+
+	descr, err := getDescr(&fimg)
+	if err != nil {
+		return fmt.Errorf("no primary partition found: %s", err)
+	}
+
+	groupid := descr[0].Groupid
+	//link = descr[0].ID
+
+	// Get the primary partition data size
+	primSize := make([]*sif.Descriptor, 1)
+	primSize[0], _, err = fimg.GetPartPrimSys()
+	if err != nil {
+		return fmt.Errorf("failed getting main data: %s", err)
+	}
+	labels["org.label-schema.image-size"] = readBytes(float64(primSize[0].Storelen))
+
+	// make new map into json
+	text, err := json.MarshalIndent(labels, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	// Add the metadata
+	err = sifAddMetadata(&fimg, groupid, uint32(0), text)
+	if err != nil {
+		return fmt.Errorf("failed adding metadata block to SIF container file: %s", err)
+	}
+
 	return nil
+}
+
+// TODO: put in a common package
+func readBytes(in float64) string {
+	i := 0
+	size := in
+
+	units := []string{"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
+
+	for size > 1024 {
+		size /= 1024
+		i++
+	}
+	buf := fmt.Sprintf("%.*f %s", i, size, units[i])
+
+	return buf
+}
+
+func sifAddMetadata(fimg *sif.FileImage, groupid, link uint32, data []byte) error {
+	// data we need to create a signature descriptor
+	siginput := sif.DescriptorInput{
+		Datatype: sif.DataLabels,
+		Groupid:  groupid,
+		Link:     link,
+		Fname:    "image-metadata",
+		Data:     data,
+	}
+	siginput.Size = int64(binary.Size(siginput.Data))
+
+	// add new signature data object to SIF file
+	err := fimg.AddObject(siginput)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getDescr(fimg *sif.FileImage) ([]*sif.Descriptor, error) {
+	descr := make([]*sif.Descriptor, 1)
+	var err error
+
+	descr[0], _, err = fimg.GetPartPrimSys()
+	if err != nil {
+		return nil, fmt.Errorf("no primary partition found")
+	}
+
+	return descr, nil
 }
 
 // changeOwner check the command being called with sudo with the environment

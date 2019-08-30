@@ -38,7 +38,7 @@ func (p *SquashfsPacker) Pack() (*types.Bundle, error) {
 }
 
 // unpackSquashfs removes the image header with dd and then unpackes image into bundle directories with unsquashfs
-func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, rootfs string) (err error) {
+func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, rootfs string) error {
 	var stderr bytes.Buffer
 
 	trimfile, err := ioutil.TempFile(p.b.Path, "trim.squashfs")
