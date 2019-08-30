@@ -13,6 +13,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -359,8 +360,16 @@ var InspectCmd = &cobra.Command{
 				if err != nil {
 					sylog.Fatalf("Unable to get json: %s", err)
 				}
-				inspectData += "== labels ==\n"
+
+				// Sort the labels
+				var labelSort []string
 				for k := range hrOut {
+					labelSort = append(labelSort, k)
+				}
+				sort.Strings(labelSort)
+
+				inspectData += "== labels ==\n"
+				for _, k := range labelSort {
 					inspectData += fmt.Sprintf("%s: %s\n", k, string(*hrOut[k]))
 					inspectDataJSON["labels"][k] = string(*hrOut[k])
 				}
