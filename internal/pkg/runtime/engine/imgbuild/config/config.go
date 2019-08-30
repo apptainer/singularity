@@ -10,11 +10,11 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-// Name of the engine
+// Name of the engine.
 const Name = "imgbuild"
 
-// EngineConfig is the config for the Singularity engine used to run a minimal image
-// during image build process
+// EngineConfig is the config for the Singularity engine used to
+// run a minimal image during image build process.
 type EngineConfig struct {
 	types.Bundle `json:"bundle"`
 	OciConfig    *oci.Config `json:"ociConfig"`
