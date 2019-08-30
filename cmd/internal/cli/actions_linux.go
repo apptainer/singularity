@@ -48,7 +48,7 @@ func EnsureRootPriv(cmd *cobra.Command, args []string) {
 			// The first argument is the context
 			sylog.Fatalf("command '%s %s' requires root privileges", args[0], cmd.Name())
 		} else {
-			sylog.Fatalf("command %s requires root privileges", cmd.Name())
+			sylog.Fatalf("command '%s' requires root privileges", cmd.CommandPath())
 		}
 	}
 }
