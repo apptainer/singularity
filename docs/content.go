@@ -966,4 +966,33 @@ Enterprise Performance Computing (EPC)`
   mount.`
 	OciUmountExample string = `
   $ singularity oci umount /var/lib/singularity/bundles/example`
+
+	ConfigUse   string = `config`
+	ConfigShort string = `Manage various singularity configuration (root user only)`
+	ConfigLong  string = `
+  The config command allows root user to manage various configuration like fakeroot
+  user mapping entries.`
+	ConfigExample string = `
+  All config commands have their own help output:
+
+  $ singularity help config fakeroot
+  $ singularity config fakeroot --help`
+
+	ConfigFakerootUse   string = `fakeroot <option> <user>`
+	ConfigFakerootShort string = `Manage fakeroot user mappings entries (root user only)`
+	ConfigFakerootLong  string = `
+  The config fakeroot command allow a root user to add/remove/enable/disable fakeroot
+  user mappings.`
+	ConfigFakerootExample string = `
+  To add a fakeroot user mapping for vagrant user:
+  $ singularity config fakeroot --add vagrant
+
+  To remove a fakeroot user mapping for vagrant user:
+  $ singularity config fakeroot --remove vagrant
+
+  To disable a fakeroot user mapping for vagrant user:
+  $ singularity config fakeroot --disable vagrant
+
+  To enable a fakeroot user mapping for vagrant user:
+  $ singularity config fakeroot --enable vagrant`
 )
