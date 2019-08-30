@@ -31,32 +31,61 @@ type Engine struct {
 type Operations interface {
 	// Config returns a zero value of the current EngineConfig, which
 	// depends on the implementation, used to populate the Common struct.
+	//
 	// Since this method simply return a zero value of the concrete
 	// EngineConfig, it does not matter whether or not there are any elevated
 	// privileges during this call.
 	Config() config.EngineConfig
 	// InitConfig stores the parsed config.Common inside the Operations
-	// implementation. Since this method simply stores config.Common,
-	// it does not matter whether or not there are any elevated
-	// privileges during this call.
+	// implementation.
+	//
+	// Since this method simply stores config.Common, it does not matter
+	// whether or not there are any elevated privileges during this call.
 	InitConfig(*config.Common)
 	// PrepareConfig is called during stage1 to validate and prepare
-	// container configuration. No additional privileges can be gained
-	// as any of them are already dropped by the time PrepareConfig is called.
+	// container configuration.
+	//
+	// No additional privileges can be gained as any of them are already
+	// dropped by the time PrepareConfig is called.
 	PrepareConfig(*starter.Config) error
-	// CreateContainer is called in master and does mount operations, etc... to
-	// set up the container environment for the payload proc.
+	// CreateContainer is called from master process to prepare container
+	// environment, e.g. perform mount operations, setup network, etc.
+	//
+	// Additional privileges required for setup may be gained when running
+	// in suid flow. However, when a user namespace is requested and it is not
+	// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
+	// and thus no additional privileges can be gained.
 	CreateContainer(int, net.Conn) error
-	// StartProcess is called in stage2 after waiting on RPC server exit. It is
-	// responsible for exec'ing the payload proc in the container.
+	// StartProcess is called during stage2 after RPC server finished
+	// environment preparation. This is the container process itself.
+	//
+	// No additional privileges can be gained during this call (unless container
+	// is executed as root intentionally) as starter will set uid/euid/suid
+	// to the targetUID (PrepareConfig will set it by calling starter.Config.SetTargetUID).
 	StartProcess(net.Conn) error
-	// PostStartProcess is called in master after successful execution of container process.
+	// PostStartProcess is called from master after successful
+	// execution of the container process.
+	//
+	// Additional privileges may be gained when running
+	// in suid flow. However, when a user namespace is requested and it is not
+	// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
+	// and thus no additional privileges can be gained.
 	PostStartProcess(int) error
-	// MonitorContainer is called in master once the container proc has been spawned. It
-	// will typically block until the container proc exists.
+	// MonitorContainer is called from master once the container has
+	// been spawned. It will typically block until the container exists.
+	//
+	// Additional privileges may be gained when running
+	// in suid flow. However, when a user namespace is requested and it is not
+	// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
+	// and thus no additional privileges can be gained.
 	MonitorContainer(int, chan os.Signal) (syscall.WaitStatus, error)
-	// CleanupContainer is called in master after the MonitorContainer returns. It is responsible
-	// for ensuring that the container has been properly torn down.
+	// CleanupContainer is called from master after the MonitorContainer returns.
+	// It is responsible for ensuring that the container has been properly torn down.
+	//
+	// Additional privileges may be gained when running
+	// in suid flow. However, when a user namespace is requested and it is not
+	// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
+	// and thus no additional privileges can be gained.
 	CleanupContainer(error, syscall.WaitStatus) error
 }
 

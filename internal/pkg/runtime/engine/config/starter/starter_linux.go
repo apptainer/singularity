@@ -58,6 +58,7 @@ func (c *Config) GetIsSUID() bool {
 }
 
 // GetContainerPid returns container PID (if any).
+// Container PID is set by master process before stage 2 or rpc.
 func (c *Config) GetContainerPid() int {
 	return int(c.config.container.pid)
 }
