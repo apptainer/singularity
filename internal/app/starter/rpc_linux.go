@@ -14,6 +14,13 @@ import (
 )
 
 // RPCServer serves runtime engine requests.
+//
+// The RPC server process is already in correct namespaces
+// required by container, so any operations performed will
+// affect final container environment. When run with suid
+// flow, i.e. no user namespace for container is created
+// and no hybrid workflow is requested, the server is run
+// with escalated privileges (as euid 0).
 func RPCServer(socket int, e *engine.Engine) {
 	comm := os.NewFile(uintptr(socket), "unix")
 	conn, err := net.FileConn(comm)
