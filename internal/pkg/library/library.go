@@ -113,7 +113,12 @@ func SearchLibrary(ctx context.Context, c *client.Client, value string) error {
 		fmt.Printf("Found %d containers for '%s'\n", numContainers, value)
 		for _, con := range results.Containers {
 			fmt.Printf("\t%s\n", con.LibraryURI())
-			fmt.Printf("\t\tTags: %s\n", con.TagList())
+			if len(con.ImageTags) != 0 {
+				fmt.Printf("\t\tTags: %s\n", con.TagList())
+			} else if len(con.Images) > 0 {
+				fmt.Printf("\t\tImage ID: %s (no tag)\n", con.Images)
+			}
+			fmt.Printf("\n")
 		}
 		fmt.Printf("\n")
 

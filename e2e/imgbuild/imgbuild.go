@@ -826,9 +826,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	err := e2e.CheckCryptsetupVersion()
 	if err != nil {
 		expectedExitCode = 255
-		// todo: fix the problen with catching stderr, until then we do not do a real check
-		//expectedStderr = "FATAL:   While performing build: unable to encrypt filesystem at /tmp/sbuild-718337349/squashfs-770818633: available cryptsetup is not supported"
-		expectedStderr = ""
+		expectedStderr = ": available cryptsetup is not supported"
 	}
 
 	// First with the command line argument, only using --passphrase
