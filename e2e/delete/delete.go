@@ -7,8 +7,9 @@ package delete
 
 import (
 	"bytes"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"testing"
+
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
 type ctx struct {
