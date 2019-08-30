@@ -6,7 +6,6 @@
 package build
 
 import (
-	//	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,13 +13,10 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	//	"strconv"
 	"strings"
 	"syscall"
-	//	"time"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	//	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/build/apps"
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/files"
@@ -253,9 +249,6 @@ func (b Build) cleanUp() {
 func (b *Build) Full() error {
 	sylog.Infof("Starting build...")
 
-	// For the metadata after the build
-	//	labels := make(map[string]string, 1)
-
 	// monitor build for termination signal and clean up
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -266,8 +259,6 @@ func (b *Build) Full() error {
 	}()
 	// clean up build normally
 	defer b.cleanUp()
-
-	//	fmt.Printf("OBJJSON: %+v\n", b.Conf.Opts.JSONObjects)
 
 	// build each stage one after the other
 	for i, stage := range b.stages {
@@ -326,72 +317,9 @@ func (b *Build) Full() error {
 		}
 
 		sylog.Infof("Inserting scripts...")
-		if err := stage.insertMetadata(); err != nil {
-			return fmt.Errorf("while inserting metadata to bundle: %v", err)
+		if err := stage.insertScripts(); err != nil {
+			return fmt.Errorf("while inserting scripts to bundle: %v", err)
 		}
-
-		//		// Only add the metadata partition if we are building a sif
-		//		if b.Conf.Format == "sif" {
-		//			labels["org.label-schema.schema-version"] = "2.0"
-		//
-		//			// build date and time, lots of time formatting
-		//			currentTime := time.Now()
-		//			year, month, day := currentTime.Date()
-		//			date := strconv.Itoa(day) + `_` + month.String() + `_` + strconv.Itoa(year)
-		//			hour, min, sec := currentTime.Clock()
-		//			time := strconv.Itoa(hour) + `:` + strconv.Itoa(min) + `:` + strconv.Itoa(sec)
-		//			zone, _ := currentTime.Zone()
-		//			timeString := currentTime.Weekday().String() + `_` + date + `_` + time + `_` + zone
-		//			labels["org.label-schema.build-date"] = timeString
-		//
-		//			// singularity version
-		//			labels["org.label-schema.usage.singularity.version"] = buildcfg.PACKAGE_VERSION
-		//
-		//			// help info if help exists in the definition and is run in the build
-		//			if stage.b.RunSection("help") && stage.b.Recipe.ImageData.Help.Script != "" {
-		//				labels["org.label-schema.usage"] = "/.singularity.d/runscript.help"
-		//				labels["org.label-schema.usage.singularity.runscript.help"] = "/.singularity.d/runscript.help"
-		//			}
-		//
-		//			// bootstrap header info, only if this build actually bootstrapped
-		//			if !stage.b.Opts.Update || stage.b.Opts.Force {
-		//				for key, value := range stage.b.Recipe.Header {
-		//					labels["org.label-schema.usage.singularity.deffile."+key] = value
-		//				}
-		//			}
-		//
-		//			if stage.b.RunSection("labels") && len(stage.b.Recipe.ImageData.Labels) > 0 {
-		//				sylog.Infof("Adding labels")
-		//
-		//				// add new labels to new map and check for collisions
-		//				for key, value := range stage.b.Recipe.ImageData.Labels {
-		//					// check if label already exists
-		//					if _, ok := labels[key]; ok {
-		//						// overwrite collision if it exists and force flag is set
-		//						if stage.b.Opts.Force {
-		//							labels[key] = value
-		//						} else {
-		//							sylog.Warningf("Label: %s already exists and force option is false, not overwriting", key)
-		//						}
-		//					} else {
-		//						// set if it doesnt
-		//						labels[key] = value
-		//					}
-		//				}
-		//			}
-		//		} else {
-		//			// Otherwise, add the labels.json file in /.singularity.d
-		//
-		//			fmt.Println("Skipping")
-		//
-		//			//			err := stage.insertMetadata()
-		//			//			if err != nil {
-		//			//				return fmt.Errorf("while inserting metadata to bundle: %v", err)
-		//			//			}
-		//
-		//		}
-
-		fmt.Printf("OLD LABELSL:::::: %+v\n", stage.b.Recipe.ImageData.Labels)
 	}
 
 	sylog.Debugf("Calling assembler")
@@ -399,147 +327,10 @@ func (b *Build) Full() error {
 		return err
 	}
 
-	//	if b.Conf.Format == "sif" {
-	//
-	//		sylog.Infof("Inserting Metadata...")
-	//
-	//		// load the container to add the metadata
-	//		fimg, err := sif.LoadContainer(b.Conf.Dest, false)
-	//		if err != nil {
-	//			return fmt.Errorf("failed to load sif container file: %s", err)
-	//		}
-	//		defer fimg.UnloadContainer()
-	//
-	//		// figure out which descriptor has data to sign
-	//		descr, err := getDescr(&fimg)
-	//		if err != nil {
-	//			return fmt.Errorf("no primary partition found: %s", err)
-	//		}
-	//
-	//		groupid := descr[0].Groupid
-	//		//link = descr[0].ID
-	//
-	//		// Get the primary partition data size
-	//		primSize := make([]*sif.Descriptor, 1)
-	//		primSize[0], _, err = fimg.GetPartPrimSys()
-	//		if err != nil {
-	//			return fmt.Errorf("failed getting main data: %s", err)
-	//		}
-	//		labels["org.label-schema.image-size"] = readBytes(float64(primSize[0].Storelen))
-	//
-	//		//
-	//		//
-	//		//
-	//
-	//		//		oldSIF, err := sif.LoadContainer(args[0], true)
-	//		//		if err != nil {
-	//		//			sylog.Fatalf("failed to load SIF container file: %s", err)
-	//		//		}
-	//		//		defer oldSIF.UnloadContainer()
-	//		//
-	//		//		sifData, _, err := getMetaData(&oldSIF, sif.DataLabels)
-	//		//		if err == ErrNoMetaData {
-	//		//			sylog.Warningf("No metadata partition found in container")
-	//		//			//inspectInContainer(args[0])
-	//		//		} else if err != nil {
-	//		//			sylog.Fatalf("Unable to get label metadata: %s", err)
-	//		//		}
-	//
-	//		//		inspectDataJSON["labels"] = make(map[string]string, 1)
-	//		//
-	//		//		for _, v := range sifData {
-	//		//			metaData := v.GetData(&fimg)
-	//		//			var hrOut map[string]*json.RawMessage
-	//		//			err := json.Unmarshal(metaData, &hrOut)
-	//		//			if err != nil {
-	//		//				sylog.Fatalf("Unable to get json: %s", err)
-	//		//			}
-	//		//			inspectData += "== labels ==\n"
-	//		//			for k := range hrOut {
-	//		//				inspectData += fmt.Sprintf("%s: %s\n", k, string(*hrOut[k]))
-	//		//				inspectDataJSON["labels"][k] = string(*hrOut[k])
-	//		//			}
-	//		//		}
-	//		//
-	//		//		jsonBytes, err := ioutil.ReadAll(jsonFile)
-	//		//		if err != nil {
-	//		//			return err
-	//		//		}
-	//		//
-	//		//		err = json.Unmarshal(jsonBytes, &labels)
-	//		//		if err != nil {
-	//		//			return err
-	//		//		}
-	//
-	//		//
-	//		//
-	//		//
-	//
-	//		// make new map into json
-	//		text, err := json.MarshalIndent(labels, "", "    ")
-	//		if err != nil {
-	//			return err
-	//		}
-	//
-	//		// Add the metadata
-	//		err = sifAddMetadata(&fimg, groupid, uint32(0), text)
-	//		if err != nil {
-	//			return fmt.Errorf("failed adding metadata block to SIF container file: %s", err)
-	//		}
-	//	}
-	//
 	sylog.Verbosef("Build complete: %s", b.Conf.Dest)
 
 	return nil
 }
-
-//// TODO: put in a common package
-//func readBytes(in float64) string {
-//	i := 0
-//	size := in
-//
-//	units := []string{"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
-//
-//	for size > 1024 {
-//		size /= 1024
-//		i++
-//	}
-//	buf := fmt.Sprintf("%.*f %s", i, size, units[i])
-//
-//	return buf
-//}
-//
-//func sifAddMetadata(fimg *sif.FileImage, groupid, link uint32, data []byte) error {
-//	// data we need to create a signature descriptor
-//	siginput := sif.DescriptorInput{
-//		Datatype: sif.DataLabels,
-//		Groupid:  groupid,
-//		Link:     link,
-//		Fname:    "image-metadata",
-//		Data:     data,
-//	}
-//	siginput.Size = int64(binary.Size(siginput.Data))
-//
-//	// add new signature data object to SIF file
-//	err := fimg.AddObject(siginput)
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//}
-//
-//func getDescr(fimg *sif.FileImage) ([]*sif.Descriptor, error) {
-//	descr := make([]*sif.Descriptor, 1)
-//	var err error
-//
-//	descr[0], _, err = fimg.GetPartPrimSys()
-//	if err != nil {
-//		return nil, fmt.Errorf("no primary partition found")
-//	}
-//
-//	return descr, nil
-//}
 
 // engineRequired returns true if build definition is requesting to run scripts or copy files
 func engineRequired(def types.Definition) bool {

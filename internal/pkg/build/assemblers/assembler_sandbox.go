@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/sylabs/singularity/internal/pkg/build/metadata"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -31,16 +32,16 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	// Copy the labels
 	for k, v := range b.Recipe.ImageData.Labels {
 		jsonLabels[k] = v
-		//		fmt.Printf("KEY=%s\nVAULE=%s\n", k, v)
 	}
 
+	sylog.Infof("Adding labels...")
+
+	metadata.GetImageInfoLabels(jsonLabels, b)
+
 	text, err := json.MarshalIndent(jsonLabels, "", "\t")
-	//	text, err := json.MarshalIndent(b.JSONObjects, "", "\t")
 	if err != nil {
 		return fmt.Errorf("unable to marshal json: %s", err)
 	}
-
-	fmt.Println("WRITING TO: ", filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"))
 
 	err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0644)
 	if err != nil {

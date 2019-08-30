@@ -439,7 +439,7 @@ var InspectCmd = &cobra.Command{
 		}
 
 		if jsonfmt {
-			text, err := json.MarshalIndent(inspectDataJSON, "", "    ")
+			text, err := json.MarshalIndent(inspectDataJSON, "", "\t")
 			if err != nil {
 				sylog.Fatalf("Unable to marshal json: %s", err)
 			}

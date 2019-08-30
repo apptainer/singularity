@@ -15,11 +15,10 @@ import (
 	"runtime"
 	"strconv"
 	"syscall"
-	"time"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/build/metadata"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image/packer"
@@ -218,69 +217,18 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 		return fmt.Errorf("while creating SIF: %v", err)
 	}
 
-	//
-	// Add the labels
-	//
-
-	sylog.Infof("Adding label partition...")
-
 	labels := make(map[string]string, 1)
 
-	labels["org.label-schema.schema-version"] = "2.0"
-
-	// build date and time, lots of time formatting
-	currentTime := time.Now()
-	year, month, day := currentTime.Date()
-	date := strconv.Itoa(day) + `_` + month.String() + `_` + strconv.Itoa(year)
-	hour, min, sec := currentTime.Clock()
-	time := strconv.Itoa(hour) + `:` + strconv.Itoa(min) + `:` + strconv.Itoa(sec)
-	zone, _ := currentTime.Zone()
-	timeString := currentTime.Weekday().String() + `_` + date + `_` + time + `_` + zone
-	labels["org.label-schema.build-date"] = timeString
-
-	// singularity version
-	labels["org.label-schema.usage.singularity.version"] = buildcfg.PACKAGE_VERSION
-
-	// help info if help exists in the definition and is run in the build
-	if b.RunSection("help") && b.Recipe.ImageData.Help.Script != "" {
-		labels["org.label-schema.usage"] = "/.singularity.d/runscript.help"
-		labels["org.label-schema.usage.singularity.runscript.help"] = "/.singularity.d/runscript.help"
-	}
-
-	// bootstrap header info, only if this build actually bootstrapped
-	if !b.Opts.Update || b.Opts.Force {
-		for key, value := range b.Recipe.Header {
-			labels["org.label-schema.usage.singularity.deffile."+key] = value
-		}
-	}
-
-	fmt.Printf("LOOOK HERE!!! OLD IMAGE LABELS: %+v\n", b.Recipe.ImageData.Labels)
-
+	// Get the old image labels first
 	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
-		sylog.Infof("Adding labels")
-
-		// add new labels to new map and check for collisions
 		for key, value := range b.Recipe.ImageData.Labels {
-			// check if label already exists
-			if _, ok := labels[key]; ok {
-				// overwrite collision if it exists and force flag is set
-				if b.Opts.Force {
-					labels[key] = value
-				} else {
-					sylog.Warningf("Label: %s already exists and force option is false, not overwriting", key)
-				}
-			} else {
-				// set if it doesnt
-				labels[key] = value
-			}
+			labels[key] = value
 		}
 	}
 
-	//
-	// write the data
-	//
+	sylog.Infof("Inserting Metadata Labels...")
 
-	sylog.Infof("Inserting Metadata... to: %s <========", path)
+	metadata.GetImageInfoLabels(labels, b)
 
 	// load the container to add the metadata
 	fimg, err := sif.LoadContainer(path, false)
@@ -295,7 +243,6 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	}
 
 	groupid := descr[0].Groupid
-	//link = descr[0].ID
 
 	// Get the primary partition data size
 	primSize := make([]*sif.Descriptor, 1)
