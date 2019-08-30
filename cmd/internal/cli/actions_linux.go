@@ -40,16 +40,9 @@ import (
 )
 
 // EnsureRootPriv ensures that a command is executed with root privileges.
-// To customize the output, arguments can be used to specify the context (e.g., "oci", "plugin"),
-// where the first argument (string) will be displayed before the command itself.
 func EnsureRootPriv(cmd *cobra.Command, args []string) {
 	if os.Geteuid() != 0 {
-		if len(args) >= 1 && len(args[0]) > 0 {
-			// The first argument is the context
-			sylog.Fatalf("command '%s %s' requires root privileges", args[0], cmd.Name())
-		} else {
-			sylog.Fatalf("command '%s' requires root privileges", cmd.CommandPath())
-		}
+		sylog.Fatalf("%q command requires root privileges", cmd.CommandPath())
 	}
 }
 

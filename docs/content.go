@@ -970,7 +970,7 @@ Enterprise Performance Computing (EPC)`
 	ConfigUse   string = `config`
 	ConfigShort string = `Manage various singularity configuration (root user only)`
 	ConfigLong  string = `
-  The config command allow root user to manage various configuration like fakeroot
+  The config command allows root user to manage various configuration like fakeroot
   user mapping entries.`
 	ConfigExample string = `
   All config commands have their own help output:

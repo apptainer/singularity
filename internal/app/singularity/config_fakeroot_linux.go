@@ -16,13 +16,13 @@ import (
 type FakerootConfigOp uint8
 
 const (
-	// FakerootAddUser is the operation to add a user fakeroot mapping
+	// FakerootAddUser is the operation to add a user fakeroot mapping.
 	FakerootAddUser FakerootConfigOp = iota
-	// FakerootRemoveUser is the operation to remove a user fakeroot mapping
+	// FakerootRemoveUser is the operation to remove a user fakeroot mapping.
 	FakerootRemoveUser
-	// FakerootEnableUser is the operation to enable a user fakeroot mapping
+	// FakerootEnableUser is the operation to enable a user fakeroot mapping.
 	FakerootEnableUser
-	// FakerootDisableUser is the operation to disable a user fakeroot mapping
+	// FakerootDisableUser is the operation to disable a user fakeroot mapping.
 	FakerootDisableUser
 )
 

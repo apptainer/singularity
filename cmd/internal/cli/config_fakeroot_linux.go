@@ -45,7 +45,7 @@ var fakerootConfigEnableFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "enable",
 	ShortHand:    "e",
-	Usage:        "enable a user fakeroot mapping entry allowing him to use the fakeroot feature",
+	Usage:        "enable a user fakeroot mapping entry allowing him to use the fakeroot feature (the user mapping must be present)",
 }
 
 // -d|--disable
@@ -56,14 +56,14 @@ var fakerootConfigDisableFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "disable",
 	ShortHand:    "d",
-	Usage:        "disable a user fakeroot mapping entry preventing him to use the fakeroot feature",
+	Usage:        "disable a user fakeroot mapping entry preventing him to use the fakeroot feature (the user mapping must be present)",
 }
 
 // configFakerootCmd singularity config fakeroot
 var configFakerootCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, nil) },
+	PreRun:                EnsureRootPriv,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		username := args[0]
 		var op singularity.FakerootConfigOp
