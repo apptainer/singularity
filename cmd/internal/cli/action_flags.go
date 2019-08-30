@@ -31,6 +31,7 @@ var (
 	VMIP              string
 	ContainLibsPath   []string
 	encryptionPEMPath string
+	FuseMount         []string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -312,7 +313,18 @@ var actionPEMPathFlag = cmdline.Flag{
 	DefaultValue: "",
 	Name:         "pem-path",
 	Usage:        "Enter an path to a PEM formated RSA key for an encrypted container",
-	EnvKeys:      []string{"ENCRYPTION_PEM_PATH"},
+}
+
+// --fusemount, hidden for now while experimental
+var actionFuseMountFlag = cmdline.Flag{
+	ID:           "actionFuseMountFlag",
+	Value:        &FuseMount,
+	DefaultValue: []string{},
+	Name:         "fusemount",
+	Usage:        "a FUSE filesystem mount specification. Begins with the source of the FUSE driver followed by a colon; currently must be 'container:'.  After the colon is the command to run to implement a libfuse3- based filesystem. The last space- separated part of the string is a mountpoint that will be pre-mounted and replaced with a /dev/fd path to the FUSE file descriptor.  Implies --pid.",
+	EnvKeys:      []string{"FUSESPEC"},
+	ExcludedOS:   []string{cmdline.Darwin},
+	Hidden:       true,
 }
 
 // hidden flags to handle docker credentials
@@ -649,9 +661,9 @@ func init() {
 	cmdManager.SetCmdGroup("actions", ExecCmd, ShellCmd, RunCmd, TestCmd)
 	actionsCmd := cmdManager.GetCmdGroup("actions")
 
-	if InstanceStartCmd != nil {
-		cmdManager.SetCmdGroup("actions_instance", ExecCmd, ShellCmd, RunCmd, TestCmd, InstanceStartCmd)
-		cmdManager.RegisterFlagForCmd(&actionBootFlag, InstanceStartCmd)
+	if instanceStartCmd != nil {
+		cmdManager.SetCmdGroup("actions_instance", ExecCmd, ShellCmd, RunCmd, TestCmd, instanceStartCmd)
+		cmdManager.RegisterFlagForCmd(&actionBootFlag, instanceStartCmd)
 	} else {
 		cmdManager.SetCmdGroup("actions_instance", actionsCmd...)
 	}
@@ -677,6 +689,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionVMIPFlag, actionsCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNONETFlag, actionsCmd...)
 	cmdManager.RegisterFlagForCmd(&actionContainLibsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionFuseMountFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionFakerootFlag, actionsInstanceCmd...)

@@ -9,16 +9,41 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.3.0
+# Changes Since v3.4.0
+
+# v3.4.0 - [2019.08.23]
 
 ## New features / functionalities
-
-  - Added support for multiline variables in singularity def-files
+  
+  - New support for building and running encrypted containers with RSA keys and passphrases
+    - `--pem-path` option added to the `build` and action commands for RSA based encrypted containers
+    - `--passphrase` option added to `build` and action commands for passphrase based encrypted containers
+    - `SINGULARITY_ENCRYPTION_PEM_PATH` and `SINGULARITY_ENCRYPTION_PASSPHRASE` environment variables added to serve same functions as above
+    - `--encyrpt` option added to `build` command to build an encrypted container when environment variables contain a secret
+  - New `--disable-cache` flag prevents caching of downloaded containers
+  - Added support for multi-line variables in singularity def-files
   - Added support for 'indexed' def-file variables (like arrays)
   - Added support for SUSE SLE Products
   - Added the def-file variables:
       product, user, regcode, productpgp, registerurl, modules,	otherurl (indexed)
-  - Support multiple-archtecture tags in the SCS library
+  - Support multiple-architecture tags in the SCS library
+  - Added a `--dry-run` flag to `cache clean`
+  - Added a `SINGULARITY_SYPGPDIR` environment variable to specify the location of PGP key data
+  - Added a `--nonet` option to the action commands to disable networking when running with the `--vm` option
+  - Added a `--long-list` flag to the `key search` command to preserve 
+  - Added experimental, hidden `--fusemount` flag to pass a command to mount a libfuse3 based file system within the container
+
+## Changed defaults / behaviors
+
+  - Runtime now properly honors `SINGULARITY_DISABLE_CACHE` environment variable
+  - `remote add` command now automatically attempts to login and a `--no-login` flag is added to disable this behavior
+  - Using the `pull` command to download an unsigned container no longer produces an error code
+  - `cache clean` command now prompts user before cleaning when run without `--force` option and is more verbose
+  - Shortened the default output of the `key search` command
+
+## Deprecated / removed commands
+
+  - The `--allow-unsigned` flag to `pull` has been deprecated and will be removed in the future
 
 # v3.3.0 - [2019.06.17]
 

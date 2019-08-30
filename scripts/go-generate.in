@@ -1,0 +1,10 @@
+#!/bin/sh
+
+export BUILDDIR='@BUILDDIR@'
+export GO111MODULE='@GO111MODULE@'
+export GO_BUILD_TAGS='@GO_TAGS@'
+export GOFLAGS='@GOFLAGS@'
+
+exec '@GO@' generate \
+	-tags '@GO_TAGS@' \
+	"$@"

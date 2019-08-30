@@ -55,7 +55,12 @@ func (c *ctx) testHelpOciContent(t *testing.T) {
 			assert.Assert(t, golden.String(got, path))
 		}
 
-		c.env.RunSingularity(t, e2e.AsSubtest(tc.name), e2e.WithCommand("help"), e2e.WithArgs(tc.cmds...),
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tc.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("help"),
+			e2e.WithArgs(tc.cmds...),
 			e2e.PostRun(func(t *testing.T) {
 				if t.Failed() {
 					t.Fatalf("Failed to run help command on test: %s", tc.name)
@@ -123,7 +128,12 @@ func (c *ctx) testCommands(t *testing.T) {
 				argRun = tf.argv
 			}
 
-			c.env.RunSingularity(t, e2e.AsSubtest(tf.name), e2e.WithCommand(cmdRun), e2e.WithArgs(argRun),
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest(tf.name),
+				e2e.WithProfile(e2e.UserProfile),
+				e2e.WithCommand(cmdRun),
+				e2e.WithArgs(argRun),
 				e2e.PostRun(func(t *testing.T) {
 					if t.Failed() {
 						t.Fatalf("Failed to run help flag while running command:\n%s\n", tt.name)
@@ -158,7 +168,11 @@ func (c *ctx) testFailure(t *testing.T) {
 
 	for _, tt := range tests {
 
-		c.env.RunSingularity(t, e2e.AsSubtest(tt.name), e2e.WithArgs(tt.argv...),
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithArgs(tt.argv...),
 			e2e.PostRun(func(t *testing.T) {
 				if !t.Failed() {
 					t.Fatalf("While running command:\n%s\nUnexpected success", tt.name)
@@ -233,6 +247,7 @@ func (c *ctx) testSingularity(t *testing.T) {
 
 		c.env.RunSingularity(t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit,
 				printSuccessOrFailureFn,
@@ -243,8 +258,8 @@ func (c *ctx) testSingularity(t *testing.T) {
 
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
 		env: env,
 	}

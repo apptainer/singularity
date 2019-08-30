@@ -100,6 +100,8 @@ func checkCryptsetupVersion(cryptsetup string) error {
 // EncryptFilesystem takes the path to a file containing a non-encrypted
 // filesystem, encrypts it using the provided key, and returns a path to
 // a file that can be later used as an encrypted volume with cryptsetup.
+// NOTE: it is the callers responsibility to remove the returned file that
+// contains the crypt header.
 func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) {
 	f, err := os.Stat(path)
 	if err != nil {

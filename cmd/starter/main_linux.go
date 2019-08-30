@@ -18,8 +18,8 @@ import (
 	"unsafe"
 
 	"github.com/sylabs/singularity/internal/app/starter"
-	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/engine"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
+	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	_ "github.com/sylabs/singularity/internal/pkg/util/goversion"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
@@ -29,11 +29,11 @@ import (
 )
 
 func getEngine(jsonConfig []byte) *engine.Engine {
-	engine, err := engine.Get(jsonConfig)
+	e, err := engine.Get(jsonConfig)
 	if err != nil {
 		sylog.Fatalf("Failed to initialize runtime engine: %s\n", err)
 	}
-	return engine
+	return e
 }
 
 func startup() {
@@ -85,7 +85,6 @@ func startup() {
 	sylog.Fatalf("You should not be there\n")
 }
 
-// called after "starter.c" __init__ function returns.
 func init() {
 	// lock main thread for function execution loop
 	runtime.LockOSThread()
@@ -93,6 +92,11 @@ func init() {
 	runtime.GOMAXPROCS(1)
 }
 
+// main function is executed after starter.c init function.
+// Depending on the value of goexecute from starter.c Go will act differently,
+// e.g. it may launch container process or spawn a container monitor. Thus
+// Go runtime appears to be in a different environment based on the current
+// execution stage.
 func main() {
 	// spawn a goroutine to use mainthread later
 	go startup()

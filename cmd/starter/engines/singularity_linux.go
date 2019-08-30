@@ -9,5 +9,5 @@ package engines
 
 import (
 	// register the singularity runtime engine
-	_ "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
+	_ "github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity"
 )

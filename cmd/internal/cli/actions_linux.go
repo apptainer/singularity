@@ -28,8 +28,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/instance"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
@@ -291,6 +291,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	engineConfig.SetBindPath(BindPaths)
+	if FuseMount != nil {
+		/* If --fusemount is given, imply --pid */
+		PidNamespace = true
+		engineConfig.SetFuseMount(FuseMount)
+	}
 	engineConfig.SetNetwork(Network)
 	engineConfig.SetDNS(DNS)
 	engineConfig.SetNetworkArgs(NetworkArgs)

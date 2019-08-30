@@ -104,6 +104,7 @@ func TestSquashfsInitializer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("impossible to create temporary directory: %s\n", err)
 	}
+	defer os.RemoveAll(invalidPath)
 	img.File, err = os.Open(invalidPath)
 	if err != nil {
 		t.Fatalf("open() failed: %s\n", err)

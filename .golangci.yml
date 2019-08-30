@@ -34,3 +34,7 @@ issues:
   max-per-linter: 0
   max-same-issues: 0
 
+  exclude-rules:
+    - path: internal/pkg/util/fs/overlay/
+      linters:
+        - misspell

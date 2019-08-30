@@ -89,7 +89,10 @@ var (
 )
 
 func cleanCache() error {
-	if !cacheCleanForce {
+	if cacheCleanDry {
+		fmt.Println("User requested a dry run. Not actually deleting any data!")
+	}
+	if !cacheCleanForce && !cacheCleanDry {
 		ok, err := cleanCachePrompt()
 		if err != nil {
 			return fmt.Errorf("could not prompt user: %v", err)
