@@ -23,16 +23,16 @@ type ctx struct {
 }
 
 func (c *ctx) testInvalidTransport(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
-
 	tests := []struct {
 		name       string
 		uri        string
+		expectOp   e2e.SingularityCmdResultOp
 		expectExit int
 	}{
 		{
 			name:       "push invalid transport",
 			uri:        "nothing://bar/foo/foobar:latest",
+			expectOp:   e2e.ExpectError(e2e.ContainMatch, "Unsupported transport type: nothing"),
 			expectExit: 255,
 		},
 	}
@@ -46,13 +46,12 @@ func (c *ctx) testInvalidTransport(t *testing.T) {
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("push"),
 			e2e.WithArgs(args...),
-			e2e.ExpectExit(tt.expectExit),
+			e2e.ExpectExit(tt.expectExit, tt.expectOp),
 		)
 	}
 }
 
 func (c *ctx) testPushCmd(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
 	e2e.PrepRegistry(t, c.env)
 
 	// setup file and dir to use as invalid sources
@@ -137,6 +136,6 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		e2e.EnsureImage(t, c.env)
 
 		t.Run("push invalid transport", c.testInvalidTransport)
-		t.Run("push", c.testPushCmd)
+		t.Run("push oras", c.testPushCmd)
 	}
 }
