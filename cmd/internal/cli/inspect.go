@@ -281,12 +281,20 @@ func parseDeffile(content string, section string) string {
 	scanner := bufio.NewScanner(strings.NewReader(content))
 	for scanner.Scan() {
 		if headerFound {
+			nextWord := strings.Fields(scanner.Text())
 			for s := range parser.ValidSections {
-				if scanner.Text() == "%"+s {
+				if len(nextWord) != 0 && nextWord[0] == "%"+s {
 					end = true
 					break
 				}
 			}
+			for s := range parser.AppSections {
+				if len(nextWord) != 0 && nextWord[0] == "%"+s {
+					end = true
+					break
+				}
+			}
+
 			if !end {
 				ret += scanner.Text()
 				ret += "\n"
@@ -338,7 +346,7 @@ var InspectCmd = &cobra.Command{
 		var inspectData string
 		inspectDataJSON := make(map[string]map[string]string, 1)
 
-		if deffile || runscript || helpfile || environment {
+		if deffile || runscript || helpfile || environment || testfile {
 			inspectDataJSON["container"] = make(map[string]string, 1)
 		}
 

@@ -258,31 +258,6 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	return nil
 }
 
-// copy-paste from sylabs/sif
-func cstrToString(str []byte) string {
-	n := len(str)
-	if m := n - 1; str[m] == 0 {
-		n = m
-	}
-	return string(str[:n])
-}
-
-// TODO: put in a common package
-func readBytes(in float64) string {
-	i := 0
-	size := in
-
-	units := []string{"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
-
-	for size > 1024 {
-		size /= 1024
-		i++
-	}
-	buf := fmt.Sprintf("%.*f %s", i, size, units[i])
-
-	return buf
-}
-
 func sifAddMetadata(fimg *sif.FileImage, groupid, link uint32, data []byte) error {
 	// data we need to create a signature descriptor
 	siginput := sif.DescriptorInput{

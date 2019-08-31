@@ -182,7 +182,7 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 		return nil
 	}
 
-	if appSections[key] {
+	if AppSections[key] {
 		sectionSplit := strings.SplitN(strings.TrimLeft(split[0], "%"), " ", 3)
 		if len(sectionSplit) < 2 {
 			return fmt.Errorf("app section %v: could not be split into section name and app name", sectionSplit[0])
@@ -313,7 +313,7 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 		var keys []string
 		for k := range sections {
 			sectionName := strings.Split(k, " ")
-			if !appSections[sectionName[0]] {
+			if !AppSections[sectionName[0]] {
 				keys = append(keys, k)
 			}
 		}
@@ -527,7 +527,8 @@ var ValidSections = map[string]bool{
 	"startscript": true,
 }
 
-var appSections = map[string]bool{
+// AppSections are the valid app sections.
+var AppSections = map[string]bool{
 	"appinstall": true,
 	"applabels":  true,
 	"appfiles":   true,
