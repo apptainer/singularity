@@ -228,8 +228,6 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 
 	sylog.Infof("Inserting Metadata Labels...")
 
-	metadata.GetImageInfoLabels(labels, b)
-
 	// load the container to add the metadata
 	fimg, err := sif.LoadContainer(path, false)
 	if err != nil {
@@ -241,16 +239,9 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	if err != nil {
 		return fmt.Errorf("no primary partition found: %s", err)
 	}
-
 	groupid := descr[0].Groupid
 
-	// Get the primary partition data size
-	primSize := make([]*sif.Descriptor, 1)
-	primSize[0], _, err = fimg.GetPartPrimSys()
-	if err != nil {
-		return fmt.Errorf("failed getting main data: %s", err)
-	}
-	labels["org.label-schema.image-size"] = readBytes(float64(primSize[0].Storelen))
+	metadata.GetImageInfoLabels(labels, &fimg, b)
 
 	// make new map into json
 	text, err := json.MarshalIndent(labels, "", "    ")
@@ -265,6 +256,15 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	}
 
 	return nil
+}
+
+// copy-paste from sylabs/sif
+func cstrToString(str []byte) string {
+	n := len(str)
+	if m := n - 1; str[m] == 0 {
+		n = m
+	}
+	return string(str[:n])
 }
 
 // TODO: put in a common package

@@ -6,15 +6,18 @@
 package metadata
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 // GetImageInfoLabels will make some image labels
-func GetImageInfoLabels(labels map[string]string, b *types.Bundle) {
+func GetImageInfoLabels(labels map[string]string, fimg *sif.FileImage, b *types.Bundle) error {
 	labels["org.label-schema.schema-version"] = "2.0"
 
 	// build date and time, lots of time formatting
@@ -30,6 +33,33 @@ func GetImageInfoLabels(labels map[string]string, b *types.Bundle) {
 	// singularity version
 	labels["org.label-schema.usage.singularity.version"] = buildcfg.PACKAGE_VERSION
 
+	if fimg != nil {
+		var err error
+		// Get the primary partition data size
+		primSize := make([]*sif.Descriptor, 1)
+		primSize[0], _, err = fimg.GetPartPrimSys()
+		if err != nil {
+			return fmt.Errorf("failed getting main data: %s", err)
+		}
+		labels["org.label-schema.image-size"] = readBytes(float64(primSize[0].Storelen))
+
+		// Get the image arch
+		imgParts, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
+		if err != nil {
+			return fmt.Errorf("unable to get image part: %s", err)
+		}
+
+		if len(imgParts) != 1 {
+			sylog.Warningf("Multiple partitions found, using first")
+		}
+
+		imageArch, err := imgParts[0].GetArch()
+		if err != nil {
+			return fmt.Errorf("unable to get image arch: %s", err)
+		}
+		labels["org.label-schema.image-arch"] = sif.GetGoArch(cstrToString(imageArch[:]))
+	}
+
 	if b != nil {
 		// help info if help exists in the definition and is run in the build
 		if b.RunSection("help") && b.Recipe.ImageData.Help.Script != "" {
@@ -44,4 +74,31 @@ func GetImageInfoLabels(labels map[string]string, b *types.Bundle) {
 			}
 		}
 	}
+
+	return nil
+}
+
+// copy-paste from sylabs/sif
+func cstrToString(str []byte) string {
+	n := len(str)
+	if m := n - 1; str[m] == 0 {
+		n = m
+	}
+	return string(str[:n])
+}
+
+// TODO: put in a common package
+func readBytes(in float64) string {
+	i := 0
+	size := in
+
+	units := []string{"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
+
+	for size > 1024 {
+		size /= 1024
+		i++
+	}
+	buf := fmt.Sprintf("%.*f %s", i, size, units[i])
+
+	return buf
 }

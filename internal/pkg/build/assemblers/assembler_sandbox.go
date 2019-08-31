@@ -36,7 +36,7 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	sylog.Infof("Adding labels...")
 
-	metadata.GetImageInfoLabels(jsonLabels, b)
+	metadata.GetImageInfoLabels(jsonLabels, nil, b)
 
 	text, err := json.MarshalIndent(jsonLabels, "", "\t")
 	if err != nil {
