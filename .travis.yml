@@ -18,7 +18,6 @@ addons:
       - libuuid1
       - libssl-dev
       - libssl1.0.0
-      - libarchive-dev
       - libseccomp-dev
       - cryptsetup
 
