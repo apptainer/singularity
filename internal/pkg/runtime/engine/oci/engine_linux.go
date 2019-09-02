@@ -23,24 +23,16 @@ type EngineOperations struct {
 //
 // Since this method simply stores config.Common, it does not matter
 // whether or not there are any elevated privileges during this call.
-//
-// Most likely this still will be executed as root since `singularity oci`
-// command set requires privileged execution.
 func (e *EngineOperations) InitConfig(cfg *config.Common) {
 	e.CommonConfig = cfg
 }
-
-// Config returns a pointer to a singularity.EngineConfig literal as a
-// config.EngineConfig interface. This pointer gets stored in the Engine.Common
-// field.
 
 // Config returns a pointer to EngineConfig literal as a config.EngineConfig
 // interface. This pointer gets stored in the Engine.Common field.
 //
 // Since this method simply returns a zero value of the concrete
 // EngineConfig, it does not matter whether or not there are any elevated
-// privileges during this call. However, most likely this still will be executed
-// as root since `singularity oci` command set requires privileged execution.
+// privileges during this call.
 func (e *EngineOperations) Config() config.EngineConfig {
 	return e.EngineConfig
 }

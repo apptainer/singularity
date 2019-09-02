@@ -18,24 +18,40 @@ import (
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
-// EngineOperations implements the the engine.Operations interface for
-// the image build process
+// EngineOperations is a Singularity runtime engine that implements engine.Operations.
+// Basically, this is the core of `singularity build` command.
 type EngineOperations struct {
 	CommonConfig *config.Common               `json:"-"`
 	EngineConfig *imgbuildConfig.EngineConfig `json:"engineConfig"`
 }
 
-// InitConfig initializes engines config internals
+// InitConfig stores the parsed config.Common inside the engine.
+//
+// Since this method simply stores config.Common, it does not matter
+// whether or not there are any elevated privileges during this call.
 func (e *EngineOperations) InitConfig(cfg *config.Common) {
 	e.CommonConfig = cfg
 }
 
-// Config returns the EngineConfig
+// Config returns a pointer to imgbuildConfig.EngineConfig literal
+// as a config.EngineConfig interface. This pointer gets stored in
+// the Engine.Common field.
+//
+// Since this method simply returns a zero value of the concrete
+// EngineConfig, it does not matter whether or not there are any elevated
+// privileges during this call.
 func (e *EngineOperations) Config() config.EngineConfig {
 	return e.EngineConfig
 }
 
-// PrepareConfig validates/prepares EngineConfig setup
+// PrepareConfig is called during stage1 to validate and prepare
+// build container configuration.
+//
+// No additional privileges can be gained as any of them are already
+// dropped by the time PrepareConfig is called.
+//
+// Note that imgbuild engine is called with `sudo` or `--fakeroot`,
+// so technically this method may already be run with escalated privileges.
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if e.EngineConfig.OciConfig.Generator.Config != &e.EngineConfig.OciConfig.Spec {
 		return fmt.Errorf("bad engine configuration provided")

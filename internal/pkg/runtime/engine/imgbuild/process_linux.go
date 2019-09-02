@@ -17,6 +17,13 @@ import (
 )
 
 // StartProcess runs the %post script
+// StartProcess is called during stage2 after RPC server finished
+// environment preparation. This will execute `%post` section of a
+// container recipe file.
+//
+// No additional privileges can be gained during this call. However,
+// imgbuild engine is run with `sudo` of `--fakeroot`, so technically
+// there are elevated privileges here.
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	// clean environment in which %post and %test scripts are run in
@@ -38,7 +45,16 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	return nil
 }
 
-// MonitorContainer is responsible for waiting on container process
+// MonitorContainer is called from master once the container has
+// been spawned. It will block until the container exists.
+//
+// Additional privileges may be gained when running
+// in suid flow. However, when a user namespace is requested and it is not
+// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
+// and thus no additional privileges can be gained.
+//
+// Particularly here no additional privileges are gained as monitor does
+// not need them for wait4 and kill syscalls.
 func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (syscall.WaitStatus, error) {
 	var status syscall.WaitStatus
 
@@ -60,12 +76,12 @@ func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (sy
 	}
 }
 
-// CleanupContainer _
+// CleanupContainer does nothing for imgbuild engine.
 func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
 	return nil
 }
 
-// PostStartProcess actually does nothing for build engine
+// PostStartProcess does nothing for imgbuild engine.
 func (e *EngineOperations) PostStartProcess(pid int) error {
 	return nil
 }
