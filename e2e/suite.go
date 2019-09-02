@@ -17,50 +17,31 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/security"
-
 	"github.com/sylabs/singularity/e2e/actions"
-
 	"github.com/sylabs/singularity/e2e/cache"
-
 	"github.com/sylabs/singularity/e2e/cmdenvvars"
-
 	"github.com/sylabs/singularity/e2e/docker"
-
 	"github.com/sylabs/singularity/e2e/help"
-
 	"github.com/sylabs/singularity/e2e/imgbuild"
-
 	"github.com/sylabs/singularity/e2e/inspect"
-
 	"github.com/sylabs/singularity/e2e/instance"
-
-	"github.com/sylabs/singularity/e2e/key"
-
-	"github.com/sylabs/singularity/e2e/oci"
-
-	"github.com/sylabs/singularity/e2e/pull"
-
-	"github.com/sylabs/singularity/e2e/push"
-
-	"github.com/sylabs/singularity/e2e/regressions"
-
-	"github.com/sylabs/singularity/e2e/remote"
-
-	"github.com/sylabs/singularity/e2e/run"
-
-	"github.com/sylabs/singularity/e2e/sign"
-
-	"github.com/sylabs/singularity/e2e/verify"
-
-	"github.com/sylabs/singularity/e2e/version"
-
-	singularityenv "github.com/sylabs/singularity/e2e/env"
-
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/key"
+	"github.com/sylabs/singularity/e2e/oci"
+	"github.com/sylabs/singularity/e2e/pull"
+	"github.com/sylabs/singularity/e2e/push"
+	"github.com/sylabs/singularity/e2e/regressions"
+	"github.com/sylabs/singularity/e2e/remote"
+	"github.com/sylabs/singularity/e2e/run"
+	"github.com/sylabs/singularity/e2e/security"
+	"github.com/sylabs/singularity/e2e/sign"
+	"github.com/sylabs/singularity/e2e/verify"
+	"github.com/sylabs/singularity/e2e/version"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 
+	e2ebuildcfg "github.com/sylabs/singularity/e2e/buildcfg"
+	singularityenv "github.com/sylabs/singularity/e2e/env"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
@@ -155,6 +136,7 @@ func Run(t *testing.T) {
 		"SECURITY":    security.E2ETests(testenv),
 		"ACTIONS":     actions.E2ETests(testenv),
 		"BUILD":       imgbuild.E2ETests(testenv),
+		"BUILDCFG":    e2ebuildcfg.E2ETests(testenv),
 		"CACHE":       cache.E2ETests(testenv),
 		"CMDENVVARS":  cmdenvvars.E2ETests(testenv),
 		"DOCKER":      docker.E2ETests(testenv),

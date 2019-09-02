@@ -175,7 +175,7 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 
 		t.Run("singularitySignHelpOption", c.singularitySignHelpOption)
 		t.Run("singularitySignIDOption", c.singularitySignIDOption)
-		t.Run("singularitySignGroupIDOption", c.singularitySignIDOption)
+		t.Run("singularitySignGroupIDOption", c.singularitySignGroupIDOption)
 		t.Run("singularitySignKeyidxOption", c.singularitySignKeyidxOption)
 	}
 }
