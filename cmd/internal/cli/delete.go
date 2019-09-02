@@ -7,7 +7,6 @@ package cli
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -47,6 +46,7 @@ var deleteImageTimeoutFlag = cmdline.Flag{
 	DefaultValue: 15,
 	Name:         "timeout",
 	ShortHand:    "T",
+	Hidden:       true,
 	Usage:        "specify delete timeout in secods",
 	EnvKeys:      []string{"TIMEOUT"},
 }
