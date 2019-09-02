@@ -20,7 +20,7 @@ import (
 // and thus no additional privileges can be gained.
 //
 // Particularly here no additional privileges are gained as monitor does
-// not need them for wait4 and kill syscalls.However, most likely this
+// not need them for wait4 and kill syscalls. However, most likely this
 // still will be executed as root since `singularity oci` command set requires
 // privileged execution.
 func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (syscall.WaitStatus, error) {

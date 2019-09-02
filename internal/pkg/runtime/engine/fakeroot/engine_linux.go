@@ -27,23 +27,38 @@ import (
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
 
-// EngineOperations describes a runtime engine
+// EngineOperations is a Singularity fakeroot runtime engine that implements engine.Operations.
 type EngineOperations struct {
 	CommonConfig *config.Common               `json:"-"`
 	EngineConfig *fakerootConfig.EngineConfig `json:"engineConfig"`
 }
 
-// InitConfig initializes engines config internals.
+// InitConfig stores the parsed config.Common inside the engine.
+//
+// Since this method simply stores config.Common, it does not matter
+// whether or not there are any elevated privileges during this call.
 func (e *EngineOperations) InitConfig(cfg *config.Common) {
 	e.CommonConfig = cfg
 }
 
-// Config returns the EngineConfig.
+// Config returns a pointer to a fakerootConfig.EngineConfig
+// literal as a config.EngineConfig interface. This pointer
+// gets stored in the engine.Engine.Common field.
+//
+// Since this method simply returns a zero value of the concrete
+// EngineConfig, it does not matter whether or not there are any elevated
+// privileges during this call.
 func (e *EngineOperations) Config() config.EngineConfig {
 	return e.EngineConfig
 }
 
-// PrepareConfig validates/prepares EngineConfig setup
+// PrepareConfig is called during stage1 to validate and prepare
+// container configuration. It is responsible for singularity
+// configuration file parsing, reading capabilities, configuring
+// UID/GID mappings, etc.
+//
+// No additional privileges can be gained as any of them are already
+// dropped by the time PrepareConfig is called.
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	g := generate.Generator{Config: &specs.Spec{}}
 
@@ -119,7 +134,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	return nil
 }
 
-// CreateContainer actually does nothing for the fakeroot engine
+// CreateContainer does nothing for the fakeroot engine.
 func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 	return nil
 }
@@ -140,7 +155,12 @@ func fakerootSeccompProfile() *specs.LinuxSeccomp {
 	}
 }
 
-// StartProcess will execute command in the fakeroot context
+// StartProcess is called during stage2 after RPC server finished
+// environment preparation. This is the container process itself.
+// It will execute command in the fakeroot context.
+//
+// This will be executed on behalf of a root user in a new user
+// namespace (PrepareConfig will set both).
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	const (
 		mountInfo    = "/proc/self/mountinfo"
@@ -193,7 +213,13 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	return syscall.Exec(args[0], args, env)
 }
 
-// MonitorContainer is responsible for waiting on container process
+// MonitorContainer is called from master once the container has
+// been spawned. It will block until the container exists.
+//
+// Additional privileges may be gained when running hybrid flow.
+//
+// Particularly here no additional privileges are gained as monitor does
+// not need them for wait4 and kill syscalls.
 func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (syscall.WaitStatus, error) {
 	var status syscall.WaitStatus
 
@@ -215,12 +241,12 @@ func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (sy
 	}
 }
 
-// CleanupContainer actually does nothing for the fakeroot engine
+// CleanupContainer does nothing for the fakeroot engine.
 func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
 	return nil
 }
 
-// PostStartProcess actually does nothing for the fakeroot engine
+// PostStartProcess does nothing for the fakeroot engine.
 func (e *EngineOperations) PostStartProcess(pid int) error {
 	return nil
 }

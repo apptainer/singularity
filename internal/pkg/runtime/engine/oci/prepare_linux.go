@@ -26,7 +26,7 @@ var (
 
 // PrepareConfig is called during stage1 to validate and prepare
 // container configuration. It is responsible for reading capabilities,
-// checking what namespaces are require, opening streams for attach and
+// checking what namespaces are required, opening streams for attach and
 // exec, etc.
 //
 // No additional privileges can be gained as any of them are already
