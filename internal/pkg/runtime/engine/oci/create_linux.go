@@ -145,126 +145,20 @@ type container struct {
 
 var statusChan = make(chan string, 1)
 
-func (e *EngineOperations) createState(pid int) error {
-	e.EngineConfig.Lock()
-	defer e.EngineConfig.Unlock()
-
-	name := e.CommonConfig.ContainerID
-
-	file, err := instance.Add(name, instance.OciSubDir)
-	if err != nil {
-		return err
-	}
-
-	e.EngineConfig.State.Version = specs.Version
-	e.EngineConfig.State.Bundle = e.EngineConfig.GetBundlePath()
-	e.EngineConfig.State.ID = e.CommonConfig.ContainerID
-	e.EngineConfig.State.Pid = pid
-	e.EngineConfig.State.Status = ociruntime.Creating
-	e.EngineConfig.State.Annotations = e.EngineConfig.OciConfig.Annotations
-
-	file.Config, err = json.Marshal(e.CommonConfig)
-	if err != nil {
-		return err
-	}
-
-	file.User = "root"
-	file.Pid = pid
-	file.PPid = os.Getpid()
-	file.Image = filepath.Join(e.EngineConfig.GetBundlePath(), e.EngineConfig.OciConfig.Root.Path)
-
-	if err := file.Update(); err != nil {
-		return err
-	}
-
-	socketPath := e.EngineConfig.SyncSocket
-
-	if socketPath != "" {
-		data, err := json.Marshal(e.EngineConfig.State)
-		if err != nil {
-			sylog.Warningf("failed to marshal state data: %s", err)
-		} else if err := unix.WriteSocket(socketPath, data); err != nil {
-			sylog.Warningf("%s", err)
-		}
-	}
-
-	return nil
-}
-
-func (e *EngineOperations) updateState(status string) error {
-	e.EngineConfig.Lock()
-	defer e.EngineConfig.Unlock()
-
-	file, err := instance.Get(e.CommonConfig.ContainerID, instance.OciSubDir)
-	if err != nil {
-		return err
-	}
-	// do nothing if already stopped
-	if e.EngineConfig.State.Status == ociruntime.Stopped {
-		return nil
-	}
-	oldStatus := e.EngineConfig.State.Status
-	e.EngineConfig.State.Status = status
-
-	t := time.Now().UnixNano()
-
-	switch status {
-	case ociruntime.Created:
-		if e.EngineConfig.State.CreatedAt == nil {
-			e.EngineConfig.State.CreatedAt = &t
-		}
-	case ociruntime.Running:
-		if e.EngineConfig.State.StartedAt == nil {
-			e.EngineConfig.State.StartedAt = &t
-		}
-	case ociruntime.Stopped:
-		if e.EngineConfig.State.FinishedAt == nil {
-			e.EngineConfig.State.FinishedAt = &t
-		}
-	}
-
-	file.Config, err = json.Marshal(e.CommonConfig)
-	if err != nil {
-		return err
-	}
-
-	if err := file.Update(); err != nil {
-		return err
-	}
-
-	socketPath := e.EngineConfig.SyncSocket
-
-	if socketPath != "" {
-		data, err := json.Marshal(e.EngineConfig.State)
-		if err != nil {
-			sylog.Warningf("failed to marshal state data: %s", err)
-		} else if err := unix.WriteSocket(socketPath, data); err != nil {
-			sylog.Warningf("%s", err)
-		}
-	}
-
-	// send running or stopped status right after container creation
-	// to notify that container process started
-	if statusChan != nil && oldStatus == ociruntime.Created &&
-		(status == ociruntime.Running || status == ociruntime.Stopped) {
-		statusChan <- status
-	}
-	return nil
-}
-
-// one shot function to wait on running or stopped status
-func (e *EngineOperations) waitStatusUpdate() {
-	if statusChan == nil {
-		return
-	}
-	// block until status update is sent
-	<-statusChan
-	// close channel and set it to nil
-	close(statusChan)
-	statusChan = nil
-}
-
-// CreateContainer creates a container
+// CreateContainer is called from master process to prepare container
+// environment, e.g. perform mount operations, etc.
+//
+// Additional privileges required for setup may be gained when running
+// in suid flow. However, when a user namespace is requested and it is not
+// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
+// and thus no additional privileges can be gained.
+//
+// Specifically in oci engine, no additional privileges are gained. Container
+// setup (e.g. mount operations) where privileges may be required is performed
+// by calling RPC server methods (see internal/app/starter/rpc_linux.go for details).
+//
+// However, most likely this still will be executed as root since `singularity oci`
+// command set requires privileged execution.
 func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 	var err error
 
@@ -468,6 +362,125 @@ func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 	}
 
 	return nil
+}
+
+func (e *EngineOperations) createState(pid int) error {
+	e.EngineConfig.Lock()
+	defer e.EngineConfig.Unlock()
+
+	name := e.CommonConfig.ContainerID
+
+	file, err := instance.Add(name, instance.OciSubDir)
+	if err != nil {
+		return err
+	}
+
+	e.EngineConfig.State.Version = specs.Version
+	e.EngineConfig.State.Bundle = e.EngineConfig.GetBundlePath()
+	e.EngineConfig.State.ID = e.CommonConfig.ContainerID
+	e.EngineConfig.State.Pid = pid
+	e.EngineConfig.State.Status = ociruntime.Creating
+	e.EngineConfig.State.Annotations = e.EngineConfig.OciConfig.Annotations
+
+	file.Config, err = json.Marshal(e.CommonConfig)
+	if err != nil {
+		return err
+	}
+
+	file.User = "root"
+	file.Pid = pid
+	file.PPid = os.Getpid()
+	file.Image = filepath.Join(e.EngineConfig.GetBundlePath(), e.EngineConfig.OciConfig.Root.Path)
+
+	if err := file.Update(); err != nil {
+		return err
+	}
+
+	socketPath := e.EngineConfig.SyncSocket
+
+	if socketPath != "" {
+		data, err := json.Marshal(e.EngineConfig.State)
+		if err != nil {
+			sylog.Warningf("failed to marshal state data: %s", err)
+		} else if err := unix.WriteSocket(socketPath, data); err != nil {
+			sylog.Warningf("%s", err)
+		}
+	}
+
+	return nil
+}
+
+func (e *EngineOperations) updateState(status string) error {
+	e.EngineConfig.Lock()
+	defer e.EngineConfig.Unlock()
+
+	file, err := instance.Get(e.CommonConfig.ContainerID, instance.OciSubDir)
+	if err != nil {
+		return err
+	}
+	// do nothing if already stopped
+	if e.EngineConfig.State.Status == ociruntime.Stopped {
+		return nil
+	}
+	oldStatus := e.EngineConfig.State.Status
+	e.EngineConfig.State.Status = status
+
+	t := time.Now().UnixNano()
+
+	switch status {
+	case ociruntime.Created:
+		if e.EngineConfig.State.CreatedAt == nil {
+			e.EngineConfig.State.CreatedAt = &t
+		}
+	case ociruntime.Running:
+		if e.EngineConfig.State.StartedAt == nil {
+			e.EngineConfig.State.StartedAt = &t
+		}
+	case ociruntime.Stopped:
+		if e.EngineConfig.State.FinishedAt == nil {
+			e.EngineConfig.State.FinishedAt = &t
+		}
+	}
+
+	file.Config, err = json.Marshal(e.CommonConfig)
+	if err != nil {
+		return err
+	}
+
+	if err := file.Update(); err != nil {
+		return err
+	}
+
+	socketPath := e.EngineConfig.SyncSocket
+
+	if socketPath != "" {
+		data, err := json.Marshal(e.EngineConfig.State)
+		if err != nil {
+			sylog.Warningf("failed to marshal state data: %s", err)
+		} else if err := unix.WriteSocket(socketPath, data); err != nil {
+			sylog.Warningf("%s", err)
+		}
+	}
+
+	// send running or stopped status right after container creation
+	// to notify that container process started
+	if statusChan != nil && oldStatus == ociruntime.Created &&
+		(status == ociruntime.Running || status == ociruntime.Stopped) {
+		statusChan <- status
+	}
+	return nil
+}
+
+// one shot function to wait on running or stopped status
+func (e *EngineOperations) waitStatusUpdate() {
+	if statusChan == nil {
+		return
+	}
+	// block until status update is sent
+	<-statusChan
+	// close channel and set it to nil
+	close(statusChan)
+	statusChan = nil
 }
 
 func (c *container) addCgroups(pid int, system *mount.System) error {

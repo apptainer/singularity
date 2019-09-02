@@ -287,8 +287,8 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 }
 
 // PostStartProcess is called from master after successful
-// execution of the container process. It will to write instance
-// state/config files or execute post start OCI hook (not supported yet).
+// execution of the container process. It will write instance
+// state/config files (if any).
 //
 // Additional privileges may be gained when running
 // in suid flow. However, when a user namespace is requested and it is not

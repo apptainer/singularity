@@ -31,7 +31,7 @@ func (e *EngineOperations) InitConfig(cfg *config.Common) {
 // literal as a config.EngineConfig interface. This pointer
 // gets stored in the engine.Engine.Common field.
 //
-// Since this method simply return a zero value of the concrete
+// Since this method simply returns a zero value of the concrete
 // EngineConfig, it does not matter whether or not there are any elevated
 // privileges during this call.
 func (e *EngineOperations) Config() config.EngineConfig {

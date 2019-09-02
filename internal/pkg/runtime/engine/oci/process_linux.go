@@ -31,60 +31,12 @@ import (
 	"github.com/sylabs/singularity/pkg/util/unix"
 )
 
-func setRlimit(rlimits []specs.POSIXRlimit) error {
-	resources := make(map[string]struct{})
-
-	for _, rl := range rlimits {
-		if err := rlimit.Set(rl.Type, rl.Soft, rl.Hard); err != nil {
-			return err
-		}
-		if _, found := resources[rl.Type]; found {
-			return fmt.Errorf("%s was already set", rl.Type)
-		}
-		resources[rl.Type] = struct{}{}
-	}
-
-	return nil
-}
-
-func (e *EngineOperations) emptyProcess(masterConn net.Conn) error {
-	// pause process on next read
-	if _, err := masterConn.Write([]byte("t")); err != nil {
-		return fmt.Errorf("failed to pause process: %s", err)
-	}
-
-	// block on read start given
-	data := make([]byte, 1)
-	if _, err := masterConn.Read(data); err != nil {
-		return fmt.Errorf("failed to receive ack from master: %s", err)
-	}
-
-	var status syscall.WaitStatus
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGCHLD, syscall.SIGINT, syscall.SIGTERM)
-
-	if err := security.Configure(&e.EngineConfig.OciConfig.Spec); err != nil {
-		return fmt.Errorf("failed to apply security configuration: %s", err)
-	}
-
-	masterConn.Close()
-
-	for {
-		s := <-signals
-		switch s {
-		case syscall.SIGCHLD:
-			for {
-				if pid, _ := syscall.Wait4(-1, &status, syscall.WNOHANG, nil); pid <= 0 {
-					break
-				}
-			}
-		case syscall.SIGINT, syscall.SIGTERM:
-			os.Exit(0)
-		}
-	}
-}
-
-// StartProcess starts the process
+// StartProcess is called during stage2 after RPC server finished
+// environment preparation. This is the container process itself.
+//
+// No additional privileges can be gained during this call (unless container
+// is executed as root intentionally) as starter will set uid/euid/suid
+// to the targetUID (PrepareConfig will set it by calling starter.Config.SetTargetUID).
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	cwd := e.EngineConfig.OciConfig.Process.Cwd
 
@@ -198,7 +150,12 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	return fmt.Errorf("exec %s failed: %s", args[0], err)
 }
 
-// PreStartProcess will be executed in master context
+// PreStartProcess is called from master after before container startup.
+//
+// Additional privileges may be gained when running
+// in suid flow. However, when a user namespace is requested and it is not
+// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
+// and thus no additional privileges can be gained.
 func (e *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fatalChan chan error) error {
 	if e.EngineConfig.Exec {
 		return nil
@@ -277,8 +234,21 @@ func (e *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fatalCh
 	return nil
 }
 
-// PostStartProcess will execute code in master context after execution of container
-// process, typically to write instance state/config files or execute post start OCI hook
+// PostStartProcess is called from master after successful
+// execution of the container process. It will execute OCI
+// post start hooks (if any).
+//
+// Additional privileges may be gained when running
+// in suid flow. However, when a user namespace is requested and it is not
+// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
+// and thus no additional privileges can be gained.
+//
+// Here, however, oci engine does not escalate privileges, which means
+// OCI hooks will be executed of behalf of a user who spawned a container
+// (but not the one who runs it as targetUID may be arbitrary).
+//
+// Most likely this still will be executed as root since `singularity oci`
+// command set requires privileged execution.
 func (e *EngineOperations) PostStartProcess(pid int) error {
 	if err := e.updateState(ociruntime.Running); err != nil {
 		return err
@@ -292,6 +262,59 @@ func (e *EngineOperations) PostStartProcess(pid int) error {
 		}
 	}
 	return nil
+}
+
+func setRlimit(rlimits []specs.POSIXRlimit) error {
+	resources := make(map[string]struct{})
+
+	for _, rl := range rlimits {
+		if err := rlimit.Set(rl.Type, rl.Soft, rl.Hard); err != nil {
+			return err
+		}
+		if _, found := resources[rl.Type]; found {
+			return fmt.Errorf("%s was already set", rl.Type)
+		}
+		resources[rl.Type] = struct{}{}
+	}
+
+	return nil
+}
+
+func (e *EngineOperations) emptyProcess(masterConn net.Conn) error {
+	// pause process on next read
+	if _, err := masterConn.Write([]byte("t")); err != nil {
+		return fmt.Errorf("failed to pause process: %s", err)
+	}
+
+	// block on read start given
+	data := make([]byte, 1)
+	if _, err := masterConn.Read(data); err != nil {
+		return fmt.Errorf("failed to receive ack from master: %s", err)
+	}
+
+	var status syscall.WaitStatus
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGCHLD, syscall.SIGINT, syscall.SIGTERM)
+
+	if err := security.Configure(&e.EngineConfig.OciConfig.Spec); err != nil {
+		return fmt.Errorf("failed to apply security configuration: %s", err)
+	}
+
+	masterConn.Close()
+
+	for {
+		s := <-signals
+		switch s {
+		case syscall.SIGCHLD:
+			for {
+				if pid, _ := syscall.Wait4(-1, &status, syscall.WNOHANG, nil); pid <= 0 {
+					break
+				}
+			}
+		case syscall.SIGINT, syscall.SIGTERM:
+			os.Exit(0)
+		}
+	}
 }
 
 func (e *EngineOperations) handleStream(l net.Listener, logger *instance.Logger, fatalChan chan error) {
@@ -381,7 +404,7 @@ func (e *EngineOperations) handleStream(l net.Listener, logger *instance.Logger,
 	}
 }
 
-func (e *EngineOperations) handleControl(masterConn net.Conn, attach net.Listener, control net.Listener, logger *instance.Logger, start chan bool, fatalChan chan error) {
+func (e *EngineOperations) handleControl(masterConn net.Conn, attach, control net.Listener, logger *instance.Logger, start chan bool, fatalChan chan error) {
 	var master *os.File
 	started := false
 
