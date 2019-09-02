@@ -90,7 +90,7 @@ var deleteImageCmd = &cobra.Command{
 		defer cancel()
 		err = singularity.DeleteImage(ctx, libraryConfig, imageRef, deleteImageArch)
 		if err != nil {
-			sylog.Fatalf(err.Error())
+			sylog.Fatalf("Unable to delete image from library: %s\n", err)
 		}
 
 		sylog.Infof("Image %s arch[%s] deleted.", imageRef, deleteImageArch)
