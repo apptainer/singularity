@@ -333,7 +333,7 @@ Enterprise Performance Computing (EPC)`
 	DeleteLong  string = `
   The 'delete' command allows you to delete an image from a remote library.`
 	DeleteExample string = `
-  $ singularity delete --arch=amd64 library://sylabsed/examples/lolcow:1.0`
+  $ singularity delete --arch=amd64 library://username/project/image:1.0`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
