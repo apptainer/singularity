@@ -961,7 +961,7 @@ func (keyring *Handle) ExportPrivateKey(kpath string, armor bool) error {
 	}
 
 	// Create the file that we will be exporting to
-	file, err := os.Create(kpath)
+	file, err := os.OpenFile(kpath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
 	}
@@ -1003,7 +1003,7 @@ func (keyring *Handle) ExportPubKey(kpath string, armor bool) error {
 		return err
 	}
 
-	file, err := os.Create(kpath)
+	file, err := os.OpenFile(kpath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		return fmt.Errorf("unable to create file: %v", err)
 	}
