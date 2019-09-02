@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// Package push tests only test the oras transport against a local registry
+// Package push tests only test the oras transport (and a invalid transport) against a local registry
 package push
 
 import (
@@ -22,8 +22,36 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
+func (c *ctx) testInvalidTransport(t *testing.T) {
+	tests := []struct {
+		name       string
+		uri        string
+		expectOp   e2e.SingularityCmdResultOp
+		expectExit int
+	}{
+		{
+			name:       "push invalid transport",
+			uri:        "nothing://bar/foo/foobar:latest",
+			expectOp:   e2e.ExpectError(e2e.ContainMatch, "Unsupported transport type: nothing"),
+			expectExit: 255,
+		},
+	}
+
+	for _, tt := range tests {
+		args := []string{c.env.ImagePath, tt.uri}
+
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("push"),
+			e2e.WithArgs(args...),
+			e2e.ExpectExit(tt.expectExit, tt.expectOp),
+		)
+	}
+}
+
 func (c *ctx) testPushCmd(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
 	e2e.PrepRegistry(t, c.env)
 
 	// setup file and dir to use as invalid sources
@@ -72,31 +100,29 @@ func (c *ctx) testPushCmd(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			tmpdir, err := ioutil.TempDir(c.env.TestDir, "pull_test.")
-			if err != nil {
-				t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
-			}
-			defer os.RemoveAll(tmpdir)
+		tmpdir, err := ioutil.TempDir(c.env.TestDir, "pull_test.")
+		if err != nil {
+			t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
+		}
+		defer os.RemoveAll(tmpdir)
 
-			// We create the list of arguments using a string instead of a slice of
-			// strings because using slices of strings most of the type ends up adding
-			// an empty elements to the list when passing it to the command, which
-			// will create a failure.
-			args := tt.dstURI
-			if tt.imagePath != "" {
-				args = tt.imagePath + " " + args
-			}
+		// We create the list of arguments using a string instead of a slice of
+		// strings because using slices of strings most of the type ends up adding
+		// an empty elements to the list when passing it to the command, which
+		// will create a failure.
+		args := tt.dstURI
+		if tt.imagePath != "" {
+			args = tt.imagePath + " " + args
+		}
 
-			c.env.RunSingularity(
-				t,
-				e2e.AsSubtest(tt.desc),
-				e2e.WithProfile(e2e.UserProfile),
-				e2e.WithCommand("push"),
-				e2e.WithArgs(strings.Split(args, " ")...),
-				e2e.ExpectExit(tt.expectedExitCode),
-			)
-		})
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.desc),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("push"),
+			e2e.WithArgs(strings.Split(args, " ")...),
+			e2e.ExpectExit(tt.expectedExitCode),
+		)
 	}
 }
 
@@ -109,6 +135,7 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	return func(t *testing.T) {
 		e2e.EnsureImage(t, c.env)
 
-		t.Run("push", c.testPushCmd)
+		t.Run("push invalid transport", c.testInvalidTransport)
+		t.Run("push oras", c.testPushCmd)
 	}
 }

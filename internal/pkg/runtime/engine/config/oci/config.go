@@ -18,14 +18,12 @@ type Config struct {
 	specs.Spec
 }
 
-// MarshalJSON is for json.Marshaler
+// MarshalJSON implements json.Marshaler.
 func (c *Config) MarshalJSON() ([]byte, error) {
-	b, err := json.Marshal(&c.Spec)
-
-	return b, err
+	return json.Marshal(&c.Spec)
 }
 
-// UnmarshalJSON is for json.Unmarshaler
+// UnmarshalJSON implements json.Unmarshaler.
 func (c *Config) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &c.Spec); err != nil {
 		return err
