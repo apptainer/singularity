@@ -502,13 +502,13 @@ func (e *EngineConfig) SetDeleteImage(delete bool) {
 // SetSignalPropagation sets if engine must propagate signals from
 // master process -> container process when PID namespace is disabled
 // or from master process -> sinit process -> container
-// process when PID namespace is enabled
+// process when PID namespace is enabled.
 func (e *EngineConfig) SetSignalPropagation(propagation bool) {
 	e.JSON.SignalPropagation = propagation
 }
 
 // GetSignalPropagation returns if engine propagate signals across
-// processes (see SetSignalPropagation)
+// processes (see SetSignalPropagation).
 func (e *EngineConfig) GetSignalPropagation() bool {
 	return e.JSON.SignalPropagation
 }

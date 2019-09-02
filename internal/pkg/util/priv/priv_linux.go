@@ -11,14 +11,14 @@ import (
 	"syscall"
 )
 
-// Escalate escalates thread privileges
+// Escalate escalates thread privileges.
 func Escalate() error {
 	runtime.LockOSThread()
 	uid := os.Getuid()
 	return syscall.Setresuid(uid, 0, uid)
 }
 
-// Drop drops thread privileges
+// Drop drops thread privileges.
 func Drop() error {
 	defer runtime.UnlockOSThread()
 	uid := os.Getuid()
