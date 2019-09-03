@@ -14,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
 )
@@ -237,8 +238,7 @@ func Init(path string, writable bool) (*Image, error) {
 		mode := rf.format.openMode(writable)
 
 		if mode&os.O_RDWR != 0 {
-			const W_OK = 2
-			if err := syscall.Access(resolvedPath, W_OK); err != nil {
+			if fs.IsWritable(resolvedPath) {
 				sylog.Debugf("Opening %s in read-only mode: no write permissions", path)
 				mode = os.O_RDONLY
 				img.Writable = false

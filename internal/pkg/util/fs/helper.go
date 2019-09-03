@@ -224,8 +224,8 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 	return nil
 }
 
-// IsWritable returns true of the directory that is passed in is writable by the
-// the current user.
-func IsWritable(dir string) bool {
-	return unix.Access(dir, unix.W_OK) == nil
+// IsWritable returns true of the file that is passed in
+// is writable by the user (note: uid is checked, not euid).
+func IsWritable(path string) bool {
+	return unix.Access(path, unix.W_OK) == nil
 }
