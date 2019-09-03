@@ -165,7 +165,7 @@ var buildLibraryFlag = cmdline.Flag{
 var buildTmpdirFlag = cmdline.Flag{
 	ID:           "buildTmpdirFlag",
 	Value:        &tmpDir,
-	DefaultValue: "",
+	DefaultValue: os.TempDir(),
 	Name:         "tmpdir",
 	Usage:        "specify a temporary directory to use for build",
 	EnvKeys:      []string{"TMPDIR"},
