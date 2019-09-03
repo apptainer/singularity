@@ -25,7 +25,7 @@ import (
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 )
 
-// CreateContainer creates a container
+// CreateContainer creates a container.
 func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 	if e.CommonConfig.EngineName != imgbuildConfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
