@@ -18,7 +18,7 @@ import (
 
 // GetImageInfoLabels will make some image labels
 func GetImageInfoLabels(labels map[string]string, fimg *sif.FileImage, b *types.Bundle) error {
-	labels["org.label-schema.schema-version"] = "2.0"
+	labels["org.label-schema.schema-version"] = "1.0"
 
 	// build date and time, lots of time formatting
 	currentTime := time.Now()

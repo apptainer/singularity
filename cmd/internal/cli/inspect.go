@@ -48,19 +48,24 @@ var (
 	listApps    bool
 )
 
-type inspectAttributes struct {
-	Apps        string            `json:"apps"`
+type inspectMetadata struct {
+	Apps        string            `json:"apps,omitempty"`
 	Labels      map[string]string `json:"labels,omitempty"`
 	Deffile     string            `json:"deffile,omitempty"`
 	Runscript   string            `json:"runscript,omitempty"`
 	Test        string            `json:"test,omitempty"`
-	Environment map[string]string `json:"environment,omitempty"`
-	Helpfile    string            `json:"helpfile,omitempty"`
+	Environment string            `json:"environment,omitempty"`
+	//Environment map[string]string `json:"environment,omitempty"`
+	Helpfile string `json:"helpfile,omitempty"`
+}
+
+type inspectData struct {
+	Attributes inspectMetadata `json:"attributes"`
 }
 
 type inspectFormat struct {
-	Attributes inspectAttributes `json:"attributes"`
-	Type       string            `json:"type"`
+	Data inspectData `json:"data"`
+	Type string      `json:"type"`
 }
 
 // -d|--deffile
@@ -222,22 +227,23 @@ func getHelpCommand(appName string) string {
 func setAttribute(obj *inspectFormat, label string, value string) {
 	switch label {
 	case "apps":
-		obj.Attributes.Apps = value
+		obj.Data.Attributes.Apps = value
 	case "deffile":
-		obj.Attributes.Deffile = value
+		obj.Data.Attributes.Deffile = value
 	case "test":
-		obj.Attributes.Test = value
+		obj.Data.Attributes.Test = value
 	case "helpfile":
-		obj.Attributes.Helpfile = value
+		obj.Data.Attributes.Helpfile = value
 	case "labels":
-		if err := json.Unmarshal([]byte(value), &obj.Attributes.Labels); err != nil {
+		if err := json.Unmarshal([]byte(value), &obj.Data.Attributes.Labels); err != nil {
 			sylog.Warningf("Unable to parse labels: %s", value)
 		}
 	case "runscript":
-		obj.Attributes.Runscript = value
+		obj.Data.Attributes.Runscript = value
 	default:
 		if strings.HasSuffix(label, "environment.sh") {
-			obj.Attributes.Environment[label] = value
+			//obj.Data.Attributes.Environment[label] = value
+			obj.Data.Attributes.Environment = value
 		} else {
 			sylog.Warningf("Trying to set attribute for unknown label: %s", label)
 		}
@@ -337,18 +343,30 @@ var InspectCmd = &cobra.Command{
 			labels = true
 		}
 
+		f, err := os.Stat(args[0])
+		if err != nil {
+			sylog.Fatalf("Unable to stat file: %s", err)
+		}
+		if f.IsDir() {
+			inspectInContainer(args[0])
+			return
+		}
+
 		fimg, err := sif.LoadContainer(args[0], true)
 		if err != nil {
 			sylog.Fatalf("failed to load SIF container file: %s", err)
 		}
 		defer fimg.UnloadContainer()
 
-		var inspectData string
-		inspectDataJSON := make(map[string]map[string]string, 1)
+		//		var inspectData string
 
-		if deffile || runscript || helpfile || environment || testfile {
-			inspectDataJSON["container"] = make(map[string]string, 1)
-		}
+		//var inspectData inspectDataFull
+		//		inspectData.containerType = "container"
+
+		//inspectData := inspectFormat{}
+		var inspectData inspectFormat
+		inspectData.Type = "container"
+		inspectData.Data.Attributes.Labels = make(map[string]string, 1)
 
 		// Inspect Labels
 		if labels {
@@ -359,7 +377,7 @@ var InspectCmd = &cobra.Command{
 			} else if err != nil {
 				sylog.Fatalf("Unable to get label metadata: %s", err)
 			}
-			inspectDataJSON["labels"] = make(map[string]string, 1)
+			//inspectDataJSON["data"]["attributes"]["labels"] = make(map[string]string, 1)
 
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
@@ -376,10 +394,15 @@ var InspectCmd = &cobra.Command{
 				}
 				sort.Strings(labelSort)
 
-				inspectData += "== labels ==\n"
+				//inspectData += "== labels ==\n"
+
+				//inspectData.data.labels = make(map[string]string)
 				for _, k := range labelSort {
-					inspectData += fmt.Sprintf("%s: %s\n", k, string(*hrOut[k]))
-					inspectDataJSON["labels"][k] = string(*hrOut[k])
+					//inspectData += fmt.Sprintf("%s: %s\n", k, string(*hrOut[k]))
+					//inspectDataJSON["labels"][k] = string(*hrOut[k])
+
+					//inspectData.data.labels[k] = string(*hrOut[k])
+					inspectData.Data.Attributes.Labels[k] = string(*hrOut[k])
 				}
 			}
 		}
@@ -393,8 +416,7 @@ var InspectCmd = &cobra.Command{
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
 				data := string(metaData)
-				inspectDataJSON["container"]["deffile"] = data
-				inspectData += data
+				inspectData.Data.Attributes.Deffile = data
 			}
 		}
 
@@ -408,8 +430,7 @@ var InspectCmd = &cobra.Command{
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
 				data := parseDeffile(string(metaData), "%help")
-				inspectDataJSON["container"]["helpfile"] = data
-				inspectData += "== helpfile ==\n" + data
+				inspectData.Data.Attributes.Helpfile = data
 			}
 		}
 
@@ -422,8 +443,7 @@ var InspectCmd = &cobra.Command{
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
 				data := parseDeffile(string(metaData), "%runscript")
-				inspectDataJSON["container"]["runscript"] = data
-				inspectData += "== runscript ==\n" + data
+				inspectData.Data.Attributes.Runscript = data
 			}
 		}
 
@@ -436,8 +456,7 @@ var InspectCmd = &cobra.Command{
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
 				data := parseDeffile(string(metaData), "%test")
-				inspectDataJSON["container"]["testfile"] = data
-				inspectData += "== testfile ==\n" + data
+				inspectData.Data.Attributes.Test = data
 			}
 		}
 
@@ -450,19 +469,41 @@ var InspectCmd = &cobra.Command{
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
 				data := parseDeffile(string(metaData), "%environment")
-				inspectDataJSON["container"]["environment"] = data
-				inspectData += "== environment ==\n" + data
+				inspectData.Data.Attributes.Environment = data
 			}
 		}
 
 		if jsonfmt {
-			text, err := json.MarshalIndent(inspectDataJSON, "", "\t")
+			text, err := json.MarshalIndent(inspectData, "", "\t")
 			if err != nil {
 				sylog.Fatalf("Unable to marshal json: %s", err)
 			}
-			fmt.Printf("%s\n", text)
+			fmt.Printf("%s\n", string(text))
 		} else {
-			fmt.Printf("%s\n", inspectData)
+			if inspectData.Data.Attributes.Apps != "" {
+				fmt.Printf("== apps ==\n%s\n", inspectData.Data.Attributes.Apps)
+			}
+			if inspectData.Data.Attributes.Helpfile != "" {
+				fmt.Printf("==helpfile==\n%s\n", inspectData.Data.Attributes.Helpfile)
+			}
+			if inspectData.Data.Attributes.Deffile != "" {
+				fmt.Printf("==deffile==\n%s\n", inspectData.Data.Attributes.Deffile)
+			}
+			if inspectData.Data.Attributes.Runscript != "" {
+				fmt.Printf("==runscript==\n%s\n", inspectData.Data.Attributes.Runscript)
+			}
+			if inspectData.Data.Attributes.Test != "" {
+				fmt.Printf("==test==\n%s\n", inspectData.Data.Attributes.Test)
+			}
+			if inspectData.Data.Attributes.Environment != "" {
+				fmt.Printf("==environment==\n%s", inspectData.Data.Attributes.Environment)
+			}
+			if len(inspectData.Data.Attributes.Labels) > 0 {
+				fmt.Printf("==labels==\n")
+				for labLabel, labValue := range inspectData.Data.Attributes.Labels {
+					fmt.Printf("%s: %s\n", labLabel, labValue)
+				}
+			}
 		}
 	},
 	TraverseChildren: true,
@@ -527,8 +568,8 @@ func inspectInContainer(path string) {
 
 	inspectObj := inspectFormat{}
 	inspectObj.Type = "container"
-	inspectObj.Attributes.Labels = make(map[string]string)
-	inspectObj.Attributes.Environment = make(map[string]string)
+	inspectObj.Data.Attributes.Labels = make(map[string]string)
+	//inspectObj.Data.Attributes.Environment = make(map[string]string)
 
 	// Parse the command output string into sections.
 	reader := bufio.NewReader(strings.NewReader(fileContents))
@@ -564,31 +605,31 @@ func inspectInContainer(path string) {
 		}
 		fmt.Println(string(jsonObj))
 	} else {
-		if inspectObj.Attributes.Apps != "" {
+		if inspectObj.Data.Attributes.Apps != "" {
 			fmt.Printf("==apps==\n")
-			fmt.Printf("%s\n", inspectObj.Attributes.Apps)
+			fmt.Printf("%s\n", inspectObj.Data.Attributes.Apps)
 		}
-		if inspectObj.Attributes.Helpfile != "" {
-			fmt.Println("==helpfile==\n" + inspectObj.Attributes.Helpfile)
+		if inspectObj.Data.Attributes.Helpfile != "" {
+			fmt.Println("==helpfile==\n" + inspectObj.Data.Attributes.Helpfile)
 		}
-		if inspectObj.Attributes.Deffile != "" {
-			fmt.Println("==deffile==\n" + inspectObj.Attributes.Deffile)
+		if inspectObj.Data.Attributes.Deffile != "" {
+			fmt.Println("==deffile==\n" + inspectObj.Data.Attributes.Deffile)
 		}
-		if inspectObj.Attributes.Runscript != "" {
-			fmt.Println("==runscript==\n" + inspectObj.Attributes.Runscript)
+		if inspectObj.Data.Attributes.Runscript != "" {
+			fmt.Println("==runscript==\n" + inspectObj.Data.Attributes.Runscript)
 		}
-		if inspectObj.Attributes.Test != "" {
-			fmt.Println("==test==\n" + inspectObj.Attributes.Test)
+		if inspectObj.Data.Attributes.Test != "" {
+			fmt.Println("==test==\n" + inspectObj.Data.Attributes.Test)
 		}
-		if len(inspectObj.Attributes.Environment) > 0 {
-			fmt.Println("==environment==")
-			for envLabel, envValue := range inspectObj.Attributes.Environment {
-				fmt.Println("==environment:" + envLabel + "==\n" + envValue)
-			}
+		if len(inspectObj.Data.Attributes.Environment) > 0 {
+			fmt.Printf("==environment==\n %s", inspectObj.Data.Attributes.Environment)
+			//			for envLabel, envValue := range inspectObj.Data.Attributes.Environment {
+			//				fmt.Println("==environment:" + envLabel + "==\n" + envValue)
+			//			}
 		}
-		if len(inspectObj.Attributes.Labels) > 0 {
+		if len(inspectObj.Data.Attributes.Labels) > 0 {
 			fmt.Println("==labels==")
-			for labLabel, labValue := range inspectObj.Attributes.Labels {
+			for labLabel, labValue := range inspectObj.Data.Attributes.Labels {
 				fmt.Println(labLabel + ": " + labValue)
 			}
 		}

@@ -749,9 +749,9 @@ Enterprise Performance Computing (EPC)`
 	InspectUse   string = `inspect [inspect options...] <image path>`
 	InspectShort string = `Show metadata for an image`
 	InspectLong  string = `
-  Inspect will show you labels, environment variables, apps and scripts associated 
-  with the image determined by the flags you pass. By default, they will be shown in 
-  plain text. If you would like to list them in json format, you should use the --json flag.
+  Show metadata related to an image. You can filter which metadata to see based
+  on the options used. By default, they will be shown in plain text. If you would
+  like to list them in json format, you should use the --json flag.
   `
 	InspectExample string = `
   $ singularity inspect ubuntu.sif
@@ -770,8 +770,8 @@ Enterprise Performance Computing (EPC)`
       SCIF_APPROOT       the installation folder for the application created at /scif/apps/<app>
       SCIF_APPMETA       the application metadata folder
       SCIF_APPDATA       the data folder created for the application at /scif/data/<app>
-        SCIF_APPINPUT    expected input folder within data base folder
-        SCIF_APPOUTPUT   the output data folder within data base folder
+      SCIF_APPINPUT    expected input folder within data base folder
+      SCIF_APPOUTPUT   the output data folder within data base folder
 
       SCIF_APPENV        points to the application's custom environment.sh file in its metadata folder
       SCIF_APPLABELS     is the application's labels.json in the metadata folder
