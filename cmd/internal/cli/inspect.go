@@ -50,6 +50,7 @@ var (
 
 type inspectMetadata struct {
 	Apps        string            `json:"apps,omitempty"`
+	AppLabels   string            `json:"apps-labels,omitempty"`
 	Labels      map[string]string `json:"labels,omitempty"`
 	Deffile     string            `json:"deffile,omitempty"`
 	Runscript   string            `json:"runscript,omitempty"`
@@ -68,7 +69,6 @@ type inspectFormat struct {
 	Type string      `json:"type"`
 }
 
-// -d|--deffile
 var inspectAppsListFlag = cmdline.Flag{
 	ID:           "inspectAppsListFlag",
 	Value:        &listApps,
@@ -277,12 +277,32 @@ func getMetaData(fimg *sif.FileImage, dataType sif.Datatype) (sigs []*sif.Descri
 	return
 }
 
-// parseDeffile will take a deffile content, and return the specified section.
-// Returns "" if the section does not exist.
-func parseDeffile(content string, section string) string {
+// parseDeffile will take a deffile content, appname and a section, and
+// return the specified section. Returns "" if the section does not exist.
+func parseDeffile(content, app, section string) string {
 	ret := ""
 	headerFound := false
 	end := false
+	searchSection := ""
+
+	if app != "" {
+		switch section {
+		case "help":
+			searchSection = "%apphelp " + app
+		case "runscript":
+			searchSection = "%apprun " + app
+		case "test":
+			searchSection = "%apptest " + app
+		case "environment":
+			searchSection = "%appenv " + app
+		case "labels":
+			searchSection = "%applabels " + app
+		}
+	} else {
+		searchSection = "%" + section
+	}
+
+	sylog.Debugf("Searching for section: %s\n", searchSection)
 
 	scanner := bufio.NewScanner(strings.NewReader(content))
 	for scanner.Scan() {
@@ -300,14 +320,12 @@ func parseDeffile(content string, section string) string {
 					break
 				}
 			}
-
 			if !end {
 				ret += scanner.Text()
 				ret += "\n"
 			}
 		}
-
-		if scanner.Text() == section {
+		if scanner.Text() == searchSection {
 			headerFound = true
 		}
 		if end {
@@ -339,7 +357,7 @@ var InspectCmd = &cobra.Command{
 			sylog.Fatalf("container not found: %s", err)
 		}
 
-		if !runscript && !helpfile && !deffile && !testfile && !environment {
+		if !runscript && !helpfile && !deffile && !testfile && !environment && !listApps {
 			labels = true
 		}
 
@@ -358,51 +376,50 @@ var InspectCmd = &cobra.Command{
 		}
 		defer fimg.UnloadContainer()
 
-		//		var inspectData string
-
-		//var inspectData inspectDataFull
-		//		inspectData.containerType = "container"
-
-		//inspectData := inspectFormat{}
 		var inspectData inspectFormat
 		inspectData.Type = "container"
 		inspectData.Data.Attributes.Labels = make(map[string]string, 1)
 
 		// Inspect Labels
 		if labels {
-			sifData, _, err := getMetaData(&fimg, sif.DataLabels)
-			if err == ErrNoMetaData {
-				sylog.Warningf("No metadata partition, searching in container...")
-				inspectInContainer(args[0])
-			} else if err != nil {
-				sylog.Fatalf("Unable to get label metadata: %s", err)
-			}
-			//inspectDataJSON["data"]["attributes"]["labels"] = make(map[string]string, 1)
-
-			for _, v := range sifData {
-				metaData := v.GetData(&fimg)
-				var hrOut map[string]*json.RawMessage
-				err := json.Unmarshal(metaData, &hrOut)
+			if AppName != "" {
+				sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
 				if err != nil {
-					sylog.Fatalf("Unable to get json: %s", err)
+					sylog.Fatalf("Unable to get metadata: %s", err)
 				}
 
-				// Sort the labels
-				var labelSort []string
-				for k := range hrOut {
-					labelSort = append(labelSort, k)
+				for _, v := range sifData {
+					metaData := v.GetData(&fimg)
+					data := parseDeffile(string(metaData), AppName, "labels")
+					inspectData.Data.Attributes.AppLabels = data
 				}
-				sort.Strings(labelSort)
+			} else {
+				sifData, _, err := getMetaData(&fimg, sif.DataLabels)
+				if err == ErrNoMetaData {
+					sylog.Warningf("No metadata partition, searching in container...")
+					inspectInContainer(args[0])
+				} else if err != nil {
+					sylog.Fatalf("Unable to get label metadata: %s", err)
+				}
 
-				//inspectData += "== labels ==\n"
+				for _, v := range sifData {
+					metaData := v.GetData(&fimg)
+					var hrOut map[string]*json.RawMessage
+					err := json.Unmarshal(metaData, &hrOut)
+					if err != nil {
+						sylog.Fatalf("Unable to get json: %s", err)
+					}
 
-				//inspectData.data.labels = make(map[string]string)
-				for _, k := range labelSort {
-					//inspectData += fmt.Sprintf("%s: %s\n", k, string(*hrOut[k]))
-					//inspectDataJSON["labels"][k] = string(*hrOut[k])
+					// Sort the labels
+					var labelSort []string
+					for k := range hrOut {
+						labelSort = append(labelSort, k)
+					}
+					sort.Strings(labelSort)
 
-					//inspectData.data.labels[k] = string(*hrOut[k])
-					inspectData.Data.Attributes.Labels[k] = string(*hrOut[k])
+					for _, k := range labelSort {
+						inspectData.Data.Attributes.Labels[k] = string(*hrOut[k])
+					}
 				}
 			}
 		}
@@ -429,7 +446,7 @@ var InspectCmd = &cobra.Command{
 
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
-				data := parseDeffile(string(metaData), "%help")
+				data := parseDeffile(string(metaData), AppName, "help")
 				inspectData.Data.Attributes.Helpfile = data
 			}
 		}
@@ -442,7 +459,7 @@ var InspectCmd = &cobra.Command{
 			}
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
-				data := parseDeffile(string(metaData), "%runscript")
+				data := parseDeffile(string(metaData), AppName, "runscript")
 				inspectData.Data.Attributes.Runscript = data
 			}
 		}
@@ -455,7 +472,7 @@ var InspectCmd = &cobra.Command{
 			}
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
-				data := parseDeffile(string(metaData), "%test")
+				data := parseDeffile(string(metaData), AppName, "test")
 				inspectData.Data.Attributes.Test = data
 			}
 		}
@@ -468,7 +485,7 @@ var InspectCmd = &cobra.Command{
 			}
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
-				data := parseDeffile(string(metaData), "%environment")
+				data := parseDeffile(string(metaData), AppName, "environment")
 				inspectData.Data.Attributes.Environment = data
 			}
 		}
@@ -483,23 +500,27 @@ var InspectCmd = &cobra.Command{
 			if inspectData.Data.Attributes.Apps != "" {
 				fmt.Printf("== apps ==\n%s\n", inspectData.Data.Attributes.Apps)
 			}
+			// TODO: fix the app labels (maybe in the main label partition)
+			if inspectData.Data.Attributes.AppLabels != "" {
+				fmt.Printf("== app labels ==\n%s\n", inspectData.Data.Attributes.AppLabels)
+			}
 			if inspectData.Data.Attributes.Helpfile != "" {
-				fmt.Printf("==helpfile==\n%s\n", inspectData.Data.Attributes.Helpfile)
+				fmt.Printf("== helpfile ==\n%s\n", inspectData.Data.Attributes.Helpfile)
 			}
 			if inspectData.Data.Attributes.Deffile != "" {
-				fmt.Printf("==deffile==\n%s\n", inspectData.Data.Attributes.Deffile)
+				fmt.Printf("== deffile ==\n%s\n", inspectData.Data.Attributes.Deffile)
 			}
 			if inspectData.Data.Attributes.Runscript != "" {
-				fmt.Printf("==runscript==\n%s\n", inspectData.Data.Attributes.Runscript)
+				fmt.Printf("== runscript ==\n%s\n", inspectData.Data.Attributes.Runscript)
 			}
 			if inspectData.Data.Attributes.Test != "" {
-				fmt.Printf("==test==\n%s\n", inspectData.Data.Attributes.Test)
+				fmt.Printf("== test ==\n%s\n", inspectData.Data.Attributes.Test)
 			}
 			if inspectData.Data.Attributes.Environment != "" {
-				fmt.Printf("==environment==\n%s", inspectData.Data.Attributes.Environment)
+				fmt.Printf("== environment ==\n%s", inspectData.Data.Attributes.Environment)
 			}
 			if len(inspectData.Data.Attributes.Labels) > 0 {
-				fmt.Printf("==labels==\n")
+				fmt.Printf("== labels ==\n")
 				for labLabel, labValue := range inspectData.Data.Attributes.Labels {
 					fmt.Printf("%s: %s\n", labLabel, labValue)
 				}
@@ -622,7 +643,7 @@ func inspectInContainer(path string) {
 			fmt.Println("==test==\n" + inspectObj.Data.Attributes.Test)
 		}
 		if len(inspectObj.Data.Attributes.Environment) > 0 {
-			fmt.Printf("==environment==\n %s", inspectObj.Data.Attributes.Environment)
+			fmt.Printf("==environment==\n%s", inspectObj.Data.Attributes.Environment)
 			//			for envLabel, envValue := range inspectObj.Data.Attributes.Environment {
 			//				fmt.Println("==environment:" + envLabel + "==\n" + envValue)
 			//			}

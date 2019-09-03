@@ -770,8 +770,8 @@ Enterprise Performance Computing (EPC)`
       SCIF_APPROOT       the installation folder for the application created at /scif/apps/<app>
       SCIF_APPMETA       the application metadata folder
       SCIF_APPDATA       the data folder created for the application at /scif/data/<app>
-      SCIF_APPINPUT    expected input folder within data base folder
-      SCIF_APPOUTPUT   the output data folder within data base folder
+      SCIF_APPINPUT      expected input folder within data base folder
+      SCIF_APPOUTPUT     the output data folder within data base folder
 
       SCIF_APPENV        points to the application's custom environment.sh file in its metadata folder
       SCIF_APPLABELS     is the application's labels.json in the metadata folder
