@@ -147,7 +147,7 @@ func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
-		e2e.ExpectExit(0),
+		e2e.ExpectExit(255),
 	)
 }
 

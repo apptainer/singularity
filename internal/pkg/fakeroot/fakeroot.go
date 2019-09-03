@@ -27,7 +27,7 @@ const (
 	// validRangeCount is the valid fakeroot range count.
 	validRangeCount = uint32(65536)
 	// StartMax is the maximum possible range start.
-	startMax = uint32(4294967296 - 65536)
+	startMax = uint32(4294967296 - 131072)
 	// StartMin is the minimum possible range start.
 	startMin = uint32(65536)
 	// disabledPrefix is the character prefix marking an entry as disabled.
@@ -311,11 +311,11 @@ func (c *Config) GetUserEntry(username string, reportBadEntry bool) (*Entry, err
 	}
 	if reportBadEntry && entryCount > 0 {
 		return nil, fmt.Errorf(
-			"entries for user %s found in %s but all with a range count different from %d",
+			"mapping entries for user %s found in %s but all with a range count different from %d",
 			username, c.file.Name(), validRangeCount,
 		)
 	}
-	return nil, fmt.Errorf("no user entry found for %s", username)
+	return nil, fmt.Errorf("no mapping entry found in %s for %s", c.file.Name(), username)
 }
 
 // GetIDRange determines UID/GID mappings based on configuration
@@ -334,6 +334,9 @@ func GetIDRange(path string, uid uint32) (*specs.LinuxIDMapping, error) {
 	e, err := config.GetUserEntry(userinfo.Name, true)
 	if err != nil {
 		return nil, err
+	}
+	if e.disabled {
+		return nil, fmt.Errorf("your fakeroot mapping has been disabled by the administrator")
 	}
 	return &specs.LinuxIDMapping{
 		ContainerID: 1,
