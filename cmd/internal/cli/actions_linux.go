@@ -496,6 +496,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	Env := []string{sylog.GetEnvVar()}
 
+	// starter will force the loading of kernel overlay module
+	if !UserNamespace && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
+		Env = append(Env, "LOAD_OVERLAY_MODULE=1")
+	}
+
 	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
 
 	// convert image file to sandbox if we are using user

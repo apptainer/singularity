@@ -136,8 +136,15 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 
 	for _, img := range e.EngineConfig.GetImageList() {
-		if err := syscall.Close(int(img.Fd)); err != nil {
-			return fmt.Errorf("failed to close file descriptor for %s", img.Path)
+		// bad file descriptor error is ignored because
+		// the file descriptor has been previously closed
+		// in this loop, happens when a SIF image contains
+		// overlay partition in it as each SIF overlay
+		// partition is considered as a single image with
+		// different offset/size but pointing to the same
+		// opened image file descriptor
+		if err := syscall.Close(int(img.Fd)); err != nil && err != syscall.EBADF {
+			return fmt.Errorf("failed to close file descriptor for %s: %s", img.Path, err)
 		}
 	}
 

@@ -46,36 +46,34 @@ var defaultCNIConfPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", "netw
 var defaultCNIPluginPath = filepath.Join(buildcfg.LIBEXECDIR, "singularity", "cni")
 
 type container struct {
-	engine           *EngineOperations
-	rpcOps           *client.RPC
-	session          *layout.Session
-	sessionLayerType string
-	sessionFsType    string
-	sessionSize      int
-	userNS           bool
-	pidNS            bool
-	utsNS            bool
-	netNS            bool
-	ipcNS            bool
-	mountInfoPath    string
-	skippedMount     []string
-	checkDest        []string
-	suidFlag         uintptr
-	devSourcePath    string
+	engine        *EngineOperations
+	rpcOps        *client.RPC
+	session       *layout.Session
+	sessionFsType string
+	sessionSize   int
+	userNS        bool
+	pidNS         bool
+	utsNS         bool
+	netNS         bool
+	ipcNS         bool
+	mountInfoPath string
+	skippedMount  []string
+	checkDest     []string
+	suidFlag      uintptr
+	devSourcePath string
 }
 
 func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	var err error
 
 	c := &container{
-		engine:           engine,
-		rpcOps:           rpcOps,
-		sessionLayerType: "none",
-		sessionFsType:    engine.EngineConfig.File.MemoryFSType,
-		mountInfoPath:    fmt.Sprintf("/proc/%d/mountinfo", pid),
-		skippedMount:     make([]string, 0),
-		checkDest:        make([]string, 0),
-		suidFlag:         syscall.MS_NOSUID,
+		engine:        engine,
+		rpcOps:        rpcOps,
+		sessionFsType: engine.EngineConfig.File.MemoryFSType,
+		mountInfoPath: fmt.Sprintf("/proc/%d/mountinfo", pid),
+		skippedMount:  make([]string, 0),
+		checkDest:     make([]string, 0),
+		suidFlag:      syscall.MS_NOSUID,
 	}
 
 	cwd := engine.EngineConfig.GetCwd()
@@ -226,141 +224,39 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	return nil
 }
 
-func (c *container) setupSIFOverlay(img *image.Image, writable bool) error {
-	// Determine if overlay partitions exists
-	overlayPart := 0
-	overlayImg := c.engine.EngineConfig.GetOverlayImage()
-	imglist := c.engine.EngineConfig.GetImageList()
-
-	for _, p := range img.Partitions[1:] {
-		if p.Type == image.EXT3 || p.Type == image.SQUASHFS {
-			imgCopy := *img
-			imgCopy.Type = int(p.Type)
-			imgCopy.Partitions = []image.Section{p}
-			imglist = append(imglist, imgCopy)
-			overlayImg = append(overlayImg, imgCopy.Path)
-			overlayPart++
-		}
-	}
-
-	c.engine.EngineConfig.SetOverlayImage(overlayImg)
-	c.engine.EngineConfig.SetImageList(imglist)
-
-	if overlayPart == 0 && writable {
-		return fmt.Errorf("no SIF writable overlay partition found")
-	}
-
-	return nil
-}
-
-// checkOverlay will test if overlay is supported/allowed.
-func (c *container) checkOverlay() bool {
-	// NEED FIX: on ubuntu until 4.15 kernel it was possible to mount overlay
-	// with the current workflow, since 4.18 we get an operation not permitted
-	if c.userNS {
-		return false
-	}
-
-	// this mount always returns an error
-	if err := c.rpcOps.Mount("none", "/", "overlay", syscall.MS_SILENT, ""); err != syscall.EINVAL {
-		// if an invalid argument error is returned, overlay is supported and is allowed
-		sylog.Debugf("Overlay seems not supported and/or not allowed by kernel")
-		return false
-	}
-
-	// previous mount forced overlay module to be loaded, check if we find
-	// it in /proc/filesystems
-	if has, _ := proc.HasFilesystem("overlay"); has {
-		sylog.Debugf("Overlay seems supported and allowed by kernel")
-		switch c.engine.EngineConfig.File.EnableOverlay {
-		case "yes", "try":
-			return true
-		default:
-			sylog.Debugf("Could not use overlay, disabled by configuration")
-		}
-	}
-
-	return false
-}
-
 // setupSessionLayout will create the session layout according to the capabilities of Singularity
 // on the system. It will first attempt to use "overlay", followed by "underlay", and if neither
 // are available it will not use either. If neither are used, we will not be able to bind mount
 // to non-existent paths within the container
 func (c *container) setupSessionLayout(system *mount.System) error {
-	writableTmpfs := c.engine.EngineConfig.GetWritableTmpfs()
-	overlayEnabled := c.checkOverlay()
+	var err error
+	var sessionPath string
 
-	sessionPath, err := filepath.EvalSymlinks(buildcfg.SESSIONDIR)
+	sessionPath, err = filepath.EvalSymlinks(buildcfg.SESSIONDIR)
 	if err != nil {
-		return fmt.Errorf("failed to resolved session directory %s: %s", buildcfg.SESSIONDIR, err)
+		return fmt.Errorf("failed to resolve session directory %s: %s", buildcfg.SESSIONDIR, err)
 	}
 
-	imgObject, err := c.loadImage(c.engine.EngineConfig.GetImage(), true)
+	sessionLayer := c.engine.EngineConfig.GetSessionLayer()
+
+	sylog.Debugf("Using Layer system: %s\n", sessionLayer)
+
+	switch sessionLayer {
+	case singularity.DefaultLayer:
+		err = c.setupDefaultLayout(system, sessionPath)
+	case singularity.OverlayLayer:
+		err = c.setupOverlayLayout(system, sessionPath)
+	case singularity.UnderlayLayer:
+		err = c.setupUnderlayLayout(system, sessionPath)
+	default:
+		return fmt.Errorf("unknown session layer set: %s", sessionLayer)
+	}
+
 	if err != nil {
-		return fmt.Errorf("while loading image object: %s", err)
+		return fmt.Errorf("while setting %s session layout: %s", sessionLayer, err)
 	}
 
-	if c.engine.EngineConfig.GetWritableImage() && !writableTmpfs {
-		sylog.Debugf("Image is writable, not attempting to use overlay or underlay\n")
-		if imgObject.Type == image.SIF {
-			err = c.setupSIFOverlay(imgObject, c.engine.EngineConfig.GetWritableImage())
-			if err == nil {
-				return c.setupOverlayLayout(system, sessionPath)
-			}
-			sylog.Warningf("While attempting to set up SIFOverlay: %s", err)
-		}
-		return c.setupDefaultLayout(system, sessionPath)
-	}
-
-	if overlayEnabled {
-		skipOverlay := false
-
-		// before using overlay we check if the sandbox image is
-		// compatible as an overlay lower directory and skip using
-		// overlay to fallback to underlay if not filesystem is not
-		// compatible
-		rootfs := c.engine.EngineConfig.GetImage()
-		img, err := c.loadImage(rootfs, true)
-		if err != nil {
-			return err
-		}
-
-		if img.Type == image.SANDBOX {
-			if err := fsoverlay.CheckLower(img.Path); fsoverlay.IsIncompatible(err) {
-				// a warning message would be better but on some systems it
-				// could annoy users, make it verbose instead
-				sylog.Verbosef("Fallback to underlay: %s", err)
-				skipOverlay = true
-			} else if err != nil {
-				return fmt.Errorf("while checking image compatibility with overlay: %s", err)
-			}
-		}
-
-		if !skipOverlay {
-			sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
-			if imgObject.Type == image.SIF {
-				err = c.setupSIFOverlay(imgObject, c.engine.EngineConfig.GetWritableImage())
-				if err == nil {
-					return c.setupOverlayLayout(system, sessionPath)
-				}
-				sylog.Warningf("While attempting to set up SIFOverlay: %s", err)
-			}
-			return c.setupOverlayLayout(system, sessionPath)
-		}
-	}
-
-	if writableTmpfs {
-		sylog.Warningf("Ignoring --writable-tmpfs as it requires overlay support")
-	}
-
-	if c.engine.EngineConfig.File.EnableUnderlay {
-		sylog.Debugf("Attempting to use underlay (enable underlay = yes)\n")
-		return c.setupUnderlayLayout(system, sessionPath)
-	}
-
-	sylog.Debugf("Not attempting to use underlay or overlay\n")
-	return c.setupDefaultLayout(system, sessionPath)
+	return system.RunAfterTag(mount.SharedTag, c.setPropagationMount)
 }
 
 // setupOverlayLayout sets up the session with overlay filesystem
@@ -369,42 +265,27 @@ func (c *container) setupOverlayLayout(system *mount.System, sessionPath string)
 	if c.session, err = layout.NewSession(sessionPath, c.sessionFsType, c.sessionSize, system, overlay.New()); err != nil {
 		return err
 	}
-
-	if err := c.addOverlayMount(system); err != nil {
-		return err
-	}
-
-	c.sessionLayerType = "overlay"
-	return system.RunAfterTag(mount.SharedTag, c.setPropagationMount)
+	return c.addOverlayMount(system)
 }
 
 // setupUnderlayLayout sets up the session with underlay "filesystem"
 func (c *container) setupUnderlayLayout(system *mount.System, sessionPath string) (err error) {
 	sylog.Debugf("Creating underlay SESSIONDIR layout\n")
-	if c.session, err = layout.NewSession(sessionPath, c.sessionFsType, c.sessionSize, system, underlay.New()); err != nil {
-		return err
-	}
-
-	c.sessionLayerType = "underlay"
-	return system.RunAfterTag(mount.SharedTag, c.setPropagationMount)
+	c.session, err = layout.NewSession(sessionPath, c.sessionFsType, c.sessionSize, system, underlay.New())
+	return err
 }
 
 // setupDefaultLayout sets up the session without overlay or underlay
 func (c *container) setupDefaultLayout(system *mount.System, sessionPath string) (err error) {
 	sylog.Debugf("Creating default SESSIONDIR layout\n")
-	if c.session, err = layout.NewSession(sessionPath, c.sessionFsType, c.sessionSize, system, nil); err != nil {
-		return err
-	}
-
-	c.sessionLayerType = "none"
-	return system.RunAfterTag(mount.SharedTag, c.setPropagationMount)
+	c.session, err = layout.NewSession(sessionPath, c.sessionFsType, c.sessionSize, system, nil)
+	return err
 }
 
 // isLayerEnabled returns whether or not overlay or underlay system
 // is enabled
 func (c *container) isLayerEnabled() bool {
-	sylog.Debugf("Using Layer system: %v\n", c.sessionLayerType)
-	return c.sessionLayerType != "none"
+	return c.engine.EngineConfig.GetSessionLayer() != singularity.DefaultLayer
 }
 
 func (c *container) mount(point *mount.Point) error {
@@ -912,8 +793,10 @@ func (c *container) addOverlayMount(system *mount.System) error {
 					return err
 				}
 			}
+		case image.SIF:
+			return fmt.Errorf("%s: SIF image not supported as overlay image", imageObject.Path)
 		default:
-			return fmt.Errorf("unknown image format")
+			return fmt.Errorf("%s: overlay image with unknown format", imageObject.Path)
 		}
 
 		err = system.Points.AddPropagation(mount.DevTag, dst, syscall.MS_UNBINDABLE)
@@ -1391,7 +1274,8 @@ func (c *container) addHomeMount(system *mount.System) error {
 		return err
 	}
 
-	sylog.Debugf("Adding home directory mount [%v:%v] to list using layer: %v\n", stagingDir, dest, c.sessionLayerType)
+	sessionLayer := c.engine.EngineConfig.GetSessionLayer()
+	sylog.Debugf("Adding home directory mount [%v:%v] to list using layer: %s\n", stagingDir, dest, sessionLayer)
 	if !c.isLayerEnabled() {
 		return c.addHomeNoLayer(system, stagingDir, dest)
 	}
