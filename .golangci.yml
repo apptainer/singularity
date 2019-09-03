@@ -38,3 +38,7 @@ issues:
     - path: internal/pkg/util/fs/overlay/
       linters:
         - misspell
+    - path: pkg/image/image.go
+      text: "const W_OK should be WOK"
+      linters:
+        - golint
