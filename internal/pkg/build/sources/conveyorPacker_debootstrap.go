@@ -43,7 +43,7 @@ func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	// run debootstrap command
-	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+cp.include, `--arch=`+runtime.GOARCH, cp.osversion, cp.b.Rootfs(), cp.mirrorurl)
+	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+cp.include, `--arch=`+runtime.GOARCH, cp.osversion, cp.b.RootfsPath, cp.mirrorurl)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -61,7 +61,7 @@ func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
 func (cp *DebootstrapConveyorPacker) Pack() (*types.Bundle, error) {
 
 	//change root directory permissions to 0755
-	if err := os.Chmod(cp.b.Rootfs(), 0755); err != nil {
+	if err := os.Chmod(cp.b.RootfsPath, 0755); err != nil {
 		return nil, fmt.Errorf("while changing bundle rootfs perms: %v", err)
 	}
 
@@ -107,14 +107,14 @@ func (cp *DebootstrapConveyorPacker) getRecipeHeaderInfo() (err error) {
 }
 
 func (cp *DebootstrapConveyorPacker) insertBaseEnv(b *types.Bundle) (err error) {
-	if err = makeBaseEnv(b.Rootfs()); err != nil {
+	if err = makeBaseEnv(b.RootfsPath); err != nil {
 		return
 	}
 	return nil
 }
 
 func (cp *DebootstrapConveyorPacker) insertRunScript(b *types.Bundle) (err error) {
-	f, err := os.Create(b.Rootfs() + "/.singularity.d/runscript")
+	f, err := os.Create(b.RootfsPath + "/.singularity.d/runscript")
 	if err != nil {
 		return
 	}
@@ -132,7 +132,7 @@ func (cp *DebootstrapConveyorPacker) insertRunScript(b *types.Bundle) (err error
 
 	f.Sync()
 
-	err = os.Chmod(b.Rootfs()+"/.singularity.d/runscript", 0755)
+	err = os.Chmod(b.RootfsPath+"/.singularity.d/runscript", 0755)
 	if err != nil {
 		return
 	}
@@ -142,5 +142,5 @@ func (cp *DebootstrapConveyorPacker) insertRunScript(b *types.Bundle) (err error
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
 func (cp *DebootstrapConveyorPacker) CleanUp() {
-	os.RemoveAll(cp.b.Path)
+	cp.b.Remove()
 }

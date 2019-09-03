@@ -237,7 +237,8 @@ func Init(path string, writable bool) (*Image, error) {
 		mode := rf.format.openMode(writable)
 
 		if mode&os.O_RDWR != 0 {
-			if err := syscall.Access(resolvedPath, 2); err != nil {
+			const W_OK = 2
+			if err := syscall.Access(resolvedPath, W_OK); err != nil {
 				sylog.Debugf("Opening %s in read-only mode: no write permissions", path)
 				mode = os.O_RDONLY
 				img.Writable = false

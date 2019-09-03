@@ -158,7 +158,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	s := packer.NewSquashfs()
 	s.MksquashfsPath = a.MksquashfsPath
 
-	f, err := ioutil.TempFile(b.Path, "squashfs-")
+	f, err := ioutil.TempFile(b.TempDir, "squashfs-")
 	if err != nil {
 		return fmt.Errorf("while creating temporary file for squashfs: %v", err)
 	}
@@ -177,7 +177,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 		flags = append(flags, "-comp", "gzip")
 	}
 
-	if err := s.Create([]string{b.Rootfs()}, fsPath, flags); err != nil {
+	if err := s.Create([]string{b.RootfsPath}, fsPath, flags); err != nil {
 		return fmt.Errorf("while creating squashfs: %v", err)
 	}
 

@@ -44,7 +44,7 @@ func unpackRootfs(b *sytypes.Bundle, tmpfsRef types.ImageReference, sysCtx *type
 		mapOptions.GIDMappings = append(mapOptions.GIDMappings, gidMap)
 	}
 
-	engineExt, err := umoci.OpenLayout(b.Path)
+	engineExt, err := umoci.OpenLayout(b.TempDir)
 	if err != nil {
 		return fmt.Errorf("error opening layout: %s", err)
 	}
@@ -65,8 +65,8 @@ func unpackRootfs(b *sytypes.Bundle, tmpfsRef types.ImageReference, sysCtx *type
 	json.Unmarshal(manifestData, &manifest)
 
 	// UnpackRootfs from umoci v0.4.2 expects a path to a non-existing directory
-	os.RemoveAll(b.Rootfs())
+	os.RemoveAll(b.RootfsPath)
 
 	// Unpack root filesystem
-	return umocilayer.UnpackRootfs(context.Background(), engineExt, b.Rootfs(), manifest, &mapOptions)
+	return umocilayer.UnpackRootfs(context.Background(), engineExt, b.RootfsPath, manifest, &mapOptions)
 }

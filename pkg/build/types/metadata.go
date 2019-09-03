@@ -23,10 +23,6 @@ type MetaData struct {
 	BaseEnv []string `json:"baseEnv"`
 
 	BuildHistory *BuildHistory `json:"buildHistory"`
-
-	//OverylayPartition string
-
-	//PartionBinds map[string][]string
 }
 
 // BuildHistory ...

@@ -18,6 +18,6 @@ import (
 // unpackRootfs extracts all of the layers of the given image reference into the rootfs of the provided bundle
 func unpackRootfs(b *sytypes.Bundle, _ types.ImageReference, _ *types.SystemContext) (err error) {
 	refs := []string{"name=tmp"}
-	err = imagetools.UnpackLayout(b.Path, b.Rootfs(), "amd64", refs)
+	err = imagetools.UnpackLayout(b.TempDir, b.RootfsPath, "amd64", refs)
 	return err
 }

@@ -6,7 +6,9 @@
 package sources_test
 
 import (
+	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
@@ -26,7 +28,7 @@ func TestDebootstrapConveyor(t *testing.T) {
 
 	test.EnsurePrivilege(t)
 
-	b, err := types.NewBundle("", "sbuild-debootstrap")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-debootstrap"), os.TempDir())
 	if err != nil {
 		return
 	}
@@ -56,7 +58,7 @@ func TestDebootstrapPacker(t *testing.T) {
 
 	test.EnsurePrivilege(t)
 
-	b, err := types.NewBundle("", "sbuild-debootstrap")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-debootstrap"), os.TempDir())
 	if err != nil {
 		return
 	}

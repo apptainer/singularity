@@ -8,6 +8,7 @@ package assemblers_test
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
@@ -42,11 +43,11 @@ func TestSIFAssemblerDocker(t *testing.T) {
 		t.Fatalf("could not find mksquashfs: %v", err)
 	}
 
-	b, err := types.NewBundle("", "sbuild-SIFAssembler")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-SIFAssembler"), os.TempDir())
 	if err != nil {
 		t.Fatalf("unable to make bundle: %v", err)
 	}
-	defer os.RemoveAll(b.Path)
+	defer b.Remove()
 
 	b.Recipe, err = types.NewDefinitionFromURI(assemblerDockerURI)
 	if err != nil {
@@ -97,11 +98,11 @@ func TestSIFAssemblerShub(t *testing.T) {
 		t.Fatalf("could not find mksquashfs: %v", err)
 	}
 
-	b, err := types.NewBundle("", "sbuild-SIFAssembler")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-SIFAssembler"), os.TempDir())
 	if err != nil {
 		t.Fatalf("unable to make bundle: %v", err)
 	}
-	defer os.RemoveAll(b.Path)
+	defer b.Remove()
 
 	b.Recipe, err = types.NewDefinitionFromURI(assemblerShubURI)
 	if err != nil {

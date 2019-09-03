@@ -49,7 +49,7 @@ var (
 	NoNet           bool
 	IsSyOS          bool
 	disableCache    bool
-	EnterPassphrase bool
+	enterPassphrase bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -300,7 +300,7 @@ var actionContainLibsFlag = cmdline.Flag{
 // --passphrase
 var actionPassphraseFlag = cmdline.Flag{
 	ID:           "actionEncryptionPassphrase",
-	Value:        &EnterPassphrase,
+	Value:        &enterPassphrase,
 	DefaultValue: false,
 	Name:         "passphrase",
 	Usage:        "Enter a passphrase for an encrypted contaner",

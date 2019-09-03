@@ -47,7 +47,7 @@ func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 		sylog.Warningf("Running inside a user namespace, but setgroups is denied, build may not work correctly")
 	}
 
-	rootfs := e.EngineConfig.Rootfs()
+	rootfs := e.EngineConfig.RootfsPath
 
 	st, err := os.Stat(rootfs)
 	if err != nil {
@@ -201,7 +201,7 @@ func (e *EngineOperations) copyFiles() error {
 			transfer.Dst = transfer.Src
 		}
 		// copy each file into bundle rootfs
-		transfer.Dst = files.AddPrefix(e.EngineConfig.Rootfs(), transfer.Dst)
+		transfer.Dst = files.AddPrefix(e.EngineConfig.RootfsPath, transfer.Dst)
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
 		if err := files.Copy(transfer.Src, transfer.Dst); err != nil {
 			return err
