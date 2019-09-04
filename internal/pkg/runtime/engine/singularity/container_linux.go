@@ -39,10 +39,10 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-// defaultCNIConfPath is the default directory to CNI network configuration files
+// defaultCNIConfPath is the default directory to CNI network configuration files.
 var defaultCNIConfPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", "network")
 
-// defaultCNIPluginPath is the default directory to CNI plugins executables
+// defaultCNIPluginPath is the default directory to CNI plugins executables.
 var defaultCNIPluginPath = filepath.Join(buildcfg.LIBEXECDIR, "singularity", "cni")
 
 type container struct {

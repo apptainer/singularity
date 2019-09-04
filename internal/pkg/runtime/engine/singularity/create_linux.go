@@ -16,7 +16,18 @@ import (
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
-// CreateContainer creates a container.
+// CreateContainer is called from master process to prepare container
+// environment, e.g. perform mount operations, setup network, etc.
+//
+// Additional privileges required for setup may be gained when running
+// in suid flow. However, when a user namespace is requested and it is not
+// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
+// and thus no additional privileges can be gained.
+//
+// Specifically in singularity engine, additional privileges are gained during
+// network setup (see container.prepareNetworkSetup) in fakeroot flow. The rest
+// of the setup (e.g. mount operations) where privileges may be required is performed
+// by calling RPC server methods (see internal/app/starter/rpc_linux.go for details).
 func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 	if e.CommonConfig.EngineName != singularityConfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")

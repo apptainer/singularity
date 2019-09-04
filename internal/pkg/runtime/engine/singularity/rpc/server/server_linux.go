@@ -35,7 +35,7 @@ func (t *Methods) Mount(arguments *args.MountArgs, mountErr *error) (err error) 
 	return nil
 }
 
-// Decrypt decrypts the loop device
+// Decrypt decrypts the loop device.
 func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *string) (err error) {
 	cryptDev := &crypt.Device{}
 
