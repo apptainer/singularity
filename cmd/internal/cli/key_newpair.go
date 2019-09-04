@@ -39,7 +39,7 @@ var (
 		DefaultValue: "",
 		Name:         "email",
 		ShortHand:    "E",
-		Usage:        "keys owner email",
+		Usage:        "key owner email",
 	}
 
 	keyNewPairComment     string
