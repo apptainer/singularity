@@ -87,8 +87,6 @@ func New(defs []types.Definition, conf Config) (*Build, error) {
 }
 
 func newBuild(defs []types.Definition, conf Config) (*Build, error) {
-	var err error
-
 	syscall.Umask(0002)
 
 	// always build a sandbox if updating an existing sandbox
@@ -107,11 +105,15 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 			return nil, fmt.Errorf("multiple stages detected, all must have headers")
 		}
 
-		s := stage{}
+		var s stage
+		rootfs, err := ioutil.TempDir(conf.Opts.TmpDir, "rootfs-")
+		if err != nil {
+			return nil, fmt.Errorf("could not create rootfs bundle directory: %v", err)
+		}
 		if conf.Opts.EncryptionKeyInfo != nil {
-			s.b, err = types.NewEncryptedBundle(filepath.Join(conf.Opts.TmpDir, "rootfs"), conf.Opts.TmpDir, conf.Opts.EncryptionKeyInfo)
+			s.b, err = types.NewEncryptedBundle(rootfs, conf.Opts.TmpDir, conf.Opts.EncryptionKeyInfo)
 		} else {
-			s.b, err = types.NewBundle(filepath.Join(conf.Opts.TmpDir, "rootfs"), conf.Opts.TmpDir)
+			s.b, err = types.NewBundle(rootfs, conf.Opts.TmpDir)
 		}
 		if err != nil {
 			return nil, err
