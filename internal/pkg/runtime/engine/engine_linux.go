@@ -32,7 +32,7 @@ type Operations interface {
 	// Config returns a zero value of the current EngineConfig, which
 	// depends on the implementation, used to populate the Common struct.
 	//
-	// Since this method simply return a zero value of the concrete
+	// Since this method simply returns a zero value of the concrete
 	// EngineConfig, it does not matter whether or not there are any elevated
 	// privileges during this call.
 	Config() config.EngineConfig
