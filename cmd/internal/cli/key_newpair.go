@@ -49,7 +49,7 @@ var (
 		DefaultValue: "",
 		Name:         "comment",
 		ShortHand:    "C",
-		Usage:        "keys comment",
+		Usage:        "key comment",
 	}
 
 	keyNewPairPassword     string
