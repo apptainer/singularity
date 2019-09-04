@@ -209,3 +209,25 @@ func HasNamespace(pid int, nstype string) (bool, error) {
 
 	return has, nil
 }
+
+// Getppid returns the parent process ID for the corresponding
+// process ID passed in parameter.
+func Getppid(pid int) (int, error) {
+	status := fmt.Sprintf("/proc/%d/status", pid)
+	p, err := os.Open(status)
+	if err != nil {
+		return -1, fmt.Errorf("could not open %s: %s", status, err)
+	}
+	defer p.Close()
+
+	scanner := bufio.NewScanner(p)
+	for scanner.Scan() {
+		ppid := -1
+		n, _ := fmt.Sscanf(scanner.Text(), "PPid:\t%d", &ppid)
+		if n == 1 && ppid > 0 {
+			return ppid, nil
+		}
+	}
+
+	return -1, fmt.Errorf("no parent process ID found")
+}

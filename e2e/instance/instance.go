@@ -11,7 +11,13 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"syscall"
 	"testing"
+
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
+
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -227,6 +233,77 @@ func (c *ctx) testInstanceFromURI(t *testing.T) {
 	}
 }
 
+// Execute an instance process, kill master process
+// and try to start another instance with same name
+func (c *ctx) testGhostInstance(t *testing.T) {
+	// pick up a random name
+	instanceName := uuid.NewV4().String()
+	pidfile := filepath.Join(c.env.TestDir, instanceName)
+
+	postFn := func(t *testing.T) {
+		defer os.Remove(pidfile)
+
+		if t.Failed() {
+			t.Fatalf("instance %s failed to start correctly", instanceName)
+		}
+
+		d, err := ioutil.ReadFile(pidfile)
+		if err != nil {
+			t.Fatalf("failed to read pid file: %s", err)
+		}
+		trimmed := strings.TrimSuffix(string(d), "\n")
+		pid, err := strconv.ParseInt(trimmed, 10, 32)
+		if err != nil {
+			t.Fatalf("failed to convert PID %s in %s: %s", trimmed, pidfile, err)
+		}
+		ppid, err := proc.Getppid(int(pid))
+		if err != nil {
+			t.Fatalf("failed to get parent process ID for process %d: %s", pid, err)
+		}
+
+		// starting same instance twice must return an error
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(c.profile),
+			e2e.WithCommand("instance start"),
+			e2e.WithArgs(c.env.ImagePath, instanceName),
+			e2e.ExpectExit(
+				255,
+				e2e.ExpectErrorf(e2e.ContainMatch, "instance %s already exists", instanceName),
+			),
+		)
+
+		// kill master process
+		if err := syscall.Kill(int(ppid), syscall.SIGKILL); err != nil {
+			t.Fatalf("failed to send KILL signal to %d: %s", ppid, err)
+		}
+
+		// now check we are deleting ghost instance files correctly
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(c.profile),
+			e2e.WithCommand("instance start"),
+			e2e.WithArgs(c.env.ImagePath, instanceName),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					return
+				}
+				c.stopInstance(t, instanceName)
+			}),
+			e2e.ExpectExit(0),
+		)
+	}
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(c.profile),
+		e2e.WithCommand("instance start"),
+		e2e.WithArgs("--pid-file", pidfile, c.env.ImagePath, instanceName),
+		e2e.PostRun(postFn),
+		e2e.ExpectExit(0),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
@@ -250,6 +327,7 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 			{"CreateManyInstances", c.testCreateManyInstances},
 			{"StopAll", c.testStopAll},
 			{"FinalNoInstances", c.testNoInstances},
+			{"GhostInstance", c.testGhostInstance},
 		}
 
 		// run unprivileged
