@@ -58,199 +58,12 @@ func elfToGoArch(elfFile *elf.File) string {
 	return "UNKNOWN"
 }
 
-func (e *EngineOperations) setPathEnv() {
-	env := e.EngineConfig.OciConfig.Process.Env
-	for _, keyval := range env {
-		if strings.HasPrefix(keyval, "PATH=") {
-			os.Setenv("PATH", keyval[5:])
-			break
-		}
-	}
-}
-
-func (e *EngineOperations) checkExec() error {
-	shell := e.EngineConfig.GetShell()
-
-	if shell == "" {
-		shell = defaultShell
-	}
-
-	// Make sure the shell exists
-	if _, err := os.Stat(shell); os.IsNotExist(err) {
-		return fmt.Errorf("shell %s doesn't exist in container", shell)
-	}
-
-	args := e.EngineConfig.OciConfig.Process.Args
-	env := e.EngineConfig.OciConfig.Process.Env
-
-	// match old behavior of searching path
-	oldpath := os.Getenv("PATH")
-	defer func() {
-		os.Setenv("PATH", oldpath)
-		e.EngineConfig.OciConfig.Process.Args = args
-		e.EngineConfig.OciConfig.Process.Env = env
-	}()
-
-	e.setPathEnv()
-
-	// If args[0] is an absolute path, exec.LookPath() looks for
-	// this file directly instead of within PATH
-	if _, err := exec.LookPath(args[0]); err == nil {
-		return nil
-	}
-
-	// If args[0] isn't executable (either via PATH or absolute path),
-	// look for alternative approaches to handling it
-	switch args[0] {
-	case "/.singularity.d/actions/exec":
-		if p, err := exec.LookPath("/.exec"); err == nil {
-			args[0] = p
-			return nil
-		}
-		if p, err := exec.LookPath(args[1]); err == nil {
-			sylog.Warningf("container does not have %s, calling %s directly", args[0], args[1])
-			args[1] = p
-			args = args[1:]
-			return nil
-		}
-		return fmt.Errorf("no executable %s found", args[1])
-	case "/.singularity.d/actions/shell":
-		if p, err := exec.LookPath("/.shell"); err == nil {
-			args[0] = p
-			return nil
-		}
-		if p, err := exec.LookPath(shell); err == nil {
-			sylog.Warningf("container does not have %s, calling %s directly", args[0], shell)
-			args[0] = p
-			return nil
-		}
-		return fmt.Errorf("no %s found inside container", shell)
-	case "/.singularity.d/actions/run":
-		if p, err := exec.LookPath("/.run"); err == nil {
-			args[0] = p
-			return nil
-		}
-		if p, err := exec.LookPath("/singularity"); err == nil {
-			args[0] = p
-			return nil
-		}
-		return fmt.Errorf("no run driver found inside container")
-	case "/.singularity.d/actions/start":
-		if _, err := exec.LookPath(shell); err != nil {
-			return fmt.Errorf("no %s found inside container, can't run instance", shell)
-		}
-		args = []string{shell, "-c", `echo "instance start script not found"`}
-		return nil
-	case "/.singularity.d/actions/test":
-		if p, err := exec.LookPath("/.test"); err == nil {
-			args[0] = p
-			return nil
-		}
-		return fmt.Errorf("no test driver found inside container")
-	}
-
-	return fmt.Errorf("no %s found inside container", args[0])
-}
-
-func (e *EngineOperations) runFuseDriver(name string, program []string, fd int) error {
-	sylog.Debugf("Running FUSE driver for %s as %v, fd %d", name, program, fd)
-
-	fh := os.NewFile(uintptr(fd), "fd-"+name)
-	if fh == nil {
-		// this should never happen
-		return errors.New("cannot map /dev/fuse file descriptor to a file handle")
-	}
-	// the master process does not need this file descriptor after
-	// running the program, make sure it gets closed; ignore any
-	// errors that happen here
-	defer fh.Close()
-
-	// The assumption is that the plugin prepared "Program" in such
-	// a way that it's missing the last parameter and that must
-	// correspond to /dev/fd/N. Instead of making assumptions as to
-	// how many and which file descriptors are open at this point,
-	// simply assume that it's possible to map the existing file
-	// descriptor to the name number in the new process.
-	//
-	// "newFd" should be the same as "fd", but do not assume that
-	// either.
-	newFd := fh.Fd()
-	fdDevice := fmt.Sprintf("/dev/fd/%d", newFd)
-	args := append(program, fdDevice)
-
-	// set PATH for the command
-	oldpath := os.Getenv("PATH")
-	defer func() {
-		os.Setenv("PATH", oldpath)
-	}()
-	e.setPathEnv()
-
-	cmd := exec.Command(args[0], args[1:]...)
-
-	// Add the /dev/fuse file descriptor to the list of file
-	// descriptors to be passed to the new process.
-	//
-	// ExtraFiles is an array of *os.File, with the position of each
-	// entry determining the resulting file descriptor number. Since
-	// we are passing /dev/fd/N above, place our file handle at
-	// position N-3, so that it gets mapped to file descriptor N in
-	// the new process (the Go library will set things up so that
-	// stdin, stdout and stderr are 0, 1, and 2, so the first
-	// element of ExtraFiles gets 3).
-	cmd.ExtraFiles = make([]*os.File, newFd-3+1)
-	cmd.ExtraFiles[newFd-3] = fh
-	// The FUSE driver will get SIGQUIT if the parent dies.
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGQUIT,
-	}
-
-	if err := cmd.Run(); err != nil {
-		sylog.Warningf("cannot run program %v: %v\n", args, err)
-		return err
-	}
-
-	return nil
-}
-
-// setupFuseDrivers runs the operations required by FUSE drivers before
-// the user process starts
-func setupFuseDrivers(e *EngineOperations) error {
-	// close file descriptors open for FUSE mount
-	for _, name := range e.EngineConfig.GetPluginFuseMounts() {
-		var cfg struct {
-			Fuse singularity.FuseInfo
-		}
-		if err := e.EngineConfig.GetPluginConfig(name, &cfg); err != nil {
-			return err
-		}
-
-		if err := e.runFuseDriver(name, cfg.Fuse.Program, cfg.Fuse.DevFuseFd); err != nil {
-			return err
-		}
-
-		syscall.Close(cfg.Fuse.DevFuseFd)
-	}
-
-	return nil
-}
-
-// preStartProcess does the final set up before starting the user's
-// process.
-func preStartProcess(e *EngineOperations) error {
-	// TODO(mem): most of the StartProcess method should be here, as
-	// it's doing preparation for actually starting the user
-	// process.
-	//
-	// For now it's limited to doing the final set up for FUSE
-	// drivers
-	if err := setupFuseDrivers(e); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// StartProcess starts the process
+// StartProcess is called during stage2 after RPC server finished
+// environment preparation. This is the container process itself.
+//
+// No additional privileges can be gained during this call (unless container
+// is executed as root intentionally) as starter will set uid/euid/suid
+// to the targetUID (PrepareConfig will set it by calling starter.Config.SetTargetUID).
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	// Manage all signals.
 	// Queue them until they're ready to be handled below.
@@ -473,8 +286,16 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 }
 
-// PostStartProcess will execute code in master context after execution of container
-// process, typically to write instance state/config files or execute post start OCI hook
+// PostStartProcess is called from master after successful
+// execution of the container process. It will write instance
+// state/config files (if any).
+//
+// Additional privileges may be gained when running
+// in suid flow. However, when a user namespace is requested and it is not
+// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
+// and thus no additional privileges can be gained.
+//
+// Here, however, singularity engine does not escalate privileges.
 func (e *EngineOperations) PostStartProcess(pid int) error {
 	sylog.Debugf("Post start process")
 
@@ -546,5 +367,196 @@ func (e *EngineOperations) PostStartProcess(pid int) error {
 
 		return err
 	}
+	return nil
+}
+
+func (e *EngineOperations) setPathEnv() {
+	env := e.EngineConfig.OciConfig.Process.Env
+	for _, keyval := range env {
+		if strings.HasPrefix(keyval, "PATH=") {
+			os.Setenv("PATH", keyval[5:])
+			break
+		}
+	}
+}
+
+func (e *EngineOperations) checkExec() error {
+	shell := e.EngineConfig.GetShell()
+
+	if shell == "" {
+		shell = defaultShell
+	}
+
+	// Make sure the shell exists
+	if _, err := os.Stat(shell); os.IsNotExist(err) {
+		return fmt.Errorf("shell %s doesn't exist in container", shell)
+	}
+
+	args := e.EngineConfig.OciConfig.Process.Args
+	env := e.EngineConfig.OciConfig.Process.Env
+
+	// match old behavior of searching path
+	oldPath := os.Getenv("PATH")
+	defer func() {
+		os.Setenv("PATH", oldPath)
+		e.EngineConfig.OciConfig.Process.Args = args
+		e.EngineConfig.OciConfig.Process.Env = env
+	}()
+
+	e.setPathEnv()
+
+	// If args[0] is an absolute path, exec.LookPath() looks for
+	// this file directly instead of within PATH
+	if _, err := exec.LookPath(args[0]); err == nil {
+		return nil
+	}
+
+	// If args[0] isn't executable (either via PATH or absolute path),
+	// look for alternative approaches to handling it
+	switch args[0] {
+	case "/.singularity.d/actions/exec":
+		if p, err := exec.LookPath("/.exec"); err == nil {
+			args[0] = p
+			return nil
+		}
+		if p, err := exec.LookPath(args[1]); err == nil {
+			sylog.Warningf("container does not have %s, calling %s directly", args[0], args[1])
+			args[1] = p
+			args = args[1:]
+			return nil
+		}
+		return fmt.Errorf("no executable %s found", args[1])
+	case "/.singularity.d/actions/shell":
+		if p, err := exec.LookPath("/.shell"); err == nil {
+			args[0] = p
+			return nil
+		}
+		if p, err := exec.LookPath(shell); err == nil {
+			sylog.Warningf("container does not have %s, calling %s directly", args[0], shell)
+			args[0] = p
+			return nil
+		}
+		return fmt.Errorf("no %s found inside container", shell)
+	case "/.singularity.d/actions/run":
+		if p, err := exec.LookPath("/.run"); err == nil {
+			args[0] = p
+			return nil
+		}
+		if p, err := exec.LookPath("/singularity"); err == nil {
+			args[0] = p
+			return nil
+		}
+		return fmt.Errorf("no run driver found inside container")
+	case "/.singularity.d/actions/start":
+		if _, err := exec.LookPath(shell); err != nil {
+			return fmt.Errorf("no %s found inside container, can't run instance", shell)
+		}
+		args = []string{shell, "-c", `echo "instance start script not found"`}
+		return nil
+	case "/.singularity.d/actions/test":
+		if p, err := exec.LookPath("/.test"); err == nil {
+			args[0] = p
+			return nil
+		}
+		return fmt.Errorf("no test driver found inside container")
+	}
+
+	return fmt.Errorf("no %s found inside container", args[0])
+}
+
+func (e *EngineOperations) runFuseDriver(name string, program []string, fd int) error {
+	sylog.Debugf("Running FUSE driver for %s as %v, fd %d", name, program, fd)
+
+	fh := os.NewFile(uintptr(fd), "fd-"+name)
+	if fh == nil {
+		// this should never happen
+		return errors.New("cannot map /dev/fuse file descriptor to a file handle")
+	}
+	// the master process does not need this file descriptor after
+	// running the program, make sure it gets closed; ignore any
+	// errors that happen here
+	defer fh.Close()
+
+	// The assumption is that the plugin prepared "Program" in such
+	// a way that it's missing the last parameter and that must
+	// correspond to /dev/fd/N. Instead of making assumptions as to
+	// how many and which file descriptors are open at this point,
+	// simply assume that it's possible to map the existing file
+	// descriptor to the name number in the new process.
+	//
+	// "newFd" should be the same as "fd", but do not assume that
+	// either.
+	newFd := fh.Fd()
+	fdDevice := fmt.Sprintf("/dev/fd/%d", newFd)
+	args := append(program, fdDevice)
+
+	// set PATH for the command
+	oldpath := os.Getenv("PATH")
+	defer func() {
+		os.Setenv("PATH", oldpath)
+	}()
+	e.setPathEnv()
+
+	cmd := exec.Command(args[0], args[1:]...)
+
+	// Add the /dev/fuse file descriptor to the list of file
+	// descriptors to be passed to the new process.
+	//
+	// ExtraFiles is an array of *os.File, with the position of each
+	// entry determining the resulting file descriptor number. Since
+	// we are passing /dev/fd/N above, place our file handle at
+	// position N-3, so that it gets mapped to file descriptor N in
+	// the new process (the Go library will set things up so that
+	// stdin, stdout and stderr are 0, 1, and 2, so the first
+	// element of ExtraFiles gets 3).
+	cmd.ExtraFiles = make([]*os.File, newFd-3+1)
+	cmd.ExtraFiles[newFd-3] = fh
+	// The FUSE driver will get SIGQUIT if the parent dies.
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGQUIT,
+	}
+
+	if err := cmd.Run(); err != nil {
+		sylog.Warningf("cannot run program %v: %v\n", args, err)
+		return err
+	}
+
+	return nil
+}
+
+// setupFuseDrivers runs the operations required by FUSE
+// drivers before the user process starts.
+func setupFuseDrivers(e *EngineOperations) error {
+	// close file descriptors open for FUSE mount
+	for _, name := range e.EngineConfig.GetPluginFuseMounts() {
+		var cfg struct {
+			Fuse singularity.FuseInfo
+		}
+		if err := e.EngineConfig.GetPluginConfig(name, &cfg); err != nil {
+			return err
+		}
+
+		if err := e.runFuseDriver(name, cfg.Fuse.Program, cfg.Fuse.DevFuseFd); err != nil {
+			return err
+		}
+
+		syscall.Close(cfg.Fuse.DevFuseFd)
+	}
+
+	return nil
+}
+
+// preStartProcess does the final set up before starting the user's process.
+func preStartProcess(e *EngineOperations) error {
+	// TODO(mem): most of the StartProcess method should be here, as
+	// it's doing preparation for actually starting the user
+	// process.
+	//
+	// For now it's limited to doing the final set up for FUSE
+	// drivers
+	if err := setupFuseDrivers(e); err != nil {
+		return err
+	}
+
 	return nil
 }

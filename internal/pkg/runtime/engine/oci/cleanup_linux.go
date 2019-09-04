@@ -15,7 +15,17 @@ import (
 	"github.com/sylabs/singularity/pkg/ociruntime"
 )
 
-// CleanupContainer cleans up the container
+// CleanupContainer is called from master after the MonitorContainer returns.
+// It is responsible for ensuring that the container has been properly torn down.
+//
+// Additional privileges may be gained when running
+// in suid flow. However, when a user namespace is requested and it is not
+// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
+// and thus no additional privileges can be gained.
+//
+// Specifically in oci engine, no additional privileges are gained here. However,
+// most likely this still will be executed as root since `singularity oci`
+// command set requires privileged execution.
 func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
 	if e.EngineConfig.Cgroups != nil {
 		e.EngineConfig.Cgroups.Remove()
