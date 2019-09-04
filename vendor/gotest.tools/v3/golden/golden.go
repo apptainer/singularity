@@ -9,17 +9,28 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
-	"gotest.tools/assert"
-	"gotest.tools/assert/cmp"
-	"gotest.tools/internal/format"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/assert/cmp"
+	"gotest.tools/v3/internal/format"
 )
 
 var flagUpdate = flag.Bool("test.update-golden", false, "update golden file")
 
 type helperT interface {
 	Helper()
+}
+
+// Open opens the file in ./testdata
+func Open(t assert.TestingT, filename string) *os.File {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
+	f, err := os.Open(Path(filename))
+	assert.NilError(t, err)
+	return f
 }
 
 // Get returns the contents of the file in ./testdata

@@ -2,6 +2,7 @@ package icmd
 
 import (
 	"io"
+	"os"
 	"time"
 )
 
@@ -34,5 +35,12 @@ func Dir(path string) CmdOp {
 func WithStdin(r io.Reader) CmdOp {
 	return func(c *Cmd) {
 		c.Stdin = r
+	}
+}
+
+// WithExtraFile adds a file descriptor to the command
+func WithExtraFile(f *os.File) CmdOp {
+	return func(c *Cmd) {
+		c.ExtraFiles = append(c.ExtraFiles, f)
 	}
 }
