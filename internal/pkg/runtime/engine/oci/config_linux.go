@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/singularity/pkg/ociruntime"
 )
 
-// Name of the engine
+// Name of the engine.
 const Name = "oci"
 
 // EngineConfig is the config for the OCI engine.
@@ -23,7 +23,6 @@ type EngineConfig struct {
 	LogFormat     string           `json:"logFormat"`
 	PidFile       string           `json:"pidFile"`
 	OciConfig     *oci.Config      `json:"ociConfig"`
-	State         ociruntime.State `json:"state"`
 	MasterPts     int              `json:"masterPts"`
 	SlavePts      int              `json:"slavePts"`
 	OutputStreams [2]int           `json:"outputStreams"`
@@ -33,7 +32,9 @@ type EngineConfig struct {
 	EmptyProcess  bool             `json:"emptyProcess"`
 	Exec          bool             `json:"exec"`
 	Cgroups       *cgroups.Manager `json:"-"`
-	sync.Mutex    `json:"-"`
+
+	sync.Mutex `json:"-"`
+	State      ociruntime.State `json:"state"`
 }
 
 // NewConfig returns an oci.EngineConfig.
@@ -55,14 +56,12 @@ func (e *EngineConfig) GetBundlePath() string {
 	return e.BundlePath
 }
 
-// SetState sets the container state as defined by OCI state
-// specification
+// SetState sets the container state as defined by OCI state specification.
 func (e *EngineConfig) SetState(state *ociruntime.State) {
 	e.State = *state
 }
 
-// GetState returns the container state as defined by OCI state
-// specification
+// GetState returns the container state as defined by OCI state specification.
 func (e *EngineConfig) GetState() *ociruntime.State {
 	return &e.State
 }
