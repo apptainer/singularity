@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
@@ -101,8 +102,18 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 		return fmt.Errorf("failed to set close-on-exec on loop device %s: %s", path, err.Error())
 	}
 
-	if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdSetStatus64, uintptr(unsafe.Pointer(loop.Info))); err != 0 {
-		return fmt.Errorf("failed to set loop flags on loop device: %s", syscall.Errno(err))
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdSetStatus64, uintptr(unsafe.Pointer(loop.Info))); err != 0 {
+			if err == syscall.EAGAIN && i < maxRetries-1 {
+				// loop_set_status() can temporarily fail with EAGAIN -> sleep and try again
+				// (cf. https://github.com/karelzak/util-linux/blob/dab1303287b7ebe30b57ccc78591070dad0a85ea/lib/loopdev.c#L1355)
+				time.Sleep(250*time.Millisecond)
+				continue
+			}
+			return fmt.Errorf("failed to set loop flags on loop device: %s", syscall.Errno(err))
+		}
+		break
 	}
 
 	return nil
