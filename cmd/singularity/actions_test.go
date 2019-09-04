@@ -20,7 +20,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
-//build base image for tests
+// build base image for tests
 const imageName = "container.sif"
 const appsImageName = "appsImage.sif"
 
@@ -509,8 +509,7 @@ func TestSingularityActions(t *testing.T) {
 	appsImage = filepath.Join(dir, appsImageName)
 
 	opts := buildOpts{
-		force:   true,
-		sandbox: false,
+		force: true,
 	}
 	if b, err := imageBuild(imgCache, opts, imagePath, "../../examples/busybox/Singularity"); err != nil {
 		t.Log(string(b))
