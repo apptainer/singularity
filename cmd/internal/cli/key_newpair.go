@@ -59,7 +59,7 @@ var (
 		DefaultValue: "",
 		Name:         "password",
 		ShortHand:    "P",
-		Usage:        "keys password",
+		Usage:        "key password",
 	}
 
 	keyNewPairPush     bool
