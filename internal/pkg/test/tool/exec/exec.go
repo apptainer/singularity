@@ -8,7 +8,7 @@ package exec
 import (
 	"testing"
 
-	"gotest.tools/icmd"
+	"gotest.tools/v3/icmd"
 )
 
 type Cmd struct {
