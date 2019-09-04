@@ -280,40 +280,46 @@ func TestMultiStageDefinition(t *testing.T) {
 		correct DefFileDetail // a bit hacky, but this allows us to check final image for correct artifacts
 	}{
 		// Simple copy from stage one to final stage
-		{"FileCopySimple", false, true, []DefFileDetail{
-			{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Stage:     "one",
-				Files: []FilePair{
-					{
-						Src: tmpfile.Name(),
-						Dst: "StageOne2.txt",
+		{
+			name:    "FileCopySimple",
+			sandbox: true,
+			dfd: []DefFileDetail{
+				{
+					Bootstrap: "docker",
+					From:      "alpine:latest",
+					Stage:     "one",
+					Files: []FilePair{
+						{
+							Src: tmpfile.Name(),
+							Dst: "StageOne2.txt",
+						},
+						{
+							Src: tmpfile.Name(),
+							Dst: "StageOne.txt",
+						},
 					},
-					{
-						Src: tmpfile.Name(),
-						Dst: "StageOne.txt",
+				},
+				{
+					Bootstrap: "docker",
+					From:      "alpine:latest",
+					FilesFrom: []FileSection{
+						{
+							Stage: "one",
+							Files: []FilePair{
+								{
+									Src: "StageOne2.txt",
+									Dst: "StageOneCopy2.txt",
+								},
+								{
+									Src: "StageOne.txt",
+									Dst: "StageOneCopy.txt",
+								},
+							},
+						},
 					},
 				},
 			},
-			{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				FilesFrom: []FileSection{
-					{
-						"one",
-						[]FilePair{
-							{
-								Src: "StageOne2.txt",
-								Dst: "StageOneCopy2.txt",
-							},
-							{
-								Src: "StageOne.txt",
-								Dst: "StageOneCopy.txt",
-							},
-						}}},
-			}},
-			DefFileDetail{
+			correct: DefFileDetail{
 				Files: []FilePair{
 					{
 						Src: tmpfile.Name(),
@@ -327,8 +333,10 @@ func TestMultiStageDefinition(t *testing.T) {
 			},
 		},
 		// Complex copy of files from stage one and two to stage three, then final copy from three to final stage
-		{"FileCopyComplex", false, true,
-			[]DefFileDetail{
+		{
+			name:    "FileCopyComplex",
+			sandbox: true,
+			dfd: []DefFileDetail{
 				{
 					Bootstrap: "docker",
 					From:      "alpine:latest",
@@ -388,7 +396,8 @@ func TestMultiStageDefinition(t *testing.T) {
 									Dst: "StageTwoCopy.txt",
 								},
 							},
-						}},
+						},
+					},
 				},
 				{
 					Bootstrap: "docker",
@@ -413,10 +422,12 @@ func TestMultiStageDefinition(t *testing.T) {
 									Src: "StageTwoCopy.txt",
 									Dst: "StageTwoCopyFinal.txt",
 								},
-							}}},
+							},
+						},
+					},
 				},
 			},
-			DefFileDetail{
+			correct: DefFileDetail{
 				Files: []FilePair{
 					{
 						Src: tmpfile.Name(),
