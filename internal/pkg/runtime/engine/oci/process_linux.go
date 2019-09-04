@@ -244,7 +244,7 @@ func (e *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fatalCh
 // and thus no additional privileges can be gained.
 //
 // Here, however, oci engine does not escalate privileges, which means
-// OCI hooks will be executed of behalf of a user who spawned a container
+// OCI hooks will be executed on behalf of a user who spawned a container
 // (but not the one who runs it as targetUID may be arbitrary).
 //
 // Most likely this still will be executed as root since `singularity oci`

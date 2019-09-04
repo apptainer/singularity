@@ -159,7 +159,7 @@ func fakerootSeccompProfile() *specs.LinuxSeccomp {
 // environment preparation. This is the container process itself.
 // It will execute command in the fakeroot context.
 //
-// This will be executed on behalf of a root user in a new user
+// This will be executed as a fake root user in a new user
 // namespace (PrepareConfig will set both).
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	const (

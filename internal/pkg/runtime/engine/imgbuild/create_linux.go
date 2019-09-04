@@ -37,7 +37,7 @@ import (
 // setup (e.g. mount operations) where privileges may be required is performed
 // by calling RPC server methods (see internal/app/starter/rpc_linux.go for details).
 //
-// Note that imgbuild engine is usually called with `sudo`, so technically this
+// Note that imgbuild engine is usually called by root user or by fakeroot engine, so technically this
 // method may already be run with escalated privileges.
 func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 	if e.CommonConfig.EngineName != imgbuildConfig.Name {

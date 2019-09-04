@@ -50,7 +50,7 @@ func (e *EngineOperations) Config() config.EngineConfig {
 // No additional privileges can be gained as any of them are already
 // dropped by the time PrepareConfig is called.
 //
-// Note that imgbuild engine is called with `sudo` or `--fakeroot`,
+// Note that imgbuild engine is called by root user or fakeroot engine,
 // so technically this method may already be run with escalated privileges.
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if e.EngineConfig.OciConfig.Generator.Config != &e.EngineConfig.OciConfig.Spec {

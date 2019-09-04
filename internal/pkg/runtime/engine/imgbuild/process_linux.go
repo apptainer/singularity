@@ -22,7 +22,7 @@ import (
 // container recipe file.
 //
 // No additional privileges can be gained during this call. However,
-// imgbuild engine is run with `sudo` of `--fakeroot`, so technically
+// imgbuild engine is run by root user or fakeroot engine, so technically
 // there are elevated privileges here.
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 
