@@ -408,7 +408,7 @@ func (cp *OCIConveyorPacker) insertEnv() (err error) {
 		if len(envParts) == 1 {
 			export = fmt.Sprintf("export %s=${%s:-}\n", envParts[0], envParts[0])
 		} else {
-			if strings.ContainsAny(envParts[0],"PATH") {
+			if strings.Contains(envParts[0],"PATH") {
 				export = fmt.Sprintf("export %s=%q\n", envParts[0], shell.Escape(envParts[1]))
 			} else {
 				export = fmt.Sprintf("export %s=${%s:-%q}\n", envParts[0], envParts[0], shell.Escape(envParts[1]))
