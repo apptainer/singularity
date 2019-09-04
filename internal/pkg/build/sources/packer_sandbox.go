@@ -28,7 +28,7 @@ type SandboxPacker struct {
 func (p *SandboxPacker) Pack() (*types.Bundle, error) {
 	rootfs := p.srcdir
 
-	p.b.Recipe.ImageData.Labels = make(map[string]string, 1)
+	p.b.Recipe.ImageData.Labels = make(map[string]map[string]string, 1)
 
 	// Read the labels from the sandbox
 	jsonLabels, err := ioutil.ReadFile(filepath.Join(rootfs, ".singularity.d/labels.json"))

@@ -222,18 +222,28 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 
 	// Get the old image labels first
 	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
-		for key, value := range b.Recipe.ImageData.Labels {
-			labels["system-partition"][key] = value
+		for _, value := range b.Recipe.ImageData.Labels {
+			for foo, bar := range value {
+				labels["system-partition"][foo] = bar
+				//labels[key][foo] = bar
+			}
 		}
 	}
 
-	for name, l := range b.JSONLabels {
-		labels[name] = make(map[string]string, 1)
-		for k, v := range l {
-			labels[name][k] = v
-			fmt.Printf("LABELS NAME=%s %s:%s\n", name, k, v)
+	// Copy the labels
+	for k, v := range b.JSONLabels {
+		labels[k] = make(map[string]string, 1)
+		for foo, bar := range v {
+			labels[k][foo] = bar
 		}
 	}
+
+	//	for k, v := range b.Recipe.ImageData.Labels {
+	//		labels[k] = make(map[string]string, 1)
+	//		for foo, bar := range v {
+	//			labels[k][foo] = bar
+	//		}
+	//	}
 
 	sylog.Infof("Inserting Metadata Labels...")
 

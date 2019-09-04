@@ -83,7 +83,7 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 	} else if err != nil {
 		sylog.Fatalf("Unable to get label metadata: %s", err)
 	} else if err == nil {
-		b.Recipe.ImageData.Labels = make(map[string]string, 1)
+		b.Recipe.ImageData.Labels = make(map[string]map[string]string, 1)
 
 		for _, v := range sifData {
 			metaData := v.GetData(&fimg)

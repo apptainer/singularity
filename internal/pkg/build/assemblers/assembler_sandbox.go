@@ -32,12 +32,23 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	jsonLabels["system-partition"] = make(map[string]string, 1)
 	// Copy the labels
 	for k, v := range b.Recipe.ImageData.Labels {
-		jsonLabels["system-partition"][k] = v
+		jsonLabels[k] = make(map[string]string, 1)
+		for foo, bar := range v {
+			jsonLabels[k][foo] = bar
+		}
 	}
 
 	sylog.Infof("Adding labels...")
 
 	metadata.GetImageInfoLabels(jsonLabels, nil, b)
+
+	// Copy the labels from the %applabels
+	for name, l := range b.JSONLabels {
+		jsonLabels[name] = make(map[string]string, 1)
+		for k, v := range l {
+			jsonLabels[name][k] = v
+		}
+	}
 
 	text, err := json.MarshalIndent(jsonLabels, "", "\t")
 	if err != nil {
