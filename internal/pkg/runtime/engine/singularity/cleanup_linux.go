@@ -57,18 +57,18 @@ func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStat
 		}
 	}
 
+	if e.EngineConfig.CryptDev != "" {
+		if err := cleanupCrypt(e.EngineConfig.CryptDev); err != nil {
+			sylog.Errorf("could not cleanup crypt: %v", err)
+		}
+	}
+
 	if e.EngineConfig.GetInstance() {
 		file, err := instance.Get(e.CommonConfig.ContainerID, instance.SingSubDir)
 		if err != nil {
 			return err
 		}
 		return file.Delete()
-	}
-
-	if e.EngineConfig.CryptDev != "" {
-		if err := cleanupCrypt(e.EngineConfig.CryptDev); err != nil {
-			sylog.Errorf("could not cleanup crypt: %v", err)
-		}
 	}
 
 	return nil
