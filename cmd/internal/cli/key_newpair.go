@@ -69,7 +69,7 @@ var (
 		DefaultValue: false,
 		Name:         "push",
 		ShortHand:    "U",
-		Usage:        "push generated key to a keystore",
+		Usage:        "specify to push the public key to the remote keystore (default true)",
 	}
 
 	// KeyNewPairCmd is 'singularity key newpair' and generate a new OpenPGP key pair
