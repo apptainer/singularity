@@ -109,9 +109,9 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 
 		s := stage{}
 		if conf.Opts.EncryptionKeyInfo != nil {
-			s.b, err = types.NewEncryptedBundle(conf.Opts.TmpDir, "sbuild", conf.Opts.EncryptionKeyInfo)
+			s.b, err = types.NewEncryptedBundle(filepath.Join(conf.Opts.TmpDir, "rootfs"), conf.Opts.TmpDir, conf.Opts.EncryptionKeyInfo)
 		} else {
-			s.b, err = types.NewBundle(conf.Opts.TmpDir, "sbuild")
+			s.b, err = types.NewBundle(filepath.Join(conf.Opts.TmpDir, "rootfs"), conf.Opts.TmpDir)
 		}
 		if err != nil {
 			return nil, err
@@ -143,7 +143,7 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 			return nil, fmt.Errorf("while searching for mksquashfs: %v", err)
 		}
 
-		flag, err := ensureGzipComp(b.stages[lastStageIndex].b.Path, mksquashfsPath)
+		flag, err := ensureGzipComp(b.stages[lastStageIndex].b.TmpDir, mksquashfsPath)
 		if err != nil {
 			return nil, fmt.Errorf("while ensuring correct compression algorithm: %v", err)
 		}
@@ -226,26 +226,27 @@ func ensureGzipComp(tmpdir, mksquashfsPath string) (bool, error) {
 	return false, fmt.Errorf("could not build squashfs with required gzip compression")
 }
 
-// cleanUp removes remnants of build from file system unless NoCleanUp is specified
+// cleanUp removes remnants of build from file system unless NoCleanUp is specified.
 func (b Build) cleanUp() {
-	var bundlePaths []string
-	for _, s := range b.stages {
-		bundlePaths = append(bundlePaths, s.b.Path)
-	}
-
 	if b.Conf.NoCleanUp {
+		var bundlePaths []string
+		for _, s := range b.stages {
+			bundlePaths = append(bundlePaths, s.b.RootfsPath, s.b.TmpDir)
+		}
 		sylog.Infof("Build performed with no clean up option, build bundle(s) located at: %v", bundlePaths)
 		return
 	}
 
-	for _, path := range bundlePaths {
-		os.RemoveAll(path)
+	for _, s := range b.stages {
+		sylog.Debugf("Cleaning up %q and %q", s.b.RootfsPath, s.b.TmpDir)
+		err := s.b.Remove()
+		if err != nil {
+			sylog.Errorf("Could not remove bundle: %v", err)
+		}
 	}
-	sylog.Debugf("Build bundle(s) cleaned: %v", bundlePaths)
-
 }
 
-// Full runs a standard build from start to finish
+// Full runs a standard build from start to finish.
 func (b *Build) Full() error {
 	sylog.Infof("Starting build...")
 
@@ -354,7 +355,7 @@ func runBuildEngine(b *types.Bundle) error {
 	}
 
 	// surface build specific environment variables for scripts
-	sRootfs := "SINGULARITY_ROOTFS=" + b.Rootfs()
+	sRootfs := "SINGULARITY_ROOTFS=" + b.RootfsPath
 	sEnvironment := "SINGULARITY_ENVIRONMENT=" + "/.singularity.d/env/91-environment.sh"
 
 	ociConfig.Process = &specs.Process{}
@@ -512,8 +513,8 @@ func (s *stage) copyFiles(b *Build) error {
 
 			// copy each file into bundle rootfs
 			// prepend appropriate bundle path to supplied paths
-			transfer.Src = files.AddPrefix(b.stages[stageIndex].b.Rootfs(), transfer.Src)
-			transfer.Dst = files.AddPrefix(s.b.Rootfs(), transfer.Dst)
+			transfer.Src = files.AddPrefix(b.stages[stageIndex].b.RootfsPath, transfer.Src)
+			transfer.Dst = files.AddPrefix(s.b.RootfsPath, transfer.Dst)
 			sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
 			if err := files.Copy(transfer.Src, transfer.Dst); err != nil {
 				return err
