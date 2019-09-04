@@ -39,6 +39,7 @@ type Bundle struct {
 	BindPath    []string          `json:"bindPath"`
 	Path        string            `json:"bundlePath"`
 	Opts        Options           `json:"opts"`
+	JSONLabels  map[string]map[string]string
 }
 
 // Options defines build time behavior to be executed on the bundle

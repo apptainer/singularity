@@ -17,8 +17,8 @@ import (
 )
 
 // GetImageInfoLabels will make some image labels
-func GetImageInfoLabels(labels map[string]string, fimg *sif.FileImage, b *types.Bundle) error {
-	labels["org.label-schema.schema-version"] = "1.0"
+func GetImageInfoLabels(labels map[string]map[string]string, fimg *sif.FileImage, b *types.Bundle) error {
+	labels["system-partition"]["org.label-schema.schema-version"] = "1.0"
 
 	// build date and time, lots of time formatting
 	currentTime := time.Now()
@@ -28,10 +28,10 @@ func GetImageInfoLabels(labels map[string]string, fimg *sif.FileImage, b *types.
 	time := strconv.Itoa(hour) + `:` + strconv.Itoa(min) + `:` + strconv.Itoa(sec)
 	zone, _ := currentTime.Zone()
 	timeString := currentTime.Weekday().String() + `_` + date + `_` + time + `_` + zone
-	labels["org.label-schema.build-date"] = timeString
+	labels["system-partition"]["org.label-schema.build-date"] = timeString
 
 	// singularity version
-	labels["org.label-schema.usage.singularity.version"] = buildcfg.PACKAGE_VERSION
+	labels["system-partition"]["org.label-schema.usage.singularity.version"] = buildcfg.PACKAGE_VERSION
 
 	if fimg != nil {
 		var err error
@@ -41,7 +41,7 @@ func GetImageInfoLabels(labels map[string]string, fimg *sif.FileImage, b *types.
 		if err != nil {
 			return fmt.Errorf("failed getting main data: %s", err)
 		}
-		labels["org.label-schema.image-size"] = readBytes(float64(primSize[0].Storelen))
+		labels["system-partition"]["org.label-schema.image-size"] = readBytes(float64(primSize[0].Storelen))
 
 		// Get the image arch
 		imgParts, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
@@ -57,20 +57,20 @@ func GetImageInfoLabels(labels map[string]string, fimg *sif.FileImage, b *types.
 		if err != nil {
 			return fmt.Errorf("unable to get image arch: %s", err)
 		}
-		labels["org.label-schema.image-arch"] = sif.GetGoArch(cstrToString(imageArch[:]))
+		labels["system-partition"]["org.label-schema.image-arch"] = sif.GetGoArch(cstrToString(imageArch[:]))
 	}
 
 	if b != nil {
 		// help info if help exists in the definition and is run in the build
 		if b.RunSection("help") && b.Recipe.ImageData.Help.Script != "" {
-			labels["org.label-schema.usage"] = "/.singularity.d/runscript.help"
-			labels["org.label-schema.usage.singularity.runscript.help"] = "/.singularity.d/runscript.help"
+			labels["system-partition"]["org.label-schema.usage"] = "/.singularity.d/runscript.help"
+			labels["system-partition"]["org.label-schema.usage.singularity.runscript.help"] = "/.singularity.d/runscript.help"
 		}
 
 		// bootstrap header info, only if this build actually bootstrapped
 		if !b.Opts.Update || b.Opts.Force {
 			for key, value := range b.Recipe.Header {
-				labels["org.label-schema.usage.singularity.deffile."+key] = value
+				labels["system-partition"]["org.label-schema.usage.singularity.deffile."+key] = value
 			}
 		}
 	}

@@ -28,10 +28,11 @@ type SandboxAssembler struct {
 func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	sylog.Infof("Creating sandbox directory...")
 
-	jsonLabels := make(map[string]string, 1)
+	jsonLabels := make(map[string]map[string]string, 1)
+	jsonLabels["system-partition"] = make(map[string]string, 1)
 	// Copy the labels
 	for k, v := range b.Recipe.ImageData.Labels {
-		jsonLabels[k] = v
+		jsonLabels["system-partition"][k] = v
 	}
 
 	sylog.Infof("Adding labels...")

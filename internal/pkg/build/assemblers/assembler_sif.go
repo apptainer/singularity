@@ -217,12 +217,21 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 		return fmt.Errorf("while creating SIF: %v", err)
 	}
 
-	labels := make(map[string]string, 1)
+	labels := make(map[string]map[string]string, 1)
+	labels["system-partition"] = make(map[string]string, 1)
 
 	// Get the old image labels first
 	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
 		for key, value := range b.Recipe.ImageData.Labels {
-			labels[key] = value
+			labels["system-partition"][key] = value
+		}
+	}
+
+	for name, l := range b.JSONLabels {
+		labels[name] = make(map[string]string, 1)
+		for k, v := range l {
+			labels[name][k] = v
+			fmt.Printf("LABELS NAME=%s %s:%s\n", name, k, v)
 		}
 	}
 

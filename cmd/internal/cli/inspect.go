@@ -13,10 +13,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/buger/jsonparser"
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
@@ -382,45 +382,47 @@ var InspectCmd = &cobra.Command{
 
 		// Inspect Labels
 		if labels {
-			if AppName != "" {
-				sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
-				if err != nil {
-					sylog.Fatalf("Unable to get metadata: %s", err)
-				}
-
-				for _, v := range sifData {
-					metaData := v.GetData(&fimg)
-					data := parseDeffile(string(metaData), AppName, "labels")
-					inspectData.Data.Attributes.AppLabels = data
-				}
+			jsonName := ""
+			if AppName == "" {
+				jsonName = "system-partition"
 			} else {
-				sifData, _, err := getMetaData(&fimg, sif.DataLabels)
-				if err == ErrNoMetaData {
-					sylog.Warningf("No metadata partition, searching in container...")
-					inspectInContainer(args[0])
-				} else if err != nil {
-					sylog.Fatalf("Unable to get label metadata: %s", err)
+				jsonName = AppName
+			}
+
+			sifData, _, err := getMetaData(&fimg, sif.DataLabels)
+			if err == ErrNoMetaData {
+				sylog.Warningf("No metadata partition, searching in container...")
+				inspectInContainer(args[0])
+			} else if err != nil {
+				sylog.Fatalf("Unable to get label metadata: %s", err)
+			}
+
+			for _, v := range sifData {
+				metaData := v.GetData(&fimg)
+				newbytes, _, _, err := jsonparser.Get(metaData, jsonName)
+				if err != nil {
+					sylog.Fatalf("Unable to find json from metadata: %s", err)
+				}
+				var hrOut map[string]*json.RawMessage
+				err = json.Unmarshal(newbytes, &hrOut)
+				if err != nil {
+					sylog.Fatalf("Unable to get json: %s", err)
 				}
 
-				for _, v := range sifData {
-					metaData := v.GetData(&fimg)
-					var hrOut map[string]*json.RawMessage
-					err := json.Unmarshal(metaData, &hrOut)
-					if err != nil {
-						sylog.Fatalf("Unable to get json: %s", err)
-					}
-
-					// Sort the labels
-					var labelSort []string
-					for k := range hrOut {
-						labelSort = append(labelSort, k)
-					}
-					sort.Strings(labelSort)
-
-					for _, k := range labelSort {
-						inspectData.Data.Attributes.Labels[k] = string(*hrOut[k])
-					}
+				for k, v := range hrOut {
+					inspectData.Data.Attributes.Labels[k] = string(*v)
 				}
+
+				//				// Sort the labels
+				//				var labelSort []string
+				//				for k := range hrOut {
+				//					labelSort = append(labelSort, k)
+				//				}
+				//				sort.Strings(labelSort)
+				//
+				//				for _, k := range labelSort {
+				//					inspectData.Data.Attributes.Labels[k] = string(*hrOut[k])
+				//				}
 			}
 		}
 

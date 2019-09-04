@@ -45,7 +45,8 @@ type Build struct {
 	// stages of the build
 	stages []stage
 	// Conf contains cross stage build configuration
-	Conf Config
+	Conf           Config
+	MetaDataLabels map[string]map[string]string
 }
 
 // Config defines how build is executed, including things like where final image is written.
@@ -249,6 +250,8 @@ func (b Build) cleanUp() {
 func (b *Build) Full() error {
 	sylog.Infof("Starting build...")
 
+	b.MetaDataLabels = make(map[string]map[string]string, 1)
+
 	// monitor build for termination signal and clean up
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -301,7 +304,11 @@ func (b *Build) Full() error {
 			a.HandleSection(k, v)
 		}
 
-		a.HandleBundle(stage.b)
+		err := a.HandleBundle(stage.b)
+		if err != nil {
+			return err
+		}
+
 		stage.b.Recipe.BuildData.Post.Script += a.HandlePost()
 
 		if stage.b.RunSection("files") {
@@ -319,6 +326,35 @@ func (b *Build) Full() error {
 		sylog.Infof("Inserting scripts...")
 		if err := stage.insertScripts(); err != nil {
 			return fmt.Errorf("while inserting scripts to bundle: %v", err)
+		}
+	}
+
+	// Only get the last stage app labels
+	for k, v := range b.stages[len(b.stages)-1].b.Recipe.CustomData {
+		appName, appLabels := apps.GetAppLabels(k, v)
+		if appName != "" && appLabels != nil {
+			b.MetaDataLabels[appName] = make(map[string]string, 1)
+			var objmap map[string]*json.RawMessage
+			err := json.Unmarshal(appLabels, &objmap)
+			if err != nil {
+				return fmt.Errorf("unable to unmarshal json: %s", err)
+			}
+
+			for k, v := range objmap {
+				b.MetaDataLabels[appName][k] = string(*v)
+			}
+		}
+	}
+
+	b.stages[len(b.stages)-1].b.JSONLabels = make(map[string]map[string]string, 1)
+
+	// TODO: fix this
+	// Copy build.Build.MetaDataLabels to bundle.JSONLabels
+	for name, l := range b.MetaDataLabels {
+		b.stages[len(b.stages)-1].b.JSONLabels[name] = make(map[string]string, 1)
+		for k, v := range l {
+			b.stages[len(b.stages)-1].b.JSONLabels[name][k] = v
+			//b.stage.JSONLabels[name][k] = v
 		}
 	}
 
