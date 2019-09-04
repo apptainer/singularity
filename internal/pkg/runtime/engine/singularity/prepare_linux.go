@@ -46,8 +46,120 @@ var nsProcName = map[specs.LinuxNamespaceType]string{
 	specs.UserNamespace:    "user",
 }
 
+// PrepareConfig is called during stage1 to validate and prepare
+// container configuration. It is responsible for singularity
+// configuration file parsing, handling user input, reading capabilities,
+// and checking what namespaces are required.
+//
+// No additional privileges can be gained as any of them are already
+// dropped by the time PrepareConfig is called.
+func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
+	if e.CommonConfig.EngineName != singularityConfig.Name {
+		return fmt.Errorf("incorrect engine")
+	}
+
+	if e.EngineConfig.OciConfig.Generator.Config != &e.EngineConfig.OciConfig.Spec {
+		return fmt.Errorf("bad engine configuration provided")
+	}
+
+	configurationFile := buildcfg.SINGULARITY_CONF_FILE
+	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
+		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
+	}
+
+	if !e.EngineConfig.File.AllowSetuid && starterConfig.GetIsSUID() {
+		return fmt.Errorf("suid workflow disabled by administrator")
+	}
+
+	if starterConfig.GetIsSUID() {
+		// check for ownership of singularity.conf
+		if !fs.IsOwner(configurationFile, 0) {
+			return fmt.Errorf("%s must be owned by root", configurationFile)
+		}
+		// check for ownership of capability.json
+		if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
+			return fmt.Errorf("%s must be owned by root", buildcfg.CAPABILITY_FILE)
+		}
+		// check for ownership of ecl.toml
+		if !fs.IsOwner(buildcfg.ECL_FILE, 0) {
+			return fmt.Errorf("%s must be owned by root", buildcfg.ECL_FILE)
+		}
+	}
+
+	// Save the current working directory to restore it in stage 2
+	// for relative bind paths
+	if pwd, err := os.Getwd(); err == nil {
+		e.EngineConfig.SetCwd(pwd)
+	} else {
+		sylog.Warningf("can't determine current working directory")
+		e.EngineConfig.SetCwd("/")
+	}
+
+	if e.EngineConfig.OciConfig.Process == nil {
+		e.EngineConfig.OciConfig.Process = &specs.Process{}
+	}
+	if e.EngineConfig.OciConfig.Process.Capabilities == nil {
+		e.EngineConfig.OciConfig.Process.Capabilities = &specs.LinuxCapabilities{}
+	}
+	if len(e.EngineConfig.OciConfig.Process.Args) == 0 {
+		return fmt.Errorf("container process arguments not found")
+	}
+
+	uid := e.EngineConfig.GetTargetUID()
+	gids := e.EngineConfig.GetTargetGID()
+
+	if os.Getuid() == 0 && (uid != 0 || len(gids) > 0) {
+		starterConfig.SetTargetUID(uid)
+		starterConfig.SetTargetGID(gids)
+		e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
+	}
+
+	if e.EngineConfig.GetInstanceJoin() {
+		if err := e.prepareInstanceJoinConfig(starterConfig); err != nil {
+			return err
+		}
+	} else {
+		if err := e.prepareContainerConfig(starterConfig); err != nil {
+			return err
+		}
+		if err := e.loadImages(starterConfig); err != nil {
+			return err
+		}
+	}
+
+	starterConfig.SetMasterPropagateMount(true)
+	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
+
+	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {
+		starterConfig.SetCapabilities(capabilities.Permitted, e.EngineConfig.OciConfig.Process.Capabilities.Permitted)
+		starterConfig.SetCapabilities(capabilities.Effective, e.EngineConfig.OciConfig.Process.Capabilities.Effective)
+		starterConfig.SetCapabilities(capabilities.Inheritable, e.EngineConfig.OciConfig.Process.Capabilities.Inheritable)
+		starterConfig.SetCapabilities(capabilities.Bounding, e.EngineConfig.OciConfig.Process.Capabilities.Bounding)
+		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
+	}
+
+	// determine if engine need to propagate signals across processes
+	e.checkSignalPropagation()
+
+	// We must call this here because at this point we haven't
+	// spawned the master process nor the RPC server. The assumption
+	// is that this function runs in stage 1 and that even if it's a
+	// separate process, it's created in such a way that it's
+	// sharing its file descriptor table with the wrapper / stage 2.
+	//
+	// At this point we do not have elevated privileges. We assume
+	// that the user running singularity has access to /dev/fuse
+	// (typically it's 0666, or 0660 belonging to a group that
+	// allows the user to read and write to it).
+	if err := openDevFuse(e, starterConfig); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // prepareUserCaps is responsible for checking that user's requested
-// capabilities are authorized
+// capabilities are authorized.
 func (e *EngineOperations) prepareUserCaps(enforced bool) error {
 	commonCaps := make([]string, 0)
 	commonUnauthorizedCaps := make([]string, 0)
@@ -151,7 +263,7 @@ func (e *EngineOperations) prepareUserCaps(enforced bool) error {
 }
 
 // prepareRootCaps is responsible for setting root capabilities
-// based on capability/configuration files and requested capabilities
+// based on capability/configuration files and requested capabilities.
 func (e *EngineOperations) prepareRootCaps() error {
 	commonCaps := make([]string, 0)
 	defaultCapabilities := e.EngineConfig.File.RootDefaultCapabilities
@@ -322,8 +434,8 @@ func (e *EngineOperations) prepareFd(starterConfig *starter.Config) error {
 	return nil
 }
 
-// prepareContainerConfig is responsible for getting and applying user supplied
-// configuration for container creation
+// prepareContainerConfig is responsible for getting and applying
+// user supplied configuration for container creation.
 func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config) error {
 	// always set mount namespace
 	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
@@ -440,8 +552,8 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	return e.prepareFd(starterConfig)
 }
 
-// prepareInstanceJoinConfig is responsible for getting and applying configuration
-// to join a running instance
+// prepareInstanceJoinConfig is responsible for getting and
+// applying configuration to join a running instance.
 func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Config) error {
 	name := instance.ExtractName(e.EngineConfig.GetImage())
 	file, err := instance.Get(name, instance.SingSubDir)
@@ -704,115 +816,6 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		e.EngineConfig.OciConfig.Process.NoNewPrivileges = instanceEngineConfig.OciConfig.Process.NoNewPrivileges
 	} else {
 		e.EngineConfig.OciConfig.Process.NoNewPrivileges = true
-	}
-
-	return nil
-}
-
-// PrepareConfig checks and prepares the runtime engine config.
-// It is responsible for singularity configuration file parsing,
-// handling user input, reading capabilities, and checking what
-// namespaces are required.
-func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
-	if e.CommonConfig.EngineName != singularityConfig.Name {
-		return fmt.Errorf("incorrect engine")
-	}
-
-	if e.EngineConfig.OciConfig.Generator.Config != &e.EngineConfig.OciConfig.Spec {
-		return fmt.Errorf("bad engine configuration provided")
-	}
-
-	configurationFile := buildcfg.SINGULARITY_CONF_FILE
-	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
-		return fmt.Errorf("Unable to parse singularity.conf file: %s", err)
-	}
-
-	if !e.EngineConfig.File.AllowSetuid && starterConfig.GetIsSUID() {
-		return fmt.Errorf("suid workflow disabled by administrator")
-	}
-
-	if starterConfig.GetIsSUID() {
-		// check for ownership of singularity.conf
-		if !fs.IsOwner(configurationFile, 0) {
-			return fmt.Errorf("%s must be owned by root", configurationFile)
-		}
-		// check for ownership of capability.json
-		if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
-			return fmt.Errorf("%s must be owned by root", buildcfg.CAPABILITY_FILE)
-		}
-		// check for ownership of ecl.toml
-		if !fs.IsOwner(buildcfg.ECL_FILE, 0) {
-			return fmt.Errorf("%s must be owned by root", buildcfg.ECL_FILE)
-		}
-	}
-
-	// Save the current working directory to restore it in stage 2
-	// for relative bind paths
-	if pwd, err := os.Getwd(); err == nil {
-		e.EngineConfig.SetCwd(pwd)
-	} else {
-		sylog.Warningf("can't determine current working directory")
-		e.EngineConfig.SetCwd("/")
-	}
-
-	if e.EngineConfig.OciConfig.Process == nil {
-		e.EngineConfig.OciConfig.Process = &specs.Process{}
-	}
-	if e.EngineConfig.OciConfig.Process.Capabilities == nil {
-		e.EngineConfig.OciConfig.Process.Capabilities = &specs.LinuxCapabilities{}
-	}
-	if len(e.EngineConfig.OciConfig.Process.Args) == 0 {
-		return fmt.Errorf("container process arguments not found")
-	}
-
-	uid := e.EngineConfig.GetTargetUID()
-	gids := e.EngineConfig.GetTargetGID()
-
-	if os.Getuid() == 0 && (uid != 0 || len(gids) > 0) {
-		starterConfig.SetTargetUID(uid)
-		starterConfig.SetTargetGID(gids)
-		e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
-	}
-
-	if e.EngineConfig.GetInstanceJoin() {
-		if err := e.prepareInstanceJoinConfig(starterConfig); err != nil {
-			return err
-		}
-	} else {
-		if err := e.prepareContainerConfig(starterConfig); err != nil {
-			return err
-		}
-		if err := e.loadImages(starterConfig); err != nil {
-			return err
-		}
-	}
-
-	starterConfig.SetMasterPropagateMount(true)
-	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
-
-	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {
-		starterConfig.SetCapabilities(capabilities.Permitted, e.EngineConfig.OciConfig.Process.Capabilities.Permitted)
-		starterConfig.SetCapabilities(capabilities.Effective, e.EngineConfig.OciConfig.Process.Capabilities.Effective)
-		starterConfig.SetCapabilities(capabilities.Inheritable, e.EngineConfig.OciConfig.Process.Capabilities.Inheritable)
-		starterConfig.SetCapabilities(capabilities.Bounding, e.EngineConfig.OciConfig.Process.Capabilities.Bounding)
-		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
-	}
-
-	// determine if engine need to propagate signals across processes
-	e.checkSignalPropagation()
-
-	// We must call this here because at this point we haven't
-	// spawned the master process nor the RPC server. The assumption
-	// is that this function runs in stage 1 and that even if it's a
-	// separate process, it's created in such a way that it's
-	// sharing its file descriptor table with the wrapper / stage 2.
-	//
-	// At this point we do not have elevated privileges. We assume
-	// that the user running singularity has access to /dev/fuse
-	// (typically it's 0666, or 0660 belonging to a group that
-	// allows the user to read and write to it).
-	if err := openDevFuse(e, starterConfig); err != nil {
-		return err
 	}
 
 	return nil

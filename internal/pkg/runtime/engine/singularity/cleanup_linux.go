@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -19,14 +18,18 @@ import (
 	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
-/*
- * see https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle
- * we will run step 8/9 there
- */
-
-// CleanupContainer cleans up the container.
+// CleanupContainer is called from master after the MonitorContainer returns.
+// It is responsible for ensuring that the container has been properly torn down.
+//
+// Additional privileges may be gained when running
+// in suid flow. However, when a user namespace is requested and it is not
+// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
+// and thus no additional privileges can be gained.
+//
+// For better understanding of runtime flow in general refer to
+// https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle.
+// CleanupContainer is performing step 8/9 here.
 func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
-
 	if e.EngineConfig.GetDeleteImage() {
 		image := e.EngineConfig.GetImage()
 		sylog.Verbosef("Removing image %s", image)
@@ -41,7 +44,7 @@ func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStat
 			priv.Escalate()
 		}
 		if err := e.EngineConfig.Network.DelNetworks(); err != nil {
-			sylog.Errorf("%s", err)
+			sylog.Errorf("could not delete networks: %v", err)
 		}
 		if e.EngineConfig.GetFakeroot() {
 			priv.Drop()
@@ -50,7 +53,13 @@ func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStat
 
 	if e.EngineConfig.Cgroups != nil {
 		if err := e.EngineConfig.Cgroups.Remove(); err != nil {
-			sylog.Errorf("%s", err)
+			sylog.Errorf("could not remove cgroups: %v", err)
+		}
+	}
+
+	if e.EngineConfig.CryptDev != "" {
+		if err := cleanupCrypt(e.EngineConfig.CryptDev); err != nil {
+			sylog.Errorf("could not cleanup crypt: %v", err)
 		}
 	}
 
@@ -62,28 +71,15 @@ func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStat
 		return file.Delete()
 	}
 
-	if e.EngineConfig.CryptDev != "" {
-		cleanupCrypt(e.EngineConfig.CryptDev)
-	}
-
 	return nil
 }
 
 func cleanupCrypt(path string) error {
+	// elevate the privilege to unmount and delete the crypt device
+	priv.Escalate()
+	defer priv.Drop()
 
-	// Elevate the privilege to unmount and delete the crypt device
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
-	uid := os.Getuid()
-	err := syscall.Setresuid(uid, 0, uid)
-	if err != nil {
-		return fmt.Errorf("error while setting root uid")
-	}
-
-	defer syscall.Setresuid(uid, uid, 0)
-
-	err = syscall.Unmount(filepath.Join(buildcfg.SESSIONDIR, "final"), syscall.MNT_DETACH)
+	err := syscall.Unmount(filepath.Join(buildcfg.SESSIONDIR, "final"), syscall.MNT_DETACH)
 	if err != nil {
 		return fmt.Errorf("failed while unmounting final session directory: %s", err)
 	}
