@@ -42,7 +42,70 @@ func TestNewDefinitionFromJSON(t *testing.T) {
 
 	const singularityJSON = "parser/testdata_good/docker/docker.json"
 	// We do not have a valid example file that we can use to reach the corner cases, so we define a fake JSON
-	const validSingularityJSON = `{"header":{"bootstrap":"yum","include":"yum","mirrorurl":"http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/","osversion":"7"},"imageData":{"metadata":null,"labels":{"Maintainer":"gvallee"},"imageScripts":{"help":{"args":"","script":""},"environment":{"args":"","script":""},"runScript":{"args":"","script":""},"test":{"args":"","script":""},"startScript":{"args":"","script":""}}},"buildData":{"files":[{"source":"myFakeFile"}],"buildScripts":{"pre":{"args":"","script":""},"setup":{"args":"","script":""},"post":{"args":"","script":""},"test":{"args":"","script":""}}},"customData":null}`
+	const validSingularityJSON = `
+{
+  "header": {
+    "bootstrap": "yum",
+    "include": "yum",
+    "mirrorurl": "http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/",
+    "osversion": "7"
+  },
+  "imageData": {
+    "metadata": null,
+    "labels": {
+      "Maintainer": "gvallee"
+    },
+    "imageScripts": {
+      "help": {
+        "args": "",
+        "script": ""
+      },
+      "environment": {
+        "args": "",
+        "script": ""
+      },
+      "runScript": {
+        "args": "",
+        "script": ""
+      },
+      "test": {
+        "args": "",
+        "script": ""
+      },
+      "startScript": {
+        "args": "",
+        "script": ""
+      }
+    }
+  },
+  "buildData": {
+    "files": [
+      {
+        "source": "myFakeFile"
+      }
+    ],
+    "buildScripts": {
+      "pre": {
+        "args": "",
+        "script": ""
+      },
+      "setup": {
+        "args": "",
+        "script": ""
+      },
+      "post": {
+        "args": "",
+        "script": ""
+      },
+      "test": {
+        "args": "",
+        "script": ""
+      }
+    }
+  },
+  "customData": null
+}
+`
 
 	for _, testCase := range simpleCases {
 		_, myerr := NewDefinitionFromJSON(strings.NewReader(testCase.JSON))
