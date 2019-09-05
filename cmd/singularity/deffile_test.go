@@ -5,6 +5,9 @@
 
 // This file is been deprecated and will disappear on with version 3.3
 // of singularity. The functionality has been moved to e2e/imgbuild/imgbuild.go
+
+// +build integration_test
+
 package main
 
 import (
