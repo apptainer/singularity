@@ -27,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/syecl"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/image"
@@ -46,8 +47,120 @@ var nsProcName = map[specs.LinuxNamespaceType]string{
 	specs.UserNamespace:    "user",
 }
 
+// PrepareConfig is called during stage1 to validate and prepare
+// container configuration. It is responsible for singularity
+// configuration file parsing, handling user input, reading capabilities,
+// and checking what namespaces are required.
+//
+// No additional privileges can be gained as any of them are already
+// dropped by the time PrepareConfig is called.
+func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
+	if e.CommonConfig.EngineName != singularityConfig.Name {
+		return fmt.Errorf("incorrect engine")
+	}
+
+	if e.EngineConfig.OciConfig.Generator.Config != &e.EngineConfig.OciConfig.Spec {
+		return fmt.Errorf("bad engine configuration provided")
+	}
+
+	configurationFile := buildcfg.SINGULARITY_CONF_FILE
+	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
+		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
+	}
+
+	if !e.EngineConfig.File.AllowSetuid && starterConfig.GetIsSUID() {
+		return fmt.Errorf("suid workflow disabled by administrator")
+	}
+
+	if starterConfig.GetIsSUID() {
+		// check for ownership of singularity.conf
+		if !fs.IsOwner(configurationFile, 0) {
+			return fmt.Errorf("%s must be owned by root", configurationFile)
+		}
+		// check for ownership of capability.json
+		if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
+			return fmt.Errorf("%s must be owned by root", buildcfg.CAPABILITY_FILE)
+		}
+		// check for ownership of ecl.toml
+		if !fs.IsOwner(buildcfg.ECL_FILE, 0) {
+			return fmt.Errorf("%s must be owned by root", buildcfg.ECL_FILE)
+		}
+	}
+
+	// Save the current working directory to restore it in stage 2
+	// for relative bind paths
+	if pwd, err := os.Getwd(); err == nil {
+		e.EngineConfig.SetCwd(pwd)
+	} else {
+		sylog.Warningf("can't determine current working directory")
+		e.EngineConfig.SetCwd("/")
+	}
+
+	if e.EngineConfig.OciConfig.Process == nil {
+		e.EngineConfig.OciConfig.Process = &specs.Process{}
+	}
+	if e.EngineConfig.OciConfig.Process.Capabilities == nil {
+		e.EngineConfig.OciConfig.Process.Capabilities = &specs.LinuxCapabilities{}
+	}
+	if len(e.EngineConfig.OciConfig.Process.Args) == 0 {
+		return fmt.Errorf("container process arguments not found")
+	}
+
+	uid := e.EngineConfig.GetTargetUID()
+	gids := e.EngineConfig.GetTargetGID()
+
+	if os.Getuid() == 0 && (uid != 0 || len(gids) > 0) {
+		starterConfig.SetTargetUID(uid)
+		starterConfig.SetTargetGID(gids)
+		e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
+	}
+
+	if e.EngineConfig.GetInstanceJoin() {
+		if err := e.prepareInstanceJoinConfig(starterConfig); err != nil {
+			return err
+		}
+	} else {
+		if err := e.prepareContainerConfig(starterConfig); err != nil {
+			return err
+		}
+		if err := e.loadImages(starterConfig); err != nil {
+			return err
+		}
+	}
+
+	starterConfig.SetMasterPropagateMount(true)
+	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
+
+	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {
+		starterConfig.SetCapabilities(capabilities.Permitted, e.EngineConfig.OciConfig.Process.Capabilities.Permitted)
+		starterConfig.SetCapabilities(capabilities.Effective, e.EngineConfig.OciConfig.Process.Capabilities.Effective)
+		starterConfig.SetCapabilities(capabilities.Inheritable, e.EngineConfig.OciConfig.Process.Capabilities.Inheritable)
+		starterConfig.SetCapabilities(capabilities.Bounding, e.EngineConfig.OciConfig.Process.Capabilities.Bounding)
+		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
+	}
+
+	// determine if engine need to propagate signals across processes
+	e.checkSignalPropagation()
+
+	// We must call this here because at this point we haven't
+	// spawned the master process nor the RPC server. The assumption
+	// is that this function runs in stage 1 and that even if it's a
+	// separate process, it's created in such a way that it's
+	// sharing its file descriptor table with the wrapper / stage 2.
+	//
+	// At this point we do not have elevated privileges. We assume
+	// that the user running singularity has access to /dev/fuse
+	// (typically it's 0666, or 0660 belonging to a group that
+	// allows the user to read and write to it).
+	if err := openDevFuse(e, starterConfig); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // prepareUserCaps is responsible for checking that user's requested
-// capabilities are authorized
+// capabilities are authorized.
 func (e *EngineOperations) prepareUserCaps(enforced bool) error {
 	commonCaps := make([]string, 0)
 	commonUnauthorizedCaps := make([]string, 0)
@@ -151,7 +264,7 @@ func (e *EngineOperations) prepareUserCaps(enforced bool) error {
 }
 
 // prepareRootCaps is responsible for setting root capabilities
-// based on capability/configuration files and requested capabilities
+// based on capability/configuration files and requested capabilities.
 func (e *EngineOperations) prepareRootCaps() error {
 	commonCaps := make([]string, 0)
 	defaultCapabilities := e.EngineConfig.File.RootDefaultCapabilities
@@ -322,8 +435,8 @@ func (e *EngineOperations) prepareFd(starterConfig *starter.Config) error {
 	return nil
 }
 
-// prepareContainerConfig is responsible for getting and applying user supplied
-// configuration for container creation
+// prepareContainerConfig is responsible for getting and applying
+// user supplied configuration for container creation.
 func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config) error {
 	// always set mount namespace
 	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
@@ -440,8 +553,8 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	return e.prepareFd(starterConfig)
 }
 
-// prepareInstanceJoinConfig is responsible for getting and applying configuration
-// to join a running instance
+// prepareInstanceJoinConfig is responsible for getting and
+// applying configuration to join a running instance.
 func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Config) error {
 	name := instance.ExtractName(e.EngineConfig.GetImage())
 	file, err := instance.Get(name, instance.SingSubDir)
@@ -709,115 +822,6 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	return nil
 }
 
-// PrepareConfig checks and prepares the runtime engine config.
-// It is responsible for singularity configuration file parsing,
-// handling user input, reading capabilities, and checking what
-// namespaces are required.
-func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
-	if e.CommonConfig.EngineName != singularityConfig.Name {
-		return fmt.Errorf("incorrect engine")
-	}
-
-	if e.EngineConfig.OciConfig.Generator.Config != &e.EngineConfig.OciConfig.Spec {
-		return fmt.Errorf("bad engine configuration provided")
-	}
-
-	configurationFile := buildcfg.SINGULARITY_CONF_FILE
-	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
-		return fmt.Errorf("Unable to parse singularity.conf file: %s", err)
-	}
-
-	if !e.EngineConfig.File.AllowSetuid && starterConfig.GetIsSUID() {
-		return fmt.Errorf("suid workflow disabled by administrator")
-	}
-
-	if starterConfig.GetIsSUID() {
-		// check for ownership of singularity.conf
-		if !fs.IsOwner(configurationFile, 0) {
-			return fmt.Errorf("%s must be owned by root", configurationFile)
-		}
-		// check for ownership of capability.json
-		if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
-			return fmt.Errorf("%s must be owned by root", buildcfg.CAPABILITY_FILE)
-		}
-		// check for ownership of ecl.toml
-		if !fs.IsOwner(buildcfg.ECL_FILE, 0) {
-			return fmt.Errorf("%s must be owned by root", buildcfg.ECL_FILE)
-		}
-	}
-
-	// Save the current working directory to restore it in stage 2
-	// for relative bind paths
-	if pwd, err := os.Getwd(); err == nil {
-		e.EngineConfig.SetCwd(pwd)
-	} else {
-		sylog.Warningf("can't determine current working directory")
-		e.EngineConfig.SetCwd("/")
-	}
-
-	if e.EngineConfig.OciConfig.Process == nil {
-		e.EngineConfig.OciConfig.Process = &specs.Process{}
-	}
-	if e.EngineConfig.OciConfig.Process.Capabilities == nil {
-		e.EngineConfig.OciConfig.Process.Capabilities = &specs.LinuxCapabilities{}
-	}
-	if len(e.EngineConfig.OciConfig.Process.Args) == 0 {
-		return fmt.Errorf("container process arguments not found")
-	}
-
-	uid := e.EngineConfig.GetTargetUID()
-	gids := e.EngineConfig.GetTargetGID()
-
-	if os.Getuid() == 0 && (uid != 0 || len(gids) > 0) {
-		starterConfig.SetTargetUID(uid)
-		starterConfig.SetTargetGID(gids)
-		e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
-	}
-
-	if e.EngineConfig.GetInstanceJoin() {
-		if err := e.prepareInstanceJoinConfig(starterConfig); err != nil {
-			return err
-		}
-	} else {
-		if err := e.prepareContainerConfig(starterConfig); err != nil {
-			return err
-		}
-		if err := e.loadImages(starterConfig); err != nil {
-			return err
-		}
-	}
-
-	starterConfig.SetMasterPropagateMount(true)
-	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
-
-	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {
-		starterConfig.SetCapabilities(capabilities.Permitted, e.EngineConfig.OciConfig.Process.Capabilities.Permitted)
-		starterConfig.SetCapabilities(capabilities.Effective, e.EngineConfig.OciConfig.Process.Capabilities.Effective)
-		starterConfig.SetCapabilities(capabilities.Inheritable, e.EngineConfig.OciConfig.Process.Capabilities.Inheritable)
-		starterConfig.SetCapabilities(capabilities.Bounding, e.EngineConfig.OciConfig.Process.Capabilities.Bounding)
-		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
-	}
-
-	// determine if engine need to propagate signals across processes
-	e.checkSignalPropagation()
-
-	// We must call this here because at this point we haven't
-	// spawned the master process nor the RPC server. The assumption
-	// is that this function runs in stage 1 and that even if it's a
-	// separate process, it's created in such a way that it's
-	// sharing its file descriptor table with the wrapper / stage 2.
-	//
-	// At this point we do not have elevated privileges. We assume
-	// that the user running singularity has access to /dev/fuse
-	// (typically it's 0666, or 0660 belonging to a group that
-	// allows the user to read and write to it).
-	if err := openDevFuse(e, starterConfig); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // openDevFuse is a helper function that opens /dev/fuse once for each
 // plugin that wants to mount a FUSE filesystem.
 func openDevFuse(e *EngineOperations, starterConfig *starter.Config) error {
@@ -864,6 +868,98 @@ func (e *EngineOperations) checkSignalPropagation() {
 	}
 }
 
+// setSessionLayer will test if overlay is supported/allowed.
+func (e *EngineOperations) setSessionLayer(img *image.Image) error {
+	e.EngineConfig.SetSessionLayer(singularityConfig.DefaultLayer)
+
+	writableTmpfs := e.EngineConfig.GetWritableTmpfs()
+	writableImage := e.EngineConfig.GetWritableImage()
+	hasOverlayImage := len(e.EngineConfig.GetOverlayImage()) > 0
+
+	if writableImage && hasOverlayImage {
+		return fmt.Errorf("you could not use --overlay in conjunction with --writable")
+	}
+
+	// NEED FIX: on ubuntu until 4.15 kernel it was possible to mount overlay
+	// with the current workflow, since 4.18 we get an operation not permitted
+	for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
+		if ns.Type == specs.UserNamespace {
+			if !e.EngineConfig.File.EnableUnderlay {
+				sylog.Debugf("Not attempting to use underlay with user namespace: disabled by configuration ('enable underlay = no')")
+				return nil
+			}
+			if !writableImage {
+				sylog.Debugf("Using underlay layer: user namespace requested")
+				e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
+				return nil
+			}
+			sylog.Debugf("Not attempting to use overlay or underlay: writable flag requested")
+			return nil
+		}
+	}
+
+	// starter was forced to load overlay module, now check if there
+	// is an overlay entry in /proc/filesystems
+	if has, _ := proc.HasFilesystem("overlay"); has {
+		sylog.Debugf("Overlay seems supported and allowed by kernel")
+		switch e.EngineConfig.File.EnableOverlay {
+		case "yes", "try":
+			e.EngineConfig.SetSessionLayer(singularityConfig.OverlayLayer)
+
+			// a SIF image may contain one or more overlay partition
+			// check there is at least one ext3 overlay partition
+			// to validate overlay with writable flag
+			hasSIFOverlay := false
+
+			if img.Type == image.SIF {
+				for _, p := range img.Partitions[1:] {
+					if p.Type == image.EXT3 {
+						hasSIFOverlay = true
+						break
+					}
+				}
+			}
+
+			if !writableImage || hasSIFOverlay {
+				sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", e.EngineConfig.File.EnableOverlay)
+				return nil
+			}
+
+			sylog.Debugf("Not attempting to use overlay or underlay: writable flag requested")
+			e.EngineConfig.SetSessionLayer(singularityConfig.DefaultLayer)
+			return nil
+		default:
+			if hasOverlayImage {
+				return fmt.Errorf("overlay images requires 'enable overlay = yes': set to 'no' by administrator")
+			}
+			if writableTmpfs {
+				return fmt.Errorf("--writable-tmpfs requires 'enable overlay = yes': set to 'no' by administrator")
+			}
+			sylog.Debugf("Could not use overlay, disabled by configuration ('enable overlay = no')")
+		}
+	} else {
+		if writableTmpfs {
+			return fmt.Errorf("--writable-tmpfs requires overlay kernel support: your kernel doesn't support it")
+		}
+		if hasOverlayImage {
+			return fmt.Errorf("overlay images requires overlay kernel support: your kernel doesn't support it")
+		}
+	}
+
+	// if --writable wasn't set, use underlay if possible
+	if !writableImage && e.EngineConfig.File.EnableUnderlay {
+		sylog.Debugf("Attempting to use underlay (enable underlay = yes)\n")
+		e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
+		return nil
+	} else if writableImage {
+		sylog.Debugf("Not attempting to use overlay or underlay: writable flag requested")
+		return nil
+	}
+
+	sylog.Debugf("Not attempting to use overlay or underlay: both disabled by administrator")
+	return nil
+}
+
 func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 	images := make([]image.Image, 0)
 
@@ -879,25 +975,36 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 	}
 
 	if writable && !img.Writable {
-		sylog.Warningf("Can't set writable flag on image, no write permissions")
-		e.EngineConfig.SetWritableImage(false)
+		return fmt.Errorf("could not use %s for writing, you don't have write permissions", img.Path)
 	}
+
+	if err := e.setSessionLayer(img); err != nil {
+		return err
+	}
+
+	sessionLayer := e.EngineConfig.GetSessionLayer()
+
+	// first image is always the root filesystem
+	images = append(images, *img)
+	writableOverlayPath := ""
+	overlayPartitions := []string{}
 
 	// sandbox are handled differently for security reasons
 	if img.Type == image.SANDBOX {
 		if img.Path == "/" {
 			return fmt.Errorf("/ as sandbox is not authorized")
 		}
-		if err := mainthread.Fchdir(int(img.Fd)); err != nil {
-			return err
+
+		if err := overlay.CheckLower(img.Path); overlay.IsIncompatible(err) {
+			// a warning message would be better but on some systems it
+			// could annoy users, make it verbose instead
+			sylog.Verbosef("Fallback to underlay layer: %s", err)
+			e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
+			return nil
+		} else if err != nil {
+			return fmt.Errorf("while checking image compatibility with overlay: %s", err)
 		}
-		cwd, err := os.Getwd()
-		if err != nil {
-			return fmt.Errorf("failed to determine current working directory: %s", err)
-		}
-		if cwd != img.Path {
-			return fmt.Errorf("path mismatch for sandbox %s != %s", cwd, img.Path)
-		}
+
 		// C starter code will position current working directory
 		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
 	} else if img.Type == image.SIF {
@@ -912,6 +1019,33 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 				return err
 			}
 		}
+		// load overlay partition if we use overlay layer
+		if sessionLayer == singularityConfig.OverlayLayer {
+			// look for potential overlay partition in SIF image
+			// and inject them into the overlay list
+			for _, p := range img.Partitions[1:] {
+				if p.Type == image.EXT3 || p.Type == image.SQUASHFS {
+					imgCopy := *img
+					imgCopy.Type = int(p.Type)
+					imgCopy.Partitions = []image.Section{p}
+					images = append(images, imgCopy)
+					overlayPartitions = append(overlayPartitions, imgCopy.Path)
+					if img.Writable && p.Type == image.EXT3 {
+						writableOverlayPath = img.Path
+					}
+				}
+			}
+		}
+		// SIF image open for writing without writable
+		// overlay partition, assuming that the root
+		// filesystem is squashfs or encrypted squashfs
+		if img.Writable && img.Partitions[0].Type != image.EXT3 && writableOverlayPath == "" {
+			return fmt.Errorf("no SIF writable overlay partition found in %s", img.Path)
+		}
+	}
+
+	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
+		return err
 	}
 
 	// lock all ext3 partitions if any to prevent concurrent writes
@@ -923,35 +1057,39 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		}
 	}
 
-	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
-		return err
-	}
-
-	// first image is always the root filesystem
-	images = append(images, *img)
-
 	// load overlay images
 	for _, overlayImg := range e.EngineConfig.GetOverlayImage() {
-		writable := true
+		writableOverlay := true
 
 		splitted := strings.SplitN(overlayImg, ":", 2)
 		if len(splitted) == 2 {
 			if splitted[1] == "ro" {
-				writable = false
+				writableOverlay = false
 			}
 		}
 
-		img, err := e.loadImage(splitted[0], writable)
+		img, err := e.loadImage(splitted[0], writableOverlay)
 		if err != nil {
 			return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
 		}
 
-		// lock all ext3 partitions if any to prevent concurrent writes
 		for _, part := range img.Partitions {
+			// lock all ext3 partitions if any to prevent concurrent writes
 			if part.Type == image.EXT3 {
 				if err := img.LockSection(part); err != nil {
 					return fmt.Errorf("error while locking ext3 overlay partition from %s: %s", img.Path, err)
 				}
+			}
+
+			if writableOverlay && img.Writable {
+				if writableOverlayPath != "" {
+					return fmt.Errorf(
+						"you can't specify more than one writable overlay, "+
+							"%s contains a writable overlay, requires to use '--overlay %s:ro'",
+						writableOverlayPath, img.Path,
+					)
+				}
+				writableOverlayPath = img.Path
 			}
 		}
 
@@ -961,6 +1099,11 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		images = append(images, *img)
 	}
 
+	if e.EngineConfig.GetWritableTmpfs() && writableOverlayPath != "" {
+		return fmt.Errorf("you can't specify --writable-tmpfs with another writable overlay image (%s)", writableOverlayPath)
+	}
+
+	e.EngineConfig.SetOverlayImage(append(e.EngineConfig.GetOverlayImage(), overlayPartitions...))
 	e.EngineConfig.SetImageList(images)
 
 	return nil

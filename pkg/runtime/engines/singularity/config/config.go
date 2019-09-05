@@ -12,6 +12,15 @@ import (
 // Name is the name of the runtime.
 const Name = "singularity"
 
+const (
+	// DefaultLayer is the string representation for the default layer.
+	DefaultLayer string = "none"
+	// OverlayLayer is the string representation for the overlay layer.
+	OverlayLayer = "overlay"
+	// UnderlayLayer is the string representation for the underlay layer.
+	UnderlayLayer = "underlay"
+)
+
 // FileConfig describes the singularity.conf file options
 type FileConfig struct {
 	AllowSetuid             bool     `default:"yes" authorized:"yes,no" directive:"allow setuid"`
@@ -51,7 +60,7 @@ type FileConfig struct {
 	CryptsetupPath          string   `directive:"cryptsetup path"`
 }
 
-// JSONConfig stores engine specific confguration that is allowed to be set by the user
+// JSONConfig stores engine specific confguration that is allowed to be set by the user.
 type JSONConfig struct {
 	ScratchDir        []string      `json:"scratchdir,omitempty"`
 	OverlayImage      []string      `json:"overlayImage,omitempty"`
@@ -76,6 +85,7 @@ type JSONConfig struct {
 	Network           string        `json:"network,omitempty"`
 	DNS               string        `json:"dns,omitempty"`
 	Cwd               string        `json:"cwd,omitempty"`
+	SessionLayer      string        `json:"sessionLayer,omitempty"`
 	EncryptionKey     []byte        `json:"encryptionKey,omitempty"`
 	TargetUID         int           `json:"targetUID,omitempty"`
 	WritableImage     bool          `json:"writableImage,omitempty"`
@@ -107,12 +117,12 @@ func (e *EngineConfig) GetImage() string {
 	return e.JSON.Image
 }
 
-// SetKey sets the key for the image's system partition
+// SetKey sets the key for the image's system partition.
 func (e *EngineConfig) SetEncryptionKey(key []byte) {
 	e.JSON.EncryptionKey = key
 }
 
-// GetKey retrieves the key for image's system partition
+// GetKey retrieves the key for image's system partition.
 func (e *EngineConfig) GetEncryptionKey() []byte {
 	return e.JSON.EncryptionKey
 }
@@ -322,7 +332,7 @@ func (e *EngineConfig) SetKeepPrivs(keep bool) {
 	e.JSON.KeepPrivs = keep
 }
 
-// GetKeepPrivs returns if keep-privs is set or not
+// GetKeepPrivs returns if keep-privs is set or not.
 func (e *EngineConfig) GetKeepPrivs() bool {
 	return e.JSON.KeepPrivs
 }
@@ -332,169 +342,169 @@ func (e *EngineConfig) SetNoPrivs(nopriv bool) {
 	e.JSON.NoPrivs = nopriv
 }
 
-// GetNoPrivs returns if no-privs flag is set or not
+// GetNoPrivs returns if no-privs flag is set or not.
 func (e *EngineConfig) GetNoPrivs() bool {
 	return e.JSON.NoPrivs
 }
 
-// SetNoHome set no-home flag to not mount home user home directory
+// SetNoHome set no-home flag to not mount home user home directory.
 func (e *EngineConfig) SetNoHome(val bool) {
 	e.JSON.NoHome = val
 }
 
-// GetNoHome returns if no-home flag is set or not
+// GetNoHome returns if no-home flag is set or not.
 func (e *EngineConfig) GetNoHome() bool {
 	return e.JSON.NoHome
 }
 
-// SetNoInit set noinit flag to not start shim init process
+// SetNoInit set noinit flag to not start shim init process.
 func (e *EngineConfig) SetNoInit(val bool) {
 	e.JSON.NoInit = val
 }
 
-// GetNoInit returns if noinit flag is set or not
+// GetNoInit returns if noinit flag is set or not.
 func (e *EngineConfig) GetNoInit() bool {
 	return e.JSON.NoInit
 }
 
-// SetNetwork sets a list of commas separated networks to configure inside container
+// SetNetwork sets a list of commas separated networks to configure inside container.
 func (e *EngineConfig) SetNetwork(network string) {
 	e.JSON.Network = network
 }
 
-// GetNetwork retrieves a list of commas separated networks configured in container
+// GetNetwork retrieves a list of commas separated networks configured in container.
 func (e *EngineConfig) GetNetwork() string {
 	return e.JSON.Network
 }
 
-// SetNetworkArgs sets network arguments to pass to CNI plugins
+// SetNetworkArgs sets network arguments to pass to CNI plugins.
 func (e *EngineConfig) SetNetworkArgs(args []string) {
 	e.JSON.NetworkArgs = args
 }
 
-// GetNetworkArgs retrieves network arguments passed to CNI plugins
+// GetNetworkArgs retrieves network arguments passed to CNI plugins.
 func (e *EngineConfig) GetNetworkArgs() []string {
 	return e.JSON.NetworkArgs
 }
 
-// SetDNS sets a commas separated list of DNS servers to add in resolv.conf
+// SetDNS sets a commas separated list of DNS servers to add in resolv.conf.
 func (e *EngineConfig) SetDNS(dns string) {
 	e.JSON.DNS = dns
 }
 
-// GetDNS retrieves list of DNS servers
+// GetDNS retrieves list of DNS servers.
 func (e *EngineConfig) GetDNS() string {
 	return e.JSON.DNS
 }
 
-// SetImageList sets image list containing opened images
+// SetImageList sets image list containing opened images.
 func (e *EngineConfig) SetImageList(list []image.Image) {
 	e.JSON.ImageList = list
 }
 
-// GetImageList returns image list containing opened images
+// GetImageList returns image list containing opened images.
 func (e *EngineConfig) GetImageList() []image.Image {
 	return e.JSON.ImageList
 }
 
-// SetCwd sets current working directory
+// SetCwd sets current working directory.
 func (e *EngineConfig) SetCwd(path string) {
 	e.JSON.Cwd = path
 }
 
-// GetCwd returns current working directory
+// GetCwd returns current working directory.
 func (e *EngineConfig) GetCwd() string {
 	return e.JSON.Cwd
 }
 
-// SetOpenFd sets a list of open file descriptor
+// SetOpenFd sets a list of open file descriptor.
 func (e *EngineConfig) SetOpenFd(fds []int) {
 	e.JSON.OpenFd = fds
 }
 
-// GetOpenFd returns the list of open file descriptor
+// GetOpenFd returns the list of open file descriptor.
 func (e *EngineConfig) GetOpenFd() []int {
 	return e.JSON.OpenFd
 }
 
-// SetWritableTmpfs sets writable tmpfs flag
+// SetWritableTmpfs sets writable tmpfs flag.
 func (e *EngineConfig) SetWritableTmpfs(writable bool) {
 	e.JSON.WritableTmpfs = writable
 }
 
-// GetWritableTmpfs returns if writable tmpfs is set or no
+// GetWritableTmpfs returns if writable tmpfs is set or no.
 func (e *EngineConfig) GetWritableTmpfs() bool {
 	return e.JSON.WritableTmpfs
 }
 
-// SetSecurity sets security feature arguments
+// SetSecurity sets security feature arguments.
 func (e *EngineConfig) SetSecurity(security []string) {
 	e.JSON.Security = security
 }
 
-// GetSecurity returns security feature arguments
+// GetSecurity returns security feature arguments.
 func (e *EngineConfig) GetSecurity() []string {
 	return e.JSON.Security
 }
 
-// SetCgroupsPath sets path to cgroups profile
+// SetCgroupsPath sets path to cgroups profile.
 func (e *EngineConfig) SetCgroupsPath(path string) {
 	e.JSON.CgroupsPath = path
 }
 
-// GetCgroupsPath returns path to cgroups profile
+// GetCgroupsPath returns path to cgroups profile.
 func (e *EngineConfig) GetCgroupsPath() string {
 	return e.JSON.CgroupsPath
 }
 
-// SetTargetUID sets target UID to execute the container process as user ID
+// SetTargetUID sets target UID to execute the container process as user ID.
 func (e *EngineConfig) SetTargetUID(uid int) {
 	e.JSON.TargetUID = uid
 }
 
-// GetTargetUID returns the target UID
+// GetTargetUID returns the target UID.
 func (e *EngineConfig) GetTargetUID() int {
 	return e.JSON.TargetUID
 }
 
-// SetTargetGID sets target GIDs to execute container process as group IDs
+// SetTargetGID sets target GIDs to execute container process as group IDs.
 func (e *EngineConfig) SetTargetGID(gid []int) {
 	e.JSON.TargetGID = gid
 }
 
-// GetTargetGID returns the target GIDs
+// GetTargetGID returns the target GIDs.
 func (e *EngineConfig) GetTargetGID() []int {
 	return e.JSON.TargetGID
 }
 
 // SetLibrariesPath sets libraries to bind in container
-// /.singularity.d/libs directory
+// /.singularity.d/libs directory.
 func (e *EngineConfig) SetLibrariesPath(libraries []string) {
 	e.JSON.LibrariesPath = libraries
 }
 
 // GetLibrariesPath returns libraries to bind in container
-// /.singularity.d/libs directory
+// /.singularity.d/libs directory.
 func (e *EngineConfig) GetLibrariesPath() []string {
 	return e.JSON.LibrariesPath
 }
 
-// SetFakeroot sets fakeroot flag
+// SetFakeroot sets fakeroot flag.
 func (e *EngineConfig) SetFakeroot(fakeroot bool) {
 	e.JSON.Fakeroot = fakeroot
 }
 
-// GetFakeroot returns if fakeroot is set or not
+// GetFakeroot returns if fakeroot is set or not.
 func (e *EngineConfig) GetFakeroot() bool {
 	return e.JSON.Fakeroot
 }
 
-// GetDeleteImage returns if container image must be deleted after use
+// GetDeleteImage returns if container image must be deleted after use.
 func (e *EngineConfig) GetDeleteImage() bool {
 	return e.JSON.DeleteImage
 }
 
-// SetDeleteImage sets if container image must be deleted after use
+// SetDeleteImage sets if container image must be deleted after use.
 func (e *EngineConfig) SetDeleteImage(delete bool) {
 	e.JSON.DeleteImage = delete
 }
@@ -502,13 +512,25 @@ func (e *EngineConfig) SetDeleteImage(delete bool) {
 // SetSignalPropagation sets if engine must propagate signals from
 // master process -> container process when PID namespace is disabled
 // or from master process -> sinit process -> container
-// process when PID namespace is enabled
+// process when PID namespace is enabled.
 func (e *EngineConfig) SetSignalPropagation(propagation bool) {
 	e.JSON.SignalPropagation = propagation
 }
 
 // GetSignalPropagation returns if engine propagate signals across
-// processes (see SetSignalPropagation)
+// processes (see SetSignalPropagation).
 func (e *EngineConfig) GetSignalPropagation() bool {
 	return e.JSON.SignalPropagation
+}
+
+// GetSessionLayer returns the session layer used to setup the
+// container mount points.
+func (e *EngineConfig) GetSessionLayer() string {
+	return e.JSON.SessionLayer
+}
+
+// SetSessionLayer sets the session layer to use to setup the
+// container mount points.
+func (e *EngineConfig) SetSessionLayer(sessionLayer string) {
+	e.JSON.SessionLayer = sessionLayer
 }

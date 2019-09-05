@@ -281,3 +281,33 @@ func TestHasNamespace(t *testing.T) {
 
 	cmd.Wait()
 }
+
+func TestGetppid(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	pid := os.Getpid()
+	ppid := os.Getppid()
+
+	list := []struct {
+		name          string
+		pid           int
+		ppid          int
+		expectSuccess bool
+	}{
+		{"ProcessZero", 0, -1, false},
+		{"CurrentProcess", pid, ppid, true},
+		{"InitProcess", 1, -1, false},
+	}
+
+	for _, tt := range list {
+		p, err := Getppid(tt.pid)
+		if err != nil && tt.expectSuccess {
+			t.Fatalf("unexpected failure for %q: %s", tt.name, err)
+		} else if err == nil && !tt.expectSuccess {
+			t.Fatalf("unexpected success for %q: got parent process ID %d instead of %d", tt.name, p, tt.ppid)
+		} else if p != tt.ppid {
+			t.Fatalf("unexpected parent process ID returned: got %d instead of %d", p, tt.ppid)
+		}
+	}
+}

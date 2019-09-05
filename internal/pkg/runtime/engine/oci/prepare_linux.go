@@ -24,36 +24,15 @@ var (
 	slave  *os.File
 )
 
-func (e *EngineOperations) checkCapabilities() error {
-	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Permitted {
-		if _, ok := capabilities.Map[cap]; !ok {
-			return fmt.Errorf("unrecognized capabilities %s", cap)
-		}
-	}
-	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Effective {
-		if _, ok := capabilities.Map[cap]; !ok {
-			return fmt.Errorf("unrecognized capabilities %s", cap)
-		}
-	}
-	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Inheritable {
-		if _, ok := capabilities.Map[cap]; !ok {
-			return fmt.Errorf("unrecognized capabilities %s", cap)
-		}
-	}
-	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Bounding {
-		if _, ok := capabilities.Map[cap]; !ok {
-			return fmt.Errorf("unrecognized capabilities %s", cap)
-		}
-	}
-	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Ambient {
-		if _, ok := capabilities.Map[cap]; !ok {
-			return fmt.Errorf("unrecognized capabilities %s", cap)
-		}
-	}
-	return nil
-}
-
-// PrepareConfig checks and prepares the runtime engine config.
+// PrepareConfig is called during stage1 to validate and prepare
+// container configuration. It is responsible for reading capabilities,
+// checking what namespaces are required, opening streams for attach and
+// exec, etc.
+//
+// No additional privileges can be gained as any of them are already
+// dropped by the time PrepareConfig is called. However, most likely this
+// still will be executed as root since `singularity oci` command set
+// requires privileged execution.
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if e.CommonConfig.EngineName != Name {
 		return fmt.Errorf("incorrect engine")
@@ -242,5 +221,34 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		}
 	}
 
+	return nil
+}
+
+func (e *EngineOperations) checkCapabilities() error {
+	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Permitted {
+		if _, ok := capabilities.Map[cap]; !ok {
+			return fmt.Errorf("unrecognized capabilities %s", cap)
+		}
+	}
+	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Effective {
+		if _, ok := capabilities.Map[cap]; !ok {
+			return fmt.Errorf("unrecognized capabilities %s", cap)
+		}
+	}
+	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Inheritable {
+		if _, ok := capabilities.Map[cap]; !ok {
+			return fmt.Errorf("unrecognized capabilities %s", cap)
+		}
+	}
+	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Bounding {
+		if _, ok := capabilities.Map[cap]; !ok {
+			return fmt.Errorf("unrecognized capabilities %s", cap)
+		}
+	}
+	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Ambient {
+		if _, ok := capabilities.Map[cap]; !ok {
+			return fmt.Errorf("unrecognized capabilities %s", cap)
+		}
+	}
 	return nil
 }
