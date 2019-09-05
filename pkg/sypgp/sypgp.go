@@ -61,6 +61,15 @@ type Handle struct {
 	path string
 }
 
+// GenKeyPairOptions parameters needed for generating new key pair.
+type GenKeyPairOptions struct {
+	Name      string
+	Email     string
+	Comment   string
+	Password  string
+	KeyLength int
+}
+
 // mrKeyList contains all the key info, used for decoding
 // the MR output from 'key search'
 type mrKeyList struct {
@@ -449,17 +458,17 @@ func (keyring *Handle) RemovePubKey(toDelete string) error {
 	return keyring.storePubKeyring(newKeyList)
 }
 
-func (keyring *Handle) genKeyPair(name, comment, email, passphrase string, bitLen int) (*openpgp.Entity, error) {
-	conf := &packet.Config{RSABits: bitLen, DefaultHash: crypto.SHA384}
+func (keyring *Handle) genKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, error) {
+	conf := &packet.Config{RSABits: opts.KeyLength, DefaultHash: crypto.SHA384}
 
-	entity, err := openpgp.NewEntity(name, comment, email, conf)
+	entity, err := openpgp.NewEntity(opts.Name, opts.Comment, opts.Email, conf)
 	if err != nil {
 		return nil, err
 	}
 
-	// Encrypt private key
-	if passphrase != "" {
-		if err = EncryptKey(entity, passphrase); err != nil {
+	if opts.Password != "" {
+		// Encrypt private key
+		if err = EncryptKey(entity, opts.Password); err != nil {
 			return nil, err
 		}
 	}
@@ -477,59 +486,16 @@ func (keyring *Handle) genKeyPair(name, comment, email, passphrase string, bitLe
 }
 
 // GenKeyPair generates an PGP key pair and store them in the sypgp home folder
-func (keyring *Handle) GenKeyPair(keyServiceURI, authToken string, bitLen int) (*openpgp.Entity, error) {
+func (keyring *Handle) GenKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, error) {
 	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
 	}
 
-	name, err := interactive.AskQuestion("Enter your name (e.g., John Doe) : ")
-	if err != nil {
-		return nil, err
-	}
-
-	email, err := interactive.AskQuestion("Enter your email address (e.g., john.doe@example.com) : ")
-	if err != nil {
-		return nil, err
-	}
-
-	comment, err := interactive.AskQuestion("Enter optional comment (e.g., development keys) : ")
-	if err != nil {
-		return nil, err
-	}
-
-	// get a password
-	passphrase, err := interactive.GetPassphrase("Enter a passphrase : ", 3)
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Printf("Generating Entity and OpenPGP Key Pair... ")
-
-	entity, err := keyring.genKeyPair(name, comment, email, passphrase, bitLen)
+	entity, err := keyring.genKeyPair(opts)
 	if err != nil {
 		// Print the missing newline if there’s an error
 		fmt.Printf("\n")
 		return nil, err
-	}
-
-	fmt.Printf("done\n")
-
-	// Ask to push the new key to the keystore
-	ans, err := interactive.AskYNQuestion("y", "Would you like to push it to the keystore? [Y,n] ")
-	switch {
-	case err != nil:
-		fmt.Fprintf(os.Stderr, "Not pushing newly created key to keystore: %s\n", err)
-
-	case ans == "y":
-		err = PushPubkey(entity, keyServiceURI, authToken)
-		if err != nil {
-			fmt.Printf("Failed to push newly created key to keystore: %s\n", err)
-		} else {
-			fmt.Printf("Key successfully pushed to: %s\n", keyServiceURI)
-		}
-
-	default:
-		fmt.Printf("NOT pushing newly created key to: %s\n", keyServiceURI)
 	}
 
 	return entity, nil
