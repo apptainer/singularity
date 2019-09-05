@@ -15,7 +15,7 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-// stage represents the process of constucting a root filesystem
+// stage represents the process of constucting a root filesystem.
 type stage struct {
 	// name of the stage
 	name string
