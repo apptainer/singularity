@@ -12,7 +12,16 @@ import (
 // Name is the name of the runtime.
 const Name = "singularity"
 
-// FileConfig describes the singularity.conf file options.
+const (
+	// DefaultLayer is the string representation for the default layer.
+	DefaultLayer string = "none"
+	// OverlayLayer is the string representation for the overlay layer.
+	OverlayLayer = "overlay"
+	// UnderlayLayer is the string representation for the underlay layer.
+	UnderlayLayer = "underlay"
+)
+
+// FileConfig describes the singularity.conf file options
 type FileConfig struct {
 	AllowSetuid             bool     `default:"yes" authorized:"yes,no" directive:"allow setuid"`
 	AllowPidNs              bool     `default:"yes" authorized:"yes,no" directive:"allow pid ns"`
@@ -76,6 +85,7 @@ type JSONConfig struct {
 	Network           string        `json:"network,omitempty"`
 	DNS               string        `json:"dns,omitempty"`
 	Cwd               string        `json:"cwd,omitempty"`
+	SessionLayer      string        `json:"sessionLayer,omitempty"`
 	EncryptionKey     []byte        `json:"encryptionKey,omitempty"`
 	TargetUID         int           `json:"targetUID,omitempty"`
 	WritableImage     bool          `json:"writableImage,omitempty"`
@@ -511,4 +521,16 @@ func (e *EngineConfig) SetSignalPropagation(propagation bool) {
 // processes (see SetSignalPropagation).
 func (e *EngineConfig) GetSignalPropagation() bool {
 	return e.JSON.SignalPropagation
+}
+
+// GetSessionLayer returns the session layer used to setup the
+// container mount points.
+func (e *EngineConfig) GetSessionLayer() string {
+	return e.JSON.SessionLayer
+}
+
+// SetSessionLayer sets the session layer to use to setup the
+// container mount points.
+func (e *EngineConfig) SetSessionLayer(sessionLayer string) {
+	e.JSON.SessionLayer = sessionLayer
 }

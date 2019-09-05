@@ -641,7 +641,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 func (c *actionTests) PersistentOverlay(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	const squashfsImage = "squashfs.simg"
+	var squashfsImage = filepath.Join(c.env.TestDir, "squashfs.simg")
 
 	if _, err := stdexec.LookPath("mkfs.ext3"); err != nil {
 		t.Skip("mkfs.ext3 not found")
@@ -694,9 +694,26 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 
 	defer os.Remove(ext3Img)
 
+	sandboxImage := filepath.Join(c.env.TestDir, "sandbox")
+
+	// Create a sandbox image from test image
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--sandbox", sandboxImage, c.env.ImagePath),
+		e2e.PostRun(func(t *testing.T) {
+			if t.Failed() {
+				t.Fatalf("failed to create sandbox %s from test image %s", sandboxImage, c.env.ImagePath)
+			}
+		}),
+		e2e.ExpectExit(0),
+	)
+
 	tests := []struct {
 		name    string
 		argv    []string
+		dir     string
 		exit    int
 		profile e2e.Profile
 	}{
@@ -713,6 +730,24 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 			profile: e2e.RootProfile,
 		},
 		{
+			name:    "overlay_find_with_writable_fail",
+			argv:    []string{"--overlay", dir, "--writable", c.env.ImagePath, "true"},
+			exit:    255,
+			profile: e2e.RootProfile,
+		},
+		{
+			name:    "overlay_find_with_writable_tmpfs",
+			argv:    []string{"--overlay", dir + ":ro", "--writable-tmpfs", c.env.ImagePath, "test", "-f", "/dir_overlay"},
+			exit:    0,
+			profile: e2e.RootProfile,
+		},
+		{
+			name:    "overlay_find_with_writable_tmpfs_fail",
+			argv:    []string{"--overlay", dir, "--writable-tmpfs", c.env.ImagePath, "true"},
+			exit:    255,
+			profile: e2e.RootProfile,
+		},
+		{
 			name:    "overlay_ext3_create",
 			argv:    []string{"--overlay", ext3Img, c.env.ImagePath, "touch", "/ext3_overlay"},
 			exit:    0,
@@ -725,32 +760,44 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 			profile: e2e.RootProfile,
 		},
 		{
+			name:    "overlay_multiple_writable_fail",
+			argv:    []string{"--overlay", ext3Img, "--overlay", ext3Img, c.env.ImagePath, "true"},
+			exit:    255,
+			profile: e2e.RootProfile,
+		},
+		{
 			name:    "overlay_squashFS_find",
-			argv:    []string{"--overlay", squashfsImage, c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
+			argv:    []string{"--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
 			exit:    0,
 			profile: e2e.RootProfile,
 		},
 		{
+			name:    "overlay_squashFS_find_fail_without_ro",
+			argv:    []string{"--overlay", squashfsImage, c.env.ImagePath, "true"},
+			exit:    255,
+			profile: e2e.RootProfile,
+		},
+		{
 			name:    "overlay_multiple_create",
-			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage, c.env.ImagePath, "touch", "/multiple_overlay_fs"},
+			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage + ":ro", c.env.ImagePath, "touch", "/multiple_overlay_fs"},
 			exit:    0,
 			profile: e2e.RootProfile,
 		},
 		{
 			name:    "overlay_multiple_find_ext3",
-			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage, c.env.ImagePath, "test", "-f", "/multiple_overlay_fs"},
+			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", "/multiple_overlay_fs"},
 			exit:    0,
 			profile: e2e.RootProfile,
 		},
 		{
 			name:    "overlay_multiple_find_squashfs",
-			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage, c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
+			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
 			exit:    0,
 			profile: e2e.RootProfile,
 		},
 		{
 			name:    "overlay_noroot",
-			argv:    []string{"--overlay", dir, c.env.ImagePath, "test", "-f", "/foo_overlay"},
+			argv:    []string{"--overlay", dir, c.env.ImagePath, "true"},
 			exit:    255,
 			profile: e2e.UserProfile,
 		},
@@ -760,6 +807,21 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 			exit:    1,
 			profile: e2e.RootProfile,
 		},
+		{
+			// https://github.com/sylabs/singularity/issues/4329
+			name:    "SIF_writable_without_overlay_partition_issue_4329",
+			argv:    []string{"--writable", c.env.ImagePath, "true"},
+			exit:    255,
+			profile: e2e.RootProfile,
+		},
+		{
+			// https://github.com/sylabs/singularity/issues/4270
+			name:    "overlay_dir_relative_path_issue_4270",
+			argv:    []string{"--overlay", filepath.Base(dir), sandboxImage, "test", "-f", "/dir_overlay"},
+			dir:     filepath.Dir(dir),
+			exit:    0,
+			profile: e2e.RootProfile,
+		},
 	}
 
 	for _, tt := range tests {
@@ -767,6 +829,7 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(tt.profile),
+			e2e.WithDir(tt.dir),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),

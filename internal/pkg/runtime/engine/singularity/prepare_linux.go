@@ -27,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/syecl"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/image"
@@ -867,6 +868,98 @@ func (e *EngineOperations) checkSignalPropagation() {
 	}
 }
 
+// setSessionLayer will test if overlay is supported/allowed.
+func (e *EngineOperations) setSessionLayer(img *image.Image) error {
+	e.EngineConfig.SetSessionLayer(singularityConfig.DefaultLayer)
+
+	writableTmpfs := e.EngineConfig.GetWritableTmpfs()
+	writableImage := e.EngineConfig.GetWritableImage()
+	hasOverlayImage := len(e.EngineConfig.GetOverlayImage()) > 0
+
+	if writableImage && hasOverlayImage {
+		return fmt.Errorf("you could not use --overlay in conjunction with --writable")
+	}
+
+	// NEED FIX: on ubuntu until 4.15 kernel it was possible to mount overlay
+	// with the current workflow, since 4.18 we get an operation not permitted
+	for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
+		if ns.Type == specs.UserNamespace {
+			if !e.EngineConfig.File.EnableUnderlay {
+				sylog.Debugf("Not attempting to use underlay with user namespace: disabled by configuration ('enable underlay = no')")
+				return nil
+			}
+			if !writableImage {
+				sylog.Debugf("Using underlay layer: user namespace requested")
+				e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
+				return nil
+			}
+			sylog.Debugf("Not attempting to use overlay or underlay: writable flag requested")
+			return nil
+		}
+	}
+
+	// starter was forced to load overlay module, now check if there
+	// is an overlay entry in /proc/filesystems
+	if has, _ := proc.HasFilesystem("overlay"); has {
+		sylog.Debugf("Overlay seems supported and allowed by kernel")
+		switch e.EngineConfig.File.EnableOverlay {
+		case "yes", "try":
+			e.EngineConfig.SetSessionLayer(singularityConfig.OverlayLayer)
+
+			// a SIF image may contain one or more overlay partition
+			// check there is at least one ext3 overlay partition
+			// to validate overlay with writable flag
+			hasSIFOverlay := false
+
+			if img.Type == image.SIF {
+				for _, p := range img.Partitions[1:] {
+					if p.Type == image.EXT3 {
+						hasSIFOverlay = true
+						break
+					}
+				}
+			}
+
+			if !writableImage || hasSIFOverlay {
+				sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", e.EngineConfig.File.EnableOverlay)
+				return nil
+			}
+
+			sylog.Debugf("Not attempting to use overlay or underlay: writable flag requested")
+			e.EngineConfig.SetSessionLayer(singularityConfig.DefaultLayer)
+			return nil
+		default:
+			if hasOverlayImage {
+				return fmt.Errorf("overlay images requires 'enable overlay = yes': set to 'no' by administrator")
+			}
+			if writableTmpfs {
+				return fmt.Errorf("--writable-tmpfs requires 'enable overlay = yes': set to 'no' by administrator")
+			}
+			sylog.Debugf("Could not use overlay, disabled by configuration ('enable overlay = no')")
+		}
+	} else {
+		if writableTmpfs {
+			return fmt.Errorf("--writable-tmpfs requires overlay kernel support: your kernel doesn't support it")
+		}
+		if hasOverlayImage {
+			return fmt.Errorf("overlay images requires overlay kernel support: your kernel doesn't support it")
+		}
+	}
+
+	// if --writable wasn't set, use underlay if possible
+	if !writableImage && e.EngineConfig.File.EnableUnderlay {
+		sylog.Debugf("Attempting to use underlay (enable underlay = yes)\n")
+		e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
+		return nil
+	} else if writableImage {
+		sylog.Debugf("Not attempting to use overlay or underlay: writable flag requested")
+		return nil
+	}
+
+	sylog.Debugf("Not attempting to use overlay or underlay: both disabled by administrator")
+	return nil
+}
+
 func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 	images := make([]image.Image, 0)
 
@@ -882,25 +975,36 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 	}
 
 	if writable && !img.Writable {
-		sylog.Warningf("Can't set writable flag on image, no write permissions")
-		e.EngineConfig.SetWritableImage(false)
+		return fmt.Errorf("could not use %s for writing, you don't have write permissions", img.Path)
 	}
+
+	if err := e.setSessionLayer(img); err != nil {
+		return err
+	}
+
+	sessionLayer := e.EngineConfig.GetSessionLayer()
+
+	// first image is always the root filesystem
+	images = append(images, *img)
+	writableOverlayPath := ""
+	overlayPartitions := []string{}
 
 	// sandbox are handled differently for security reasons
 	if img.Type == image.SANDBOX {
 		if img.Path == "/" {
 			return fmt.Errorf("/ as sandbox is not authorized")
 		}
-		if err := mainthread.Fchdir(int(img.Fd)); err != nil {
-			return err
+
+		if err := overlay.CheckLower(img.Path); overlay.IsIncompatible(err) {
+			// a warning message would be better but on some systems it
+			// could annoy users, make it verbose instead
+			sylog.Verbosef("Fallback to underlay layer: %s", err)
+			e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
+			return nil
+		} else if err != nil {
+			return fmt.Errorf("while checking image compatibility with overlay: %s", err)
 		}
-		cwd, err := os.Getwd()
-		if err != nil {
-			return fmt.Errorf("failed to determine current working directory: %s", err)
-		}
-		if cwd != img.Path {
-			return fmt.Errorf("path mismatch for sandbox %s != %s", cwd, img.Path)
-		}
+
 		// C starter code will position current working directory
 		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
 	} else if img.Type == image.SIF {
@@ -915,6 +1019,33 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 				return err
 			}
 		}
+		// load overlay partition if we use overlay layer
+		if sessionLayer == singularityConfig.OverlayLayer {
+			// look for potential overlay partition in SIF image
+			// and inject them into the overlay list
+			for _, p := range img.Partitions[1:] {
+				if p.Type == image.EXT3 || p.Type == image.SQUASHFS {
+					imgCopy := *img
+					imgCopy.Type = int(p.Type)
+					imgCopy.Partitions = []image.Section{p}
+					images = append(images, imgCopy)
+					overlayPartitions = append(overlayPartitions, imgCopy.Path)
+					if img.Writable && p.Type == image.EXT3 {
+						writableOverlayPath = img.Path
+					}
+				}
+			}
+		}
+		// SIF image open for writing without writable
+		// overlay partition, assuming that the root
+		// filesystem is squashfs or encrypted squashfs
+		if img.Writable && img.Partitions[0].Type != image.EXT3 && writableOverlayPath == "" {
+			return fmt.Errorf("no SIF writable overlay partition found in %s", img.Path)
+		}
+	}
+
+	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
+		return err
 	}
 
 	// lock all ext3 partitions if any to prevent concurrent writes
@@ -926,35 +1057,39 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		}
 	}
 
-	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
-		return err
-	}
-
-	// first image is always the root filesystem
-	images = append(images, *img)
-
 	// load overlay images
 	for _, overlayImg := range e.EngineConfig.GetOverlayImage() {
-		writable := true
+		writableOverlay := true
 
 		splitted := strings.SplitN(overlayImg, ":", 2)
 		if len(splitted) == 2 {
 			if splitted[1] == "ro" {
-				writable = false
+				writableOverlay = false
 			}
 		}
 
-		img, err := e.loadImage(splitted[0], writable)
+		img, err := e.loadImage(splitted[0], writableOverlay)
 		if err != nil {
 			return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
 		}
 
-		// lock all ext3 partitions if any to prevent concurrent writes
 		for _, part := range img.Partitions {
+			// lock all ext3 partitions if any to prevent concurrent writes
 			if part.Type == image.EXT3 {
 				if err := img.LockSection(part); err != nil {
 					return fmt.Errorf("error while locking ext3 overlay partition from %s: %s", img.Path, err)
 				}
+			}
+
+			if writableOverlay && img.Writable {
+				if writableOverlayPath != "" {
+					return fmt.Errorf(
+						"you can't specify more than one writable overlay, "+
+							"%s contains a writable overlay, requires to use '--overlay %s:ro'",
+						writableOverlayPath, img.Path,
+					)
+				}
+				writableOverlayPath = img.Path
 			}
 		}
 
@@ -964,6 +1099,11 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		images = append(images, *img)
 	}
 
+	if e.EngineConfig.GetWritableTmpfs() && writableOverlayPath != "" {
+		return fmt.Errorf("you can't specify --writable-tmpfs with another writable overlay image (%s)", writableOverlayPath)
+	}
+
+	e.EngineConfig.SetOverlayImage(append(e.EngineConfig.GetOverlayImage(), overlayPartitions...))
 	e.EngineConfig.SetImageList(images)
 
 	return nil

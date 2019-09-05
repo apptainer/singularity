@@ -92,10 +92,18 @@ func TestSquashfsInitializer(t *testing.T) {
 		t.Fatalf("cannot stat the image file: %s\n", err)
 	}
 
+	// initializer must fail if writable is true
+	err = squashfsfmt.initializer(img, fileinfo)
+	if err == nil {
+		t.Fatalf("unexpected success for squashfs initializer\n")
+	}
+	// reset cursor for header parsing
+	img.File.Seek(0, os.SEEK_SET)
+	// initialized must succeed if writable is false
+	img.Writable = false
 	err = squashfsfmt.initializer(img, fileinfo)
 	if err != nil {
-		img.File.Close()
-		t.Fatalf("initializer failed: %s\n", err)
+		t.Fatalf("unexpected error for squashfs initializer: %s\n", err)
 	}
 	img.File.Close()
 

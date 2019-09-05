@@ -7,6 +7,7 @@ package instance
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -14,6 +15,8 @@ import (
 )
 
 const testSubDir = "testing"
+
+var fakeInstancePid int
 
 func TestProcName(t *testing.T) {
 	test.DropPrivilege(t)
@@ -193,6 +196,7 @@ func TestAdd(t *testing.T) {
 			continue
 		}
 		file.User = "root"
+		file.PPid = fakeInstancePid
 		file.Pid = os.Getpid()
 		if err := file.Update(); err != nil {
 			t.Errorf("error while creating instance %s: %s", e.name, err)
@@ -237,9 +241,33 @@ func TestGet(t *testing.T) {
 		if path != instanceDir {
 			t.Errorf("unexpected instance directory path, got %s instead of %s", path, instanceDir)
 		}
+		if file.isExited() {
+			t.Errorf("fake instance is not running")
+		}
 		err = file.Delete()
 		if err != nil && !e.expectFailure {
 			t.Errorf("unexpected error while deleting instance %s: %s", e.name, err)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	// spawn a fake instance process
+	cmd := exec.Command("cat")
+	// keep cat running until it gets killed
+	cmd.StdinPipe()
+	// set process to "Singularity instance"
+	cmd.Args = []string{ProgPrefix}
+	if err := cmd.Start(); err != nil {
+		os.Exit(1)
+	}
+	fakeInstancePid = cmd.Process.Pid
+
+	// execute tests
+	e := m.Run()
+
+	// kill the fake instance process
+	cmd.Process.Kill()
+
+	os.Exit(e)
 }

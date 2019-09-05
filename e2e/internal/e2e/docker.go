@@ -63,7 +63,7 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 		// start script in e2e/testdata/Docker_registry.def will listen
 		// on port 5111 once docker registry is up and initialized, so
 		// we are trying to connect to this port until we got a response,
-		// without any response after 10 seconds we abort tests execution
+		// without any response after 30 seconds we abort tests execution
 		// because the start script probably failed
 		retry := 0
 		for {
@@ -75,8 +75,8 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 			}
 			time.Sleep(100 * time.Millisecond)
 			retry++
-			if retry == 100 {
-				t.Fatalf("docker registry unreachable after 10 seconds: %+v", err)
+			if retry == 300 {
+				t.Fatalf("docker registry unreachable after 30 seconds: %+v", err)
 			}
 		}
 
