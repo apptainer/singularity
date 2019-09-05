@@ -59,40 +59,80 @@ func (c *ctx) singularitySignIDOption(t *testing.T) {
 	imgPath, cleanup := c.prepareImage(t)
 	defer cleanup(t)
 
-	cmdArgs := []string{"--id", "0", imgPath}
+	tests := []struct {
+		name       string
+		args       []string
+		expectOp   e2e.SingularityCmdResultOp
+		expectExit int
+	}{
+		{
+			name:       "sign deffile",
+			args:       []string{"--id", "0", imgPath},
+			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied to "+imgPath),
+			expectExit: 0,
+		},
+		{
+			name:       "sign non-exsistent ID",
+			args:       []string{"--id", "5", imgPath},
+			expectOp:   e2e.ExpectError(e2e.ContainMatch, "no descriptor found for id 5"),
+			expectExit: 2,
+		},
+	}
+
 	c.env.KeyringDir = c.keyringDir
 	c.env.ImgCacheDir = c.imgCache
-	c.env.RunSingularity(
-		t,
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("sign"),
-		e2e.WithArgs(cmdArgs...),
-		e2e.ConsoleRun(c.passphraseInput...),
-		e2e.ExpectExit(
-			0,
-			e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied to "+imgPath),
-		),
-	)
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("sign"),
+			e2e.WithArgs(tt.args...),
+			e2e.ConsoleRun(c.passphraseInput...),
+			e2e.ExpectExit(tt.expectExit, tt.expectOp),
+		)
+	}
 }
 
 func (c *ctx) singularitySignGroupIDOption(t *testing.T) {
 	imgPath, cleanup := c.prepareImage(t)
 	defer cleanup(t)
 
-	cmdArgs := []string{"--groupid", "0", imgPath}
+	tests := []struct {
+		name       string
+		args       []string
+		expectOp   e2e.SingularityCmdResultOp
+		expectExit int
+	}{
+		{
+			name:       "groupID 0",
+			args:       []string{"--groupid", "0", imgPath},
+			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied to "+imgPath),
+			expectExit: 0,
+		},
+		{
+			name:       "groupID 5",
+			args:       []string{"--groupid", "5", imgPath},
+			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, "no descriptors found for groupid 5"),
+			expectExit: 2,
+		},
+	}
+
 	c.env.KeyringDir = c.keyringDir
 	c.env.ImgCacheDir = c.imgCache
-	c.env.RunSingularity(
-		t,
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("sign"),
-		e2e.WithArgs(cmdArgs...),
-		e2e.ConsoleRun(c.passphraseInput...),
-		e2e.ExpectExit(
-			0,
-			e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied to "+imgPath),
-		),
-	)
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("sign"),
+			e2e.WithArgs(tt.args...),
+			e2e.ConsoleRun(c.passphraseInput...),
+			e2e.ExpectExit(tt.expectExit, tt.expectOp),
+		)
+	}
 }
 
 func (c *ctx) singularitySignKeyidxOption(t *testing.T) {

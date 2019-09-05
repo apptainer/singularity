@@ -17,15 +17,17 @@ import (
 	"syscall"
 	"testing"
 
+	// Tests imports
 	"github.com/sylabs/singularity/e2e/actions"
+	e2ebuildcfg "github.com/sylabs/singularity/e2e/buildcfg"
 	"github.com/sylabs/singularity/e2e/cache"
 	"github.com/sylabs/singularity/e2e/cmdenvvars"
 	"github.com/sylabs/singularity/e2e/docker"
+	singularityenv "github.com/sylabs/singularity/e2e/env"
 	"github.com/sylabs/singularity/e2e/help"
 	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/e2e/inspect"
 	"github.com/sylabs/singularity/e2e/instance"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/key"
 	"github.com/sylabs/singularity/e2e/oci"
 	"github.com/sylabs/singularity/e2e/pull"
@@ -38,10 +40,8 @@ import (
 	"github.com/sylabs/singularity/e2e/verify"
 	"github.com/sylabs/singularity/e2e/version"
 
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-
-	e2ebuildcfg "github.com/sylabs/singularity/e2e/buildcfg"
-	singularityenv "github.com/sylabs/singularity/e2e/env"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
