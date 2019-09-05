@@ -3,6 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// +build integration_test
 // +build seccomp
 
 package main
