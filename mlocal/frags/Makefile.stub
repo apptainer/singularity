@@ -37,7 +37,7 @@ unit-test:
 	$(V)cd $(SOURCEDIR) && \
 		sudo -E \
 		scripts/go-test -v \
-		`$(GO) list ./... | grep -v "cmd/singularity\|pkg/network\|e2e"`
+		./...
 	@echo "       PASS"
 
 
@@ -52,7 +52,7 @@ integration-test:
 	@echo " TEST sudo go test [integration]"
 	$(V)cd $(SOURCEDIR) && \
 		sudo -E \
-		scripts/go-test -v \
+		scripts/go-test -v -tags 'integration_test' \
 		./cmd/singularity ./pkg/network
 	@echo "       PASS"
 
@@ -63,7 +63,7 @@ test:
     	trap "kill $$! || true" 0; \
 		cd $(SOURCEDIR) && \
 		sudo -E \
-		scripts/go-test -v \
+		scripts/go-test -v -tags 'integration_test' \
 		./...
 	@echo "       PASS"
 
