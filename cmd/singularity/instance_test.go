@@ -6,6 +6,8 @@
 // This file has been deprecated and will be removed in version 3.3 of
 // Singularity. The functionality has been moved to e2e/instance/instance*.go.
 
+// +build integration_test
+
 package main
 
 import (
