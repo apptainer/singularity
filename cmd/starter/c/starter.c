@@ -933,6 +933,20 @@ static int get_pipe_exec_fd(void) {
     return pipe_fd;
 }
 
+/* "noop" mount operation to force kernel to load overlay module */
+void load_overlay_module(void) {
+    if ( geteuid() == 0 && getenv("LOAD_OVERLAY_MODULE") != NULL ) {
+        debugf("Trying to load overlay kernel module\n");
+        if ( mount(NULL, "/", "overlay", MS_SILENT, NULL) < 0 ) {
+            if ( errno == EINVAL ) {
+                debugf("Overlay seems supported by the kernel\n");
+            } else {
+                debugf("Overlay seems not supported by the kernel\n");
+            }
+        };
+    }
+}
+
 /*
  * Starter's entrypoint executed before Go runtime in a single-thread context.
  *
@@ -958,6 +972,9 @@ __attribute__((constructor)) static void init(void) {
 #ifndef SINGULARITY_NO_NEW_PRIVS
     fatalf("Host kernel is outdated and does not support PR_SET_NO_NEW_PRIVS!\n");
 #endif
+
+    /* force loading overlay kernel module if requested */
+    load_overlay_module();
 
     /*
      * get pipe file descriptor from environment variable PIPE_EXEC_FD

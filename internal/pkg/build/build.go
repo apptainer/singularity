@@ -81,7 +81,7 @@ func NewBuildJSON(r io.Reader, conf Config) (*Build, error) {
 	return newBuild([]types.Definition{def}, conf)
 }
 
-// New creates a new build struct form a slice of definitions
+// New creates a new build struct form a slice of definitions.
 func New(defs []types.Definition, conf Config) (*Build, error) {
 	return newBuild(defs, conf)
 }
@@ -448,9 +448,10 @@ func MakeAllDefs(spec string) ([]types.Definition, error) {
 		return []types.Definition{d}, err
 	}
 
-	// Check if spec is an image/sandbox
-	if _, err := image.Init(spec, false); err == nil {
-		d, err := types.NewDefinitionFromURI("localimage" + "://" + spec)
+	// check if spec is an image/sandbox
+	if i, err := image.Init(spec, false); err == nil {
+		_ = i.File.Close()
+		d, err := types.NewDefinitionFromURI("localimage://" + spec)
 		return []types.Definition{d}, err
 	}
 

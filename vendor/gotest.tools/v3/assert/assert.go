@@ -49,16 +49,16 @@ The example below shows assert used with some common types.
 
 Comparisons
 
-Package https://godoc.org/gotest.tools/assert/cmp provides
+Package http://gotest.tools/assert/cmp provides
 many common comparisons. Additional comparisons can be written to compare
 values in other ways. See the example Assert (CustomComparison).
 
 Automated migration from testify
 
-gty-migrate-from-testify is a binary which can update source code which uses
-testify assertions to use the assertions provided by this package.
+gty-migrate-from-testify is a command which translates Go source code from
+testify assertions to the assertions provided by this package.
 
-See http://bit.do/cmd-gty-migrate-from-testify.
+See http://gotest.tools/assert/cmd/gty-migrate-from-testify.
 
 
 */
@@ -70,9 +70,9 @@ import (
 	"go/token"
 
 	gocmp "github.com/google/go-cmp/cmp"
-	"gotest.tools/assert/cmp"
-	"gotest.tools/internal/format"
-	"gotest.tools/internal/source"
+	"gotest.tools/v3/assert/cmp"
+	"gotest.tools/v3/internal/format"
+	"gotest.tools/v3/internal/source"
 )
 
 // BoolOrComparison can be a bool, or cmp.Comparison. See Assert() for usage.
@@ -202,17 +202,20 @@ func boolFailureMessage(expr ast.Expr) (string, error) {
 	return "expression is false: " + formatted, nil
 }
 
-// Assert performs a comparison. If the comparison fails the test is marked as
+// Assert performs a comparison. If the comparison fails, the test is marked as
 // failed, a failure message is logged, and execution is stopped immediately.
 //
-// The comparison argument may be one of three types: bool, cmp.Comparison or
-// error.
-// When called with a bool the failure message will contain the literal source
-// code of the expression.
-// When called with a cmp.Comparison the comparison is responsible for producing
-// a helpful failure message.
-// When called with an error a nil value is considered success. A non-nil error
-// is a failure, and Error() is used as the failure message.
+// The comparison argument may be one of three types:
+//   bool
+// True is success. False is a failure.
+// The failure message will contain the literal source code of the expression.
+//   cmp.Comparison
+// Uses cmp.Result.Success() to check for success of failure.
+// The comparison is responsible for producing a helpful failure message.
+// http://gotest.tools/assert/cmp provides many common comparisons.
+//   error
+// A nil value is considered success.
+// A non-nil error is a failure, err.Error() is used as the failure message.
 func Assert(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -260,10 +263,10 @@ func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
 	assert(t, t.FailNow, argsAfterT, cmp.Equal(x, y), msgAndArgs...)
 }
 
-// DeepEqual uses google/go-cmp (http://bit.do/go-cmp) to assert two values are
-// equal and fails the test if they are not equal.
+// DeepEqual uses google/go-cmp (https://godoc.org/github.com/google/go-cmp/cmp)
+// to assert two values are equal and fails the test if they are not equal.
 //
-// Package https://godoc.org/gotest.tools/assert/opt provides some additional
+// Package http://gotest.tools/assert/opt provides some additional
 // commonly used Options.
 //
 // This is equivalent to Assert(t, cmp.DeepEqual(x, y)).
@@ -295,14 +298,19 @@ func ErrorContains(t TestingT, err error, substring string, msgAndArgs ...interf
 }
 
 // ErrorType fails the test if err is nil, or err is not the expected type.
+// Equivalent to Assert(t, cmp.ErrorType(err, expected)).
 //
 // Expected can be one of:
-// a func(error) bool which returns true if the error is the expected type,
-// an instance of (or a pointer to) a struct of the expected type,
-// a pointer to an interface the error is expected to implement,
-// a reflect.Type of the expected struct or interface.
-//
-// Equivalent to Assert(t, cmp.ErrorType(err, expected)).
+//   func(error) bool
+// Function should return true if the error is the expected type.
+//   type struct{}, type &struct{}
+// A struct or a pointer to a struct.
+// Fails if the error is not of the same type as expected.
+//   type &interface{}
+// A pointer to an interface type.
+// Fails if err does not implement the interface.
+//   reflect.Type
+// Fails if err does not implement the reflect.Type
 func ErrorType(t TestingT, err error, expected interface{}, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
