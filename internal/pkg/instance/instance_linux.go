@@ -46,6 +46,7 @@ type File struct {
 	Image  string `json:"image"`
 	Config []byte `json:"config"`
 	UserNs bool   `json:"userns"`
+	IP     string `json:"ip"`
 }
 
 // ProcName returns processus name based on instance name
