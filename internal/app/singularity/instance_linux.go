@@ -30,12 +30,12 @@ func PrintInstanceList(w io.Writer, name, user string, formatJSON bool) error {
 	}
 
 	if !formatJSON {
-		_, err := fmt.Fprintf(w, "%-16s %-8s %-12s %s\n", "INSTANCE NAME", "PID", "IP", "IMAGE")
+		_, err := fmt.Fprintf(w, "%-16s %-8s %-15s %s\n", "INSTANCE NAME", "PID", "IP", "IMAGE")
 		if err != nil {
 			return fmt.Errorf("could not write list header: %v", err)
 		}
 		for _, i := range ii {
-			_, err := fmt.Fprintf(w, "%-16s %-8d %-12s %s\n", i.Name, i.Pid, i.IP, i.Image)
+			_, err := fmt.Fprintf(w, "%-16s %-8d %-15s %s\n", i.Name, i.Pid, i.IP, i.Image)
 			if err != nil {
 				return fmt.Errorf("could not write instance info: %v", err)
 			}
