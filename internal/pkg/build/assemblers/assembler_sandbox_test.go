@@ -7,6 +7,7 @@ package assemblers_test
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
@@ -27,11 +28,11 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("", "sbuild-sandboxAssembler")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-sandboxAssembler"), os.TempDir())
 	if err != nil {
 		t.Fatalf("unable to make bundle: %v", err)
 	}
-	defer os.RemoveAll(b.Path)
+	defer b.Remove()
 
 	b.Recipe, err = types.NewDefinitionFromURI(assemblerDockerURI)
 	if err != nil {
@@ -75,11 +76,11 @@ func TestSandboxAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("", "sbuild-sandboxAssembler")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-sandboxAssembler"), os.TempDir())
 	if err != nil {
 		t.Fatalf("unable to make bundle: %v", err)
 	}
-	defer os.RemoveAll(b.Path)
+	defer b.Remove()
 
 	b.Recipe, err = types.NewDefinitionFromURI(assemblerShubURI)
 	if err != nil {

@@ -6,6 +6,8 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
@@ -353,7 +355,7 @@ var actionDockerPasswordFlag = cmdline.Flag{
 var actionTmpDirFlag = cmdline.Flag{
 	ID:           "actionTmpDirFlag",
 	Value:        &tmpDir,
-	DefaultValue: "",
+	DefaultValue: os.TempDir(),
 	Name:         "tmpdir",
 	Usage:        "specify a temporary directory to use for build",
 	Hidden:       true,
