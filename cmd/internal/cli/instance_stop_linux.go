@@ -35,7 +35,7 @@ var instanceStopUserFlag = cmdline.Flag{
 	DefaultValue: "",
 	Name:         "user",
 	ShortHand:    "u",
-	Usage:        "If running as root, stop instances belonging to user",
+	Usage:        "if running as root, stop instances belonging to user",
 	Tag:          "<username>",
 	EnvKeys:      []string{"USER"},
 }

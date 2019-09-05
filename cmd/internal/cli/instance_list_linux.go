@@ -28,7 +28,7 @@ var instanceListUserFlag = cmdline.Flag{
 	DefaultValue: "",
 	Name:         "user",
 	ShortHand:    "u",
-	Usage:        `If running as root, list instances from "<username>"`,
+	Usage:        `if running as root, list instances from "<username>"`,
 	Tag:          "<username>",
 	EnvKeys:      []string{"USER"},
 }
@@ -41,7 +41,7 @@ var instanceListJSONFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "json",
 	ShortHand:    "j",
-	Usage:        "Print structured json instead of list",
+	Usage:        "print structured json instead of list",
 	EnvKeys:      []string{"JSON"},
 }
 

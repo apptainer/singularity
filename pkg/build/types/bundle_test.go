@@ -9,65 +9,128 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
 func TestNewBundle(t *testing.T) {
-	invalidDir := "notExsitingDir/"
-	validDirPrefix := "bundleTests-"
-	prefixes := []string{"", "dummyPrefix"}
-	testFalseSections := [][]string{{"dummy1", "dummy2", "none"},
-		{"none"},
-		{"dummy1", "dummy2"}}
-	testTrueSections := [][]string{{"all"},
-		{"dummy", "all"},
-		{"test"},
-		{"dummy", "test"}}
-
-	// We create the test directory
-	testDir, err := ioutil.TempDir("", validDirPrefix)
+	testDir, err := ioutil.TempDir("", "bundleTest-")
 	if err != nil {
-		t.Fatal("cannot create temporary directory", err)
+		t.Fatal("Could not create temporary directory", err)
 	}
 	defer os.RemoveAll(testDir)
 
-	// Now we run various tests, it will create directories
-	for _, prefix := range prefixes {
+	tt := []struct {
+		name        string
+		rootfs      string
+		tempDir     string
+		expectError string
+	}{
+		{
+			name:        "invalid temp dir",
+			rootfs:      filepath.Join(testDir, t.Name()+"-bundle1"),
+			tempDir:     "/foo/bar",
+			expectError: `could not create temp dir in "/foo/bar": stat /foo/bar: no such file or directory`,
+		},
+		{
+			name:        "all ok",
+			rootfs:      filepath.Join(testDir, t.Name()+"-bundle2"),
+			tempDir:     testDir,
+			expectError: ``,
+		},
+	}
 
-		// Tests that should fail
-		bundle, myerr := NewBundle(invalidDir, prefix)
-		if bundle != nil && myerr == nil {
-			t.Fatal("NewBundle() with an invalid directory succeeded while expected to fail")
-		}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			b, err := NewBundle(tc.rootfs, tc.tempDir)
+			if tc.expectError == "" && err != nil {
+				t.Errorf("Expected no error, but got %v", err)
+			}
+			if tc.expectError != "" {
+				if err == nil {
+					t.Errorf("Expected error, but got nil")
+				} else {
+					if !strings.Contains(err.Error(), tc.expectError) {
+						t.Errorf("Expected %q, but got %v", tc.expectError, err)
+					}
+				}
+			}
 
-		// Test that should succeed
-		bundle, myerr = NewBundle(testDir, prefix)
-		if bundle == nil || myerr != nil {
-			t.Fatal("NewBundle() with a valid directory failed while expected to succeed")
-		}
-		// We check if the directory was actually created
-		_, myerr = os.Stat(bundle.Path)
-		if myerr != nil {
-			t.Fatal("target directory", bundle.Path, "could not be created")
-		}
-		// With the new bundle, we test Rootfs()
-		if bundle.Rootfs() != filepath.Join(bundle.Path, bundle.FSObjects["rootfs"]) {
-			t.Fatal("Rootfs() returned the wrong value")
-		}
-		// And then, we test RunSection()
-		for _, falseSection := range testFalseSections {
-			bundle.Opts.Sections = falseSection
-			if (*bundle).RunSection("notExistingSection") == true {
-				t.Fatal("RunSection() returned true while expected to return false")
+			if b != nil {
+				// check if the directories were actually created
+				_, err := os.Stat(b.RootfsPath)
+				if err != nil {
+					t.Errorf("RootfsPath stat failed: %v", err)
+				}
+				_, err = os.Stat(b.TmpDir)
+				if err != nil {
+					t.Errorf("TmpDir stat failed: %v", err)
+				}
+
+				if err := b.Remove(); err != nil {
+					t.Errorf("Could not remove bundle: %v", err)
+				}
+
+				// check if the directories were actually removed
+				_, err = os.Stat(b.RootfsPath)
+				if !os.IsNotExist(err) {
+					t.Errorf("RootfsPath was not removed: %v", err)
+				}
+				_, err = os.Stat(b.TmpDir)
+				if !os.IsNotExist(err) {
+					t.Errorf("TmpDir was not removed: %v", err)
+				}
 			}
-		}
-		for _, trueSection := range testTrueSections {
-			bundle.Opts.Sections = trueSection
-			if (*bundle).RunSection("test") == false {
-				t.Fatal("RunSection() returned false while expected to return true")
+		})
+	}
+
+}
+
+func TestBundle_RunSections(t *testing.T) {
+	tt := []struct {
+		name      string
+		sections  []string
+		run       string
+		expectRun bool
+	}{
+		{
+			name:      "none",
+			sections:  []string{"none"},
+			run:       "test",
+			expectRun: false,
+		},
+		{
+			name:      "all",
+			sections:  []string{"all"},
+			run:       "test",
+			expectRun: true,
+		},
+		{
+			name:      "not found",
+			sections:  []string{"foo", "bar"},
+			run:       "test",
+			expectRun: false,
+		},
+		{
+			name:      "found",
+			sections:  []string{"foo", "test", "bar"},
+			run:       "test",
+			expectRun: true,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			b := Bundle{
+				Opts: Options{
+					Sections: tc.sections,
+				},
 			}
-		}
-		// All done, deleting the directory that was created
-		os.RemoveAll(bundle.Path)
+
+			actual := b.RunSection(tc.run)
+			if actual != tc.expectRun {
+				t.Fatalf("Extected %v, but got %v", tc.expectRun, actual)
+			}
+		})
 	}
 }

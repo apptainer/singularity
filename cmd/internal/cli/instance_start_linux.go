@@ -24,7 +24,7 @@ var instanceStartPidFileFlag = cmdline.Flag{
 	Value:        &instanceStartPidFile,
 	DefaultValue: "",
 	Name:         "pid-file",
-	Usage:        "Write instance PID to the file with the given name",
+	Usage:        "write instance PID to the file with the given name",
 	EnvKeys:      []string{"PID_FILE"},
 }
 

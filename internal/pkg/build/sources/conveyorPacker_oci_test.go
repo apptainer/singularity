@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
@@ -54,7 +55,7 @@ func TestOCIConveyorDocker(t *testing.T) {
 	imgCache, cleanup := setupCache(t)
 	defer cleanup()
 
-	b, err := types.NewBundle("", "sbuild-oci")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-oci"), os.TempDir())
 	if err != nil {
 		t.Fatalf("failed to create new bundle: %s", err)
 	}
@@ -88,7 +89,7 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	}
 	defer os.Remove(archive)
 
-	b, err := types.NewBundle("", "sbuild-oci")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-oci"), os.TempDir())
 	if err != nil {
 		return
 	}
@@ -134,7 +135,7 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 		return
 	}
 
-	b, err := types.NewBundle("", "sbuild-oci")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-oci"), os.TempDir())
 	if err != nil {
 		return
 	}
@@ -172,7 +173,7 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	}
 	defer os.Remove(archive)
 
-	b, err := types.NewBundle("", "sbuild-oci")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-oci"), os.TempDir())
 	if err != nil {
 		return
 	}
@@ -223,7 +224,7 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 		t.Fatalf("Error extracting oci archive to layout: %v", err)
 	}
 
-	b, err := types.NewBundle("", "sbuild-oci")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-oci"), os.TempDir())
 	if err != nil {
 		return
 	}
@@ -254,7 +255,7 @@ func TestOCIPacker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("", "sbuild-oci")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-oci"), os.TempDir())
 	if err != nil {
 		return
 	}

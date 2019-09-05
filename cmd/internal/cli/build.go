@@ -126,7 +126,7 @@ var buildArchFlag = cmdline.Flag{
 	Value:        &buildArch,
 	DefaultValue: runtime.GOARCH,
 	Name:         "arch",
-	Usage:        "Architecture for remote build",
+	Usage:        "architecture for remote build",
 	EnvKeys:      []string{"BUILD_ARCH"},
 }
 
@@ -165,7 +165,7 @@ var buildLibraryFlag = cmdline.Flag{
 var buildTmpdirFlag = cmdline.Flag{
 	ID:           "buildTmpdirFlag",
 	Value:        &tmpDir,
-	DefaultValue: "",
+	DefaultValue: os.TempDir(),
 	Name:         "tmpdir",
 	Usage:        "specify a temporary directory to use for build",
 	EnvKeys:      []string{"TMPDIR"},

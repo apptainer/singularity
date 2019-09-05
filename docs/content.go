@@ -258,7 +258,8 @@ Enterprise Performance Computing (EPC)`
   keys to be stored in the default user local key store location (e.g., 
   $HOME/.singularity/sypgp).`
 	KeyNewPairExample string = `
-  $ singularity key newpair`
+  $ singularity key newpair
+  $ singularity key newpair --password=psk --name=your-name --comment="key comment" --email=mail@email.com --push=false`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key list

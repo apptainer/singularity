@@ -6,6 +6,8 @@
 package sources_test
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
@@ -26,7 +28,7 @@ func TestLibraryConveyor(t *testing.T) {
 
 	test.EnsurePrivilege(t)
 
-	b, err := types.NewBundle("", "sbuild-library")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-library"), os.TempDir())
 	if err != nil {
 		return
 	}
@@ -57,7 +59,7 @@ func TestLibraryConveyor(t *testing.T) {
 func TestLibraryPacker(t *testing.T) {
 	test.EnsurePrivilege(t)
 
-	b, err := types.NewBundle("", "sbuild-library")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-library"), os.TempDir())
 	if err != nil {
 		return
 	}

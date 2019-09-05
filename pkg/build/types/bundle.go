@@ -6,9 +6,10 @@
 package types
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
+	"strings"
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
@@ -16,114 +17,63 @@ import (
 	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
-// Bundle is the temporary build environment used during the image
-// building process. A Bundle is the programmatic representation of
-// the directory structure which will constitute this environmenb.
-// /tmp/...:
-//     fs/ - A chroot filesystem
-//     .singularity.d/ - Container metadata (from 2.x image format)
-//     config.json (optional) - Contain information for OCI image bundle
-//     etc... - The Bundle dir can theoretically contain arbitrary directories,
-//              files, etc... which can be interpreted by the Chef
+// Bundle is the temporary environment used during the image building process.
 type Bundle struct {
-	// FSObjects is a map of the filesystem objects contained in the Bundle. An object
-	// will be built as one section of a SIF file.
-	//
-	// Known FSObjects labels:
-	//   * rootfs -> root file system
-	//   * .singularity.d -> .singularity.d directory (includes image exec scripts)
-	//   * data -> directory containing data files
-	FSObjects   map[string]string `json:"fsObjects"`
 	JSONObjects map[string][]byte `json:"jsonObjects"`
 	Recipe      Definition        `json:"rawDeffile"`
-	BindPath    []string          `json:"bindPath"`
-	Path        string            `json:"bundlePath"`
 	Opts        Options           `json:"opts"`
+
+	RootfsPath string `json:"rootfsPath"` // where actual fs to chroot will appear
+	TmpDir     string `json:"tmpPath"`    // where temp files required during build will appear
 }
 
-// Options defines build time behavior to be executed on the bundle
+// Options defines build time behavior to be executed on the bundle.
 type Options struct {
-	// Sections are the parts of the definition to run during the build
+	// Sections are the parts of the definition to run during the build.
 	Sections []string `json:"sections"`
-	// TmpDir specifies a non-standard temporary location to perform a build
+	// TmpDir specifies a non-standard temporary location to perform a build.
 	TmpDir string
-	// LibraryURL contains URL to library where base images can be pulled
+	// LibraryURL contains URL to library where base images can be pulled.
 	LibraryURL string `json:"libraryURL"`
-	// LibraryAuthToken contains authentication token to access specified library
+	// LibraryAuthToken contains authentication token to access specified library.
 	LibraryAuthToken string `json:"libraryAuthToken"`
-	// contains docker credentials if specified
+	// contains docker credentials if specified.
 	DockerAuthConfig *ocitypes.DockerAuthConfig
 	// EncryptionKeyInfo specifies the key used for filesystem
-	// encryption if applicable
-	// A nil value indicated encryption should not occur
+	// encryption if applicable.
+	// A nil value indicates encryption should not occur.
 	EncryptionKeyInfo *crypt.KeyInfo
-	// noTest indicates if build should skip running the test script
+	// NoTest indicates if build should skip running the test script.
 	NoTest bool `json:"noTest"`
-	// force automatically deletes an existing container at build destination while performing build
+	// Force automatically deletes an existing container at build destination while performing build.
 	Force bool `json:"force"`
-	// update detects and builds using an existing sandbox container at build destination
+	// Update detects and builds using an existing sandbox container at build destination.
 	Update bool `json:"update"`
-	// noHTTPS
+	// NoHTTPS instructs builder not to use secure connection.
 	NoHTTPS bool `json:"noHTTPS"`
-	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
-	// useful for debugging
+	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build.
+	// useful for debugging.
 	NoCleanUp bool `json:"noCleanUp"`
 	// NoCache when true, will not use any cache, or make cache.
 	NoCache bool
-	// ImgCache stores a pointer to the image cache to use
+	// ImgCache stores a pointer to the image cache to use.
 	ImgCache *cache.Handle
 }
 
-// Common code between NewBundle and NewEncryptedBundle
-func bundleCommon(bundleDir, bundlePrefix string, keyInfo *crypt.KeyInfo) (b *Bundle, err error) {
-	b = &Bundle{}
-	b.JSONObjects = make(map[string][]byte)
-
-	if bundlePrefix == "" {
-		bundlePrefix = "sbuild-"
-	}
-
-	b.Path, err = ioutil.TempDir(bundleDir, bundlePrefix+"-")
-	if err != nil {
-		return nil, err
-	}
-	sylog.Debugf("Created temporary directory for bundle %v\n", b.Path)
-
-	b.FSObjects = map[string]string{
-		"rootfs": "fs",
-	}
-
-	b.Opts.EncryptionKeyInfo = keyInfo
-
-	for _, fso := range b.FSObjects {
-		if err = os.MkdirAll(filepath.Join(b.Path, fso), 0755); err != nil {
-			return
-		}
-	}
-
-	return b, nil
-
+// NewEncryptedBundle creates an Encrypted Bundle environment.
+func NewEncryptedBundle(rootfs, tempDir string, keyInfo *crypt.KeyInfo) (b *Bundle, err error) {
+	return newBundle(rootfs, tempDir, keyInfo)
 }
 
-// NewEncryptedBundle creates an Encrypted Bundle environment
-func NewEncryptedBundle(bundleDir, bundlePrefix string, keyInfo *crypt.KeyInfo) (b *Bundle, err error) {
-	return bundleCommon(bundleDir, bundlePrefix, keyInfo)
-}
-
-// NewBundle creates a Bundle environment
-func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
-	return bundleCommon(bundleDir, bundlePrefix, nil)
-}
-
-// Rootfs give the path to the root filesystem in the Bundle
-func (b *Bundle) Rootfs() string {
-	return filepath.Join(b.Path, b.FSObjects["rootfs"])
+// NewBundle creates a Bundle environment.
+func NewBundle(rootfs, tempDir string) (b *Bundle, err error) {
+	return newBundle(rootfs, tempDir, nil)
 }
 
 // RunSection iterates through the sections specified in a bundle
 // and returns true if the given string, s, is a section of the
-// definition that should be executed during the build process
-func (b Bundle) RunSection(s string) bool {
+// definition that should be executed during the build process.
+func (b *Bundle) RunSection(s string) bool {
 	for _, section := range b.Opts.Sections {
 		if section == "none" {
 			return false
@@ -133,4 +83,47 @@ func (b Bundle) RunSection(s string) bool {
 		}
 	}
 	return false
+}
+
+// Remove cleans up any bundle files.
+func (b *Bundle) Remove() error {
+	var errors []string
+	for _, dir := range []string{b.TmpDir, b.RootfsPath} {
+		if err := os.RemoveAll(dir); err != nil {
+			errors = append(errors, fmt.Sprintf("could not remove %q: %v", dir, err))
+		}
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf(strings.Join(errors, " "))
+	}
+	return nil
+}
+
+// newBundle creates a minimum bundle with root filesystem in rootfs.
+// Any temporary files created during build process will be in tempDir/bundle-temp-*
+// directory, that will be cleaned up after successful build.
+func newBundle(rootfs, tempDir string, keyInfo *crypt.KeyInfo) (*Bundle, error) {
+	tmpPath, err := ioutil.TempDir(tempDir, "bundle-temp-")
+	if err != nil {
+		return nil, fmt.Errorf("could not create temp dir in %q: %v", tempDir, err)
+	}
+	sylog.Debugf("Created temporary directory %q for the bundle", tmpPath)
+
+	if err := os.MkdirAll(rootfs, 0755); err != nil {
+		if err := os.Remove(tmpPath); err != nil {
+			sylog.Errorf("Could not cleanup temp dir %q: %v", tmpPath, err)
+		}
+		return nil, fmt.Errorf("could not create %q: %v", rootfs, err)
+	}
+	sylog.Debugf("Created directory %q for the bundle", rootfs)
+
+	return &Bundle{
+		RootfsPath:  rootfs,
+		TmpDir:      tmpPath,
+		JSONObjects: make(map[string][]byte),
+		Opts: Options{
+			EncryptionKeyInfo: keyInfo,
+		},
+	}, nil
 }
