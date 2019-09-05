@@ -251,7 +251,7 @@ var actionVMRAMFlag = cmdline.Flag{
 	Value:        &VMRAM,
 	DefaultValue: "1024",
 	Name:         "vm-ram",
-	Usage:        "Amount of RAM in MiB to allocate to Virtual Machine (implies --vm)",
+	Usage:        "amount of RAM in MiB to allocate to Virtual Machine (implies --vm)",
 	Tag:          "<size>",
 	EnvKeys:      []string{"VM_RAM"},
 }
@@ -262,7 +262,7 @@ var actionVMCPUFlag = cmdline.Flag{
 	Value:        &VMCPU,
 	DefaultValue: "1",
 	Name:         "vm-cpu",
-	Usage:        "Number of CPU cores to allocate to Virtual Machine (implies --vm)",
+	Usage:        "number of CPU cores to allocate to Virtual Machine (implies --vm)",
 	Tag:          "<CPU #>",
 	EnvKeys:      []string{"VM_CPU"},
 }
@@ -284,7 +284,7 @@ var actionNONETFlag = cmdline.Flag{
 	Value:        &NoNet,
 	DefaultValue: false,
 	Name:         "nonet",
-	Usage:        "Disable VM network handling",
+	Usage:        "disable VM network handling",
 	EnvKeys:      []string{"VM_NONET"},
 }
 
@@ -305,7 +305,7 @@ var actionPassphraseFlag = cmdline.Flag{
 	Value:        &enterPassphrase,
 	DefaultValue: false,
 	Name:         "passphrase",
-	Usage:        "Enter a passphrase for an encrypted contaner",
+	Usage:        "enter a passphrase for an encrypted contaner",
 }
 
 // --pem-path
@@ -314,7 +314,7 @@ var actionPEMPathFlag = cmdline.Flag{
 	Value:        &encryptionPEMPath,
 	DefaultValue: "",
 	Name:         "pem-path",
-	Usage:        "Enter an path to a PEM formated RSA key for an encrypted container",
+	Usage:        "enter an path to a PEM formated RSA key for an encrypted container",
 }
 
 // --fusemount, hidden for now while experimental

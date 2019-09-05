@@ -35,7 +35,7 @@ var runHelpAppNameFlag = cmdline.Flag{
 	Value:        &AppName,
 	DefaultValue: "",
 	Name:         "app",
-	Usage:        "Show the help for an app",
+	Usage:        "show the help for an app",
 	EnvKeys:      []string{"APP"},
 }
 

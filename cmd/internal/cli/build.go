@@ -126,7 +126,7 @@ var buildArchFlag = cmdline.Flag{
 	Value:        &buildArch,
 	DefaultValue: runtime.GOARCH,
 	Name:         "arch",
-	Usage:        "Architecture for remote build",
+	Usage:        "architecture for remote build",
 	EnvKeys:      []string{"BUILD_ARCH"},
 }
 
