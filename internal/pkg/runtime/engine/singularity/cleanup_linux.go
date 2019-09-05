@@ -9,12 +9,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/instance"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
+	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/priv"
+	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
@@ -34,7 +38,20 @@ func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStat
 		image := e.EngineConfig.GetImage()
 		sylog.Verbosef("Removing image %s", image)
 		sylog.Infof("Cleaning up image...")
-		if err := os.RemoveAll(image); err != nil {
+
+		var err error
+
+		if e.EngineConfig.GetFakeroot() && os.Getuid() != 0 {
+			// this is required when we are using SUID workflow
+			// because master process is not in the fakeroot
+			// context and can get permission denied error during
+			// image removal, so we execute "rm -rf /tmp/image" via
+			// the fakeroot engine
+			err = fakerootCleanup(image)
+		} else {
+			err = os.RemoveAll(image)
+		}
+		if err != nil {
 			sylog.Errorf("failed to delete container image %s: %s", image, err)
 		}
 	}
@@ -98,4 +115,22 @@ func cleanupCrypt(path string) error {
 	}
 
 	return nil
+}
+
+func fakerootCleanup(path string) error {
+	command := []string{"/bin/rm", "-rf", path}
+
+	sylog.Debugf("Calling fakeroot engine to execute %q", strings.Join(command, " "))
+
+	cfg := &config.Common{
+		EngineName:   fakerootConfig.Name,
+		ContainerID:  "fakeroot",
+		EngineConfig: &fakerootConfig.EngineConfig{Args: command},
+	}
+
+	return starter.Run(
+		"Singularity fakeroot",
+		cfg,
+		starter.UseSuid(true),
+	)
 }

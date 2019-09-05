@@ -7,6 +7,7 @@ package cli
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,17 +16,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/cmdline"
-
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/exec"
-
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/starter"
+	"github.com/sylabs/singularity/pkg/cmdline"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
@@ -393,10 +391,6 @@ var InspectCmd = &cobra.Command{
 }
 
 func getFileContent(abspath, name string, args []string) (string, error) {
-	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
-	procname := "Singularity inspect"
-	Env := []string{sylog.GetEnvVar()}
-
 	engineConfig := singularityConfig.NewConfig()
 	ociConfig := &oci.Config{}
 	generator := generate.Generator{Config: &ociConfig.Spec}
@@ -412,22 +406,20 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 		EngineConfig: engineConfig,
 	}
 
-	configData, err := json.Marshal(cfg)
-	if err != nil {
-		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
-	}
-
 	// Record from stdout and store as a string to return as the contents of the file
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
 
-	cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
+	err := starter.Run(
+		"Singularity inspect",
+		cfg,
+		starter.UseSuid(true),
+		starter.WithStdout(&stdout),
+		starter.WithStderr(&stderr),
+	)
 	if err != nil {
-		sylog.Fatalf("Unable to exec command: %s: %s", err, cmd.Args)
+		sylog.Fatalf("Unable to process command: %s: %s", err, stderr.String())
 	}
 
-	b, err := cmd.Output()
-	if err != nil {
-		sylog.Fatalf("Unable to process command: %s: %s", err, b)
-	}
-
-	return string(b), nil
+	return stdout.String(), nil
 }
