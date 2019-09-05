@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/pkg/sypgp"
 
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 const (

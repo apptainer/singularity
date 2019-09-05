@@ -100,7 +100,7 @@ require (
 	google.golang.org/grpc v1.20.0 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
 	gopkg.in/yaml.v2 v2.2.2
-	gotest.tools v2.2.0+incompatible
+	gotest.tools v2.2.0+incompatible // indirect
 	gotest.tools/v3 v3.0.0
 	k8s.io/client-go v0.0.0-20181010045704-56e7a63b5e38 // indirect
 	rsc.io/letsencrypt v0.0.1 // indirect
