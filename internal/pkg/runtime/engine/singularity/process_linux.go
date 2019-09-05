@@ -576,18 +576,18 @@ func preStartProcess(e *EngineOperations) error {
 
 func (e *EngineOperations) getIP() (string, error) {
 	if e.EngineConfig.Network == nil {
-		return "", errors.New("not in net ns")
+		return "", nil
 	}
 
-	net := e.EngineConfig.GetNetwork()
+	net := strings.Split(e.EngineConfig.GetNetwork(), ",")
 
-	ip, err := e.EngineConfig.Network.GetNetworkIP(net, "4")
+	ip, err := e.EngineConfig.Network.GetNetworkIP(net[0], "4")
 	if err == nil {
 		return ip.String(), nil
 	}
 	sylog.Warningf("Could not get ipv4 %s", err)
 
-	ip, err = e.EngineConfig.Network.GetNetworkIP(net, "6")
+	ip, err = e.EngineConfig.Network.GetNetworkIP(net[0], "6")
 	if err == nil {
 		return ip.String(), nil
 	}
