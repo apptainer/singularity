@@ -284,7 +284,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	engineConfig.SetBindPath(BindPaths)
-	if FuseMount != nil {
+	if len(FuseMount) > 0 {
 		/* If --fusemount is given, imply --pid */
 		PidNamespace = true
 		engineConfig.SetFuseMount(FuseMount)
@@ -495,6 +495,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	Env := []string{sylog.GetEnvVar()}
+
+	// starter will force the loading of kernel overlay module
+	if !UserNamespace && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
+		Env = append(Env, "LOAD_OVERLAY_MODULE=1")
+	}
 
 	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
 

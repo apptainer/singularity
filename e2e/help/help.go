@@ -15,8 +15,8 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"gotest.tools/assert"
-	"gotest.tools/golden"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/golden"
 )
 
 type ctx struct {
