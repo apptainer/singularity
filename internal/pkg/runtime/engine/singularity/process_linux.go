@@ -327,6 +327,12 @@ func (e *EngineOperations) PostStartProcess(pid int) error {
 		file.PPid = os.Getpid()
 		file.Image = e.EngineConfig.GetImage()
 
+		ip, err := e.getIP()
+		if err != nil {
+			sylog.Warningf("Could not get ip for %s: %s", pw.Name, err)
+		}
+		file.IP = ip
+
 		// by default we add all namespaces except the user namespace which
 		// is added conditionally. This delegates checks to the C starter code
 		// which will determine if a namespace needs to be joined by
@@ -566,4 +572,26 @@ func preStartProcess(e *EngineOperations) error {
 	}
 
 	return nil
+}
+
+func (e *EngineOperations) getIP() (string, error) {
+	if e.EngineConfig.Network == nil {
+		return "", nil
+	}
+
+	net := strings.Split(e.EngineConfig.GetNetwork(), ",")
+
+	ip, err := e.EngineConfig.Network.GetNetworkIP(net[0], "4")
+	if err == nil {
+		return ip.String(), nil
+	}
+	sylog.Warningf("Could not get ipv4 %s", err)
+
+	ip, err = e.EngineConfig.Network.GetNetworkIP(net[0], "6")
+	if err == nil {
+		return ip.String(), nil
+	}
+	sylog.Warningf("Could not get ipv6 %s", err)
+
+	return "", errors.New("could not get ip")
 }
