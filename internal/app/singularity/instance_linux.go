@@ -17,6 +17,7 @@ type instanceInfo struct {
 	Instance string `json:"instance"`
 	Pid      int    `json:"pid"`
 	Image    string `json:"img"`
+	IP       string `json:"ip"`
 }
 
 // PrintInstanceList fetches instance list, applying name and
@@ -29,12 +30,12 @@ func PrintInstanceList(w io.Writer, name, user string, formatJSON bool) error {
 	}
 
 	if !formatJSON {
-		_, err := fmt.Fprintf(w, "%-16s %-8s %s\n", "INSTANCE NAME", "PID", "IMAGE")
+		_, err := fmt.Fprintf(w, "%-16s %-8s %-12s %s\n", "INSTANCE NAME", "PID", "IP", "IMAGE")
 		if err != nil {
 			return fmt.Errorf("could not write list header: %v", err)
 		}
 		for _, i := range ii {
-			_, err := fmt.Fprintf(w, "%-16s %-8d %s\n", i.Name, i.Pid, i.Image)
+			_, err := fmt.Fprintf(w, "%-16s %-8d %-12s %s\n", i.Name, i.Pid, i.IP, i.Image)
 			if err != nil {
 				return fmt.Errorf("could not write instance info: %v", err)
 			}
@@ -47,6 +48,7 @@ func PrintInstanceList(w io.Writer, name, user string, formatJSON bool) error {
 		instances[i].Image = ii[i].Image
 		instances[i].Pid = ii[i].Pid
 		instances[i].Instance = ii[i].Name
+		instances[i].IP = ii[i].IP
 	}
 
 	enc := json.NewEncoder(w)
