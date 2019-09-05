@@ -64,7 +64,7 @@ func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 
 	st, err := os.Stat(rootfs)
 	if err != nil {
-		return fmt.Errorf("stat on %s failed", rootfs)
+		return fmt.Errorf("stat on %s failed: %v", rootfs, err)
 	}
 
 	if !st.IsDir() {

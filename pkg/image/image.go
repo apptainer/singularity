@@ -257,7 +257,7 @@ func Init(path string, writable bool) (*Image, error) {
 
 		err = rf.format.initializer(img, fileinfo)
 		if _, ok := err.(debugError); ok {
-			sylog.Debugf("%s format initializer returned: %s", rf.name, err)
+			sylog.Debugf("%s format initializer returned: %v", rf.name, err)
 			_ = img.File.Close()
 			continue
 		} else if err != nil {

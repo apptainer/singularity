@@ -17,6 +17,7 @@ import (
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/internal/pkg/build/apps"
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/files"
@@ -87,6 +88,8 @@ func New(defs []types.Definition, conf Config) (*Build, error) {
 }
 
 func newBuild(defs []types.Definition, conf Config) (*Build, error) {
+	var err error
+
 	syscall.Umask(0002)
 
 	// always build a sandbox if updating an existing sandbox
@@ -105,11 +108,9 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 			return nil, fmt.Errorf("multiple stages detected, all must have headers")
 		}
 
+		rootfs := filepath.Join(conf.Opts.TmpDir, "rootfs-"+uuid.NewV1().String())
+
 		var s stage
-		rootfs, err := ioutil.TempDir(conf.Opts.TmpDir, "rootfs-")
-		if err != nil {
-			return nil, fmt.Errorf("could not create rootfs bundle directory: %v", err)
-		}
 		if conf.Opts.EncryptionKeyInfo != nil {
 			s.b, err = types.NewEncryptedBundle(rootfs, conf.Opts.TmpDir, conf.Opts.EncryptionKeyInfo)
 		} else {
