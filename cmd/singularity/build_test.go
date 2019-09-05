@@ -59,17 +59,52 @@ func imageVerify(t *testing.T, imagePath string, labels bool) {
 		expectSuccess bool
 	}
 	tests := []testSpec{
-		{"False", []string{"false"}, false},
-		{"RunScript", []string{"test", "-f", "/.singularity.d/runscript"}, true},
-		{"OneBase", []string{"test", "-f", "/.singularity.d/env/01-base.sh"}, true},
-		{"ActionsShell", []string{"test", "-f", "/.singularity.d/actions/shell"}, true},
-		{"ActionsExec", []string{"test", "-f", "/.singularity.d/actions/exec"}, true},
-		{"ActionsRun", []string{"test", "-f", "/.singularity.d/actions/run"}, true},
-		{"Environment", []string{"test", "-L", "/environment"}, true},
-		{"Singularity", []string{"test", "-L", "/singularity"}, true},
+		{
+			name:     "False",
+			execArgs: []string{"false"},
+		},
+		{
+			name:          "RunScript",
+			execArgs:      []string{"test", "-f", "/.singularity.d/runscript"},
+			expectSuccess: true,
+		},
+		{
+			name:          "OneBase",
+			execArgs:      []string{"test", "-f", "/.singularity.d/env/01-base.sh"},
+			expectSuccess: true,
+		},
+		{
+			name:          "ActionsShell",
+			execArgs:      []string{"test", "-f", "/.singularity.d/actions/shell"},
+			expectSuccess: true,
+		},
+		{
+			name:          "ActionsExec",
+			execArgs:      []string{"test", "-f", "/.singularity.d/actions/exec"},
+			expectSuccess: true,
+		},
+		{
+			name:          "ActionsRun",
+			execArgs:      []string{"test", "-f", "/.singularity.d/actions/run"},
+			expectSuccess: true,
+		},
+		{
+			name:          "Environment",
+			execArgs:      []string{"test", "-L", "/environment"},
+			expectSuccess: true,
+		},
+		{
+			name:          "Singularity",
+			execArgs:      []string{"test", "-L", "/singularity"},
+			expectSuccess: true,
+		},
 	}
 	if labels && *runDisabled { // TODO
-		tests = append(tests, testSpec{"Labels", []string{"test", "-f", "/.singularity.d/labels.json"}, true})
+		tests = append(tests, testSpec{
+			name:          "Labels",
+			execArgs:      []string{"test", "-f", "/.singularity.d/labels.json"},
+			expectSuccess: true,
+		})
 	}
 
 	for _, tt := range tests {
@@ -119,18 +154,51 @@ func TestBuild(t *testing.T) {
 		buildSpec  string
 		sandbox    bool
 	}{
-		{"BusyBox", "", "../../examples/busybox/Singularity", false},
-		{"BusyBoxSandbox", "", "../../examples/busybox/Singularity", true},
-		{"Debootstrap", "debootstrap", "../../examples/debian/Singularity", true},
-		{"DockerURI", "", "docker://busybox", true},
-		{"DockerDefFile", "", "../../examples/docker/Singularity", true},
+		{
+			name:      "BusyBox",
+			buildSpec: "../../examples/busybox/Singularity",
+		},
+		{
+			name:      "BusyBoxSandbox",
+			buildSpec: "../../examples/busybox/Singularity",
+			sandbox:   true,
+		},
+		{
+			name:       "Debootstrap",
+			dependency: "debootstrap",
+			buildSpec:  "../../examples/debian/Singularity",
+			sandbox:    true,
+		},
+		{
+			name:      "DockerURI",
+			buildSpec: "docker://busybox",
+			sandbox:   true,
+		},
+		{
+			name:      "DockerDefFile",
+			buildSpec: "../../examples/docker/Singularity",
+			sandbox:   true,
+		},
+		{
+			name:      "LibraryDefFile",
+			buildSpec: "../../examples/library/Singularity",
+			sandbox:   true,
+		},
+		{
+			name:       "Yum",
+			dependency: "yum",
+			buildSpec:  "../../examples/centos/Singularity",
+			sandbox:    true,
+		},
+		{
+			name:       "Zypper",
+			dependency: "zypper",
+			buildSpec:  "../../examples/opensuse/Singularity",
+			sandbox:    true,
+		},
 		// TODO(mem): reenable this; disabled while shub is down
 		// {"SHubURI", "", "shub://GodloveD/busybox", true},
-		// TODO(mem): reenable this; disabled while shub is down
 		// {"SHubDefFile", "", "../../examples/shub/Singularity", true},
-		{"LibraryDefFile", "", "../../examples/library/Singularity", true},
-		{"Yum", "yum", "../../examples/centos/Singularity", true},
-		{"Zypper", "zypper", "../../examples/opensuse/Singularity", true},
 	}
 
 	for _, tt := range tests {
