@@ -447,7 +447,7 @@ func testPersistentOverlay(t *testing.T) {
 	}))
 	// look for the file squashFs
 	t.Run("overlay_squashFS_find", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{squashfsImage}}, imagePath, []string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())})
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{squashfsImage + ":ro"}}, imagePath, []string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())})
 		if exitCode != 0 {
 			t.Log(stderr, err)
 			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())}, " "))
@@ -455,7 +455,7 @@ func testPersistentOverlay(t *testing.T) {
 	}))
 	// create a file multiple overlays
 	t.Run("overlay_multiple_create", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage}}, imagePath, []string{"touch", "/multiple_overlay_fs"})
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage + ":ro"}}, imagePath, []string{"touch", "/multiple_overlay_fs"})
 		if exitCode != 0 {
 			t.Log(stderr, err)
 			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"touch", "/multiple_overlay_fs"}, " "))
@@ -463,14 +463,14 @@ func testPersistentOverlay(t *testing.T) {
 	}))
 	// look for the file with multiple overlays
 	t.Run("overlay_multiple_find_ext3", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage}}, imagePath, []string{"test", "-f", "/multiple_overlay_fs"})
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage + ":ro"}}, imagePath, []string{"test", "-f", "/multiple_overlay_fs"})
 		if exitCode != 0 {
 			t.Log(stderr, err)
 			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "multiple_overlay_fs"}, " "))
 		}
 	}))
 	t.Run("overlay_multiple_find_squashfs", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage}}, imagePath, []string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())})
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage + ":ro"}}, imagePath, []string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())})
 		if exitCode != 0 {
 			t.Log(stderr, err)
 			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())}, " "))
