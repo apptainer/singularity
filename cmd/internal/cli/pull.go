@@ -123,7 +123,7 @@ var pullDisableCacheFlag = cmdline.Flag{
 var pullTmpdirFlag = cmdline.Flag{
 	ID:           "pullTmpdirFlag",
 	Value:        &tmpDir,
-	DefaultValue: "",
+	DefaultValue: os.TempDir(),
 	Hidden:       true,
 	Name:         "tmpdir",
 	Usage:        "specify a temporary directory to use for build",

@@ -8,7 +8,6 @@ package sources
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -47,14 +46,14 @@ func (cp *ScratchConveyorPacker) Pack() (b *types.Bundle, err error) {
 }
 
 func (c *ScratchConveyor) insertBaseEnv() (err error) {
-	if err = makeBaseEnv(c.b.Rootfs()); err != nil {
+	if err = makeBaseEnv(c.b.RootfsPath); err != nil {
 		return
 	}
 	return nil
 }
 
 func (cp *ScratchConveyorPacker) insertRunScript() (err error) {
-	err = ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
+	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
 	if err != nil {
 		return
 	}
@@ -64,5 +63,5 @@ func (cp *ScratchConveyorPacker) insertRunScript() (err error) {
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
 func (c *ScratchConveyor) CleanUp() {
-	os.RemoveAll(c.b.Path)
+	c.b.Remove()
 }
