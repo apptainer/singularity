@@ -122,6 +122,7 @@ func (c *ctx) singularityInspect(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("inspect"),
 			e2e.WithArgs("--json", tt.insType, containerTesterSIF),
 			e2e.ExpectExit(0, compareOutput),
@@ -130,8 +131,8 @@ func (c *ctx) singularityInspect(t *testing.T) {
 
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
 		env: env,
 	}

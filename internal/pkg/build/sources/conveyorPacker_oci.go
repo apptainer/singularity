@@ -129,7 +129,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 
 	// To to do the RootFS extraction we also have to have a location that
 	// contains *only* this image
-	cp.tmpfsRef, err = oci.ParseReference(cp.b.Path + ":" + "tmp")
+	cp.tmpfsRef, err = oci.ParseReference(cp.b.TmpDir + ":" + "tmp")
 
 	err = cp.fetch()
 	if err != nil {
@@ -294,14 +294,14 @@ func (cp *OCIConveyorPacker) unpackTmpfs() error {
 }
 
 func (cp *OCIConveyorPacker) insertBaseEnv() (err error) {
-	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
+	if err = makeBaseEnv(cp.b.RootfsPath); err != nil {
 		sylog.Errorf("%v", err)
 	}
 	return
 }
 
 func (cp *OCIConveyorPacker) insertRunScript() (err error) {
-	f, err := os.Create(cp.b.Rootfs() + "/.singularity.d/runscript")
+	f, err := os.Create(cp.b.RootfsPath + "/.singularity.d/runscript")
 	if err != nil {
 		return
 	}
@@ -381,7 +381,7 @@ exec "$@"
 
 	f.Sync()
 
-	err = os.Chmod(cp.b.Rootfs()+"/.singularity.d/runscript", 0755)
+	err = os.Chmod(cp.b.RootfsPath+"/.singularity.d/runscript", 0755)
 	if err != nil {
 		return
 	}
@@ -390,7 +390,7 @@ exec "$@"
 }
 
 func (cp *OCIConveyorPacker) insertEnv() (err error) {
-	f, err := os.Create(cp.b.Rootfs() + "/.singularity.d/env/10-docker2singularity.sh")
+	f, err := os.Create(cp.b.RootfsPath + "/.singularity.d/env/10-docker2singularity.sh")
 	if err != nil {
 		return
 	}
@@ -422,7 +422,7 @@ func (cp *OCIConveyorPacker) insertEnv() (err error) {
 
 	f.Sync()
 
-	err = os.Chmod(cp.b.Rootfs()+"/.singularity.d/env/10-docker2singularity.sh", 0755)
+	err = os.Chmod(cp.b.RootfsPath+"/.singularity.d/env/10-docker2singularity.sh", 0755)
 	if err != nil {
 		return
 	}
@@ -432,5 +432,5 @@ func (cp *OCIConveyorPacker) insertEnv() (err error) {
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
 func (cp *OCIConveyorPacker) CleanUp() {
-	os.RemoveAll(cp.b.Path)
+	cp.b.Remove()
 }

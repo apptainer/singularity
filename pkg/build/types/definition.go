@@ -23,7 +23,7 @@ type Definition struct {
 }
 
 // ImageData contains any scripts, metadata, etc... that needs to be
-// present in some form in the final built image
+// present in some form in the final built image.
 type ImageData struct {
 	Metadata     []byte                       `json:"metadata"`
 	Labels       map[string]map[string]string `json:"labels"`
@@ -40,7 +40,7 @@ type ImageScripts struct {
 }
 
 // Data contains any scripts, metadata, etc... that the Builder may
-// need to know only at build time to build the image
+// need to know only at build time to build the image.
 type Data struct {
 	Files   []Files `json:"files"`
 	Scripts `json:"buildScripts"`
@@ -54,25 +54,25 @@ type Scripts struct {
 	Test  Script `json:"test"`
 }
 
-// Files describes a %files section of a definition
+// Files describes a %files section of a definition.
 type Files struct {
 	Args  string          `json:"args"`
 	Files []FileTransport `json:"files"`
 }
 
-// FileTransport holds source and destination information of files to copy into the container
+// FileTransport holds source and destination information of files to copy into the container.
 type FileTransport struct {
 	Src string `json:"source"`
 	Dst string `json:"destination"`
 }
 
-// Script describes any script section of a definition
+// Script describes any script section of a definition.
 type Script struct {
 	Args   string `json:"args"`
 	Script string `json:"script"`
 }
 
-// NewDefinitionFromURI crafts a new Definition given a URI
+// NewDefinitionFromURI crafts a new Definition given a URI.
 func NewDefinitionFromURI(uri string) (d Definition, err error) {
 	var u []string
 	if strings.Contains(uri, "://") {
@@ -121,55 +121,38 @@ func NewDefinitionFromJSON(r io.Reader) (d Definition, err error) {
 
 func writeSectionIfExists(w io.Writer, ident string, s Script) {
 	if len(s.Script) > 0 {
-		w.Write([]byte("%"))
-		w.Write([]byte(ident))
+		fmt.Fprintf(w, "%%%s", ident)
 		if len(s.Args) > 0 {
-			w.Write([]byte(" " + s.Args))
+			fmt.Fprintf(w, " %s", s.Args)
 		}
-		w.Write([]byte("\n"))
-		w.Write([]byte(s.Script))
-		w.Write([]byte("\n\n"))
+		fmt.Fprintf(w, "\n%s\n\n", s.Script)
 	}
 }
 
 func writeFilesIfExists(w io.Writer, f []Files) {
 	for _, f := range f {
 		if len(f.Files) > 0 {
-			w.Write([]byte("%"))
-			w.Write([]byte("files"))
+			fmt.Fprintf(w, "%%files")
 			if len(f.Args) > 0 {
-				w.Write([]byte(" " + f.Args))
+				fmt.Fprintf(w, " %s", f.Args)
 			}
-			w.Write([]byte("\n"))
+			fmt.Fprintln(w)
 
 			for _, ft := range f.Files {
-				w.Write([]byte("\t"))
-				w.Write([]byte(ft.Src))
-				w.Write([]byte("\t"))
-				w.Write([]byte(ft.Dst))
-				w.Write([]byte("\n"))
+				fmt.Fprintf(w, "\t%s\t%s\n", ft.Src, ft.Dst)
 			}
-			w.Write([]byte("\n"))
+			fmt.Fprintln(w)
 		}
 	}
 }
 
 func writeLabelsIfExists(w io.Writer, l map[string]string) {
-
 	if len(l) > 0 {
-
-		w.Write([]byte("%"))
-		w.Write([]byte("labels"))
-		w.Write([]byte("\n"))
-
+		fmt.Fprintln(w, "%labels")
 		for k, v := range l {
-			w.Write([]byte("\t"))
-			w.Write([]byte(k))
-			w.Write([]byte(" "))
-			w.Write([]byte(v))
-			w.Write([]byte("\n"))
+			fmt.Fprintf(w, "\t%s %s\n", k, v)
 		}
-		w.Write([]byte("\n"))
+		fmt.Fprintln(w)
 	}
 }
 
@@ -177,12 +160,9 @@ func writeLabelsIfExists(w io.Writer, l map[string]string) {
 // into a definition file.
 func populateRaw(d *Definition, w io.Writer) {
 	for k, v := range d.Header {
-		w.Write([]byte(k))
-		w.Write([]byte(": "))
-		w.Write([]byte(v))
-		w.Write([]byte("\n"))
+		fmt.Fprintf(w, "%s: %s\n", k, v)
 	}
-	w.Write([]byte("\n"))
+	fmt.Fprintln(w)
 
 	writeLabelsIfExists(w, d.ImageData.Labels["system-partition"])
 	writeFilesIfExists(w, d.BuildData.Files)

@@ -31,7 +31,7 @@ func (c *regressionsTests) issue4203(t *testing.T) {
 
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(true),
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs(image, "testdata/regressions/issue_4203.def"),
 		e2e.PostRun(func(t *testing.T) {
@@ -46,7 +46,7 @@ func (c *regressionsTests) issue4203(t *testing.T) {
 			// container image
 			c.env.RunSingularity(
 				t,
-				e2e.WithPrivileges(false),
+				e2e.WithProfile(e2e.UserProfile),
 				e2e.WithCommand("exec"),
 				e2e.WithArgs(image, "true"),
 				e2e.ExpectExit(0),
@@ -56,8 +56,8 @@ func (c *regressionsTests) issue4203(t *testing.T) {
 	)
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &regressionsTests{
 		env: env,
 	}

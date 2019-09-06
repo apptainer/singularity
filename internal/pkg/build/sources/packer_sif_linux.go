@@ -105,7 +105,7 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 		s := unpacker.NewSquashfs()
 
 		// extract root filesystem
-		if err := s.ExtractAll(reader, b.Rootfs()); err != nil {
+		if err := s.ExtractAll(reader, b.RootfsPath); err != nil {
 			return fmt.Errorf("root filesystem extraction failed: %s", err)
 		}
 	case image.EXT3:
@@ -117,7 +117,7 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 
 		// extract ext3 partition by mounting
 		sylog.Debugf("Ext3 partition detected, mounting to extract.")
-		err = unpackImagePartition(img.File, b.Rootfs(), "ext3", info)
+		err = unpackImagePartition(img.File, b.RootfsPath, "ext3", info)
 		if err != nil {
 			return fmt.Errorf("while copying partition data to bundle: %v", err)
 		}

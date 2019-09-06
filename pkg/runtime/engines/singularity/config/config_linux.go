@@ -8,9 +8,14 @@ package singularity
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
+	"sort"
+	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/network"
 )
 
@@ -65,6 +70,51 @@ func (e *EngineConfig) SetPluginConfig(plugin string, cfg interface{}) error {
 	return nil
 }
 
+//SetFuseMount takes input from --fusemount options and creates plugin objects
+//  from them to hook in to the fuse plugin support code
+func (e *EngineConfig) SetFuseMount(fusemount []string) error {
+	if !e.File.EnableFusemount {
+		sylog.Fatalf("--fusemount disabled by configuration")
+	}
+
+	for _, mountspec := range fusemount {
+		words := strings.Fields(mountspec)
+
+		if !strings.HasPrefix(words[0], "container:") {
+			sylog.Fatalf("fusemount spec does not begin with 'container:': %s.\n", words[0])
+		}
+		words[0] = strings.Replace(words[0], "container:", "", 1)
+
+		if len(words) == 1 {
+			sylog.Fatalf("No whitespace separators found in command")
+		}
+
+		// The last word in the list is the mount point
+		mnt := words[len(words)-1]
+		words = words[0 : len(words)-1]
+
+		var cfg struct {
+			Fuse FuseInfo
+		}
+
+		cfg.Fuse.MountPoint = mnt
+		cfg.Fuse.Program = words
+
+		// Choose a name that makes sure they get used in alphabetical
+		//  order so the mountpoints stay in order.  Assumes no more
+		//  than 1000 plugins.
+		pluginName := fmt.Sprintf("_fusemount%03d", len(e.Plugin))
+
+		sylog.Verbosef("Mounting FUSE filesystem with %s %s as %s\n",
+			strings.Join(words, " "), mnt, pluginName)
+
+		if err := e.SetPluginConfig(pluginName, cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Cannot set plugin configuration: %+v\n", err)
+		}
+	}
+	return nil
+}
+
 // GetPluginFuseMounts returns the list of plugins which have a valid
 // FUSE configuration.
 //
@@ -90,6 +140,7 @@ func (e *EngineConfig) GetPluginFuseMounts() []string {
 		}
 	}
 
+	sort.Strings(list)
 	return list
 }
 

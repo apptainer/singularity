@@ -13,7 +13,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/engine"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 )
@@ -102,6 +102,10 @@ func startContainer(masterSocket int, containerPid int, e *engine.Engine, fatalC
 }
 
 // Master initializes a runtime engine and runs it.
+//
+// Saved uid 0 is preserved when run with suid flow, so that
+// the master is capable to escalate its privileges to setup
+// container environment properly.
 func Master(rpcSocket, masterSocket int, containerPid int, e *engine.Engine) {
 	var status syscall.WaitStatus
 	fatalChan := make(chan error, 1)

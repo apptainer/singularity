@@ -1,0 +1,24 @@
+{
+    "defaultAction": "SCMP_ACT_ALLOW",
+    "archMap": [
+        {
+            "architecture": "SCMP_ARCH_X86_64",
+            "subArchitectures": [
+                "SCMP_ARCH_X86",
+                "SCMP_ARCH_X32"
+            ]
+        }
+    ],
+    "syscalls": [
+        {
+            "names": [
+                "mkdir"
+            ],
+            "action": "SCMP_ACT_KILL",
+            "args": [],
+            "comment": "",
+            "includes": {},
+            "excludes": {}
+        }
+    ]
+}

@@ -14,7 +14,7 @@ On Debian-based systems:
 ```
 $ sudo apt-get update && \
   sudo apt-get install -y build-essential \
-  libssl-dev uuid-dev libgpgme11-dev libseccomp-dev \
+  libssl-dev uuid-dev libseccomp-dev \
   pkg-config squashfs-tools cryptsetup
 ```
 

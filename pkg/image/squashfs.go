@@ -138,7 +138,7 @@ func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	}
 	b := make([]byte, bufferSize)
 	if n, err := img.File.Read(b); err != nil || n != bufferSize {
-		return debugErrorf("can't read first %d bytes: %s", bufferSize, err)
+		return debugErrorf("can't read first %d bytes: %v", bufferSize, err)
 	}
 	offset, err := CheckSquashfsHeader(b)
 	if err != nil {
@@ -155,8 +155,7 @@ func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	}
 
 	if img.Writable {
-		sylog.Warningf("squashfs is not a writable filesystem")
-		img.Writable = false
+		return fmt.Errorf("could not set image writable: squashfs is a read-only filesystem")
 	}
 
 	return nil

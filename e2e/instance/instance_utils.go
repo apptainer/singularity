@@ -33,8 +33,8 @@ func (c *ctx) listInstance(t *testing.T, listArgs ...string) (stdout string, std
 
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(c.profile),
 		e2e.WithCommand("instance list"),
-		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(args...),
 		e2e.PostRun(func(t *testing.T) {
 			success = !t.Failed()
@@ -54,8 +54,8 @@ func (c *ctx) stopInstance(t *testing.T, instance string, stopArgs ...string) (s
 
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(c.profile),
 		e2e.WithCommand("instance stop"),
-		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(args...),
 		e2e.PostRun(func(t *testing.T) {
 			success = !t.Failed()
@@ -72,8 +72,8 @@ func (c *ctx) execInstance(t *testing.T, instance string, execArgs ...string) (s
 
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(c.profile),
 		e2e.WithCommand("exec"),
-		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(args...),
 		e2e.PostRun(func(t *testing.T) {
 			success = !t.Failed()
@@ -99,8 +99,8 @@ func (c *ctx) expectedNumberOfInstances(t *testing.T, n int) {
 
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(c.profile),
 		e2e.WithCommand("instance list"),
-		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs([]string{"--json"}...),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() && n != nbInstances {

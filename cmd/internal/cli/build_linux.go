@@ -22,8 +22,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/fakeroot/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
+	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -106,7 +106,6 @@ func run(cmd *cobra.Command, args []string) {
 
 	if buildArch != runtime.GOARCH && !remote {
 		sylog.Fatalf("Requested architecture (%s) does not match host (%s). Cannot build locally.", buildArch, runtime.GOARCH)
-		cmd.Flags().Lookup("arch").Value.Set(runtime.GOARCH)
 	}
 
 	dest := args[0]
@@ -125,7 +124,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		handleRemoteBuildFlags(cmd)
 
-		// Submiting a remote build requires a valid authToken
+		// submitting a remote build requires a valid authToken
 		if authToken == "" {
 			sylog.Fatalf("Unable to submit build job: %v", remoteWarning)
 		}
@@ -193,9 +192,8 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	} else {
-
 		var keyInfo *crypt.KeyInfo
-		if encrypt || EnterPassphrase || cmd.Flags().Lookup("pem-path").Changed {
+		if encrypt || enterPassphrase || cmd.Flags().Lookup("pem-path").Changed {
 			if os.Getuid() != 0 {
 				sylog.Fatalf("You must be root to build an encrypted container")
 			}
@@ -215,7 +213,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		imgCache := getCacheHandle(cache.Config{})
 		if imgCache == nil {
-			sylog.Fatalf("failed to create an image cache handle")
+			sylog.Fatalf("Failed to create an image cache handle")
 		}
 
 		if syscall.Getuid() != 0 && !fakeroot && fs.IsFile(spec) && !isImage(spec) {
@@ -224,7 +222,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		err := checkSections()
 		if err != nil {
-			sylog.Fatalf(err.Error())
+			sylog.Fatalf("Could not check build sections: %v", err)
 		}
 
 		authConf, err := makeDockerCredentials(cmd)
@@ -300,7 +298,10 @@ func checkSections() error {
 }
 
 func isImage(spec string) bool {
-	_, err := image.Init(spec, false)
+	i, err := image.Init(spec, false)
+	if i != nil {
+		_ = i.File.Close()
+	}
 	return err == nil
 }
 
@@ -375,13 +376,13 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 	}
 
 	if pemPathEnvOK {
-		exists, err := fs.FileExists(encryptionPEMPath)
+		exists, err := fs.FileExists(pemPathEnv)
 		if err != nil {
-			sylog.Fatalf("Unable to verify existence of %s: %v", encryptionPEMPath, err)
+			sylog.Fatalf("Unable to verify existence of %s: %v", pemPathEnv, err)
 		}
 
 		if !exists {
-			sylog.Fatalf("Specified PEM file %s: does not exist.", encryptionPEMPath)
+			sylog.Fatalf("Specified PEM file %s: does not exist.", pemPathEnv)
 		}
 
 		sylog.Verbosef("Using pem path environment variable for encrypted container")

@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -123,6 +124,8 @@ func (r *SingularityCmdResult) expectMatch(mt MatchType, stream streamType, patt
 // pattern string based on the type of match.
 func ExpectOutput(mt MatchType, pattern string) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
+		t.Helper()
+
 		err := r.expectMatch(mt, outputStream, pattern)
 		err = errors.Wrapf(err, "matching %q of type %s in output stream", pattern, mt)
 		if err != nil {
@@ -135,6 +138,8 @@ func ExpectOutput(mt MatchType, pattern string) SingularityCmdResultOp {
 // formatted string pattern based on the type of match.
 func ExpectOutputf(mt MatchType, formatPattern string, a ...interface{}) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
+		t.Helper()
+
 		pattern := fmt.Sprintf(formatPattern, a...)
 		err := r.expectMatch(mt, outputStream, pattern)
 		err = errors.Wrapf(err, "matching %q of type %s in output stream", pattern, mt)
@@ -148,6 +153,8 @@ func ExpectOutputf(mt MatchType, formatPattern string, a ...interface{}) Singula
 // pattern string based on the type of match.
 func ExpectError(mt MatchType, pattern string) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
+		t.Helper()
+
 		err := r.expectMatch(mt, errorStream, pattern)
 		err = errors.Wrapf(err, "matching %q of type %s in output stream", pattern, mt)
 		if err != nil {
@@ -160,6 +167,8 @@ func ExpectError(mt MatchType, pattern string) SingularityCmdResultOp {
 // pattern string based on the type of match.
 func ExpectErrorf(mt MatchType, formatPattern string, a ...interface{}) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
+		t.Helper()
+
 		pattern := fmt.Sprintf(formatPattern, a...)
 		err := r.expectMatch(mt, errorStream, pattern)
 		err = errors.Wrapf(err, "matching %q of type %s in output stream", pattern, mt)
@@ -172,6 +181,8 @@ func ExpectErrorf(mt MatchType, formatPattern string, a ...interface{}) Singular
 // GetStreams gets command stdout and stderr result.
 func GetStreams(stdout *string, stderr *string) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
+		t.Helper()
+
 		*stdout = string(r.Stdout)
 		*stderr = string(r.Stderr)
 	}
@@ -185,6 +196,8 @@ type SingularityConsoleOp func(*testing.T, *expect.Console)
 // is read or an error occurs.
 func ConsoleExpectf(format string, args ...interface{}) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
+		t.Helper()
+
 		if o, err := c.Expectf(format, args...); err != nil {
 			err = errors.Wrap(err, "checking console output")
 			expected := fmt.Sprintf(format, args...)
@@ -198,6 +211,8 @@ func ConsoleExpectf(format string, args ...interface{}) SingularityConsoleOp {
 // an error occurs.
 func ConsoleExpect(s string) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
+		t.Helper()
+
 		if o, err := c.ExpectString(s); err != nil {
 			err = errors.Wrap(err, "checking console output")
 			t.Logf("\nConsole output: %s\nExpected output: %s", o, s)
@@ -209,6 +224,8 @@ func ConsoleExpect(s string) SingularityConsoleOp {
 // ConsoleSend writes a string to the console.
 func ConsoleSend(s string) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
+		t.Helper()
+
 		if _, err := c.Send(s); err != nil {
 			err = errors.Wrapf(err, "sending %q to console", s)
 			t.Errorf("error while writing string to the console: %+v", err)
@@ -219,6 +236,8 @@ func ConsoleSend(s string) SingularityConsoleOp {
 // ConsoleSendLine writes a string to the console with a trailing newline.
 func ConsoleSendLine(s string) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
+		t.Helper()
+
 		if _, err := c.SendLine(s); err != nil {
 			err = errors.Wrapf(err, "sending line %q to console", s)
 			t.Errorf("error while writing string to the console: %+v", err)
@@ -232,22 +251,21 @@ type SingularityCmdOp func(*singularityCmd)
 
 // singularityCmd defines a Singularity command execution test.
 type singularityCmd struct {
+	cmd         []string
 	args        []string
 	envs        []string
 	dir         string // Working directory to be used when executing the command
-	cacheDir    string // Directory to use as image cache directory when executing the command
-	sypgpDir    string // Directory to use for the creation of a temporary PGP keyring
-	privileged  bool
 	subtestName string
 	stdin       io.Reader
+	waitErr     error
 	preFn       func(*testing.T)
 	postFn      func(*testing.T)
 	consoleFn   SingularityCmdOp
 	console     *expect.Console
 	resultFn    SingularityCmdOp
 	result      *SingularityCmdResult
-	waitErr     error
 	t           *testing.T
+	profile     Profile
 }
 
 // AsSubtest requests the command to be run as a subtest
@@ -260,8 +278,7 @@ func AsSubtest(name string) SingularityCmdOp {
 // WithCommand sets the singularity command to execute.
 func WithCommand(command string) SingularityCmdOp {
 	return func(s *singularityCmd) {
-		cmd := strings.Split(command, " ")
-		s.args = append(cmd, s.args...)
+		s.cmd = strings.Split(command, " ")
 	}
 }
 
@@ -293,12 +310,15 @@ func WithDir(dir string) SingularityCmdOp {
 	}
 }
 
-// WithPrivileges sets whether a singularity command must be
-// executed with privileges or not. PreRun, InRun, PostRun
-// are also executed with privileges.
-func WithPrivileges(privileged bool) SingularityCmdOp {
+// WithProfile sets the Singularity execution profile, this
+// is a convenient way to automatically set requirements like
+// privileges, arguments injection in order to execute
+// Singularity command with the corresponding profile.
+// RootProfile, RootUserNamespaceProfile will set privileges which
+// means that PreRun and PostRun are executed with privileges.
+func WithProfile(profile Profile) SingularityCmdOp {
 	return func(s *singularityCmd) {
-		s.privileged = privileged
+		s.profile = profile
 	}
 }
 
@@ -321,13 +341,13 @@ func ConsoleRun(consoleOps ...SingularityConsoleOp) SingularityCmdOp {
 		for _, op := range consoleOps {
 			op(s.t, s.console)
 		}
-		s.console.ExpectEOF()
 	}
 }
 
-// PreRun sets a function to execute before running
-// the singularity command (executed with privileges
-// if WithPrivileges(true) is passed to RunCommand).
+// PreRun sets a function to execute before running the
+// singularity command, this function is executed with
+// privileges if the profile is either RootProfile or
+// RootUserNamespaceProfile.
 func PreRun(fn func(*testing.T)) SingularityCmdOp {
 	return func(s *singularityCmd) {
 		s.preFn = fn
@@ -335,11 +355,11 @@ func PreRun(fn func(*testing.T)) SingularityCmdOp {
 }
 
 // PostRun sets a function to execute when the singularity
-// command execution finished (executed with privileges if
-// WithPrivileges(true) is passed to RunCommand). PostRun
-// is executed in all cases even when the command execution
-// failed, it's the responsibility of the caller to check if the
-// test failed with t.Failed().
+// command execution finished, this function is executed with
+// privileges if the profile is either RootProfile or
+// RootUserNamespaceProfile. PostRun is executed in all cases
+// even when the command execution failed, it's the responsibility
+// of the caller to check if the test failed with t.Failed().
 func PostRun(fn func(*testing.T)) SingularityCmdOp {
 	return func(s *singularityCmd) {
 		s.postFn = fn
@@ -360,6 +380,8 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 
 		r := s.result
 		t := s.t
+
+		t.Helper()
 
 		if t.Failed() {
 			return
@@ -407,6 +429,8 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 // provides a list of operations to be executed before or after running
 // the command.
 func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
+	t.Helper()
+
 	cmdPath := env.CmdPath
 	s := new(singularityCmd)
 
@@ -418,14 +442,37 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 		return
 	}
 
+	// a profile is required
+	if s.profile.name == "" {
+		i := 0
+		availableProfiles := make([]string, len(Profiles))
+		for profile := range Profiles {
+			availableProfiles[i] = profile
+			i++
+		}
+		profiles := strings.Join(availableProfiles, ", ")
+		t.Errorf("you must specify a profile, available profiles are %s", profiles)
+		return
+	}
+
+	// the profile returns if it requires privileges or not
+	privileged := s.profile.privileged
+
 	fn := func(t *testing.T) {
+		t.Helper()
+
 		s.result = new(SingularityCmdResult)
+		pargs := append(s.cmd, s.profile.args(s.cmd)...)
+		s.args = append(pargs, s.args...)
 		s.result.FullCmd = fmt.Sprintf("%s %s", cmdPath, strings.Join(s.args, " "))
 
 		var (
 			stdout bytes.Buffer
 			stderr bytes.Buffer
 		)
+
+		// check if profile can run this test or skip it
+		s.profile.Requirements(t)
 
 		s.t = t
 
@@ -443,27 +490,16 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 		// for the command to be executed. In that context, it is the developer's
 		// responsibility to ensure that the directory is correctly deleted upon successful
 		// or unsuccessful completion of the test.
-		if env.ImgCacheDir != "" {
-			s.cacheDir = env.ImgCacheDir
-		}
+		cacheDir := env.ImgCacheDir
 
-		if s.cacheDir == "" {
+		if cacheDir == "" {
 			// cleanCache is a function that will delete the image cache
 			// and fail the test if it cannot be deleted.
-			imgCacheDir, cleanCache := MakeCacheDir(t, "")
-			s.cacheDir = imgCacheDir
-			defer func() {
-				// Tests may switch back and forth between privileged
-				// and unprivileged mode so if this specific test is
-				// privileged, we ensure that we delete the image cache
-				// with privileged rights.
-				if s.privileged {
-					cleanCache = Privileged(cleanCache)
-				}
-				cleanCache(t)
-			}()
+			imgCacheDir, cleanCache := MakeCacheDir(t, env.TestDir)
+			cacheDir = imgCacheDir
+			defer cleanCache(t)
 		}
-		cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, s.cacheDir)
+		cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, cacheDir)
 		cmd.Env = append(cmd.Env, cacheDirEnv)
 
 		// Each command gets by default a clean temporary PGP keyring.
@@ -474,27 +510,16 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 		// the developer's responsibility to ensure that the directory is
 		// correctly deleted upon successful or unsuccessful completion of the
 		// test.
-		if env.KeyringDir != "" {
-			s.sypgpDir = env.KeyringDir
-		}
+		sypgpDir := env.KeyringDir
 
-		if s.sypgpDir == "" {
+		if sypgpDir == "" {
 			// cleanKeyring is a function that will delete the temporary
 			// PGP keyring and fail the test if it cannot be deleted.
-			keyringDir, cleanSyPGPDir := MakeSyPGPDir(t, "")
-			s.sypgpDir = keyringDir
-			defer func() {
-				// Tests may switch back and forth between privileged and
-				// unprivileged mode so if this specific test is
-				// privileged, we ensure that we delete the temporary
-				// keyring with privileged rights.
-				if s.privileged {
-					cleanSyPGPDir = Privileged(cleanSyPGPDir)
-				}
-				cleanSyPGPDir(t)
-			}()
+			keyringDir, cleanSyPGPDir := MakeSyPGPDir(t, env.TestDir)
+			sypgpDir = keyringDir
+			defer cleanSyPGPDir(t)
 		}
-		sypgpDirEnv := fmt.Sprintf("%s=%s", "SINGULARITY_SYPGPDIR", s.sypgpDir)
+		sypgpDirEnv := fmt.Sprintf("%s=%s", "SINGULARITY_SYPGPDIR", sypgpDir)
 		cmd.Env = append(cmd.Env, sypgpDirEnv)
 
 		// We check if we need to disable the cache
@@ -503,17 +528,29 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 		}
 
 		cmd.Dir = s.dir
+		if cmd.Dir == "" {
+			cmd.Dir = s.profile.defaultCwd
+		}
+
 		cmd.Stdin = s.stdin
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 
+		if s.preFn != nil {
+			s.preFn(t)
+			// if PreRun call t.Error(f) or t.Skip(f), don't
+			// execute the command and return
+			if t.Failed() || t.Skipped() {
+				return
+			}
+		}
 		if s.consoleFn != nil {
 			var err error
 
 			s.console, err = expect.NewTestConsole(
 				t,
-				expect.WithStdout(cmd.Stdout),
-				expect.WithDefaultTimeout(1*time.Second),
+				expect.WithStdout(cmd.Stdout, cmd.Stderr),
+				expect.WithDefaultTimeout(10*time.Second),
 			)
 			err = errors.Wrap(err, "creating expect console")
 			if err != nil {
@@ -530,15 +567,6 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 				Setctty: true,
 				Setsid:  true,
 				Ctty:    int(s.console.Tty().Fd()),
-			}
-		}
-
-		if s.preFn != nil {
-			s.preFn(t)
-			// if PreRun call t.Error(f) or t.Skip(f), don't
-			// execute the command and return
-			if t.Failed() || t.Skipped() {
-				return
 			}
 		}
 		if s.postFn != nil {
@@ -558,25 +586,49 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 
 		if s.consoleFn != nil {
 			s.consoleFn(s)
-			if t.Failed() {
-				cmd.Process.Signal(os.Kill)
+
+			s.waitErr = errors.Wrapf(cmd.Wait(), "waiting for command %q", s.result.FullCmd)
+			// close I/O on our side
+			if err := s.console.Tty().Close(); err != nil {
+				t.Errorf("error while closing console: %s", err)
 				return
 			}
+			_, err := s.console.Expect(expect.EOF, expect.PTSClosed, expect.WithTimeout(1*time.Second))
+			// we've set a shorter timeout of 1 second, we simply ignore it because
+			// it means that the command didn't close I/O streams and keep running
+			// in background
+			if err != nil && !os.IsTimeout(err) {
+				t.Errorf("error while waiting console EOF: %s", err)
+				return
+			}
+		} else {
+			s.waitErr = errors.Wrapf(cmd.Wait(), "waiting for command %q", s.result.FullCmd)
 		}
 
-		s.waitErr = errors.Wrapf(cmd.Wait(), "waiting for command %q", s.result.FullCmd)
 		s.result.Stdout = stdout.Bytes()
 		s.result.Stderr = stderr.Bytes()
 		s.resultFn(s)
 	}
 
-	if s.privileged {
+	if privileged {
 		fn = Privileged(fn)
 	}
 
 	if s.subtestName != "" {
 		t.Run(s.subtestName, fn)
 	} else {
-		fn(t)
+		var wg sync.WaitGroup
+
+		// if this is not a subtest, we will execute the above
+		// function in a separated go routine like t.Run would do
+		// in order to not mess up with privileges if a subsequent
+		// RunSingularity is executed without being a sub-test in
+		// PostRun
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			fn(t)
+		}()
+		wg.Wait()
 	}
 }

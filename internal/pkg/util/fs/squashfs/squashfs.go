@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	singularityconfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 

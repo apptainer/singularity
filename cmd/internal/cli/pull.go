@@ -123,7 +123,7 @@ var pullDisableCacheFlag = cmdline.Flag{
 var pullTmpdirFlag = cmdline.Flag{
 	ID:           "pullTmpdirFlag",
 	Value:        &tmpDir,
-	DefaultValue: "",
+	DefaultValue: os.TempDir(),
 	Hidden:       true,
 	Name:         "tmpdir",
 	Usage:        "specify a temporary directory to use for build",
@@ -293,7 +293,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
-		err = singularity.OciPull(imgCache, pullTo, pullFrom, tmpDir, ociAuth, noHTTPS)
+		err = singularity.OciPull(imgCache, pullTo, pullFrom, tmpDir, ociAuth, noHTTPS, noCleanUp)
 		if err != nil {
 			sylog.Fatalf("While making image from oci registry: %v", err)
 		}

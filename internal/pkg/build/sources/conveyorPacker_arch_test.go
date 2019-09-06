@@ -8,6 +8,7 @@ package sources_test
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
@@ -37,7 +38,7 @@ func TestArchConveyor(t *testing.T) {
 	defer defFile.Close()
 
 	// create bundle to build into
-	b, err := types.NewBundle("", "sbuild-arch")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-arch"), os.TempDir())
 	if err != nil {
 		return
 	}
@@ -71,7 +72,7 @@ func TestArchPacker(t *testing.T) {
 	defer defFile.Close()
 
 	// create bundle to build into
-	b, err := types.NewBundle("", "sbuild-arch")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-arch"), os.TempDir())
 	if err != nil {
 		return
 	}

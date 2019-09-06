@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sylabs/scs-library-client/client"
 	scs "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/library"
@@ -32,7 +31,7 @@ type Library struct {
 
 // NewLibrary initializes and returns new Library ready to  be used.
 func NewLibrary(scsConfig *scs.Config, cache *cache.Handle, keystoreURI string) (*Library, error) {
-	libraryClient, err := client.NewClient(scsConfig)
+	libraryClient, err := scs.NewClient(scsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("could not initialize library client: %v", err)
 	}

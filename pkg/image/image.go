@@ -14,7 +14,9 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/util/fs/lock"
 )
 
 const (
@@ -161,6 +163,46 @@ func (i *Image) HasRootFs() bool {
 	return false
 }
 
+// LockSection puts a file byte-range lock on a section to prevent
+// from concurrent writes depending if the image is writable or
+// not. If the image is writable, calling this function will place
+// a write lock for the corresponding section preventing further use
+// if the section is used for writing or reading only, if the image is
+// not writable this function place a read lock to prevent section
+// from being written while the section is used in read-only mode.
+func (i *Image) LockSection(section Section) error {
+	fd := int(i.Fd)
+	start := int64(section.Offset)
+	size := int64(section.Size)
+
+	br := lock.NewByteRange(fd, start, size)
+
+	var err error
+
+	if i.Writable {
+		err = br.Lock()
+	} else {
+		err = br.RLock()
+	}
+
+	if err == lock.ErrByteRangeAcquired {
+		if i.Writable {
+			return fmt.Errorf("can't open %s for writing, currently in use by another process", i.Path)
+		}
+		return fmt.Errorf("can't open %s for reading, currently in use for writing by another process", i.Path)
+	} else if err == lock.ErrLockNotSupported {
+		// ENOLCK means that the underlying filesystem doesn't support
+		// lock, so we simply ignore the error in order to allow ext3
+		// images located on the underlying filesystem to run correctly
+		// and advertise user in log
+		sylog.Verbosef("Could not set lock on %s section %q, underlying filesystem seems to not support lock", i.Path, section.Name)
+		sylog.Verbosef("Data corruptions may occur if %s is open for writing by multiple processes", i.Path)
+		return nil
+	}
+
+	return err
+}
+
 // ResolvePath returns a resolved absolute path.
 func ResolvePath(path string) (string, error) {
 	abspath, err := filepath.Abs(path)
@@ -196,7 +238,7 @@ func Init(path string, writable bool) (*Image, error) {
 		mode := rf.format.openMode(writable)
 
 		if mode&os.O_RDWR != 0 {
-			if err := syscall.Access(resolvedPath, 2); err != nil {
+			if !fs.IsWritable(resolvedPath) {
 				sylog.Debugf("Opening %s in read-only mode: no write permissions", path)
 				mode = os.O_RDONLY
 				img.Writable = false
@@ -215,7 +257,7 @@ func Init(path string, writable bool) (*Image, error) {
 
 		err = rf.format.initializer(img, fileinfo)
 		if _, ok := err.(debugError); ok {
-			sylog.Debugf("%s format initializer returned: %s", rf.name, err)
+			sylog.Debugf("%s format initializer returned: %v", rf.name, err)
 			_ = img.File.Close()
 			continue
 		} else if err != nil {

@@ -17,6 +17,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/docker/docker/pkg/system"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -210,27 +211,27 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	// Add mirrorURL/installURL as repo
 	if mirrorurl != "" {
-		cmd := exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `ar`, mirrorurl, `repo`)
+		cmd := exec.Command(zypperPath, `--root`, cp.b.RootfsPath, `ar`, mirrorurl, `repo`)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err = cmd.Run(); err != nil {
 			return fmt.Errorf("while adding zypper mirror: %v", err)
 		}
 		// Refreshing gpg keys
-		cmd = exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `--gpg-auto-import-keys`, `refresh`)
+		cmd = exec.Command(zypperPath, `--root`, cp.b.RootfsPath, `--gpg-auto-import-keys`, `refresh`)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err = cmd.Run(); err != nil {
 			return fmt.Errorf("while refreshing gpg keys: %v", err)
 		}
 		if updateurl != "" {
-			cmd := exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `ar`, `-f`, updateurl, `update`)
+			cmd := exec.Command(zypperPath, `--root`, cp.b.RootfsPath, `ar`, `-f`, updateurl, `update`)
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			if err = cmd.Run(); err != nil {
 				return fmt.Errorf("while adding zypper update: %v", err)
 			}
-			cmd = exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `--gpg-auto-import-keys`, `refresh`, `-r`, `update`)
+			cmd = exec.Command(zypperPath, `--root`, cp.b.RootfsPath, `--gpg-auto-import-keys`, `refresh`, `-r`, `update`)
 			if err = cmd.Run(); err != nil {
 				return fmt.Errorf("while refreshing update %v", err)
 			}
@@ -245,19 +246,19 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 			rpmsys = "/usr/lib/sysimage"
 			rpmrel = "../../.."
 		}
-		if err = os.MkdirAll(cp.b.Rootfs()+rpmbase+`/rpm`, 0755); err != nil {
+		if err = os.MkdirAll(cp.b.RootfsPath+rpmbase+`/rpm`, 0755); err != nil {
 			return fmt.Errorf("cannot recreate rpm directories: %v", err)
 		}
-		if err = os.MkdirAll(cp.b.Rootfs()+rpmsys, 0755); err != nil {
+		if err = os.MkdirAll(cp.b.RootfsPath+rpmsys, 0755); err != nil {
 			return fmt.Errorf("cannot recreate rpm directories: %v", err)
 		}
-		if err = os.RemoveAll(cp.b.Rootfs() + rpmsys + `/rpm`); err != nil {
+		if err = os.RemoveAll(cp.b.RootfsPath + rpmsys + `/rpm`); err != nil {
 			return fmt.Errorf("cannot remove rpm directory")
 		}
-		if err = os.Symlink(rpmrel+rpmbase+`/rpm`, cp.b.Rootfs()+rpmsys+`/rpm`); err != nil {
+		if err = os.Symlink(rpmrel+rpmbase+`/rpm`, cp.b.RootfsPath+rpmsys+`/rpm`); err != nil {
 			return fmt.Errorf("cannot create rpm symlink")
 		}
-		cmd := exec.Command("rpmkeys", `--root`, cp.b.Rootfs(), `--import`, pgpfile)
+		cmd := exec.Command("rpmkeys", `--root`, cp.b.RootfsPath, `--import`, pgpfile)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err = cmd.Run(); err != nil {
@@ -269,7 +270,7 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	if suseconnectPath != "" {
-		args := []string{`--root`, cp.b.Rootfs(),
+		args := []string{`--root`, cp.b.RootfsPath,
 			`--product`, suseconnectProduct,
 			`--email`, sleuser,
 			`--regcode`, sleregcode}
@@ -286,7 +287,7 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 			array := strings.SplitN(slemodules, ",", -1)
 			for i := 0; i < len(array); i++ {
 				array[i] = strings.TrimSpace(array[i])
-				cmd := exec.Command(suseconnectPath, `--root`, cp.b.Rootfs(),
+				cmd := exec.Command(suseconnectPath, `--root`, cp.b.RootfsPath,
 					`--product`, array[i]+`/`+suseconnectModver)
 				cmd.Stdout = os.Stdout
 				cmd.Stderr = os.Stderr
@@ -298,19 +299,19 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 	for i := 0; otherurl[i] != ""; i++ {
 		sID := strconv.Itoa(i)
-		cmd := exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `ar`, `-f`, otherurl[i], `repo-`+sID)
+		cmd := exec.Command(zypperPath, `--root`, cp.b.RootfsPath, `ar`, `-f`, otherurl[i], `repo-`+sID)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err = cmd.Run(); err != nil {
 			return fmt.Errorf("while adding zypper url: %s %v", otherurl[i], err)
 		}
-		cmd = exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `--gpg-auto-import-keys`, `refresh`, `-r`, `repo-`+sID)
+		cmd = exec.Command(zypperPath, `--root`, cp.b.RootfsPath, `--gpg-auto-import-keys`, `refresh`, `-r`, `repo-`+sID)
 		if err = cmd.Run(); err != nil {
 			return fmt.Errorf("while refreshing: %s %v", `repo-`+sID, err)
 		}
 	}
 
-	args := []string{`--non-interactive`, `-c`, filepath.Join(cp.b.Rootfs(), zypperConf), `--root`, cp.b.Rootfs(), `--releasever=` + osversion, `-n`, `install`, `--auto-agree-with-licenses`, `--download-in-advance`}
+	args := []string{`--non-interactive`, `-c`, filepath.Join(cp.b.RootfsPath, zypperConf), `--root`, cp.b.RootfsPath, `--releasever=` + osversion, `-n`, `install`, `--auto-agree-with-licenses`, `--download-in-advance`}
 	args = append(args, strings.Fields(include)...)
 
 	// Zypper install command
@@ -348,14 +349,14 @@ func (cp *ZypperConveyorPacker) Pack() (b *types.Bundle, err error) {
 }
 
 func (cp *ZypperConveyorPacker) insertBaseEnv() (err error) {
-	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
+	if err = makeBaseEnv(cp.b.RootfsPath); err != nil {
 		return
 	}
 	return nil
 }
 
 func (cp *ZypperConveyorPacker) insertRunScript() (err error) {
-	f, err := os.Create(cp.b.Rootfs() + "/.singularity.d/runscript")
+	f, err := os.Create(cp.b.RootfsPath + "/.singularity.d/runscript")
 	if err != nil {
 		return
 	}
@@ -373,7 +374,7 @@ func (cp *ZypperConveyorPacker) insertRunScript() (err error) {
 
 	f.Sync()
 
-	err = os.Chmod(cp.b.Rootfs()+"/.singularity.d/runscript", 0755)
+	err = os.Chmod(cp.b.RootfsPath+"/.singularity.d/runscript", 0755)
 	if err != nil {
 		return
 	}
@@ -382,12 +383,12 @@ func (cp *ZypperConveyorPacker) insertRunScript() (err error) {
 }
 
 func (cp *ZypperConveyorPacker) genZypperConfig() (err error) {
-	err = os.MkdirAll(filepath.Join(cp.b.Rootfs(), "/etc/zypp"), 0775)
+	err = os.MkdirAll(filepath.Join(cp.b.RootfsPath, "/etc/zypp"), 0775)
 	if err != nil {
-		return fmt.Errorf("while creating %v: %v", filepath.Join(cp.b.Rootfs(), "/etc/zypp"), err)
+		return fmt.Errorf("while creating %v: %v", filepath.Join(cp.b.RootfsPath, "/etc/zypp"), err)
 	}
 
-	err = ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), zypperConf), []byte("[main]\ncachedir=/val/cache/zypp-bootstrap\n\n"), 0664)
+	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, zypperConf), []byte("[main]\ncachedir=/val/cache/zypp-bootstrap\n\n"), 0664)
 	if err != nil {
 		return
 	}
@@ -396,24 +397,30 @@ func (cp *ZypperConveyorPacker) genZypperConfig() (err error) {
 }
 
 func (cp *ZypperConveyorPacker) copyPseudoDevices() (err error) {
-	err = os.Mkdir(filepath.Join(cp.b.Rootfs(), "/dev"), 0775)
+	devPath := filepath.Join(cp.b.RootfsPath, "dev")
+	err = os.Mkdir(devPath, 0775)
 	if err != nil {
-		return fmt.Errorf("while creating %v: %v", filepath.Join(cp.b.Rootfs(), "/dev"), err)
+		return fmt.Errorf("while creating %v: %v", devPath, err)
 	}
 
-	devs := []string{"/dev/null", "/dev/zero", "/dev/random", "/dev/urandom"}
+	devs := []struct {
+		major int
+		minor int
+		path  string
+		mode  uint32
+	}{
+		{1, 3, "/dev/null", syscall.S_IFCHR | 0666},
+		{1, 8, "/dev/random", syscall.S_IFCHR | 0666},
+		{1, 9, "/dev/urandom", syscall.S_IFCHR | 0666},
+		{1, 5, "/dev/zero", syscall.S_IFCHR | 0666},
+	}
 
 	for _, dev := range devs {
-		cmd := exec.Command("cp", "-a", dev, filepath.Join(cp.b.Rootfs(), "/dev"))
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err = cmd.Run(); err != nil {
-			f, err := os.Create(cp.b.Rootfs() + "/.singularity.d/runscript")
-			if err != nil {
-				return fmt.Errorf("while creating %v: %v", filepath.Join(cp.b.Rootfs(), dev), err)
-			}
+		d := int((dev.major << 8) | (dev.minor & 0xff) | ((dev.minor & 0xfff00) << 12))
+		path := filepath.Join(cp.b.RootfsPath, dev.path)
 
-			defer f.Close()
+		if err := syscall.Mknod(path, dev.mode, d); err != nil {
+			return fmt.Errorf("while creating %s: %s", path, err)
 		}
 	}
 

@@ -15,8 +15,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/pkg/cmdline"
@@ -35,7 +35,7 @@ var runHelpAppNameFlag = cmdline.Flag{
 	Value:        &AppName,
 	DefaultValue: "",
 	Name:         "app",
-	Usage:        "Show the help for an app",
+	Usage:        "show the help for an app",
 	EnvKeys:      []string{"APP"},
 }
 

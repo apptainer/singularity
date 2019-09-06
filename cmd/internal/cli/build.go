@@ -12,8 +12,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/cmdline"
-
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
@@ -22,6 +20,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 var (
@@ -127,7 +126,7 @@ var buildArchFlag = cmdline.Flag{
 	Value:        &buildArch,
 	DefaultValue: runtime.GOARCH,
 	Name:         "arch",
-	Usage:        "Architecture for remote build",
+	Usage:        "architecture for remote build",
 	EnvKeys:      []string{"BUILD_ARCH"},
 }
 
@@ -166,7 +165,7 @@ var buildLibraryFlag = cmdline.Flag{
 var buildTmpdirFlag = cmdline.Flag{
 	ID:           "buildTmpdirFlag",
 	Value:        &tmpDir,
-	DefaultValue: "",
+	DefaultValue: os.TempDir(),
 	Name:         "tmpdir",
 	Usage:        "specify a temporary directory to use for build",
 	EnvKeys:      []string{"TMPDIR"},
@@ -224,36 +223,36 @@ var buildEncryptFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(BuildCmd)
+	cmdManager.RegisterCmd(buildCmd)
 
-	cmdManager.RegisterFlagForCmd(&buildBuilderFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildDetachedFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildForceFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildJSONFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildLibraryFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildNoHTTPSFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildNoTestFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildRemoteFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildArchFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildDisableCacheFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildEncryptFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildBuilderFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildDetachedFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildForceFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildJSONFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildLibraryFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildNoHTTPSFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildNoTestFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildRemoteFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildArchFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildSectionFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildDisableCacheFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildEncryptFlag, buildCmd)
 
-	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, buildCmd)
 
-	cmdManager.RegisterFlagForCmd(&actionPassphraseFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&actionPEMPathFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&actionPassphraseFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&actionPEMPathFlag, buildCmd)
 }
 
-// BuildCmd represents the build command
-var BuildCmd = &cobra.Command{
+// buildCmd represents the build command.
+var buildCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(2),
 
@@ -279,7 +278,7 @@ func preRun(cmd *cobra.Command, args []string) {
 	sylabsToken(cmd, args)
 }
 
-// checkTargetCollision makes sure output target doesn't exist, or is ok to overwrite
+// checkTargetCollision makes sure output target doesn't exist, or is ok to overwrite.
 func checkBuildTarget(path string, update bool) bool {
 	if f, err := os.Stat(path); err == nil {
 		if update && !f.IsDir() {
@@ -306,7 +305,6 @@ func checkBuildTarget(path string, update bool) bool {
 // definitionFromSpec is specifically for parsing specs for the remote builder
 // it uses a different version the the definition struct and parser
 func definitionFromSpec(spec string) (types.Definition, error) {
-
 	// Try spec as URI first
 	def, err := types.NewDefinitionFromURI(spec)
 	if err == nil {

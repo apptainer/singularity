@@ -13,12 +13,9 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/util/bin"
-	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
 var testFileContent = "Test file content\n"
@@ -26,10 +23,6 @@ var testFileContent = "Test file content\n"
 type imgBuildTests struct {
 	env e2e.TestEnv
 }
-
-const (
-	passphrase = "e2e-passphrase"
-)
 
 func (c *imgBuildTests) buildFrom(t *testing.T) {
 	e2e.PrepRegistry(t, c.env)
@@ -66,7 +59,7 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PreRun(func(t *testing.T) {
@@ -142,7 +135,7 @@ func (c *imgBuildTests) nonRootBuild(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(false),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
@@ -184,7 +177,7 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(true),
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs("--sandbox", sandboxImage, c.env.ImagePath),
 		e2e.PostRun(func(t *testing.T) {
@@ -216,7 +209,7 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(imagePath, tt.buildSpec),
 			e2e.PostRun(func(t *testing.T) {
@@ -231,7 +224,7 @@ func (c *imgBuildTests) badPath(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(true),
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs(imagePath, "/some/dumb/path"),
 		e2e.ExpectExit(255),
@@ -427,7 +420,7 @@ func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
@@ -724,7 +717,7 @@ func (c *imgBuildTests) buildDefinition(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
@@ -743,6 +736,7 @@ func (c *imgBuildTests) ensureImageIsEncrypted(t *testing.T, imgPath string) {
 	cmdArgs := []string{"info", sifID, imgPath}
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("sif"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(
@@ -750,47 +744,6 @@ func (c *imgBuildTests) ensureImageIsEncrypted(t *testing.T, imgPath string) {
 			e2e.ExpectOutput(e2e.ContainMatch, "Fstype:    Encrypted squashfs"),
 		),
 	)
-}
-
-func checkCryptsetupVersion() error {
-	cryptsetup, err := bin.Cryptsetup()
-	if err != nil {
-		return err
-	}
-
-	cmd := exec.Command(cryptsetup, "--version")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("failed to run cryptsetup --version: %s", err)
-	}
-
-	if !strings.Contains(string(out), "cryptsetup 2.") {
-		return fmt.Errorf("incompatible cryptsetup version")
-	}
-
-	return nil
-}
-
-func (c *imgBuildTests) generatePemFile(t *testing.T) string {
-	// Temporary file to save the PEM file
-	tempPemFile, err := ioutil.TempFile(c.env.TestDir, "pem-")
-	if err != nil {
-		t.Fatalf("failed to create temporary file: %s", err)
-	}
-	tempPemFile.Close()
-	// File is deleted when the e2e framework deletes TestDir
-
-	rsaKey, err := crypt.GenerateRSAKey(2048)
-	if err != nil {
-		t.Fatalf("failed to generate RSA key: %s", err)
-	}
-
-	err = crypt.SavePublicPEM(tempPemFile.Name(), rsaKey)
-	if err != nil {
-		t.Fatalf("failed to generate PEM file: %s", err)
-	}
-
-	return tempPemFile.Name()
 }
 
 func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
@@ -804,11 +757,11 @@ func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
 	defer cleanup(t)
 
 	// Generate the PEM file
-	pemFile := c.generatePemFile(t)
+	pemFile, _ := e2e.GeneratePemFiles(t, c.env.TestDir)
 
 	// If the version of cryptsetup is not compatible with Singularity encryption,
 	// the build commands are expected to fail
-	err := checkCryptsetupVersion()
+	err := e2e.CheckCryptsetupVersion()
 	if err != nil {
 		expectedExitCode = 255
 		// todo: fix the problen with catching stderr, until then we do not do a real check
@@ -821,8 +774,8 @@ func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
 	cmdArgs := []string{"--encrypt", "--pem-path", pemFile, imgPath1, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
-		e2e.WithPrivileges(true),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(
 			expectedExitCode,
@@ -835,15 +788,15 @@ func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
 	}
 
 	// Second with the environment variable
-	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PEM_PATH", pemFile)
+	pemEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PEM_PATH", pemFile)
 	imgPath2 := filepath.Join(tempDir, "encrypted_env_var.sif")
 	cmdArgs = []string{"--encrypt", imgPath2, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs(cmdArgs...),
-		e2e.WithPrivileges(true),
-		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
+		e2e.WithEnv(append(os.Environ(), pemEnvVar)),
 		e2e.ExpectExit(
 			expectedExitCode,
 			e2e.ExpectError(e2e.ContainMatch, expectedStderr),
@@ -870,24 +823,24 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 
 	// If the version of cryptsetup is not compatible with Singularity encryption,
 	// the build commands are expected to fail
-	err := checkCryptsetupVersion()
+	err := e2e.CheckCryptsetupVersion()
 	if err != nil {
 		expectedExitCode = 255
-		// todo: fix the problen with catching stderr, until then we do not do a real check
-		//expectedStderr = "FATAL:   While performing build: unable to encrypt filesystem at /tmp/sbuild-718337349/squashfs-770818633: available cryptsetup is not supported"
-		expectedStderr = ""
+		expectedStderr = ": available cryptsetup is not supported"
 	}
 
-	// First with the command line argument
+	// First with the command line argument, only using --passphrase
 	passphraseInput := []e2e.SingularityConsoleOp{
-		e2e.ConsoleSendLine(passphrase),
+		e2e.ConsoleSendLine(e2e.Passphrase),
 	}
-	imgPath1 := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
-	cmdArgs := []string{"--encrypt", "--passphrase", imgPath1, "library://alpine:latest"}
+	cmdlineTestImgPath := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
+	// The image is deleted during cleanup of the tempdir
+	cmdArgs := []string{"--passphrase", cmdlineTestImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
+		e2e.AsSubtest("passphrase flag"),
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
-		e2e.WithPrivileges(true),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ConsoleRun(passphraseInput...),
 		e2e.ExpectExit(
@@ -897,18 +850,39 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	)
 	// If the command was supposed to succeed, we check the image
 	if expectedExitCode == 0 {
-		c.ensureImageIsEncrypted(t, imgPath1)
+		c.ensureImageIsEncrypted(t, cmdlineTestImgPath)
 	}
 
-	// Second with the environment variable
-	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PASSPHRASE", passphrase)
-	imgPath2 := filepath.Join(tempDir, "encrypted_env_var.sif")
-	cmdArgs = []string{"--encrypt", imgPath2, "library://alpine:latest"}
+	// With the command line argument, using --encrypt and --passphrase
+	cmdlineTest2ImgPath := filepath.Join(tempDir, "encrypted_cmdline2_option.sif")
+	cmdArgs = []string{"--encrypt", "--passphrase", cmdlineTest2ImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
+		e2e.AsSubtest("encrypt and passphrase flags"),
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs(cmdArgs...),
-		e2e.WithPrivileges(true),
+		e2e.ConsoleRun(passphraseInput...),
+		e2e.ExpectExit(
+			expectedExitCode,
+			e2e.ExpectError(e2e.ContainMatch, expectedStderr),
+		),
+	)
+	// If the command was supposed to succeed, we check the image
+	if expectedExitCode == 0 {
+		c.ensureImageIsEncrypted(t, cmdlineTest2ImgPath)
+	}
+
+	// With the environment variable
+	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PASSPHRASE", e2e.Passphrase)
+	envvarImgPath := filepath.Join(tempDir, "encrypted_env_var.sif")
+	cmdArgs = []string{"--encrypt", envvarImgPath, "library://alpine:latest"}
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("passphrase env var"),
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(cmdArgs...),
 		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
 		e2e.ExpectExit(
 			expectedExitCode,
@@ -917,28 +891,28 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	)
 	// If the command was supposed to succeed, we check the image
 	if expectedExitCode == 0 {
-		c.ensureImageIsEncrypted(t, imgPath2)
+		c.ensureImageIsEncrypted(t, envvarImgPath)
 	}
 
 	// Finally a test that must fail: try to specify the passphrase on the command line
-	imgPath3 := filepath.Join(tempDir, "dummy_encrypted_env_var.sif")
-	cmdArgs = []string{"--encrypt", "--passphrase", passphrase, imgPath3, "library://alpine:latest"}
+	dummyImgPath := filepath.Join(tempDir, "dummy_encrypted_env_var.sif")
+	cmdArgs = []string{"--encrypt", "--passphrase", e2e.Passphrase, dummyImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
+		e2e.AsSubtest("passphrase on cmdline"),
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs(cmdArgs...),
-		e2e.WithPrivileges(true),
 		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
 		e2e.ExpectExit(
 			1,
 			e2e.ExpectError(e2e.RegexMatch, `^Error for command \"build\": accepts 2 arg\(s\), received 3`),
 		),
 	)
-
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &imgBuildTests{
 		env: env,
 	}

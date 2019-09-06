@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/containerd/cgroups"
+	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
 
@@ -87,5 +88,13 @@ func Command(t *testing.T, command string) {
 	_, err := exec.LookPath(command)
 	if err != nil {
 		t.Skipf("%s command not found in $PATH", command)
+	}
+}
+
+// Seccomp checks that seccomp is enabled, if not the
+// current test is skipped with a message.
+func Seccomp(t *testing.T) {
+	if !seccomp.Enabled() {
+		t.Skipf("seccomp disabled, Singularity was compiled without the seccomp library")
 	}
 }

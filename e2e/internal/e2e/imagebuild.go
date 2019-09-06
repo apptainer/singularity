@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"io/ioutil"
 	"log"
-	"os/exec"
 	"path"
 	"text/template"
 )
@@ -66,24 +65,6 @@ type FilePair struct {
 	Dst string
 }
 
-// ImageBuild builds an image based on the Opts
-func (env TestEnv) ImageBuild(opts BuildOpts, imagePath, buildSpec string) ([]byte, error) {
-	var argv []string
-	argv = append(argv, "build")
-	if opts.Force {
-		argv = append(argv, "--force")
-	}
-	if opts.Sandbox {
-		argv = append(argv, "--sandbox")
-	}
-	argv = append(argv, imagePath, buildSpec)
-
-	cmd := exec.Command(env.CmdPath, argv...)
-	cmd.Env = opts.Env
-
-	return cmd.CombinedOutput()
-}
-
 // PrepareDefFile reads a template from a file, applies data to it, writes the
 // contents to disk, and returns the path.
 func PrepareDefFile(dfd DefFileDetails) (outputPath string) {
@@ -131,24 +112,4 @@ func PrepareMultiStageDefFile(dfd []DefFileDetails) (outputPath string) {
 	}
 
 	return f.Name()
-}
-
-// GenericExec executes an external program and returns its stdout and stderr.
-// If err != nil, the program did not execute successfully.
-func GenericExec(cmdPath string, argv ...string) (stdout string, stderr string, err error) {
-	var stdoutBuffer, stderrBuffer bytes.Buffer
-
-	// Execute command
-	cmd := exec.Command(cmdPath, argv...)
-	cmd.Stdout = &stdoutBuffer
-	cmd.Stderr = &stderrBuffer
-	if err = cmd.Start(); err != nil {
-		return
-	}
-
-	// Wait for command to finish and set stdout/stderr
-	err = cmd.Wait()
-	stdout = stdoutBuffer.String()
-	stderr = stderrBuffer.String()
-	return
 }

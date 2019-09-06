@@ -9,5 +9,5 @@ package engines
 
 import (
 	// register the fakeroot runtime engine
-	_ "github.com/sylabs/singularity/internal/pkg/runtime/engines/fakeroot"
+	_ "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot"
 )

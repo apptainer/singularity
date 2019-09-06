@@ -34,7 +34,7 @@ github.com/blang/semver
 github.com/buger/jsonparser
 # github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
 github.com/containerd/cgroups
-# github.com/containerd/containerd v1.2.7
+# github.com/containerd/containerd v1.2.8
 github.com/containerd/containerd/reference
 github.com/containerd/containerd/remotes/docker
 github.com/containerd/containerd/images
@@ -200,16 +200,17 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
-# github.com/google/go-cmp v0.2.0
+# github.com/google/go-cmp v0.3.0
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
+github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
 # github.com/gorilla/context v1.1.1
 github.com/gorilla/context
 # github.com/gorilla/mux v1.6.2
 github.com/gorilla/mux
-# github.com/gorilla/websocket v1.4.0
+# github.com/gorilla/websocket v1.4.1
 github.com/gorilla/websocket
 # github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce
 github.com/hashicorp/errwrap
@@ -327,7 +328,7 @@ github.com/spf13/pflag
 github.com/sylabs/json-resp
 # github.com/sylabs/scs-build-client v0.0.4
 github.com/sylabs/scs-build-client/client
-# github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
+# github.com/sylabs/scs-key-client v0.3.1-0.20190509220229-bce3b050c4ec
 github.com/sylabs/scs-key-client/client
 # github.com/sylabs/scs-library-client v0.4.2
 github.com/sylabs/scs-library-client/client
@@ -387,11 +388,11 @@ google.golang.org/grpc/status
 gopkg.in/cheggaaa/pb.v1
 # gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2
-# gotest.tools v2.3.0+incompatible
-gotest.tools/assert
-gotest.tools/golden
-gotest.tools/icmd
-gotest.tools/assert/cmp
-gotest.tools/internal/format
-gotest.tools/internal/source
-gotest.tools/internal/difflib
+# gotest.tools/v3 v3.0.0
+gotest.tools/v3/assert
+gotest.tools/v3/golden
+gotest.tools/v3/icmd
+gotest.tools/v3/assert/cmp
+gotest.tools/v3/internal/format
+gotest.tools/v3/internal/source
+gotest.tools/v3/internal/difflib

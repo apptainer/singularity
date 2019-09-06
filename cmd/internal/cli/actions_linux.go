@@ -28,8 +28,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/instance"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
@@ -40,16 +40,9 @@ import (
 )
 
 // EnsureRootPriv ensures that a command is executed with root privileges.
-// To customize the output, arguments can be used to specify the context (e.g., "oci", "plugin"),
-// where the first argument (string) will be displayed before the command itself.
 func EnsureRootPriv(cmd *cobra.Command, args []string) {
 	if os.Geteuid() != 0 {
-		if len(args) >= 1 && len(args[0]) > 0 {
-			// The first argument is the context
-			sylog.Fatalf("command '%s %s' requires root privileges", args[0], cmd.Name())
-		} else {
-			sylog.Fatalf("command %s requires root privileges", cmd.Name())
-		}
+		sylog.Fatalf("%q command requires root privileges", cmd.CommandPath())
 	}
 }
 
@@ -291,6 +284,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	engineConfig.SetBindPath(BindPaths)
+	if len(FuseMount) > 0 {
+		/* If --fusemount is given, imply --pid */
+		PidNamespace = true
+		engineConfig.SetFuseMount(FuseMount)
+	}
 	engineConfig.SetNetwork(Network)
 	engineConfig.SetDNS(DNS)
 	engineConfig.SetNetworkArgs(NetworkArgs)
@@ -497,6 +495,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	Env := []string{sylog.GetEnvVar()}
+
+	// starter will force the loading of kernel overlay module
+	if !UserNamespace && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
+		Env = append(Env, "LOAD_OVERLAY_MODULE=1")
+	}
 
 	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
 

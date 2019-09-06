@@ -13,7 +13,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
+	args "github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/util/loop"
@@ -34,7 +34,7 @@ func (p *Ext3Packer) Pack() (*types.Bundle, error) {
 
 // unpackExt3 mounts the ext3 image using a loop device and then copies its contents to the bundle
 func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs string) error {
-	tmpmnt, err := ioutil.TempDir(p.b.Path, "mnt")
+	tmpmnt, err := ioutil.TempDir(p.b.TmpDir, "mnt")
 	if err != nil {
 		return fmt.Errorf("while making tmp mount point: %v", err)
 	}
@@ -59,9 +59,9 @@ func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs strin
 	defer syscall.Unmount(tmpmnt, 0)
 
 	// copy filesystem into bundle rootfs
-	sylog.Debugf("Copying filesystem from %s to %s in Bundle\n", tmpmnt, b.Rootfs())
+	sylog.Debugf("Copying filesystem from %s to %s in Bundle\n", tmpmnt, b.RootfsPath)
 	var stderr bytes.Buffer
-	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, b.Rootfs())
+	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, b.RootfsPath)
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("while copying files: %v: %v", err, stderr.String())

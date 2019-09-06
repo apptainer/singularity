@@ -7,6 +7,7 @@ package sources_test
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
@@ -32,7 +33,7 @@ func TestBusyBoxConveyor(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	b, err := types.NewBundle("", "sbuild-busybox")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-busybox"), os.TempDir())
 	if err != nil {
 		return
 	}
@@ -62,7 +63,7 @@ func TestBusyBoxPacker(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	b, err := types.NewBundle("", "sbuild-busybox")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-busybox"), os.TempDir())
 	if err != nil {
 		return
 	}

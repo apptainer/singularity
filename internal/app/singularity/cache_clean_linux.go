@@ -122,16 +122,16 @@ func CleanSingularityCache(imgCache *cache.Handle, force bool, cacheCleanTypes [
 		return err
 	}
 
+	remove := func(_ string) error { return nil }
 	op := func(path string) error {
-		fmt.Printf("Would remove %s\n", path)
-		return nil
+		fmt.Printf("Removing %s\n", path)
+		return remove(path)
 	}
 
 	if len(cacheName) > 0 {
 		if force {
-			op = os.Remove
+			remove = os.Remove
 		}
-
 		// a name was specified, only clean matching entries
 		for _, name := range cacheName {
 			matches := 0
@@ -151,18 +151,19 @@ func CleanSingularityCache(imgCache *cache.Handle, force bool, cacheCleanTypes [
 				sylog.Warningf("No cache found with given name: %s", name)
 			}
 		}
-	} else {
-		// no name specified, clean everything in the specified
-		// cache types
-		if force {
-			op = os.RemoveAll
-		}
+		return nil
+	}
 
-		for _, cacheType := range cacheTypes {
-			sylog.Debugf("Cleaning %s cache...", cacheType)
-			if err := cleanCache(imgCache, cacheType, op); err != nil {
-				return err
-			}
+	// no name specified, clean everything in the specified
+	// cache types
+	if force {
+		remove = os.RemoveAll
+	}
+
+	for _, cacheType := range cacheTypes {
+		sylog.Debugf("Cleaning %s cache...", cacheType)
+		if err := cleanCache(imgCache, cacheType, op); err != nil {
+			return err
 		}
 	}
 

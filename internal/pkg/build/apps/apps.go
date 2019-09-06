@@ -401,7 +401,7 @@ func copyFiles(b *types.Bundle, a *App) error {
 		return nil
 	}
 
-	appBase := filepath.Join(b.Rootfs(), "/scif/apps/", a.Name)
+	appBase := filepath.Join(b.RootfsPath, "/scif/apps/", a.Name)
 	for _, line := range strings.Split(a.Files, "\n") {
 
 		// skip empty or comment lines
@@ -463,7 +463,7 @@ func writeLabels(b *types.Bundle, a *App) error {
 		return err
 	}
 
-	appBase := filepath.Join(b.Rootfs(), "/scif/apps/", a.Name)
+	appBase := filepath.Join(b.RootfsPath, "/scif/apps/", a.Name)
 	err = ioutil.WriteFile(filepath.Join(appBase, "scif/labels.json"), text, 0644)
 	return err
 }
@@ -471,7 +471,7 @@ func writeLabels(b *types.Bundle, a *App) error {
 //util funcs
 
 func appBase(b *types.Bundle, a *App) string {
-	return filepath.Join(b.Rootfs(), "/scif/apps/", a.Name)
+	return filepath.Join(b.RootfsPath, "/scif/apps/", a.Name)
 }
 
 func appMeta(b *types.Bundle, a *App) string {
@@ -479,7 +479,7 @@ func appMeta(b *types.Bundle, a *App) string {
 }
 
 func appData(b *types.Bundle, a *App) string {
-	return filepath.Join(b.Rootfs(), "/scif/data/", a.Name)
+	return filepath.Join(b.RootfsPath, "/scif/data/", a.Name)
 }
 
 func copy(src, dst string) error {

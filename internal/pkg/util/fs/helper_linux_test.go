@@ -346,7 +346,7 @@ func TestCopyFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// defer os.RemoveAll(tmpDir)
+	defer os.RemoveAll(tmpDir)
 
 	source := filepath.Join(tmpDir, "source")
 	err = ioutil.WriteFile(source, testData, 0644)
