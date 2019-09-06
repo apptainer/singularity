@@ -25,7 +25,7 @@ var pluginInstallNameFlag = cmdline.Flag{
 	DefaultValue: "",
 	Name:         "name",
 	ShortHand:    "n",
-	Usage:        "Name to install the plugin as, defaults to the value in the manifest",
+	Usage:        "name to install the plugin as, defaults to the value in the manifest",
 }
 
 func init() {

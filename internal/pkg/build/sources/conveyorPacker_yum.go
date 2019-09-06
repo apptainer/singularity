@@ -78,7 +78,7 @@ func (c *YumConveyor) Get(b *types.Bundle) (err error) {
 		return fmt.Errorf("while copying pseudo devices: %v", err)
 	}
 
-	args := []string{`--noplugins`, `-c`, filepath.Join(c.b.Rootfs(), yumConf), `--installroot`, c.b.Rootfs(), `--releasever=` + c.osversion, `-y`, `install`}
+	args := []string{`--noplugins`, `-c`, filepath.Join(c.b.RootfsPath, yumConf), `--installroot`, c.b.RootfsPath, `--releasever=` + c.osversion, `-y`, `install`}
 	args = append(args, strings.Fields(c.include)...)
 
 	// Do the install
@@ -91,7 +91,7 @@ func (c *YumConveyor) Get(b *types.Bundle) (err error) {
 	}
 
 	// clean up bootstrap packages
-	os.RemoveAll(filepath.Join(c.b.Rootfs(), "/var/cache/yum-bootstrap"))
+	os.RemoveAll(filepath.Join(c.b.RootfsPath, "/var/cache/yum-bootstrap"))
 
 	return nil
 }
@@ -251,14 +251,14 @@ func (c *YumConveyor) genYumConfig() (err error) {
 		fileContent += "\n"
 	}
 
-	err = os.Mkdir(filepath.Join(c.b.Rootfs(), "/etc"), 0775)
+	err = os.Mkdir(filepath.Join(c.b.RootfsPath, "/etc"), 0775)
 	if err != nil {
-		return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.Rootfs(), "/etc"), err)
+		return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.RootfsPath, "/etc"), err)
 	}
 
-	err = ioutil.WriteFile(filepath.Join(c.b.Rootfs(), yumConf), []byte(fileContent), 0664)
+	err = ioutil.WriteFile(filepath.Join(c.b.RootfsPath, yumConf), []byte(fileContent), 0664)
 	if err != nil {
-		return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.Rootfs(), yumConf), err)
+		return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.RootfsPath, yumConf), err)
 	}
 
 	// if gpg key is specified, import it
@@ -287,14 +287,14 @@ func (c *YumConveyor) importGPGKey() (err error) {
 		return fmt.Errorf("neither yum nor dnf in path")
 	}
 
-	cmd := exec.Command(c.rpmPath, "--root", c.b.Rootfs(), "--initdb")
+	cmd := exec.Command(c.rpmPath, "--root", c.b.RootfsPath, "--initdb")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
 		return fmt.Errorf("while initializing new rpm db: %v", err)
 	}
 
-	cmd = exec.Command(c.rpmPath, "--root", c.b.Rootfs(), "--import", c.gpg)
+	cmd = exec.Command(c.rpmPath, "--root", c.b.RootfsPath, "--import", c.gpg)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
@@ -307,7 +307,7 @@ func (c *YumConveyor) importGPGKey() (err error) {
 }
 
 func (c *YumConveyor) makePseudoDevices() (err error) {
-	devPath := filepath.Join(c.b.Rootfs(), "dev")
+	devPath := filepath.Join(c.b.RootfsPath, "dev")
 	err = os.Mkdir(devPath, 0775)
 	if err != nil {
 		return fmt.Errorf("while creating %v: %v", devPath, err)
@@ -327,7 +327,7 @@ func (c *YumConveyor) makePseudoDevices() (err error) {
 
 	for _, dev := range devs {
 		d := int((dev.major << 8) | (dev.minor & 0xff) | ((dev.minor & 0xfff00) << 12))
-		path := filepath.Join(c.b.Rootfs(), dev.path)
+		path := filepath.Join(c.b.RootfsPath, dev.path)
 
 		if err := syscall.Mknod(path, dev.mode, d); err != nil {
 			return fmt.Errorf("while creating %s: %s", path, err)
@@ -338,14 +338,14 @@ func (c *YumConveyor) makePseudoDevices() (err error) {
 }
 
 func (cp *YumConveyorPacker) insertBaseEnv() (err error) {
-	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
+	if err = makeBaseEnv(cp.b.RootfsPath); err != nil {
 		return
 	}
 	return nil
 }
 
 func (cp *YumConveyorPacker) insertRunScript() (err error) {
-	err = ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
+	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
 	if err != nil {
 		return
 	}

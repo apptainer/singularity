@@ -85,20 +85,20 @@ func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
 		return fmt.Errorf("while getting pacman config: %v", err)
 	}
 
-	args := []string{"-C", pacConf, "-c", "-d", "-G", "-M", cp.b.Rootfs(), "haveged"}
+	args := []string{"-C", pacConf, "-c", "-d", "-G", "-M", cp.b.RootfsPath, "haveged"}
 	args = append(args, instList...)
 
 	pacCmd := exec.Command(pacstrapPath, args...)
 	pacCmd.Stdout = os.Stdout
 	pacCmd.Stderr = os.Stderr
-	sylog.Debugf("\n\tPacstrap Path: %s\n\tPac Conf: %s\n\tRootfs: %s\n\tInstall List: %s\n", pacstrapPath, pacConf, cp.b.Rootfs(), instList)
+	sylog.Debugf("\n\tPacstrap Path: %s\n\tPac Conf: %s\n\tRootfs: %s\n\tInstall List: %s\n", pacstrapPath, pacConf, cp.b.RootfsPath, instList)
 
 	if err = pacCmd.Run(); err != nil {
 		return fmt.Errorf("while pacstrapping: %v", err)
 	}
 
 	//Pacman package signing setup
-	cmd := exec.Command("arch-chroot", cp.b.Rootfs(), "/bin/sh", "-c", "haveged -w 1024; pacman-key --init; pacman-key --populate archlinux")
+	cmd := exec.Command("arch-chroot", cp.b.RootfsPath, "/bin/sh", "-c", "haveged -w 1024; pacman-key --init; pacman-key --populate archlinux")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
@@ -106,7 +106,7 @@ func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	//Clean up haveged
-	cmd = exec.Command("arch-chroot", cp.b.Rootfs(), "pacman", "-Rs", "--noconfirm", "haveged")
+	cmd = exec.Command("arch-chroot", cp.b.RootfsPath, "pacman", "-Rs", "--noconfirm", "haveged")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
@@ -154,7 +154,7 @@ func getPacmanBaseList() (instList []string, err error) {
 }
 
 func (cp *ArchConveyorPacker) getPacConf(pacmanConfURL string) (pacConf string, err error) {
-	pacConfFile, err := ioutil.TempFile(cp.b.Rootfs(), "pac-conf-")
+	pacConfFile, err := ioutil.TempFile(cp.b.RootfsPath, "pac-conf-")
 	if err != nil {
 		return
 	}
@@ -179,14 +179,14 @@ func (cp *ArchConveyorPacker) getPacConf(pacmanConfURL string) (pacConf string, 
 }
 
 func (cp *ArchConveyorPacker) insertBaseEnv() (err error) {
-	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
+	if err = makeBaseEnv(cp.b.RootfsPath); err != nil {
 		return
 	}
 	return nil
 }
 
 func (cp *ArchConveyorPacker) insertRunScript() (err error) {
-	err = ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
+	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
 	if err != nil {
 		return
 	}
@@ -196,5 +196,5 @@ func (cp *ArchConveyorPacker) insertRunScript() (err error) {
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
 func (cp *ArchConveyorPacker) CleanUp() {
-	os.RemoveAll(cp.b.Path)
+	cp.b.Remove()
 }

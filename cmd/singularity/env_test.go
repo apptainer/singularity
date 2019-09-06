@@ -6,6 +6,8 @@
 // This file has been deprecated and will disappear with version 3.3
 // of singularity. The functionality has been moved to e2e/env/env.go
 
+// +build integration_test
+
 package main
 
 import (

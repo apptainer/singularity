@@ -52,7 +52,7 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	}
 	b := make([]byte, bufferSize)
 	if n, err := img.File.Read(b); err != nil || n != bufferSize {
-		return debugErrorf("can't read first %d bytes: %s", bufferSize, err)
+		return debugErrorf("can't read first %d bytes: %v", bufferSize, err)
 	}
 	if !bytes.Contains(b, []byte(sifMagic)) {
 		return debugError("SIF magic not found")

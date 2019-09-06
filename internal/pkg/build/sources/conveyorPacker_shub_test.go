@@ -6,6 +6,8 @@
 package sources_test
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
@@ -29,7 +31,7 @@ func TestShubConveyor(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("", "sbuild-shub")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-shub"), os.TempDir())
 	if err != nil {
 		return
 	}
@@ -56,7 +58,7 @@ func TestShubPacker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("", "sbuild-shub")
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-shub"), os.TempDir())
 	if err != nil {
 		return
 	}

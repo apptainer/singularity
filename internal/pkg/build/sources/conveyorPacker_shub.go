@@ -8,7 +8,6 @@ package sources
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -22,7 +21,7 @@ type ShubConveyorPacker struct {
 	LocalPacker
 }
 
-// Get downloads container from Singularityhub
+// Get downloads container from Singularityhub.
 func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Shub")
 
@@ -31,13 +30,11 @@ func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 	src := `shub://` + b.Recipe.Header["from"]
 
 	// create file for image download
-	f, err := ioutil.TempFile(cp.b.Path, "shub-img")
+	f, err := ioutil.TempFile(cp.b.TmpDir, "shub-img")
 	if err != nil {
 		return
 	}
 	defer f.Close()
-
-	cp.b.FSObjects["shubImg"] = f.Name()
 
 	shubURIRef, err := shub.ShubParseReference(src)
 	if err != nil {
@@ -51,21 +48,21 @@ func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	// get image from singularity hub
-	if err := shub.DownloadImage(manifest, cp.b.FSObjects["shubImg"], src, true, cp.b.Opts.NoHTTPS); err != nil {
+	if err := shub.DownloadImage(manifest, f.Name(), src, true, cp.b.Opts.NoHTTPS); err != nil {
 		return fmt.Errorf("unable to get image from: %s: %v", src, err)
 	}
 
 	// insert base metadata before unpacking fs
-	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
+	if err = makeBaseEnv(cp.b.RootfsPath); err != nil {
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
-	cp.LocalPacker, err = GetLocalPacker(cp.b.FSObjects["shubImg"], cp.b)
+	cp.LocalPacker, err = GetLocalPacker(f.Name(), cp.b)
 
 	return err
 }
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
 func (cp *ShubConveyorPacker) CleanUp() {
-	os.RemoveAll(cp.b.Path)
+	cp.b.Remove()
 }
