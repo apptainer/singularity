@@ -238,7 +238,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		// only resolve remote endpoints if library is a build source
 		for _, d := range defs {
-			if d.Header != nil && d.Header["bootstrap"] == "library" {
+			if d.Header["bootstrap"] == "library" {
 				handleBuildFlags(cmd)
 				continue
 			}
