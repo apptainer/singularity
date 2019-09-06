@@ -77,8 +77,6 @@ func New(defs []types.Definition, conf Config) (*Build, error) {
 }
 
 func newBuild(defs []types.Definition, conf Config) (*Build, error) {
-	var err error
-
 	syscall.Umask(0002)
 
 	// always build a sandbox if updating an existing sandbox
@@ -97,9 +95,14 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 			return nil, fmt.Errorf("multiple stages detected, all must have headers")
 		}
 
-		rootfs := filepath.Join(conf.Opts.TmpDir, "rootfs-"+uuid.NewV1().String())
+		rootfsParent := conf.Opts.TmpDir
+		if conf.Format == "sandbox" {
+			rootfsParent = filepath.Dir(conf.Dest)
+		}
+		rootfs := filepath.Join(rootfsParent, "rootfs-"+uuid.NewV1().String())
 
 		var s stage
+		var err error
 		if conf.Opts.EncryptionKeyInfo != nil {
 			s.b, err = types.NewEncryptedBundle(rootfs, conf.Opts.TmpDir, conf.Opts.EncryptionKeyInfo)
 		} else {
