@@ -294,7 +294,7 @@ func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 		globalEnv94 += globalAppEnv(b, app)
 	}
 
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/env/94-appsbase.sh"), []byte(globalEnv94), 0755)
+	err := ioutil.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/env/94-appsbase.sh"), []byte(globalEnv94), 0755)
 	if err != nil {
 		return err
 	}

@@ -56,7 +56,7 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("unable to marshal json: %s", err)
 	}
 
-	err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0644)
+	err = ioutil.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/labels.json"), []byte(text), 0644)
 	if err != nil {
 		return fmt.Errorf("unable to write to labels file: %s", err)
 	}
