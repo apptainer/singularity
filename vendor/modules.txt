@@ -214,13 +214,11 @@ github.com/gorilla/mux
 github.com/gorilla/websocket
 # github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce
 github.com/hashicorp/errwrap
-# github.com/hashicorp/go-cleanhttp v0.5.1
+# github.com/hashicorp/go-cleanhttp v0.5.0
 github.com/hashicorp/go-cleanhttp
-# github.com/hashicorp/go-hclog v0.9.2
-github.com/hashicorp/go-hclog
 # github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874
 github.com/hashicorp/go-multierror
-# github.com/hashicorp/go-retryablehttp v0.6.2
+# github.com/hashicorp/go-retryablehttp v0.5.3
 github.com/hashicorp/go-retryablehttp
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
