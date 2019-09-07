@@ -46,7 +46,7 @@ Finally, set up your environment for Go:
 
 ```
 $ echo 'export PATH=/usr/local/go/bin:${PATH}' >> ~/.bashrc && \
-  	source ~/.bashrc
+  source ~/.bashrc
 ```
 
 ## Install golangci-lint
