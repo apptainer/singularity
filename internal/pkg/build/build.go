@@ -46,8 +46,7 @@ type Build struct {
 	// stages of the build
 	stages []stage
 	// Conf contains cross stage build configuration
-	Conf           Config
-	MetaDataLabels map[string]map[string]string
+	Conf Config
 }
 
 // Config defines how build is executed, including things like where final image is written.
@@ -101,6 +100,8 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 	b := &Build{
 		Conf: conf,
 	}
+
+	fmt.Printf("NEWBUILD: %+v\n", defs)
 
 	// create stages
 	for _, d := range defs {
@@ -254,7 +255,7 @@ func (b Build) cleanUp() {
 func (b *Build) Full() error {
 	sylog.Infof("Starting build...")
 
-	b.MetaDataLabels = make(map[string]map[string]string, 1)
+	dataLabels := make(map[string]map[string]string, 1)
 
 	// monitor build for termination signal and clean up
 	c := make(chan os.Signal)
@@ -337,7 +338,7 @@ func (b *Build) Full() error {
 	for k, v := range b.stages[len(b.stages)-1].b.Recipe.CustomData {
 		appName, appLabels := apps.GetAppLabels(k, v)
 		if appName != "" && appLabels != nil {
-			b.MetaDataLabels[appName] = make(map[string]string, 1)
+			dataLabels[appName] = make(map[string]string, 1)
 			var objmap map[string]*json.RawMessage
 			err := json.Unmarshal(appLabels, &objmap)
 			if err != nil {
@@ -345,8 +346,15 @@ func (b *Build) Full() error {
 			}
 
 			for k, v := range objmap {
-				b.MetaDataLabels[appName][k] = string(*v)
+				dataLabels[appName][k] = string(*v)
 			}
+		}
+	}
+
+	for key, val := range b.stages[0].b.Recipe.ImageData.Labels {
+		dataLabels[key] = make(map[string]string, 1)
+		for k, v := range val {
+			dataLabels[key][k] = v
 		}
 	}
 
@@ -354,7 +362,7 @@ func (b *Build) Full() error {
 
 	// TODO: fix this
 	// Copy build.Build.MetaDataLabels to bundle.JSONLabels
-	for name, l := range b.MetaDataLabels {
+	for name, l := range dataLabels {
 		b.stages[len(b.stages)-1].b.JSONLabels[name] = make(map[string]string, 1)
 		for k, v := range l {
 			b.stages[len(b.stages)-1].b.JSONLabels[name][k] = v
@@ -477,6 +485,8 @@ func MakeDef(spec string) (types.Definition, error) {
 	if err != nil {
 		return types.Definition{}, fmt.Errorf("while parsing definition: %s: %v", spec, err)
 	}
+
+	fmt.Printf("MAKEDEF: %+v\n", d)
 
 	return d, nil
 }

@@ -279,6 +279,7 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 		}
 
 		labels["system-partition"][key] = val
+		fmt.Printf("NEWKEY DEFFFILE: %s: %s\n", key, val)
 	}
 
 	d.ImageData = types.ImageData{
@@ -507,7 +508,7 @@ func isEmpty(d types.Definition) bool {
 
 	// initialize empty definition fully
 	emptyDef := types.Definition{}
-	emptyDef.Labels = make(map[string]map[string]string)
+	emptyDef.Labels = make(map[string]map[string]string, 1)
 	emptyDef.BuildData.Files = make([]types.Files, 0)
 
 	return reflect.DeepEqual(d, emptyDef)

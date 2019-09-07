@@ -83,13 +83,27 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 	} else if err != nil {
 		sylog.Fatalf("Unable to get label metadata: %s", err)
 	} else if err == nil {
-		b.Recipe.ImageData.Labels = make(map[string]map[string]string, 1)
+		tmpLabels := make(map[string]map[string]string, 1)
 
 		for _, v := range sifData {
 			metaData := v.GetData(&fimg)
-			err := json.Unmarshal(metaData, &b.Recipe.ImageData.Labels)
+			//err := json.Unmarshal(metaData, &b.Recipe.ImageData.Labels)
+			err := json.Unmarshal(metaData, &tmpLabels)
 			if err != nil {
 				sylog.Fatalf("Unable to get json: %s", err)
+			}
+		}
+
+		if b.Recipe.ImageData.Labels == nil {
+			b.Recipe.ImageData.Labels = make(map[string]map[string]string, 1)
+		}
+
+		for key, val := range tmpLabels {
+			if b.Recipe.ImageData.Labels[key] == nil {
+				b.Recipe.ImageData.Labels[key] = make(map[string]string, 1)
+			}
+			for k, v := range val {
+				b.Recipe.ImageData.Labels[key][k] = v
 			}
 		}
 	}

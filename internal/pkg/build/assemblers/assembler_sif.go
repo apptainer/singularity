@@ -219,17 +219,22 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	}
 
 	labels := make(map[string]map[string]string, 1)
-	labels["system-partition"] = make(map[string]string, 1)
+	//	labels["system-partition"] = make(map[string]string, 1)
 
 	// Get the old image labels first
 	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
-		for _, value := range b.Recipe.ImageData.Labels {
+		for key, value := range b.Recipe.ImageData.Labels {
+			labels[key] = make(map[string]string, 1)
 			for foo, bar := range value {
-				labels["system-partition"][foo] = bar
+				labels[key][foo] = bar
+				fmt.Printf("OLD LABELS: %s : %s : %s\n", key, foo, bar)
 				//labels[key][foo] = bar
 			}
 		}
 	}
+
+	fmt.Printf("RECIPE_LABELS: %+v\n", b.Recipe.ImageData.Labels)
+	fmt.Printf("JSON_LABELS: %+v\n", b.JSONLabels)
 
 	// Copy the labels
 	for k, v := range b.JSONLabels {
@@ -239,12 +244,12 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 		}
 	}
 
-	//	for k, v := range b.Recipe.ImageData.Labels {
-	//		labels[k] = make(map[string]string, 1)
-	//		for foo, bar := range v {
-	//			labels[k][foo] = bar
-	//		}
+	//for k, v := range b.Recipe.ImageData.Labels {
+	//	labels[k] = make(map[string]string, 1)
+	//	for foo, bar := range v {
+	//		labels[k][foo] = bar
 	//	}
+	//}
 
 	sylog.Infof("Inserting Metadata Labels...")
 
@@ -261,6 +266,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	}
 	groupid := descr[0].Groupid
 
+	// Make the new org.label-schema, overidding the old ones
 	metadata.GetImageInfoLabels(labels, &fimg, b)
 
 	// make new map into json

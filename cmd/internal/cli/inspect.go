@@ -27,7 +27,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
-	"github.com/sylabs/singularity/pkg/build/types/parser"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
@@ -57,8 +56,7 @@ type inspectMetadata struct {
 	Runscript   string            `json:"runscript,omitempty"`
 	Test        string            `json:"test,omitempty"`
 	Environment string            `json:"environment,omitempty"`
-	//Environment map[string]string `json:"environment,omitempty"`
-	Helpfile string `json:"helpfile,omitempty"`
+	Helpfile    string            `json:"helpfile,omitempty"`
 }
 
 type inspectData struct {
@@ -70,6 +68,7 @@ type inspectFormat struct {
 	Type string      `json:"type"`
 }
 
+// --list-apps
 var inspectAppsListFlag = cmdline.Flag{
 	ID:           "inspectAppsListFlag",
 	Value:        &listApps,
@@ -243,7 +242,6 @@ func setAttribute(obj *inspectFormat, label string, value string) {
 		obj.Data.Attributes.Runscript = value
 	default:
 		if strings.HasSuffix(label, "environment.sh") {
-			//obj.Data.Attributes.Environment[label] = value
 			obj.Data.Attributes.Environment = value
 		} else {
 			sylog.Warningf("Trying to set attribute for unknown label: %s", label)
@@ -278,69 +276,6 @@ func getMetaData(fimg *sif.FileImage, dataType sif.Datatype) (sigs []*sif.Descri
 	return
 }
 
-// parseDeffile will take a deffile content, appname and a section, and
-// return the specified section. Returns "" if the section does not exist.
-func parseDeffile(content, app, section string) string {
-	ret := ""
-	headerFound := false
-	end := false
-	searchSection := ""
-
-	if app != "" {
-		switch section {
-		case "help":
-			searchSection = "%apphelp " + app
-		case "runscript":
-			searchSection = "%apprun " + app
-		case "test":
-			searchSection = "%apptest " + app
-		case "environment":
-			searchSection = "%appenv " + app
-		case "labels":
-			searchSection = "%applabels " + app
-		}
-	} else {
-		searchSection = "%" + section
-	}
-
-	sylog.Debugf("Searching for section: %s\n", searchSection)
-
-	scanner := bufio.NewScanner(strings.NewReader(content))
-	for scanner.Scan() {
-		if headerFound {
-			nextWord := strings.Fields(scanner.Text())
-			for s := range parser.ValidSections {
-				if len(nextWord) != 0 && nextWord[0] == "%"+s {
-					end = true
-					break
-				}
-			}
-			for s := range parser.AppSections {
-				if len(nextWord) != 0 && nextWord[0] == "%"+s {
-					end = true
-					break
-				}
-			}
-			if !end {
-				ret += scanner.Text()
-				ret += "\n"
-			}
-		}
-		if scanner.Text() == searchSection {
-			headerFound = true
-		}
-		if end {
-			break
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		sylog.Fatalf("error from scanner: %s\n", err)
-	}
-
-	return ret
-}
-
 // InspectCmd represents the 'inspect' command
 // TODO: This should be in its own package, not cli
 var InspectCmd = &cobra.Command{
@@ -353,18 +288,10 @@ var InspectCmd = &cobra.Command{
 	Example: docs.InspectExample,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		// Sanity check
-		if _, err := os.Stat(args[0]); err != nil {
-			sylog.Fatalf("container not found: %s", err)
-		}
-
-		if !runscript && !helpfile && !deffile && !testfile && !environment && !listApps {
-			labels = true
-		}
-
-		// TODO: need better error here
 		f, err := os.Stat(args[0])
-		if err != nil {
+		if os.IsNotExist(err) {
+			sylog.Fatalf("Container not found: %s\n", err)
+		} else if err != nil {
 			sylog.Fatalf("Unable to stat file: %s", err)
 		}
 		if f.IsDir() {
@@ -383,7 +310,7 @@ var InspectCmd = &cobra.Command{
 		inspectData.Data.Attributes.Labels = make(map[string]string, 1)
 
 		// Inspect Labels
-		if labels {
+		if labels || defaultToLabels() {
 			jsonName := ""
 			if AppName == "" {
 				jsonName = "system-partition"
@@ -414,17 +341,6 @@ var InspectCmd = &cobra.Command{
 				for k, v := range hrOut {
 					inspectData.Data.Attributes.Labels[k] = string(*v)
 				}
-
-				//				// Sort the labels
-				//				var labelSort []string
-				//				for k := range hrOut {
-				//					labelSort = append(labelSort, k)
-				//				}
-				//				sort.Strings(labelSort)
-				//
-				//				for _, k := range labelSort {
-				//					inspectData.Data.Attributes.Labels[k] = string(*hrOut[k])
-				//				}
 			}
 		}
 
@@ -480,24 +396,12 @@ var InspectCmd = &cobra.Command{
 			a[2] += getEnvironmentCommand(AppName)
 		}
 
-		//		// Default to labels if other flags are unset, excludes --app
-		//		if labels || defaultToLabels() {
-		//			sylog.Debugf("Inspection of labels selected.")
-		//			a[2] += getLabelsCommand(AppName)
-		//		}
-
 		if a[2] != "" {
-
 			// Execute the compound command string.
 			fileContents, err := getFileContent(abspath, name, a)
 			if err != nil {
 				sylog.Fatalf("Could not inspect container: %v", err)
 			}
-
-			//		inspectObj := inspectFormat{}
-			//		inspectObj.Type = "container"
-			//		inspectObj.Data.Attributes.Labels = make(map[string]string)
-			//		//inspectObj.Data.Attributes.Environment = make(map[string]string)
 
 			// Parse the command output string into sections.
 			reader := bufio.NewReader(strings.NewReader(fileContents))
@@ -566,108 +470,6 @@ var InspectCmd = &cobra.Command{
 				}
 			}
 		}
-
-		//		// Inspect Deffile
-		//		if deffile {
-		//			sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
-		//			if err != nil {
-		//				sylog.Fatalf("Unable to get metadata: %s", err)
-		//			}
-		//			for _, v := range sifData {
-		//				metaData := v.GetData(&fimg)
-		//				data := string(metaData)
-		//				inspectData.Data.Attributes.Deffile = data
-		//			}
-		//		}
-		//
-		//		// For %help
-		//		if helpfile {
-		//			sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
-		//			if err != nil {
-		//				sylog.Fatalf("Unable to get metadata: %s", err)
-		//			}
-		//
-		//			for _, v := range sifData {
-		//				metaData := v.GetData(&fimg)
-		//				data := parseDeffile(string(metaData), AppName, "help")
-		//				inspectData.Data.Attributes.Helpfile = data
-		//			}
-		//		}
-		//
-		//		// For %runscript
-		//		if runscript {
-		//			sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
-		//			if err != nil {
-		//				sylog.Fatalf("Unable to get metadata: %s", err)
-		//			}
-		//			for _, v := range sifData {
-		//				metaData := v.GetData(&fimg)
-		//				data := parseDeffile(string(metaData), AppName, "runscript")
-		//				inspectData.Data.Attributes.Runscript = data
-		//			}
-		//		}
-		//
-		//		// For %test
-		//		if testfile {
-		//			sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
-		//			if err != nil {
-		//				sylog.Fatalf("Unable to get metadata: %s", err)
-		//			}
-		//			for _, v := range sifData {
-		//				metaData := v.GetData(&fimg)
-		//				data := parseDeffile(string(metaData), AppName, "test")
-		//				inspectData.Data.Attributes.Test = data
-		//			}
-		//		}
-		//
-		//		// For %environment
-		//		if environment {
-		//			sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
-		//			if err != nil {
-		//				sylog.Fatalf("Unable to get metadata: %s", err)
-		//			}
-		//			for _, v := range sifData {
-		//				metaData := v.GetData(&fimg)
-		//				data := parseDeffile(string(metaData), AppName, "environment")
-		//				inspectData.Data.Attributes.Environment = data
-		//			}
-		//		}
-
-		//		if jsonfmt {
-		//			text, err := json.MarshalIndent(inspectData, "", "\t")
-		//			if err != nil {
-		//				sylog.Fatalf("Unable to marshal json: %s", err)
-		//			}
-		//			fmt.Printf("%s\n", string(text))
-		//		} else {
-		//			if inspectData.Data.Attributes.Apps != "" {
-		//				fmt.Printf("== apps ==\n%s\n", inspectData.Data.Attributes.Apps)
-		//			}
-		//			if inspectData.Data.Attributes.AppLabels != "" {
-		//				fmt.Printf("== app labels ==\n%s\n", inspectData.Data.Attributes.AppLabels)
-		//			}
-		//			if inspectData.Data.Attributes.Helpfile != "" {
-		//				fmt.Printf("== helpfile ==\n%s\n", inspectData.Data.Attributes.Helpfile)
-		//			}
-		//			if inspectData.Data.Attributes.Deffile != "" {
-		//				fmt.Printf("== deffile ==\n%s\n", inspectData.Data.Attributes.Deffile)
-		//			}
-		//			if inspectData.Data.Attributes.Runscript != "" {
-		//				fmt.Printf("== runscript ==\n%s\n", inspectData.Data.Attributes.Runscript)
-		//			}
-		//			if inspectData.Data.Attributes.Test != "" {
-		//				fmt.Printf("== test ==\n%s\n", inspectData.Data.Attributes.Test)
-		//			}
-		//			if inspectData.Data.Attributes.Environment != "" {
-		//				fmt.Printf("== environment ==\n%s", inspectData.Data.Attributes.Environment)
-		//			}
-		//			if len(inspectData.Data.Attributes.Labels) > 0 {
-		//				fmt.Printf("== labels ==\n")
-		//				for labLabel, labValue := range inspectData.Data.Attributes.Labels {
-		//					fmt.Printf("%s: %s\n", labLabel, labValue)
-		//				}
-		//			}
-		//		}
 	},
 	TraverseChildren: true,
 }

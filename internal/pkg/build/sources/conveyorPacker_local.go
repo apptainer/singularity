@@ -34,7 +34,6 @@ type LocalConveyorPacker struct {
 
 // GetLocalPacker ...
 func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
-
 	imageObject, err := image.Init(src, false)
 	if err != nil {
 		return nil, err

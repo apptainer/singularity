@@ -157,8 +157,6 @@ func (pl *BuildApp) HandleSection(ident, section string) {
 	default:
 		return
 	}
-
-	return
 }
 
 // GetAppLabels will return the app labels for the app.
