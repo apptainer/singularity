@@ -101,8 +101,6 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		Conf: conf,
 	}
 
-	fmt.Printf("NEWBUILD: %+v\n", defs)
-
 	// create stages
 	for _, d := range defs {
 		// verify every definition has a header if there are multiple stages
@@ -360,13 +358,11 @@ func (b *Build) Full() error {
 
 	b.stages[len(b.stages)-1].b.JSONLabels = make(map[string]map[string]string, 1)
 
-	// TODO: fix this
 	// Copy build.Build.MetaDataLabels to bundle.JSONLabels
 	for name, l := range dataLabels {
 		b.stages[len(b.stages)-1].b.JSONLabels[name] = make(map[string]string, 1)
 		for k, v := range l {
 			b.stages[len(b.stages)-1].b.JSONLabels[name][k] = v
-			//b.stage.JSONLabels[name][k] = v
 		}
 	}
 

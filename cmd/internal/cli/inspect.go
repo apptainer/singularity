@@ -59,13 +59,13 @@ type inspectMetadata struct {
 	Helpfile    string            `json:"helpfile,omitempty"`
 }
 
-type inspectData struct {
+type inspectAttributesData struct {
 	Attributes inspectMetadata `json:"attributes"`
 }
 
 type inspectFormat struct {
-	Data inspectData `json:"data"`
-	Type string      `json:"type"`
+	Data inspectAttributesData `json:"data"`
+	Type string                `json:"type"`
 }
 
 // --list-apps
@@ -196,7 +196,7 @@ func getSingleFileCommand(file string, label string, appName string) string {
 }
 
 func getLabelsCommand(appName string) string {
-	return getSingleFileCommand("labels.json", "labels", appName)
+	return getSingleFileCommand("labels.json", "labels", "")
 }
 
 func getDefinitionCommand() string {
@@ -224,7 +224,11 @@ func getHelpCommand(appName string) string {
 	return getSingleFileCommand("runscript.help", "helpfile", appName)
 }
 
-func setAttribute(obj *inspectFormat, label string, value string) {
+func setAttribute(obj *inspectFormat, label, app string, value string) {
+	if app == "" {
+		app = "system-partition"
+	}
+
 	switch label {
 	case "apps":
 		obj.Data.Attributes.Apps = value
@@ -235,8 +239,13 @@ func setAttribute(obj *inspectFormat, label string, value string) {
 	case "helpfile":
 		obj.Data.Attributes.Helpfile = value
 	case "labels":
-		if err := json.Unmarshal([]byte(value), &obj.Data.Attributes.Labels); err != nil {
-			sylog.Warningf("Unable to parse labels: %s", value)
+		newbytes, _, _, err := jsonparser.Get([]byte(value), app)
+		if err != nil {
+			sylog.Fatalf("Unable to find json from metadata: %s", err)
+		}
+
+		if err := json.Unmarshal(newbytes, &obj.Data.Attributes.Labels); err != nil {
+			sylog.Warningf("Unable to parse labels: %s", err)
 		}
 	case "runscript":
 		obj.Data.Attributes.Runscript = value
@@ -259,8 +268,9 @@ func defaultToLabels() bool {
 }
 
 // getMetaData will return a dataType
-func getMetaData(fimg *sif.FileImage, dataType sif.Datatype) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
-	descr = make([]*sif.Descriptor, 1)
+func getMetaData(fimg *sif.FileImage, dataType sif.Datatype) ([]*sif.Descriptor, []*sif.Descriptor, error) {
+	descr := make([]*sif.Descriptor, 1)
+	var err error
 
 	descr[0], _, err = fimg.GetPartPrimSys()
 	if err != nil {
@@ -268,12 +278,12 @@ func getMetaData(fimg *sif.FileImage, dataType sif.Datatype) (sigs []*sif.Descri
 	}
 
 	// GetFromDescrID
-	sigs, _, err = fimg.GetLinkedDescrsByType(uint32(0), dataType)
+	sigs, _, err := fimg.GetLinkedDescrsByType(uint32(0), dataType)
 	if err != nil {
 		return nil, nil, ErrNoMetaData
 	}
 
-	return
+	return sigs, descr, nil
 }
 
 // InspectCmd represents the 'inspect' command
@@ -288,6 +298,9 @@ var InspectCmd = &cobra.Command{
 	Example: docs.InspectExample,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		sandboxImage := false
+		a := []string{"/bin/sh", "-c", ""}
+
 		f, err := os.Stat(args[0])
 		if os.IsNotExist(err) {
 			sylog.Fatalf("Container not found: %s\n", err)
@@ -295,20 +308,27 @@ var InspectCmd = &cobra.Command{
 			sylog.Fatalf("Unable to stat file: %s", err)
 		}
 		if f.IsDir() {
-			inspectInContainer(args[0])
-			return
+			sandboxImage = true
 		}
 
-		fimg, err := sif.LoadContainer(args[0], true)
-		if err != nil {
-			sylog.Fatalf("failed to load SIF container file: %s", err)
+		var fimg sif.FileImage
+		if !sandboxImage {
+			var err error
+			fimg, err = sif.LoadContainer(args[0], true)
+			if err != nil {
+				sylog.Fatalf("failed to load SIF container file: %s", err)
+			}
+			defer fimg.UnloadContainer()
 		}
-		defer fimg.UnloadContainer()
 
 		var inspectData inspectFormat
 		inspectData.Type = "container"
 		inspectData.Data.Attributes.Labels = make(map[string]string, 1)
 
+		inspectLabelInContainer := func() {
+			sylog.Debugf("Inspection of labels selected.")
+			a[2] += getLabelsCommand(AppName)
+		}
 		// Inspect Labels
 		if labels || defaultToLabels() {
 			jsonName := ""
@@ -318,10 +338,15 @@ var InspectCmd = &cobra.Command{
 				jsonName = AppName
 			}
 
+			if sandboxImage {
+				inspectLabelInContainer()
+				goto endLabel
+			}
 			sifData, _, err := getMetaData(&fimg, sif.DataLabels)
 			if err == ErrNoMetaData {
 				sylog.Warningf("No metadata partition, searching in container...")
-				inspectInContainer(args[0])
+				inspectLabelInContainer()
+				goto endLabel
 			} else if err != nil {
 				sylog.Fatalf("Unable to get label metadata: %s", err)
 			}
@@ -343,27 +368,40 @@ var InspectCmd = &cobra.Command{
 				}
 			}
 		}
+	endLabel:
 
+		inspectDeffileInContainer := func() {
+			sylog.Debugf("Inspection of deffile selected.")
+			a[2] += getDefinitionCommand()
+		}
 		// Inspect Deffile
 		if deffile {
+			if sandboxImage {
+				inspectDeffileInContainer()
+				goto endDeffile
+			}
 			sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
-			if err != nil {
+			if err == ErrNoMetaData {
+				sylog.Warningf("No metadata partition, searching in container...")
+				inspectDeffileInContainer()
+				goto endDeffile
+			} else if err != nil {
 				sylog.Fatalf("Unable to get metadata: %s", err)
 			}
+
 			for _, v := range sifData {
 				metaData := v.GetData(&fimg)
 				data := string(metaData)
 				inspectData.Data.Attributes.Deffile = data
 			}
 		}
+	endDeffile:
 
 		abspath, err := filepath.Abs(args[0])
 		if err != nil {
 			sylog.Fatalf("While determining absolute file path: %v", err)
 		}
 		name := filepath.Base(abspath)
-
-		a := []string{"/bin/sh", "-c", ""}
 
 		if listApps {
 			sylog.Debugf("Listing all apps in container")
@@ -423,7 +461,7 @@ var InspectCmd = &cobra.Command{
 					if n != len(data) && err != nil {
 						sylog.Fatalf("Unable to read %d bytes.", sizeData)
 					}
-					setAttribute(&inspectData, label, string(data))
+					setAttribute(&inspectData, label, AppName, string(data))
 				} else {
 					sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
 				}
@@ -434,9 +472,9 @@ var InspectCmd = &cobra.Command{
 		if jsonfmt {
 			jsonObj, err := json.MarshalIndent(inspectData, "", "\t")
 			if err != nil {
-				sylog.Fatalf("Could not format inspected data as JSON.")
+				sylog.Fatalf("Could not format inspected data as JSON")
 			}
-			fmt.Println(string(jsonObj))
+			fmt.Printf("%s\n", string(jsonObj))
 		} else {
 			if inspectData.Data.Attributes.Apps != "" {
 				fmt.Printf("%s\n", inspectData.Data.Attributes.Apps)
@@ -457,7 +495,6 @@ var InspectCmd = &cobra.Command{
 				fmt.Printf("%s\n", inspectData.Data.Attributes.Environment)
 			}
 			if len(inspectData.Data.Attributes.Labels) > 0 {
-
 				// Sort the labels
 				var labelSort []string
 				for k := range inspectData.Data.Attributes.Labels {
@@ -472,134 +509,6 @@ var InspectCmd = &cobra.Command{
 		}
 	},
 	TraverseChildren: true,
-}
-
-func inspectInContainer(path string) {
-	abspath, err := filepath.Abs(path)
-	if err != nil {
-		sylog.Fatalf("While determining absolute file path: %v", err)
-	}
-	name := filepath.Base(abspath)
-
-	a := []string{"/bin/sh", "-c", ""}
-
-	if listApps {
-		sylog.Debugf("Listing all apps in container")
-		a[2] += listAppsCommand
-	}
-
-	// If AppName is given fail quickly (exit) if it doesn't exist
-	if AppName != "" {
-		sylog.Debugf("Inspection of App %s Selected.", AppName)
-		a[2] += getAppCheck(AppName)
-	}
-
-	if helpfile {
-		sylog.Debugf("Inspection of helpfile selected.")
-		a[2] += getHelpCommand(AppName)
-	}
-
-	if deffile {
-		sylog.Debugf("Inspection of deffile selected.")
-		a[2] += getDefinitionCommand()
-	}
-
-	if runscript {
-		sylog.Debugf("Inspection of runscript selected.")
-		a[2] += getRunscriptCommand(AppName)
-	}
-
-	if testfile {
-		sylog.Debugf("Inspection of test selected.")
-		a[2] += getTestCommand(AppName)
-	}
-
-	if environment {
-		sylog.Debugf("Inspection of environment selected.")
-		a[2] += getEnvironmentCommand(AppName)
-	}
-
-	// Default to labels if other flags are unset, excludes --app
-	if labels || defaultToLabels() {
-		sylog.Debugf("Inspection of labels selected.")
-		a[2] += getLabelsCommand(AppName)
-	}
-
-	// Execute the compound command string.
-	fileContents, err := getFileContent(abspath, name, a)
-	if err != nil {
-		sylog.Fatalf("Could not inspect container: %v", err)
-	}
-
-	inspectObj := inspectFormat{}
-	inspectObj.Type = "container"
-	inspectObj.Data.Attributes.Labels = make(map[string]string)
-	//inspectObj.Data.Attributes.Environment = make(map[string]string)
-
-	// Parse the command output string into sections.
-	reader := bufio.NewReader(strings.NewReader(fileContents))
-	for {
-		section, err := reader.ReadBytes('\n')
-		if err != nil {
-			break
-		}
-		parts := strings.SplitN(strings.TrimSpace(string(section)), ":", 3)
-		if len(parts) == 2 {
-			label := parts[0]
-			sizeData, errConv := strconv.Atoi(parts[1])
-			if errConv != nil {
-				sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
-			}
-			sylog.Debugf("Section %s found with %d bytes of data.", label, sizeData)
-			data := make([]byte, sizeData)
-			n, err := io.ReadFull(reader, data)
-			if n != len(data) && err != nil {
-				sylog.Fatalf("Unable to read %d bytes.", sizeData)
-			}
-			setAttribute(&inspectObj, label, string(data))
-		} else {
-			sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
-		}
-	}
-
-	// Output the inspection results (use JSON if requested).
-	if jsonfmt {
-		jsonObj, err := json.MarshalIndent(inspectObj, "", "\t")
-		if err != nil {
-			sylog.Fatalf("Could not format inspected data as JSON.")
-		}
-		fmt.Println(string(jsonObj))
-	} else {
-		if inspectObj.Data.Attributes.Apps != "" {
-			fmt.Printf("==apps==\n")
-			fmt.Printf("%s\n", inspectObj.Data.Attributes.Apps)
-		}
-		if inspectObj.Data.Attributes.Helpfile != "" {
-			fmt.Println("==helpfile==\n" + inspectObj.Data.Attributes.Helpfile)
-		}
-		if inspectObj.Data.Attributes.Deffile != "" {
-			fmt.Println("==deffile==\n" + inspectObj.Data.Attributes.Deffile)
-		}
-		if inspectObj.Data.Attributes.Runscript != "" {
-			fmt.Println("==runscript==\n" + inspectObj.Data.Attributes.Runscript)
-		}
-		if inspectObj.Data.Attributes.Test != "" {
-			fmt.Println("==test==\n" + inspectObj.Data.Attributes.Test)
-		}
-		if len(inspectObj.Data.Attributes.Environment) > 0 {
-			fmt.Printf("==environment==\n%s", inspectObj.Data.Attributes.Environment)
-			//			for envLabel, envValue := range inspectObj.Data.Attributes.Environment {
-			//				fmt.Println("==environment:" + envLabel + "==\n" + envValue)
-			//			}
-		}
-		if len(inspectObj.Data.Attributes.Labels) > 0 {
-			fmt.Println("==labels==")
-			for labLabel, labValue := range inspectObj.Data.Attributes.Labels {
-				fmt.Println(labLabel + ": " + labValue)
-			}
-		}
-	}
-
 }
 
 func getFileContent(abspath, name string, args []string) (string, error) {
