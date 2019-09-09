@@ -6,12 +6,10 @@
 package assemblers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/build/metadata"
