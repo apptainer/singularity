@@ -59,6 +59,10 @@ func TestYumConveyor(t *testing.T) {
 }
 
 func TestYumPacker(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	_, dnfErr := exec.LookPath("dnf")
 	_, yumErr := exec.LookPath("yum")
 	if dnfErr != nil && yumErr != nil {
