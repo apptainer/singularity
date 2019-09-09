@@ -13,6 +13,7 @@ import (
 
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 type ctx struct {
@@ -188,10 +189,10 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		t.Run("testSingularityCacheDir", c.testSingularityCacheDir)
-		t.Run("testSingularityDisableDir", c.testSingularityDisableCache)
-		t.Run("testSingularitySypgpDir", c.testSingularitySypgpDir)
-		t.Run("testReadOnlyCacheDir", c.testSingularityReadOnlyCacheDir)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"read-only cache directory": c.testSingularityReadOnlyCacheDir,
+		"SINGULARITY_CACHE_DIR":     c.testSingularityCacheDir,
+		"singularity disable cache": c.testSingularityDisableCache,
+		"SINGULARITY_SYPGPDIR":      c.testSingularitySypgpDir,
+	})
 }

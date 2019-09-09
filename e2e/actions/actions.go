@@ -17,6 +17,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
 )
 
@@ -843,18 +844,12 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		// singularity run
-		t.Run("run", c.actionRun)
-		// singularity exec
-		t.Run("exec", c.actionExec)
-		// stdin/stdout pipe
-		t.Run("STDPIPE", c.STDPipe)
-		// action_URI
-		t.Run("action_URI", c.RunFromURI)
-		// Persistent Overlay
-		t.Run("Persistent_Overlay", c.PersistentOverlay)
-		// shell interaction
-		t.Run("Shell", c.actionShell)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"action URI":         c.RunFromURI,        // action_URI
+		"exec":               c.actionExec,        // singularity exec
+		"persistent overlay": c.PersistentOverlay, // Persistent Overlay
+		"run":                c.actionRun,         // singularity run
+		"shell":              c.actionShell,       // shell interaction
+		"STDPIPE":            c.STDPipe,           // stdin/stdout pipe
+	})
 }
