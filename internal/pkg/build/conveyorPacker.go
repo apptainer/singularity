@@ -6,6 +6,9 @@
 package build
 
 import (
+	"fmt"
+
+	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -24,4 +27,36 @@ type Packer interface {
 type ConveyorPacker interface {
 	Conveyor
 	Packer
+}
+
+// conveyorPacker returns a valid ConveyorPacker for the given image definition.
+func conveyorPacker(def types.Definition) (ConveyorPacker, error) {
+	switch def.Header["bootstrap"] {
+	case "library":
+		return &sources.LibraryConveyorPacker{}, nil
+	case "oras":
+		return &sources.OrasConveyorPacker{}, nil
+	case "shub":
+		return &sources.ShubConveyorPacker{}, nil
+	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":
+		return &sources.OCIConveyorPacker{}, nil
+	case "busybox":
+		return &sources.BusyBoxConveyorPacker{}, nil
+	case "debootstrap":
+		return &sources.DebootstrapConveyorPacker{}, nil
+	case "arch":
+		return &sources.ArchConveyorPacker{}, nil
+	case "localimage":
+		return &sources.LocalConveyorPacker{}, nil
+	case "yum":
+		return &sources.YumConveyorPacker{}, nil
+	case "zypper":
+		return &sources.ZypperConveyorPacker{}, nil
+	case "scratch":
+		return &sources.ScratchConveyorPacker{}, nil
+	case "":
+		return nil, fmt.Errorf("no bootstrap specification found")
+	default:
+		return nil, fmt.Errorf("invalid build source %s", def.Header["bootstrap"])
+	}
 }

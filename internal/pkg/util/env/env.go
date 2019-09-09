@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-// SetFromList sets environment variables from environ argument list
+// SetFromList sets environment variables from environ argument list.
 func SetFromList(environ []string) error {
 	for _, env := range environ {
 		splitted := strings.SplitN(env, "=", 2)
