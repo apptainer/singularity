@@ -114,7 +114,7 @@ func buildUser(pwd *C.struct_passwd) *User {
 		GID:   uint32(pwd.pw_gid),
 		Gecos: C.GoString(pwd.pw_gecos),
 		Dir:   C.GoString(pwd.pw_dir),
-		Shell: "/bin/sh",
+		Shell: C.GoString(pwd.pw_shell),
 	}
 }
 
