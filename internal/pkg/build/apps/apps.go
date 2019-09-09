@@ -166,7 +166,6 @@ func GetAppLabels(ident, section string) (string, []byte) {
 		return "", nil
 	}
 
-	//app := pl.Apps[name]
 	appLabels := ""
 
 	if sect == sectionLabels {
@@ -282,10 +281,6 @@ func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 		}
 
 		if err := copyFiles(b, app); err != nil {
-			return err
-		}
-
-		if err := writeLabels(b, app); err != nil {
 			return err
 		}
 
@@ -427,43 +422,6 @@ func copyFiles(b *types.Bundle, a *App) error {
 	}
 
 	return nil
-}
-
-// %applabels
-func writeLabels(b *types.Bundle, a *App) error {
-	lines := strings.Split(strings.TrimSpace(a.Labels), "\n")
-	labels := make(map[string]string)
-
-	// add default label
-	labels["SCIF_APP_NAME"] = a.Name
-
-	for _, line := range lines {
-		// skip empty or comment lines
-		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
-			continue
-		}
-		var key, val string
-		lineSubs := strings.SplitN(line, " ", 2)
-		if len(lineSubs) < 2 {
-			key = strings.TrimSpace(lineSubs[0])
-			val = ""
-		} else {
-			key = strings.TrimSpace(lineSubs[0])
-			val = strings.TrimSpace(lineSubs[1])
-		}
-
-		labels[key] = val
-	}
-
-	// make new map into json
-	text, err := json.MarshalIndent(labels, "", "\t")
-	if err != nil {
-		return err
-	}
-
-	appBase := filepath.Join(b.RootfsPath, "/scif/apps/", a.Name)
-	err = ioutil.WriteFile(filepath.Join(appBase, "scif/labels.json"), text, 0644)
-	return err
 }
 
 //util funcs

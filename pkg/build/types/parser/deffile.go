@@ -279,7 +279,6 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 		}
 
 		labels["system-partition"][key] = val
-		fmt.Printf("NEWKEY DEFFFILE: %s: %s\n", key, val)
 	}
 
 	d.ImageData = types.ImageData{

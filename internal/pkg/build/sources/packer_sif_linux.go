@@ -8,7 +8,6 @@ package sources
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -16,16 +15,13 @@ import (
 	"syscall"
 
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/build/metadata"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
-
-// ErrNoMetaData ... FIXME
-// TODO: fix this!
-var ErrNoMetaData = errors.New("no metadata found for system partition")
 
 // Pack puts relevant objects in a Bundle!
 func (p *SIFPacker) Pack() (*types.Bundle, error) {
@@ -37,24 +33,6 @@ func (p *SIFPacker) Pack() (*types.Bundle, error) {
 	}
 
 	return p.b, nil
-}
-
-// getMetaData will return a dataType
-func getMetaData(fimg *sif.FileImage, dataType sif.Datatype) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
-	descr = make([]*sif.Descriptor, 1)
-
-	descr[0], _, err = fimg.GetPartPrimSys()
-	if err != nil {
-		return nil, nil, fmt.Errorf("no primary partition found")
-	}
-
-	// GetFromDescrID
-	sigs, _, err = fimg.GetLinkedDescrsByType(uint32(0), dataType)
-	if err != nil {
-		return nil, nil, ErrNoMetaData
-	}
-
-	return
 }
 
 // First pass just assumes a single system partition, later passes will handle more complex sif files
@@ -77,8 +55,8 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 	}
 	defer fimg.UnloadContainer()
 
-	sifData, _, err := getMetaData(&fimg, sif.DataLabels)
-	if err == ErrNoMetaData {
+	sifData, _, err := metadata.GetSIFData(&fimg, sif.DataLabels)
+	if err == metadata.ErrNoMetaData {
 		sylog.Warningf("No metadata partition found")
 	} else if err != nil {
 		sylog.Fatalf("Unable to get label metadata: %s", err)
@@ -87,7 +65,6 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 
 		for _, v := range sifData {
 			metaData := v.GetData(&fimg)
-			//err := json.Unmarshal(metaData, &b.Recipe.ImageData.Labels)
 			err := json.Unmarshal(metaData, &tmpLabels)
 			if err != nil {
 				sylog.Fatalf("Unable to get json: %s", err)

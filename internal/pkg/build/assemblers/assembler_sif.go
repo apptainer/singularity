@@ -36,7 +36,7 @@ type encryptionOptions struct {
 	plaintext []byte
 }
 
-func createSIF(path string, definition, ociConf []byte, squashfile string, encOpts *encryptionOptions) (err error) {
+func createSIF(b *types.Bundle, path string, definition, ociConf []byte, squashfile string, encOpts *encryptionOptions) (err error) {
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -150,6 +150,53 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encOp
 		}
 	}
 
+	//
+	// Add the label partition
+	//
+
+	labels := make(map[string]map[string]string, 1)
+
+	// Get the old image labels first
+	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
+		for key, value := range b.Recipe.ImageData.Labels {
+			labels[key] = make(map[string]string, 1)
+			for foo, bar := range value {
+				labels[key][foo] = bar
+			}
+		}
+	}
+
+	// Copy the labels from %applabels
+	for k, v := range b.JSONLabels {
+		labels[k] = make(map[string]string, 1)
+		for foo, bar := range v {
+			labels[k][foo] = bar
+		}
+	}
+
+	sylog.Infof("Inserting Metadata Labels...")
+
+	// load the container to add the metadata
+	fimg, err := sif.LoadContainer(path, false)
+	if err != nil {
+		return fmt.Errorf("failed to load sif container file: %s", err)
+	}
+	defer fimg.UnloadContainer()
+
+	// Make the new org.label-schema, overidding the old ones
+	metadata.GetImageInfoLabels(labels, &fimg, b)
+
+	text, err := json.MarshalIndent(labels, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	// Add the metadata
+	err = metadata.AddLabelPartition(&fimg, uint32(0), text)
+	if err != nil {
+		return fmt.Errorf("failed adding metadata block to SIF container file: %s", err)
+	}
+
 	return nil
 }
 
@@ -213,107 +260,12 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 
 	}
 
-	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, encOpts)
+	err = createSIF(b, path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, encOpts)
 	if err != nil {
 		return fmt.Errorf("while creating SIF: %v", err)
 	}
 
-	labels := make(map[string]map[string]string, 1)
-	//	labels["system-partition"] = make(map[string]string, 1)
-
-	// Get the old image labels first
-	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
-		for key, value := range b.Recipe.ImageData.Labels {
-			labels[key] = make(map[string]string, 1)
-			for foo, bar := range value {
-				labels[key][foo] = bar
-				fmt.Printf("OLD LABELS: %s : %s : %s\n", key, foo, bar)
-				//labels[key][foo] = bar
-			}
-		}
-	}
-
-	fmt.Printf("RECIPE_LABELS: %+v\n", b.Recipe.ImageData.Labels)
-	fmt.Printf("JSON_LABELS: %+v\n", b.JSONLabels)
-
-	// Copy the labels
-	for k, v := range b.JSONLabels {
-		labels[k] = make(map[string]string, 1)
-		for foo, bar := range v {
-			labels[k][foo] = bar
-		}
-	}
-
-	//for k, v := range b.Recipe.ImageData.Labels {
-	//	labels[k] = make(map[string]string, 1)
-	//	for foo, bar := range v {
-	//		labels[k][foo] = bar
-	//	}
-	//}
-
-	sylog.Infof("Inserting Metadata Labels...")
-
-	// load the container to add the metadata
-	fimg, err := sif.LoadContainer(path, false)
-	if err != nil {
-		return fmt.Errorf("failed to load sif container file: %s", err)
-	}
-	defer fimg.UnloadContainer()
-
-	descr, err := getDescr(&fimg)
-	if err != nil {
-		return fmt.Errorf("no primary partition found: %s", err)
-	}
-	groupid := descr[0].Groupid
-
-	// Make the new org.label-schema, overidding the old ones
-	metadata.GetImageInfoLabels(labels, &fimg, b)
-
-	// make new map into json
-	text, err := json.MarshalIndent(labels, "", "    ")
-	if err != nil {
-		return err
-	}
-
-	// Add the metadata
-	err = sifAddMetadata(&fimg, groupid, uint32(0), text)
-	if err != nil {
-		return fmt.Errorf("failed adding metadata block to SIF container file: %s", err)
-	}
-
 	return nil
-}
-
-func sifAddMetadata(fimg *sif.FileImage, groupid, link uint32, data []byte) error {
-	// data we need to create a signature descriptor
-	siginput := sif.DescriptorInput{
-		Datatype: sif.DataLabels,
-		Groupid:  groupid,
-		Link:     link,
-		Fname:    "image-metadata",
-		Data:     data,
-	}
-	siginput.Size = int64(binary.Size(siginput.Data))
-
-	// add new signature data object to SIF file
-	err := fimg.AddObject(siginput)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func getDescr(fimg *sif.FileImage) ([]*sif.Descriptor, error) {
-	descr := make([]*sif.Descriptor, 1)
-	var err error
-
-	descr[0], _, err = fimg.GetPartPrimSys()
-	if err != nil {
-		return nil, fmt.Errorf("no primary partition found")
-	}
-
-	return descr, nil
 }
 
 // changeOwner check the command being called with sudo with the environment

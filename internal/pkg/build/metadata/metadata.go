@@ -6,6 +6,8 @@
 package metadata
 
 import (
+	"encoding/binary"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -16,8 +18,18 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
+// ErrNoMetaData ...
+var ErrNoMetaData = errors.New("no metadata found for system partition")
+
 // GetImageInfoLabels will make some image labels
 func GetImageInfoLabels(labels map[string]map[string]string, fimg *sif.FileImage, b *types.Bundle) error {
+	if labels == nil {
+		labels = make(map[string]map[string]string, 1)
+	}
+	if labels["system-partition"] == nil {
+		labels["system-partition"] = make(map[string]string, 1)
+	}
+
 	labels["system-partition"]["org.label-schema.schema-version"] = "1.0"
 
 	// build date and time, lots of time formatting
@@ -101,4 +113,58 @@ func readBytes(in float64) string {
 	buf := fmt.Sprintf("%.*f %s", i, size, units[i])
 
 	return buf
+}
+
+// AddLabelPartition will add a label partition to a SIF image.
+func AddLabelPartition(fimg *sif.FileImage, link uint32, data []byte) error {
+	descr, err := getDescr(fimg)
+	if err != nil {
+		return fmt.Errorf("no primary partition found: %s", err)
+	}
+
+	labelPart := sif.DescriptorInput{
+		Datatype: sif.DataLabels,
+		Groupid:  descr[0].Groupid,
+		Link:     link,
+		Fname:    "image-metadata",
+		Data:     data,
+	}
+	labelPart.Size = int64(binary.Size(labelPart.Data))
+
+	err = fimg.AddObject(labelPart)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getDescr(fimg *sif.FileImage) ([]*sif.Descriptor, error) {
+	descr := make([]*sif.Descriptor, 1)
+	var err error
+
+	descr[0], _, err = fimg.GetPartPrimSys()
+	if err != nil {
+		return nil, fmt.Errorf("no primary partition found")
+	}
+
+	return descr, nil
+}
+
+// GetSIFData will return a dataType
+func GetSIFData(fimg *sif.FileImage, dataType sif.Datatype) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+	descr = make([]*sif.Descriptor, 1)
+
+	descr[0], _, err = fimg.GetPartPrimSys()
+	if err != nil {
+		return nil, nil, fmt.Errorf("no primary partition found")
+	}
+
+	// GetFromDescrID
+	sigs, _, err = fimg.GetLinkedDescrsByType(uint32(0), dataType)
+	if err != nil {
+		return nil, nil, ErrNoMetaData
+	}
+
+	return
 }

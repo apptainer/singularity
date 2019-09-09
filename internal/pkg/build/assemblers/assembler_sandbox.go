@@ -29,29 +29,20 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	// todo(sasha): get rid of this completely since we can create sandbox in b.RootfsPath?
 	sylog.Infof("Creating sandbox directory...")
 
-	jsonLabels := make(map[string]map[string]string, 1)
-	jsonLabels["system-partition"] = make(map[string]string, 1)
-	// Copy the labels
-	for k, v := range b.Recipe.ImageData.Labels {
-		jsonLabels[k] = make(map[string]string, 1)
-		for foo, bar := range v {
-			jsonLabels[k][foo] = bar
-		}
-	}
-
 	sylog.Infof("Adding labels...")
-
-	metadata.GetImageInfoLabels(jsonLabels, nil, b)
 
 	// Copy the labels from the %applabels
 	for name, l := range b.JSONLabels {
-		jsonLabels[name] = make(map[string]string, 1)
+		b.Recipe.ImageData.Labels[name] = make(map[string]string, 1)
 		for k, v := range l {
-			jsonLabels[name][k] = v
+			b.Recipe.ImageData.Labels[name][k] = v
 		}
 	}
 
-	text, err := json.MarshalIndent(jsonLabels, "", "\t")
+	// Get the schema labels, overidding the old ones
+	metadata.GetImageInfoLabels(b.Recipe.ImageData.Labels, nil, b)
+
+	text, err := json.MarshalIndent(b.Recipe.ImageData.Labels, "", "\t")
 	if err != nil {
 		return fmt.Errorf("unable to marshal json: %s", err)
 	}
