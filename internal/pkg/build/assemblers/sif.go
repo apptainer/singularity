@@ -36,7 +36,7 @@ type encryptionOptions struct {
 	plaintext []byte
 }
 
-func createSIF(b *types.Bundle, path string, definition, ociConf []byte, squashfile string, encOpts *encryptionOptions) (err error) {
+func createSIF(b *types.Bundle, path string, ociConf []byte, squashfile string, encOpts *encryptionOptions) (err error) {
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -50,7 +50,7 @@ func createSIF(b *types.Bundle, path string, definition, ociConf []byte, squashf
 		Datatype: sif.DataDeffile,
 		Groupid:  sif.DescrDefaultGroup,
 		Link:     sif.DescrUnusedLink,
-		Data:     definition,
+		Data:     b.Recipe.Raw,
 	}
 	definput.Size = int64(binary.Size(definput.Data))
 
@@ -154,26 +154,6 @@ func createSIF(b *types.Bundle, path string, definition, ociConf []byte, squashf
 	// Add the label partition
 	//
 
-	labels := make(map[string]map[string]string, 1)
-
-	// Get the old image labels first
-	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
-		for key, value := range b.Recipe.ImageData.Labels {
-			labels[key] = make(map[string]string, 1)
-			for foo, bar := range value {
-				labels[key][foo] = bar
-			}
-		}
-	}
-
-	// Copy the labels from %applabels
-	for k, v := range b.JSONLabels {
-		labels[k] = make(map[string]string, 1)
-		for foo, bar := range v {
-			labels[k][foo] = bar
-		}
-	}
-
 	sylog.Infof("Inserting Metadata Labels...")
 
 	// load the container to add the metadata
@@ -184,9 +164,9 @@ func createSIF(b *types.Bundle, path string, definition, ociConf []byte, squashf
 	defer fimg.UnloadContainer()
 
 	// Make the new org.label-schema, overidding the old ones
-	metadata.GetImageInfoLabels(labels, &fimg, b)
+	metadata.GetImageInfoLabels(b.JSONLabels, &fimg, b)
 
-	text, err := json.MarshalIndent(labels, "", "    ")
+	text, err := json.MarshalIndent(b.JSONLabels, "", "    ")
 	if err != nil {
 		return err
 	}
@@ -260,7 +240,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 
 	}
 
-	err = createSIF(b, path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, encOpts)
+	err = createSIF(b, path, b.JSONObjects["oci-config"], fsPath, encOpts)
 	if err != nil {
 		return fmt.Errorf("while creating SIF: %v", err)
 	}

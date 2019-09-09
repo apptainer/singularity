@@ -26,18 +26,10 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	sylog.Infof("Adding labels...")
 
-	// Copy the labels from the %applabels
-	for name, l := range b.JSONLabels {
-		b.Recipe.ImageData.Labels[name] = make(map[string]string, 1)
-		for k, v := range l {
-			b.Recipe.ImageData.Labels[name][k] = v
-		}
-	}
-
 	// Get the schema labels, overidding the old ones
-	metadata.GetImageInfoLabels(b.Recipe.ImageData.Labels, nil, b)
+	metadata.GetImageInfoLabels(b.JSONLabels, nil, b)
 
-	text, err := json.MarshalIndent(b.Recipe.ImageData.Labels, "", "\t")
+	text, err := json.MarshalIndent(b.JSONLabels, "", "    ")
 	if err != nil {
 		return fmt.Errorf("unable to marshal json: %s", err)
 	}

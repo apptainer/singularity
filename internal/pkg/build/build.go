@@ -329,10 +329,11 @@ func (b *Build) Full() error {
 		appName, appLabels := apps.GetAppLabels(k, v)
 		if appName != "" && appLabels != nil {
 			dataLabels[appName] = make(map[string]string, 1)
+
 			var objmap map[string]*json.RawMessage
 			err := json.Unmarshal(appLabels, &objmap)
 			if err != nil {
-				return fmt.Errorf("unable to unmarshal json: %s", err)
+				return fmt.Errorf("unable to unmarshal json from app: %s", err)
 			}
 
 			for k, v := range objmap {
