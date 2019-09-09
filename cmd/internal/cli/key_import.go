@@ -35,7 +35,7 @@ var keyImportWithNewPasswordFlag = cmdline.Flag{
 	Value:        &keyImportWithNewPassword,
 	DefaultValue: false,
 	Name:         "with-newpassword",
-	Usage:        `if specified will ask to set a newpassword`,
+	Usage:        `if specified will ask to set a new password`,
 }
 
 func importRun(cmd *cobra.Command, args []string) {
