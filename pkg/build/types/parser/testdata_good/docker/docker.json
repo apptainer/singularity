@@ -7,8 +7,10 @@
 	"imageData": {
 		"metadata": null,
 		"labels": {
-			"Maintainer": "Eduardo",
-			"Version": "v1.0"
+			"system-partition": {
+				"Maintainer": "Eduardo",
+				"Version": "v1.0"
+			}
 		},
 		"imageScripts": {
 			"help": {

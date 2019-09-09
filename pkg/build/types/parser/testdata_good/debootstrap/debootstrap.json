@@ -1,57 +1,58 @@
 {
-	"header": {
-		"bootstrap": "debootstrap",
-		"include": "somepackage",
-		"mirrorurl": "http://us.archive.ubuntu.com/ubuntu/",
-		"osversion": "xenial"
-	},
-	"imageData": {
-		"metadata": null,
-		"labels": {},
-		"imageScripts": {
-			"help": {
-				"args": "",
-				"script": ""
-			},
-			"environment": {
-				"args": "",
-				"script": ""
-			},
-			"runScript": {
-				"args": "",
-				"script": ""
-			},
-			"test": {
-				"args": "",
-				"script": ""
-			},
-			"startScript": {
-				"args": "",
-				"script": ""
-			}
-		}
-	},
-	"buildData": {
-		"files": [],
-		"buildScripts": {
-			"pre": {
-				"args": "",
-				"script": ""
-			},
-			"setup": {
-				"args": "",
-				"script": ""
-			},
-			"post": {
-				"args": "",
-				"script": ""
-			},
-			"test": {
-				"args": "",
-				"script": ""
-			}
-		}
-	},
-	"customData": null,
-	"raw": "Qm9vdHN0cmFwOiBkZWJvb3RzdHJhcApPU1ZlcnNpb246IHhlbmlhbApNaXJyb3JVUkw6ICBodHRwOi8vdXMuYXJjaGl2ZS51YnVudHUuY29tL3VidW50dS8KSW5jbHVkZTogc29tZXBhY2thZ2UK"
+    "header": {
+        "bootstrap": "debootstrap",
+        "include": "somepackage",
+        "mirrorurl": "http://us.archive.ubuntu.com/ubuntu/",
+        "osversion": "xenial"
+    },
+    "imageData": {
+        "labels": {
+            "system-partition": {}
+        },
+        "imageScripts": {
+            "help": {
+                "args": "",
+                "script": ""
+            },
+            "environment": {
+                "args": "",
+                "script": ""
+            },
+            "runScript": {
+                "args": "",
+                "script": ""
+            },
+            "test": {
+                "args": "",
+                "script": ""
+            },
+            "startScript": {
+                "args": "",
+                "script": ""
+            }
+        }
+    },
+    "buildData": {
+        "files": [],
+        "buildScripts": {
+            "pre": {
+                "args": "",
+                "script": ""
+            },
+            "setup": {
+                "args": "",
+                "script": ""
+            },
+            "post": {
+                "args": "",
+                "script": ""
+            },
+            "test": {
+                "args": "",
+                "script": ""
+            }
+        }
+    },
+    "customData": null,
+    "raw": "Qm9vdHN0cmFwOiBkZWJvb3RzdHJhcApPU1ZlcnNpb246IHhlbmlhbApNaXJyb3JVUkw6ICBodHRwOi8vdXMuYXJjaGl2ZS51YnVudHUuY29tL3VidW50dS8KSW5jbHVkZTogc29tZXBhY2thZ2UK"
 }

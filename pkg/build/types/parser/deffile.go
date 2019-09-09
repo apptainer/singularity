@@ -279,6 +279,7 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 		}
 
 		labels["system-partition"][key] = val
+		//labels[key] = val
 	}
 
 	d.ImageData = types.ImageData{
