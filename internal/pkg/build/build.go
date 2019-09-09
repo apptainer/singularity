@@ -8,7 +8,6 @@ package build
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -62,21 +61,11 @@ type Config struct {
 	Opts types.Options
 }
 
-// NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
+// NewBuild creates a new Build struct from a spec (URI, definition file, etc...).
 func NewBuild(spec string, conf Config) (*Build, error) {
-	def, err := MakeDef(spec)
+	def, err := makeDef(spec)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
-	}
-
-	return newBuild([]types.Definition{def}, conf)
-}
-
-// NewBuildJSON creates a new build struct from a JSON byte slice
-func NewBuildJSON(r io.Reader, conf Config) (*Build, error) {
-	def, err := types.NewDefinitionFromJSON(r)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
 
 	return newBuild([]types.Definition{def}, conf)
@@ -88,8 +77,6 @@ func New(defs []types.Definition, conf Config) (*Build, error) {
 }
 
 func newBuild(defs []types.Definition, conf Config) (*Build, error) {
-	var err error
-
 	syscall.Umask(0002)
 
 	// always build a sandbox if updating an existing sandbox
@@ -108,9 +95,14 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 			return nil, fmt.Errorf("multiple stages detected, all must have headers")
 		}
 
-		rootfs := filepath.Join(conf.Opts.TmpDir, "rootfs-"+uuid.NewV1().String())
+		rootfsParent := conf.Opts.TmpDir
+		if conf.Format == "sandbox" {
+			rootfsParent = filepath.Dir(conf.Dest)
+		}
+		rootfs := filepath.Join(rootfsParent, "rootfs-"+uuid.NewV1().String())
 
 		var s stage
+		var err error
 		if conf.Opts.EncryptionKeyInfo != nil {
 			s.b, err = types.NewEncryptedBundle(rootfs, conf.Opts.TmpDir, conf.Opts.EncryptionKeyInfo)
 		} else {
@@ -125,7 +117,7 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		s.b.Opts = conf.Opts
 		// dont need to get cp if we're skipping bootstrap
 		if !conf.Opts.Update || conf.Opts.Force {
-			if c, err := getcp(d); err == nil {
+			if c, err := conveyorPacker(d); err == nil {
 				s.c = c
 			} else {
 				return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
@@ -427,39 +419,8 @@ func runBuildEngine(b *types.Bundle) error {
 	return starterCmd.Run()
 }
 
-func getcp(def types.Definition) (ConveyorPacker, error) {
-	switch def.Header["bootstrap"] {
-	case "library":
-		return &sources.LibraryConveyorPacker{}, nil
-	case "oras":
-		return &sources.OrasConveyorPacker{}, nil
-	case "shub":
-		return &sources.ShubConveyorPacker{}, nil
-	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":
-		return &sources.OCIConveyorPacker{}, nil
-	case "busybox":
-		return &sources.BusyBoxConveyorPacker{}, nil
-	case "debootstrap":
-		return &sources.DebootstrapConveyorPacker{}, nil
-	case "arch":
-		return &sources.ArchConveyorPacker{}, nil
-	case "localimage":
-		return &sources.LocalConveyorPacker{}, nil
-	case "yum":
-		return &sources.YumConveyorPacker{}, nil
-	case "zypper":
-		return &sources.ZypperConveyorPacker{}, nil
-	case "scratch":
-		return &sources.ScratchConveyorPacker{}, nil
-	case "":
-		return nil, fmt.Errorf("no bootstrap specification found")
-	default:
-		return nil, fmt.Errorf("invalid build source %s", def.Header["bootstrap"])
-	}
-}
-
-// MakeDef gets a definition object from a spec
-func MakeDef(spec string) (types.Definition, error) {
+// makeDef gets a definition object from a spec.
+func makeDef(spec string) (types.Definition, error) {
 	if ok, err := uri.IsValid(spec); ok && err == nil {
 		// URI passed as spec
 		return types.NewDefinitionFromURI(spec)

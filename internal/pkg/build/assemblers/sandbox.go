@@ -19,14 +19,11 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-// SandboxAssembler stores data required to assemble the image.
-type SandboxAssembler struct {
-	// Nothing yet
-}
+// SandboxAssembler assembles a sandbox image.
+type SandboxAssembler struct{}
 
-// Assemble creates a Sandbox image from a Bundle
+// Assemble creates a Sandbox image from a Bundle.
 func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
-	// todo(sasha): get rid of this completely since we can create sandbox in b.RootfsPath?
 	sylog.Infof("Creating sandbox directory...")
 
 	sylog.Infof("Adding labels...")
@@ -58,11 +55,9 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		os.RemoveAll(path)
 	}
 
-	var stderr bytes.Buffer
-	cmd := exec.Command("mv", b.RootfsPath, path)
-	cmd.Stderr = &stderr
-	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("sandbox assemble failed: %v: %v", err, stderr.String())
+	err = os.Rename(b.RootfsPath, path)
+	if err != nil {
+		return fmt.Errorf("sandbox assemble failed: %v", err)
 	}
 
 	return nil

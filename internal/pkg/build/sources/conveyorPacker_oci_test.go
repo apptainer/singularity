@@ -48,6 +48,10 @@ func setupCache(t *testing.T) (*cache.Handle, func()) {
 
 // TestOCIConveyorDocker tests if we can pull an alpine image from dockerhub
 func TestOCIConveyorDocker(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
@@ -80,6 +84,10 @@ func TestOCIConveyorDocker(t *testing.T) {
 // TestOCIConveyorDockerArchive tests if we can use a docker save archive
 // as a source
 func TestOCIConveyorDockerArchive(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 

@@ -77,6 +77,10 @@ func TestZypperConveyor(t *testing.T) {
 }
 
 func TestZypperPacker(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.EnsurePrivilege(t)
 
 	if _, err := exec.LookPath("zypper"); err != nil {

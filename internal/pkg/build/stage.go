@@ -15,24 +15,24 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-// stage represents the process of constucting a root filesystem.
+// stage represents the process of constructing a root filesystem.
 type stage struct {
 	// name of the stage
 	name string
-	// c Gets and Packs data needed to build a container into a Bundle from various sources
+	// c Gets and Packs data needed to build a container into a Bundle from various sources.
 	c ConveyorPacker
-	// a Assembles a container from the information stored in a Bundle into various formats
+	// a Assembles a container from the information stored in a Bundle into various formats.
 	a Assembler
-	// b is an intermediate structure that encapsulates all information for the container, e.g., metadata, filesystems
+	// b is an intermediate structure that encapsulates all information for the container, e.g., metadata, filesystems.
 	b *types.Bundle
 }
 
-// Assemble assembles the bundle to the specified path
+// Assemble assembles the bundle to the specified path.
 func (s *stage) Assemble(path string) error {
 	return s.a.Assemble(s.b, path)
 }
 
-// runPreScript() executes the stages pre script on host
+// runPreScript executes the stage's pre script on host.
 func (s *stage) runPreScript() error {
 	if s.b.RunSection("pre") && s.b.Recipe.BuildData.Pre.Script != "" {
 		if syscall.Getuid() != 0 {
@@ -44,7 +44,7 @@ func (s *stage) runPreScript() error {
 		pre.Stdout = os.Stdout
 		pre.Stderr = os.Stderr
 
-		sylog.Infof("Running pre scriptlet\n")
+		sylog.Infof("Running pre scriptlet")
 		if err := pre.Start(); err != nil {
 			return fmt.Errorf("failed to start %%pre proc: %v", err)
 		}
