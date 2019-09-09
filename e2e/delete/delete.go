@@ -55,7 +55,7 @@ func (c *ctx) testDeleteCmd(t *testing.T) {
 	}
 }
 
-// E2ETests is the main func to trigger the test suite
+// E2ETests is the main func to trigger the test suite.
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
 		env: env,

@@ -47,7 +47,7 @@ var deleteImageTimeoutFlag = cmdline.Flag{
 	Name:         "timeout",
 	ShortHand:    "T",
 	Hidden:       true,
-	Usage:        "specify delete timeout in secods",
+	Usage:        "specify delete timeout in seconds",
 	EnvKeys:      []string{"TIMEOUT"},
 }
 
