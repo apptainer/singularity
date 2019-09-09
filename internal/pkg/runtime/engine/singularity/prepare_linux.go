@@ -87,13 +87,14 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		}
 	}
 
-	// Save the current working directory to restore it in stage 2
-	// for relative bind paths
-	if pwd, err := os.Getwd(); err == nil {
-		e.EngineConfig.SetCwd(pwd)
-	} else {
-		sylog.Warningf("can't determine current working directory")
-		e.EngineConfig.SetCwd("/")
+	// Save the current working directory if not set
+	if e.EngineConfig.GetCwd() == "" {
+		if pwd, err := os.Getwd(); err == nil {
+			e.EngineConfig.SetCwd(pwd)
+		} else {
+			sylog.Warningf("can't determine current working directory")
+			e.EngineConfig.SetCwd("/")
+		}
 	}
 
 	if e.EngineConfig.OciConfig.Process == nil {
