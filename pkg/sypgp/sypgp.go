@@ -1034,7 +1034,9 @@ func (keyring *Handle) importPrivateKey(entity *openpgp.Entity, setNewPassword b
 		if err != nil {
 			return err
 		}
-		newEntity.PrivateKey.Decrypt([]byte(password))
+		if err := newEntity.PrivateKey.Decrypt([]byte(password)); err != nil {
+			return err
+		}
 	}
 
 	if setNewPassword {
