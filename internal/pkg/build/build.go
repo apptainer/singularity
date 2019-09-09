@@ -245,8 +245,6 @@ func (b Build) cleanUp() {
 func (b *Build) Full() error {
 	sylog.Infof("Starting build...")
 
-	dataLabels := make(map[string]map[string]string, 1)
-
 	// monitor build for termination signal and clean up
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -324,11 +322,15 @@ func (b *Build) Full() error {
 		}
 	}
 
+	if b.stages[len(b.stages)-1].b.JSONLabels == nil {
+		b.stages[len(b.stages)-1].b.JSONLabels = make(map[string]map[string]string, 1)
+	}
+
 	// Only get the last stage app labels
 	for k, v := range b.stages[len(b.stages)-1].b.Recipe.CustomData {
 		appName, appLabels := apps.GetAppLabels(k, v)
 		if appName != "" && appLabels != nil {
-			dataLabels[appName] = make(map[string]string, 1)
+			b.stages[len(b.stages)-1].b.JSONLabels[appName] = make(map[string]string, 1)
 
 			var objmap map[string]*json.RawMessage
 			err := json.Unmarshal(appLabels, &objmap)
@@ -337,26 +339,17 @@ func (b *Build) Full() error {
 			}
 
 			for k, v := range objmap {
-				dataLabels[appName][k] = string(*v)
+				b.stages[len(b.stages)-1].b.JSONLabels[appName][k] = string(*v)
 			}
 		}
 	}
 
-	for key, val := range b.stages[0].b.Recipe.ImageData.Labels {
-		dataLabels[key] = make(map[string]string, 1)
-		for k, v := range val {
-			dataLabels[key][k] = v
+	// Copy the labels from the deffile
+	for key, val := range b.stages[len(b.stages)-1].b.Recipe.ImageData.Labels {
+		if b.stages[len(b.stages)-1].b.JSONLabels["system-partition"] == nil {
+			b.stages[len(b.stages)-1].b.JSONLabels["system-partition"] = make(map[string]string, 1)
 		}
-	}
-
-	b.stages[len(b.stages)-1].b.JSONLabels = make(map[string]map[string]string, 1)
-
-	// Copy build.Build.MetaDataLabels to bundle.JSONLabels
-	for name, l := range dataLabels {
-		b.stages[len(b.stages)-1].b.JSONLabels[name] = make(map[string]string, 1)
-		for k, v := range l {
-			b.stages[len(b.stages)-1].b.JSONLabels[name][k] = v
-		}
+		b.stages[len(b.stages)-1].b.JSONLabels["system-partition"][key] = val
 	}
 
 	sylog.Debugf("Calling assembler")

@@ -4,10 +4,8 @@
 		"imageData": {
 			"metadata": null,
 			"labels": {
-				"system-partition": {
-					"Maintainer": "Eduardo",
-					"Version": "v1.0"
-				}
+				"Maintainer": "Eduardo",
+				"Version": "v1.0"
 			},
 			"imageScripts": {
 				"help": {

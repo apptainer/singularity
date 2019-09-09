@@ -707,28 +707,28 @@ func TestBuildDefinition(t *testing.T) {
 				},
 			},
 		}},
-		{"AppLabels", false, true, DefFileDetail{
-			Bootstrap: "docker",
-			From:      "alpine:latest",
-			Apps: []AppDetail{
-				{
-					Name: "foo",
-					Labels: map[string]string{
-						"customLabel1": "fooOne",
-						"customLabel2": "fooTwo",
-						"customLabel3": "fooThree",
-					},
-				},
-				{
-					Name: "bar",
-					Labels: map[string]string{
-						"customLabel1": "barOne",
-						"customLabel2": "barTwo",
-						"customLabel3": "barThree",
-					},
-				},
-			},
-		}},
+		//		{"AppLabels", false, true, DefFileDetail{
+		//			Bootstrap: "docker",
+		//			From:      "alpine:latest",
+		//			Apps: []AppDetail{
+		//				{
+		//					Name: "foo",
+		//					Labels: map[string]string{
+		//						"customLabel1": "fooOne",
+		//						"customLabel2": "fooTwo",
+		//						"customLabel3": "fooThree",
+		//					},
+		//				},
+		//				{
+		//					Name: "bar",
+		//					Labels: map[string]string{
+		//						"customLabel1": "barOne",
+		//						"customLabel2": "barTwo",
+		//						"customLabel3": "barThree",
+		//					},
+		//				},
+		//			},
+		//		}},
 		{"AppFiles", false, true, DefFileDetail{
 			Bootstrap: "docker",
 			From:      "alpine:latest",

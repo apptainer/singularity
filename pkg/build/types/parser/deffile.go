@@ -261,8 +261,7 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 	// labels are parsed as a map[string]string
 	labelsSections := strings.TrimSpace(sections["labels"].Script)
 	subs := strings.Split(labelsSections, "\n")
-	labels := make(map[string]map[string]string)
-	labels["system-partition"] = make(map[string]string)
+	labels := make(map[string]string)
 
 	for _, line := range subs {
 		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
@@ -278,8 +277,7 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 			val = strings.TrimSpace(lineSubs[1])
 		}
 
-		labels["system-partition"][key] = val
-		//labels[key] = val
+		labels[key] = val
 	}
 
 	d.ImageData = types.ImageData{
@@ -508,7 +506,7 @@ func isEmpty(d types.Definition) bool {
 
 	// initialize empty definition fully
 	emptyDef := types.Definition{}
-	emptyDef.Labels = make(map[string]map[string]string, 1)
+	emptyDef.Labels = make(map[string]string, 1)
 	emptyDef.BuildData.Files = make([]types.Files, 0)
 
 	return reflect.DeepEqual(d, emptyDef)

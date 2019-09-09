@@ -71,16 +71,16 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 			}
 		}
 
-		if b.Recipe.ImageData.Labels == nil {
-			b.Recipe.ImageData.Labels = make(map[string]map[string]string, 1)
+		if b.JSONLabels == nil {
+			b.JSONLabels = make(map[string]map[string]string, 1)
 		}
 
 		for key, val := range tmpLabels {
-			if b.Recipe.ImageData.Labels[key] == nil {
-				b.Recipe.ImageData.Labels[key] = make(map[string]string, 1)
+			if b.JSONLabels[key] == nil {
+				b.JSONLabels[key] = make(map[string]string, 1)
 			}
 			for k, v := range val {
-				b.Recipe.ImageData.Labels[key][k] = v
+				b.JSONLabels[key][k] = v
 			}
 		}
 	}

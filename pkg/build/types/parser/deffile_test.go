@@ -129,7 +129,7 @@ func TestDoSections(t *testing.T) {
 
 	// This is a fake data structure
 	myData := new(types.Definition)
-	myData.Labels = make(map[string]map[string]string, 1)
+	myData.Labels = make(map[string]string)
 
 	s1 := bufio.NewScanner(strings.NewReader(invalidStr))
 	s1.Split(scanDefinitionFile)
@@ -226,7 +226,7 @@ func TestParseDefinitionFileFailure(t *testing.T) {
 		{"JSONInput1", "testdata_bad/json_input_1"},
 		{"JSONInput2", "testdata_bad/json_input_2"},
 		{"Empty", "testdata_bad/empty"},
-		//{"EmptyComments", "testdata_bad/emptycomments"},
+		{"EmptyComments", "testdata_bad/emptycomments"},
 	}
 
 	for _, tt := range tests {
@@ -291,7 +291,7 @@ func TestPopulateDefinition(t *testing.T) {
 	// Test with invalid data
 	//
 	invalidData := new(types.Definition)
-	invalidData.Labels = make(map[string]map[string]string, 1)
+	invalidData.Labels = make(map[string]string)
 	populateDefinition(emptyMap, &emptyFiles, invalidData)
 
 	//
@@ -300,7 +300,7 @@ func TestPopulateDefinition(t *testing.T) {
 
 	// A structure to store results (not really relevant here)
 	myData := new(types.Definition)
-	myData.Labels = make(map[string]map[string]string, 1)
+	myData.Labels = make(map[string]string)
 
 	myerr := populateDefinition(testMap, &testFiles, myData)
 	if myerr != nil {
@@ -312,7 +312,7 @@ func TestPopulateDefinition(t *testing.T) {
 func TestDoHeader(t *testing.T) {
 	invalidHeaders := []string{"headerTest", "headerTest: invalid"}
 	myData := new(types.Definition)
-	myData.Labels = make(map[string]map[string]string, 1)
+	myData.Labels = make(map[string]string)
 
 	for _, invalidHeader := range invalidHeaders {
 		myerr := doHeader(invalidHeader, myData)

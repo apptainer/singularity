@@ -25,7 +25,7 @@ type Definition struct {
 // ImageData contains any scripts, metadata, etc... that needs to be
 // present in some form in the final built image.
 type ImageData struct {
-	Labels       map[string]map[string]string `json:"labels"`
+	Labels       map[string]string `json:"labels"`
 	ImageScripts `json:"imageScripts"`
 }
 
@@ -163,7 +163,7 @@ func populateRaw(d *Definition, w io.Writer) {
 	}
 	fmt.Fprintln(w)
 
-	writeLabelsIfExists(w, d.ImageData.Labels["system-partition"])
+	writeLabelsIfExists(w, d.ImageData.Labels)
 	writeFilesIfExists(w, d.BuildData.Files)
 
 	writeSectionIfExists(w, "help", d.ImageData.Help)

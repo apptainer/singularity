@@ -6,9 +6,7 @@
 	},
 	"imageData": {
 		"metadata": null,
-         "labels": {
-             "system-partition": {}
-         },
+		"labels": {},
 		"imageScripts": {
 			"help": {
 				"args": "",

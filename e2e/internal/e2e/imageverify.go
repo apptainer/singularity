@@ -6,7 +6,6 @@ package e2e
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -198,12 +197,12 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 			}
 		}
 
-		// %applabels
-		if app.Labels != nil {
-			if err := verifyAppLabels(t, imagePath, app.Name, app.Labels); err != nil {
-				t.Fatalf("unexpected failure in app %v: Labels in app are incorrect: %v", app.Name, err)
-			}
-		}
+		//		// %applabels
+		//		if app.Labels != nil {
+		//			if err := verifyAppLabels(t, imagePath, app.Name, app.Labels); err != nil {
+		//				t.Fatalf("unexpected failure in app %v: Labels in app are incorrect: %v", app.Name, err)
+		//			}
+		//		}
 
 		// %appfiles
 		for _, p := range app.Files {
@@ -404,23 +403,23 @@ func verifyEnv(t *testing.T, cmdPath, imagePath string, env []string, flags []st
 //	return nil
 //}
 
-func verifyAppLabels(t *testing.T, imagePath, appName string, labels map[string]string) error {
-	var fileLabels map[string]string
-
-	b, err := ioutil.ReadFile(filepath.Join(imagePath, "/scif/apps/", appName, "/scif/labels.json"))
-	if err != nil {
-		t.Fatalf("While reading file: %v", err)
-	}
-
-	if err := json.Unmarshal(b, &fileLabels); err != nil {
-		t.Fatalf("While unmarshaling labels.json into map: %v", err)
-	}
-
-	for k, v := range labels {
-		if l, ok := fileLabels[k]; !ok || v != l {
-			return fmt.Errorf("Missing label: %v:%v", k, v)
-		}
-	}
-
-	return nil
-}
+//func verifyAppLabels(t *testing.T, imagePath, appName string, labels map[string]string) error {
+//	var fileLabels map[string]string
+//
+//	b, err := ioutil.ReadFile(filepath.Join(imagePath, "/scif/apps/", appName, "/scif/labels.json"))
+//	if err != nil {
+//		t.Fatalf("While reading file: %v", err)
+//	}
+//
+//	if err := json.Unmarshal(b, &fileLabels); err != nil {
+//		t.Fatalf("While unmarshaling labels.json into map: %v", err)
+//	}
+//
+//	for k, v := range labels {
+//		if l, ok := fileLabels[k]; !ok || v != l {
+//			return fmt.Errorf("Missing label: %v:%v", k, v)
+//		}
+//	}
+//
+//	return nil
+//}

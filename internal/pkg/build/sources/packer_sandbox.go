@@ -28,7 +28,10 @@ type SandboxPacker struct {
 func (p *SandboxPacker) Pack() (*types.Bundle, error) {
 	rootfs := p.srcdir
 
-	p.b.Recipe.ImageData.Labels = make(map[string]map[string]string, 1)
+	//p.b.Recipe.ImageData.Labels = make(map[string]map[string]string, 1)
+	if p.b.JSONLabels == nil {
+		p.b.JSONLabels = make(map[string]map[string]string, 1)
+	}
 
 	// Read the labels from the sandbox
 	jsonLabels, err := ioutil.ReadFile(filepath.Join(rootfs, ".singularity.d/labels.json"))
@@ -37,7 +40,8 @@ func (p *SandboxPacker) Pack() (*types.Bundle, error) {
 	}
 
 	// Then add them to ImageData
-	err = json.Unmarshal(jsonLabels, &p.b.Recipe.ImageData.Labels)
+	err = json.Unmarshal(jsonLabels, &p.b.JSONLabels)
+	//err = json.Unmarshal(jsonLabels, &p.b.Recipe.ImageData.Labels)
 	if err != nil {
 		return nil, fmt.Errorf("unable to unmarshal json labels: %s", err)
 	}
