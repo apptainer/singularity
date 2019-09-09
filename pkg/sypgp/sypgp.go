@@ -1004,6 +1004,10 @@ func findEntityByFingerprint(entities openpgp.EntityList, fingerprint [20]byte) 
 // importPrivateKey imports the specified openpgp Entity, which should
 // represent a private key. The entity is added to the private keyring.
 func (keyring *Handle) importPrivateKey(entity *openpgp.Entity, setNewPassword bool) error {
+	if entity.PrivateKey == nil {
+		return fmt.Errorf("corrupted key, unable to recover data")
+	}
+
 	// Load the local private keys as entitylist
 	privateEntityList, err := keyring.LoadPrivKeyring()
 	if err != nil {
@@ -1014,19 +1018,7 @@ func (keyring *Handle) importPrivateKey(entity *openpgp.Entity, setNewPassword b
 		return &KeyExistsError{fingerprint: entity.PrivateKey.Fingerprint}
 	}
 
-	// Check if the key is encrypted, if it is, decrypt it
-	if entity.PrivateKey == nil {
-		return fmt.Errorf("corrupted key, unable to recover data")
-	}
-
-	// Make a clone of the entity
-	newEntity := &openpgp.Entity{
-		PrimaryKey:  entity.PrimaryKey,
-		PrivateKey:  entity.PrivateKey,
-		Identities:  entity.Identities,
-		Revocations: entity.Revocations,
-		Subkeys:     entity.Subkeys,
-	}
+	newEntity := *entity
 
 	var password string
 	if entity.PrivateKey.Encrypted {
@@ -1054,7 +1046,7 @@ func (keyring *Handle) importPrivateKey(entity *openpgp.Entity, setNewPassword b
 	}
 
 	// Store the private key
-	if err := keyring.appendPrivateKey(newEntity); err != nil {
+	if err := keyring.appendPrivateKey(&newEntity); err != nil {
 		return err
 	}
 
