@@ -21,6 +21,8 @@ import (
 // ErrNoMetaData ...
 var ErrNoMetaData = errors.New("no metadata found for system partition")
 
+var ErrNoPrimaryPartition = errors.New("no primary partition found")
+
 // GetImageInfoLabels will make some image labels
 func GetImageInfoLabels(labels map[string]map[string]string, fimg *sif.FileImage, b *types.Bundle) error {
 	if labels == nil {
@@ -151,20 +153,20 @@ func getDescr(fimg *sif.FileImage) ([]*sif.Descriptor, error) {
 	return descr, nil
 }
 
-// GetSIFData will return a dataType
-func GetSIFData(fimg *sif.FileImage, dataType sif.Datatype) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
-	descr = make([]*sif.Descriptor, 1)
+// GetSIFData will return a dataType from a SIF.
+func GetSIFData(fimg *sif.FileImage, dataType sif.Datatype) ([]*sif.Descriptor, error) {
+	data := make([]*sif.Descriptor, 1)
+	var err error
 
-	descr[0], _, err = fimg.GetPartPrimSys()
+	_, _, err = fimg.GetPartPrimSys()
 	if err != nil {
-		return nil, nil, fmt.Errorf("no primary partition found")
+		return nil, ErrNoPrimaryPartition
 	}
 
-	// GetFromDescrID
-	sigs, _, err = fimg.GetLinkedDescrsByType(uint32(0), dataType)
+	data, _, err = fimg.GetLinkedDescrsByType(uint32(0), dataType)
 	if err != nil {
-		return nil, nil, ErrNoMetaData
+		return nil, ErrNoMetaData
 	}
 
-	return
+	return data, nil
 }

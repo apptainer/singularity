@@ -55,7 +55,7 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 	}
 	defer fimg.UnloadContainer()
 
-	sifData, _, err := metadata.GetSIFData(&fimg, sif.DataLabels)
+	sifData, err := metadata.GetSIFData(&fimg, sif.DataLabels)
 	if err == metadata.ErrNoMetaData {
 		sylog.Warningf("No metadata partition found")
 	} else if err != nil {

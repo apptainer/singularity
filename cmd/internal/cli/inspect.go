@@ -8,7 +8,6 @@ package cli
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -22,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/build/metadata"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
@@ -30,10 +30,6 @@ import (
 	"github.com/sylabs/singularity/pkg/cmdline"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
-
-// TODO: this should not be in a cli package
-
-var ErrNoMetaData = errors.New("no metadata found for system partition")
 
 const listAppsCommand = "echo apps:`ls \"$app/scif/apps\" | wc -c`; for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename \"$app\"`\n        echo \"$APPNAME\"\n    fi\ndone\n"
 
@@ -258,32 +254,9 @@ func setAttribute(obj *inspectFormat, label, app string, value string) {
 	}
 }
 
-func getAppCheck(appName string) string {
-	return fmt.Sprintf("if ! [ -d \"/scif/apps/%s\" ]; then echo \"App %s does not exist.\"; exit 2; fi;", appName, appName)
-}
-
 // returns true if flags for other forms of information are unset
 func defaultToLabels() bool {
 	return !(helpfile || deffile || runscript || testfile || environment || listApps)
-}
-
-// getMetaData will return a dataType
-func getMetaData(fimg *sif.FileImage, dataType sif.Datatype) ([]*sif.Descriptor, []*sif.Descriptor, error) {
-	descr := make([]*sif.Descriptor, 1)
-	var err error
-
-	descr[0], _, err = fimg.GetPartPrimSys()
-	if err != nil {
-		return nil, nil, fmt.Errorf("no primary partition found")
-	}
-
-	// GetFromDescrID
-	sigs, _, err := fimg.GetLinkedDescrsByType(uint32(0), dataType)
-	if err != nil {
-		return nil, nil, ErrNoMetaData
-	}
-
-	return sigs, descr, nil
 }
 
 // InspectCmd represents the 'inspect' command
@@ -339,11 +312,12 @@ var InspectCmd = &cobra.Command{
 			}
 
 			if sandboxImage {
+				sylog.Debugf("Inspecting in the container...")
 				inspectLabelInContainer()
 				goto endLabel
 			}
-			sifData, _, err := getMetaData(&fimg, sif.DataLabels)
-			if err == ErrNoMetaData {
+			sifData, err := metadata.GetSIFData(&fimg, sif.DataLabels)
+			if err == metadata.ErrNoMetaData {
 				sylog.Warningf("No metadata partition, searching in container...")
 				inspectLabelInContainer()
 				goto endLabel
@@ -380,8 +354,8 @@ var InspectCmd = &cobra.Command{
 				inspectDeffileInContainer()
 				goto endDeffile
 			}
-			sifData, _, err := getMetaData(&fimg, sif.DataDeffile)
-			if err == ErrNoMetaData {
+			sifData, err := metadata.GetSIFData(&fimg, sif.DataDeffile)
+			if err == metadata.ErrNoMetaData {
 				sylog.Warningf("No metadata partition, searching in container...")
 				inspectDeffileInContainer()
 				goto endDeffile
@@ -406,12 +380,6 @@ var InspectCmd = &cobra.Command{
 		if listApps {
 			sylog.Debugf("Listing all apps in container")
 			a[2] += listAppsCommand
-		}
-
-		// If AppName is given fail quickly (exit) if it doesn't exist
-		if AppName != "" {
-			sylog.Debugf("Inspection of App %s Selected.", AppName)
-			a[2] += getAppCheck(AppName)
 		}
 
 		if helpfile {
