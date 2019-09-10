@@ -36,25 +36,25 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 	}{
 		{
 			name:      "BusyBox",
-			dest:      path.Join(c.env.TestDir, "container"),
+			dest:      c.env.TestDir + "/container",
 			buildSpec: "../examples/busybox/Singularity",
 		},
 		{
 			name:       "Debootstrap",
-			dest:       c.env.TestDir + "container/",
+			dest:       c.env.TestDir + "/container/",
 			dependency: "debootstrap",
 			buildSpec:  "../examples/debian/Singularity",
 			sandbox:    true,
 		},
 		{
 			name:      "DockerURI",
-			dest:      c.env.TestDir + "container/",
+			dest:      c.env.TestDir + "/container/",
 			buildSpec: "docker://busybox",
 			sandbox:   true,
 		},
 		{
 			name:      "DockerDefFile",
-			dest:      c.env.TestDir + "container/",
+			dest:      c.env.TestDir + "/container/",
 			buildSpec: "../examples/docker/Singularity",
 			sandbox:   true,
 		},
@@ -64,26 +64,26 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 		// {"ShubDefFile", "", "../examples/shub/Singularity", true},
 		{
 			name:      "LibraryDefFile",
-			dest:      c.env.TestDir + "container/",
+			dest:      c.env.TestDir + "/container/",
 			buildSpec: "../examples/library/Singularity",
 			sandbox:   true,
 		},
 		{
 			name:      "OrasURI",
-			dest:      c.env.TestDir + "container/",
+			dest:      c.env.TestDir + "/container/",
 			buildSpec: c.env.OrasTestImage,
 			sandbox:   true,
 		},
 		{
 			name:       "Yum",
-			dest:       c.env.TestDir + "container/",
+			dest:       c.env.TestDir + "/container/",
 			dependency: "yum",
 			buildSpec:  "../examples/centos/Singularity",
 			sandbox:    true,
 		},
 		{
 			name:       "Zypper",
-			dest:       c.env.TestDir + "container/",
+			dest:       c.env.TestDir + "/container/",
 			dependency: "zypper",
 			buildSpec:  "../examples/opensuse/Singularity",
 			sandbox:    true,
@@ -100,6 +100,7 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
+			e2e.AsSubtest(tc.name),
 			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
@@ -111,6 +112,10 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 				}
 			}),
 			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					return
+				}
+
 				defer os.RemoveAll(tc.dest)
 				c.env.ImageVerify(t, tc.dest)
 			}),
@@ -120,7 +125,7 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 }
 
 func (c *imgBuildTests) nonRootBuild(t *testing.T) {
-	tests := []struct {
+	tt := []struct {
 		name      string
 		buildSpec string
 		sandbox   bool
@@ -163,24 +168,24 @@ func (c *imgBuildTests) nonRootBuild(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tc := range tt {
 		imagePath := path.Join(c.env.TestDir, "container")
 
 		// conditionally build a sandbox
-		args := []string{}
-		if tt.sandbox {
+		var args []string
+		if tc.sandbox {
 			args = []string{"--sandbox"}
 		}
-		args = append(args, imagePath, tt.buildSpec)
+		args = append(args, imagePath, tc.buildSpec)
 
 		c.env.RunSingularity(
 			t,
+			e2e.AsSubtest(tc.name),
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
 				defer os.RemoveAll(imagePath)
-
 				c.env.ImageVerify(t, imagePath)
 			}),
 			e2e.ExpectExit(0),
@@ -233,7 +238,7 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 	})
 	defer os.Remove(localSandboxDefFile)
 
-	tests := []struct {
+	tt := []struct {
 		name      string
 		buildSpec string
 	}{
@@ -244,14 +249,14 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 		{"LocalImageSandbox", localSandboxDefFile},
 	}
 
-	for i, tt := range tests {
+	for i, tc := range tt {
 		imagePath := filepath.Join(tmpdir, fmt.Sprintf("image-%d", i))
 		c.env.RunSingularity(
 			t,
-			e2e.AsSubtest(tt.name),
+			e2e.AsSubtest(tc.name),
 			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
-			e2e.WithArgs(imagePath, tt.buildSpec),
+			e2e.WithArgs(imagePath, tc.buildSpec),
 			e2e.PostRun(func(t *testing.T) {
 				c.env.ImageVerify(t, imagePath)
 			}),
