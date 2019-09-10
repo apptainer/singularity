@@ -516,6 +516,10 @@ func TestPrintEntities(t *testing.T) {
 }
 
 func TestGenKeyPair(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
