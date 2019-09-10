@@ -17,14 +17,13 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
 )
 
-// ImageVerify checks for an image integrity
+// ImageVerify checks for an image integrity.
 func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
-	type testSpec struct {
+	tt := []struct {
 		name string
 		argv []string
 		exit int
-	}
-	tests := []testSpec{
+	}{
 		{
 			name: "False",
 			argv: []string{imagePath, "false"},
@@ -72,14 +71,14 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tc := range tt {
 		env.RunSingularity(
 			t,
-			AsSubtest(tt.name),
+			AsSubtest(tc.name),
 			WithProfile(UserProfile),
 			WithCommand("exec"),
-			WithArgs(tt.argv...),
-			ExpectExit(tt.exit),
+			WithArgs(tc.argv...),
+			ExpectExit(tc.exit),
 		)
 	}
 }

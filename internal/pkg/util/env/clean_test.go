@@ -72,6 +72,7 @@ func TestSetContainerEnv(t *testing.T) {
 			resultEnv: []string{
 				"HOME=/home/tester",
 				"PS1=test",
+				"SOCIOPATH=VolanDeMort",
 				"TERM=xterm-256color",
 				"LANG=C",
 				"LD_LIBRARY_PATH=/my/custom/libs",
