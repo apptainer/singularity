@@ -27,6 +27,9 @@ type imgBuildTests struct {
 func (c *imgBuildTests) buildFrom(t *testing.T) {
 	e2e.PrepRegistry(t, c.env)
 
+	// use a trailing slash in tests for sandbox intentionally to make sure
+	// `singularity build -s /tmp/sand/ docker://alpine` works,
+	// see https://github.com/sylabs/singularity/issues/4407
 	tt := []struct {
 		name       string
 		dest       string
