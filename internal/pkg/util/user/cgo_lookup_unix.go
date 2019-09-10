@@ -2,18 +2,23 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// +build aix darwin dragonfly freebsd !android,linux netbsd openbsd solaris
+// +build cgo,!osusergo
+
 // Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// This is the simplified version of Go's os/user/cgo_lookup_unix.go file.
+// This is a slightly patched version of Go's os/user/cgo_lookup_unix.go file.
 // We need full gecos content so the only way to do so is to call C ourselves.
+// User and Group types are taken from this package rather then from os/user.
 package user
 
 import (
-	"errors"
 	"fmt"
+	osuser "os/user"
+	"strconv"
 	"syscall"
 	"unsafe"
 )
@@ -48,10 +53,9 @@ static int mygetgrnam_r(const char *name, struct group *grp,
 */
 import "C"
 
-var (
-	errUserNotFound  = errors.New("user is not found")
-	errGroupNotFound = errors.New("group is not found")
-)
+func current() (*User, error) {
+	return lookupUnixUid(syscall.Getuid())
+}
 
 func lookupUser(username string) (*User, error) {
 	var pwd C.struct_passwd
@@ -77,12 +81,20 @@ func lookupUser(username string) (*User, error) {
 		return nil, fmt.Errorf("user: lookup username %s: %v", username, err)
 	}
 	if result == nil {
-		return nil, errUserNotFound
+		return nil, osuser.UnknownUserError(username)
 	}
 	return buildUser(&pwd), err
 }
 
-func lookupUnixUid(uid uint32) (*User, error) {
+func lookupUserId(uid string) (*User, error) {
+	i, e := strconv.Atoi(uid)
+	if e != nil {
+		return nil, e
+	}
+	return lookupUnixUid(i)
+}
+
+func lookupUnixUid(uid int) (*User, error) {
 	var pwd C.struct_passwd
 	var result *C.struct_passwd
 
@@ -102,7 +114,7 @@ func lookupUnixUid(uid uint32) (*User, error) {
 		return nil, fmt.Errorf("user: lookup userid %d: %v", uid, err)
 	}
 	if result == nil {
-		return nil, errUserNotFound
+		return nil, osuser.UnknownUserIdError(uid)
 	}
 	return buildUser(&pwd), nil
 }
@@ -116,6 +128,10 @@ func buildUser(pwd *C.struct_passwd) *User {
 		Dir:   C.GoString(pwd.pw_dir),
 		Shell: C.GoString(pwd.pw_shell),
 	}
+}
+
+func currentGroup() (*Group, error) {
+	return lookupUnixGid(syscall.Getgid())
 }
 
 func lookupGroup(groupname string) (*Group, error) {
@@ -138,12 +154,20 @@ func lookupGroup(groupname string) (*Group, error) {
 		return nil, fmt.Errorf("user: lookup groupname %s: %v", groupname, err)
 	}
 	if result == nil {
-		return nil, errGroupNotFound
+		return nil, osuser.UnknownGroupError(groupname)
 	}
 	return buildGroup(&grp), nil
 }
 
-func lookupUnixGid(gid uint32) (*Group, error) {
+func lookupGroupId(gid string) (*Group, error) {
+	i, e := strconv.Atoi(gid)
+	if e != nil {
+		return nil, e
+	}
+	return lookupUnixGid(i)
+}
+
+func lookupUnixGid(gid int) (*Group, error) {
 	var grp C.struct_group
 	var result *C.struct_group
 
@@ -163,7 +187,7 @@ func lookupUnixGid(gid uint32) (*Group, error) {
 		return nil, fmt.Errorf("user: lookup groupid %d: %v", gid, err)
 	}
 	if result == nil {
-		return nil, errGroupNotFound
+		return nil, osuser.UnknownGroupIdError(strconv.Itoa(gid))
 	}
 	return buildGroup(&grp), nil
 }
@@ -192,7 +216,7 @@ func (k bufferKind) initialSize() C.size_t {
 		return 1024
 	}
 	if !isSizeReasonable(int64(sz)) {
-		// Truncate. If this truly isn't enough, retryWithBuffer will error on the first run.
+		// Truncate.  If this truly isn't enough, retryWithBuffer will error on the first run.
 		return maxBufferSize
 	}
 	return C.size_t(sz)
@@ -243,4 +267,12 @@ const maxBufferSize = 1 << 20
 
 func isSizeReasonable(sz int64) bool {
 	return sz > 0 && sz <= maxBufferSize
+}
+
+// Because we can't use cgo in tests:
+func structPasswdForNegativeTest() C.struct_passwd {
+	sp := C.struct_passwd{}
+	sp.pw_uid = 1<<32 - 2
+	sp.pw_gid = 1<<32 - 3
+	return sp
 }

@@ -6,8 +6,6 @@
 package user
 
 import (
-	"os"
-
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 )
 
@@ -29,7 +27,7 @@ type Group struct {
 
 // GetPwUID returns a pointer to User structure associated with user uid.
 func GetPwUID(uid uint32) (*User, error) {
-	return lookupUnixUid(uid)
+	return lookupUnixUid(int(uid))
 }
 
 // GetPwNam returns a pointer to User structure associated with user name.
@@ -39,7 +37,7 @@ func GetPwNam(name string) (*User, error) {
 
 // GetGrGID returns a pointer to Group structure associated with group gid.
 func GetGrGID(gid uint32) (*Group, error) {
-	return lookupUnixGid(gid)
+	return lookupUnixGid(int(gid))
 }
 
 // GetGrNam returns a pointer to Group structure associated with group name.
@@ -49,7 +47,7 @@ func GetGrNam(name string) (*Group, error) {
 
 // Current returns a pointer to User structure associated with current user.
 func Current() (*User, error) {
-	return lookupUnixUid(uint32(os.Getuid()))
+	return current()
 }
 
 // CurrentOriginal returns a pointer to User structure associated with the
