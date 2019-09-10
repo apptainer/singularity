@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/pkg/cmdline"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -34,8 +33,8 @@ var keyImportWithNewPasswordFlag = cmdline.Flag{
 	ID:           "keyImportWithNewPasswordFlag",
 	Value:        &keyImportWithNewPassword,
 	DefaultValue: false,
-	Name:         "with-newpassword",
-	Usage:        `if specified will ask to set a new password`,
+	Name:         "new-password",
+	Usage:        `set a new password to the private key`,
 }
 
 func importRun(cmd *cobra.Command, args []string) {
