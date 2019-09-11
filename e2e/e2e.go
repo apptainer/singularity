@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// RunE2ETests is the main func to trigger the test suite
+// RunE2ETests is the main func to trigger the test suite.
 func RunE2ETests(t *testing.T) {
 	t.Log("Running E2E tests for Singularity")
 	Run(t)
