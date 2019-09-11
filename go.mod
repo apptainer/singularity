@@ -77,7 +77,7 @@ require (
 	github.com/spf13/pflag v1.0.3
 	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
 	github.com/stretchr/testify v1.4.0 // indirect
-	github.com/sylabs/json-resp v0.5.0
+	github.com/sylabs/json-resp v0.6.0
 	github.com/sylabs/scs-build-client v0.0.4
 	github.com/sylabs/scs-key-client v0.3.1-0.20190509220229-bce3b050c4ec
 	github.com/sylabs/scs-library-client v0.4.3
