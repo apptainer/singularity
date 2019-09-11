@@ -7,7 +7,6 @@ package metadata
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -18,12 +17,7 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-// ErrNoMetaData ...
-var ErrNoMetaData = errors.New("no metadata found for system partition")
-
-var ErrNoPrimaryPartition = errors.New("no primary partition found")
-
-// GetImageInfoLabels will make some image labels
+// GetImageInfoLabels will make some image labels.
 func GetImageInfoLabels(labels map[string]map[string]string, fimg *sif.FileImage, b *types.Bundle) error {
 	if labels == nil {
 		labels = make(map[string]map[string]string, 1)
@@ -101,7 +95,8 @@ func cstrToString(str []byte) string {
 	return string(str[:n])
 }
 
-// TODO: put in a common package
+// readBytes will convert in (float64) to human readable output,
+// eg. 2 KB, 8 TB, 9 YB. TODO: put in a common package.
 func readBytes(in float64) string {
 	i := 0
 	size := in
@@ -151,19 +146,4 @@ func getDescr(fimg *sif.FileImage) ([]*sif.Descriptor, error) {
 	}
 
 	return descr, nil
-}
-
-// GetSIFData will return a dataType from a SIF.
-func GetSIFData(fimg *sif.FileImage, dataType sif.Datatype) ([]*sif.Descriptor, error) {
-	_, _, err := fimg.GetPartPrimSys()
-	if err != nil {
-		return nil, ErrNoPrimaryPartition
-	}
-
-	data, _, err := fimg.GetLinkedDescrsByType(uint32(0), dataType)
-	if err != nil {
-		return nil, ErrNoMetaData
-	}
-
-	return data, nil
 }

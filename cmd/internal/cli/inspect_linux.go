@@ -21,7 +21,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/build/metadata"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
@@ -317,13 +316,12 @@ var InspectCmd = &cobra.Command{
 				inspectLabelInContainer()
 				goto endLabel
 			}
-			sifData, err := metadata.GetSIFData(&fimg, sif.DataLabels)
-			if err == metadata.ErrNoMetaData {
+
+			sifData, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
+			if err != nil {
 				sylog.Warningf("No metadata partition, searching in container...")
 				inspectLabelInContainer()
 				goto endLabel
-			} else if err != nil {
-				sylog.Fatalf("Unable to get label metadata: %s", err)
 			}
 
 			for _, v := range sifData {
@@ -355,13 +353,11 @@ var InspectCmd = &cobra.Command{
 				inspectDeffileInContainer()
 				goto endDeffile
 			}
-			sifData, err := metadata.GetSIFData(&fimg, sif.DataDeffile)
-			if err == metadata.ErrNoMetaData {
+			sifData, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataDeffile)
+			if err != nil {
 				sylog.Warningf("No metadata partition, searching in container...")
 				inspectDeffileInContainer()
 				goto endDeffile
-			} else if err != nil {
-				sylog.Fatalf("Unable to get metadata: %s", err)
 			}
 
 			for _, v := range sifData {

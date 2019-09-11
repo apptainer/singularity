@@ -300,7 +300,7 @@ func (b *Build) Full() error {
 
 		err := a.HandleBundle(stage.b)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed while creating app: %s", err)
 		}
 
 		stage.b.Recipe.BuildData.Post.Script += a.HandlePost()

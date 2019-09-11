@@ -15,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/build/metadata"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
@@ -125,11 +124,9 @@ var InspectCmd = &cobra.Command{
 				jsonName = AppName
 			}
 
-			sifData, err := metadata.GetSIFData(&fimg, sif.DataLabels)
-			if err == metadata.ErrNoMetaData {
+			sifData, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
+			if err != nil {
 				sylog.Fatalf("No metadata partition")
-			} else if err != nil {
-				sylog.Fatalf("Unable to get label metadata: %s", err)
 			}
 
 			for _, v := range sifData {
@@ -152,11 +149,9 @@ var InspectCmd = &cobra.Command{
 
 		// Inspect Deffile
 		if deffile {
-			sifData, err := metadata.GetSIFData(&fimg, sif.DataDeffile)
-			if err == metadata.ErrNoMetaData {
+			sifData, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataDeffile)
+			if err != nil {
 				sylog.Fatalf("No metadata partition")
-			} else if err != nil {
-				sylog.Fatalf("Unable to get metadata: %s", err)
 			}
 
 			for _, v := range sifData {

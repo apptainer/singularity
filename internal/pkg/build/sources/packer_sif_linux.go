@@ -16,7 +16,6 @@ import (
 	"syscall"
 
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/build/metadata"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
@@ -87,8 +86,8 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 	}
 	defer fimg.UnloadContainer()
 
-	sifData, err := metadata.GetSIFData(&fimg, sif.DataLabels)
-	if err == metadata.ErrNoMetaData {
+	sifData, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
+	if err != nil {
 		sylog.Warningf("No metadata partition found")
 		// Get the labels from the old SIF, if exists.
 		jsonFilePath := filepath.Join(b.RootfsPath, "/.singularity.d/labels.json")
@@ -124,9 +123,6 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 		} else {
 			sylog.Warningf("Unable to find labels.json file: %s; skipping", err)
 		}
-
-	} else if err != nil {
-		sylog.Fatalf("Unable to get label metadata: %s", err)
 	} else if err == nil {
 		tmpLabels := make(map[string]map[string]string, 1)
 
