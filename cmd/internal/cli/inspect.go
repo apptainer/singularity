@@ -237,7 +237,8 @@ func setAttribute(obj *inspectFormat, label, app string, value string) {
 	case "labels":
 		newbytes, _, _, err := jsonparser.Get([]byte(value), app)
 		if err != nil {
-			sylog.Fatalf("Unable to find json from metadata: %s", err)
+			sylog.Warningf("Unable to find json from metadata: %s", err)
+			newbytes = []byte(value)
 		}
 
 		if err := json.Unmarshal(newbytes, &obj.Data.Attributes.Labels); err != nil {

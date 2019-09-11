@@ -245,6 +245,8 @@ func (b Build) cleanUp() {
 func (b *Build) Full() error {
 	sylog.Infof("Starting build...")
 
+	fmt.Printf("LABELS: %+v\n", b.stages[0].b.JSONLabels)
+
 	// monitor build for termination signal and clean up
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -326,6 +328,10 @@ func (b *Build) Full() error {
 		b.stages[len(b.stages)-1].b.JSONLabels = make(map[string]map[string]string, 1)
 	}
 
+	if b.stages[len(b.stages)-1].b.JSONLabels["system-partition"] == nil {
+		b.stages[len(b.stages)-1].b.JSONLabels["system-partition"] = make(map[string]string, 1)
+	}
+
 	// Only get the last stage app labels
 	for k, v := range b.stages[len(b.stages)-1].b.Recipe.CustomData {
 		appName, appLabels := apps.GetAppLabels(k, v)
@@ -344,11 +350,36 @@ func (b *Build) Full() error {
 		}
 	}
 
+	// Get the labels from the old SIF, if exists.
+	jsonFilePath := filepath.Join(b.stages[len(b.stages)-1].b.RootfsPath, "/.singularity.d/labels.json")
+	if _, err := os.Stat(jsonFilePath); err == nil {
+		labelFile := make(map[string]string, 1)
+
+		jsonFile, err := os.Open(jsonFilePath)
+		if err != nil {
+			return err
+		}
+		defer jsonFile.Close()
+
+		jsonBytes, err := ioutil.ReadAll(jsonFile)
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(jsonBytes, &labelFile)
+		if err != nil {
+			return err
+		}
+
+		for k, v := range labelFile {
+			b.stages[len(b.stages)-1].b.JSONLabels["system-partition"][k] = v
+		}
+	} else {
+		sylog.Warningf("Unable to find labels.json file; skipping")
+	}
+
 	// Copy the labels from the deffile
 	for key, val := range b.stages[len(b.stages)-1].b.Recipe.ImageData.Labels {
-		if b.stages[len(b.stages)-1].b.JSONLabels["system-partition"] == nil {
-			b.stages[len(b.stages)-1].b.JSONLabels["system-partition"] = make(map[string]string, 1)
-		}
 		b.stages[len(b.stages)-1].b.JSONLabels["system-partition"][key] = val
 	}
 
