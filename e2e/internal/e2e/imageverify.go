@@ -87,11 +87,11 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 			jsonPath:  []string{"type"},
 			expectOut: "container",
 		},
-		{
-			name:      "LabelCheckSchemaVersion",
-			jsonPath:  []string{"data", "attributes", "labels", "org.label-schema.schema-version"},
-			expectOut: "1.0",
-		},
+		//		{
+		//			name:      "LabelCheckSchemaVersion",
+		//			jsonPath:  []string{"data", "attributes", "labels", "org.label-schema.schema-version"},
+		//			expectOut: "1.0",
+		//		},
 	}
 
 	// Verify the label partition

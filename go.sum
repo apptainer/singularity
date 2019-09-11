@@ -138,9 +138,8 @@ github.com/gotestyourself/gotestyourself v2.2.0+incompatible h1:AQwinXlbQR2HvPjQ
 github.com/gotestyourself/gotestyourself v2.2.0+incompatible/go.mod h1:zZKM6oeNM8k+FRljX1mnzVYeS8wiGgQyvST1/GafPbY=
 github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce h1:prjrVgOk2Yg6w+PflHoszQNLTUh4kaByUcEWM/9uin4=
 github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
+github.com/hashicorp/go-cleanhttp v0.5.0 h1:wvCrVc9TjDls6+YGAF2hAifE1E5U1+b4tH6KdvN3Gig=
 github.com/hashicorp/go-cleanhttp v0.5.0/go.mod h1:JpRdi6/HCYpAwUzNwuwqhbovhLtngrth3wmdIIUrZ80=
-github.com/hashicorp/go-cleanhttp v0.5.1 h1:dH3aiDG9Jvb5r5+bYHsikaOUIpcM0xvgMXVoDkXMzJM=
-github.com/hashicorp/go-cleanhttp v0.5.1/go.mod h1:JpRdi6/HCYpAwUzNwuwqhbovhLtngrth3wmdIIUrZ80=
 github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874 h1:em+tTnzgU7N22woTBMcSJAOW7tRHAkK597W+MD/CpK8=
 github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874/go.mod h1:JMRHfdO9jKNzS/+BTlxCjKNQHg/jZAft8U7LloJvN7I=
 github.com/hashicorp/go-retryablehttp v0.5.3 h1:QlWt0KvWT0lq8MFppF9tsJGF+ynG7ztc2KIPhzRGk7s=
@@ -277,6 +276,8 @@ github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
+github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJyk=
+github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9 h1:OjtuUh4ZvQpHdwDHOgi8LM0skj8imSc2Hz6966oGxKY=
 github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9/go.mod h1:Qf7xZmhvuwq9Hq4LdNLS4xabRQkPJSvEP3Bh4UFG0v4=
 github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568 h1:Bv8RD7DVhhvYw31BJbw2vhUie1jqHmRHjcypRtroG6k=
@@ -287,8 +288,8 @@ github.com/sylabs/scs-build-client v0.0.4 h1:y1rer0Mq+GyAFPKn0szpayJfUSTD7SGgRB3
 github.com/sylabs/scs-build-client v0.0.4/go.mod h1:TxxLkoW6RjzcQXllPAbsA5zmljX/YsHLlQ1gZ5Lkogg=
 github.com/sylabs/scs-key-client v0.3.1-0.20190509220229-bce3b050c4ec h1:PYpPpJokBQc90ErbzDsyRQfff7gUSwtIiWDblx3AM6Y=
 github.com/sylabs/scs-key-client v0.3.1-0.20190509220229-bce3b050c4ec/go.mod h1:nMF8PplFD5ZmDz//GHjaip7+MlQ0z4Qe0RCzaT5Xjes=
-github.com/sylabs/scs-library-client v0.4.2 h1:h1w37fbphEkWLVjSoh8YLxjTUJ4VZQlJOw0/WHE3YYc=
-github.com/sylabs/scs-library-client v0.4.2/go.mod h1:89vH+0RQemCEcOnaUUQwnsRVQQmupVh8VQlBbW0ZHss=
+github.com/sylabs/scs-library-client v0.4.3 h1:JchqY6e2vUIVLx5nljDPvfR/6HG62loZjP/ZzCduqaA=
+github.com/sylabs/scs-library-client v0.4.3/go.mod h1:89vH+0RQemCEcOnaUUQwnsRVQQmupVh8VQlBbW0ZHss=
 github.com/sylabs/sif v1.0.8 h1:BK55XU0UhUsbimCr1Sl1tCLDrFsB71EDYDcHRfPpw8k=
 github.com/sylabs/sif v1.0.8/go.mod h1:/W42wtEREMjfQCNz1HhqD2PHW8ZPqjiU7Z2pZQXTRqI=
 github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e h1:QjF5rxNgRSLHJDwKUvfYP3qOx1vTDzUi/+oSC8FXnCI=
@@ -359,6 +360,8 @@ gopkg.in/airbrake/gobrake.v2 v2.0.9/go.mod h1:/h5ZAUhDkGaJfjzjKLSjv6zCL6O0LLBxU4
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 h1:qIbj1fsPNlZgppZ+VLlY7N33q108Sa+fhmuc+sWQYwY=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 h1:YR8cESwS4TdDjEe65xsg0ogRM/Nc3DYOhEAlW+xobZo=
+gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/cheggaaa/pb.v1 v1.0.28 h1:n1tBJnnK2r7g9OW2btFH91V92STTUevLXYFb8gy9EMk=
 gopkg.in/cheggaaa/pb.v1 v1.0.28/go.mod h1:V/YB90LKu/1FcN3WVnfiiE5oMCibMjukxqG/qStrOgw=
 gopkg.in/fsnotify.v1 v1.4.7 h1:xOHLXZwVvI9hhs+cLKq5+I5onOuwQLhQwiu63xxlHs4=

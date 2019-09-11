@@ -17,7 +17,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// IsFile check if name component is regular file
+// IsFile check if name component is regular file.
 func IsFile(name string) bool {
 	info, err := os.Stat(name)
 	if err != nil {
@@ -26,7 +26,7 @@ func IsFile(name string) bool {
 	return info.Mode().IsRegular()
 }
 
-// IsDir check if name component is a directory
+// IsDir check if name component is a directory.
 func IsDir(name string) bool {
 	info, err := os.Stat(name)
 	if err != nil {
@@ -35,44 +35,44 @@ func IsDir(name string) bool {
 	return info.Mode().IsDir()
 }
 
-// IsLink check if name component is a symlink
+// IsLink check if name component is a symlink.
 func IsLink(name string) bool {
 	info, err := os.Lstat(name)
 	if err != nil {
 		return false
 	}
-	return (info.Mode()&os.ModeSymlink != 0)
+	return info.Mode()&os.ModeSymlink != 0
 }
 
-// IsOwner check if name component is owned by user identified with uid
+// IsOwner check if name component is owned by user identified with uid.
 func IsOwner(name string, uid uint32) bool {
 	info, err := os.Stat(name)
 	if err != nil {
 		return false
 	}
-	return (info.Sys().(*syscall.Stat_t).Uid == uid)
+	return info.Sys().(*syscall.Stat_t).Uid == uid
 }
 
-// IsExec check if name component has executable bit permission set
+// IsExec check if name component has executable bit permission set.
 func IsExec(name string) bool {
 	info, err := os.Stat(name)
 	if err != nil {
 		return false
 	}
-	return (info.Sys().(*syscall.Stat_t).Mode&syscall.S_IXUSR != 0)
+	return info.Sys().(*syscall.Stat_t).Mode&syscall.S_IXUSR != 0
 }
 
-// IsSuid check if name component has setuid bit permission set
+// IsSuid check if name component has setuid bit permission set.
 func IsSuid(name string) bool {
 	info, err := os.Stat(name)
 	if err != nil {
 		return false
 	}
-	return (info.Sys().(*syscall.Stat_t).Mode&syscall.S_ISUID != 0)
+	return info.Sys().(*syscall.Stat_t).Mode&syscall.S_ISUID != 0
 }
 
 // MkdirAll creates a directory and parents if it doesn't exist with
-// mode after umask reset
+// mode after umask reset.
 func MkdirAll(path string, mode os.FileMode) error {
 	oldmask := syscall.Umask(0)
 	defer syscall.Umask(oldmask)
@@ -81,7 +81,7 @@ func MkdirAll(path string, mode os.FileMode) error {
 }
 
 // Mkdir creates a directory if it doesn't exist with
-// mode after umask reset
+// mode after umask reset.
 func Mkdir(path string, mode os.FileMode) error {
 	oldmask := syscall.Umask(0)
 	defer syscall.Umask(oldmask)
@@ -90,7 +90,7 @@ func Mkdir(path string, mode os.FileMode) error {
 }
 
 // RootDir returns the root directory of path (rootdir of /my/path is /my).
-// Returns "." if path is empty
+// Returns "." if path is empty.
 func RootDir(path string) string {
 	if path == "" {
 		return "."
@@ -107,7 +107,7 @@ func RootDir(path string) string {
 }
 
 // EvalRelative evaluates symlinks in path relative to root path. This
-// function doesn't return error but always returns an evaluated path
+// function doesn't return error but always returns an evaluated path.
 func EvalRelative(path string, root string) string {
 	splitted := strings.Split(filepath.Clean(path), string(os.PathSeparator))
 	dest := string(os.PathSeparator)

@@ -8,7 +8,6 @@ package files
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -16,21 +15,15 @@ import (
 )
 
 // Passwd creates a passwd template based on content of file provided in path,
-// updates content with current user information and returns content
+// updates content with current user information and returns content.
 func Passwd(path string, home string, uid int) (content []byte, err error) {
-	sylog.Verbosef("Checking for template passwd file: %s\n", path)
+	sylog.Verbosef("Checking for template passwd file: %s", path)
 	if !fs.IsFile(path) {
 		return content, fmt.Errorf("passwd file doesn't exist in container, not updating")
 	}
 
-	sylog.Verbosef("Creating passwd content\n")
-	passwdFile, err := os.Open(path)
-	if err != nil {
-		return content, fmt.Errorf("failed to open passwd file in container: %s", err)
-	}
-	defer passwdFile.Close()
-
-	content, err = ioutil.ReadAll(passwdFile)
+	sylog.Verbosef("Creating passwd content")
+	content, err = ioutil.ReadFile(path)
 	if err != nil {
 		return content, fmt.Errorf("failed to read passwd file content in container: %s", err)
 	}
@@ -50,7 +43,7 @@ func Passwd(path string, home string, uid int) (content []byte, err error) {
 		content = append(content, '\n')
 	}
 
-	sylog.Verbosef("Creating template passwd file and appending user data: %s\n", path)
+	sylog.Verbosef("Creating template passwd file and appending user data: %s", path)
 	content = append(content, []byte(userInfo)...)
 
 	return content, nil
