@@ -7,6 +7,7 @@ package assemblers
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -17,6 +18,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/build/metadata"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image/packer"
@@ -34,7 +36,7 @@ type encryptionOptions struct {
 	plaintext []byte
 }
 
-func createSIF(path string, definition, ociConf []byte, squashfile string, encOpts *encryptionOptions) (err error) {
+func createSIF(b *types.Bundle, path string, ociConf []byte, squashfile string, encOpts *encryptionOptions) (err error) {
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -48,7 +50,7 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encOp
 		Datatype: sif.DataDeffile,
 		Groupid:  sif.DescrDefaultGroup,
 		Link:     sif.DescrUnusedLink,
-		Data:     definition,
+		Data:     b.Recipe.Raw,
 	}
 	definput.Size = int64(binary.Size(definput.Data))
 
@@ -148,6 +150,33 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encOp
 		}
 	}
 
+	//
+	// Add the label partition
+	//
+
+	sylog.Infof("Inserting Metadata Labels...")
+
+	// load the container to add the metadata
+	fimg, err := sif.LoadContainer(path, false)
+	if err != nil {
+		return fmt.Errorf("failed to load sif container file: %s", err)
+	}
+	defer fimg.UnloadContainer()
+
+	// Make the new org.label-schema, overidding the old ones
+	metadata.GetImageInfoLabels(b.JSONLabels, &fimg, b)
+
+	text, err := json.MarshalIndent(b.JSONLabels, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	// Add the metadata
+	err = metadata.AddLabelPartition(&fimg, uint32(0), text)
+	if err != nil {
+		return fmt.Errorf("failed adding metadata block to SIF container file: %s", err)
+	}
+
 	return nil
 }
 
@@ -211,7 +240,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 
 	}
 
-	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, encOpts)
+	err = createSIF(b, path, b.JSONObjects["oci-config"], fsPath, encOpts)
 	if err != nil {
 		return fmt.Errorf("while creating SIF: %v", err)
 	}

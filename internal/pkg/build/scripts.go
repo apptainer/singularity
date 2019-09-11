@@ -6,29 +6,21 @@
 package build
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-func (s *stage) insertMetadata() error {
-	// insert help
+func (s *stage) insertScripts() error {
+	// insert helpfile
 	if err := insertHelpScript(s.b); err != nil {
 		return fmt.Errorf("while inserting help script: %v", err)
-	}
-
-	// insert labels
-	if err := insertLabelsJSON(s.b); err != nil {
-		return fmt.Errorf("while inserting labels json: %v", err)
 	}
 
 	// insert definition
@@ -192,103 +184,6 @@ func insertDefinition(b *types.Bundle) error {
 	err := ioutil.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/Singularity"), b.Recipe.Raw, 0644)
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func insertLabelsJSON(b *types.Bundle) (err error) {
-	var text []byte
-	labels := make(map[string]string)
-
-	if err = getExistingLabels(labels, b); err != nil {
-		return err
-	}
-
-	if err = addBuildLabels(labels, b); err != nil {
-		return err
-	}
-
-	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
-		sylog.Infof("Adding labels")
-
-		// add new labels to new map and check for collisions
-		for key, value := range b.Recipe.ImageData.Labels {
-			// check if label already exists
-			if _, ok := labels[key]; ok {
-				// overwrite collision if it exists and force flag is set
-				if b.Opts.Force {
-					labels[key] = value
-				} else {
-					sylog.Warningf("Label: %s already exists and force option is false, not overwriting", key)
-				}
-			} else {
-				// set if it doesnt
-				labels[key] = value
-			}
-		}
-	}
-
-	// make new map into json
-	text, err = json.MarshalIndent(labels, "", "\t")
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/labels.json"), []byte(text), 0644)
-	return err
-}
-
-func getExistingLabels(labels map[string]string, b *types.Bundle) error {
-	// check for existing labels in bundle
-	if _, err := os.Stat(filepath.Join(b.RootfsPath, "/.singularity.d/labels.json")); err == nil {
-		jsonFile, err := os.Open(filepath.Join(b.RootfsPath, "/.singularity.d/labels.json"))
-		if err != nil {
-			return err
-		}
-		defer jsonFile.Close()
-
-		jsonBytes, err := ioutil.ReadAll(jsonFile)
-		if err != nil {
-			return err
-		}
-
-		err = json.Unmarshal(jsonBytes, &labels)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func addBuildLabels(labels map[string]string, b *types.Bundle) error {
-	// schema version
-	labels["org.label-schema.schema-version"] = "1.0"
-
-	// build date and time, lots of time formatting
-	currentTime := time.Now()
-	year, month, day := currentTime.Date()
-	date := strconv.Itoa(day) + `_` + month.String() + `_` + strconv.Itoa(year)
-	hour, min, sec := currentTime.Clock()
-	time := strconv.Itoa(hour) + `:` + strconv.Itoa(min) + `:` + strconv.Itoa(sec)
-	zone, _ := currentTime.Zone()
-	timeString := currentTime.Weekday().String() + `_` + date + `_` + time + `_` + zone
-	labels["org.label-schema.build-date"] = timeString
-
-	// singularity version
-	labels["org.label-schema.usage.singularity.version"] = buildcfg.PACKAGE_VERSION
-
-	// help info if help exists in the definition and is run in the build
-	if b.RunSection("help") && b.Recipe.ImageData.Help.Script != "" {
-		labels["org.label-schema.usage"] = "/.singularity.d/runscript.help"
-		labels["org.label-schema.usage.singularity.runscript.help"] = "/.singularity.d/runscript.help"
-	}
-
-	// bootstrap header info, only if this build actually bootstrapped
-	if !b.Opts.Update || b.Opts.Force {
-		for key, value := range b.Recipe.Header {
-			labels["org.label-schema.usage.singularity.deffile."+key] = value
-		}
 	}
 
 	return nil

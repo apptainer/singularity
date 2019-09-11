@@ -6,6 +6,7 @@
 package build
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -296,7 +297,11 @@ func (b *Build) Full() error {
 			a.HandleSection(k, v)
 		}
 
-		a.HandleBundle(stage.b)
+		err := a.HandleBundle(stage.b)
+		if err != nil {
+			return fmt.Errorf("failed while creating app: %s", err)
+		}
+
 		stage.b.Recipe.BuildData.Post.Script += a.HandlePost()
 
 		if stage.b.RunSection("files") {
@@ -311,10 +316,41 @@ func (b *Build) Full() error {
 			}
 		}
 
-		sylog.Debugf("Inserting Metadata")
-		if err := stage.insertMetadata(); err != nil {
-			return fmt.Errorf("while inserting metadata to bundle: %v", err)
+		sylog.Infof("Inserting scripts...")
+		if err := stage.insertScripts(); err != nil {
+			return fmt.Errorf("while inserting scripts to bundle: %v", err)
 		}
+	}
+
+	if b.stages[len(b.stages)-1].b.JSONLabels == nil {
+		b.stages[len(b.stages)-1].b.JSONLabels = make(map[string]map[string]string, 1)
+	}
+
+	if b.stages[len(b.stages)-1].b.JSONLabels["system-partition"] == nil {
+		b.stages[len(b.stages)-1].b.JSONLabels["system-partition"] = make(map[string]string, 1)
+	}
+
+	// Only get the last stage app labels
+	for k, v := range b.stages[len(b.stages)-1].b.Recipe.CustomData {
+		appName, appLabels := apps.GetAppLabels(k, v)
+		if appName != "" && appLabels != nil {
+			b.stages[len(b.stages)-1].b.JSONLabels[appName] = make(map[string]string, 1)
+
+			var objmap map[string]*json.RawMessage
+			err := json.Unmarshal(appLabels, &objmap)
+			if err != nil {
+				return fmt.Errorf("unable to unmarshal json from app: %s", err)
+			}
+
+			for k, v := range objmap {
+				b.stages[len(b.stages)-1].b.JSONLabels[appName][k] = string(*v)
+			}
+		}
+	}
+
+	// Copy the labels from the deffile
+	for key, val := range b.stages[len(b.stages)-1].b.Recipe.ImageData.Labels {
+		b.stages[len(b.stages)-1].b.JSONLabels["system-partition"][key] = val
 	}
 
 	sylog.Debugf("Calling assembler")
@@ -323,6 +359,7 @@ func (b *Build) Full() error {
 	}
 
 	sylog.Verbosef("Build complete: %s", b.Conf.Dest)
+
 	return nil
 }
 

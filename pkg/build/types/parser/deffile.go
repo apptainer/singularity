@@ -182,7 +182,7 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 		return nil
 	}
 
-	if appSections[key] {
+	if AppSections[key] {
 		sectionSplit := strings.SplitN(strings.TrimLeft(split[0], "%"), " ", 3)
 		if len(sectionSplit) < 2 {
 			return fmt.Errorf("app section %v: could not be split into section name and app name", sectionSplit[0])
@@ -252,7 +252,7 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 func populateDefinition(sections map[string]*types.Script, files *[]types.Files, d *types.Definition) (err error) {
 	// initialize standard sections if not already created
 	// this function relies on standard sections being initialized in the map
-	for section := range validSections {
+	for section := range ValidSections {
 		if _, ok := sections[section]; !ok {
 			sections[section] = &types.Script{}
 		}
@@ -299,7 +299,7 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 	}
 
 	// remove standard sections from map
-	for s := range validSections {
+	for s := range ValidSections {
 		delete(sections, s)
 	}
 
@@ -313,7 +313,7 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 		var keys []string
 		for k := range sections {
 			sectionName := strings.Split(k, " ")
-			if !appSections[sectionName[0]] {
+			if !AppSections[sectionName[0]] {
 				keys = append(keys, k)
 			}
 		}
@@ -506,15 +506,15 @@ func isEmpty(d types.Definition) bool {
 
 	// initialize empty definition fully
 	emptyDef := types.Definition{}
-	emptyDef.Labels = make(map[string]string)
+	emptyDef.Labels = make(map[string]string, 1)
 	emptyDef.BuildData.Files = make([]types.Files, 0)
 
 	return reflect.DeepEqual(d, emptyDef)
 }
 
-// validSections just contains a list of all the valid sections a definition file
+// ValidSections just contains a list of all the valid sections a definition file
 // could contain. If any others are found, an error will generate
-var validSections = map[string]bool{
+var ValidSections = map[string]bool{
 	"help":        true,
 	"setup":       true,
 	"files":       true,
@@ -527,7 +527,8 @@ var validSections = map[string]bool{
 	"startscript": true,
 }
 
-var appSections = map[string]bool{
+// AppSections are the valid app sections.
+var AppSections = map[string]bool{
 	"appinstall": true,
 	"applabels":  true,
 	"appfiles":   true,

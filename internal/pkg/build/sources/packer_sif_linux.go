@@ -7,12 +7,15 @@ package sources
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 
+	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
@@ -74,6 +77,75 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 		}
 	default:
 		return fmt.Errorf("unrecognized partition format")
+	}
+
+	// Open the SIF
+	fimg, err := sif.LoadContainer(srcfile, true)
+	if err != nil {
+		sylog.Fatalf("failed to load SIF container file: %s", err)
+	}
+	defer fimg.UnloadContainer()
+
+	sifData, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
+	if err != nil {
+		sylog.Warningf("No metadata partition found")
+		// Get the labels from the old SIF, if exists.
+		jsonFilePath := filepath.Join(b.RootfsPath, "/.singularity.d/labels.json")
+		if _, err := os.Stat(jsonFilePath); err == nil {
+			labelFile := make(map[string]string, 1)
+
+			jsonFile, err := os.Open(jsonFilePath)
+			if err != nil {
+				return err
+			}
+			defer jsonFile.Close()
+
+			jsonBytes, err := ioutil.ReadAll(jsonFile)
+			if err != nil {
+				return err
+			}
+
+			if b.JSONLabels == nil {
+				b.JSONLabels = make(map[string]map[string]string, 1)
+			}
+			if b.JSONLabels["system-partition"] == nil {
+				b.JSONLabels["system-partition"] = make(map[string]string, 1)
+			}
+
+			err = json.Unmarshal(jsonBytes, &labelFile)
+			if err == nil {
+				for k, v := range labelFile {
+					b.JSONLabels["system-partition"][k] = v
+				}
+			} else {
+				sylog.Warningf("Unable to get old json labels, skipping")
+			}
+		} else {
+			sylog.Warningf("Unable to find labels.json file: %s; skipping", err)
+		}
+	} else if err == nil {
+		tmpLabels := make(map[string]map[string]string, 1)
+
+		for _, v := range sifData {
+			metaData := v.GetData(&fimg)
+			err := json.Unmarshal(metaData, &tmpLabels)
+			if err != nil {
+				sylog.Fatalf("Unable to get json: %s", err)
+			}
+		}
+
+		if b.JSONLabels == nil {
+			b.JSONLabels = make(map[string]map[string]string, 1)
+		}
+
+		for key, val := range tmpLabels {
+			if b.JSONLabels[key] == nil {
+				b.JSONLabels[key] = make(map[string]string, 1)
+			}
+			for k, v := range val {
+				b.JSONLabels[key][k] = v
+			}
+		}
 	}
 
 	return nil

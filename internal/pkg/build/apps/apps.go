@@ -159,6 +159,58 @@ func (pl *BuildApp) HandleSection(ident, section string) {
 	}
 }
 
+// GetAppLabels will return the app labels for the app.
+func GetAppLabels(ident, section string) (string, []byte) {
+	name, sect := getAppAndSection(ident)
+	if name == "" || sect == "" {
+		return "", nil
+	}
+
+	appLabels := ""
+
+	if sect == sectionLabels {
+		appLabels = section
+	}
+
+	if appLabels == "" {
+		return "", nil
+	}
+
+	lines := strings.Split(strings.TrimSpace(appLabels), "\n")
+	labels := make(map[string]string)
+
+	// add default label
+	labels["SCIF_APP_NAME"] = name
+
+	// TODO: add apphelp to labels
+
+	for _, line := range lines {
+		// skip empty or comment lines
+		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
+			continue
+		}
+		var key, val string
+		lineSubs := strings.SplitN(line, " ", 2)
+		if len(lineSubs) < 2 {
+			key = strings.TrimSpace(lineSubs[0])
+			val = ""
+		} else {
+			key = strings.TrimSpace(lineSubs[0])
+			val = strings.TrimSpace(lineSubs[1])
+		}
+
+		labels[key] = val
+	}
+
+	// make new map into json
+	text, err := json.MarshalIndent(labels, "", "\t")
+	if err != nil {
+		sylog.Fatalf("unable to json: %s", err)
+	}
+
+	return name, text
+}
+
 func (pl *BuildApp) initApp(name string) {
 	pl.Lock()
 	defer pl.Unlock()
@@ -194,10 +246,13 @@ func getAppAndSection(ident string) (appName string, sectionName string) {
 }
 
 // HandleBundle is a hook where we can modify the bundle
-func (pl *BuildApp) HandleBundle(b *types.Bundle) {
-	if err := pl.createAllApps(b); err != nil {
-		sylog.Fatalf("Unable to create apps: %s", err)
+func (pl *BuildApp) HandleBundle(b *types.Bundle) error {
+	err := pl.createAllApps(b)
+	if err != nil {
+		return fmt.Errorf("unable to create app: %s", err)
 	}
+
+	return nil
 }
 
 func (pl *BuildApp) createAllApps(b *types.Bundle) error {
@@ -229,14 +284,15 @@ func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 			return err
 		}
 
-		if err := writeLabels(b, app); err != nil {
-			return err
-		}
-
 		globalEnv94 += globalAppEnv(b, app)
 	}
 
-	return ioutil.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/env/94-appsbase.sh"), []byte(globalEnv94), 0755)
+	err := ioutil.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/env/94-appsbase.sh"), []byte(globalEnv94), 0755)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func createAppRoot(b *types.Bundle, a *App) error {
@@ -366,44 +422,6 @@ func copyFiles(b *types.Bundle, a *App) error {
 	}
 
 	return nil
-}
-
-// %applabels
-func writeLabels(b *types.Bundle, a *App) error {
-	lines := strings.Split(strings.TrimSpace(a.Labels), "\n")
-	labels := make(map[string]string)
-
-	// add default label
-	labels["SCIF_APP_NAME"] = a.Name
-
-	for _, line := range lines {
-
-		// skip empty or comment lines
-		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
-			continue
-		}
-		var key, val string
-		lineSubs := strings.SplitN(line, " ", 2)
-		if len(lineSubs) < 2 {
-			key = strings.TrimSpace(lineSubs[0])
-			val = ""
-		} else {
-			key = strings.TrimSpace(lineSubs[0])
-			val = strings.TrimSpace(lineSubs[1])
-		}
-
-		labels[key] = val
-	}
-
-	// make new map into json
-	text, err := json.MarshalIndent(labels, "", "\t")
-	if err != nil {
-		return err
-	}
-
-	appBase := filepath.Join(b.RootfsPath, "/scif/apps/", a.Name)
-	err = ioutil.WriteFile(filepath.Join(appBase, "scif/labels.json"), text, 0644)
-	return err
 }
 
 //util funcs
