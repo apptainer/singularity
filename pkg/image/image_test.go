@@ -107,9 +107,14 @@ func checkSection(reader io.Reader) error {
 }
 
 func TestReader(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	// XXX(mem): This is what makes the test slow
 	filename := downloadImage(t)
 	defer os.Remove(filename)
 
@@ -186,6 +191,10 @@ func TestReader(t *testing.T) {
 }
 
 func TestAuthorizedPath(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
@@ -210,6 +219,7 @@ func TestAuthorizedPath(t *testing.T) {
 			shouldPass: true},
 	}
 
+	// XXX(mem): This is what makes this test slow
 	img, path := createImage(t)
 	defer os.Remove(path)
 
@@ -269,6 +279,10 @@ func runAuthorizedOwnerTest(t *testing.T, testDescr ownerGroupTest, img *Image) 
 }
 
 func TestRootAuthorizedOwner(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	// Function focusing only on executing the privileged case
 	test.EnsurePrivilege(t)
 
@@ -290,6 +304,7 @@ func TestRootAuthorizedOwner(t *testing.T) {
 		},
 	}
 
+	// XXX(mem): This is what makes this test slow
 	img, path := createImage(t)
 	defer os.Remove(path)
 
@@ -301,6 +316,10 @@ func TestRootAuthorizedOwner(t *testing.T) {
 }
 
 func TestAuthorizedOwner(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	// We will create a runtime test based on the current user that assumes
 	// this not a privileged test
 	test.DropPrivilege(t)
@@ -338,6 +357,7 @@ func TestAuthorizedOwner(t *testing.T) {
 	}
 	tests = append(tests, localUser)
 
+	// XXX(mem): This is what makes this test slow
 	img, path := createImage(t)
 	defer os.Remove(path)
 
@@ -370,6 +390,10 @@ func runAuthorizedGroupTest(t *testing.T, tt groupTest, img *Image) {
 }
 
 func TestPrivilegedAuthorizedGroup(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.EnsurePrivilege(t) // to make sure we create the image under the correct user
 
 	tests := []groupTest{
@@ -389,6 +413,7 @@ func TestPrivilegedAuthorizedGroup(t *testing.T) {
 		*/
 	}
 
+	// XXX(mem): This is what makes this test slow
 	img, path := createImage(t)
 	defer os.Remove(path)
 
@@ -398,6 +423,10 @@ func TestPrivilegedAuthorizedGroup(t *testing.T) {
 }
 
 func TestAuthorizedGroup(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
@@ -432,6 +461,7 @@ func TestAuthorizedGroup(t *testing.T) {
 	}
 	tests = append(tests, validTest)
 
+	// XXX(mem): This is what makes this test slow
 	img, path := createImage(t)
 	defer os.Remove(path)
 

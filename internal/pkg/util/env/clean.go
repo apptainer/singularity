@@ -21,6 +21,11 @@ var alwaysPassKeys = map[string]struct{}{
 	"ftp_proxy":   {},
 }
 
+var alwaysOmitKeys = map[string]struct{}{
+	"path":            {},
+	"ld_library_path": {},
+}
+
 // SetContainerEnv cleans environment variables before running the container.
 func SetContainerEnv(g *generate.Generator, hostEnvs []string, cleanEnv bool, homeDest string) {
 	for _, env := range hostEnvs {
@@ -66,15 +71,15 @@ func keyToAdd(key string, cleanEnv bool) string {
 	if strings.HasPrefix(key, envPrefix) {
 		return strings.TrimPrefix(key, envPrefix)
 	}
-	if _, ok := alwaysPassKeys[strings.ToLower(key)]; ok {
+	keyLow := strings.ToLower(key)
+	if _, ok := alwaysPassKeys[keyLow]; ok {
 		return key
 	}
 	if cleanEnv {
 		return ""
 	}
-	if strings.Contains(key, "PATH") {
+	if _, ok := alwaysOmitKeys[keyLow]; ok {
 		return ""
 	}
-
 	return key
 }

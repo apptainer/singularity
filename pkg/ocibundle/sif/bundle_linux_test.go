@@ -22,6 +22,10 @@ import (
 )
 
 func TestFromSif(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.EnsurePrivilege(t)
 
 	// prepare bundle directory and download a SIF image
