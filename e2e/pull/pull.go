@@ -284,7 +284,7 @@ func (c *ctx) setup(t *testing.T) {
 	}
 }
 
-func (c *ctx) testPullCmd(t *testing.T) {
+func (c ctx) testPullCmd(t *testing.T) {
 	// XXX(mem): this should come from the environment
 	sylabsAdminFingerprint := "8883491F4268F173C6E5DC49EDECE4F3F38D871E"
 	argv := []string{"key", "pull", sylabsAdminFingerprint}
@@ -433,7 +433,7 @@ func orasPushNoCheck(file, ref string) error {
 	return nil
 }
 
-func (c *ctx) testPullDisableCacheCmd(t *testing.T) {
+func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 	cacheDir, err := ioutil.TempDir("", "e2e-imgcache-")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
@@ -466,7 +466,7 @@ func (c *ctx) testPullDisableCacheCmd(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+	c := ctx{
 		env: env,
 	}
 

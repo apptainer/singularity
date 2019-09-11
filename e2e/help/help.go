@@ -44,7 +44,7 @@ var helpOciContentTests = []struct {
 	{"HelpOciUpdate", []string{"oci", "update"}},
 }
 
-func (c *ctx) testHelpOciContent(t *testing.T) {
+func (c ctx) testHelpOciContent(t *testing.T) {
 	for _, tc := range helpOciContentTests {
 
 		name := fmt.Sprintf("help-%s.txt", strings.Join(tc.cmds, "-"))
@@ -71,7 +71,7 @@ func (c *ctx) testHelpOciContent(t *testing.T) {
 	}
 }
 
-func (c *ctx) testCommands(t *testing.T) {
+func (c ctx) testCommands(t *testing.T) {
 	testCommands := []struct {
 		name string
 		cmd  string
@@ -151,7 +151,7 @@ func (c *ctx) testCommands(t *testing.T) {
 
 }
 
-func (c *ctx) testFailure(t *testing.T) {
+func (c ctx) testFailure(t *testing.T) {
 	if !c.env.RunDisabled {
 		t.Skip("disabled until issue addressed") // TODO
 	}
@@ -189,7 +189,7 @@ const (
 	helpHelpExpectedOutput = "Help about any command"
 )
 
-func (c *ctx) testSingularity(t *testing.T) {
+func (c ctx) testSingularity(t *testing.T) {
 	tests := []struct {
 		name           string
 		argv           []string
@@ -260,7 +260,7 @@ func (c *ctx) testSingularity(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+	c := ctx{
 		env: env,
 	}
 

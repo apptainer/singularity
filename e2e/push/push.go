@@ -22,7 +22,7 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-func (c *ctx) testInvalidTransport(t *testing.T) {
+func (c ctx) testInvalidTransport(t *testing.T) {
 	tests := []struct {
 		name       string
 		uri        string
@@ -51,7 +51,7 @@ func (c *ctx) testInvalidTransport(t *testing.T) {
 	}
 }
 
-func (c *ctx) testPushCmd(t *testing.T) {
+func (c ctx) testPushCmd(t *testing.T) {
 	e2e.PrepRegistry(t, c.env)
 
 	// setup file and dir to use as invalid sources
@@ -128,7 +128,7 @@ func (c *ctx) testPushCmd(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+	c := ctx{
 		env: env,
 	}
 
