@@ -7,7 +7,6 @@ package imgbuild
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -17,12 +16,34 @@ import (
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 var testFileContent = "Test file content\n"
 
 type imgBuildTests struct {
 	env e2e.TestEnv
+}
+
+func (c imgBuildTests) tempDir(t *testing.T, namespace string) (string, func()) {
+	dn, err := fs.MakeTmpDir(c.env.TestDir, namespace+".", 0755)
+	if err != nil {
+		t.Errorf("failed to create temporary directory: %#v", err)
+	}
+
+	cleanup := func() {
+		if t.Failed() {
+			t.Logf("Test %s failed, not removing %s", t.Name(), dn)
+
+			return
+		}
+
+		if err := os.RemoveAll(dn); err != nil {
+			t.Logf("Failed to remove %s for test %s: %#v", dn, t.Name(), err)
+		}
+	}
+
+	return dn, cleanup
 }
 
 func (c imgBuildTests) buildFrom(t *testing.T) {
@@ -84,10 +105,14 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		imagePath := path.Join(c.env.TestDir, "container")
+		dn, cleanup := c.tempDir(t, "build-from")
+		defer cleanup()
 
-		// sandboxes take less time to build
-		args := []string{"--sandbox", imagePath, tc.buildSpec}
+		imagePath := path.Join(dn, "sandbox")
+
+		// Pass --sandbox because sandboxes take less time to
+		// build by skipping the SIF creation step.
+		args := []string{"--force", "--sandbox", imagePath, tc.buildSpec}
 
 		c.env.RunSingularity(
 			t,
@@ -157,7 +182,10 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		imagePath := path.Join(c.env.TestDir, "container")
+		dn, cleanup := c.tempDir(t, "non-root-build")
+		defer cleanup()
+
+		imagePath := path.Join(dn, "container")
 
 		args := append(tc.args, imagePath, tc.buildSpec)
 
@@ -168,7 +196,6 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
-				defer os.RemoveAll(imagePath)
 				c.env.ImageVerify(t, imagePath)
 			}),
 			e2e.ExpectExit(0),
@@ -179,12 +206,9 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 func (c imgBuildTests) buildLocalImage(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	tmpdir, err := ioutil.TempDir(c.env.TestDir, "build-local-image.")
-	if err != nil {
-		t.Errorf("Cannot create temporary directory: %+v", err)
-	}
+	tmpdir, cleanup := c.tempDir(t, "build-local-image")
 
-	defer os.RemoveAll(tmpdir)
+	defer cleanup()
 
 	liDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
@@ -249,7 +273,11 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 }
 
 func (c imgBuildTests) badPath(t *testing.T) {
-	imagePath := path.Join(c.env.TestDir, "container")
+	dn, cleanup := c.tempDir(t, "bad-path")
+	defer cleanup()
+
+	imagePath := path.Join(dn, "container")
+
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.RootProfile),
@@ -442,7 +470,11 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		imagePath := path.Join(c.env.TestDir, "container")
+		dn, cleanup := c.tempDir(t, "multi-stage-definition")
+		defer cleanup()
+
+		imagePath := path.Join(dn, "container")
+
 		defFile := e2e.PrepareMultiStageDefFile(tt.dfd)
 
 		// sandboxes take less time to build
@@ -455,7 +487,6 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
 				defer os.Remove(defFile)
-				defer os.RemoveAll(imagePath)
 
 				e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.correct)
 			}),
@@ -728,7 +759,11 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 	}
 
 	for name, dfd := range tt {
-		imagePath := path.Join(c.env.TestDir, "container")
+		dn, cleanup := c.tempDir(t, "build-definition")
+		defer cleanup()
+
+		imagePath := path.Join(dn, "container")
+
 		defFile := e2e.PrepareDefFile(dfd)
 
 		c.env.RunSingularity(
@@ -739,7 +774,6 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			e2e.WithArgs("--sandbox", imagePath, defFile),
 			e2e.PostRun(func(t *testing.T) {
 				defer os.Remove(defFile)
-				defer os.RemoveAll(imagePath)
 
 				e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, dfd)
 			}),
@@ -770,8 +804,8 @@ func (c imgBuildTests) buildEncryptPemFile(t *testing.T) {
 
 	// We create a temporary directory to store the image, making sure tests
 	// will not pollute each other
-	tempDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
-	defer cleanup(t)
+	dn, cleanup := c.tempDir(t, "pem-encryption")
+	defer cleanup()
 
 	// Generate the PEM file
 	pemFile, _ := e2e.GeneratePemFiles(t, c.env.TestDir)
@@ -788,7 +822,7 @@ func (c imgBuildTests) buildEncryptPemFile(t *testing.T) {
 	}
 
 	// First with the command line argument
-	imgPath1 := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
+	imgPath1 := filepath.Join(dn, "encrypted_cmdline_option.sif")
 	cmdArgs := []string{"--encrypt", "--pem-path", pemFile, imgPath1, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -807,7 +841,7 @@ func (c imgBuildTests) buildEncryptPemFile(t *testing.T) {
 
 	// Second with the environment variable
 	pemEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PEM_PATH", pemFile)
-	imgPath2 := filepath.Join(tempDir, "encrypted_env_var.sif")
+	imgPath2 := filepath.Join(dn, "encrypted_env_var.sif")
 	cmdArgs = []string{"--encrypt", imgPath2, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -836,8 +870,8 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 
 	// We create a temporary directory to store the image, making sure tests
 	// will not pollute each other
-	tempDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
-	defer cleanup(t)
+	dn, cleanup := c.tempDir(t, "passphrase-encryption")
+	defer cleanup()
 
 	// If the version of cryptsetup is not compatible with Singularity encryption,
 	// the build commands are expected to fail
@@ -851,8 +885,8 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	passphraseInput := []e2e.SingularityConsoleOp{
 		e2e.ConsoleSendLine(e2e.Passphrase),
 	}
-	cmdlineTestImgPath := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
-	// The image is deleted during cleanup of the tempdir
+	cmdlineTestImgPath := filepath.Join(dn, "encrypted_cmdline_option.sif")
+	// The image is deleted during cleanup of the temporary directory
 	cmdArgs := []string{"--passphrase", cmdlineTestImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -872,7 +906,7 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	}
 
 	// With the command line argument, using --encrypt and --passphrase
-	cmdlineTest2ImgPath := filepath.Join(tempDir, "encrypted_cmdline2_option.sif")
+	cmdlineTest2ImgPath := filepath.Join(dn, "encrypted_cmdline2_option.sif")
 	cmdArgs = []string{"--encrypt", "--passphrase", cmdlineTest2ImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -893,7 +927,7 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 
 	// With the environment variable
 	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PASSPHRASE", e2e.Passphrase)
-	envvarImgPath := filepath.Join(tempDir, "encrypted_env_var.sif")
+	envvarImgPath := filepath.Join(dn, "encrypted_env_var.sif")
 	cmdArgs = []string{"--encrypt", envvarImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -913,7 +947,7 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	}
 
 	// Finally a test that must fail: try to specify the passphrase on the command line
-	dummyImgPath := filepath.Join(tempDir, "dummy_encrypted_env_var.sif")
+	dummyImgPath := filepath.Join(dn, "dummy_encrypted_env_var.sif")
 	cmdArgs = []string{"--encrypt", "--passphrase", e2e.Passphrase, dummyImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
