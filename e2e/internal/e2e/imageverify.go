@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/buger/jsonparser"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
 )
 
@@ -63,11 +64,6 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 			argv: []string{imagePath, "test", "-L", "/singularity"},
 			exit: 0,
 		},
-		//		{
-		//			name: "Labels",
-		//			argv: []string{imagePath, "test", "-f", "/.singularity.d/labels.json"},
-		//			exit: 0,
-		//		},
 	}
 
 	for _, tc := range tt {
@@ -78,6 +74,45 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 			WithCommand("exec"),
 			WithArgs(tc.argv...),
 			ExpectExit(tc.exit),
+		)
+	}
+
+	tests := []struct {
+		name      string
+		jsonPath  []string
+		expectOut string
+	}{
+		{
+			name:      "LabelCheckType",
+			jsonPath:  []string{"type"},
+			expectOut: "container",
+		},
+		{
+			name:      "LabelCheckSchemaVersion",
+			jsonPath:  []string{"data", "attributes", "labels", "org.label-schema.schema-version"},
+			expectOut: "1.0",
+		},
+	}
+
+	// Verify the label partition
+	for _, tt := range tests {
+		verifyOutput := func(t *testing.T, r *SingularityCmdResult) {
+			jsonOut, err := jsonparser.GetString(r.Stdout, tt.jsonPath...)
+			if err != nil {
+				t.Fatalf("unable to get expected output from json: %v", err)
+			}
+			if jsonOut != tt.expectOut {
+				t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", jsonOut, tt.expectOut)
+			}
+		}
+
+		env.RunSingularity(
+			t,
+			AsSubtest(tt.name),
+			WithProfile(UserProfile),
+			WithCommand("inspect"),
+			WithArgs([]string{"--json", "--labels", imagePath}...),
+			ExpectExit(0, verifyOutput),
 		)
 	}
 }
@@ -100,11 +135,6 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 			t.Fatalf("unexpected failure: Env in container is incorrect: %v", err)
 		}
 	}
-
-	//	// always run this since we should at least have default build labels
-	//	if err := verifyLabels(t, imagePath, dfd.Labels); err != nil {
-	//		t.Fatalf("unexpected failure: Labels in the container are incorrect: %v", err)
-	//	}
 
 	// verify %files section works correctly
 	for _, p := range dfd.Files {
@@ -195,13 +225,6 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 				t.Fatalf("unexpected failure in app %v: Env in app is incorrect: %v", app.Name, err)
 			}
 		}
-
-		//		// %applabels
-		//		if app.Labels != nil {
-		//			if err := verifyAppLabels(t, imagePath, app.Name, app.Labels); err != nil {
-		//				t.Fatalf("unexpected failure in app %v: Labels in app are incorrect: %v", app.Name, err)
-		//			}
-		//		}
 
 		// %appfiles
 		for _, p := range app.Files {
@@ -367,58 +390,3 @@ func verifyEnv(t *testing.T, cmdPath, imagePath string, env []string, flags []st
 
 	return nil
 }
-
-//func verifyLabels(t *testing.T, imagePath string, labels map[string]string) error {
-//	var fileLabels map[string]string
-//
-//	b, err := ioutil.ReadFile(filepath.Join(imagePath, "/.singularity.d/labels.json"))
-//	if err != nil {
-//		t.Fatalf("While reading file: %v", err)
-//	}
-//
-//	if err := json.Unmarshal(b, &fileLabels); err != nil {
-//		t.Fatalf("While unmarshaling labels.json into map: %v", err)
-//	}
-//
-//	for k, v := range labels {
-//		if l, ok := fileLabels[k]; !ok || v != l {
-//			return fmt.Errorf("Missing label: %v:%v", k, v)
-//		}
-//	}
-//
-//	//check default labels that are always generated
-//	defaultLabels := []string{
-//		"org.label-schema.schema-version",
-//		"org.label-schema.build-date",
-//		"org.label-schema.usage.singularity.version",
-//	}
-//
-//	for _, l := range defaultLabels {
-//		if _, ok := fileLabels[l]; !ok {
-//			return fmt.Errorf("Missing label: %v", l)
-//		}
-//	}
-//
-//	return nil
-//}
-
-//func verifyAppLabels(t *testing.T, imagePath, appName string, labels map[string]string) error {
-//	var fileLabels map[string]string
-//
-//	b, err := ioutil.ReadFile(filepath.Join(imagePath, "/scif/apps/", appName, "/scif/labels.json"))
-//	if err != nil {
-//		t.Fatalf("While reading file: %v", err)
-//	}
-//
-//	if err := json.Unmarshal(b, &fileLabels); err != nil {
-//		t.Fatalf("While unmarshaling labels.json into map: %v", err)
-//	}
-//
-//	for k, v := range labels {
-//		if l, ok := fileLabels[k]; !ok || v != l {
-//			return fmt.Errorf("Missing label: %v:%v", k, v)
-//		}
-//	}
-//
-//	return nil
-//}
