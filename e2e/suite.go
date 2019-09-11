@@ -18,27 +18,27 @@ import (
 	"testing"
 
 	// Tests imports
-	//	"github.com/sylabs/singularity/e2e/actions"
-	//	e2ebuildcfg "github.com/sylabs/singularity/e2e/buildcfg"
-	//	"github.com/sylabs/singularity/e2e/cache"
-	//	"github.com/sylabs/singularity/e2e/cmdenvvars"
-	//	"github.com/sylabs/singularity/e2e/docker"
-	//	singularityenv "github.com/sylabs/singularity/e2e/env"
-	//	"github.com/sylabs/singularity/e2e/help"
-	//	"github.com/sylabs/singularity/e2e/imgbuild"
+	"github.com/sylabs/singularity/e2e/actions"
+	e2ebuildcfg "github.com/sylabs/singularity/e2e/buildcfg"
+	"github.com/sylabs/singularity/e2e/cache"
+	"github.com/sylabs/singularity/e2e/cmdenvvars"
+	"github.com/sylabs/singularity/e2e/docker"
+	singularityenv "github.com/sylabs/singularity/e2e/env"
+	"github.com/sylabs/singularity/e2e/help"
+	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/e2e/inspect"
-	//	"github.com/sylabs/singularity/e2e/instance"
-	//	"github.com/sylabs/singularity/e2e/key"
-	//	"github.com/sylabs/singularity/e2e/oci"
-	//	"github.com/sylabs/singularity/e2e/pull"
-	//	"github.com/sylabs/singularity/e2e/push"
-	//	"github.com/sylabs/singularity/e2e/regressions"
-	//	"github.com/sylabs/singularity/e2e/remote"
-	//	"github.com/sylabs/singularity/e2e/run"
-	//	"github.com/sylabs/singularity/e2e/security"
-	//	"github.com/sylabs/singularity/e2e/sign"
-	//	"github.com/sylabs/singularity/e2e/verify"
-	//	"github.com/sylabs/singularity/e2e/version"
+	"github.com/sylabs/singularity/e2e/instance"
+	"github.com/sylabs/singularity/e2e/key"
+	"github.com/sylabs/singularity/e2e/oci"
+	"github.com/sylabs/singularity/e2e/pull"
+	"github.com/sylabs/singularity/e2e/push"
+	"github.com/sylabs/singularity/e2e/regressions"
+	"github.com/sylabs/singularity/e2e/remote"
+	"github.com/sylabs/singularity/e2e/run"
+	"github.com/sylabs/singularity/e2e/security"
+	"github.com/sylabs/singularity/e2e/sign"
+	"github.com/sylabs/singularity/e2e/verify"
+	"github.com/sylabs/singularity/e2e/version"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -133,27 +133,27 @@ func Run(t *testing.T) {
 
 	// RunE2ETests by functionality
 	suites := map[string]func(*testing.T){
-		//		"SECURITY":   security.E2ETests(testenv),
-		//		"ACTIONS":    actions.E2ETests(testenv),
-		//		"BUILD":      imgbuild.E2ETests(testenv),
-		//		"BUILDCFG":   e2ebuildcfg.E2ETests(testenv),
-		//		"CACHE":      cache.E2ETests(testenv),
-		//		"CMDENVVARS": cmdenvvars.E2ETests(testenv),
-		//		"DOCKER":     docker.E2ETests(testenv),
-		//		"ENV":        singularityenv.E2ETests(testenv),
-		//		"HELP":       help.E2ETests(testenv),
-		"INSPECT": inspect.E2ETests(testenv),
-		//		"INSTANCE":    instance.E2ETests(testenv),
-		//		"KEY":         key.E2ETests(testenv),
-		//		"OCI":         oci.E2ETests(testenv),
-		//		"PULL":        pull.E2ETests(testenv),
-		//		"PUSH":        push.E2ETests(testenv),
-		//		"REMOTE":      remote.E2ETests(testenv),
-		//		"RUN":         run.E2ETests(testenv),
-		//		"SIGN":        sign.E2ETests(testenv),
-		//		"VERIFY":      verify.E2ETests(testenv),
-		//		"VERSION":     version.E2ETests(testenv),
-		//		"REGRESSIONS": regressions.E2ETests(testenv),
+		"SECURITY":    security.E2ETests(testenv),
+		"ACTIONS":     actions.E2ETests(testenv),
+		"BUILD":       imgbuild.E2ETests(testenv),
+		"BUILDCFG":    e2ebuildcfg.E2ETests(testenv),
+		"CACHE":       cache.E2ETests(testenv),
+		"CMDENVVARS":  cmdenvvars.E2ETests(testenv),
+		"DOCKER":      docker.E2ETests(testenv),
+		"ENV":         singularityenv.E2ETests(testenv),
+		"HELP":        help.E2ETests(testenv),
+		"INSPECT":     inspect.E2ETests(testenv),
+		"INSTANCE":    instance.E2ETests(testenv),
+		"KEY":         key.E2ETests(testenv),
+		"OCI":         oci.E2ETests(testenv),
+		"PULL":        pull.E2ETests(testenv),
+		"PUSH":        push.E2ETests(testenv),
+		"REMOTE":      remote.E2ETests(testenv),
+		"RUN":         run.E2ETests(testenv),
+		"SIGN":        sign.E2ETests(testenv),
+		"VERIFY":      verify.E2ETests(testenv),
+		"VERSION":     version.E2ETests(testenv),
+		"REGRESSIONS": regressions.E2ETests(testenv),
 	}
 
 	for name, fn := range suites {

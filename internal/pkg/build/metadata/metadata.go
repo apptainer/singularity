@@ -155,15 +155,12 @@ func getDescr(fimg *sif.FileImage) ([]*sif.Descriptor, error) {
 
 // GetSIFData will return a dataType from a SIF.
 func GetSIFData(fimg *sif.FileImage, dataType sif.Datatype) ([]*sif.Descriptor, error) {
-	data := make([]*sif.Descriptor, 1)
-	var err error
-
-	_, _, err = fimg.GetPartPrimSys()
+	_, _, err := fimg.GetPartPrimSys()
 	if err != nil {
 		return nil, ErrNoPrimaryPartition
 	}
 
-	data, _, err = fimg.GetLinkedDescrsByType(uint32(0), dataType)
+	data, _, err := fimg.GetLinkedDescrsByType(uint32(0), dataType)
 	if err != nil {
 		return nil, ErrNoMetaData
 	}

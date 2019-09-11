@@ -245,8 +245,6 @@ func (b Build) cleanUp() {
 func (b *Build) Full() error {
 	sylog.Infof("Starting build...")
 
-	fmt.Printf("LABELS: %+v\n", b.stages[0].b.JSONLabels)
-
 	// monitor build for termination signal and clean up
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -467,8 +465,6 @@ func makeDef(spec string) (types.Definition, error) {
 	if err != nil {
 		return types.Definition{}, fmt.Errorf("while parsing definition: %s: %v", spec, err)
 	}
-
-	fmt.Printf("MAKEDEF: %+v\n", d)
 
 	return d, nil
 }
