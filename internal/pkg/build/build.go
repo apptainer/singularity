@@ -349,6 +349,7 @@ func (b *Build) Full() error {
 		}
 	}
 
+	// TODO: fix this up a little better...
 	// Get the labels from the old SIF, if exists.
 	jsonFilePath := filepath.Join(b.stages[len(b.stages)-1].b.RootfsPath, "/.singularity.d/labels.json")
 	if _, err := os.Stat(jsonFilePath); err == nil {
@@ -366,12 +367,12 @@ func (b *Build) Full() error {
 		}
 
 		err = json.Unmarshal(jsonBytes, &labelFile)
-		if err != nil {
-			return err
-		}
-
-		for k, v := range labelFile {
-			b.stages[len(b.stages)-1].b.JSONLabels["system-partition"][k] = v
+		if err == nil {
+			for k, v := range labelFile {
+				b.stages[len(b.stages)-1].b.JSONLabels["system-partition"][k] = v
+			}
+		} else {
+			sylog.Warningf("Unable to get old json labels, skipping")
 		}
 	} else {
 		sylog.Warningf("Unable to find labels.json file; skipping")
