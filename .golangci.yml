@@ -38,3 +38,7 @@ issues:
     - path: internal/pkg/util/fs/overlay/
       linters:
         - misspell
+
+    - path: internal/pkg/util/user/cgo_lookup_unix.go
+      linters:
+        - deadcode

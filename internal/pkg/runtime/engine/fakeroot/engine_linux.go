@@ -11,7 +11,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	fakerootutil "github.com/sylabs/singularity/internal/pkg/fakeroot"
@@ -170,6 +170,19 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	if e.EngineConfig == nil {
 		return fmt.Errorf("bad fakeroot engine configuration provided")
 	}
+
+	args := e.EngineConfig.Args
+	if len(args) == 0 {
+		return fmt.Errorf("no command to execute provided")
+	}
+	env := e.EngineConfig.Envs
+
+	// simple command execution
+	if !e.EngineConfig.BuildEnv {
+		return syscall.Exec(args[0], args, env)
+	}
+
+	// prepare fakeroot build environment
 	if e.EngineConfig.Home == "" {
 		return fmt.Errorf("a user home directory is required to bind it on top of /root directory")
 	}
@@ -200,11 +213,6 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 	}
 
-	args := e.EngineConfig.Args
-	if len(args) == 0 {
-		return fmt.Errorf("no command to execute provided")
-	}
-	env := e.EngineConfig.Envs
 	if seccomp.Enabled() {
 		if err := seccomp.LoadSeccompConfig(fakerootSeccompProfile(), false, 0); err != nil {
 			sylog.Warningf("could not apply seccomp filter, some bootstrap may not work correctly")

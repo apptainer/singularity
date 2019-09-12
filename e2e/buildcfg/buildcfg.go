@@ -15,7 +15,7 @@ type buildcfgTests struct {
 	env e2e.TestEnv
 }
 
-func (c *buildcfgTests) buildcfgTests(t *testing.T) {
+func (c buildcfgTests) buildcfgTests(t *testing.T) {
 	tests := []struct {
 		name           string
 		cmdArgs        []string
@@ -45,7 +45,7 @@ func (c *buildcfgTests) buildcfgTests(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &buildcfgTests{
+	c := buildcfgTests{
 		env: env,
 	}
 

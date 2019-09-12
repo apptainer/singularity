@@ -22,6 +22,7 @@ import (
 	e2ebuildcfg "github.com/sylabs/singularity/e2e/buildcfg"
 	"github.com/sylabs/singularity/e2e/cache"
 	"github.com/sylabs/singularity/e2e/cmdenvvars"
+	"github.com/sylabs/singularity/e2e/delete"
 	"github.com/sylabs/singularity/e2e/docker"
 	singularityenv "github.com/sylabs/singularity/e2e/env"
 	"github.com/sylabs/singularity/e2e/help"
@@ -140,6 +141,7 @@ func Run(t *testing.T) {
 		"BUILD":       imgbuild.E2ETests(testenv),
 		"CACHE":       cache.E2ETests(testenv),
 		"CMDENVVARS":  cmdenvvars.E2ETests(testenv),
+		"DELETE":      delete.E2ETests(testenv),
 		"DOCKER":      docker.E2ETests(testenv),
 		"ENV":         singularityenv.E2ETests(testenv),
 		"HELP":        help.E2ETests(testenv),

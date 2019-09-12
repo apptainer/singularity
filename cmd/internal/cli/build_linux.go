@@ -7,12 +7,10 @@ package cli
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	osExec "os/exec"
-	"path/filepath"
 	"runtime"
 	"syscall"
 
@@ -25,9 +23,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
+	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
@@ -35,15 +33,7 @@ import (
 )
 
 func fakerootExec(cmdArgs []string) {
-	starter := filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter-suid")
-
-	// singularity was compiled with '--without-suid' option
-	if buildcfg.SINGULARITY_SUID_INSTALL == 0 {
-		starter = filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter")
-	}
-	if _, err := os.Stat(starter); os.IsNotExist(err) {
-		sylog.Fatalf("%s not found, please check your installation", starter)
-	}
+	useSuid := buildcfg.SINGULARITY_SUID_INSTALL == 1
 
 	short := "-" + buildFakerootFlag.ShortHand
 	long := "--" + buildFakerootFlag.Name
@@ -75,9 +65,10 @@ func fakerootExec(cmdArgs []string) {
 	}
 
 	engineConfig := &fakerootConfig.EngineConfig{
-		Args: args,
-		Envs: os.Environ(),
-		Home: user.Dir,
+		Args:     args,
+		Envs:     os.Environ(),
+		Home:     user.Dir,
+		BuildEnv: true,
 	}
 
 	cfg := &config.Common{
@@ -86,16 +77,12 @@ func fakerootExec(cmdArgs []string) {
 		EngineConfig: engineConfig,
 	}
 
-	configData, err := json.Marshal(cfg)
-	if err != nil {
-		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
-	}
-
-	Env := []string{"SINGULARITY_MESSAGELEVEL=0"}
-
-	if err := exec.Pipe(starter, []string{"Singularity fakeroot"}, Env, configData); err != nil {
-		sylog.Fatalf("%s", err)
-	}
+	err = starter.Exec(
+		"Singularity fakeroot",
+		cfg,
+		starter.UseSuid(useSuid),
+	)
+	sylog.Fatalf("%s", err)
 }
 
 func run(cmd *cobra.Command, args []string) {
