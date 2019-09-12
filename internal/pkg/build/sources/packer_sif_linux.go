@@ -20,29 +20,29 @@ import (
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
-// Pack puts relevant objects in a Bundle!
+// Pack puts relevant objects in a Bundle.
 func (p *SIFPacker) Pack() (*types.Bundle, error) {
-
-	err := p.unpackSIF(p.b, p.srcfile)
+	err := unpackSIF(p.b, p.srcFile)
 	if err != nil {
-		sylog.Errorf("unpackSIF Failed: %s", err)
+		sylog.Errorf("unpackSIF failed: %s", err)
 		return nil, err
 	}
 
 	return p.b, nil
 }
 
-// First pass just assumes a single system partition, later passes will handle more complex sif files
-// unpackSIF parses through the sif file and places each component in the sandbox
-func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
-	img, err := image.Init(srcfile, false)
+// unpackSIF parses through the sif file and places each component
+// in the sandbox. First pass just assumes a single system partition,
+// later passes will handle more complex sif files.
+func unpackSIF(b *types.Bundle, srcFile string) (err error) {
+	img, err := image.Init(srcFile, false)
 	if err != nil {
-		return fmt.Errorf("could not open image %s: %s", srcfile, err)
+		return fmt.Errorf("could not open image %s: %s", srcFile, err)
 	}
 	defer img.File.Close()
 
 	if !img.HasRootFs() {
-		return fmt.Errorf("no root filesystem found in %s", srcfile)
+		return fmt.Errorf("no root filesystem found in %s", srcFile)
 	}
 
 	switch img.Partitions[0].Type {
@@ -61,8 +61,8 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 		}
 	case image.EXT3:
 		info := &loop.Info64{
-			Offset:    uint64(img.Partitions[0].Offset),
-			SizeLimit: uint64(img.Partitions[0].Size),
+			Offset:    img.Partitions[0].Offset,
+			SizeLimit: img.Partitions[0].Size,
 			Flags:     loop.FlagsAutoClear,
 		}
 
@@ -76,10 +76,22 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 		return fmt.Errorf("unrecognized partition format")
 	}
 
+	ociReader, err := image.NewSectionReader(img, "oci-config.json", -1)
+	if err != nil && err != image.ErrNoSection {
+		sylog.Errorf("Could not read image OCI config: %v", err)
+	}
+	if ociReader != nil {
+		ociConfig, err := ioutil.ReadAll(ociReader)
+		if err != nil {
+			sylog.Errorf("Could not read OCI config: %v", err)
+		}
+		b.JSONObjects[types.OCIConfigJSON] = ociConfig
+	}
 	return nil
 }
 
-// unpackImagePartition temporarily mounts an image parition using a loop device and then copies its contents to the destination directory
+// unpackImagePartition temporarily mounts an image partition using a
+// loop device and then copies its contents to the destination directory.
 func unpackImagePartition(src *os.File, dest, mountType string, info *loop.Info64) (err error) {
 	number := 0
 	loopdev := new(loop.Device)

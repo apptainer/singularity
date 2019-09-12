@@ -14,7 +14,7 @@ import (
 	shub "github.com/sylabs/singularity/pkg/client/shub"
 )
 
-// ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack
+// ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack.
 type ShubConveyorPacker struct {
 	recipe types.Definition
 	b      *types.Bundle

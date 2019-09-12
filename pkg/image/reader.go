@@ -16,9 +16,9 @@ type readerError string
 func (e readerError) Error() string { return string(e) }
 
 const (
-	// ErrNoSection corresponds to an image section not found
+	// ErrNoSection corresponds to an image section not found.
 	ErrNoSection = readerError("no section found")
-	// ErrNoPartition corresponds to an image partition not found
+	// ErrNoPartition corresponds to an image partition not found.
 	ErrNoPartition = readerError("no partition found")
 )
 
@@ -83,7 +83,7 @@ func NewPartitionReader(image *Image, name string, index int) (io.Reader, error)
 // NewSectionReader searches and returns a reader for an image
 // section identified by name or by index, if index is less than 0
 // only section with provided name will be returned if a matching
-// entry is found
+// entry is found.
 func NewSectionReader(image *Image, name string, index int) (io.Reader, error) {
 	return commonSectionReader(false, image, name, index)
 }
