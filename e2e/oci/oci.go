@@ -96,11 +96,11 @@ func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 	return bundleDir, cleanup
 }
 
-func (c *ctx) testOciRun(t *testing.T) {
+func (c ctx) testOciRun(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	containerID := uuid.NewV4().String()
-	bundleDir, umountFn := genericOciMount(t, c)
+	bundleDir, umountFn := genericOciMount(t, &c)
 
 	// umount bundle
 	defer umountFn()
@@ -131,11 +131,11 @@ func (c *ctx) testOciRun(t *testing.T) {
 	)
 }
 
-func (c *ctx) testOciAttach(t *testing.T) {
+func (c ctx) testOciAttach(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	containerID := uuid.NewV4().String()
-	bundleDir, umountFn := genericOciMount(t, c)
+	bundleDir, umountFn := genericOciMount(t, &c)
 
 	// umount bundle
 	defer umountFn()
@@ -198,11 +198,11 @@ func (c *ctx) testOciAttach(t *testing.T) {
 	)
 }
 
-func (c *ctx) testOciBasic(t *testing.T) {
+func (c ctx) testOciBasic(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	containerID := uuid.NewV4().String()
-	bundleDir, umountFn := genericOciMount(t, c)
+	bundleDir, umountFn := genericOciMount(t, &c)
 
 	// umount bundle
 	defer umountFn()
@@ -332,7 +332,7 @@ func (c *ctx) testOciBasic(t *testing.T) {
 	)
 }
 
-func (c *ctx) testOciHelp(t *testing.T) {
+func (c ctx) testOciHelp(t *testing.T) {
 	tests := []struct {
 		name          string
 		expectedRegex string
@@ -406,7 +406,7 @@ func (c *ctx) testOciHelp(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+	c := ctx{
 		env: env,
 	}
 
