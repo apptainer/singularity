@@ -40,7 +40,7 @@ func prepTest(t *testing.T, testEnv e2e.TestEnv, testName string, h *cache.Handl
 	ensureCacheNotEmpty(t, testName, imagePath, h)
 }
 
-func (c *cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
+func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 	tests := []struct {
 		name               string
 		options            []string
@@ -123,7 +123,7 @@ func (c *cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 	}
 }
 
-func (c *cacheTests) testInteractiveCacheCmds(t *testing.T) {
+func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
 	tt := []struct {
 		name               string
 		options            []string
@@ -299,7 +299,7 @@ func ensureCacheNotEmpty(t *testing.T, testName string, imagePath string, h *cac
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	return func(t *testing.T) {
-		c := &cacheTests{
+		c := cacheTests{
 			env: env,
 		}
 		t.Run("cacheInteractiveCmds", c.testInteractiveCacheCmds)

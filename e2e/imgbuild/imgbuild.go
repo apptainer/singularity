@@ -24,7 +24,7 @@ type imgBuildTests struct {
 	env e2e.TestEnv
 }
 
-func (c *imgBuildTests) buildFrom(t *testing.T) {
+func (c imgBuildTests) buildFrom(t *testing.T) {
 	e2e.PrepRegistry(t, c.env)
 
 	// use a trailing slash in tests for sandbox intentionally to make sure
@@ -127,7 +127,7 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 	}
 }
 
-func (c *imgBuildTests) nonRootBuild(t *testing.T) {
+func (c imgBuildTests) nonRootBuild(t *testing.T) {
 	tt := []struct {
 		name      string
 		buildSpec string
@@ -196,7 +196,7 @@ func (c *imgBuildTests) nonRootBuild(t *testing.T) {
 	}
 }
 
-func (c *imgBuildTests) buildLocalImage(t *testing.T) {
+func (c imgBuildTests) buildLocalImage(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	tmpdir, err := ioutil.TempDir(c.env.TestDir, "build-local-image.")
@@ -268,7 +268,7 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 	}
 }
 
-func (c *imgBuildTests) badPath(t *testing.T) {
+func (c imgBuildTests) badPath(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	c.env.RunSingularity(
 		t,
@@ -279,7 +279,7 @@ func (c *imgBuildTests) badPath(t *testing.T) {
 	)
 }
 
-func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
+func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
@@ -494,7 +494,7 @@ func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 	}
 }
 
-func (c *imgBuildTests) buildDefinition(t *testing.T) {
+func (c imgBuildTests) buildDefinition(t *testing.T) {
 	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
@@ -878,7 +878,7 @@ func (c *imgBuildTests) ensureImageIsEncrypted(t *testing.T, imgPath string) {
 	)
 }
 
-func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
+func (c imgBuildTests) buildEncryptPemFile(t *testing.T) {
 	// Expected results for a successful command execution
 	expectedExitCode := 0
 	expectedStderr := ""
@@ -944,7 +944,7 @@ func (c *imgBuildTests) buildEncryptPemFile(t *testing.T) {
 // buildEncryptPassphrase is exercising the build command for encrypted containers
 // while using a passphrase. Note that it covers both the normal case and when the
 // version of cryptsetup available is not compliant.
-func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
+func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	// Expected results for a successful command execution
 	expectedExitCode := 0
 	expectedStderr := ""
@@ -1046,7 +1046,7 @@ func (c *imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &imgBuildTests{
+	c := imgBuildTests{
 		env: env,
 	}
 

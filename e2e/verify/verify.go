@@ -53,7 +53,7 @@ func getDataCheckJSON(keyNum int) []string {
 	return []string{"SignerKeys", fmt.Sprintf("[%d]", keyNum), "Signer", "DataCheck"}
 }
 
-func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
+func (c ctx) singularityVerifyKeyNum(t *testing.T) {
 	keyNumPath := []string{"Signatures"}
 
 	tests := []struct {
@@ -108,7 +108,7 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 	}
 }
 
-func (c *ctx) singularityVerifySigner(t *testing.T) {
+func (c ctx) singularityVerifySigner(t *testing.T) {
 	tests := []struct {
 		expectOutput []verifyOutput
 		name         string
@@ -294,7 +294,7 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 	}
 }
 
-func (c *ctx) checkGroupidOption(t *testing.T) {
+func (c ctx) checkGroupidOption(t *testing.T) {
 	cmdArgs := []string{"--groupid", "0", c.successImage}
 	c.env.RunSingularity(
 		t,
@@ -308,7 +308,7 @@ func (c *ctx) checkGroupidOption(t *testing.T) {
 	)
 }
 
-func (c *ctx) checkIDOption(t *testing.T) {
+func (c ctx) checkIDOption(t *testing.T) {
 	cmdArgs := []string{"--id", "0", c.successImage}
 	c.env.RunSingularity(
 		t,
@@ -322,7 +322,7 @@ func (c *ctx) checkIDOption(t *testing.T) {
 	)
 }
 
-func (c *ctx) checkURLOption(t *testing.T) {
+func (c ctx) checkURLOption(t *testing.T) {
 	if !fs.IsFile(c.successImage) {
 		t.Fatalf("image file (%s) does not exist", c.successImage)
 	}
@@ -342,7 +342,7 @@ func (c *ctx) checkURLOption(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+	c := ctx{
 		env:            env,
 		corruptedImage: filepath.Join(env.TestDir, "verify_corrupted.sif"),
 		successImage:   filepath.Join(env.TestDir, "verify_success.sif"),

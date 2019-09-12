@@ -25,7 +25,7 @@ type actionTests struct {
 }
 
 // run tests min fuctionality for singularity run
-func (c *actionTests) actionRun(t *testing.T) {
+func (c actionTests) actionRun(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	tests := []struct {
@@ -73,7 +73,7 @@ func (c *actionTests) actionRun(t *testing.T) {
 }
 
 // exec tests min fuctionality for singularity exec
-func (c *actionTests) actionExec(t *testing.T) {
+func (c actionTests) actionExec(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	user := e2e.CurrentUser(t)
@@ -243,7 +243,7 @@ func (c *actionTests) actionExec(t *testing.T) {
 }
 
 // Shell interaction tests
-func (c *actionTests) actionShell(t *testing.T) {
+func (c actionTests) actionShell(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	hostname, err := os.Hostname()
@@ -309,7 +309,7 @@ func (c *actionTests) actionShell(t *testing.T) {
 }
 
 // STDPipe tests pipe stdin/stdout to singularity actions cmd
-func (c *actionTests) STDPipe(t *testing.T) {
+func (c actionTests) STDPipe(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	stdinTests := []struct {
@@ -450,7 +450,7 @@ func (c *actionTests) STDPipe(t *testing.T) {
 }
 
 // RunFromURI tests min fuctionality for singularity run/exec URI://
-func (c *actionTests) RunFromURI(t *testing.T) {
+func (c actionTests) RunFromURI(t *testing.T) {
 	e2e.PrepRegistry(t, c.env)
 
 	runScript := "testdata/runscript.sh"
@@ -638,7 +638,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 }
 
 // PersistentOverlay test the --overlay function
-func (c *actionTests) PersistentOverlay(t *testing.T) {
+func (c actionTests) PersistentOverlay(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	var squashfsImage = filepath.Join(c.env.TestDir, "squashfs.simg")
@@ -839,7 +839,7 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &actionTests{
+	c := actionTests{
 		env: env,
 	}
 
