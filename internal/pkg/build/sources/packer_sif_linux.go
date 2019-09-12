@@ -77,13 +77,14 @@ func unpackSIF(b *types.Bundle, srcFile string) (err error) {
 	}
 
 	ociReader, err := image.NewSectionReader(img, "oci-config.json", -1)
-	if err != nil && err != image.ErrNoSection {
-		sylog.Errorf("Could not read image OCI config: %v", err)
-	}
-	if ociReader != nil {
+	if err == image.ErrNoSection {
+		sylog.Debugf("No oci-config.json section found")
+	} else if err != nil {
+		return fmt.Errorf("could not get OCI config section reader: %v", err)
+	} else {
 		ociConfig, err := ioutil.ReadAll(ociReader)
 		if err != nil {
-			sylog.Errorf("Could not read OCI config: %v", err)
+			return fmt.Errorf("could not read OCI config: %v", err)
 		}
 		b.JSONObjects[types.OCIConfigJSON] = ociConfig
 	}
