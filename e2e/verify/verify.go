@@ -13,6 +13,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 type ctx struct {
@@ -79,7 +80,7 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if !e2e.FileExists(t, tt.imagePath) {
+		if !fs.IsFile(tt.imagePath) {
 			t.Fatalf("image file (%s) does not exist", tt.imagePath)
 		}
 
@@ -271,7 +272,7 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			}
 		}
 
-		if !e2e.FileExists(t, tt.imagePath) {
+		if !fs.IsFile(tt.imagePath) {
 			t.Fatalf("image file (%s) does not exist", tt.imagePath)
 		}
 
@@ -322,7 +323,7 @@ func (c *ctx) checkIDOption(t *testing.T) {
 }
 
 func (c *ctx) checkURLOption(t *testing.T) {
-	if !e2e.FileExists(t, c.successImage) {
+	if !fs.IsFile(c.successImage) {
 		t.Fatalf("image file (%s) does not exist", c.successImage)
 	}
 
