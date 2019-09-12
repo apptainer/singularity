@@ -21,7 +21,7 @@ type ctx struct {
 // remoteAdd checks the functionality of "singularity remote add" command.
 // It Verifies that adding valid endpoints results in success and invalid
 // one's results in failure.
-func (c *ctx) remoteAdd(t *testing.T) {
+func (c ctx) remoteAdd(t *testing.T) {
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -75,7 +75,7 @@ func (c *ctx) remoteAdd(t *testing.T) {
 // 1. Adds remote endpoints
 // 2. Deletes the already added entries
 // 3. Verfies that removing an invalid entry results in a failure
-func (c *ctx) remoteRemove(t *testing.T) {
+func (c ctx) remoteRemove(t *testing.T) {
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -148,7 +148,7 @@ func (c *ctx) remoteRemove(t *testing.T) {
 // remoteUse tests the functionality of "singularity remote use" command.
 // 1. Tries to use non-existing remote entry
 // 2. Adds remote entries and tries to use those
-func (c *ctx) remoteUse(t *testing.T) {
+func (c ctx) remoteUse(t *testing.T) {
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -222,7 +222,7 @@ func (c *ctx) remoteUse(t *testing.T) {
 // 1. Adds remote endpoints
 // 2. Verifies that remote status command succeeds on existing endpoints
 // 3. Verifies that remote status command fails on non-existing endpoints
-func (c *ctx) remoteStatus(t *testing.T) {
+func (c ctx) remoteStatus(t *testing.T) {
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -293,7 +293,7 @@ func (c *ctx) remoteStatus(t *testing.T) {
 }
 
 // remoteList tests the functionality of "singularity remote list" command
-func (c *ctx) remoteList(t *testing.T) {
+func (c ctx) remoteList(t *testing.T) {
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -398,7 +398,7 @@ func (c *ctx) remoteList(t *testing.T) {
 	}
 }
 
-func (c *ctx) remoteTestFlag(t *testing.T) {
+func (c ctx) remoteTestFlag(t *testing.T) {
 	tests := []struct {
 		name           string
 		cmdArgs        []string
@@ -454,7 +454,7 @@ func (c *ctx) remoteTestFlag(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+	c := ctx{
 		env: env,
 	}
 
