@@ -95,6 +95,8 @@ func (c ctx) assertLibraryCacheEntryExists(t *testing.T, imgPath, imgName string
 
 	cacheEntryPath := filepath.Join(c.env.ImgCacheDir, "cache", "library", shasum, imgName)
 	if _, err := os.Stat(cacheEntryPath); os.IsNotExist(err) {
+		ls(t, c.env.TestDir)
+		ls(t, c.env.ImgCacheDir)
 		t.Fatalf("Cache entry %s for image %s with name %s does not exists: %s",
 			cacheEntryPath, imgPath, imgName, err)
 	}
@@ -128,6 +130,24 @@ func (c ctx) testSingularityCacheDir(t *testing.T) {
 
 	// there should be an entry for this image in the library cache
 	c.assertLibraryCacheEntryExists(t, imgPath, "alpine_latest.sif")
+}
+
+func ls(t *testing.T, dir string) {
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			t.Logf("W: skipping path %q due to error: %v\n", path, err)
+			return err
+		}
+
+		t.Logf("%-20d  %s  %s\n", info.Size(), info.Mode(), path)
+
+		return nil
+	})
+
+	if err != nil {
+		t.Logf("E: error walking the path %q: %v\n", dir, err)
+		return
+	}
 }
 
 func (c ctx) testSingularityDisableCache(t *testing.T) {
