@@ -82,9 +82,3 @@ func PathExists(t *testing.T, path string) bool {
 
 	return true
 }
-
-// FileExists return true if the file identified by the path exists, false otherwise.
-func FileExists(t *testing.T, path string) bool {
-	// todo: we should check if it is a file
-	return PathExists(t, path)
-}
