@@ -10,71 +10,14 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 
 	"github.com/buger/jsonparser"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/cmdline"
 )
-
-var (
-	labels  bool
-	deffile bool
-	jsonfmt bool
-)
-
-type inspectMetadata struct {
-	// TODO: Its possible to get this info through the label partition
-	Apps      string `json:"apps,omitempty"`
-	AppLabels string `json:"apps-labels,omitempty"`
-
-	Labels  map[string]string `json:"labels,omitempty"`
-	Deffile string            `json:"deffile,omitempty"`
-}
-
-type inspectAttributesData struct {
-	Attributes inspectMetadata `json:"attributes"`
-}
-
-type inspectFormat struct {
-	Data inspectAttributesData `json:"data"`
-	Type string                `json:"type"`
-}
-
-// -l|--labels
-var inspectLabelsFlag = cmdline.Flag{
-	ID:           "inspectLabelsFlag",
-	Value:        &labels,
-	DefaultValue: false,
-	Name:         "labels",
-	ShortHand:    "l",
-	Usage:        "show the labels associated with the image (default)",
-	EnvKeys:      []string{"LABELS"},
-}
-
-// -d|--deffile
-var inspectDeffileFlag = cmdline.Flag{
-	ID:           "inspectDeffileFlag",
-	Value:        &deffile,
-	DefaultValue: false,
-	Name:         "deffile",
-	ShortHand:    "d",
-	Usage:        "show the Singularity recipe file that was used to generate the image",
-	EnvKeys:      []string{"DEFFILE"},
-}
-
-// -j|--json
-var inspectJSONFlag = cmdline.Flag{
-	ID:           "inspectJSONFlag",
-	Value:        &jsonfmt,
-	DefaultValue: false,
-	Name:         "json",
-	ShortHand:    "j",
-	Usage:        "print structured json instead of sections",
-	EnvKeys:      []string{"JSON"},
-}
 
 func init() {
 	cmdManager.RegisterCmd(InspectCmd)
@@ -84,7 +27,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&inspectLabelsFlag, InspectCmd)
 }
 
-// InspectCmd represents the 'inspect' command
+// InspectCmd represents the 'inspect' command.
 var InspectCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(1),
@@ -102,7 +45,7 @@ var InspectCmd = &cobra.Command{
 			sylog.Fatalf("Unable to stat file: %s", err)
 		}
 		if f.IsDir() {
-			sylog.Fatalf("not yet...")
+			sylog.Fatalf("Cannot inspect a sandbox container")
 		}
 
 		fimg, err := sif.LoadContainer(args[0], true)
@@ -112,49 +55,53 @@ var InspectCmd = &cobra.Command{
 		defer fimg.UnloadContainer()
 
 		var inspectData inspectFormat
-		inspectData.Type = "container"
+		inspectData.Type = containerType
 		inspectData.Data.Attributes.Labels = make(map[string]string, 1)
 
-		// Inspect Labels
+		// Inspect Labels.
 		if labels || !deffile {
-			jsonName := ""
-			if AppName == "" {
-				jsonName = "system-partition"
-			} else {
-				jsonName = AppName
-			}
+			jsonName := "system-partition"
 
-			sifData, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
+			labelDescriptor, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
 			if err != nil {
 				sylog.Fatalf("No metadata partition")
 			}
 
-			for _, v := range sifData {
+			for _, v := range labelDescriptor {
 				metaData := v.GetData(&fimg)
-				newbytes, _, _, err := jsonparser.Get(metaData, jsonName)
+				b, _, _, err := jsonparser.Get(metaData, jsonName)
 				if err != nil {
 					sylog.Fatalf("Unable to find json from metadata: %s", err)
 				}
-				var hrOut map[string]*json.RawMessage
-				err = json.Unmarshal(newbytes, &hrOut)
+				var hrOut map[string]json.RawMessage
+				err = json.Unmarshal(b, &hrOut)
 				if err != nil {
 					sylog.Fatalf("Unable to get json: %s", err)
 				}
 
 				for k, v := range hrOut {
-					inspectData.Data.Attributes.Labels[k] = string(*v)
+					value := string(v)
+					// Only remove the extra quotes if json output.
+					if jsonfmt {
+						var err error
+						value, err = strconv.Unquote(value)
+						if err != nil {
+							sylog.Fatalf("Unable to remove quotes from data: %s\n", err)
+						}
+					}
+					inspectData.Data.Attributes.Labels[k] = value
 				}
 			}
 		}
 
-		// Inspect Deffile
+		// Inspect Deffile.
 		if deffile {
-			sifData, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataDeffile)
+			labelDescriptor, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataDeffile)
 			if err != nil {
 				sylog.Fatalf("No metadata partition")
 			}
 
-			for _, v := range sifData {
+			for _, v := range labelDescriptor {
 				metaData := v.GetData(&fimg)
 				data := string(metaData)
 				inspectData.Data.Attributes.Deffile = data
@@ -173,7 +120,7 @@ var InspectCmd = &cobra.Command{
 				fmt.Printf("%s\n", inspectData.Data.Attributes.Deffile)
 			}
 			if len(inspectData.Data.Attributes.Labels) > 0 {
-				// Sort the labels
+				// Sort the labels.
 				var labelSort []string
 				for k := range inspectData.Data.Attributes.Labels {
 					labelSort = append(labelSort, k)

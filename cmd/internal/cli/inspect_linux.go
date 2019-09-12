@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -32,36 +33,16 @@ import (
 
 const listAppsCommand = "echo apps:`ls \"$app/scif/apps\" | wc -c`; for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename \"$app\"`\n        echo \"$APPNAME\"\n    fi\ndone\n"
 
+var errNoLabelPartition = errors.New("no label partition found")
+var errNoSIF = errors.New("invalid SIF")
+
 var (
-	labels      bool
-	deffile     bool
 	runscript   bool
 	testfile    bool
 	environment bool
 	helpfile    bool
-	jsonfmt     bool
 	listApps    bool
 )
-
-type inspectMetadata struct {
-	Apps        string            `json:"apps,omitempty"`
-	AppLabels   string            `json:"apps-labels,omitempty"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	Deffile     string            `json:"deffile,omitempty"`
-	Runscript   string            `json:"runscript,omitempty"`
-	Test        string            `json:"test,omitempty"`
-	Environment string            `json:"environment,omitempty"`
-	Helpfile    string            `json:"helpfile,omitempty"`
-}
-
-type inspectAttributesData struct {
-	Attributes inspectMetadata `json:"attributes"`
-}
-
-type inspectFormat struct {
-	Data inspectAttributesData `json:"data"`
-	Type string                `json:"type"`
-}
 
 // --list-apps
 var inspectAppsListFlag = cmdline.Flag{
@@ -81,28 +62,6 @@ var inspectAppNameFlag = cmdline.Flag{
 	Name:         "app",
 	Usage:        "inspect a specific app",
 	EnvKeys:      []string{"APP"},
-}
-
-// -l|--labels
-var inspectLabelsFlag = cmdline.Flag{
-	ID:           "inspectLabelsFlag",
-	Value:        &labels,
-	DefaultValue: false,
-	Name:         "labels",
-	ShortHand:    "l",
-	Usage:        "show the labels associated with the image (default)",
-	EnvKeys:      []string{"LABELS"},
-}
-
-// -d|--deffile
-var inspectDeffileFlag = cmdline.Flag{
-	ID:           "inspectDeffileFlag",
-	Value:        &deffile,
-	DefaultValue: false,
-	Name:         "deffile",
-	ShortHand:    "d",
-	Usage:        "show the Singularity recipe file that was used to generate the image",
-	EnvKeys:      []string{"DEFFILE"},
 }
 
 // -r|--runscript
@@ -149,17 +108,6 @@ var inspectHelpfileFlag = cmdline.Flag{
 	EnvKeys:      []string{"HELPFILE"},
 }
 
-// -j|--json
-var inspectJSONFlag = cmdline.Flag{
-	ID:           "inspectJSONFlag",
-	Value:        &jsonfmt,
-	DefaultValue: false,
-	Name:         "json",
-	ShortHand:    "j",
-	Usage:        "print structured json instead of sections",
-	EnvKeys:      []string{"JSON"},
-}
-
 func init() {
 	cmdManager.RegisterCmd(InspectCmd)
 
@@ -190,7 +138,7 @@ func getSingleFileCommand(file string, label string, appName string) string {
 	return str.String()
 }
 
-func getLabelsCommand(appName string) string {
+func getLabelsCommand() string {
 	return getSingleFileCommand("labels.json", "labels", "")
 }
 
@@ -234,13 +182,13 @@ func setAttribute(obj *inspectFormat, label, app string, value string) {
 	case "helpfile":
 		obj.Data.Attributes.Helpfile = value
 	case "labels":
-		newbytes, _, _, err := jsonparser.Get([]byte(value), app)
+		b, _, _, err := jsonparser.Get([]byte(value), app)
 		if err != nil {
-			sylog.Warningf("Unable to find json from metadata: %s", err)
-			newbytes = []byte(value)
+			sylog.Warningf("Unable to find json from metadata: %s; skipping", err)
+			b = []byte(value)
 		}
 
-		if err := json.Unmarshal(newbytes, &obj.Data.Attributes.Labels); err != nil {
+		if err := json.Unmarshal(b, &obj.Data.Attributes.Labels); err != nil {
 			sylog.Warningf("Unable to parse labels: %s", err)
 		}
 	case "runscript":
@@ -254,13 +202,78 @@ func setAttribute(obj *inspectFormat, label, app string, value string) {
 	}
 }
 
-// returns true if flags for other forms of information are unset
+// returns true if flags for other forms of information are unset.
 func defaultToLabels() bool {
 	return !(helpfile || deffile || runscript || testfile || environment || listApps)
 }
 
-// InspectCmd represents the 'inspect' command
-// TODO: This should be in its own package, not cli
+func inspectLabelPartition(inspectData *inspectFormat, fimg *sif.FileImage) error {
+	if fimg == nil {
+		return errNoSIF
+	}
+
+	jsonName := AppName
+	if jsonName == "" {
+		jsonName = "system-partition"
+	}
+
+	labelDescriptor, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
+	if err != nil {
+		sylog.Warningf("No metadata partition, searching in container...")
+		return errNoLabelPartition
+	}
+
+	for _, v := range labelDescriptor {
+		metaData := v.GetData(fimg)
+		b, _, _, err := jsonparser.Get(metaData, jsonName)
+		if err != nil {
+			return fmt.Errorf("unable to find json from metadata: %s", err)
+		}
+		var hrOut map[string]json.RawMessage
+		err = json.Unmarshal(b, &hrOut)
+		if err != nil {
+			return fmt.Errorf("unable to get json: %s", err)
+		}
+
+		for k, v := range hrOut {
+			value := string(v)
+			// Only remove the extra quotes if json output.
+			if jsonfmt {
+				var err error
+				value, err = strconv.Unquote(value)
+				if err != nil {
+					return fmt.Errorf("unable to remove quotes from data: %s", err)
+				}
+			}
+			inspectData.Data.Attributes.Labels[k] = value
+		}
+	}
+
+	return nil
+}
+
+func inspectDeffilePartition(inspectData *inspectFormat, fimg *sif.FileImage) error {
+	if fimg == nil {
+		return errNoSIF
+	}
+
+	labelDescriptor, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataDeffile)
+	if err != nil {
+		sylog.Warningf("No metadata partition, searching in container...")
+		return errNoLabelPartition
+	}
+
+	for _, v := range labelDescriptor {
+		metaData := v.GetData(fimg)
+		data := string(metaData)
+		inspectData.Data.Attributes.Deffile = data
+	}
+
+	return nil
+}
+
+// InspectCmd represents the 'inspect' command.
+// TODO: This should be in its own package, not cli.
 var InspectCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(1),
@@ -271,18 +284,13 @@ var InspectCmd = &cobra.Command{
 	Example: docs.InspectExample,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		sandboxImage := false
-		a := []string{"/bin/sh", "-c", ""}
-
 		f, err := os.Stat(args[0])
 		if os.IsNotExist(err) {
 			sylog.Fatalf("Container not found: %s\n", err)
 		} else if err != nil {
 			sylog.Fatalf("Unable to stat file: %s", err)
 		}
-		if f.IsDir() {
-			sandboxImage = true
-		}
+		sandboxImage := f.IsDir()
 
 		var fimg sif.FileImage
 		if !sandboxImage {
@@ -295,113 +303,67 @@ var InspectCmd = &cobra.Command{
 		}
 
 		var inspectData inspectFormat
-		inspectData.Type = "container"
+		inspectData.Type = containerType
 		inspectData.Data.Attributes.Labels = make(map[string]string, 1)
 
-		inspectLabelInContainer := func() {
-			sylog.Debugf("Inspection of labels selected.")
-			a[2] += getLabelsCommand(AppName)
-		}
-		// Inspect Labels
+		inspectCMD := []string{"/bin/sh", "-c", ""}
+
+		// Inspect Labels.
 		if labels || defaultToLabels() {
-			jsonName := ""
-			if AppName == "" {
-				jsonName = "system-partition"
-			} else {
-				jsonName = AppName
-			}
-
-			if sandboxImage {
-				sylog.Debugf("Inspecting in the container...")
-				inspectLabelInContainer()
-				goto endLabel
-			}
-
-			sifData, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
-			if err != nil {
-				sylog.Warningf("No metadata partition, searching in container...")
-				inspectLabelInContainer()
-				goto endLabel
-			}
-
-			for _, v := range sifData {
-				metaData := v.GetData(&fimg)
-				newbytes, _, _, err := jsonparser.Get(metaData, jsonName)
-				if err != nil {
-					sylog.Fatalf("Unable to find json from metadata: %s", err)
-				}
-				var hrOut map[string]*json.RawMessage
-				err = json.Unmarshal(newbytes, &hrOut)
-				if err != nil {
-					sylog.Fatalf("Unable to get json: %s", err)
-				}
-
-				for k, v := range hrOut {
-					inspectData.Data.Attributes.Labels[k] = string(*v)
-				}
+			err := inspectLabelPartition(&inspectData, &fimg)
+			if err == errNoLabelPartition || err == errNoSIF {
+				sylog.Debugf("Inspection of labels selected.")
+				inspectCMD[2] += getLabelsCommand()
+			} else if err != nil {
+				sylog.Fatalf("Unable to inspect container: %s", err)
 			}
 		}
-	endLabel:
 
-		inspectDeffileInContainer := func() {
-			sylog.Debugf("Inspection of deffile selected.")
-			a[2] += getDefinitionCommand()
-		}
-		// Inspect Deffile
+		// Inspect Deffile.
 		if deffile {
-			if sandboxImage {
-				inspectDeffileInContainer()
-				goto endDeffile
-			}
-			sifData, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataDeffile)
-			if err != nil {
-				sylog.Warningf("No metadata partition, searching in container...")
-				inspectDeffileInContainer()
-				goto endDeffile
-			}
-
-			for _, v := range sifData {
-				metaData := v.GetData(&fimg)
-				data := string(metaData)
-				inspectData.Data.Attributes.Deffile = data
+			err := inspectDeffilePartition(&inspectData, &fimg)
+			if err == errNoLabelPartition || err == errNoSIF {
+				sylog.Debugf("Inspection of deffile selected.")
+				inspectCMD[2] += getDefinitionCommand()
+			} else if err != nil {
+				sylog.Fatalf("Unable to inspect deffile: %s", err)
 			}
 		}
-	endDeffile:
-
-		abspath, err := filepath.Abs(args[0])
-		if err != nil {
-			sylog.Fatalf("While determining absolute file path: %v", err)
-		}
-		name := filepath.Base(abspath)
 
 		if listApps {
 			sylog.Debugf("Listing all apps in container")
-			a[2] += listAppsCommand
+			inspectCMD[2] += listAppsCommand
 		}
 
 		if helpfile {
 			sylog.Debugf("Inspection of helpfile selected.")
-			a[2] += getHelpCommand(AppName)
+			inspectCMD[2] += getHelpCommand(AppName)
 		}
 
 		if runscript {
 			sylog.Debugf("Inspection of runscript selected.")
-			a[2] += getRunscriptCommand(AppName)
+			inspectCMD[2] += getRunscriptCommand(AppName)
 		}
 
 		if testfile {
 			sylog.Debugf("Inspection of test selected.")
-			a[2] += getTestCommand(AppName)
+			inspectCMD[2] += getTestCommand(AppName)
 		}
 
 		if environment {
 			sylog.Debugf("Inspection of environment selected.")
-			a[2] += getEnvironmentCommand(AppName)
+			inspectCMD[2] += getEnvironmentCommand(AppName)
 		}
 
-		if a[2] != "" {
+		if inspectCMD[2] != "" {
+			abspath, err := filepath.Abs(args[0])
+			if err != nil {
+				sylog.Fatalf("While determining absolute file path: %v", err)
+			}
+			name := filepath.Base(abspath)
+
 			// Execute the compound command string.
-			fileContents, err := getFileContent(abspath, name, a)
+			fileContents, err := getFileContent(abspath, name, inspectCMD)
 			if err != nil {
 				sylog.Fatalf("Could not inspect container: %v", err)
 			}
@@ -460,7 +422,7 @@ var InspectCmd = &cobra.Command{
 				fmt.Printf("%s\n", inspectData.Data.Attributes.Environment)
 			}
 			if len(inspectData.Data.Attributes.Labels) > 0 {
-				// Sort the labels
+				// Sort the labels.
 				var labelSort []string
 				for k := range inspectData.Data.Attributes.Labels {
 					labelSort = append(labelSort, k)
@@ -492,7 +454,7 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 		EngineConfig: engineConfig,
 	}
 
-	// Record from stdout and store as a string to return as the contents of the file
+	// Record from stdout and store as a string to return as the contents of the file.
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 

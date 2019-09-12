@@ -89,11 +89,11 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 			jsonPath:  []string{"type"},
 			expectOut: "container",
 		},
-		//		{
-		//			name:      "LabelCheckSchemaVersion",
-		//			jsonPath:  []string{"data", "attributes", "labels", "org.label-schema.schema-version"},
-		//			expectOut: "1.0",
-		//		},
+		{
+			name:      "LabelCheckSchemaVersion",
+			jsonPath:  []string{"data", "attributes", "labels", "org.label-schema.schema-version"},
+			expectOut: "1.0",
+		},
 	}
 
 	// Verify the label partition
@@ -129,6 +129,30 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 
 		if err := verifyHelp(t, helpPath, dfd.Help); err != nil {
 			t.Fatalf("unexpected failure: help message: %v", err)
+		}
+	}
+
+	if dfd.Env != nil {
+		if err := verifyEnv(t, cmdPath, imagePath, dfd.Env, nil); err != nil {
+			t.Fatalf("unexpected failure: Env in container is incorrect: %v", err)
+		}
+	}
+
+	// verify %files section works correctly
+	for _, p := range dfd.Files {
+		var file string
+		if p.Dst == "" {
+			file = p.Src
+		} else {
+			file = p.Dst
+		}
+
+		if !fs.IsFile(filepath.Join(imagePath, file)) {
+			t.Fatalf("unexpected failure: File %v does not exist in container", file)
+		}
+
+		if err := verifyFile(t, p.Src, filepath.Join(imagePath, file)); err != nil {
+			t.Fatalf("unexpected failure: File %v: %v", file, err)
 		}
 	}
 
