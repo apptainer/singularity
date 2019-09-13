@@ -11,13 +11,14 @@ $(starter_suid): $(BUILDDIR)/.clean-starter $(singularity_build_config) $(starte
 		-o $@ $(SOURCEDIR)/cmd/starter/main_linux.go
 
 $(starter_suid_INSTALL): $(starter_suid)
-	@if [ `id -u` -ne 0 -a -z "${RPM_BUILD_ROOT}" ] ; then \
-		echo "SUID binary requires to execute make install as root, use sudo make install to finish installation"; \
-		exit 1 ; \
-	fi
 	@echo " INSTALL SUID" $@
 	$(V)install -d $(@D)
-	$(V)install -m 4755 $(starter_suid) $(starter_suid_INSTALL)
+	$(V)install $(starter_suid) $(starter_suid_INSTALL)
+	@if [ `id -u` -ne 0 ] ; then \
+		echo "$(starter_suid_INSTALL) -- installed with incorrect permissions"; \
+	else \
+		$(V)chmod 4755 $(starter_suid_INSTALL); \
+	fi
 
 CLEANFILES += $(starter_suid)
 INSTALLFILES += $(starter_suid_INSTALL)
