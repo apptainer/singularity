@@ -17,7 +17,7 @@ $(starter_suid_INSTALL): $(starter_suid)
 	@if [ `id -u` -ne 0 ] ; then \
 		echo "$(starter_suid_INSTALL) -- installed with incorrect permissions"; \
 	else \
-		$(V)chmod 4755 $(starter_suid_INSTALL); \
+		chmod 4755 $(starter_suid_INSTALL); \
 	fi
 
 CLEANFILES += $(starter_suid)
