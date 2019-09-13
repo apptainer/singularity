@@ -15,10 +15,6 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 )
 
-const (
-	sifMagic = "\x53\x49\x46\x5f\x4d\x41\x47\x49\x43"
-)
-
 type sifFormat struct{}
 
 func checkPartitionType(img *Image, fstype sif.Fstype, offset int64) (uint32, error) {
@@ -46,15 +42,15 @@ func checkPartitionType(img *Image, fstype sif.Fstype, offset int64) (uint32, er
 	return 0, fmt.Errorf("unknown filesystem type %v", fstype)
 }
 
-func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
-	if fileinfo.IsDir() {
+func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
+	if fi.IsDir() {
 		return debugError("not a sif file image")
 	}
 	b := make([]byte, bufferSize)
 	if n, err := img.File.Read(b); err != nil || n != bufferSize {
 		return debugErrorf("can't read first %d bytes: %v", bufferSize, err)
 	}
-	if !bytes.Contains(b, []byte(sifMagic)) {
+	if !bytes.Contains(b, []byte(sif.HdrMagic)) {
 		return debugError("SIF magic not found")
 	}
 
@@ -87,9 +83,6 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	// Get the default system partition image
 	for _, desc := range fimg.DescrArr {
 		if !desc.Used {
-			continue
-		}
-		if desc.Datatype != sif.DataPartition {
 			continue
 		}
 		ptype, err := desc.GetPartType()

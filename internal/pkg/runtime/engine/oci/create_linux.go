@@ -870,7 +870,7 @@ func (c *container) addReadonlyPathsMount(system *mount.System) error {
 	return nil
 }
 
-func (c *container) mount(point *mount.Point) error {
+func (c *container) mount(point *mount.Point, system *mount.System) error {
 	source := point.Source
 	dest := point.Destination
 	flags, opts := mount.ConvertOptions(point.Options)

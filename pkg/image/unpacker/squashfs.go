@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 )
 
-// Squashfs represents a squashfs unpacker
+// Squashfs represents a squashfs unpacker.
 type Squashfs struct {
 	UnsquashfsPath string
 }
@@ -76,13 +76,13 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) error 
 }
 
 // ExtractAll extracts a squashfs filesystem read from reader to a
-// destination directory
+// destination directory.
 func (s *Squashfs) ExtractAll(reader io.Reader, dest string) error {
-	return s.extract([]string{}, reader, dest)
+	return s.extract(nil, reader, dest)
 }
 
 // ExtractFiles extracts provided files from a squashfs filesystem
-// read from reader to a destination directory
+// read from reader to a destination directory.
 func (s *Squashfs) ExtractFiles(files []string, reader io.Reader, dest string) error {
 	if len(files) == 0 {
 		return fmt.Errorf("no files to extract")
