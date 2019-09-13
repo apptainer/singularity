@@ -15,13 +15,14 @@ type hookFn func(*System) error
 
 // mountFn describes function prototype for function responsible
 // of mount operation
-type mountFn func(*Point) error
+type mountFn func(*Point, *System) error
 
 // System defines a mount system allowing to register before/after
 // hook functions for specific tag during mount phase
 type System struct {
 	Points         *Points
 	Mount          mountFn
+	currentTag     AuthorizedTag
 	beforeTagHooks map[AuthorizedTag][]hookFn
 	afterTagHooks  map[AuthorizedTag][]hookFn
 }
@@ -57,11 +58,17 @@ func (b *System) RunAfterTag(tag AuthorizedTag, fn hookFn) error {
 	return nil
 }
 
+// CurrentTag returns the tag being processed by MountAll.
+func (b *System) CurrentTag() AuthorizedTag {
+	return b.currentTag
+}
+
 // MountAll iterates over mount point list and mounts every point
 // by calling hook before/after hook functions
 func (b *System) MountAll() error {
 	b.init()
 	for _, tag := range GetTagList() {
+		b.currentTag = tag
 		for _, fn := range b.beforeTagHooks[tag] {
 			if err := fn(b); err != nil {
 				return fmt.Errorf("hook function for tag %s returns error: %s", tag, err)
@@ -69,7 +76,7 @@ func (b *System) MountAll() error {
 		}
 		for _, point := range b.Points.GetByTag(tag) {
 			if b.Mount != nil {
-				if err := b.Mount(&point); err != nil {
+				if err := b.Mount(&point, b); err != nil {
 					return fmt.Errorf("mount %s->%s error: %s", point.Source, point.Destination, err)
 				}
 			}
