@@ -31,6 +31,7 @@ import (
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
+	buildTypes "github.com/sylabs/singularity/pkg/build/types"
 	sytypes "github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -144,7 +145,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 	return nil
 }
 
-// Pack puts relevant objects in a Bundle!
+// Pack puts relevant objects in a Bundle.
 func (cp *OCIConveyorPacker) Pack() (*sytypes.Bundle, error) {
 	err := cp.unpackTmpfs()
 	if err != nil {
@@ -208,7 +209,7 @@ func (cp *OCIConveyorPacker) insertOCIConfig() error {
 		return err
 	}
 
-	cp.b.JSONObjects["oci-config"] = conf
+	cp.b.JSONObjects[buildTypes.OCIConfigJSON] = conf
 	return nil
 }
 

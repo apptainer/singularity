@@ -42,20 +42,20 @@ import (
 type Build struct {
 	// stages of the build
 	stages []stage
-	// Conf contains cross stage build configuration
+	// Conf contains cross stage build configuration.
 	Conf Config
 }
 
 // Config defines how build is executed, including things like where final image is written.
 type Config struct {
-	// Dest is the location for container after build is complete
+	// Dest is the location for container after build is complete.
 	Dest string
-	// Format is the format of built container, e.g., SIF, sandbox
+	// Format is the format of built container, e.g. SIF, sandbox.
 	Format string
-	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
-	// useful for debugging
+	// NoCleanUp allows a user to prevent a bundle from being cleaned
+	// up after a failed build, useful for debugging.
 	NoCleanUp bool
-	// Opts for bundles
+	// Opts for bundles.
 	Opts types.Options
 }
 

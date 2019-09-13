@@ -17,7 +17,7 @@ import (
 
 // stage represents the process of constructing a root filesystem.
 type stage struct {
-	// name of the stage
+	// name of the stage.
 	name string
 	// c Gets and Packs data needed to build a container into a Bundle from various sources.
 	c ConveyorPacker
