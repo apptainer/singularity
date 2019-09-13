@@ -23,7 +23,7 @@ type ctx struct {
 // 0555 for access rights, and we try to run a singularity run command
 // using that directory as cache. This reflects a problem that is important
 // for the grid use case.
-func (c *ctx) testRun555Cache(t *testing.T) {
+func (c ctx) testRun555Cache(t *testing.T) {
 	tempDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
 	defer cleanup(t)
 	cacheDir := filepath.Join(tempDir, "image-cache")
@@ -47,7 +47,7 @@ func (c *ctx) testRun555Cache(t *testing.T) {
 	)
 }
 
-func (c *ctx) testRunPEMEncrypted(t *testing.T) {
+func (c ctx) testRunPEMEncrypted(t *testing.T) {
 	// If the version of cryptsetup is not compatible with Singularity encryption,
 	// the build commands are expected to fail
 	err := e2e.CheckCryptsetupVersion()
@@ -99,7 +99,7 @@ func (c *ctx) testRunPEMEncrypted(t *testing.T) {
 	)
 }
 
-func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
+func (c ctx) testRunPassphraseEncrypted(t *testing.T) {
 	// If the version of cryptsetup is not compatible with Singularity encryption,
 	// the build commands are expected to fail
 	err := e2e.CheckCryptsetupVersion()
@@ -153,7 +153,7 @@ func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+	c := ctx{
 		env: env,
 	}
 

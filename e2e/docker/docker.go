@@ -22,7 +22,7 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-func (c *ctx) testDockerPulls(t *testing.T) {
+func (c ctx) testDockerPulls(t *testing.T) {
 	const tmpContainerFile = "test_container.sif"
 
 	tmpPath, err := fs.MakeTmpDir(c.env.TestDir, "docker-", 0755)
@@ -117,7 +117,7 @@ func (c *ctx) testDockerPulls(t *testing.T) {
 }
 
 // AUFS sanity tests
-func (c *ctx) testDockerAUFS(t *testing.T) {
+func (c ctx) testDockerAUFS(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
@@ -163,7 +163,7 @@ func (c *ctx) testDockerAUFS(t *testing.T) {
 }
 
 // Check force permissions for user builds #977
-func (c *ctx) testDockerPermissions(t *testing.T) {
+func (c ctx) testDockerPermissions(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
@@ -208,7 +208,7 @@ func (c *ctx) testDockerPermissions(t *testing.T) {
 }
 
 // Check whiteout of symbolic links #1592 #1576
-func (c *ctx) testDockerWhiteoutSymlink(t *testing.T) {
+func (c ctx) testDockerWhiteoutSymlink(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
@@ -227,7 +227,7 @@ func (c *ctx) testDockerWhiteoutSymlink(t *testing.T) {
 	)
 }
 
-func (c *ctx) testDockerDefFile(t *testing.T) {
+func (c ctx) testDockerDefFile(t *testing.T) {
 	getKernelMajor := func(t *testing.T) (major int) {
 		var buf unix.Utsname
 		if err := unix.Uname(&buf); err != nil {
@@ -306,7 +306,7 @@ func (c *ctx) testDockerDefFile(t *testing.T) {
 	}
 }
 
-func (c *ctx) testDockerRegistry(t *testing.T) {
+func (c ctx) testDockerRegistry(t *testing.T) {
 	e2e.PrepRegistry(t, c.env)
 
 	tests := []struct {
@@ -371,7 +371,7 @@ func (c *ctx) testDockerRegistry(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+	c := ctx{
 		env: env,
 	}
 

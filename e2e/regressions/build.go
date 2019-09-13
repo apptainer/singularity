@@ -26,7 +26,7 @@ type regressionsTests struct {
 // Most if not all NSS services point to the bad NSS library in
 // order to catch all the potential calls which could occur from
 // Go code inside the build engine, singularity engine is also tested.
-func (c *regressionsTests) issue4203(t *testing.T) {
+func (c regressionsTests) issue4203(t *testing.T) {
 	image := filepath.Join(c.env.TestDir, "issue_4203.sif")
 
 	c.env.RunSingularity(
@@ -58,7 +58,7 @@ func (c *regressionsTests) issue4203(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &regressionsTests{
+	c := regressionsTests{
 		env: env,
 	}
 

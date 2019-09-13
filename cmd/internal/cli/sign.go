@@ -41,14 +41,24 @@ var signSifGroupIDFlag = cmdline.Flag{
 	Usage:        "group ID to be signed",
 }
 
-// -i|--id
+// -i| --sif-id
+var signSifDescSifIDFlag = cmdline.Flag{
+	ID:           "signSifDescSifIDFlag",
+	Value:        &sifDescID,
+	DefaultValue: uint32(0),
+	Name:         "sif-id",
+	ShortHand:    "i",
+	Usage:        "descriptor ID to be signed (default system-partition)",
+}
+
+// --id (deprecated)
 var signSifDescIDFlag = cmdline.Flag{
 	ID:           "signSifDescIDFlag",
 	Value:        &sifDescID,
 	DefaultValue: uint32(0),
 	Name:         "id",
-	ShortHand:    "i",
 	Usage:        "descriptor ID to be signed",
+	Deprecated:   "use '--sif-id'",
 }
 
 // -k|--keyidx
@@ -66,6 +76,7 @@ func init() {
 
 	cmdManager.RegisterFlagForCmd(&signServerURIFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifGroupIDFlag, SignCmd)
+	cmdManager.RegisterFlagForCmd(&signSifDescSifIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifDescIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signKeyIdxFlag, SignCmd)
 }
