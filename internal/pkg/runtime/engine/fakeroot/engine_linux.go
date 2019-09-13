@@ -198,7 +198,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 
 	// fix potential issue with SELinux (https://github.com/sylabs/singularity/issues/4038)
-	mounts, err := proc.ParseMountInfo(mountInfo)
+	mounts, err := proc.GetMountPointMap(mountInfo)
 	if err != nil {
 		return fmt.Errorf("while parsing %s: %s", mountInfo, err)
 	}

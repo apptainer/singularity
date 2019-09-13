@@ -9,8 +9,8 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-// SIFPacker holds the locations of where to pack from and to
+// SIFPacker holds the locations of where to pack from and to.
 type SIFPacker struct {
-	srcfile string
+	srcFile string
 	b       *types.Bundle
 }

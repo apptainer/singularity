@@ -309,7 +309,7 @@ func (c ctx) checkGroupidOption(t *testing.T) {
 }
 
 func (c ctx) checkIDOption(t *testing.T) {
-	cmdArgs := []string{"--id", "0", c.successImage}
+	cmdArgs := []string{"--sif-id", "0", c.successImage}
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.UserProfile),

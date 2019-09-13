@@ -228,21 +228,22 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				if IsWritable {
 					sylog.Warningf("NVIDIA binaries may not be bound with --writable")
 				}
-				for _, binary := range bins {
+				binaries := make([]string, len(bins))
+				for i, binary := range bins {
 					usrBinBinary := filepath.Join("/usr/bin", filepath.Base(binary))
-					bind := strings.Join([]string{binary, usrBinBinary}, ":")
-					BindPaths = append(BindPaths, bind)
+					binaries[i] = strings.Join([]string{binary, usrBinBinary}, ":")
 				}
+				engineConfig.SetFilesPath(binaries)
 			}
 			if len(libs) == 0 {
 				sylog.Warningf("Could not find any NVIDIA libraries on this host!")
 				sylog.Warningf("You may need to edit %v/nvliblist.conf", buildcfg.SINGULARITY_CONFDIR)
 			} else {
-				ContainLibsPath = append(ContainLibsPath, libs...)
+				engineConfig.SetLibrariesPath(libs)
 			}
 		}
 		// bind persistenced socket if found
-		BindPaths = append(BindPaths, nvidia.IpcsPath(userPath)...)
+		engineConfig.AppendFilesPath(nvidia.IpcsPath(userPath)...)
 	}
 
 	// early check for key material before we start engine so we can fail fast if missing
@@ -304,7 +305,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetNoPrivs(NoPrivs)
 	engineConfig.SetSecurity(Security)
 	engineConfig.SetShell(ShellPath)
-	engineConfig.SetLibrariesPath(ContainLibsPath)
+	engineConfig.AppendLibrariesPath(ContainLibsPath...)
 	engineConfig.SetFakeroot(IsFakeroot)
 
 	if ShellPath != "" {
@@ -470,10 +471,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	// Clean environment
 	env.SetContainerEnv(&generator, environment, IsCleanEnv, engineConfig.GetHomeDest())
 
-	// force to use getwd syscall
-	os.Unsetenv("PWD")
-
 	if pwd, err := os.Getwd(); err == nil {
+		engineConfig.SetCwd(pwd)
 		if PwdPath != "" {
 			generator.SetProcessCwd(PwdPath)
 		} else {

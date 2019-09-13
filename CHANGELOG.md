@@ -11,6 +11,8 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.4.0
 
+ - Deprecated `--id` flag for `sign` and `verify`; replaced with `--sif-id`.
+
 # v3.4.0 - [2019.08.23]
 
 ## New features / functionalities
