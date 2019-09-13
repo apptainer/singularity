@@ -21,7 +21,7 @@ type ctx struct {
 }
 
 // testSecurityUnpriv tests the security flag fuctionality for singularity exec without elevated privileges
-func (c *ctx) testSecurityUnpriv(t *testing.T) {
+func (c ctx) testSecurityUnpriv(t *testing.T) {
 	tests := []struct {
 		name       string
 		image      string
@@ -100,7 +100,7 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 }
 
 // testSecurityPriv tests security flag fuctionality for singularity exec with elevated privileges
-func (c *ctx) testSecurityPriv(t *testing.T) {
+func (c ctx) testSecurityPriv(t *testing.T) {
 	tests := []struct {
 		name       string
 		argv       []string
@@ -174,7 +174,7 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 }
 
 // testSecurityConfOwnership tests checks on config files ownerships
-func (c *ctx) testSecurityConfOwnership(t *testing.T) {
+func (c ctx) testSecurityConfOwnership(t *testing.T) {
 	configFile := buildcfg.SINGULARITY_CONF_FILE
 
 	c.env.RunSingularity(
@@ -207,7 +207,7 @@ func (c *ctx) testSecurityConfOwnership(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+	c := ctx{
 		env:     env,
 		pingImg: filepath.Join(env.TestDir, "ubuntu-ping.sif"),
 	}

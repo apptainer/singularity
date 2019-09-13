@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 type actionTests struct {
@@ -25,7 +26,7 @@ type actionTests struct {
 }
 
 // run tests min fuctionality for singularity run
-func (c *actionTests) actionRun(t *testing.T) {
+func (c actionTests) actionRun(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	tests := []struct {
@@ -73,27 +74,34 @@ func (c *actionTests) actionRun(t *testing.T) {
 }
 
 // exec tests min fuctionality for singularity exec
-func (c *actionTests) actionExec(t *testing.T) {
+func (c actionTests) actionExec(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	user := e2e.CurrentUser(t)
 
 	// Create a temp testfile
-	tmpfile, err := ioutil.TempFile("", "testSingularityExec.tmp")
+	testdata, err := fs.MakeTmpDir(c.env.TestDir, "testdata", 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tmpfile.Name()) // clean up
+	defer os.RemoveAll(testdata)
 
-	testfile, err := tmpfile.Stat()
-	if err != nil {
+	testdataTmp := filepath.Join(testdata, "tmp")
+	if err := os.Mkdir(testdataTmp, 0755); err != nil {
 		t.Fatal(err)
 	}
 
-	pwd, err := os.Getwd()
+	// Create a temp testfile
+	tmpfile, err := fs.MakeTmpFile(testdataTmp, "testSingularityExec.", 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
+	tmpfile.Close()
+
+	basename := filepath.Base(tmpfile.Name())
+	tmpfilePath := filepath.Join("/tmp", basename)
+	vartmpfilePath := filepath.Join("/var/tmp", basename)
+	homePath := filepath.Join("/home", basename)
 
 	tests := []struct {
 		name string
@@ -183,13 +191,18 @@ func (c *actionTests) actionExec(t *testing.T) {
 			exit: 0,
 		},
 		{
-			name: "WorkdirContain",
-			argv: []string{"--contain", c.env.ImagePath, "test", "-f", tmpfile.Name()},
+			name: "ContainOnly",
+			argv: []string{"--contain", c.env.ImagePath, "test", "-f", tmpfilePath},
 			exit: 1,
 		},
 		{
-			name: "Workdir",
-			argv: []string{"--workdir", "testdata", c.env.ImagePath, "test", "-f", tmpfile.Name()},
+			name: "WorkdirOnly",
+			argv: []string{"--workdir", testdata, c.env.ImagePath, "test", "-f", tmpfilePath},
+			exit: 1,
+		},
+		{
+			name: "WorkdirContain",
+			argv: []string{"--workdir", testdata, "--contain", c.env.ImagePath, "test", "-f", tmpfilePath},
 			exit: 0,
 		},
 		{
@@ -199,12 +212,12 @@ func (c *actionTests) actionExec(t *testing.T) {
 		},
 		{
 			name: "Home",
-			argv: []string{"--home", pwd + "testdata", c.env.ImagePath, "test", "-f", tmpfile.Name()},
+			argv: []string{"--home", testdata, c.env.ImagePath, "test", "-f", tmpfile.Name()},
 			exit: 0,
 		},
 		{
 			name: "HomePath",
-			argv: []string{"--home", "/tmp:/home", c.env.ImagePath, "test", "-f", "/home/" + testfile.Name()},
+			argv: []string{"--home", testdataTmp + ":/home", c.env.ImagePath, "test", "-f", homePath},
 			exit: 0,
 		},
 		{
@@ -218,8 +231,13 @@ func (c *actionTests) actionExec(t *testing.T) {
 			exit: 0,
 		},
 		{
-			name: "UserBind",
-			argv: []string{"--bind", "/tmp:/var/tmp", c.env.ImagePath, "test", "-f", "/var/tmp/" + testfile.Name()},
+			name: "UserBindTmp",
+			argv: []string{"--bind", testdataTmp + ":/tmp", c.env.ImagePath, "test", "-f", tmpfilePath},
+			exit: 0,
+		},
+		{
+			name: "UserBindVarTmp",
+			argv: []string{"--bind", testdataTmp + ":/var/tmp", c.env.ImagePath, "test", "-f", vartmpfilePath},
 			exit: 0,
 		},
 		{
@@ -243,7 +261,7 @@ func (c *actionTests) actionExec(t *testing.T) {
 }
 
 // Shell interaction tests
-func (c *actionTests) actionShell(t *testing.T) {
+func (c actionTests) actionShell(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	hostname, err := os.Hostname()
@@ -309,7 +327,7 @@ func (c *actionTests) actionShell(t *testing.T) {
 }
 
 // STDPipe tests pipe stdin/stdout to singularity actions cmd
-func (c *actionTests) STDPipe(t *testing.T) {
+func (c actionTests) STDPipe(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	stdinTests := []struct {
@@ -450,7 +468,7 @@ func (c *actionTests) STDPipe(t *testing.T) {
 }
 
 // RunFromURI tests min fuctionality for singularity run/exec URI://
-func (c *actionTests) RunFromURI(t *testing.T) {
+func (c actionTests) RunFromURI(t *testing.T) {
 	e2e.PrepRegistry(t, c.env)
 
 	runScript := "testdata/runscript.sh"
@@ -638,7 +656,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 }
 
 // PersistentOverlay test the --overlay function
-func (c *actionTests) PersistentOverlay(t *testing.T) {
+func (c actionTests) PersistentOverlay(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	var squashfsImage = filepath.Join(c.env.TestDir, "squashfs.simg")
@@ -672,6 +690,7 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(tmpfile.Name())
+	bogusFile := filepath.Base(tmpfile.Name())
 
 	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
 	if res := cmd.Run(t); res.Error != nil {
@@ -767,7 +786,7 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 		},
 		{
 			name:    "overlay_squashFS_find",
-			argv:    []string{"--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
+			argv:    []string{"--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", bogusFile)},
 			exit:    0,
 			profile: e2e.RootProfile,
 		},
@@ -791,7 +810,7 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 		},
 		{
 			name:    "overlay_multiple_find_squashfs",
-			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
+			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", bogusFile)},
 			exit:    0,
 			profile: e2e.RootProfile,
 		},
@@ -839,7 +858,7 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &actionTests{
+	c := actionTests{
 		env: env,
 	}
 

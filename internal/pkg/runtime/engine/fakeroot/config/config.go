@@ -11,7 +11,8 @@ const Name = "fakeroot"
 // EngineConfig is the config for the fakeroot engine used to execute
 // a command in a fakeroot context
 type EngineConfig struct {
-	Args []string `json:"args"`
-	Envs []string `json:"envs"`
-	Home string   `json:"home"`
+	Args     []string `json:"args"`
+	Envs     []string `json:"envs"`
+	Home     string   `json:"home"`
+	BuildEnv bool     `json:"buildEnv"`
 }

@@ -25,7 +25,7 @@ type LibraryConveyorPacker struct {
 	LocalPacker
 }
 
-// Get downloads container from Singularityhub
+// Get downloads container from Sylabs Cloud Library.
 func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Library")
 
@@ -116,7 +116,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	return err
 }
 
-// CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
+// CleanUp removes any files owned by the conveyorPacker on the filesystem.
 func (cp *LibraryConveyorPacker) CleanUp() {
 	cp.b.Remove()
 }

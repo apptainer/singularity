@@ -6,7 +6,6 @@
 package build
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -21,13 +20,12 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/files"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	syexec "github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/squashfs"
+	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
@@ -44,20 +42,20 @@ import (
 type Build struct {
 	// stages of the build
 	stages []stage
-	// Conf contains cross stage build configuration
+	// Conf contains cross stage build configuration.
 	Conf Config
 }
 
 // Config defines how build is executed, including things like where final image is written.
 type Config struct {
-	// Dest is the location for container after build is complete
+	// Dest is the location for container after build is complete.
 	Dest string
-	// Format is the format of built container, e.g., SIF, sandbox
+	// Format is the format of built container, e.g. SIF, sandbox.
 	Format string
-	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
-	// useful for debugging
+	// NoCleanUp allows a user to prevent a bundle from being cleaned
+	// up after a failed build, useful for debugging.
 	NoCleanUp bool
-	// Opts for bundles
+	// Opts for bundles.
 	Opts types.Options
 }
 
@@ -79,6 +77,7 @@ func New(defs []types.Definition, conf Config) (*Build, error) {
 func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 	syscall.Umask(0002)
 
+	conf.Dest = filepath.Clean(conf.Dest)
 	// always build a sandbox if updating an existing sandbox
 	if conf.Opts.Update {
 		conf.Format = "sandbox"
@@ -339,9 +338,6 @@ func runBuildEngine(b *types.Bundle) error {
 	}
 
 	sylog.Debugf("Starting build engine")
-	env := []string{sylog.GetEnvVar()}
-	starter := filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter")
-	progname := []string{"singularity image-build"}
 	ociConfig := &oci.Config{}
 
 	engineConfig := &imgbuildConfig.EngineConfig{
@@ -362,20 +358,12 @@ func runBuildEngine(b *types.Bundle) error {
 		EngineConfig: engineConfig,
 	}
 
-	configData, err := json.Marshal(config)
-	if err != nil {
-		return fmt.Errorf("failed to marshal config.Common: %s", err)
-	}
-
-	starterCmd, err := syexec.PipeCommand(starter, progname, env, configData)
-	if err != nil {
-		return fmt.Errorf("failed to create cmd type: %v", err)
-	}
-
-	starterCmd.Stdout = os.Stdout
-	starterCmd.Stderr = os.Stderr
-
-	return starterCmd.Run()
+	return starter.Run(
+		"Singularity image-build",
+		config,
+		starter.WithStdout(os.Stdout),
+		starter.WithStderr(os.Stderr),
+	)
 }
 
 // makeDef gets a definition object from a spec.

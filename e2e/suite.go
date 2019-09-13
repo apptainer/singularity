@@ -22,6 +22,7 @@ import (
 	e2ebuildcfg "github.com/sylabs/singularity/e2e/buildcfg"
 	"github.com/sylabs/singularity/e2e/cache"
 	"github.com/sylabs/singularity/e2e/cmdenvvars"
+	"github.com/sylabs/singularity/e2e/delete"
 	"github.com/sylabs/singularity/e2e/docker"
 	singularityenv "github.com/sylabs/singularity/e2e/env"
 	"github.com/sylabs/singularity/e2e/help"
@@ -131,14 +132,16 @@ func Run(t *testing.T) {
 	// is stopped after tests run.
 	defer e2e.KillRegistry(t, testenv)
 
-	// RunE2ETests by functionality
+	// RunE2ETests by functionality.
+	//
+	// Please keep this list sorted.
 	suites := map[string]func(*testing.T){
-		"SECURITY":    security.E2ETests(testenv),
 		"ACTIONS":     actions.E2ETests(testenv),
-		"BUILD":       imgbuild.E2ETests(testenv),
 		"BUILDCFG":    e2ebuildcfg.E2ETests(testenv),
+		"BUILD":       imgbuild.E2ETests(testenv),
 		"CACHE":       cache.E2ETests(testenv),
 		"CMDENVVARS":  cmdenvvars.E2ETests(testenv),
+		"DELETE":      delete.E2ETests(testenv),
 		"DOCKER":      docker.E2ETests(testenv),
 		"ENV":         singularityenv.E2ETests(testenv),
 		"HELP":        help.E2ETests(testenv),
@@ -148,12 +151,13 @@ func Run(t *testing.T) {
 		"OCI":         oci.E2ETests(testenv),
 		"PULL":        pull.E2ETests(testenv),
 		"PUSH":        push.E2ETests(testenv),
+		"REGRESSIONS": regressions.E2ETests(testenv),
 		"REMOTE":      remote.E2ETests(testenv),
 		"RUN":         run.E2ETests(testenv),
+		"SECURITY":    security.E2ETests(testenv),
 		"SIGN":        sign.E2ETests(testenv),
 		"VERIFY":      verify.E2ETests(testenv),
 		"VERSION":     version.E2ETests(testenv),
-		"REGRESSIONS": regressions.E2ETests(testenv),
 	}
 
 	for name, fn := range suites {

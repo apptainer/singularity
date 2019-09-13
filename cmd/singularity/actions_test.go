@@ -390,6 +390,7 @@ func testPersistentOverlay(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(tmpfile.Name())
+	bogusFile := filepath.Base(tmpfile.Name())
 
 	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
 	var out bytes.Buffer
@@ -449,10 +450,10 @@ func testPersistentOverlay(t *testing.T) {
 	}))
 	// look for the file squashFs
 	t.Run("overlay_squashFS_find", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{squashfsImage + ":ro"}}, imagePath, []string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())})
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{squashfsImage + ":ro"}}, imagePath, []string{"test", "-f", fmt.Sprintf("/%s", bogusFile)})
 		if exitCode != 0 {
 			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())}, " "))
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("/%s", bogusFile)}, " "))
 		}
 	}))
 	// create a file multiple overlays
@@ -472,10 +473,10 @@ func testPersistentOverlay(t *testing.T) {
 		}
 	}))
 	t.Run("overlay_multiple_find_squashfs", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage + ":ro"}}, imagePath, []string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())})
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage + ":ro"}}, imagePath, []string{"test", "-f", fmt.Sprintf("/%s", bogusFile)})
 		if exitCode != 0 {
 			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())}, " "))
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("/%s", bogusFile)}, " "))
 		}
 	}))
 	// look for the file without root privs

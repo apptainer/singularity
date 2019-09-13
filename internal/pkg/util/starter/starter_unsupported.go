@@ -5,15 +5,14 @@
 
 // +build !linux
 
-package sources
+package starter
 
 import (
 	"fmt"
-
-	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-// Pack puts relevant objects in a Bundle.
-func (p *SIFPacker) Pack() (*types.Bundle, error) {
-	return nil, fmt.Errorf("unsupported on this platform")
+// sendData sets a socket communication channel between caller and starter
+// binary in order to pass engine JSON configuration data to starter.
+func sendData(data []byte) (int, error) {
+	return -1, fmt.Errorf("not supported on this platform")
 }
