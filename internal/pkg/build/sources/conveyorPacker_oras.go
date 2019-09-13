@@ -15,7 +15,7 @@ import (
 )
 
 // OrasConveyorPacker only needs to hold a packer to pack the image it pulls
-// as well as extra information about the library it's pulling from
+// as well as extra information about the library it's pulling from.
 type OrasConveyorPacker struct {
 	LocalPacker
 }

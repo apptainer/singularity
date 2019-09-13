@@ -7,13 +7,8 @@
 
 package sources
 
-import (
-	"fmt"
+import "fmt"
 
-	"github.com/sylabs/singularity/pkg/build/types"
-)
-
-// Pack puts relevant objects in a Bundle.
-func (p *SIFPacker) Pack() (*types.Bundle, error) {
-	return nil, fmt.Errorf("unsupported on this platform")
+func (cp *ArchConveyorPacker) prepareFakerootEnv() (func(), error) {
+	return nil, fmt.Errorf("fakeroot not supported on this platform")
 }

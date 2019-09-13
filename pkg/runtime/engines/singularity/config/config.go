@@ -67,6 +67,7 @@ type JSONConfig struct {
 	BindPath          []string      `json:"bindpath,omitempty"`
 	NetworkArgs       []string      `json:"networkArgs,omitempty"`
 	Security          []string      `json:"security,omitempty"`
+	FilesPath         []string      `json:"filesPath,omitempty"`
 	LibrariesPath     []string      `json:"librariesPath,omitempty"`
 	ImageList         []image.Image `json:"imageList,omitempty"`
 	OpenFd            []int         `json:"openFd,omitempty"`
@@ -483,10 +484,31 @@ func (e *EngineConfig) SetLibrariesPath(libraries []string) {
 	e.JSON.LibrariesPath = libraries
 }
 
+// AppendLibrariesPath adds libraries to bind in container
+// /.singularity.d/libs directory.
+func (e *EngineConfig) AppendLibrariesPath(libraries ...string) {
+	e.JSON.LibrariesPath = append(e.JSON.LibrariesPath, libraries...)
+}
+
 // GetLibrariesPath returns libraries to bind in container
 // /.singularity.d/libs directory.
 func (e *EngineConfig) GetLibrariesPath() []string {
 	return e.JSON.LibrariesPath
+}
+
+// SetFilesPath sets files to bind in container (eg: --nv).
+func (e *EngineConfig) SetFilesPath(files []string) {
+	e.JSON.FilesPath = files
+}
+
+// AppendFilesPath adds files to bind in container (eg: --nv)
+func (e *EngineConfig) AppendFilesPath(files ...string) {
+	e.JSON.FilesPath = append(e.JSON.FilesPath, files...)
+}
+
+// GetFilesPath returns files to bind in container (eg: --nv).
+func (e *EngineConfig) GetFilesPath() []string {
+	return e.JSON.FilesPath
 }
 
 // SetFakeroot sets fakeroot flag.
