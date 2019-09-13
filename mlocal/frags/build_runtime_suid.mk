@@ -14,7 +14,7 @@ $(starter_suid_INSTALL): $(starter_suid)
 	@echo " INSTALL SUID" $@
 	$(V)install -d $(@D)
 	$(V)install $(starter_suid) $(starter_suid_INSTALL)
-	@if [ `id -u` -ne 0 -a -z "${RPM_BUILD_ROOT}" ] ; then \
+	@if [ `id -u` -ne 0 ] ; then \
 		echo "$(starter_suid_INSTALL) -- installed with incorrect permissions"; \
 	else \
 		$(V)chmod 4755 $(starter_suid_INSTALL); \
