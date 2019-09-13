@@ -14,6 +14,7 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 )
 
 // DebootstrapConveyorPacker holds stuff that needs to be packed into the bundle
@@ -40,6 +41,17 @@ func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	if os.Getuid() != 0 {
 		return fmt.Errorf("you must be root to build with debootstrap")
+	}
+
+	insideUserNs, setgroupsAllowed := namespaces.IsInsideUserNamespace(os.Getpid())
+	if insideUserNs && setgroupsAllowed {
+		umountFn, err := cp.prepareFakerootEnv()
+		if umountFn != nil {
+			defer umountFn()
+		}
+		if err != nil {
+			return fmt.Errorf("while preparing fakeroot build environment: %s", err)
+		}
 	}
 
 	// run debootstrap command
