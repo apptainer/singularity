@@ -65,7 +65,7 @@ func check(path string, d dir) error {
 		return fmt.Errorf("could not retrieve underlying filesystem information for %s: %s", path, err)
 	}
 
-	fs, ok := incompatibleFs[stfs.Type]
+	fs, ok := incompatibleFs[int64(stfs.Type)]
 	if !ok || (ok && fs.overlayDir&d == 0) {
 		return nil
 	}

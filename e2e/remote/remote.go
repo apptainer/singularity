@@ -21,7 +21,7 @@ type ctx struct {
 // remoteAdd checks the functionality of "singularity remote add" command.
 // It Verifies that adding valid endpoints results in success and invalid
 // one's results in failure.
-func (c *ctx) remoteAdd(t *testing.T) {
+func (c ctx) remoteAdd(t *testing.T) {
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -42,6 +42,7 @@ func (c *ctx) remoteAdd(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -62,6 +63,7 @@ func (c *ctx) remoteAdd(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
@@ -73,7 +75,7 @@ func (c *ctx) remoteAdd(t *testing.T) {
 // 1. Adds remote endpoints
 // 2. Deletes the already added entries
 // 3. Verfies that removing an invalid entry results in a failure
-func (c *ctx) remoteRemove(t *testing.T) {
+func (c ctx) remoteRemove(t *testing.T) {
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -96,6 +98,7 @@ func (c *ctx) remoteRemove(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -115,6 +118,7 @@ func (c *ctx) remoteRemove(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -133,6 +137,7 @@ func (c *ctx) remoteRemove(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
@@ -143,7 +148,7 @@ func (c *ctx) remoteRemove(t *testing.T) {
 // remoteUse tests the functionality of "singularity remote use" command.
 // 1. Tries to use non-existing remote entry
 // 2. Adds remote entries and tries to use those
-func (c *ctx) remoteUse(t *testing.T) {
+func (c ctx) remoteUse(t *testing.T) {
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -163,6 +168,7 @@ func (c *ctx) remoteUse(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
@@ -184,6 +190,7 @@ func (c *ctx) remoteUse(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -203,6 +210,7 @@ func (c *ctx) remoteUse(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -214,7 +222,7 @@ func (c *ctx) remoteUse(t *testing.T) {
 // 1. Adds remote endpoints
 // 2. Verifies that remote status command succeeds on existing endpoints
 // 3. Verifies that remote status command fails on non-existing endpoints
-func (c *ctx) remoteStatus(t *testing.T) {
+func (c ctx) remoteStatus(t *testing.T) {
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -237,6 +245,7 @@ func (c *ctx) remoteStatus(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -255,6 +264,7 @@ func (c *ctx) remoteStatus(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -274,6 +284,7 @@ func (c *ctx) remoteStatus(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
@@ -282,7 +293,7 @@ func (c *ctx) remoteStatus(t *testing.T) {
 }
 
 // remoteList tests the functionality of "singularity remote list" command
-func (c *ctx) remoteList(t *testing.T) {
+func (c ctx) remoteList(t *testing.T) {
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -301,6 +312,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -322,6 +334,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -339,6 +352,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -358,6 +372,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -375,6 +390,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -382,9 +398,63 @@ func (c *ctx) remoteList(t *testing.T) {
 	}
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+func (c ctx) remoteTestFlag(t *testing.T) {
+	tests := []struct {
+		name           string
+		cmdArgs        []string
+		expectedOutput string
+	}{
+		{
+			name:           "add help",
+			cmdArgs:        []string{"add", "--help"},
+			expectedOutput: "Create a new singularity remote endpoint",
+		},
+		{
+			name:           "list help",
+			cmdArgs:        []string{"list", "--help"},
+			expectedOutput: "List all singularity remote endpoints that are configured",
+		},
+		{
+			name:           "login help",
+			cmdArgs:        []string{"login", "--help"},
+			expectedOutput: "Log into a singularity remote endpoint using an authentication token",
+		},
+		{
+			name:           "remove help",
+			cmdArgs:        []string{"remove", "--help"},
+			expectedOutput: "Remove an existing singularity remote endpoint",
+		},
+		{
+			name:           "status help",
+			cmdArgs:        []string{"status", "--help"},
+			expectedOutput: "Check the status of the singularity services at an endpoint",
+		},
+		{
+			name:           "use help",
+			cmdArgs:        []string{"use", "--help"},
+			expectedOutput: "Set a singularity remote endpoint to be actively used",
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(tt.cmdArgs...),
+			e2e.ExpectExit(
+				0,
+				e2e.ExpectOutput(e2e.RegexMatch, `^`+tt.expectedOutput),
+			),
+		)
+
+	}
+}
+
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := ctx{
 		env: env,
 	}
 
@@ -394,5 +464,6 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 		t.Run("use", c.remoteUse)
 		t.Run("status", c.remoteStatus)
 		t.Run("list", c.remoteList)
+		t.Run("test flag", c.remoteTestFlag)
 	}
 }

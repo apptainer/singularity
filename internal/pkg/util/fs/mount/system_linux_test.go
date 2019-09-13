@@ -6,6 +6,7 @@
 package mount
 
 import (
+	"fmt"
 	"syscall"
 	"testing"
 
@@ -28,18 +29,26 @@ func TestSystem(t *testing.T) {
 	after := false
 	mnt := false
 
-	mountFn := func(point *Point) error {
+	mountFn := func(point *Point, system *System) error {
 		mnt = true
 		return nil
 	}
 	beforeHook := func(system *System) error {
 		before = true
+		tag := system.CurrentTag()
+		if tag != BindsTag {
+			return fmt.Errorf("bad tag returned: %s instead of %s", tag, BindsTag)
+		}
 		return nil
 	}
 	afterHook := func(system *System) error {
 		after = true
 		if system.Mount == nil {
 			system.Mount = mountFn
+		}
+		tag := system.CurrentTag()
+		if tag != BindsTag {
+			return fmt.Errorf("bad tag returned: %s instead of %s", tag, BindsTag)
 		}
 		return nil
 	}

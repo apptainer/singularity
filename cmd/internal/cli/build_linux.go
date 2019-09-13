@@ -7,12 +7,10 @@ package cli
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	osExec "os/exec"
-	"path/filepath"
 	"runtime"
 	"syscall"
 
@@ -22,12 +20,12 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/fakeroot/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
+	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
+	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
@@ -35,15 +33,7 @@ import (
 )
 
 func fakerootExec(cmdArgs []string) {
-	starter := filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter-suid")
-
-	// singularity was compiled with '--without-suid' option
-	if buildcfg.SINGULARITY_SUID_INSTALL == 0 {
-		starter = filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter")
-	}
-	if _, err := os.Stat(starter); os.IsNotExist(err) {
-		sylog.Fatalf("%s not found, please check your installation", starter)
-	}
+	useSuid := buildcfg.SINGULARITY_SUID_INSTALL == 1
 
 	short := "-" + buildFakerootFlag.ShortHand
 	long := "--" + buildFakerootFlag.Name
@@ -75,9 +65,10 @@ func fakerootExec(cmdArgs []string) {
 	}
 
 	engineConfig := &fakerootConfig.EngineConfig{
-		Args: args,
-		Envs: os.Environ(),
-		Home: user.Dir,
+		Args:     args,
+		Envs:     os.Environ(),
+		Home:     user.Dir,
+		BuildEnv: true,
 	}
 
 	cfg := &config.Common{
@@ -86,16 +77,12 @@ func fakerootExec(cmdArgs []string) {
 		EngineConfig: engineConfig,
 	}
 
-	configData, err := json.Marshal(cfg)
-	if err != nil {
-		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
-	}
-
-	Env := []string{"SINGULARITY_MESSAGELEVEL=0"}
-
-	if err := exec.Pipe(starter, []string{"Singularity fakeroot"}, Env, configData); err != nil {
-		sylog.Fatalf("%s", err)
-	}
+	err = starter.Exec(
+		"Singularity fakeroot",
+		cfg,
+		starter.UseSuid(useSuid),
+	)
+	sylog.Fatalf("%s", err)
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -106,7 +93,6 @@ func run(cmd *cobra.Command, args []string) {
 
 	if buildArch != runtime.GOARCH && !remote {
 		sylog.Fatalf("Requested architecture (%s) does not match host (%s). Cannot build locally.", buildArch, runtime.GOARCH)
-		cmd.Flags().Lookup("arch").Value.Set(runtime.GOARCH)
 	}
 
 	dest := args[0]
@@ -125,7 +111,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		handleRemoteBuildFlags(cmd)
 
-		// Submiting a remote build requires a valid authToken
+		// submitting a remote build requires a valid authToken
 		if authToken == "" {
 			sylog.Fatalf("Unable to submit build job: %v", remoteWarning)
 		}
@@ -193,9 +179,8 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	} else {
-
 		var keyInfo *crypt.KeyInfo
-		if encrypt || EnterPassphrase || cmd.Flags().Lookup("pem-path").Changed {
+		if encrypt || enterPassphrase || cmd.Flags().Lookup("pem-path").Changed {
 			if os.Getuid() != 0 {
 				sylog.Fatalf("You must be root to build an encrypted container")
 			}
@@ -215,7 +200,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		imgCache := getCacheHandle(cache.Config{})
 		if imgCache == nil {
-			sylog.Fatalf("failed to create an image cache handle")
+			sylog.Fatalf("Failed to create an image cache handle")
 		}
 
 		if syscall.Getuid() != 0 && !fakeroot && fs.IsFile(spec) && !isImage(spec) {
@@ -224,7 +209,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		err := checkSections()
 		if err != nil {
-			sylog.Fatalf(err.Error())
+			sylog.Fatalf("Could not check build sections: %v", err)
 		}
 
 		authConf, err := makeDockerCredentials(cmd)
@@ -240,7 +225,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		// only resolve remote endpoints if library is a build source
 		for _, d := range defs {
-			if d.Header != nil && d.Header["bootstrap"] == "library" {
+			if d.Header["bootstrap"] == "library" {
 				handleBuildFlags(cmd)
 				continue
 			}
@@ -300,7 +285,10 @@ func checkSections() error {
 }
 
 func isImage(spec string) bool {
-	_, err := image.Init(spec, false)
+	i, err := image.Init(spec, false)
+	if i != nil {
+		_ = i.File.Close()
+	}
 	return err == nil
 }
 

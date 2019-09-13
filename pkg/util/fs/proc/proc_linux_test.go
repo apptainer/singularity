@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -73,11 +73,167 @@ var mountInfoData = `22 28 0:21 / /sys rw,nosuid,nodev,noexec,relatime shared:7 
 381 26 0:54 / /run/user/1000 rw,nosuid,nodev,relatime shared:245 - tmpfs tmpfs rw,size=1635868k,mode=700,uid=1000,gid=1000
 363 381 0:52 / /run/user/1000/gvfs rw,nosuid,nodev,relatime shared:233 - fuse.gvfsd-fuse gvfsd-fuse rw,user_id=1000,group_id=1000`
 
-func TestParseMountInfo(t *testing.T) {
+var expectedMap = map[string][]string{
+	"/": {
+		"/sys",
+		"/proc",
+		"/dev",
+		"/run",
+		"/home",
+	},
+	"/dev": {
+		"/dev/pts",
+		"/dev/shm",
+		"/dev/mqueue",
+		"/dev/hugepages",
+	},
+	"/sys": {
+		"/sys/kernel/security",
+		"/sys/fs/cgroup",
+		"/sys/fs/pstore",
+		"/sys/kernel/debug",
+		"/sys/kernel/config",
+		"/sys/fs/fuse/connections",
+	},
+	"/sys/fs/cgroup": {
+		"/sys/fs/cgroup/unified",
+		"/sys/fs/cgroup/systemd",
+		"/sys/fs/cgroup/devices",
+		"/sys/fs/cgroup/rdma",
+		"/sys/fs/cgroup/cpuset",
+		"/sys/fs/cgroup/cpu,cpuacct",
+		"/sys/fs/cgroup/pids",
+		"/sys/fs/cgroup/hugetlb",
+		"/sys/fs/cgroup/net_cls,net_prio",
+		"/sys/fs/cgroup/freezer",
+		"/sys/fs/cgroup/perf_event",
+		"/sys/fs/cgroup/memory",
+		"/sys/fs/cgroup/blkio",
+	},
+	"/proc": {
+		"/proc/fs/nfsd",
+		"/proc/sys/fs/binfmt_misc",
+	},
+	"/run": {
+		"/run/lock",
+		"/run/rpc_pipefs",
+		"/run/user/1000",
+	},
+	"/run/user/1000": {
+		"/run/user/1000/gvfs",
+	},
+}
+
+func TestGetMountInfo(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	if _, err := ParseMountInfo("/proc/self/fakemountinfo"); err == nil {
+	_, err := GetMountInfoEntry("/bad/path")
+	if err == nil {
+		t.Fatalf("unexpected success while parsing bad path")
+	}
+
+	tmpfile, err := ioutil.TempFile("", "mountinfo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	if _, err := tmpfile.Write([]byte(mountInfoData)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	entries, err := GetMountInfoEntry(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("unexpected error while parsing %s: %s", tmpfile.Name(), err)
+	}
+
+	for _, e := range entries {
+		found := false
+		if _, ok := expectedMap[e.Point]; ok {
+			continue
+		}
+		for parent := range expectedMap {
+			for _, child := range expectedMap[parent] {
+				if e.Point == child {
+					found = true
+					break
+				}
+			}
+		}
+		if !found {
+			t.Errorf("%s not found", e.Point)
+		}
+	}
+
+	check := []MountInfoEntry{
+		{
+			ParentID:     "28",
+			ID:           "22",
+			Dev:          "0:21",
+			Root:         "/",
+			Fields:       "shared:7",
+			FSType:       "sysfs",
+			Source:       "sysfs",
+			SuperOptions: []string{"rw"},
+			Options:      []string{"rw", "nosuid", "nodev", "noexec", "relatime"},
+		},
+		{
+			ParentID:     "28",
+			ID:           "88",
+			Dev:          "253:1",
+			Root:         "/",
+			Fields:       "shared:33",
+			FSType:       "ext4",
+			Source:       "/dev/mapper/pdc_egggdecf1",
+			SuperOptions: []string{"rw", "errors=remount-ro", "stripe=64"},
+			Options:      []string{"rw", "noatime", "nodiratime"},
+		},
+	}
+
+	for _, c := range check {
+		for _, e := range entries {
+			if c.Point == e.Point {
+				if e.ParentID != c.ParentID {
+					t.Errorf("wrong parent ID %s instead of %s", e.ParentID, c.ParentID)
+				}
+				if e.ID != c.ID {
+					t.Errorf("wrong ID: %s instead of %s", e.ID, c.ID)
+				}
+				if e.Dev != c.Dev {
+					t.Errorf("wrong dev field: %s instead of %s", e.Dev, c.Dev)
+				}
+				if e.Root != c.Root {
+					t.Errorf("wrong root field: %s instead of %s", e.Root, c.Root)
+				}
+				if e.Fields != c.Fields {
+					t.Errorf("wrong fields: %s instead of %s", e.Fields, c.Fields)
+				}
+				if e.FSType != c.FSType {
+					t.Errorf("wrong fstype: %s instead of %s", e.FSType, c.FSType)
+				}
+				if e.Source != c.Source {
+					t.Errorf("wrong source: %s instead of %s", e.Source, c.Source)
+				}
+				if e.SuperOptions[0] != c.SuperOptions[0] {
+					t.Errorf("wrong super options: %s instead of %s", e.SuperOptions[0], c.SuperOptions)
+				}
+				if e.Options[1] != c.Options[1] {
+					t.Errorf("wrong options: %s instead of %s", e.Options[1], c.Options)
+				}
+			}
+		}
+	}
+}
+
+func TestGetMountPointMap(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	if _, err := GetMountPointMap("/proc/self/fakemountinfo"); err == nil {
 		t.Errorf("should have failed with non existent path")
 	}
 	tmpfile, err := ioutil.TempFile("", "mountinfo")
@@ -92,33 +248,30 @@ func TestParseMountInfo(t *testing.T) {
 	if err := tmpfile.Close(); err != nil {
 		t.Fatal(err)
 	}
-	m, err := ParseMountInfo(tmpfile.Name())
+	m, err := GetMountPointMap(tmpfile.Name())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(m) != 7 {
-		t.Errorf("got %d main parent mount point instead of 7", len(m))
+
+	if len(m) != len(expectedMap) {
+		t.Errorf("got %d parent entry instead of %d", len(m), len(expectedMap))
 	}
-	if len(m["/"]) != 5 {
-		t.Errorf("got %d child mount point for '/' instead of 5", len(m["/"]))
-	}
-	if len(m["/dev"]) != 4 {
-		t.Errorf("got %d child mount point for '/dev' instead of 4", len(m["/dev"]))
-	}
-	if len(m["/sys"]) != 6 {
-		t.Errorf("got %d child mount point for '/sys' instead of 6", len(m["/sys"]))
-	}
-	if len(m["/sys/fs/cgroup"]) != 13 {
-		t.Errorf("got %d child mount point for '/sys/fs/cgroup' instead of 13", len(m["/sys/fs/cgroup"]))
-	}
-	if len(m["/proc"]) != 2 {
-		t.Errorf("got %d child mount point for '/proc' instead of 2", len(m["/proc"]))
-	}
-	if len(m["/run"]) != 3 {
-		t.Errorf("got %d child mount point for '/run' instead of 3", len(m["/run"]))
-	}
-	if len(m["/run/user/1000"]) != 1 {
-		t.Errorf("got %d child mount point for '/run/user/1000' instead of 1", len(m["/run/user/1000"]))
+
+	for e := range expectedMap {
+		if len(m[e]) != len(expectedMap[e]) {
+			t.Errorf("got %d child mount point for %q instead of %d", len(m[e]), e, len(expectedMap[e]))
+		}
+		for _, c := range expectedMap[e] {
+			found := false
+			for _, mc := range m[e] {
+				if mc == c {
+					found = true
+				}
+			}
+			if !found {
+				t.Errorf("%s is missing for parent mount %s", c, e)
+			}
+		}
 	}
 }
 
@@ -169,23 +322,39 @@ func TestReadIDMap(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	_, _, err := ReadIDMap("/proc/__/uid_map")
+	if err == nil {
+		t.Fatalf("unexpected success with bad uid_map path")
+	}
+
 	// skip tests if uid_map doesn't exists
 	if _, err := os.Stat("/proc/self/uid_map"); os.IsNotExist(err) {
 		return
 	}
-	containerID, hostID, err := ReadIDMap("/proc/self/uid_map")
-	if err != nil {
-		t.Fatal(err)
+
+	for _, e := range []string{"/proc/self/uid_map", "/proc/self/gid_map"} {
+		containerID, hostID, err := ReadIDMap(e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if containerID != 0 || containerID != hostID {
+			t.Errorf("unexpected container/host ID")
+		}
 	}
-	if containerID != 0 || containerID != hostID {
-		t.Errorf("")
-	}
-	containerID, hostID, err = ReadIDMap("/proc/self/gid_map")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if containerID != 0 || containerID != hostID {
-		t.Errorf("")
+
+	for _, e := range []string{"a a a", "0 a a"} {
+		f, err := ioutil.TempFile("", "uid_map-")
+		if err != nil {
+			t.Fatalf("failed to create temporary file")
+		}
+		defer os.Remove(f.Name())
+		f.WriteString(e)
+		f.Close()
+
+		_, _, err = ReadIDMap(f.Name())
+		if err == nil {
+			t.Fatalf("unexpected success with bad formatted uid_map")
+		}
 	}
 }
 
@@ -248,8 +417,13 @@ func TestSetOOMScoreAdj(t *testing.T) {
 func TestHasNamespace(t *testing.T) {
 	test.EnsurePrivilege(t)
 
+	has, err := HasNamespace(0, "ipc")
+	if err == nil && has {
+		t.Error("unexpected success with PID 0")
+	}
+
 	ppid := os.Getppid()
-	has, err := HasNamespace(ppid, "net")
+	has, err = HasNamespace(ppid, "net")
 	if err != nil {
 		t.Error(err)
 	}
@@ -280,4 +454,34 @@ func TestHasNamespace(t *testing.T) {
 	pipe.Close()
 
 	cmd.Wait()
+}
+
+func TestGetppid(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	pid := os.Getpid()
+	ppid := os.Getppid()
+
+	list := []struct {
+		name          string
+		pid           int
+		ppid          int
+		expectSuccess bool
+	}{
+		{"ProcessZero", 0, -1, false},
+		{"CurrentProcess", pid, ppid, true},
+		{"InitProcess", 1, -1, false},
+	}
+
+	for _, tt := range list {
+		p, err := Getppid(tt.pid)
+		if err != nil && tt.expectSuccess {
+			t.Fatalf("unexpected failure for %q: %s", tt.name, err)
+		} else if err == nil && !tt.expectSuccess {
+			t.Fatalf("unexpected success for %q: got parent process ID %d instead of %d", tt.name, p, tt.ppid)
+		} else if p != tt.ppid {
+			t.Fatalf("unexpected parent process ID returned: got %d instead of %d", p, tt.ppid)
+		}
+	}
 }

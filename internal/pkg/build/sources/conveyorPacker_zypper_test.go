@@ -8,6 +8,7 @@ package sources
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
@@ -52,7 +53,7 @@ func TestZypperConveyor(t *testing.T) {
 		defer defFile.Close()
 
 		// create bundle to build into
-		b, err := types.NewBundle("", "sbuild-zypper")
+		b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-zypper"), os.TempDir())
 		if err != nil {
 			return
 		}
@@ -68,7 +69,7 @@ func TestZypperConveyor(t *testing.T) {
 
 		err = zc.Get(b)
 		// clean up tmpfs since assembler isnt called
-		defer os.RemoveAll(zc.b.Path)
+		defer zc.b.Remove()
 		if err != nil {
 			t.Fatalf("failed to Get from %s: %v\n", defName, err)
 		}
@@ -76,6 +77,10 @@ func TestZypperConveyor(t *testing.T) {
 }
 
 func TestZypperPacker(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.EnsurePrivilege(t)
 
 	if _, err := exec.LookPath("zypper"); err != nil {
@@ -90,7 +95,7 @@ func TestZypperPacker(t *testing.T) {
 		defer defFile.Close()
 
 		// create bundle to build into
-		b, err := types.NewBundle("", "sbuild-zypper")
+		b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-zypper"), os.TempDir())
 		if err != nil {
 			return
 		}
@@ -106,7 +111,7 @@ func TestZypperPacker(t *testing.T) {
 
 		err = zcp.Get(b)
 		// clean up tmpfs since assembler isnt called
-		defer os.RemoveAll(zcp.b.Path)
+		defer zcp.b.Remove()
 		if err != nil {
 			t.Fatalf("failed to Get from %s: %v\n", defName, err)
 		}

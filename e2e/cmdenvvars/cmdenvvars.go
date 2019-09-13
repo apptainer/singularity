@@ -57,7 +57,7 @@ func (c *ctx) testSingularityImgCache(t *testing.T, disableCache bool) string {
 	// whether it does the correct thing or not.
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("pull"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(0),
@@ -76,7 +76,7 @@ func (c *ctx) cacheIsNotExist(t *testing.T, imgPath string) {
 	}
 }
 
-func (c *ctx) testSingularityCacheDir(t *testing.T) {
+func (c ctx) testSingularityCacheDir(t *testing.T) {
 	// The intent of the test is simple:
 	// - create 2 temporary directories, one where the image will be pulled and one where the
 	//   image cache should be created,
@@ -103,7 +103,7 @@ func (c *ctx) testSingularityCacheDir(t *testing.T) {
 	}
 }
 
-func (c *ctx) testSingularityDisableCache(t *testing.T) {
+func (c ctx) testSingularityDisableCache(t *testing.T) {
 	testDir, cacheDir, cleanup := setupTempDirs(t, false)
 	c.env.TestDir = testDir
 	defer cleanup(t)
@@ -122,7 +122,7 @@ func (c *ctx) testSingularityDisableCache(t *testing.T) {
 // usage of sandboxes shared between users is a common practice. In that
 // context, the home directory ends up being read-only and no caching
 // is required.
-func (c *ctx) testSingularityReadOnlyCacheDir(t *testing.T) {
+func (c ctx) testSingularityReadOnlyCacheDir(t *testing.T) {
 	testDir, cacheDir, cleanup := setupTempDirs(t, true)
 	c.env.TestDir = testDir
 	defer cleanup(t)
@@ -146,7 +146,7 @@ func (c *ctx) testSingularityReadOnlyCacheDir(t *testing.T) {
 	c.cacheIsNotExist(t, imgPath)
 }
 
-func (c *ctx) testSingularitySypgpDir(t *testing.T) {
+func (c ctx) testSingularitySypgpDir(t *testing.T) {
 	// Create a temporary directory to be used for a keyring
 	keyringDir, err := ioutil.TempDir("", "e2e-sypgp-env-")
 	if err != nil {
@@ -164,7 +164,7 @@ func (c *ctx) testSingularitySypgpDir(t *testing.T) {
 	c.env.KeyringDir = keyringDir
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("key"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(0),
@@ -182,9 +182,9 @@ func (c *ctx) testSingularitySypgpDir(t *testing.T) {
 
 }
 
-// RunE2ETests is the bootstrap to run all instance tests.
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := ctx{
 		env: env,
 	}
 

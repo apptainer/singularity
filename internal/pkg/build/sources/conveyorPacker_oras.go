@@ -15,7 +15,7 @@ import (
 )
 
 // OrasConveyorPacker only needs to hold a packer to pack the image it pulls
-// as well as extra information about the library it's pulling from
+// as well as extra information about the library it's pulling from.
 type OrasConveyorPacker struct {
 	LocalPacker
 }
@@ -53,7 +53,7 @@ func (cp *OrasConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	// insert base metadata before unpacking fs
-	if err = makeBaseEnv(b.Rootfs()); err != nil {
+	if err = makeBaseEnv(b.RootfsPath); err != nil {
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 

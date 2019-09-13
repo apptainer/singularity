@@ -22,7 +22,7 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-func (c *ctx) testDockerPulls(t *testing.T) {
+func (c ctx) testDockerPulls(t *testing.T) {
 	const tmpContainerFile = "test_container.sif"
 
 	tmpPath, err := fs.MakeTmpDir(c.env.TestDir, "docker-", 0755)
@@ -98,6 +98,7 @@ func (c *ctx) testDockerPulls(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("pull"),
 			e2e.WithArgs(append(tt.options, tt.image, tt.uri)...),
 			e2e.PostRun(func(t *testing.T) {
@@ -116,12 +117,13 @@ func (c *ctx) testDockerPulls(t *testing.T) {
 }
 
 // AUFS sanity tests
-func (c *ctx) testDockerAUFS(t *testing.T) {
+func (c ctx) testDockerAUFS(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-aufs-sanity"}...),
 		e2e.ExpectExit(0),
@@ -152,6 +154,7 @@ func (c *ctx) testDockerAUFS(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),
@@ -160,12 +163,13 @@ func (c *ctx) testDockerAUFS(t *testing.T) {
 }
 
 // Check force permissions for user builds #977
-func (c *ctx) testDockerPermissions(t *testing.T) {
+func (c ctx) testDockerPermissions(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-singularity-userperms"}...),
 		e2e.ExpectExit(0),
@@ -195,6 +199,7 @@ func (c *ctx) testDockerPermissions(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),
@@ -203,12 +208,13 @@ func (c *ctx) testDockerPermissions(t *testing.T) {
 }
 
 // Check whiteout of symbolic links #1592 #1576
-func (c *ctx) testDockerWhiteoutSymlink(t *testing.T) {
+func (c ctx) testDockerWhiteoutSymlink(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-singularity-linkwh"}...),
 		e2e.PostRun(func(t *testing.T) {
@@ -221,7 +227,7 @@ func (c *ctx) testDockerWhiteoutSymlink(t *testing.T) {
 	)
 }
 
-func (c *ctx) testDockerDefFile(t *testing.T) {
+func (c ctx) testDockerDefFile(t *testing.T) {
 	getKernelMajor := func(t *testing.T) (major int) {
 		var buf unix.Utsname
 		if err := unix.Uname(&buf); err != nil {
@@ -277,7 +283,7 @@ func (c *ctx) testDockerDefFile(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs([]string{imagePath, deffile}...),
 			e2e.PreRun(func(t *testing.T) {
@@ -300,7 +306,7 @@ func (c *ctx) testDockerDefFile(t *testing.T) {
 	}
 }
 
-func (c *ctx) testDockerRegistry(t *testing.T) {
+func (c ctx) testDockerRegistry(t *testing.T) {
 	e2e.PrepRegistry(t, c.env)
 
 	tests := []struct {
@@ -344,7 +350,7 @@ func (c *ctx) testDockerRegistry(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs([]string{imagePath, defFile}...),
 			e2e.WithEnv(append(os.Environ(), "SINGULARITY_NOHTTPS=true")),
@@ -363,9 +369,9 @@ func (c *ctx) testDockerRegistry(t *testing.T) {
 	}
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := ctx{
 		env: env,
 	}
 

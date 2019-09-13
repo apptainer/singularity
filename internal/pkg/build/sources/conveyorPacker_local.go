@@ -47,7 +47,7 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 		sylog.Debugf("Packing from SIF")
 
 		return &SIFPacker{
-			srcfile: src,
+			srcFile: src,
 			b:       b,
 		}, nil
 	case image.SQUASHFS:
@@ -84,10 +84,10 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 	}
 }
 
-// Get just stores the source
+// Get just stores the source.
 func (cp *LocalConveyorPacker) Get(b *types.Bundle) (err error) {
 	// insert base metadata before unpacking fs
-	if err = makeBaseEnv(b.Rootfs()); err != nil {
+	if err = makeBaseEnv(b.RootfsPath); err != nil {
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 

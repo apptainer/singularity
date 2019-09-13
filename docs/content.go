@@ -258,7 +258,8 @@ Enterprise Performance Computing (EPC)`
   keys to be stored in the default user local key store location (e.g., 
   $HOME/.singularity/sypgp).`
 	KeyNewPairExample string = `
-  $ singularity key newpair`
+  $ singularity key newpair
+  $ singularity key newpair --password=psk --name=your-name --comment="key comment" --email=mail@email.com --push=false`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key list
@@ -324,6 +325,16 @@ Enterprise Performance Computing (EPC)`
   your keyring.`
 	KeyRemoveExample string = `
   $ singularity key remove D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// delete
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	DeleteUse   string = `delete [arch] <imageRef>`
+	DeleteShort string = `Deletes requested image from the library`
+	DeleteLong  string = `
+  The 'delete' command allows you to delete an image from a remote library.`
+	DeleteExample string = `
+  $ singularity delete --arch=amd64 library://username/project/image:1.0`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
@@ -478,20 +489,27 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstanceListUse   string = `list [list options...]`
+	InstanceListUse   string = `list [list options...] [<instance name glob>]`
 	InstanceListShort string = `List all running and named Singularity instances`
 	InstanceListLong  string = `
   The instance list command allows you to view the Singularity container
   instances that are currently running in the background.`
 	InstanceListExample string = `
   $ singularity instance list
-  DAEMON NAME      PID      CONTAINER IMAGE
-  test            11963     /home/mibauer/singularity/sinstance/test.sif
+  INSTANCE NAME      PID       IMAGE
+  test               11963     /home/mibauer/singularity/sinstance/test.sif
+  test2              11964     /home/mibauer/singularity/sinstance/test.sif
+  lolcow             11965     /home/mibauer/singularity/sinstance/lolcow.sif
+
+  $ singularity instance list 'test*'
+  INSTANCE NAME      PID       IMAGE
+  test               11963     /home/mibauer/singularity/sinstance/test.sif
+  test2              11964     /home/mibauer/singularity/sinstance/test.sif
 
   $ sudo singularity instance list -u mibauer
-  DAEMON NAME      PID      CONTAINER IMAGE
-  test            11963     /home/mibauer/singularity/sinstance/test.sif
-  test2           16219     /home/mibauer/singularity/sinstance/test.sif`
+  INSTANCE NAME      PID       IMAGE
+  test               11963     /home/mibauer/singularity/sinstance/test.sif
+  test2              16219     /home/mibauer/singularity/sinstance/test.sif`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance start
@@ -959,4 +977,33 @@ Enterprise Performance Computing (EPC)`
   mount.`
 	OciUmountExample string = `
   $ singularity oci umount /var/lib/singularity/bundles/example`
+
+	ConfigUse   string = `config`
+	ConfigShort string = `Manage various singularity configuration (root user only)`
+	ConfigLong  string = `
+  The config command allows root user to manage various configuration like fakeroot
+  user mapping entries.`
+	ConfigExample string = `
+  All config commands have their own help output:
+
+  $ singularity help config fakeroot
+  $ singularity config fakeroot --help`
+
+	ConfigFakerootUse   string = `fakeroot <option> <user>`
+	ConfigFakerootShort string = `Manage fakeroot user mappings entries (root user only)`
+	ConfigFakerootLong  string = `
+  The config fakeroot command allow a root user to add/remove/enable/disable fakeroot
+  user mappings.`
+	ConfigFakerootExample string = `
+  To add a fakeroot user mapping for vagrant user:
+  $ singularity config fakeroot --add vagrant
+
+  To remove a fakeroot user mapping for vagrant user:
+  $ singularity config fakeroot --remove vagrant
+
+  To disable a fakeroot user mapping for vagrant user:
+  $ singularity config fakeroot --disable vagrant
+
+  To enable a fakeroot user mapping for vagrant user:
+  $ singularity config fakeroot --enable vagrant`
 )

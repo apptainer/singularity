@@ -13,6 +13,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 type ctx struct {
@@ -52,7 +53,7 @@ func getDataCheckJSON(keyNum int) []string {
 	return []string{"SignerKeys", fmt.Sprintf("[%d]", keyNum), "Signer", "DataCheck"}
 }
 
-func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
+func (c ctx) singularityVerifyKeyNum(t *testing.T) {
 	keyNumPath := []string{"Signatures"}
 
 	tests := []struct {
@@ -79,7 +80,7 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if !e2e.FileExists(t, tt.imagePath) {
+		if !fs.IsFile(tt.imagePath) {
 			t.Fatalf("image file (%s) does not exist", tt.imagePath)
 		}
 
@@ -99,7 +100,7 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithPrivileges(false),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("verify"),
 			e2e.WithArgs("--json", tt.imagePath),
 			e2e.ExpectExit(tt.expectExit, verifyOutput),
@@ -107,7 +108,7 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 	}
 }
 
-func (c *ctx) singularityVerifySigner(t *testing.T) {
+func (c ctx) singularityVerifySigner(t *testing.T) {
 	tests := []struct {
 		expectOutput []verifyOutput
 		name         string
@@ -271,7 +272,7 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			}
 		}
 
-		if !e2e.FileExists(t, tt.imagePath) {
+		if !fs.IsFile(tt.imagePath) {
 			t.Fatalf("image file (%s) does not exist", tt.imagePath)
 		}
 
@@ -285,7 +286,7 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithPrivileges(false),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("verify"),
 			e2e.WithArgs(args...),
 			e2e.ExpectExit(tt.expectExit, verifyOutput),
@@ -293,11 +294,11 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 	}
 }
 
-func (c *ctx) checkGroupidOption(t *testing.T) {
+func (c ctx) checkGroupidOption(t *testing.T) {
 	cmdArgs := []string{"--groupid", "0", c.successImage}
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("verify"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(
@@ -307,11 +308,11 @@ func (c *ctx) checkGroupidOption(t *testing.T) {
 	)
 }
 
-func (c *ctx) checkIDOption(t *testing.T) {
-	cmdArgs := []string{"--id", "0", c.successImage}
+func (c ctx) checkIDOption(t *testing.T) {
+	cmdArgs := []string{"--sif-id", "0", c.successImage}
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("verify"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(
@@ -321,15 +322,15 @@ func (c *ctx) checkIDOption(t *testing.T) {
 	)
 }
 
-func (c *ctx) checkURLOption(t *testing.T) {
-	if !e2e.FileExists(t, c.successImage) {
+func (c ctx) checkURLOption(t *testing.T) {
+	if !fs.IsFile(c.successImage) {
 		t.Fatalf("image file (%s) does not exist", c.successImage)
 	}
 
 	cmdArgs := []string{"--url", "https://keys.sylabs.io", c.successImage}
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("verify"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(
@@ -339,9 +340,9 @@ func (c *ctx) checkURLOption(t *testing.T) {
 	)
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := ctx{
 		env:            env,
 		corruptedImage: filepath.Join(env.TestDir, "verify_corrupted.sif"),
 		successImage:   filepath.Join(env.TestDir, "verify_success.sif"),

@@ -3,10 +3,34 @@
 export GOFLAGS='@GOFLAGS@'
 export GO111MODULE='@GO111MODULE@'
 
+GO_TAGS='@GO_TAGS@'
+
+skip=false
+
+for arg in "$@" ; do
+	shift
+
+	if ${skip} ; then
+		skip=false
+		continue
+	fi
+
+	case "${arg}" in
+		-tags)
+			GO_TAGS="${GO_TAGS} ${1}"
+			skip=true
+			;;
+
+		*)
+			set -- "$@" "${arg}"
+			;;
+	esac
+done
+
 exec '@GO@' test \
 	-count=1 \
-	-timeout=20m \
-	-tags '@GO_TAGS@' \
+	-timeout=30m \
+	-tags "${GO_TAGS}" \
 	-failfast \
 	-cover \
 	-race \

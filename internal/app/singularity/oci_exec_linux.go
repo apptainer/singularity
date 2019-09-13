@@ -6,23 +6,17 @@
 package singularity
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
+	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/pkg/ociruntime"
-
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/oci"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/exec"
 )
 
 // OciExec executes a command in a container
 func OciExec(containerID string, cmdArgs []string) error {
-	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter"
-
 	commonConfig, err := getCommonConfig(containerID)
 	if err != nil {
 		return fmt.Errorf("%s doesn't exist", containerID)
@@ -42,13 +36,6 @@ func OciExec(containerID string, cmdArgs []string) error {
 
 	os.Clearenv()
 
-	configData, err := json.Marshal(commonConfig)
-	if err != nil {
-		sylog.Fatalf("%s", err)
-	}
-
-	Env := []string{sylog.GetEnvVar()}
-
 	procName := fmt.Sprintf("Singularity OCI %s", containerID)
-	return exec.Pipe(starter, []string{procName}, Env, configData)
+	return starter.Exec(procName, commonConfig)
 }

@@ -8,7 +8,7 @@
 package singularity
 
 import (
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 )
 
 // EngineConfig stores both the JSONConfig and the FileConfig

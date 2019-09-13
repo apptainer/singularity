@@ -7,12 +7,12 @@ package run
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 )
 
 type ctx struct {
@@ -23,36 +23,31 @@ type ctx struct {
 // 0555 for access rights, and we try to run a singularity run command
 // using that directory as cache. This reflects a problem that is important
 // for the grid use case.
-func (c *ctx) testRun555Cache(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "e2e-run-555-")
-	if err != nil {
-		t.Fatalf("failed to create temporary directory: %s", err)
-	}
-	defer func() {
-		err := os.RemoveAll(tempDir)
-		if err != nil {
-			t.Fatalf("failed to delete temporary directory %s: %s", tempDir, err)
-		}
-	}()
+func (c ctx) testRun555Cache(t *testing.T) {
+	tempDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
+	defer cleanup(t)
 	cacheDir := filepath.Join(tempDir, "image-cache")
-	err = os.Mkdir(cacheDir, 0555)
+	err := os.Mkdir(cacheDir, 0555)
 	if err != nil {
 		t.Fatalf("failed to create a temporary image cache: %s", err)
 	}
 	// Directory is deleted when tempDir is deleted
 
 	cmdArgs := []string{"library://godlovedc/funny/lolcow"}
-	c.env.ImgCacheDir = cacheDir
+	// We explicitly pass the environment to the command, not through c.env.ImgCacheDir
+	// because c.env is shared between all the tests, something we do not want here.
+	cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, cacheDir)
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
+		e2e.WithEnv(append(os.Environ(), cacheDirEnv)),
 		e2e.ExpectExit(0),
 	)
 }
 
-func (c *ctx) testRunPEMEncrypted(t *testing.T) {
+func (c ctx) testRunPEMEncrypted(t *testing.T) {
 	// If the version of cryptsetup is not compatible with Singularity encryption,
 	// the build commands are expected to fail
 	err := e2e.CheckCryptsetupVersion()
@@ -73,8 +68,8 @@ func (c *ctx) testRunPEMEncrypted(t *testing.T) {
 	cmdArgs := []string{"--encrypt", "--pem-path", pemPubFile, imgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
+		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
-		e2e.WithPrivileges(true),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(0),
 	)
@@ -84,6 +79,7 @@ func (c *ctx) testRunPEMEncrypted(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("pem file cmdline"),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(0),
@@ -95,6 +91,7 @@ func (c *ctx) testRunPEMEncrypted(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("pem file cmdline"),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.WithEnv(append(os.Environ(), pemEnvVar)),
@@ -102,10 +99,13 @@ func (c *ctx) testRunPEMEncrypted(t *testing.T) {
 	)
 }
 
-func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
-	// Expected results for a successful command execution
-	expectedExitCode := 0
-	expectedStderr := ""
+func (c ctx) testRunPassphraseEncrypted(t *testing.T) {
+	// If the version of cryptsetup is not compatible with Singularity encryption,
+	// the build commands are expected to fail
+	err := e2e.CheckCryptsetupVersion()
+	if err != nil {
+		t.Skip("cryptsetup is not compatible, skipping test")
+	}
 
 	passphraseEncryptedURL := "library://vallee/default/passphrase_encrypted_alpine"
 	passphraseEncryptedFingerprint := "sha256.e784d01b94e4b5a42d9e9b54bc2c0400630604bb896de1e65d8c77e25ca5b5e7"
@@ -113,28 +113,16 @@ func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
 		e2e.ConsoleSendLine(e2e.Passphrase),
 	}
 
-	// If the version of cryptsetup is not compatible with Singularity encryption,
-	// the build commands are expected to fail
-	err := e2e.CheckCryptsetupVersion()
-	if err != nil {
-		expectedExitCode = 255
-		// todo: fix the problen with catching stderr, until then we do not do a real check
-		//expectedStderr = "FATAL:   While performing build: unable to encrypt filesystem at /tmp/sbuild-718337349/squashfs-770818633: available cryptsetup is not supported"
-		expectedStderr = ""
-	}
-
 	// Interactive command
 	cmdArgs := []string{"--passphrase", passphraseEncryptedURL + ":" + passphraseEncryptedFingerprint}
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("interactive passphrase"),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ConsoleRun(passphraseInput...),
-		e2e.ExpectExit(
-			expectedExitCode,
-			e2e.ExpectError(e2e.ContainMatch, expectedStderr),
-		),
+		e2e.ExpectExit(0),
 	)
 
 	// Using the environment variable to specify the passphrase
@@ -143,13 +131,11 @@ func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("env var passphrase"),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
-		e2e.ExpectExit(
-			expectedExitCode,
-			e2e.ExpectError(e2e.ContainMatch, expectedStderr),
-		),
+		e2e.ExpectExit(0),
 	)
 
 	// Specifying the passphrase on the command line should always fail
@@ -157,19 +143,17 @@ func (c *ctx) testRunPassphraseEncrypted(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("passphrase on cmdline"),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("run"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
-		e2e.ExpectExit(
-			255,
-			e2e.ExpectError(e2e.ContainMatch, expectedStderr),
-		),
+		e2e.ExpectExit(255),
 	)
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func CmdE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := ctx{
 		env: env,
 	}
 

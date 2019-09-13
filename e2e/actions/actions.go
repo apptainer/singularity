@@ -11,12 +11,14 @@ import (
 	"io/ioutil"
 	"os"
 	stdexec "os/exec"
+	"path/filepath"
 	"strconv"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 type actionTests struct {
@@ -24,7 +26,7 @@ type actionTests struct {
 }
 
 // run tests min fuctionality for singularity run
-func (c *actionTests) actionRun(t *testing.T) {
+func (c actionTests) actionRun(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	tests := []struct {
@@ -63,6 +65,7 @@ func (c *actionTests) actionRun(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("run"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),
@@ -71,27 +74,34 @@ func (c *actionTests) actionRun(t *testing.T) {
 }
 
 // exec tests min fuctionality for singularity exec
-func (c *actionTests) actionExec(t *testing.T) {
+func (c actionTests) actionExec(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	user := e2e.CurrentUser(t)
 
 	// Create a temp testfile
-	tmpfile, err := ioutil.TempFile("", "testSingularityExec.tmp")
+	testdata, err := fs.MakeTmpDir(c.env.TestDir, "testdata", 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tmpfile.Name()) // clean up
+	defer os.RemoveAll(testdata)
 
-	testfile, err := tmpfile.Stat()
-	if err != nil {
+	testdataTmp := filepath.Join(testdata, "tmp")
+	if err := os.Mkdir(testdataTmp, 0755); err != nil {
 		t.Fatal(err)
 	}
 
-	pwd, err := os.Getwd()
+	// Create a temp testfile
+	tmpfile, err := fs.MakeTmpFile(testdataTmp, "testSingularityExec.", 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
+	tmpfile.Close()
+
+	basename := filepath.Base(tmpfile.Name())
+	tmpfilePath := filepath.Join("/tmp", basename)
+	vartmpfilePath := filepath.Join("/var/tmp", basename)
+	homePath := filepath.Join("/home", basename)
 
 	tests := []struct {
 		name string
@@ -181,13 +191,18 @@ func (c *actionTests) actionExec(t *testing.T) {
 			exit: 0,
 		},
 		{
-			name: "WorkdirContain",
-			argv: []string{"--contain", c.env.ImagePath, "test", "-f", tmpfile.Name()},
+			name: "ContainOnly",
+			argv: []string{"--contain", c.env.ImagePath, "test", "-f", tmpfilePath},
 			exit: 1,
 		},
 		{
-			name: "Workdir",
-			argv: []string{"--workdir", "testdata", c.env.ImagePath, "test", "-f", tmpfile.Name()},
+			name: "WorkdirOnly",
+			argv: []string{"--workdir", testdata, c.env.ImagePath, "test", "-f", tmpfilePath},
+			exit: 1,
+		},
+		{
+			name: "WorkdirContain",
+			argv: []string{"--workdir", testdata, "--contain", c.env.ImagePath, "test", "-f", tmpfilePath},
 			exit: 0,
 		},
 		{
@@ -197,12 +212,12 @@ func (c *actionTests) actionExec(t *testing.T) {
 		},
 		{
 			name: "Home",
-			argv: []string{"--home", pwd + "testdata", c.env.ImagePath, "test", "-f", tmpfile.Name()},
+			argv: []string{"--home", testdata, c.env.ImagePath, "test", "-f", tmpfile.Name()},
 			exit: 0,
 		},
 		{
 			name: "HomePath",
-			argv: []string{"--home", "/tmp:/home", c.env.ImagePath, "test", "-f", "/home/" + testfile.Name()},
+			argv: []string{"--home", testdataTmp + ":/home", c.env.ImagePath, "test", "-f", homePath},
 			exit: 0,
 		},
 		{
@@ -216,8 +231,13 @@ func (c *actionTests) actionExec(t *testing.T) {
 			exit: 0,
 		},
 		{
-			name: "UserBind",
-			argv: []string{"--bind", "/tmp:/var/tmp", c.env.ImagePath, "test", "-f", "/var/tmp/" + testfile.Name()},
+			name: "UserBindTmp",
+			argv: []string{"--bind", testdataTmp + ":/tmp", c.env.ImagePath, "test", "-f", tmpfilePath},
+			exit: 0,
+		},
+		{
+			name: "UserBindVarTmp",
+			argv: []string{"--bind", testdataTmp + ":/var/tmp", c.env.ImagePath, "test", "-f", vartmpfilePath},
 			exit: 0,
 		},
 		{
@@ -231,6 +251,7 @@ func (c *actionTests) actionExec(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithDir("/tmp"),
 			e2e.WithArgs(tt.argv...),
@@ -240,7 +261,7 @@ func (c *actionTests) actionExec(t *testing.T) {
 }
 
 // Shell interaction tests
-func (c *actionTests) actionShell(t *testing.T) {
+func (c actionTests) actionShell(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	hostname, err := os.Hostname()
@@ -296,6 +317,7 @@ func (c *actionTests) actionShell(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("shell"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ConsoleRun(tt.consoleOps...),
@@ -305,7 +327,7 @@ func (c *actionTests) actionShell(t *testing.T) {
 }
 
 // STDPipe tests pipe stdin/stdout to singularity actions cmd
-func (c *actionTests) STDPipe(t *testing.T) {
+func (c actionTests) STDPipe(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	stdinTests := []struct {
@@ -381,6 +403,7 @@ func (c *actionTests) STDPipe(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.argv...),
 			e2e.WithStdin(&input),
@@ -433,6 +456,7 @@ func (c *actionTests) STDPipe(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(
@@ -444,7 +468,7 @@ func (c *actionTests) STDPipe(t *testing.T) {
 }
 
 // RunFromURI tests min fuctionality for singularity run/exec URI://
-func (c *actionTests) RunFromURI(t *testing.T) {
+func (c actionTests) RunFromURI(t *testing.T) {
 	e2e.PrepRegistry(t, c.env)
 
 	runScript := "testdata/runscript.sh"
@@ -623,6 +647,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),
@@ -631,10 +656,10 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 }
 
 // PersistentOverlay test the --overlay function
-func (c *actionTests) PersistentOverlay(t *testing.T) {
+func (c actionTests) PersistentOverlay(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	const squashfsImage = "squashfs.simg"
+	var squashfsImage = filepath.Join(c.env.TestDir, "squashfs.simg")
 
 	if _, err := stdexec.LookPath("mkfs.ext3"); err != nil {
 		t.Skip("mkfs.ext3 not found")
@@ -665,6 +690,7 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(tmpfile.Name())
+	bogusFile := filepath.Base(tmpfile.Name())
 
 	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
 	if res := cmd.Run(t); res.Error != nil {
@@ -672,84 +698,148 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 	}
 	defer os.RemoveAll(squashfsImage)
 
+	ext3Img := filepath.Join(c.env.TestDir, "ext3_fs.img")
+
 	//  Create the overlay ext3 fs
-	cmd = exec.Command("dd", "if=/dev/zero", "of=ext3_fs.img", "bs=1M", "count=768", "status=none")
+	cmd = exec.Command("dd", "if=/dev/zero", "of="+ext3Img, "bs=1M", "count=768", "status=none")
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
 
-	cmd = exec.Command("mkfs.ext3", "-q", "-F", "ext3_fs.img")
+	cmd = exec.Command("mkfs.ext3", "-q", "-F", ext3Img)
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
 
-	defer os.Remove("ext3_fs.img")
+	defer os.Remove(ext3Img)
+
+	sandboxImage := filepath.Join(c.env.TestDir, "sandbox")
+
+	// Create a sandbox image from test image
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--sandbox", sandboxImage, c.env.ImagePath),
+		e2e.PostRun(func(t *testing.T) {
+			if t.Failed() {
+				t.Fatalf("failed to create sandbox %s from test image %s", sandboxImage, c.env.ImagePath)
+			}
+		}),
+		e2e.ExpectExit(0),
+	)
 
 	tests := []struct {
-		name       string
-		argv       []string
-		exit       int
-		privileged bool
+		name    string
+		argv    []string
+		dir     string
+		exit    int
+		profile e2e.Profile
 	}{
 		{
-			name:       "overlay_create",
-			argv:       []string{"--overlay", dir, c.env.ImagePath, "touch", "/dir_overlay"},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_create",
+			argv:    []string{"--overlay", dir, c.env.ImagePath, "touch", "/dir_overlay"},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_find",
-			argv:       []string{"--overlay", dir, c.env.ImagePath, "test", "-f", "/dir_overlay"},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_find",
+			argv:    []string{"--overlay", dir, c.env.ImagePath, "test", "-f", "/dir_overlay"},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_ext3_create",
-			argv:       []string{"--overlay", "ext3_fs.img", c.env.ImagePath, "touch", "/ext3_overlay"},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_find_with_writable_fail",
+			argv:    []string{"--overlay", dir, "--writable", c.env.ImagePath, "true"},
+			exit:    255,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_ext3_find",
-			argv:       []string{"--overlay", "ext3_fs.img", c.env.ImagePath, "test", "-f", "/ext3_overlay"},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_find_with_writable_tmpfs",
+			argv:    []string{"--overlay", dir + ":ro", "--writable-tmpfs", c.env.ImagePath, "test", "-f", "/dir_overlay"},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_squashFS_find",
-			argv:       []string{"--overlay", squashfsImage, c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_find_with_writable_tmpfs_fail",
+			argv:    []string{"--overlay", dir, "--writable-tmpfs", c.env.ImagePath, "true"},
+			exit:    255,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_multiple_create",
-			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, c.env.ImagePath, "touch", "/multiple_overlay_fs"},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_ext3_create",
+			argv:    []string{"--overlay", ext3Img, c.env.ImagePath, "touch", "/ext3_overlay"},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_multiple_find_ext3",
-			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, c.env.ImagePath, "test", "-f", "/multiple_overlay_fs"},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_ext3_find",
+			argv:    []string{"--overlay", ext3Img, c.env.ImagePath, "test", "-f", "/ext3_overlay"},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_multiple_find_squashfs",
-			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_multiple_writable_fail",
+			argv:    []string{"--overlay", ext3Img, "--overlay", ext3Img, c.env.ImagePath, "true"},
+			exit:    255,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_noroot",
-			argv:       []string{"--overlay", dir, c.env.ImagePath, "test", "-f", "/foo_overlay"},
-			exit:       255,
-			privileged: false,
+			name:    "overlay_squashFS_find",
+			argv:    []string{"--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", bogusFile)},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_noflag",
-			argv:       []string{c.env.ImagePath, "test", "-f", "/foo_overlay"},
-			exit:       1,
-			privileged: true,
+			name:    "overlay_squashFS_find_fail_without_ro",
+			argv:    []string{"--overlay", squashfsImage, c.env.ImagePath, "true"},
+			exit:    255,
+			profile: e2e.RootProfile,
+		},
+		{
+			name:    "overlay_multiple_create",
+			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage + ":ro", c.env.ImagePath, "touch", "/multiple_overlay_fs"},
+			exit:    0,
+			profile: e2e.RootProfile,
+		},
+		{
+			name:    "overlay_multiple_find_ext3",
+			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", "/multiple_overlay_fs"},
+			exit:    0,
+			profile: e2e.RootProfile,
+		},
+		{
+			name:    "overlay_multiple_find_squashfs",
+			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", bogusFile)},
+			exit:    0,
+			profile: e2e.RootProfile,
+		},
+		{
+			name:    "overlay_noroot",
+			argv:    []string{"--overlay", dir, c.env.ImagePath, "true"},
+			exit:    255,
+			profile: e2e.UserProfile,
+		},
+		{
+			name:    "overlay_noflag",
+			argv:    []string{c.env.ImagePath, "test", "-f", "/foo_overlay"},
+			exit:    1,
+			profile: e2e.RootProfile,
+		},
+		{
+			// https://github.com/sylabs/singularity/issues/4329
+			name:    "SIF_writable_without_overlay_partition_issue_4329",
+			argv:    []string{"--writable", c.env.ImagePath, "true"},
+			exit:    255,
+			profile: e2e.RootProfile,
+		},
+		{
+			// https://github.com/sylabs/singularity/issues/4270
+			name:    "overlay_dir_relative_path_issue_4270",
+			argv:    []string{"--overlay", filepath.Base(dir), sandboxImage, "test", "-f", "/dir_overlay"},
+			dir:     filepath.Dir(dir),
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 	}
 
@@ -757,17 +847,18 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
+			e2e.WithDir(tt.dir),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.argv...),
-			e2e.WithPrivileges(tt.privileged),
 			e2e.ExpectExit(tt.exit),
 		)
 	}
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &actionTests{
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := actionTests{
 		env: env,
 	}
 

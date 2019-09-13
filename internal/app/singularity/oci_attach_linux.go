@@ -19,7 +19,7 @@ import (
 	"github.com/kr/pty"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/ociruntime"
 	"github.com/sylabs/singularity/pkg/util/unix"

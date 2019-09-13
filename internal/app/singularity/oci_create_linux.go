@@ -13,17 +13,13 @@ import (
 	"path/filepath"
 
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/oci"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/exec"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
+	"github.com/sylabs/singularity/internal/pkg/util/starter"
 )
 
 // OciCreate creates a container from an OCI bundle
 func OciCreate(containerID string, args *OciArgs) error {
-	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter"
-
 	_, err := getState(containerID)
 	if err == nil {
 		return fmt.Errorf("%s already exists", containerID)
@@ -65,8 +61,6 @@ func OciCreate(containerID string, args *OciArgs) error {
 		return fmt.Errorf("failed to parse OCI specification file %s: %s", configJSON, err)
 	}
 
-	Env := []string{sylog.GetEnvVar()}
-
 	engineConfig.EmptyProcess = args.EmptyProcess
 	engineConfig.SyncSocket = args.SyncSocketPath
 
@@ -76,19 +70,12 @@ func OciCreate(containerID string, args *OciArgs) error {
 		EngineConfig: engineConfig,
 	}
 
-	configData, err := json.Marshal(commonConfig)
-	if err != nil {
-		sylog.Fatalf("%s", err)
-	}
-
 	procName := fmt.Sprintf("Singularity OCI %s", containerID)
-	cmd, err := exec.PipeCommand(starter, []string{procName}, Env, configData)
-	if err != nil {
-		return err
-	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-
-	return cmd.Run()
+	return starter.Run(
+		procName,
+		commonConfig,
+		starter.WithStdin(os.Stdin),
+		starter.WithStderr(os.Stderr),
+		starter.WithStdout(os.Stdout),
+	)
 }

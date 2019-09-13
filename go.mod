@@ -15,7 +15,7 @@ require (
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
-	github.com/containerd/containerd v1.2.7
+	github.com/containerd/containerd v1.2.8
 	github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd // indirect
 	github.com/containernetworking/cni v0.7.1
 	github.com/containernetworking/plugins v0.8.2
@@ -39,10 +39,9 @@ require (
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/mux v1.6.2 // indirect
-	github.com/gorilla/websocket v1.4.0
+	github.com/gorilla/websocket v1.4.1
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce // indirect
-	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
 	github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7 // indirect
@@ -77,10 +76,11 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
 	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
-	github.com/sylabs/json-resp v0.5.0
+	github.com/stretchr/testify v1.4.0 // indirect
+	github.com/sylabs/json-resp v0.6.0
 	github.com/sylabs/scs-build-client v0.0.4
-	github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
-	github.com/sylabs/scs-library-client v0.4.2
+	github.com/sylabs/scs-key-client v0.3.1-0.20190509220229-bce3b050c4ec
+	github.com/sylabs/scs-library-client v0.4.4
 	github.com/sylabs/sif v1.0.8
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
 	github.com/urfave/cli v1.21.0 // indirect
@@ -98,9 +98,11 @@ require (
 	golang.org/x/sys v0.0.0-20190616124812-15dcb6c0061f
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/grpc v1.20.0 // indirect
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
 	gopkg.in/yaml.v2 v2.2.2
-	gotest.tools v2.3.0+incompatible
+	gotest.tools v2.2.0+incompatible // indirect
+	gotest.tools/v3 v3.0.0
 	k8s.io/client-go v0.0.0-20181010045704-56e7a63b5e38 // indirect
 	rsc.io/letsencrypt v0.0.1 // indirect
 )

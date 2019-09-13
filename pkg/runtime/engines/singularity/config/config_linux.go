@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/network"
 )

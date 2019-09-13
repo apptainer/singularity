@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 // HasFilesystem returns whether kernel support filesystem or not
@@ -33,11 +35,11 @@ func HasFilesystem(fs string) (bool, error) {
 	return false, nil
 }
 
-// ParseMountInfo parses mountinfo pointing to path and returns a map
-// of parent mount points with associated child mount points
-func ParseMountInfo(path string) (map[string][]string, error) {
+// GetMountPointMap parses mountinfo pointing to path and returns
+// a map of parent mount points with associated child mount points.
+func GetMountPointMap(path string) (map[string][]string, error) {
 	mp := make(map[string][]string)
-	mountlist := make(map[string][]string)
+	entries := make(map[string]MountInfoEntry)
 
 	p, err := os.Open(path)
 	if err != nil {
@@ -47,52 +49,139 @@ func ParseMountInfo(path string) (map[string][]string, error) {
 
 	scanner := bufio.NewScanner(p)
 	for scanner.Scan() {
-		fields := strings.Fields(scanner.Text())
-		mountlist[fields[0]] = fields
+		entry := parseMountInfoLine(scanner.Text())
+		entries[entry.ID] = entry
 	}
-	for k := range mountlist {
-		if i, ok := mountlist[mountlist[k][1]]; ok {
-			if mountlist[k][4] != i[4] {
-				mp[i[4]] = append(mp[i[4]], mountlist[k][4])
+
+	for e := range entries {
+		parentID := entries[e].ParentID
+		if i, ok := entries[parentID]; ok {
+			point := i.Point
+			if entries[e].Point != point {
+				mp[point] = append(mp[point], entries[e].Point)
 			}
 		}
 	}
 	return mp, nil
 }
 
-// ParentMount parses mountinfo and return the path of parent
-// mount point for which the provided path is mounted in
-func ParentMount(path string) (string, error) {
-	var mountPoints []string
-	parent := "/"
+// MountInfoEntry contains parsed fields of a mountinfo line.
+type MountInfoEntry struct {
+	ID           string
+	ParentID     string
+	Dev          string
+	Root         string
+	Point        string
+	Options      []string
+	Fields       string
+	FSType       string
+	Source       string
+	SuperOptions []string
+}
 
-	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		return parent, err
+// parseMountInfoLine parses a mountinfo line and returns
+// a MountInfoEntry containing parsed fields associated
+// to the line.
+func parseMountInfoLine(line string) MountInfoEntry {
+	fields := strings.Fields(line)
+	entry := MountInfoEntry{}
+
+	// ID field
+	entry.ID = fields[0]
+	// convert Parent ID field
+	entry.ParentID = fields[1]
+	// convert major:minor field
+	entry.Dev = fields[2]
+	// root field
+	entry.Root = fields[3]
+	// mount point field
+	entry.Point = fields[4]
+	// mount options field
+	entry.Options = strings.Split(fields[5], ",")
+	// optional fields field
+	shift := 0
+	if fields[6] != "-" {
+		entry.Fields = fields[6]
+		shift++
 	}
+	// filesystem type field
+	entry.FSType = fields[7+shift]
+	// mount source field
+	entry.Source = fields[8+shift]
+	// super block options field
+	entry.SuperOptions = strings.Split(fields[9+shift], ",")
 
-	p, err := os.Open("/proc/self/mountinfo")
+	return entry
+}
+
+// GetMountInfoEntry parses a mountinfo file and returns all
+// parsed entries as an array of MountInfoEntry.
+func GetMountInfoEntry(path string) ([]MountInfoEntry, error) {
+	p, err := os.Open(path)
 	if err != nil {
-		return parent, fmt.Errorf("can't open /proc/self/mountinfo: %s", err)
+		return nil, fmt.Errorf("can't open %s: %s", path, err)
 	}
 	defer p.Close()
 
+	entries := make([]MountInfoEntry, 0)
 	scanner := bufio.NewScanner(p)
 	for scanner.Scan() {
-		fields := strings.Fields(scanner.Text())
-		mountPoints = append(mountPoints, fields[4])
+		entry := parseMountInfoLine(scanner.Text())
+		entries = append(entries, entry)
 	}
 
-	for resolved != "/" {
-		for _, point := range mountPoints {
-			if point == resolved {
-				return point, nil
+	return entries, nil
+}
+
+// FindParentMountEntry finds the parent mount point entry associated
+// to the provided path among the entry list provided in argument.
+func FindParentMountEntry(path string, entries []MountInfoEntry) (*MountInfoEntry, error) {
+	p, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return nil, fmt.Errorf("while resolving path %s: %s", path, err)
+	}
+
+	fi, err := os.Stat(p)
+	if err != nil {
+		return nil, fmt.Errorf("while getting stat for %s: %s", path, err)
+	}
+	st := fi.Sys().(*syscall.Stat_t)
+	dev := fmt.Sprintf("%d:%d", unix.Major(st.Dev), unix.Minor(st.Dev))
+
+	var entry *MountInfoEntry
+	matchLen := 0
+
+	for i, e := range entries {
+		// find the longest mount point for the provided path
+		if e.Dev == dev && strings.HasPrefix(p, e.Point) {
+			l := len(e.Point)
+			if l > matchLen {
+				matchLen = l
+				entry = &entries[i]
 			}
 		}
-		resolved = filepath.Dir(resolved)
 	}
 
-	return parent, nil
+	if entry == nil {
+		return nil, fmt.Errorf("no parent mount point found")
+	}
+
+	return entry, nil
+}
+
+// ParentMount parses mountinfo and returns the path of parent
+// mount point for which the provided path is mounted in.
+func ParentMount(path string) (string, error) {
+	entries, err := GetMountInfoEntry("/proc/self/mountinfo")
+	if err != nil {
+		return "", fmt.Errorf("while parsing %s: %s", path, err)
+	}
+
+	entry, err := FindParentMountEntry(path, entries)
+	if err != nil {
+		return "", err
+	}
+	return entry.Point, nil
 }
 
 // ExtractPid returns a pid extracted from path of type "/proc/1"
@@ -208,4 +297,26 @@ func HasNamespace(pid int, nstype string) (bool, error) {
 	}
 
 	return has, nil
+}
+
+// Getppid returns the parent process ID for the corresponding
+// process ID passed in parameter.
+func Getppid(pid int) (int, error) {
+	status := fmt.Sprintf("/proc/%d/status", pid)
+	p, err := os.Open(status)
+	if err != nil {
+		return -1, fmt.Errorf("could not open %s: %s", status, err)
+	}
+	defer p.Close()
+
+	scanner := bufio.NewScanner(p)
+	for scanner.Scan() {
+		ppid := -1
+		n, _ := fmt.Sscanf(scanner.Text(), "PPid:\t%d", &ppid)
+		if n == 1 && ppid > 0 {
+			return ppid, nil
+		}
+	}
+
+	return -1, fmt.Errorf("no parent process ID found")
 }

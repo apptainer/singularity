@@ -12,6 +12,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
 type ctx struct {
@@ -20,12 +21,13 @@ type ctx struct {
 }
 
 // testSecurityUnpriv tests the security flag fuctionality for singularity exec without elevated privileges
-func (c *ctx) testSecurityUnpriv(t *testing.T) {
+func (c ctx) testSecurityUnpriv(t *testing.T) {
 	tests := []struct {
 		name       string
 		image      string
 		argv       []string
 		opts       []string
+		preFn      func(*testing.T)
 		expectExit int
 	}{
 		// taget UID/GID
@@ -48,12 +50,14 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 			name:       "SecComp_BlackList",
 			argv:       []string{"mkdir", "/tmp/foo"},
 			opts:       []string{"--security", "seccomp:./security/testdata/seccomp-profile.json"},
+			preFn:      require.Seccomp,
 			expectExit: 159, // process should be killed with SIGSYS (128+31)
 		},
 		{
 			name:       "SecComp_true",
 			argv:       []string{"true"},
 			opts:       []string{"--security", "seccomp:./security/testdata/seccomp-profile.json"},
+			preFn:      require.Seccomp,
 			expectExit: 0,
 		},
 		// capabilities
@@ -85,8 +89,10 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(optArgs...),
+			e2e.PreRun(tt.preFn),
 			e2e.ExpectExit(tt.expectExit),
 		)
 
@@ -94,11 +100,12 @@ func (c *ctx) testSecurityUnpriv(t *testing.T) {
 }
 
 // testSecurityPriv tests security flag fuctionality for singularity exec with elevated privileges
-func (c *ctx) testSecurityPriv(t *testing.T) {
+func (c ctx) testSecurityPriv(t *testing.T) {
 	tests := []struct {
 		name       string
 		argv       []string
 		opts       []string
+		preFn      func(*testing.T)
 		expectOp   e2e.SingularityCmdResultOp
 		expectExit int
 	}{
@@ -122,12 +129,14 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 			name:       "SecComp_BlackList",
 			argv:       []string{"mkdir", "/tmp/foo"},
 			opts:       []string{"--security", "seccomp:./testdata/seccomp-profile.json"},
+			preFn:      require.Seccomp,
 			expectExit: 159, // process should be killed with SIGSYS (128+31)
 		},
 		{
 			name:       "SecComp_true",
 			argv:       []string{"true"},
 			opts:       []string{"--security", "seccomp:./testdata/seccomp-profile.json"},
+			preFn:      require.Seccomp,
 			expectExit: 0,
 		},
 		// capabilities
@@ -154,9 +163,10 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(optArgs...),
+			e2e.PreRun(tt.preFn),
 			e2e.ExpectExit(tt.expectExit, tt.expectOp),
 		)
 
@@ -164,12 +174,13 @@ func (c *ctx) testSecurityPriv(t *testing.T) {
 }
 
 // testSecurityConfOwnership tests checks on config files ownerships
-func (c *ctx) testSecurityConfOwnership(t *testing.T) {
+func (c ctx) testSecurityConfOwnership(t *testing.T) {
 	configFile := buildcfg.SINGULARITY_CONF_FILE
 
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("non root config"),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.PreRun(func(t *testing.T) {
 			e2e.Privileged(func(t *testing.T) {
 				// Change file ownership (do not try this at home)
@@ -194,9 +205,9 @@ func (c *ctx) testSecurityConfOwnership(t *testing.T) {
 	)
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := ctx{
 		env:     env,
 		pingImg: filepath.Join(env.TestDir, "ubuntu-ping.sif"),
 	}

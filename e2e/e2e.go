@@ -6,16 +6,11 @@
 package e2e
 
 import (
-	"os"
 	"testing"
 )
 
-// RunE2ETests is the main func to trigger the test suite
+// RunE2ETests is the main func to trigger the test suite.
 func RunE2ETests(t *testing.T) {
-	if os.Getenv("SINGULARITY_E2E") == "" {
-		t.Skip("Skipping e2e tests, SINGULARITY_E2E not set")
-	} else {
-		t.Log("Running E2E tests for Singularity")
-		Run(t)
-	}
+	t.Log("Running E2E tests for Singularity")
+	Run(t)
 }

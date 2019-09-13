@@ -70,7 +70,7 @@ func TestMakeParentDir(t *testing.T) {
 			defer os.RemoveAll(dir)
 
 			// concatenate test path with directory, do not use a join function so that we do not remove a trailing slash
-			path := dir + tt.path
+			path := dir + "/" + tt.path
 			if err := makeParentDir(path, tt.srcNum); err != nil {
 				t.Errorf("")
 			}
@@ -161,10 +161,11 @@ func TestCopyFile(t *testing.T) {
 
 func TestCopyDir(t *testing.T) {
 	// create tmpdir
-	dir, err := ioutil.TempDir("", "copy-test-src")
+	dir, err := ioutil.TempDir("", "copy-test-src-")
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer os.RemoveAll(dir)
 
 	// prep src dir to copy
 	srcDir := filepath.Join(dir, "sourceDir")
@@ -231,6 +232,7 @@ func TestCopyFail(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer os.RemoveAll(dir)
 
 	tests := []struct {
 		name string

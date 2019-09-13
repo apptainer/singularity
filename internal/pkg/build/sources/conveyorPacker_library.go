@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"runtime"
 
 	"github.com/sylabs/scs-library-client/client"
@@ -26,7 +25,7 @@ type LibraryConveyorPacker struct {
 	LocalPacker
 }
 
-// Get downloads container from Singularityhub
+// Get downloads container from Sylabs Cloud Library.
 func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Library")
 
@@ -39,7 +38,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	libraryURL := b.Opts.LibraryURL
 	authToken := b.Opts.LibraryAuthToken
 
-	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
+	if err = makeBaseEnv(cp.b.RootfsPath); err != nil {
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
@@ -75,7 +74,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	imageName := uri.GetName("library://" + imageRef)
 
 	if cp.b.Opts.NoCache {
-		file, err := ioutil.TempFile(cp.b.Path, "sbuild-tmp-cache-")
+		file, err := ioutil.TempFile(cp.b.TmpDir, "sbuild-tmp-cache-")
 		if err != nil {
 			return fmt.Errorf("unable to create tmp file: %v", err)
 		}
@@ -108,7 +107,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	// insert base metadata before unpacking fs
-	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
+	if err = makeBaseEnv(cp.b.RootfsPath); err != nil {
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
@@ -117,7 +116,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	return err
 }
 
-// CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
+// CleanUp removes any files owned by the conveyorPacker on the filesystem.
 func (cp *LibraryConveyorPacker) CleanUp() {
-	os.RemoveAll(cp.b.Path)
+	cp.b.Remove()
 }

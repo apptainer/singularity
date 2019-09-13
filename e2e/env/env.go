@@ -18,7 +18,7 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-func (c *ctx) singularityEnv(t *testing.T) {
+func (c ctx) singularityEnv(t *testing.T) {
 	// Singularity defines a path by default. See singularityware/singularity/etc/init.
 	var defaultImage = "docker://alpine:3.8"
 	var defaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -92,7 +92,7 @@ func (c *ctx) singularityEnv(t *testing.T) {
 	for _, tt := range tests {
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(false),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithEnv(tt.env),
 			e2e.WithArgs(tt.image, "env"),
@@ -104,9 +104,9 @@ func (c *ctx) singularityEnv(t *testing.T) {
 	}
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := ctx{
 		env: env,
 	}
 

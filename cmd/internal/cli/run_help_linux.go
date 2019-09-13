@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,11 +13,10 @@ import (
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/exec"
+	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
@@ -35,7 +33,7 @@ var runHelpAppNameFlag = cmdline.Flag{
 	Value:        &AppName,
 	DefaultValue: "",
 	Name:         "app",
-	Usage:        "Show the help for an app",
+	Usage:        "show the help for an app",
 	EnvKeys:      []string{"APP"},
 }
 
@@ -64,9 +62,7 @@ var RunHelpCmd = &cobra.Command{
 		name := filepath.Base(abspath)
 
 		a := []string{"/bin/sh", "-c", getCommand(getHelpPath(cmd))}
-		starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
 		procname := "Singularity help"
-		Env := []string{sylog.GetEnvVar()}
 
 		engineConfig := singularityConfig.NewConfig()
 		ociConfig := &oci.Config{}
@@ -83,14 +79,8 @@ var RunHelpCmd = &cobra.Command{
 			EngineConfig: engineConfig,
 		}
 
-		configData, err := json.Marshal(cfg)
-		if err != nil {
-			sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
-		}
-
-		if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
-			sylog.Fatalf("%s", err)
-		}
+		err = starter.Exec(procname, cfg, starter.UseSuid(true))
+		sylog.Fatalf("%s", err)
 	},
 
 	Use:     docs.RunHelpUse,

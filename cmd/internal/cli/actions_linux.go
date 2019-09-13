@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,38 +17,30 @@ import (
 	"time"
 
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/sylabs/singularity/internal/pkg/plugin"
-	imgutil "github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/image/unpacker"
-	"github.com/sylabs/singularity/pkg/util/crypt"
-	"github.com/sylabs/singularity/pkg/util/namespaces"
-	"github.com/sylabs/singularity/pkg/util/nvidia"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/instance"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/plugin"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
-	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	imgutil "github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/image/unpacker"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	"github.com/sylabs/singularity/pkg/util/crypt"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
+	"github.com/sylabs/singularity/pkg/util/nvidia"
 )
 
 // EnsureRootPriv ensures that a command is executed with root privileges.
-// To customize the output, arguments can be used to specify the context (e.g., "oci", "plugin"),
-// where the first argument (string) will be displayed before the command itself.
 func EnsureRootPriv(cmd *cobra.Command, args []string) {
 	if os.Geteuid() != 0 {
-		if len(args) >= 1 && len(args[0]) > 0 {
-			// The first argument is the context
-			sylog.Fatalf("command '%s %s' requires root privileges", args[0], cmd.Name())
-		} else {
-			sylog.Fatalf("command %s requires root privileges", cmd.Name())
-		}
+		sylog.Fatalf("%q command requires root privileges", cmd.CommandPath())
 	}
 }
 
@@ -199,10 +190,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetImage(abspath)
 	}
 
-	starter := filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter-suid")
+	useSuid := true
+
 	// singularity was compiled with '--without-suid' option
 	if buildcfg.SINGULARITY_SUID_INSTALL == 0 {
-		starter = filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter")
+		useSuid = false
 	}
 
 	// use non privileged starter binary:
@@ -211,16 +203,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	// - if user namespace is requested
 	// - if 'allow setuid = no' is set in singularity.conf
 	if uid == 0 || insideUserNs || UserNamespace || !engineConfig.File.AllowSetuid {
-		starter = filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter")
+		useSuid = false
 		if buildcfg.SINGULARITY_SUID_INSTALL == 1 && !engineConfig.File.AllowSetuid {
 			sylog.Verbosef("'allow setuid' set to 'no' by configuration, fallback to user namespace")
 			UserNamespace = true
 		}
-	}
-
-	sylog.Debugf("Use starter binary %s", starter)
-	if _, err := os.Stat(starter); os.IsNotExist(err) {
-		sylog.Fatalf("%s not found, please check your installation", starter)
 	}
 
 	if !NoNvidia && (Nvidia || engineConfig.File.AlwaysUseNv) {
@@ -241,21 +228,22 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				if IsWritable {
 					sylog.Warningf("NVIDIA binaries may not be bound with --writable")
 				}
-				for _, binary := range bins {
+				binaries := make([]string, len(bins))
+				for i, binary := range bins {
 					usrBinBinary := filepath.Join("/usr/bin", filepath.Base(binary))
-					bind := strings.Join([]string{binary, usrBinBinary}, ":")
-					BindPaths = append(BindPaths, bind)
+					binaries[i] = strings.Join([]string{binary, usrBinBinary}, ":")
 				}
+				engineConfig.SetFilesPath(binaries)
 			}
 			if len(libs) == 0 {
 				sylog.Warningf("Could not find any NVIDIA libraries on this host!")
 				sylog.Warningf("You may need to edit %v/nvliblist.conf", buildcfg.SINGULARITY_CONFDIR)
 			} else {
-				ContainLibsPath = append(ContainLibsPath, libs...)
+				engineConfig.SetLibrariesPath(libs)
 			}
 		}
 		// bind persistenced socket if found
-		BindPaths = append(BindPaths, nvidia.IpcsPath(userPath)...)
+		engineConfig.AppendFilesPath(nvidia.IpcsPath(userPath)...)
 	}
 
 	// early check for key material before we start engine so we can fail fast if missing
@@ -291,7 +279,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	engineConfig.SetBindPath(BindPaths)
-	if FuseMount != nil {
+	if len(FuseMount) > 0 {
 		/* If --fusemount is given, imply --pid */
 		PidNamespace = true
 		engineConfig.SetFuseMount(FuseMount)
@@ -317,7 +305,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetNoPrivs(NoPrivs)
 	engineConfig.SetSecurity(Security)
 	engineConfig.SetShell(ShellPath)
-	engineConfig.SetLibrariesPath(ContainLibsPath)
+	engineConfig.AppendLibrariesPath(ContainLibsPath...)
 	engineConfig.SetFakeroot(IsFakeroot)
 
 	if ShellPath != "" {
@@ -462,11 +450,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	if IpcNamespace {
 		generator.AddOrReplaceLinuxNamespace("ipc", "")
 	}
-	if !UserNamespace {
-		if _, err := os.Stat(starter); os.IsNotExist(err) {
-			sylog.Verbosef("starter-suid not found, using user namespace")
-			UserNamespace = true
-		}
+	if !UserNamespace && uid != 0 && buildcfg.SINGULARITY_SUID_INSTALL == 0 {
+		sylog.Verbosef("Unprivileged installation: using user namespace")
+		UserNamespace = true
+		useSuid = false
 	}
 
 	if UserNamespace {
@@ -484,10 +471,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	// Clean environment
 	env.SetContainerEnv(&generator, environment, IsCleanEnv, engineConfig.GetHomeDest())
 
-	// force to use getwd syscall
-	os.Unsetenv("PWD")
-
 	if pwd, err := os.Getwd(); err == nil {
+		engineConfig.SetCwd(pwd)
 		if PwdPath != "" {
 			generator.SetProcessCwd(PwdPath)
 		} else {
@@ -501,7 +486,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		sylog.Warningf("can't determine current working directory: %s", err)
 	}
 
-	Env := []string{sylog.GetEnvVar()}
+	// starter will force the loading of kernel overlay module
+	loadOverlay := false
+	if !UserNamespace && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
+		loadOverlay = true
+	}
 
 	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
 
@@ -542,11 +531,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		EngineConfig: engineConfig,
 	}
 
-	configData, err := json.Marshal(cfg)
-	if err != nil {
-		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
-	}
-
 	if engineConfig.GetInstance() {
 		stdout, stderr, err := instance.SetLogFile(name, int(uid), instance.LogSubDir)
 		if err != nil {
@@ -558,15 +542,14 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Warningf("failed to get standard error stream offset: %s", err)
 		}
 
-		cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
-		if err != nil {
-			sylog.Warningf("failed to prepare command: %s", err)
-		}
-
-		cmd.Stdout = stdout
-		cmd.Stderr = stderr
-
-		cmdErr := cmd.Run()
+		cmdErr := starter.Run(
+			procname,
+			cfg,
+			starter.UseSuid(useSuid),
+			starter.WithStdout(stdout),
+			starter.WithStderr(stderr),
+			starter.LoadOverlayModule(loadOverlay),
+		)
 
 		if sylog.GetLevel() != 0 {
 			// starter can exit a bit before all errors has been reported
@@ -592,8 +575,12 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Infof("instance started successfully")
 		}
 	} else {
-		if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
-			sylog.Fatalf("%s", err)
-		}
+		err := starter.Exec(
+			procname,
+			cfg,
+			starter.UseSuid(useSuid),
+			starter.LoadOverlayModule(loadOverlay),
+		)
+		sylog.Fatalf("%s", err)
 	}
 }

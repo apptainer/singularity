@@ -9,5 +9,5 @@ package engines
 
 import (
 	// register the build runtime engine
-	_ "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
+	_ "github.com/sylabs/singularity/internal/pkg/runtime/engine/imgbuild"
 )

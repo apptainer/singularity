@@ -139,6 +139,10 @@ func TestRoot(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// drop priv within go routine running this test
+			// in order to clean up cache directories without priv
+			test.DropPrivilege(t)
+			defer test.ResetPrivilege(t)
 			imgCache, err := NewHandle(Config{BaseDir: tt.basedir})
 			if err != nil {
 				t.Fatalf("failed to create new image cache: %s", err)

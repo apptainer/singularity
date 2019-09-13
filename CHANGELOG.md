@@ -11,7 +11,9 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.4.0
 
-# v3.4.0 - [2019.08.30]
+ - Deprecated `--id` flag for `sign` and `verify`; replaced with `--sif-id`.
+
+# v3.4.0 - [2019.08.23]
 
 ## New features / functionalities
   
@@ -19,7 +21,7 @@ _The old changelog can be found in the `release-2.6` branch_
     - `--pem-path` option added to the `build` and action commands for RSA based encrypted containers
     - `--passphrase` option added to `build` and action commands for passphrase based encrypted containers
     - `SINGULARITY_ENCRYPTION_PEM_PATH` and `SINGULARITY_ENCRYPTION_PASSPHRASE` environment variables added to serve same functions as above
-    - `--encrypt` option added to `build` command to build an encrypted container when environment variables contain a secret
+    - `--encyrpt` option added to `build` command to build an encrypted container when environment variables contain a secret
   - New `--disable-cache` flag prevents caching of downloaded containers
   - Added support for multi-line variables in singularity def-files
   - Added support for 'indexed' def-file variables (like arrays)

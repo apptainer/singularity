@@ -219,7 +219,7 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest(tt.desc),
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("pull"),
 		e2e.WithArgs(strings.Split(argv, " ")...),
 		e2e.ExpectExit(tt.expectedExitCode))
@@ -284,7 +284,7 @@ func (c *ctx) setup(t *testing.T) {
 	}
 }
 
-func (c *ctx) testPullCmd(t *testing.T) {
+func (c ctx) testPullCmd(t *testing.T) {
 	// XXX(mem): this should come from the environment
 	sylabsAdminFingerprint := "8883491F4268F173C6E5DC49EDECE4F3F38D871E"
 	argv := []string{"key", "pull", sylabsAdminFingerprint}
@@ -433,7 +433,7 @@ func orasPushNoCheck(file, ref string) error {
 	return nil
 }
 
-func (c *ctx) testPullDisableCacheCmd(t *testing.T) {
+func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 	cacheDir, err := ioutil.TempDir("", "e2e-imgcache-")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
@@ -452,7 +452,7 @@ func (c *ctx) testPullDisableCacheCmd(t *testing.T) {
 
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("pull"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ExpectExit(0),
@@ -464,9 +464,9 @@ func (c *ctx) testPullDisableCacheCmd(t *testing.T) {
 	}
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := ctx{
 		env: env,
 	}
 

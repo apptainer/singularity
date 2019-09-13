@@ -24,11 +24,11 @@ type ctx struct {
 const imgURL = "library://sylabs/tests/unsigned:1.0.0"
 const imgName = "testImage.sif"
 
-func (c *ctx) singularitySignHelpOption(t *testing.T) {
+func (c ctx) singularitySignHelpOption(t *testing.T) {
 	c.env.KeyringDir = c.keyringDir
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("sign"),
 		e2e.WithArgs("--help"),
 		e2e.ExpectExit(
@@ -55,47 +55,87 @@ func (c *ctx) prepareImage(t *testing.T) (string, func(*testing.T)) {
 	}
 }
 
-func (c *ctx) singularitySignIDOption(t *testing.T) {
+func (c ctx) singularitySignIDOption(t *testing.T) {
 	imgPath, cleanup := c.prepareImage(t)
 	defer cleanup(t)
 
-	cmdArgs := []string{"--id", "0", imgPath}
+	tests := []struct {
+		name       string
+		args       []string
+		expectOp   e2e.SingularityCmdResultOp
+		expectExit int
+	}{
+		{
+			name:       "sign deffile",
+			args:       []string{"--sif-id", "0", imgPath},
+			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied to "+imgPath),
+			expectExit: 0,
+		},
+		{
+			name:       "sign non-exsistent ID",
+			args:       []string{"--sif-id", "5", imgPath},
+			expectOp:   e2e.ExpectError(e2e.ContainMatch, "no descriptor found for id 5"),
+			expectExit: 2,
+		},
+	}
+
 	c.env.KeyringDir = c.keyringDir
 	c.env.ImgCacheDir = c.imgCache
-	c.env.RunSingularity(
-		t,
-		e2e.WithPrivileges(false),
-		e2e.WithCommand("sign"),
-		e2e.WithArgs(cmdArgs...),
-		e2e.ConsoleRun(c.passphraseInput...),
-		e2e.ExpectExit(
-			0,
-			e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied to "+imgPath),
-		),
-	)
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("sign"),
+			e2e.WithArgs(tt.args...),
+			e2e.ConsoleRun(c.passphraseInput...),
+			e2e.ExpectExit(tt.expectExit, tt.expectOp),
+		)
+	}
 }
 
-func (c *ctx) singularitySignGroupIDOption(t *testing.T) {
+func (c ctx) singularitySignGroupIDOption(t *testing.T) {
 	imgPath, cleanup := c.prepareImage(t)
 	defer cleanup(t)
 
-	cmdArgs := []string{"--groupid", "0", imgPath}
+	tests := []struct {
+		name       string
+		args       []string
+		expectOp   e2e.SingularityCmdResultOp
+		expectExit int
+	}{
+		{
+			name:       "groupID 0",
+			args:       []string{"--groupid", "0", imgPath},
+			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied to "+imgPath),
+			expectExit: 0,
+		},
+		{
+			name:       "groupID 5",
+			args:       []string{"--groupid", "5", imgPath},
+			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, "no descriptors found for groupid 5"),
+			expectExit: 2,
+		},
+	}
+
 	c.env.KeyringDir = c.keyringDir
 	c.env.ImgCacheDir = c.imgCache
-	c.env.RunSingularity(
-		t,
-		e2e.WithPrivileges(false),
-		e2e.WithCommand("sign"),
-		e2e.WithArgs(cmdArgs...),
-		e2e.ConsoleRun(c.passphraseInput...),
-		e2e.ExpectExit(
-			0,
-			e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied to "+imgPath),
-		),
-	)
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("sign"),
+			e2e.WithArgs(tt.args...),
+			e2e.ConsoleRun(c.passphraseInput...),
+			e2e.ExpectExit(tt.expectExit, tt.expectOp),
+		)
+	}
 }
 
-func (c *ctx) singularitySignKeyidxOption(t *testing.T) {
+func (c ctx) singularitySignKeyidxOption(t *testing.T) {
 	imgPath, cleanup := c.prepareImage(t)
 	defer cleanup(t)
 
@@ -104,7 +144,7 @@ func (c *ctx) singularitySignKeyidxOption(t *testing.T) {
 	c.env.ImgCacheDir = c.imgCache
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("sign"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ConsoleRun(c.passphraseInput...),
@@ -129,15 +169,16 @@ func (c *ctx) generateKeypair(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.ConsoleRun(keyGenInput...),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("key"),
 		e2e.WithArgs("newpair"),
 		e2e.ExpectExit(0),
 	)
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := ctx{
 		env: env,
 	}
 
@@ -174,7 +215,7 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 
 		t.Run("singularitySignHelpOption", c.singularitySignHelpOption)
 		t.Run("singularitySignIDOption", c.singularitySignIDOption)
-		t.Run("singularitySignGroupIDOption", c.singularitySignIDOption)
+		t.Run("singularitySignGroupIDOption", c.singularitySignGroupIDOption)
 		t.Run("singularitySignKeyidxOption", c.singularitySignKeyidxOption)
 	}
 }

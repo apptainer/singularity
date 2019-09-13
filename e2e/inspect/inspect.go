@@ -18,7 +18,7 @@ type ctx struct {
 
 const containerTesterSIF = "testdata/inspecter_container.sif"
 
-func (c *ctx) singularityInspect(t *testing.T) {
+func (c ctx) singularityInspect(t *testing.T) {
 	tests := []struct {
 		name      string
 		insType   string   // insType the type of 'inspect' flag, eg. '--deffile'
@@ -122,6 +122,7 @@ func (c *ctx) singularityInspect(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("inspect"),
 			e2e.WithArgs("--json", tt.insType, containerTesterSIF),
 			e2e.ExpectExit(0, compareOutput),
@@ -130,9 +131,9 @@ func (c *ctx) singularityInspect(t *testing.T) {
 
 }
 
-// RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &ctx{
+// E2ETests is the main func to trigger the test suite
+func E2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := ctx{
 		env: env,
 	}
 

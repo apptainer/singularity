@@ -25,7 +25,7 @@ var pluginInstallNameFlag = cmdline.Flag{
 	DefaultValue: "",
 	Name:         "name",
 	ShortHand:    "n",
-	Usage:        "Name to install the plugin as, defaults to the value in the manifest",
+	Usage:        "name to install the plugin as, defaults to the value in the manifest",
 }
 
 func init() {
@@ -37,7 +37,7 @@ func init() {
 //
 // singularity plugin install <path> [-n name]
 var PluginInstallCmd = &cobra.Command{
-	PreRun: func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, pluginContext) },
+	PreRun: EnsureRootPriv,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := singularity.InstallPlugin(args[0], buildcfg.LIBEXECDIR)
 		if err != nil {
