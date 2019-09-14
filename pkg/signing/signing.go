@@ -495,6 +495,7 @@ func getSignEntities(fimg *sif.FileImage) ([]string, error) {
 func GetSignEntities(cpath string) ([]string, error) {
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
+		fimg.UnloadContainer()
 		return nil, err
 	}
 	defer fimg.UnloadContainer()

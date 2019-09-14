@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/pkg/ociruntime"
 )
@@ -410,10 +411,10 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		t.Run("Basic", c.testOciBasic)
-		t.Run("Attach", c.testOciAttach)
-		t.Run("Run", c.testOciRun)
-		t.Run("Help", c.testOciHelp)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"basic":  c.testOciBasic,
+		"attach": c.testOciAttach,
+		"run":    c.testOciRun,
+		"help":   c.testOciHelp,
+	})
 }

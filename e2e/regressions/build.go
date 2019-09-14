@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 type regressionsTests struct {
@@ -62,8 +63,7 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		// https://github.com/sylabs/singularity/issues/4203
-		t.Run("Issue4203", c.issue4203)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"issue 4203": c.issue4203, // https://github.com/sylabs/singularity/issues/4203
+	})
 }
