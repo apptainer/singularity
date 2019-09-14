@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/golden"
 )
@@ -264,11 +265,10 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		// try to build from a non existen path
-		t.Run("testCommands", c.testCommands)
-		t.Run("testFailure", c.testFailure)
-		t.Run("testSingularity", c.testSingularity)
-		t.Run("testHelpContent", c.testHelpOciContent)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"commands":     c.testCommands,
+		"failure":      c.testFailure,
+		"help content": c.testHelpOciContent,
+		"singularity":  c.testSingularity,
+	})
 }

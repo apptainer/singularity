@@ -12,6 +12,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 type ctx struct {
@@ -118,9 +119,9 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		t.Run("test_semantic_version", c.testSemanticVersion)
-		t.Run("test_equal_version", c.testEqualVersion)
-		t.Run("test_help_option", c.testHelpOption)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"equal version":    c.testEqualVersion,
+		"help option":      c.testHelpOption,
+		"semantic version": c.testSemanticVersion,
+	})
 }
