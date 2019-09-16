@@ -51,6 +51,10 @@ func (c *Client) doPOSTRequest(ctx context.Context, path string, o interface{}) 
 	return c.commonRequestHandler(ctx, "POST", path, o, []int{http.StatusOK, http.StatusCreated})
 }
 
+func (c *Client) doDeleteRequest(ctx context.Context, path string) (objJSON []byte, err error) {
+	return c.commonRequestHandler(ctx, "DELETE", path, nil, []int{http.StatusOK})
+}
+
 func (c *Client) commonRequestHandler(ctx context.Context, method string, path string, o interface{}, acceptedStatusCodes []int) (objJSON []byte, err error) {
 	var payload io.Reader
 
