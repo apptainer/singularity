@@ -344,8 +344,9 @@ fi
 # libseccomp dev
 ########################
 printf " checking: libseccomp+headers... "
+seccomp_iflags=`pkg-config --cflags-only-I libseccomp 2>/dev/null || true`
 if ! printf "#include <seccomp.h>\nint main() { seccomp_syscall_resolve_name(\"read\"); }" | \
-   $tgtcc $user_cflags $ldflags -x c -o /dev/null - -lseccomp >/dev/null 2>&1; then
+   $tgtcc $user_cflags $ldflags $seccomp_iflags -x c -o /dev/null - -lseccomp >/dev/null 2>&1; then
     tgtstatic=0
     echo "no"
 else
