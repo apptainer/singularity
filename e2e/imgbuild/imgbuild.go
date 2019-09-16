@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 var testFileContent = "Test file content\n"
@@ -1050,21 +1051,14 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		// builds from definition file and URI
-		t.Run("From", c.buildFrom)
-		// build and image from an existing image
-		t.Run("FromLocalImage", c.buildLocalImage)
-		// build sifs from non-root
-		t.Run("NonRootBuild", c.nonRootBuild)
-		// try to build from a non existing path
-		t.Run("badPath", c.badPath)
-		// builds from definition template
-		t.Run("Definition", c.buildDefinition)
-		// multistage build from definition templates
-		t.Run("MultiStage", c.buildMultiStageDefinition)
-		// build encrypted images
-		t.Run("buildEncryptPassphrase", c.buildEncryptPassphrase)
-		t.Run("buildEncryptPemFile", c.buildEncryptPemFile)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"bad path":                        c.badPath, // try to build from a non existen path
+		"build encrypt with PEM file":     c.buildEncryptPemFile,
+		"build encrypted with passphrase": c.buildEncryptPassphrase,    // build encrypted images
+		"definition":                      c.buildDefinition,           // builds from definition template
+		"from local image":                c.buildLocalImage,           // build and image from an existing image
+		"from":                            c.buildFrom,                 // builds from definition file and URI
+		"multistage":                      c.buildMultiStageDefinition, // multistage build from definition templates
+		"non-root build":                  c.nonRootBuild,              // build sifs from non-root
+	})
 }

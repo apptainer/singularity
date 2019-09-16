@@ -462,7 +462,8 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 		t.Helper()
 
 		s.result = new(SingularityCmdResult)
-		pargs := append(s.cmd, s.profile.args(s.cmd)...)
+		pargs := append([]string{"--debug"}, s.cmd...)
+		pargs = append(pargs, s.profile.args(s.cmd)...)
 		s.args = append(pargs, s.args...)
 		s.result.FullCmd = fmt.Sprintf("%s %s", cmdPath, strings.Join(s.args, " "))
 

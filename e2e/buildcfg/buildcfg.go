@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 type buildcfgTests struct {
@@ -49,7 +50,7 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		t.Run("buildcfgHelp", c.buildcfgTests)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"buildcfgHelp": c.buildcfgTests,
+	})
 }

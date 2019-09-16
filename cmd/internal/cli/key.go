@@ -75,6 +75,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&keyServerURIFlag, KeySearchCmd, KeyPushCmd, KeyPullCmd)
 	cmdManager.RegisterFlagForCmd(&keySearchLongListFlag, KeySearchCmd)
 	cmdManager.RegisterFlagForCmd(&keyNewpairBitLengthFlag, KeyNewPairCmd)
+	cmdManager.RegisterFlagForCmd(&keyImportWithNewPasswordFlag, KeyImportCmd)
 }
 
 // KeyCmd is the 'key' command that allows management of key stores

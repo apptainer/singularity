@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 )
 
@@ -157,9 +158,9 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		t.Run("run555cache", c.testRun555Cache)
-		t.Run("runPassphraseEncrypted", c.testRunPassphraseEncrypted)
-		t.Run("runPEMEncrypted", c.testRunPEMEncrypted)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"0555 cache":           c.testRun555Cache,
+		"passphrase encrypted": c.testRunPassphraseEncrypted,
+		"PEM encrypted":        c.testRunPEMEncrypted,
+	})
 }

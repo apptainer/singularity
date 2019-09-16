@@ -10,6 +10,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 type ctx struct {
@@ -137,7 +138,7 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		t.Run("singularityInspect", c.singularityInspect)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"inspect command": c.singularityInspect,
+	})
 }
