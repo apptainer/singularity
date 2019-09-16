@@ -95,12 +95,12 @@ func (c *ctx) singularityKeySearch(t *testing.T) {
 		},
 		{
 			name:   "key search --url <open key server> <name>",
-			args:   []string{"search", "--url", "https://keyserver.2ndquadrant.com", "WestleyK"},
+			args:   []string{"search", "--url", "https://hkps.pool.sks-keyservers.net", "WestleyK"},
 			stdout: "^Showing",
 		},
 		{
 			name:   "key search --url <open key server> <key id>",
-			args:   []string{"search", "--url", "https://keyserver.2ndquadrant.com", "0x0E92D0AC"},
+			args:   []string{"search", "--url", "https://hkps.pool.sks-keyservers.net", "0x0E92D0AC"},
 			stdout: "^Showing 1 results",
 		},
 		// TODO: add tests for --long-list after #4156 is solved
