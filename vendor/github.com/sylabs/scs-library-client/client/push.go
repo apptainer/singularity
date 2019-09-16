@@ -12,8 +12,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/go-log/log"
-	"github.com/hashicorp/go-retryablehttp"
 	jsonresp "github.com/sylabs/json-resp"
 	"golang.org/x/sync/errgroup"
 )
@@ -227,17 +225,6 @@ func (c *Client) postFile(ctx context.Context, r io.Reader, fileSize int64, imag
 	return nil
 }
 
-// loggingAdapter is an adapter to redirect log messages from retryablehttp
-// to our logger
-type loggingAdapter struct {
-	logger log.Logger
-}
-
-// Printf implements interface used by retryablehttp
-func (l *loggingAdapter) Printf(fmt string, args ...interface{}) {
-	l.logger.Logf(fmt, args)
-}
-
 // postFileV2 uses V2 API to upload images to SCS library server. This is
 // a three step operation: "create" upload image request, which returns a
 // URL to issue an http PUT operation against, and then finally calls the
@@ -277,7 +264,7 @@ func (c *Client) postFileV2(ctx context.Context, r io.Reader, fileSize int64, im
 		return fmt.Errorf("error getting presigned URL")
 	}
 
-	req, err := retryablehttp.NewRequest(http.MethodPut, presignedURL, callback.GetReader())
+	req, err := http.NewRequest(http.MethodPut, presignedURL, callback.GetReader())
 	if err != nil {
 		return fmt.Errorf("error creating request: %v", err)
 	}
@@ -285,15 +272,7 @@ func (c *Client) postFileV2(ctx context.Context, r io.Reader, fileSize int64, im
 	req.ContentLength = fileSize
 	req.Header.Set("Content-Type", "application/octet-stream")
 
-	// redirect log output from retryablehttp to our logger
-	l := loggingAdapter{
-		logger: c.Logger,
-	}
-
-	client := retryablehttp.NewClient()
-	client.Logger = &l
-
-	resp, err := client.Do(req.WithContext(ctx))
+	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	callback.Finish()
 	if err != nil {
 		return fmt.Errorf("error uploading image: %v", err)
