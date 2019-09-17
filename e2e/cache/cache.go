@@ -13,6 +13,7 @@ import (
 
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 )
 
@@ -298,11 +299,12 @@ func ensureCacheNotEmpty(t *testing.T, testName string, imagePath string, h *cac
 
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	return func(t *testing.T) {
-		c := cacheTests{
-			env: env,
-		}
-		t.Run("cacheInteractiveCmds", c.testInteractiveCacheCmds)
-		t.Run("cacheNoninteractiveCmds", c.testNoninteractiveCacheCmds)
+	c := cacheTests{
+		env: env,
 	}
+
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"interactive commands":     c.testInteractiveCacheCmds,
+		"non-interactive commands": c.testNoninteractiveCacheCmds,
+	})
 }

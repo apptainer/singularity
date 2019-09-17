@@ -16,6 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 type ctx struct {
@@ -23,6 +24,8 @@ type ctx struct {
 }
 
 func (c ctx) testInvalidTransport(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	tests := []struct {
 		name       string
 		uri        string
@@ -52,6 +55,8 @@ func (c ctx) testInvalidTransport(t *testing.T) {
 }
 
 func (c ctx) testPushCmd(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	e2e.PrepRegistry(t, c.env)
 
 	// setup file and dir to use as invalid sources
@@ -132,10 +137,8 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		e2e.EnsureImage(t, c.env)
-
-		t.Run("push invalid transport", c.testInvalidTransport)
-		t.Run("push oras", c.testPushCmd)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"invalid transport": c.testInvalidTransport,
+		"oras":              c.testPushCmd,
+	})
 }

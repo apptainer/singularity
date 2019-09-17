@@ -7,7 +7,6 @@ package imgbuild
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -16,12 +15,35 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 var testFileContent = "Test file content\n"
 
 type imgBuildTests struct {
 	env e2e.TestEnv
+}
+
+func (c imgBuildTests) tempDir(t *testing.T, namespace string) (string, func()) {
+	dn, err := fs.MakeTmpDir(c.env.TestDir, namespace+".", 0755)
+	if err != nil {
+		t.Errorf("failed to create temporary directory: %#v", err)
+	}
+
+	cleanup := func() {
+		if t.Failed() {
+			t.Logf("Test %s failed, not removing %s", t.Name(), dn)
+
+			return
+		}
+
+		if err := os.RemoveAll(dn); err != nil {
+			t.Logf("Failed to remove %s for test %s: %#v", dn, t.Name(), err)
+		}
+	}
+
+	return dn, cleanup
 }
 
 func (c imgBuildTests) buildFrom(t *testing.T) {
@@ -32,74 +54,65 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 	// see https://github.com/sylabs/singularity/issues/4407
 	tt := []struct {
 		name       string
-		dest       string
 		dependency string
 		buildSpec  string
-		sandbox    bool
 	}{
 		{
 			name:      "BusyBox",
-			dest:      c.env.TestDir + "/container",
 			buildSpec: "../examples/busybox/Singularity",
 		},
 		{
 			name:       "Debootstrap",
-			dest:       c.env.TestDir + "/container/",
 			dependency: "debootstrap",
 			buildSpec:  "../examples/debian/Singularity",
-			sandbox:    true,
 		},
 		{
 			name:      "DockerURI",
-			dest:      c.env.TestDir + "/container/",
 			buildSpec: "docker://busybox",
-			sandbox:   true,
 		},
 		{
 			name:      "DockerDefFile",
-			dest:      c.env.TestDir + "/container/",
 			buildSpec: "../examples/docker/Singularity",
-			sandbox:   true,
 		},
 		// TODO(mem): reenable this; disabled while shub is down
-		// {"ShubURI", "", "shub://GodloveD/busybox", true},
+		// {
+		// 	name:       "ShubURI",
+		// 	buildSpec:  "shub://GodloveD/busybox",
+		// },
 		// TODO(mem): reenable this; disabled while shub is down
-		// {"ShubDefFile", "", "../examples/shub/Singularity", true},
+		// {
+		// 	name:       "ShubDefFile",
+		// 	buildSpec:  "../examples/shub/Singularity",
+		// },
 		{
 			name:      "LibraryDefFile",
-			dest:      c.env.TestDir + "/container/",
 			buildSpec: "../examples/library/Singularity",
-			sandbox:   true,
 		},
 		{
 			name:      "OrasURI",
-			dest:      c.env.TestDir + "/container/",
 			buildSpec: c.env.OrasTestImage,
-			sandbox:   true,
 		},
 		{
 			name:       "Yum",
-			dest:       c.env.TestDir + "/container/",
 			dependency: "yum",
 			buildSpec:  "../examples/centos/Singularity",
-			sandbox:    true,
 		},
 		{
 			name:       "Zypper",
-			dest:       c.env.TestDir + "/container/",
 			dependency: "zypper",
 			buildSpec:  "../examples/opensuse/Singularity",
-			sandbox:    true,
 		},
 	}
 
 	for _, tc := range tt {
-		// conditionally build a sandbox
-		var args []string
-		if tc.sandbox {
-			args = []string{"--sandbox"}
-		}
-		args = append(args, tc.dest, tc.buildSpec)
+		dn, cleanup := c.tempDir(t, "build-from")
+		defer cleanup()
+
+		imagePath := path.Join(dn, "sandbox")
+
+		// Pass --sandbox because sandboxes take less time to
+		// build by skipping the SIF creation step.
+		args := []string{"--force", "--sandbox", imagePath, tc.buildSpec}
 
 		c.env.RunSingularity(
 			t,
@@ -108,10 +121,12 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PreRun(func(t *testing.T) {
-				if tc.dependency != "" {
-					if _, err := exec.LookPath(tc.dependency); err != nil {
-						t.Skipf("%v not found in path", tc.dependency)
-					}
+				if tc.dependency == "" {
+					return
+				}
+
+				if _, err := exec.LookPath(tc.dependency); err != nil {
+					t.Skipf("%v not found in path", tc.dependency)
 				}
 			}),
 			e2e.PostRun(func(t *testing.T) {
@@ -119,8 +134,8 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 					return
 				}
 
-				defer os.RemoveAll(tc.dest)
-				c.env.ImageVerify(t, tc.dest)
+				defer os.RemoveAll(imagePath)
+				c.env.ImageVerify(t, imagePath)
 			}),
 			e2e.ExpectExit(0),
 		)
@@ -131,55 +146,48 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 	tt := []struct {
 		name      string
 		buildSpec string
-		sandbox   bool
+		args      []string
 	}{
 		{
 			name:      "local sif",
 			buildSpec: "testdata/busybox.sif",
-			sandbox:   false,
 		},
 		{
 			name:      "local sif to sandbox",
 			buildSpec: "testdata/busybox.sif",
-			sandbox:   true,
+			args:      []string{"--sandbox"},
 		},
 		{
 			name:      "library sif",
 			buildSpec: "library://sylabs/tests/busybox:1.0.0",
-			sandbox:   false,
 		},
 		{
 			name:      "library sif sandbox",
 			buildSpec: "library://sylabs/tests/busybox:1.0.0",
-			sandbox:   true,
+			args:      []string{"--sandbox"},
 		},
 		{
 			name:      "library sif sha",
 			buildSpec: "library://sylabs/tests/busybox:sha256.8b5478b0f2962eba3982be245986eb0ea54f5164d90a65c078af5b83147009ba",
-			sandbox:   false,
 		},
 		// TODO: uncomment when shub is working
 		//{
 		//		name:      "shub busybox",
 		//		buildSpec: "shub://GodloveD/busybox",
-		//		sandbox:   false,
 		//},
 		{
 			name:      "docker busybox",
 			buildSpec: "docker://busybox:latest",
-			sandbox:   false,
 		},
 	}
 
 	for _, tc := range tt {
-		imagePath := path.Join(c.env.TestDir, "container")
+		dn, cleanup := c.tempDir(t, "non-root-build")
+		defer cleanup()
 
-		// conditionally build a sandbox
-		var args []string
-		if tc.sandbox {
-			args = []string{"--sandbox"}
-		}
-		args = append(args, imagePath, tc.buildSpec)
+		imagePath := path.Join(dn, "container")
+
+		args := append(tc.args, imagePath, tc.buildSpec)
 
 		c.env.RunSingularity(
 			t,
@@ -188,7 +196,6 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
-				defer os.RemoveAll(imagePath)
 				c.env.ImageVerify(t, imagePath)
 			}),
 			e2e.ExpectExit(0),
@@ -199,12 +206,9 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 func (c imgBuildTests) buildLocalImage(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	tmpdir, err := ioutil.TempDir(c.env.TestDir, "build-local-image.")
-	if err != nil {
-		t.Errorf("Cannot create temporary directory: %+v", err)
-	}
+	tmpdir, cleanup := c.tempDir(t, "build-local-image")
 
-	defer os.RemoveAll(tmpdir)
+	defer cleanup()
 
 	liDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
@@ -269,7 +273,11 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 }
 
 func (c imgBuildTests) badPath(t *testing.T) {
-	imagePath := path.Join(c.env.TestDir, "container")
+	dn, cleanup := c.tempDir(t, "bad-path")
+	defer cleanup()
+
+	imagePath := path.Join(dn, "container")
+
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.RootProfile),
@@ -288,15 +296,12 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		force   bool
-		sandbox bool
 		dfd     []e2e.DefFileDetails
 		correct e2e.DefFileDetails // a bit hacky, but this allows us to check final image for correct artifacts
 	}{
 		// Simple copy from stage one to final stage
 		{
-			name:    "FileCopySimple",
-			sandbox: true,
+			name: "FileCopySimple",
 			dfd: []e2e.DefFileDetails{
 				{
 					Bootstrap: "docker",
@@ -348,8 +353,7 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 		},
 		// Complex copy of files from stage one and two to stage three, then final copy from three to final stage
 		{
-			name:    "FileCopyComplex",
-			sandbox: true,
+			name: "FileCopyComplex",
 			dfd: []e2e.DefFileDetails{
 				{
 					Bootstrap: "docker",
@@ -466,17 +470,15 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		imagePath := path.Join(c.env.TestDir, "container")
+		dn, cleanup := c.tempDir(t, "multi-stage-definition")
+		defer cleanup()
+
+		imagePath := path.Join(dn, "container")
+
 		defFile := e2e.PrepareMultiStageDefFile(tt.dfd)
 
-		args := []string{}
-		if tt.force {
-			args = append([]string{"--force"}, args...)
-		}
-		if tt.sandbox {
-			args = append([]string{"--sandbox"}, args...)
-		}
-		args = append(args, imagePath, defFile)
+		// sandboxes take less time to build
+		args := []string{"--sandbox", imagePath, defFile}
 
 		c.env.RunSingularity(
 			t,
@@ -485,7 +487,6 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
 				defer os.Remove(defFile)
-				defer os.RemoveAll(imagePath)
 
 				e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.correct)
 			}),
@@ -501,362 +502,280 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 	}
 	defer os.Remove(tmpfile) // clean up
 
-	tt := []struct {
-		name    string
-		force   bool
-		sandbox bool
-		dfd     e2e.DefFileDetails
-	}{
-		{
-			name:    "Empty",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
+	tt := map[string]e2e.DefFileDetails{
+		"Empty": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+		},
+		"Help": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Help: []string{
+				"help info line 1",
+				"help info line 2",
+				"help info line 3",
 			},
 		},
-		{
-			name:    "Help",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Help: []string{
-					"help info line 1",
-					"help info line 2",
-					"help info line 3",
+		"Files": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Files: []e2e.FilePair{
+				{
+					Src: tmpfile,
+					Dst: "NewName2.txt",
+				},
+				{
+					Src: tmpfile,
+					Dst: "NewName.txt",
 				},
 			},
 		},
-		{
-			name:    "Files",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Files: []e2e.FilePair{
-					{
-						Src: tmpfile,
-						Dst: "NewName2.txt",
+		"Test": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Test: []string{
+				"echo testscript line 1",
+				"echo testscript line 2",
+				"echo testscript line 3",
+			},
+		},
+		"Startscript": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			StartScript: []string{
+				"echo startscript line 1",
+				"echo startscript line 2",
+				"echo startscript line 3",
+			},
+		},
+		"Runscript": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			RunScript: []string{
+				"echo runscript line 1",
+				"echo runscript line 2",
+				"echo runscript line 3",
+			},
+		},
+		"Env": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Env: []string{
+				"testvar1=one",
+				"testvar2=two",
+				"testvar3=three",
+			},
+		},
+		"Labels": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Labels: map[string]string{
+				"customLabel1": "one",
+				"customLabel2": "two",
+				"customLabel3": "three",
+			},
+		},
+		"Pre": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Pre: []string{
+				filepath.Join(c.env.TestDir, "PreFile1"),
+			},
+		},
+		"Setup": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Setup: []string{
+				filepath.Join(c.env.TestDir, "SetupFile1"),
+			},
+		},
+		"Post": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Post: []string{
+				"PostFile1",
+			},
+		},
+		"AppHelp": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []e2e.AppDetail{
+				{
+					Name: "foo",
+					Help: []string{
+						"foo help info line 1",
+						"foo help info line 2",
+						"foo help info line 3",
 					},
-					{
-						Src: tmpfile,
-						Dst: "NewName.txt",
+				},
+				{
+					Name: "bar",
+					Help: []string{
+						"bar help info line 1",
+						"bar help info line 2",
+						"bar help info line 3",
 					},
 				},
 			},
 		},
-		{
-			name:    "Test",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Test: []string{
-					"echo testscript line 1",
-					"echo testscript line 2",
-					"echo testscript line 3",
+		"AppEnv": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []e2e.AppDetail{
+				{
+					Name: "foo",
+					Env: []string{
+						"testvar1=fooOne",
+						"testvar2=fooTwo",
+						"testvar3=fooThree",
+					},
+				},
+				{
+					Name: "bar",
+					Env: []string{
+						"testvar1=barOne",
+						"testvar2=barTwo",
+						"testvar3=barThree",
+					},
 				},
 			},
 		},
-		{
-			name:    "Startscript",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				StartScript: []string{
-					"echo startscript line 1",
-					"echo startscript line 2",
-					"echo startscript line 3",
+		"AppLabels": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []e2e.AppDetail{
+				{
+					Name: "foo",
+					Labels: map[string]string{
+						"customLabel1": "fooOne",
+						"customLabel2": "fooTwo",
+						"customLabel3": "fooThree",
+					},
+				},
+				{
+					Name: "bar",
+					Labels: map[string]string{
+						"customLabel1": "barOne",
+						"customLabel2": "barTwo",
+						"customLabel3": "barThree",
+					},
 				},
 			},
 		},
-		{
-			name:    "Runscript",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				RunScript: []string{
-					"echo runscript line 1",
-					"echo runscript line 2",
-					"echo runscript line 3",
-				},
-			},
-		},
-		{
-			name:    "Env",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Env: []string{
-					"testvar1=one",
-					"testvar2=two",
-					"testvar3=three",
-				},
-			},
-		},
-		{
-			name:    "Labels",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Labels: map[string]string{
-					"customLabel1": "one",
-					"customLabel2": "two",
-					"customLabel3": "three",
-				},
-			},
-		},
-		{
-			name:    "Pre",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Pre: []string{
-					filepath.Join(c.env.TestDir, "PreFile1"),
-				},
-			},
-		},
-		{
-			name:    "Setup",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Setup: []string{
-					filepath.Join(c.env.TestDir, "SetupFile1"),
-				},
-			},
-		},
-		{
-			name:    "Post",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Post: []string{
-					"PostFile1",
-				},
-			},
-		},
-		{
-			name:    "AppHelp",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Apps: []e2e.AppDetail{
-					{
-						Name: "foo",
-						Help: []string{
-							"foo help info line 1",
-							"foo help info line 2",
-							"foo help info line 3",
+		"AppFiles": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []e2e.AppDetail{
+				{
+					Name: "foo",
+					Files: []e2e.FilePair{
+						{
+							Src: tmpfile,
+							Dst: "FooFile2.txt",
+						},
+						{
+							Src: tmpfile,
+							Dst: "FooFile.txt",
 						},
 					},
-					{
-						Name: "bar",
-						Help: []string{
-							"bar help info line 1",
-							"bar help info line 2",
-							"bar help info line 3",
-						},
-					},
 				},
-			},
-		},
-		{
-			name:    "AppEnv",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Apps: []e2e.AppDetail{
-					{
-						Name: "foo",
-						Env: []string{
-							"testvar1=fooOne",
-							"testvar2=fooTwo",
-							"testvar3=fooThree",
+				{
+					Name: "bar",
+					Files: []e2e.FilePair{
+						{
+							Src: tmpfile,
+							Dst: "BarFile2.txt",
 						},
-					},
-					{
-						Name: "bar",
-						Env: []string{
-							"testvar1=barOne",
-							"testvar2=barTwo",
-							"testvar3=barThree",
+						{
+							Src: tmpfile,
+							Dst: "BarFile.txt",
 						},
 					},
 				},
 			},
 		},
-		{
-			name:    "AppLabels",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Apps: []e2e.AppDetail{
-					{
-						Name: "foo",
-						Labels: map[string]string{
-							"customLabel1": "fooOne",
-							"customLabel2": "fooTwo",
-							"customLabel3": "fooThree",
-						},
+		"AppInstall": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []e2e.AppDetail{
+				{
+					Name: "foo",
+					Install: []string{
+						"FooInstallFile1",
 					},
-					{
-						Name: "bar",
-						Labels: map[string]string{
-							"customLabel1": "barOne",
-							"customLabel2": "barTwo",
-							"customLabel3": "barThree",
-						},
+				},
+				{
+					Name: "bar",
+					Install: []string{
+						"BarInstallFile1",
 					},
 				},
 			},
 		},
-		{
-			name:    "AppFiles",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Apps: []e2e.AppDetail{
-					{
-						Name: "foo",
-						Files: []e2e.FilePair{
-							{
-								Src: tmpfile,
-								Dst: "FooFile2.txt",
-							},
-							{
-								Src: tmpfile,
-								Dst: "FooFile.txt",
-							},
-						},
+		"AppRun": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []e2e.AppDetail{
+				{
+					Name: "foo",
+					Run: []string{
+						"echo foo runscript line 1",
+						"echo foo runscript line 2",
+						"echo foo runscript line 3",
 					},
-					{
-						Name: "bar",
-						Files: []e2e.FilePair{
-							{
-								Src: tmpfile,
-								Dst: "BarFile2.txt",
-							},
-							{
-								Src: tmpfile,
-								Dst: "BarFile.txt",
-							},
-						},
+				},
+				{
+					Name: "bar",
+					Run: []string{
+						"echo bar runscript line 1",
+						"echo bar runscript line 2",
+						"echo bar runscript line 3",
 					},
 				},
 			},
 		},
-		{
-			name:    "AppInstall",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Apps: []e2e.AppDetail{
-					{
-						Name: "foo",
-						Install: []string{
-							"FooInstallFile1",
-						},
-					},
-					{
-						Name: "bar",
-						Install: []string{
-							"BarInstallFile1",
-						},
+		"AppTest": {
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []e2e.AppDetail{
+				{
+					Name: "foo",
+					Test: []string{
+						"echo foo testscript line 1",
+						"echo foo testscript line 2",
+						"echo foo testscript line 3",
 					},
 				},
-			},
-		},
-		{
-			name:    "AppRun",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Apps: []e2e.AppDetail{
-					{
-						Name: "foo",
-						Run: []string{
-							"echo foo runscript line 1",
-							"echo foo runscript line 2",
-							"echo foo runscript line 3",
-						},
-					},
-					{
-						Name: "bar",
-						Run: []string{
-							"echo bar runscript line 1",
-							"echo bar runscript line 2",
-							"echo bar runscript line 3",
-						},
-					},
-				},
-			},
-		},
-		{
-			name:    "AppTest",
-			sandbox: true,
-			dfd: e2e.DefFileDetails{
-				Bootstrap: "docker",
-				From:      "alpine:latest",
-				Apps: []e2e.AppDetail{
-					{
-						Name: "foo",
-						Test: []string{
-							"echo foo testscript line 1",
-							"echo foo testscript line 2",
-							"echo foo testscript line 3",
-						},
-					},
-					{
-						Name: "bar",
-						Test: []string{
-							"echo bar testscript line 1",
-							"echo bar testscript line 2",
-							"echo bar testscript line 3",
-						},
+				{
+					Name: "bar",
+					Test: []string{
+						"echo bar testscript line 1",
+						"echo bar testscript line 2",
+						"echo bar testscript line 3",
 					},
 				},
 			},
 		},
 	}
 
-	for _, tc := range tt {
-		imagePath := path.Join(c.env.TestDir, "container")
-		defFile := e2e.PrepareDefFile(tc.dfd)
+	for name, dfd := range tt {
+		dn, cleanup := c.tempDir(t, "build-definition")
+		defer cleanup()
 
-		args := []string{}
-		if tc.force {
-			args = append([]string{"--force"}, args...)
-		}
-		if tc.sandbox {
-			args = append([]string{"--sandbox"}, args...)
-		}
-		args = append(args, imagePath, defFile)
+		imagePath := path.Join(dn, "container")
+
+		defFile := e2e.PrepareDefFile(dfd)
 
 		c.env.RunSingularity(
 			t,
+			e2e.AsSubtest(name),
 			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
-			e2e.WithArgs(args...),
+			e2e.WithArgs("--sandbox", imagePath, defFile),
 			e2e.PostRun(func(t *testing.T) {
 				defer os.Remove(defFile)
-				defer os.RemoveAll(imagePath)
 
-				e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tc.dfd)
+				e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, dfd)
 			}),
 			e2e.ExpectExit(0),
 		)
@@ -885,8 +804,8 @@ func (c imgBuildTests) buildEncryptPemFile(t *testing.T) {
 
 	// We create a temporary directory to store the image, making sure tests
 	// will not pollute each other
-	tempDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
-	defer cleanup(t)
+	dn, cleanup := c.tempDir(t, "pem-encryption")
+	defer cleanup()
 
 	// Generate the PEM file
 	pemFile, _ := e2e.GeneratePemFiles(t, c.env.TestDir)
@@ -903,7 +822,7 @@ func (c imgBuildTests) buildEncryptPemFile(t *testing.T) {
 	}
 
 	// First with the command line argument
-	imgPath1 := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
+	imgPath1 := filepath.Join(dn, "encrypted_cmdline_option.sif")
 	cmdArgs := []string{"--encrypt", "--pem-path", pemFile, imgPath1, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -922,7 +841,7 @@ func (c imgBuildTests) buildEncryptPemFile(t *testing.T) {
 
 	// Second with the environment variable
 	pemEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PEM_PATH", pemFile)
-	imgPath2 := filepath.Join(tempDir, "encrypted_env_var.sif")
+	imgPath2 := filepath.Join(dn, "encrypted_env_var.sif")
 	cmdArgs = []string{"--encrypt", imgPath2, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -951,8 +870,8 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 
 	// We create a temporary directory to store the image, making sure tests
 	// will not pollute each other
-	tempDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
-	defer cleanup(t)
+	dn, cleanup := c.tempDir(t, "passphrase-encryption")
+	defer cleanup()
 
 	// If the version of cryptsetup is not compatible with Singularity encryption,
 	// the build commands are expected to fail
@@ -966,8 +885,8 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	passphraseInput := []e2e.SingularityConsoleOp{
 		e2e.ConsoleSendLine(e2e.Passphrase),
 	}
-	cmdlineTestImgPath := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
-	// The image is deleted during cleanup of the tempdir
+	cmdlineTestImgPath := filepath.Join(dn, "encrypted_cmdline_option.sif")
+	// The image is deleted during cleanup of the temporary directory
 	cmdArgs := []string{"--passphrase", cmdlineTestImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -987,7 +906,7 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	}
 
 	// With the command line argument, using --encrypt and --passphrase
-	cmdlineTest2ImgPath := filepath.Join(tempDir, "encrypted_cmdline2_option.sif")
+	cmdlineTest2ImgPath := filepath.Join(dn, "encrypted_cmdline2_option.sif")
 	cmdArgs = []string{"--encrypt", "--passphrase", cmdlineTest2ImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -1008,7 +927,7 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 
 	// With the environment variable
 	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PASSPHRASE", e2e.Passphrase)
-	envvarImgPath := filepath.Join(tempDir, "encrypted_env_var.sif")
+	envvarImgPath := filepath.Join(dn, "encrypted_env_var.sif")
 	cmdArgs = []string{"--encrypt", envvarImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -1028,7 +947,7 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	}
 
 	// Finally a test that must fail: try to specify the passphrase on the command line
-	dummyImgPath := filepath.Join(tempDir, "dummy_encrypted_env_var.sif")
+	dummyImgPath := filepath.Join(dn, "dummy_encrypted_env_var.sif")
 	cmdArgs = []string{"--encrypt", "--passphrase", e2e.Passphrase, dummyImgPath, "library://alpine:latest"}
 	c.env.RunSingularity(
 		t,
@@ -1050,21 +969,14 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		// builds from definition file and URI
-		t.Run("From", c.buildFrom)
-		// build and image from an existing image
-		t.Run("FromLocalImage", c.buildLocalImage)
-		// build sifs from non-root
-		t.Run("NonRootBuild", c.nonRootBuild)
-		// try to build from a non existing path
-		t.Run("badPath", c.badPath)
-		// builds from definition template
-		t.Run("Definition", c.buildDefinition)
-		// multistage build from definition templates
-		t.Run("MultiStage", c.buildMultiStageDefinition)
-		// build encrypted images
-		t.Run("buildEncryptPassphrase", c.buildEncryptPassphrase)
-		t.Run("buildEncryptPemFile", c.buildEncryptPemFile)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"bad path":                        c.badPath, // try to build from a non existen path
+		"build encrypt with PEM file":     c.buildEncryptPemFile,
+		"build encrypted with passphrase": c.buildEncryptPassphrase,    // build encrypted images
+		"definition":                      c.buildDefinition,           // builds from definition template
+		"from local image":                c.buildLocalImage,           // build and image from an existing image
+		"from":                            c.buildFrom,                 // builds from definition file and URI
+		"multistage":                      c.buildMultiStageDefinition, // multistage build from definition templates
+		"non-root build":                  c.nonRootBuild,              // build sifs from non-root
+	})
 }

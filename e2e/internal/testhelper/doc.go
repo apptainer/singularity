@@ -3,17 +3,6 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build !linux
-
-package sources
-
-import (
-	"fmt"
-
-	"github.com/sylabs/singularity/pkg/build/types"
-)
-
-// Pack puts relevant objects in a Bundle.
-func (p *SIFPacker) Pack() (*types.Bundle, error) {
-	return nil, fmt.Errorf("unsupported on this platform")
-}
+// Package testhelper contains a collection of test helper functions that
+// are specific to the way E2E tests are executed.
+package testhelper

@@ -1,3 +1,3 @@
 module github.com/sylabs/json-resp
 
-go 1.12
+go 1.13

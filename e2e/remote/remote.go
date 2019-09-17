@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 type ctx struct {
@@ -458,12 +459,12 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		t.Run("add", c.remoteAdd)
-		t.Run("remove", c.remoteRemove)
-		t.Run("use", c.remoteUse)
-		t.Run("status", c.remoteStatus)
-		t.Run("list", c.remoteList)
-		t.Run("test flag", c.remoteTestFlag)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"add":       c.remoteAdd,
+		"list":      c.remoteList,
+		"remove":    c.remoteRemove,
+		"status":    c.remoteStatus,
+		"test flag": c.remoteTestFlag,
+		"use":       c.remoteUse,
+	})
 }
