@@ -6,6 +6,7 @@
 package crypt
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -269,23 +270,15 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 	for i := 0; i < maxRetries; i++ {
 		nextCrypt := getNextAvailableCryptDevice()
 		if nextCrypt == "" {
-			return "", errors.New("Crypt device not available")
+			return "", errors.New("сrypt device not available")
 		}
 
 		cmd := exec.Command(cryptsetup, "open", "--batch-mode", "--type", "luks2", "--key-file", "-", path, nextCrypt)
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 		cmd.SysProcAttr.Credential = &syscall.Credential{Uid: 0, Gid: 0}
 		sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
-		stdin, err := cmd.StdinPipe()
-		if err != nil {
-			return "", err
-		}
 
-		go func() {
-			stdin.Write(key)
-			stdin.Close()
-		}()
-
+		cmd.Stdin = bytes.NewBuffer(key)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			if strings.Contains(string(out), "Device already exists") {
@@ -310,5 +303,5 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 		return nextCrypt, nil
 	}
 
-	return "", errors.New("Unable to open crypt device")
+	return "", errors.New("unable to open crypt device")
 }
