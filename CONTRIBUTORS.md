@@ -15,6 +15,7 @@
     - Adam Simpson <asimpson@nvidia.com>, <adambsimpson@gmail.com>
     - Afif Elghraoui <afif.elghraoui@nih.gov>
     - Amanda Duffy <aduffy@lenovo.com>
+    - Ana Guerrero Lopez <aguerrero@suse.com>
     - Ángel Bejarano <abejarano@ontropos.com>
     - Bernard Li <bernardli@lbl.gov>
     - Brian Bockelman <bbockelm@cse.unl.edu>
