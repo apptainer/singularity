@@ -51,22 +51,21 @@ type lastMount struct {
 }
 
 type container struct {
-	engine           *EngineOperations
-	rpcOps           *client.RPC
-	session          *layout.Session
-	sessionFsType    string
-	sessionSize      int
-	userNS           bool
-	pidNS            bool
-	utsNS            bool
-	netNS            bool
-	ipcNS            bool
-	mountInfoPath    string
-	mountInfoEntries []proc.MountInfoEntry
-	lastMount        lastMount
-	skippedMount     []string
-	suidFlag         uintptr
-	devSourcePath    string
+	engine        *EngineOperations
+	rpcOps        *client.RPC
+	session       *layout.Session
+	sessionFsType string
+	sessionSize   int
+	userNS        bool
+	pidNS         bool
+	utsNS         bool
+	netNS         bool
+	ipcNS         bool
+	mountInfoPath string
+	lastMount     lastMount
+	skippedMount  []string
+	suidFlag      uintptr
+	devSourcePath string
 }
 
 func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
@@ -664,10 +663,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		if err := system.Points.AddBind(mount.RootfsTag, rootfs, c.session.RootFsPath(), flags); err != nil {
 			return err
 		}
-		if !c.userNS {
-			system.Points.AddRemount(mount.RootfsTag, c.session.RootFsPath(), flags)
-		}
-		return nil
+		return system.Points.AddRemount(mount.RootfsTag, c.session.RootFsPath(), flags)
 	}
 
 	sylog.Debugf("Mounting block [%v] image: %v\n", mountType, rootfs)
@@ -1964,15 +1960,12 @@ func (c *container) addFuseMount(system *mount.System) error {
 func (c *container) getBindFlags(source string, defaultFlags uintptr) (uintptr, error) {
 	addFlags := uintptr(0)
 
-	if c.mountInfoEntries == nil {
-		entries, err := proc.GetMountInfoEntry(c.mountInfoPath)
-		if err != nil {
-			return 0, fmt.Errorf("error while reading %s: %s", c.mountInfoPath, err)
-		}
-		c.mountInfoEntries = entries
+	entries, err := proc.GetMountInfoEntry(c.mountInfoPath)
+	if err != nil {
+		return 0, fmt.Errorf("error while reading %s: %s", c.mountInfoPath, err)
 	}
 
-	e, err := proc.FindParentMountEntry(source, c.mountInfoEntries)
+	e, err := proc.FindParentMountEntry(source, entries)
 	if err != nil {
 		return 0, fmt.Errorf("while searching parent mount point entry for %s: %s", source, err)
 	}
