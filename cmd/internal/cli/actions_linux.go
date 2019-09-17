@@ -291,7 +291,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	engineConfig.SetBindPath(BindPaths)
-	if FuseMount != nil {
+	if len(FuseMount) > 0 {
 		/* If --fusemount is given, imply --pid */
 		PidNamespace = true
 		engineConfig.SetFuseMount(FuseMount)
