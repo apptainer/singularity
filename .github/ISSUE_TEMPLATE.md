@@ -1,18 +1,44 @@
+### Version of Singularity:
 
-## Version of Singularity:
+Write your Singularity version here.
 
-Write here.
 
 ### Expected behavior
 
-Write here.
+What did you expect to see when you do...?
+
 
 ### Actual behavior
 
-Write here.
+What actually happend? Why was it incorrect?
+
 
 ### Steps to reproduce behavior
 
-Write here.
+Please fill out as much information as possible.
+
+
+### Environment?
+
+Please add infomation about your environment.
+
+#### OS distribution and version:
+
+```
+$ cat /etc/os-release 
+
+```
+
+
+#### go version:
+
+```
+$ go version
+
+```
+
+#### How did you install Singularity
+
+Write here how you installed Singularity. Eg. RPM, source.
 
 

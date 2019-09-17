@@ -857,6 +857,85 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 	}
 }
 
+func (c actionTests) actionBasicProfiles(t *testing.T) {
+	env := c.env
+
+	e2e.EnsureImage(t, env)
+
+	tests := []struct {
+		name    string
+		command string
+		argv    []string
+		exit    int
+	}{
+		{
+			name:    "ExecTrue",
+			command: "exec",
+			argv:    []string{env.ImagePath, "true"},
+			exit:    0,
+		},
+		{
+			name:    "ExecPidNsTrue",
+			command: "exec",
+			argv:    []string{"--pid", env.ImagePath, "true"},
+			exit:    0,
+		},
+		{
+			name:    "ExecFalse",
+			command: "exec",
+			argv:    []string{env.ImagePath, "false"},
+			exit:    1,
+		},
+		{
+			name:    "ExecPidNsFalse",
+			command: "exec",
+			argv:    []string{"--pid", env.ImagePath, "false"},
+			exit:    1,
+		},
+		{
+			name:    "RunTrue",
+			command: "run",
+			argv:    []string{env.ImagePath, "true"},
+			exit:    0,
+		},
+		{
+			name:    "RunPidNsTrue",
+			command: "run",
+			argv:    []string{"--pid", env.ImagePath, "true"},
+			exit:    0,
+		},
+		{
+			name:    "RunFalse",
+			command: "run",
+			argv:    []string{env.ImagePath, "false"},
+			exit:    1,
+		},
+		{
+			name:    "RunPidNsFalse",
+			command: "run",
+			argv:    []string{"--pid", env.ImagePath, "false"},
+			exit:    1,
+		},
+	}
+
+	for _, profile := range e2e.Profiles {
+		profile := profile
+
+		t.Run(profile.String(), func(t *testing.T) {
+			for _, tt := range tests {
+				env.RunSingularity(
+					t,
+					e2e.AsSubtest(tt.name),
+					e2e.WithProfile(profile),
+					e2e.WithCommand(tt.command),
+					e2e.WithArgs(tt.argv...),
+					e2e.ExpectExit(tt.exit),
+				)
+			}
+		})
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := actionTests{
@@ -864,11 +943,12 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	}
 
 	return testhelper.TestRunner(map[string]func(*testing.T){
-		"action URI":         c.RunFromURI,        // action_URI
-		"exec":               c.actionExec,        // singularity exec
-		"persistent overlay": c.PersistentOverlay, // Persistent Overlay
-		"run":                c.actionRun,         // singularity run
-		"shell":              c.actionShell,       // shell interaction
-		"STDPIPE":            c.STDPipe,           // stdin/stdout pipe
+		"action URI":            c.RunFromURI,          // action_URI
+		"exec":                  c.actionExec,          // singularity exec
+		"persistent overlay":    c.PersistentOverlay,   // Persistent Overlay
+		"run":                   c.actionRun,           // singularity run
+		"shell":                 c.actionShell,         // shell interaction
+		"STDPIPE":               c.STDPipe,             // stdin/stdout pipe
+		"action basic profiles": c.actionBasicProfiles, // run basic action under different profiles
 	})
 }
