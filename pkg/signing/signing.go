@@ -51,11 +51,9 @@ type KeyList struct {
 
 // computeHashStr generates a hash from data object(s) and generates a string
 // to be stored in the signature block
-func computeHashStr(fimg *sif.FileImage, descr []*sif.Descriptor) string {
+func computeHashStr(fimg *sif.FileImage, descr *sif.Descriptor) string {
 	hash := sha512.New384()
-	for _, v := range descr {
-		hash.Write(v.GetData(fimg))
-	}
+	hash.Write(descr.GetData(fimg))
 
 	sum := hash.Sum(nil)
 
@@ -90,14 +88,22 @@ func sifAddSignature(fimg *sif.FileImage, groupid, link uint32, fingerprint [20]
 }
 
 // descrToSign determines via argument or interactively which descriptor to sign
-func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) (descr []*sif.Descriptor, err error) {
-	descr = make([]*sif.Descriptor, 1)
+func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) ([]*sif.Descriptor, error) {
+	descr := make([]*sif.Descriptor, 1)
+	var err error
 
 	if id == 0 {
 		descr[0], _, err = fimg.GetPartPrimSys()
 		if err != nil {
 			return nil, fmt.Errorf("no primary partition found")
 		}
+
+		//data, _, err := fimg.GetLinkedDescrsByType(descr[0].ID, sif.DataDeffile)
+		data, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataDeffile)
+		if err != nil && err != sif.ErrNotFound {
+			return nil, fmt.Errorf("failed to get descr for deffile: %s", err)
+		}
+		descr = append(descr, data...)
 	} else if isGroup {
 		var search = sif.Descriptor{
 			Groupid: id | sif.DescrGroupMask,
@@ -113,7 +119,7 @@ func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) (descr []*sif.Des
 		}
 	}
 
-	return
+	return descr, nil
 }
 
 // Sign takes the path of a container and generates an OpenPGP signature block for
@@ -122,16 +128,16 @@ func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) (descr []*sif.Des
 func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	keyring := sypgp.NewHandle("")
 
+	// Generate a private key usable for signing
 	elist, err := keyring.LoadPrivKeyring()
 	if err != nil {
 		return fmt.Errorf("could not load private keyring: %s", err)
 	}
-
-	// Generate a private key usable for signing
-	var entity *openpgp.Entity
 	if elist == nil {
 		return fmt.Errorf("no private keys in keyring. use 'key newpair' to generate a key, or 'key import' to import a private key from gpg")
 	}
+
+	var entity *openpgp.Entity
 	if keyIdx != -1 { // -k <idx> has been specified
 		if keyIdx >= 0 && keyIdx < len(elist) {
 			entity = elist[keyIdx]
@@ -149,6 +155,7 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 
 	// Decrypt key if needed
 	if entity.PrivateKey.Encrypted {
+		sylog.Debugf("Decrypting key...")
 		if err = sypgp.DecryptKey(entity, ""); err != nil {
 			return fmt.Errorf("could not decrypt private key, wrong password?")
 		}
@@ -167,35 +174,39 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 		return fmt.Errorf("signing requires a primary partition: %s", err)
 	}
 
-	// signature also include data integrity check
-	sifhash := computeHashStr(&fimg, descr)
+	for _, de := range descr {
+		fmt.Println("Looping now...")
 
-	// create an ascii armored signature block
-	var signedmsg bytes.Buffer
-	plaintext, err := clearsign.Encode(&signedmsg, entity.PrivateKey, nil)
-	if err != nil {
-		return fmt.Errorf("could not build a signature block: %s", err)
-	}
-	_, err = plaintext.Write([]byte(sifhash))
-	if err != nil {
-		return fmt.Errorf("failed writing hash value to signature block: %s", err)
-	}
-	if err = plaintext.Close(); err != nil {
-		return fmt.Errorf("I/O error while wrapping up signature block: %s", err)
-	}
+		// signature also include data integrity check
+		sifhash := computeHashStr(&fimg, de)
 
-	// finally add the signature block (for descr) as a new SIF data object
-	var groupid, link uint32
-	if isGroup {
-		groupid = sif.DescrUnusedGroup
-		link = descr[0].Groupid
-	} else {
-		groupid = descr[0].Groupid
-		link = descr[0].ID
-	}
-	err = sifAddSignature(&fimg, groupid, link, entity.PrimaryKey.Fingerprint, signedmsg.Bytes())
-	if err != nil {
-		return fmt.Errorf("failed adding signature block to SIF container file: %s", err)
+		// create an ascii armored signature block
+		var signedmsg bytes.Buffer
+		plaintext, err := clearsign.Encode(&signedmsg, entity.PrivateKey, nil)
+		if err != nil {
+			return fmt.Errorf("could not build a signature block: %s", err)
+		}
+		_, err = plaintext.Write([]byte(sifhash))
+		if err != nil {
+			return fmt.Errorf("failed writing hash value to signature block: %s", err)
+		}
+		if err = plaintext.Close(); err != nil {
+			return fmt.Errorf("I/O error while wrapping up signature block: %s", err)
+		}
+
+		// finally add the signature block (for descr) as a new SIF data object
+		var groupid, link uint32
+		if isGroup {
+			groupid = sif.DescrUnusedGroup
+			link = de.Groupid
+		} else {
+			groupid = de.Groupid
+			link = de.ID
+		}
+		err = sifAddSignature(&fimg, groupid, link, entity.PrimaryKey.Fingerprint, signedmsg.Bytes())
+		if err != nil {
+			return fmt.Errorf("failed adding signature block to SIF container file: %s", err)
+		}
 	}
 
 	return nil
@@ -312,7 +323,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	}
 
 	// the selected data object is hashed for comparison against signature block's
-	sifhash := computeHashStr(&fimg, descr)
+	sifhash := computeHashStr(&fimg, descr[0])
 
 	// setup some colors
 	green := color.New(color.FgGreen).SprintFunc()
