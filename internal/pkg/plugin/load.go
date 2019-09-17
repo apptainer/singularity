@@ -37,7 +37,7 @@ func InitializeAll(libexecdir string) error {
 		return err
 	}
 
-	errs := []error{}
+	var errs []error
 
 	for _, meta := range metas {
 		if !meta.Enabled {
@@ -85,7 +85,7 @@ func InitializeAll(libexecdir string) error {
 	return nil
 }
 
-// Initialize loads the plugin located at path and returns it
+// Initialize loads the plugin located at path and returns it.
 func Initialize(path string) (*pluginapi.Plugin, error) {
 	pl, err := open(path)
 	if err != nil {

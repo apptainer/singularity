@@ -43,7 +43,7 @@ const DefaultConfigSymbol = "DefaultConfig"
 //             myPluginImplementation{...},
 //     }
 //
-// In addition, type Plugin also exposes useful helper methods to a plugin
+// In addition, type Plugin also exposes useful helper methods to a plugin.
 type Plugin struct {
 	Manifest
 	Config
@@ -62,7 +62,7 @@ type Plugin struct {
 type Config interface{}
 
 // Initializer is an interface which stores the object of a plugin's implementation. The Initialize
-// method allows the plugin to register its functions with the Runtime to be called later
+// method allows the plugin to register its functions with the Runtime to be called later.
 type Initializer interface {
 	Initialize(HookRegistration)
 }

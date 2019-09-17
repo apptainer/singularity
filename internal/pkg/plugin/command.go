@@ -15,7 +15,7 @@ type commandRegistry struct {
 }
 
 // RegisterCommand registers a CommandHook for adding a new command to the singularity
-// binary
+// binary.
 func (r *commandRegistry) RegisterCommand(hook pluginapi.CommandHook) error {
 	r.Commands = append(r.Commands, hook.Command)
 

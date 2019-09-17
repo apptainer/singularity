@@ -22,7 +22,7 @@ import (
 
 const manifestgenDir = "cmd/plugin_manifestgen"
 
-// getSingularitySrcDir returns the source directory for singularity
+// getSingularitySrcDir returns the source directory for singularity.
 func getSingularitySrcDir() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -59,7 +59,7 @@ func pluginManifestPath(sourceDir string) string {
 // plugin's source code directory; and destSif, the path to the intended final
 // location of the plugin SIF file.
 func CompilePlugin(sourceDir, destSif, buildTags string) error {
-	// build plugin object using go buiild
+	// build plugin object using go build
 	_, err := buildPlugin(sourceDir, buildTags)
 	if err != nil {
 		return fmt.Errorf("while building plugin .so: %s", err)
@@ -108,7 +108,7 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 		sourceDir,
 	}
 
-	sylog.Debugf("Runnig: %s %s", goTool, strings.Join(args, " "))
+	sylog.Debugf("Running: %s %s", goTool, strings.Join(args, " "))
 
 	buildcmd := exec.Command(goTool, args...)
 
@@ -162,7 +162,7 @@ func generateManifest(sourceDir, buildTags string) (string, error) {
 }
 
 // makeSIF takes in two arguments: sourceDir, the path to the plugin source directory;
-// and sifPath, the path to the final .sif file which is ready to be used
+// and sifPath, the path to the final .sif file which is ready to be used.
 func makeSIF(sourceDir, sifPath string) error {
 	plCreateInfo := sif.CreateInfo{
 		Pathname:   sifPath,

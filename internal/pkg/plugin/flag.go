@@ -21,7 +21,7 @@ type flagRegistry struct {
 	Hooks   []flagHook
 }
 
-// RegisterStringFlag adds a string flag to the registry
+// RegisterStringFlag adds a string flag to the registry.
 func (r *flagRegistry) RegisterStringFlag(f pluginapi.StringFlagHook) error {
 	r.FlagSet.StringP(f.Flag.Name, f.Flag.Shorthand, f.Flag.DefValue, f.Flag.Usage)
 
@@ -34,7 +34,7 @@ func (r *flagRegistry) RegisterStringFlag(f pluginapi.StringFlagHook) error {
 	return nil
 }
 
-// RegisterBoolFlag adds a bool flag to the registry
+// RegisterBoolFlag adds a bool flag to the registry.
 func (r *flagRegistry) RegisterBoolFlag(f pluginapi.BoolFlagHook) error {
 	r.FlagSet.BoolP(f.Flag.Name, f.Flag.Shorthand, false, f.Flag.Usage)
 
@@ -47,14 +47,14 @@ func (r *flagRegistry) RegisterBoolFlag(f pluginapi.BoolFlagHook) error {
 	return nil
 }
 
-// AddFlagHooks will add the plugin defined flags to the input FlagSet
+// AddFlagHooks will add the plugin defined flags to the input FlagSet.
 func AddFlagHooks(flagSet *pflag.FlagSet) {
 	assertInitialized()
 
 	flagSet.AddFlagSet(reg.FlagSet)
 }
 
-// FlagHookCallbacks will run the callback functions for all registered
+// FlagHookCallbacks will run the callback functions for all registered.
 // flag hooks
 func FlagHookCallbacks(c *singularity.EngineConfig) {
 	assertInitialized()

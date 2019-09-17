@@ -23,13 +23,13 @@ func init() {
 	cmdManager.RegisterSubCmd(PluginCmd, PluginInspectCmd)
 }
 
-// PluginCmd is the root command for all plugin related functionalities
-// which are exposed via the CLI.
+// PluginCmd is the root command for all plugin related functionality
+// which is exposed via the CLI.
 //
 // singularity plugin [...]
 var PluginCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return errors.New("Invalid command")
+		return errors.New("invalid command")
 	},
 	DisableFlagsInUseLine: true,
 
