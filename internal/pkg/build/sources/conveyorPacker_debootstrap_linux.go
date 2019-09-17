@@ -42,7 +42,7 @@ func (cp *DebootstrapConveyorPacker) prepareFakerootEnv() (func(), error) {
 		"/dev/zero",
 	}
 
-	devPath := filepath.Join(cp.b.RootfsPath, "dev")
+	devPath := filepath.Join(cp.b.Rootfs(), "dev")
 	if err := os.Mkdir(devPath, 0755); err != nil {
 		return nil, fmt.Errorf("while creating %s: %s", devPath, err)
 	}
@@ -55,7 +55,7 @@ func (cp *DebootstrapConveyorPacker) prepareFakerootEnv() (func(), error) {
 		syscall.Unmount(mountPath, syscall.MNT_DETACH)
 		syscall.Unmount(mknodPath, syscall.MNT_DETACH)
 		for _, d := range devs {
-			path := filepath.Join(cp.b.RootfsPath, d)
+			path := filepath.Join(cp.b.Rootfs(), d)
 			syscall.Unmount(path, syscall.MNT_DETACH)
 		}
 	}
@@ -77,7 +77,7 @@ func (cp *DebootstrapConveyorPacker) prepareFakerootEnv() (func(), error) {
 	// post-configuration package we also need to create at least
 	// one /dev/ttyX file
 	go func() {
-		makedevPath := filepath.Join(cp.b.RootfsPath, "/sbin/MAKEDEV")
+		makedevPath := filepath.Join(cp.b.Rootfs(), "/sbin/MAKEDEV")
 		for {
 			select {
 			case <-ctx.Done():
@@ -85,7 +85,7 @@ func (cp *DebootstrapConveyorPacker) prepareFakerootEnv() (func(), error) {
 			case <-time.After(100 * time.Millisecond):
 				if _, err := os.Stat(makedevPath); err == nil {
 					os.Truncate(makedevPath, 0)
-					os.Create(filepath.Join(cp.b.RootfsPath, "/dev/tty1"))
+					os.Create(filepath.Join(cp.b.Rootfs(), "/dev/tty1"))
 					break
 				}
 			}
@@ -102,7 +102,7 @@ func (cp *DebootstrapConveyorPacker) prepareFakerootEnv() (func(), error) {
 
 	// mount required block devices
 	for _, p := range devs {
-		rootfsPath := filepath.Join(cp.b.RootfsPath, p)
+		rootfsPath := filepath.Join(cp.b.Rootfs(), p)
 		if err := fs.Touch(rootfsPath); err != nil {
 			return umountFn, fmt.Errorf("while creating %s: %s", rootfsPath, err)
 		}

@@ -97,7 +97,7 @@ func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
 		}
 	}
 
-	args := []string{"-C", pacConf, "-c", "-d", "-G", "-M", cp.b.RootfsPath, "haveged"}
+	args := []string{"-C", pacConf, "-c", "-d", "-G", "-M", cp.b.Rootfs(), "haveged"}
 	args = append(args, instList...)
 
 	pacCmd := exec.Command(pacstrapPath, args...)

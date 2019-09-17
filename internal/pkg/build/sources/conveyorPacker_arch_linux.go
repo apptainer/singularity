@@ -38,11 +38,11 @@ func (cp *ArchConveyorPacker) prepareFakerootEnv() (func(), error) {
 		"/dev/zero",
 	}
 
-	devPath := filepath.Join(cp.b.RootfsPath, "dev")
+	devPath := filepath.Join(cp.b.Rootfs(), "dev")
 	if err := os.Mkdir(devPath, 0755); err != nil {
 		return nil, fmt.Errorf("while creating %s: %s", devPath, err)
 	}
-	procPath := filepath.Join(cp.b.RootfsPath, "proc")
+	procPath := filepath.Join(cp.b.Rootfs(), "proc")
 	if err := os.Mkdir(procPath, 0755); err != nil {
 		return nil, fmt.Errorf("while creating %s: %s", procPath, err)
 	}
@@ -52,7 +52,7 @@ func (cp *ArchConveyorPacker) prepareFakerootEnv() (func(), error) {
 		syscall.Unmount(umountPath, syscall.MNT_DETACH)
 		syscall.Unmount(procPath, syscall.MNT_DETACH)
 		for _, d := range devs {
-			path := filepath.Join(cp.b.RootfsPath, d)
+			path := filepath.Join(cp.b.Rootfs(), d)
 			syscall.Unmount(path, syscall.MNT_DETACH)
 		}
 	}
@@ -72,7 +72,7 @@ func (cp *ArchConveyorPacker) prepareFakerootEnv() (func(), error) {
 
 	// mount required block devices
 	for _, p := range devs {
-		rootfsPath := filepath.Join(cp.b.RootfsPath, p)
+		rootfsPath := filepath.Join(cp.b.Rootfs(), p)
 		if err := fs.Touch(rootfsPath); err != nil {
 			return umountFn, fmt.Errorf("while creating %s: %s", rootfsPath, err)
 		}
