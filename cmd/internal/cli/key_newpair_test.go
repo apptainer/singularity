@@ -56,7 +56,7 @@ func Test_collectInput_flags(t *testing.T) {
 	assert.DeepEqual(t, expectedOpts, o)
 }
 
-func Test_collectInput_stdin(t *testing.T) {
+func TestCollectInput(t *testing.T) {
 	tf, err := ioutil.TempFile("", "collect-test-")
 	assert.NilError(t, err)
 	defer tf.Close()
@@ -64,6 +64,7 @@ func Test_collectInput_stdin(t *testing.T) {
 	oldStdin := os.Stdin
 	defer func(ostdin *os.File) {
 		os.Stdin = ostdin
+		os.Remove(tf.Name())
 	}(oldStdin)
 	os.Stdin = tf
 
