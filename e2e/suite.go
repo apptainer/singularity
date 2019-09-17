@@ -103,6 +103,11 @@ func Run(t *testing.T) {
 		log.Fatalf("failed to create temporary directory: %v", err)
 	}
 	defer e2e.Privileged(func(t *testing.T) {
+		if t.Failed() {
+			t.Logf("Test failed, not removing %s", name)
+			return
+		}
+
 		os.RemoveAll(name)
 	})(t)
 
@@ -113,7 +118,7 @@ func Run(t *testing.T) {
 
 	// Build a base image for tests
 	imagePath := path.Join(name, "test.sif")
-	t.Log(imagePath)
+	t.Log("Path to test image:", imagePath)
 	testenv.ImagePath = imagePath
 	defer os.Remove(imagePath)
 

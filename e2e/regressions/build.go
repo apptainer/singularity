@@ -6,6 +6,8 @@
 package regressions
 
 import (
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -57,6 +59,57 @@ func (c regressionsTests) issue4203(t *testing.T) {
 	)
 }
 
+// issue4407 checks that it's possible to build a sandbox image when the
+// destination directory contains a traling slash and when it doesn't.
+func (c *regressionsTests) issue4407(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	sandboxDir := func() string {
+		name, err := ioutil.TempDir(c.env.TestDir, "sandbox.")
+		if err != nil {
+			log.Fatalf("failed to create temporary directory for sandbox: %v", err)
+		}
+
+		if err := os.Chmod(name, 0755); err != nil {
+			log.Fatalf("failed to chmod temporary directory for sandbox: %v", err)
+		}
+
+		return name
+	}
+
+	tc := map[string]string{
+		"with slash":    sandboxDir() + "/",
+		"without slash": sandboxDir(),
+	}
+
+	for name, imagePath := range tc {
+		args := []string{
+			"--force",
+			"--sandbox",
+			imagePath,
+			c.env.ImagePath,
+		}
+
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(name),
+			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(args...),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					return
+				}
+
+				defer os.RemoveAll(imagePath)
+
+				c.env.ImageVerify(t, imagePath)
+			}),
+			e2e.ExpectExit(0),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := regressionsTests{
@@ -65,5 +118,6 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 
 	return testhelper.TestRunner(map[string]func(*testing.T){
 		"issue 4203": c.issue4203, // https://github.com/sylabs/singularity/issues/4203
+		"issue 4407": c.issue4407, // https://github.com/sylabs/singularity/issues/4407
 	})
 }
