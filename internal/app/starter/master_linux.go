@@ -6,16 +6,20 @@
 package starter
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
+
+	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
 func createContainer(rpcSocket int, containerPid int, e *engine.Engine, fatalChan chan error) {
@@ -33,6 +37,11 @@ func createContainer(rpcSocket int, containerPid int, e *engine.Engine, fatalCha
 
 	err = e.CreateContainer(containerPid, rpcConn)
 	if err != nil {
+		if strings.Contains(err.Error(), crypt.ErrInvalidPassphrase.Error()) {
+			sylog.Debugf("%s", err)
+			err = errors.New("failed to decrypt, ensure you have supplied appropriate key material")
+		}
+
 		fatalChan <- fmt.Errorf("container creation failed: %s", err)
 		return
 	}
