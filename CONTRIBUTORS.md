@@ -15,6 +15,7 @@
     - Adam Simpson <asimpson@nvidia.com>, <adambsimpson@gmail.com>
     - Afif Elghraoui <afif.elghraoui@nih.gov>
     - Amanda Duffy <aduffy@lenovo.com>
+    - Ana Guerrero Lopez <aguerrero@suse.com>
     - Ángel Bejarano <abejarano@ontropos.com>
     - Bernard Li <bernardli@lbl.gov>
     - Brian Bockelman <bbockelm@cse.unl.edu>
@@ -31,6 +32,7 @@
     - Divya Cote <divya.cote@gmail.com>
     - Eduardo Arango <eduardo@sylabs.io>, <arangogutierrez@gmail.com>
     - Egbert Eich <eich@suse.com>
+    - Eric Müller <mueller@kip.uni-heidelberg.de>
     - Felix Abecassis <fabecassis@nvidia.com>
     - Geoffroy Vallee <geoffroy@sylabs.io>, <geoffroy.vallee@gmail.com>
     - George Hartzell <hartzell@alerce.com>
