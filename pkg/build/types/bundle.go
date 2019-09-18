@@ -22,7 +22,7 @@ type Bundle struct {
 	JSONObjects map[string][]byte `json:"jsonObjects"`
 	Recipe      Definition        `json:"rawDeffile"`
 	Opts        Options           `json:"opts"`
-	JSONLabels  map[string]map[string]string
+	JSONLabels  map[string]string
 	RootfsPath  string `json:"rootfsPath"` // where actual fs to chroot will appear
 	TmpDir      string `json:"tmpPath"`    // where temp files required during build will appear
 }

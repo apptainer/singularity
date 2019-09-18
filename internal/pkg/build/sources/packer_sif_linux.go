@@ -106,16 +106,13 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 			}
 
 			if b.JSONLabels == nil {
-				b.JSONLabels = make(map[string]map[string]string, 1)
-			}
-			if b.JSONLabels["system-partition"] == nil {
-				b.JSONLabels["system-partition"] = make(map[string]string, 1)
+				b.JSONLabels = make(map[string]string, 1)
 			}
 
 			err = json.Unmarshal(jsonBytes, &labelFile)
 			if err == nil {
 				for k, v := range labelFile {
-					b.JSONLabels["system-partition"][k] = v
+					b.JSONLabels[k] = v
 				}
 			} else {
 				sylog.Warningf("Unable to get old json labels, skipping")
@@ -124,7 +121,7 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 			sylog.Warningf("Unable to find labels.json file: %s; skipping", err)
 		}
 	} else if err == nil {
-		tmpLabels := make(map[string]map[string]string, 1)
+		tmpLabels := make(map[string]string, 1)
 
 		for _, v := range sifData {
 			metaData := v.GetData(&fimg)
@@ -135,16 +132,11 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 		}
 
 		if b.JSONLabels == nil {
-			b.JSONLabels = make(map[string]map[string]string, 1)
+			b.JSONLabels = make(map[string]string, 1)
 		}
 
 		for key, val := range tmpLabels {
-			if b.JSONLabels[key] == nil {
-				b.JSONLabels[key] = make(map[string]string, 1)
-			}
-			for k, v := range val {
-				b.JSONLabels[key][k] = v
-			}
+			b.JSONLabels[key] = val
 		}
 	}
 

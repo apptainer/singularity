@@ -6,7 +6,6 @@
 package build
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -323,34 +322,12 @@ func (b *Build) Full() error {
 	}
 
 	if b.stages[len(b.stages)-1].b.JSONLabels == nil {
-		b.stages[len(b.stages)-1].b.JSONLabels = make(map[string]map[string]string, 1)
-	}
-
-	if b.stages[len(b.stages)-1].b.JSONLabels["system-partition"] == nil {
-		b.stages[len(b.stages)-1].b.JSONLabels["system-partition"] = make(map[string]string, 1)
-	}
-
-	// Only get the last stage app labels
-	for k, v := range b.stages[len(b.stages)-1].b.Recipe.CustomData {
-		appName, appLabels := apps.GetAppLabels(k, v)
-		if appName != "" && appLabels != nil {
-			b.stages[len(b.stages)-1].b.JSONLabels[appName] = make(map[string]string, 1)
-
-			var objmap map[string]*json.RawMessage
-			err := json.Unmarshal(appLabels, &objmap)
-			if err != nil {
-				return fmt.Errorf("unable to unmarshal json from app: %s", err)
-			}
-
-			for k, v := range objmap {
-				b.stages[len(b.stages)-1].b.JSONLabels[appName][k] = string(*v)
-			}
-		}
+		b.stages[len(b.stages)-1].b.JSONLabels = make(map[string]string, 1)
 	}
 
 	// Copy the labels from the deffile
 	for key, val := range b.stages[len(b.stages)-1].b.Recipe.ImageData.Labels {
-		b.stages[len(b.stages)-1].b.JSONLabels["system-partition"][key] = val
+		b.stages[len(b.stages)-1].b.JSONLabels[key] = val
 	}
 
 	sylog.Debugf("Calling assembler")

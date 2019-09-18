@@ -30,7 +30,7 @@ func (p *SandboxPacker) Pack() (*types.Bundle, error) {
 
 	//p.b.Recipe.ImageData.Labels = make(map[string]map[string]string, 1)
 	if p.b.JSONLabels == nil {
-		p.b.JSONLabels = make(map[string]map[string]string, 1)
+		p.b.JSONLabels = make(map[string]string, 1)
 	}
 
 	// Read the labels from the sandbox
