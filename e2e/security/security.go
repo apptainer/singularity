@@ -7,7 +7,6 @@ package security
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -16,8 +15,7 @@ import (
 )
 
 type ctx struct {
-	env     e2e.TestEnv
-	pingImg string
+	env e2e.TestEnv
 }
 
 // testSecurityUnpriv tests the security flag fuctionality for singularity exec without elevated privileges
@@ -28,6 +26,7 @@ func (c ctx) testSecurityUnpriv(t *testing.T) {
 		argv       []string
 		opts       []string
 		preFn      func(*testing.T)
+		expectOp   e2e.SingularityCmdResultOp
 		expectExit int
 	}{
 		// taget UID/GID
@@ -63,27 +62,34 @@ func (c ctx) testSecurityUnpriv(t *testing.T) {
 		// capabilities
 		{
 			name:       "capabilities_keep_true",
-			argv:       []string{"ping", "-c", "1", "8.8.8.8"},
+			argv:       []string{"grep", "^CapEff:", "/proc/self/status"},
 			opts:       []string{"--keep-privs"},
-			expectExit: 255,
+			expectExit: 255, // singularity errors out, --keep-privs needs root
 		},
 		{
-			name:       "capabilities_keep-false",
-			argv:       []string{"ping", "-c", "1", "8.8.8.8"},
-			expectExit: 2,
+			// we start without any capabilities, the
+			// expected set is empty.
+			name:     "capabilities_keep-false",
+			argv:     []string{"grep", "^CapEff:", "/proc/self/status"},
+			expectOp: e2e.ExpectOutput(e2e.RegexMatch, `CapEff:\s+0+\n`),
 		},
 		{
-			name:       "capabilities_drop",
-			argv:       []string{"ping", "-c", "1", "8.8.8.8"},
-			opts:       []string{"--drop-caps", "CAP_NET_RAW"},
-			expectExit: 2,
+			// this one is tricky: we are asking to drop
+			// cap_net_raw, but since we start without any
+			// capabilities the expected set is empty.
+			name:     "capabilities_drop",
+			argv:     []string{"grep", "^Cap.*:", "/proc/self/status"},
+			opts:     []string{"--drop-caps", "CAP_NET_RAW"},
+			expectOp: e2e.ExpectOutput(e2e.RegexMatch, `CapEff:\s+0+\n`),
 		},
 	}
+
+	e2e.EnsureImage(t, c.env)
 
 	for _, tt := range tests {
 		optArgs := []string{}
 		optArgs = append(optArgs, tt.opts...)
-		optArgs = append(optArgs, c.pingImg)
+		optArgs = append(optArgs, c.env.ImagePath)
 		optArgs = append(optArgs, tt.argv...)
 
 		c.env.RunSingularity(
@@ -93,7 +99,7 @@ func (c ctx) testSecurityUnpriv(t *testing.T) {
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(optArgs...),
 			e2e.PreRun(tt.preFn),
-			e2e.ExpectExit(tt.expectExit),
+			e2e.ExpectExit(tt.expectExit, tt.expectOp),
 		)
 
 	}
@@ -141,23 +147,39 @@ func (c ctx) testSecurityPriv(t *testing.T) {
 		},
 		// capabilities
 		{
-			name:       "capabilities_keep",
-			argv:       []string{"ping", "-c", "1", "8.8.8.8"},
-			opts:       []string{"--keep-privs"},
-			expectExit: 0,
+			// this might break if new capabilities are
+			// added
+			//
+			// TODO(mem): what we really want to test is
+			// that the set outside the container is the
+			// same set inside the container.
+			name:     "capabilities_keep",
+			argv:     []string{"grep", "^CapEff:", "/proc/self/status"},
+			opts:     []string{"--keep-privs"},
+			expectOp: e2e.ExpectOutput(e2e.RegexMatch, `CapEff:\s+0000003fffffffff\n`),
 		},
 		{
-			name:       "capabilities_drop",
-			argv:       []string{"ping", "-c", "1", "8.8.8.8"},
-			opts:       []string{"--drop-caps", "CAP_NET_RAW"},
-			expectExit: 2,
+			// this might break if new capabilities are
+			// added; cap_net_raw corresponds to the missing
+			// bit in CapEff.
+			//
+			// TODO(mem): what we really want to test is
+			// that the set outside the container is the
+			// same set inside the container, modulo
+			// cap_net_raw.
+			name:     "capabilities_drop",
+			argv:     []string{"grep", "^CapEff:", "/proc/self/status"},
+			opts:     []string{"--drop-caps", "CAP_NET_RAW"},
+			expectOp: e2e.ExpectOutput(e2e.RegexMatch, `CapEff:\s+0000003fffffdfff\n`),
 		},
 	}
+
+	e2e.EnsureImage(t, c.env)
 
 	for _, tt := range tests {
 		optArgs := []string{}
 		optArgs = append(optArgs, tt.opts...)
-		optArgs = append(optArgs, c.pingImg)
+		optArgs = append(optArgs, c.env.ImagePath)
 		optArgs = append(optArgs, tt.argv...)
 
 		c.env.RunSingularity(
@@ -175,6 +197,8 @@ func (c ctx) testSecurityPriv(t *testing.T) {
 
 // testSecurityConfOwnership tests checks on config files ownerships
 func (c ctx) testSecurityConfOwnership(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	configFile := buildcfg.SINGULARITY_CONF_FILE
 
 	c.env.RunSingularity(
@@ -208,14 +232,10 @@ func (c ctx) testSecurityConfOwnership(t *testing.T) {
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := ctx{
-		env:     env,
-		pingImg: filepath.Join(env.TestDir, "ubuntu-ping.sif"),
+		env: env,
 	}
 
 	return func(t *testing.T) {
-		e2e.PullImage(t, env, "library://sylabs/tests/ubuntu_ping:v1.0", c.pingImg)
-		defer os.Remove(c.pingImg)
-
 		t.Run("singularitySecurityUnpriv", c.testSecurityUnpriv)
 		t.Run("singularitySecurityPriv", c.testSecurityPriv)
 		t.Run("testSecurityConfOwnership", c.testSecurityConfOwnership)
