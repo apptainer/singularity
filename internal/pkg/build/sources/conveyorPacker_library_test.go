@@ -40,6 +40,7 @@ func TestLibraryConveyor(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", libraryURI, err)
 	}
+	defer b.Remove()
 
 	cp := &sources.LibraryConveyorPacker{}
 
@@ -49,8 +50,6 @@ func TestLibraryConveyor(t *testing.T) {
 	b.Opts.ImgCache = imgCache
 
 	err = cp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
-	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", libraryURI, err)
 	}
@@ -71,6 +70,7 @@ func TestLibraryPacker(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", libraryURI, err)
 	}
+	defer b.Remove()
 
 	cp := &sources.LibraryConveyorPacker{}
 
@@ -80,8 +80,6 @@ func TestLibraryPacker(t *testing.T) {
 	b.Opts.ImgCache = imgCache
 
 	err = cp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
-	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", libraryURI, err)
 	}

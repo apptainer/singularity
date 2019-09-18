@@ -16,12 +16,12 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/signing"
 )
 
 // LibraryConveyorPacker only needs to hold a packer to pack the image it pulls
 // as well as extra information about the library it's pulling from
 type LibraryConveyorPacker struct {
-	b *types.Bundle
 	LocalPacker
 }
 
@@ -33,28 +33,19 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 		return fmt.Errorf("invalid image cache")
 	}
 
-	cp.b = b
-
-	libraryURL := b.Opts.LibraryURL
-	authToken := b.Opts.LibraryAuthToken
-
-	if err = makeBaseEnv(cp.b.RootfsPath); err != nil {
-		return fmt.Errorf("while inserting base environment: %v", err)
-	}
-
 	// check for custom library from definition
 	customLib, ok := b.Recipe.Header["library"]
 	if ok {
 		sylog.Debugf("Using custom library: %v", customLib)
-		libraryURL = customLib
+		b.Opts.LibraryURL = customLib
 	}
 
-	sylog.Debugf("LibraryURL: %v", libraryURL)
+	sylog.Debugf("LibraryURL: %v", b.Opts.LibraryURL)
 	sylog.Debugf("LibraryRef: %v", b.Recipe.Header["from"])
 
 	libraryClient, err := client.NewClient(&client.Config{
-		BaseURL:   libraryURL,
-		AuthToken: authToken,
+		BaseURL:   b.Opts.LibraryURL,
+		AuthToken: b.Opts.LibraryAuthToken,
 	})
 	if err != nil {
 		return err
@@ -70,11 +61,11 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 		return fmt.Errorf("while getting image info: %v", err)
 	}
 
-	imagePath := ""
 	imageName := uri.GetName("library://" + imageRef)
 
-	if cp.b.Opts.NoCache {
-		file, err := ioutil.TempFile(cp.b.TmpDir, "sbuild-tmp-cache-")
+	var imagePath string
+	if b.Opts.NoCache {
+		file, err := ioutil.TempFile(b.TmpDir, "sbuild-tmp-cache-")
 		if err != nil {
 			return fmt.Errorf("unable to create tmp file: %v", err)
 		}
@@ -106,17 +97,18 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 		}
 	}
 
+	_, err = signing.IsSigned(context.Background(), imagePath, b.Opts.KeyStoreURL, 0, false, b.Opts.LibraryAuthToken)
+	if err != nil {
+		sylog.Warningf("Unable to verify library://%s  ", imageRef)
+		sylog.Warningf("Skipping container verification")
+	}
+
 	// insert base metadata before unpacking fs
-	if err = makeBaseEnv(cp.b.RootfsPath); err != nil {
+	if err = makeBaseEnv(b.RootfsPath); err != nil {
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
-	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)
+	cp.LocalPacker, err = GetLocalPacker(imagePath, b)
 
 	return err
-}
-
-// CleanUp removes any files owned by the conveyorPacker on the filesystem.
-func (cp *LibraryConveyorPacker) CleanUp() {
-	cp.b.Remove()
 }
