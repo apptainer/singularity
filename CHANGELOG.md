@@ -9,7 +9,19 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.4.0
+# Changes Since v3.4.1
+
+# v3.4.1 - [2019.09.17]
+
+  - This point release addresses the following issues:
+    - Fixes an issue where a PID namespace was always being used
+    - Fixes compilation on non 64-bit architectures
+    - Allows fakeroot builds for zypper, pacstrap, and debootstrap
+    - Correctly detects seccomp on OpenSUSE
+    - Honors GO_MODFLAGS properly in the mconfig generated makefile
+    - Passes the Mac hostname to the VM in MacOS Singularity builds
+    - Handles temporary EAGAIN failures when setting up loop devices on recent kernels
+    - Fixes excessive memory usage in singularity push
 
 # v3.4.0 - [2019.08.30]
 
