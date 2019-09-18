@@ -20,6 +20,7 @@ gotestsum_runner() {
 }
 
 gotestsum_postprocess() {
+	touch "${junitOutput}.json"
 	gotestsum \
 		--junitfile "${junitOutput}" \
 		--raw-command \
@@ -103,6 +104,9 @@ if ${use_gotestsum} ; then
 	fi
 fi
 
+# capture exit code
+rc=0
+
 "${test_runner}" \
 	-count=1 \
 	-timeout=30m \
@@ -110,6 +114,10 @@ fi
 	-failfast \
 	-cover \
 	-race \
-	"$@"
+	"$@" ||
+rc=$?
 
 "${test_postprocess}"
+
+# return original exit code
+exit ${rc}
