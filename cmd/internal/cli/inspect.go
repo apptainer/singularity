@@ -25,13 +25,13 @@ type inspectMetadata struct {
 	Helpfile    string            `json:"helpfile,omitempty"`
 }
 
-type inspectAttributesData struct {
+type Data struct {
 	Attributes inspectMetadata `json:"attributes"`
 }
 
 type inspectFormat struct {
-	Data inspectAttributesData `json:"data"`
-	Type string                `json:"type"`
+	Data `json:"data"`
+	Type string `json:"type"`
 }
 
 // -l|--labels

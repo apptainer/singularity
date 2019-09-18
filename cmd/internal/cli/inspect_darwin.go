@@ -12,7 +12,6 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/buger/jsonparser"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/docs"
@@ -50,7 +49,7 @@ var InspectCmd = &cobra.Command{
 
 		fimg, err := sif.LoadContainer(args[0], true)
 		if err != nil {
-			sylog.Fatalf("failed to load SIF container file: %s", err)
+			sylog.Fatalf("Failed to load SIF container file: %s", err)
 		}
 		defer fimg.UnloadContainer()
 
@@ -60,8 +59,6 @@ var InspectCmd = &cobra.Command{
 
 		// Inspect Labels.
 		if labels || !deffile {
-			jsonName := "system-partition"
-
 			labelDescriptor, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
 			if err != nil {
 				sylog.Fatalf("No metadata partition")
@@ -69,12 +66,8 @@ var InspectCmd = &cobra.Command{
 
 			for _, v := range labelDescriptor {
 				metaData := v.GetData(&fimg)
-				b, _, _, err := jsonparser.Get(metaData, jsonName)
-				if err != nil {
-					sylog.Fatalf("Unable to find json from metadata: %s", err)
-				}
 				var hrOut map[string]json.RawMessage
-				err = json.Unmarshal(b, &hrOut)
+				err = json.Unmarshal(metaData, &hrOut)
 				if err != nil {
 					sylog.Fatalf("Unable to get json: %s", err)
 				}

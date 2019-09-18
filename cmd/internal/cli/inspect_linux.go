@@ -18,7 +18,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/buger/jsonparser"
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
@@ -138,8 +137,8 @@ func getSingleFileCommand(file string, label string, appName string) string {
 	return str.String()
 }
 
-func getLabelsCommand() string {
-	return getSingleFileCommand("labels.json", "labels", "")
+func getLabelsCommand(appName string) string {
+	return getSingleFileCommand("labels.json", "labels", appName)
 }
 
 func getDefinitionCommand() string {
@@ -167,11 +166,7 @@ func getHelpCommand(appName string) string {
 	return getSingleFileCommand("runscript.help", "helpfile", appName)
 }
 
-func setAttribute(obj *inspectFormat, label, app string, value string) {
-	if app == "" {
-		app = "system-partition"
-	}
-
+func setAttribute(obj *inspectFormat, label, app, value string) {
 	switch label {
 	case "apps":
 		obj.Data.Attributes.Apps = value
@@ -182,13 +177,7 @@ func setAttribute(obj *inspectFormat, label, app string, value string) {
 	case "helpfile":
 		obj.Data.Attributes.Helpfile = value
 	case "labels":
-		b, _, _, err := jsonparser.Get([]byte(value), app)
-		if err != nil {
-			sylog.Warningf("Unable to find json from metadata: %s; skipping", err)
-			b = []byte(value)
-		}
-
-		if err := json.Unmarshal(b, &obj.Data.Attributes.Labels); err != nil {
+		if err := json.Unmarshal([]byte(value), &obj.Data.Attributes.Labels); err != nil {
 			sylog.Warningf("Unable to parse labels: %s", err)
 		}
 	case "runscript":
@@ -212,11 +201,6 @@ func inspectLabelPartition(inspectData *inspectFormat, fimg *sif.FileImage) erro
 		return errNoSIF
 	}
 
-	jsonName := AppName
-	if jsonName == "" {
-		jsonName = "system-partition"
-	}
-
 	labelDescriptor, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
 	if err != nil {
 		sylog.Warningf("No metadata partition, searching in container...")
@@ -225,12 +209,8 @@ func inspectLabelPartition(inspectData *inspectFormat, fimg *sif.FileImage) erro
 
 	for _, v := range labelDescriptor {
 		metaData := v.GetData(fimg)
-		b, _, _, err := jsonparser.Get(metaData, jsonName)
-		if err != nil {
-			return fmt.Errorf("unable to find json from metadata: %s", err)
-		}
 		var hrOut map[string]json.RawMessage
-		err = json.Unmarshal(b, &hrOut)
+		err = json.Unmarshal(metaData, &hrOut)
 		if err != nil {
 			return fmt.Errorf("unable to get json: %s", err)
 		}
@@ -297,7 +277,7 @@ var InspectCmd = &cobra.Command{
 			var err error
 			fimg, err = sif.LoadContainer(args[0], true)
 			if err != nil {
-				sylog.Fatalf("failed to load SIF container file: %s", err)
+				sylog.Fatalf("Failed to load SIF container file: %s", err)
 			}
 			defer fimg.UnloadContainer()
 		}
@@ -306,25 +286,31 @@ var InspectCmd = &cobra.Command{
 		inspectData.Type = containerType
 		inspectData.Data.Attributes.Labels = make(map[string]string, 1)
 
-		inspectCMD := []string{"/bin/sh", "-c", ""}
+		inspectShellCmd := []string{"/bin/sh", "-c", ""}
 
-		// Inspect Labels.
-		if labels || defaultToLabels() {
+		// Try to inspect the label partition, if not, then exec/shell
+		// the container to get the data.
+		if (labels || defaultToLabels()) && AppName == "" {
 			err := inspectLabelPartition(&inspectData, &fimg)
 			if err == errNoLabelPartition || err == errNoSIF {
-				sylog.Debugf("Inspection of labels selected.")
-				inspectCMD[2] += getLabelsCommand()
+				sylog.Debugf("Cant get label partition, looking in container...")
+				inspectShellCmd[2] += getLabelsCommand(AppName)
 			} else if err != nil {
 				sylog.Fatalf("Unable to inspect container: %s", err)
 			}
+		} else if (labels || defaultToLabels()) && AppName != "" {
+			// If '--app' is specified, then we need to shell/exec the
+			// container.
+			sylog.Debugf("Inspection of labels selected.")
+			inspectShellCmd[2] += getLabelsCommand(AppName)
 		}
 
-		// Inspect Deffile.
+		// Inspect the deffile.
 		if deffile {
 			err := inspectDeffilePartition(&inspectData, &fimg)
 			if err == errNoLabelPartition || err == errNoSIF {
 				sylog.Debugf("Inspection of deffile selected.")
-				inspectCMD[2] += getDefinitionCommand()
+				inspectShellCmd[2] += getDefinitionCommand()
 			} else if err != nil {
 				sylog.Fatalf("Unable to inspect deffile: %s", err)
 			}
@@ -332,30 +318,30 @@ var InspectCmd = &cobra.Command{
 
 		if listApps {
 			sylog.Debugf("Listing all apps in container")
-			inspectCMD[2] += listAppsCommand
+			inspectShellCmd[2] += listAppsCommand
 		}
 
 		if helpfile {
 			sylog.Debugf("Inspection of helpfile selected.")
-			inspectCMD[2] += getHelpCommand(AppName)
+			inspectShellCmd[2] += getHelpCommand(AppName)
 		}
 
 		if runscript {
 			sylog.Debugf("Inspection of runscript selected.")
-			inspectCMD[2] += getRunscriptCommand(AppName)
+			inspectShellCmd[2] += getRunscriptCommand(AppName)
 		}
 
 		if testfile {
 			sylog.Debugf("Inspection of test selected.")
-			inspectCMD[2] += getTestCommand(AppName)
+			inspectShellCmd[2] += getTestCommand(AppName)
 		}
 
 		if environment {
 			sylog.Debugf("Inspection of environment selected.")
-			inspectCMD[2] += getEnvironmentCommand(AppName)
+			inspectShellCmd[2] += getEnvironmentCommand(AppName)
 		}
 
-		if inspectCMD[2] != "" {
+		if inspectShellCmd[2] != "" {
 			abspath, err := filepath.Abs(args[0])
 			if err != nil {
 				sylog.Fatalf("While determining absolute file path: %v", err)
@@ -363,7 +349,7 @@ var InspectCmd = &cobra.Command{
 			name := filepath.Base(abspath)
 
 			// Execute the compound command string.
-			fileContents, err := getFileContent(abspath, name, inspectCMD)
+			fileContents, err := getFileContent(abspath, name, inspectShellCmd)
 			if err != nil {
 				sylog.Fatalf("Could not inspect container: %v", err)
 			}
