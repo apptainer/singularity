@@ -74,7 +74,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/seccomp/libseccomp-golang v0.9.0
 	github.com/spf13/cobra v0.0.5
-	github.com/spf13/pflag v1.0.3
+	github.com/spf13/pflag v1.0.5
 	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/sylabs/json-resp v0.6.0
