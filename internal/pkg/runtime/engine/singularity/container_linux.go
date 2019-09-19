@@ -1960,6 +1960,12 @@ func (c *container) addFuseMount(system *mount.System) error {
 func (c *container) getBindFlags(source string, defaultFlags uintptr) (uintptr, error) {
 	addFlags := uintptr(0)
 
+	// case where there is a single bind, we doesn't need
+	// to apply mount flags from source directory/file
+	if defaultFlags == syscall.MS_BIND || defaultFlags == syscall.MS_BIND|syscall.MS_REC {
+		return defaultFlags, nil
+	}
+
 	entries, err := proc.GetMountInfoEntry(c.mountInfoPath)
 	if err != nil {
 		return 0, fmt.Errorf("error while reading %s: %s", c.mountInfoPath, err)
