@@ -87,6 +87,41 @@ func sifAddSignature(fimg *sif.FileImage, groupid, link uint32, fingerprint [20]
 	return nil
 }
 
+// Copy-paste from sylabs/sif
+// datatypeStr returns a string representation of a datatype.
+func datatypeStr(dtype sif.Datatype) string {
+	switch dtype {
+	case sif.DataDeffile:
+		return "Def.FILE"
+	case sif.DataEnvVar:
+		return "Env.Vars"
+	case sif.DataLabels:
+		return "JSON.Labels"
+	case sif.DataPartition:
+		return "FS"
+	case sif.DataSignature:
+		return "Signature"
+	case sif.DataGenericJSON:
+		return "JSON.Generic"
+	case sif.DataGeneric:
+		return "Generic/Raw"
+	}
+	return "Unknown data-type"
+}
+
+func getDataPartitionToSign(fimg *sif.FileImage, dataType sif.Datatype) ([]*sif.Descriptor, error) {
+	sylog.Debugf("Looking for: %s partition to sign...", datatypeStr(dataType))
+	// We are using ID 0 (skipping ID), because we are looking for all Datatypes,
+	// and ID's will limit the search.
+	data, _, err := fimg.GetLinkedDescrsByType(uint32(0), dataType)
+	if err != nil && err != sif.ErrNotFound {
+		return nil, fmt.Errorf("failed to get descr for deffile: %s", err)
+	}
+	sylog.Debugf("Found %d partitions", len(data))
+
+	return data, nil
+}
+
 // descrToSign determines via argument or interactively which descriptor to sign
 func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) ([]*sif.Descriptor, error) {
 	descr := make([]*sif.Descriptor, 1)
@@ -98,12 +133,21 @@ func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) ([]*sif.Descripto
 			return nil, fmt.Errorf("no primary partition found")
 		}
 
-		//data, _, err := fimg.GetLinkedDescrsByType(descr[0].ID, sif.DataDeffile)
-		data, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataDeffile)
-		if err != nil && err != sif.ErrNotFound {
-			return nil, fmt.Errorf("failed to get descr for deffile: %s", err)
+		// signableDatatypes is a list of all the signable Datatypes, all
+		// but DataSignature, since theres no need to sign a signature.
+		signableDatatypes := []sif.Datatype{
+			sif.DataDeffile, sif.DataEnvVar,
+			sif.DataLabels, sif.DataGenericJSON,
+			sif.DataGeneric, sif.DataCryptoMessage,
 		}
-		descr = append(descr, data...)
+
+		for _, datatype := range signableDatatypes {
+			data, err := getDataPartitionToSign(fimg, datatype)
+			if err != nil {
+				return nil, err
+			}
+			descr = append(descr, data...)
+		}
 	} else if isGroup {
 		var search = sif.Descriptor{
 			Groupid: id | sif.DescrGroupMask,
@@ -128,7 +172,7 @@ func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) ([]*sif.Descripto
 func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	keyring := sypgp.NewHandle("")
 
-	// Generate a private key usable for signing
+	// Load a private key usable for signing
 	elist, err := keyring.LoadPrivKeyring()
 	if err != nil {
 		return fmt.Errorf("could not load private keyring: %s", err)
@@ -171,14 +215,15 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	// figure out which descriptor has data to sign
 	descr, err := descrToSign(&fimg, id, isGroup)
 	if err != nil {
-		return fmt.Errorf("signing requires a primary partition: %s", err)
+		return fmt.Errorf("unable to find a signable partition: %s", err)
 	}
 
 	for _, de := range descr {
-		fmt.Println("Looping now...")
+		sylog.Debugf("Signing %s partition...", datatypeStr(de.Datatype))
 
 		// signature also include data integrity check
 		sifhash := computeHashStr(&fimg, de)
+		sylog.Debugf("Signing hash: %s\n", sifhash)
 
 		// create an ascii armored signature block
 		var signedmsg bytes.Buffer
@@ -324,6 +369,8 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 
 	// the selected data object is hashed for comparison against signature block's
 	sifhash := computeHashStr(&fimg, descr[0])
+
+	sylog.Debugf("Verifying hash: %s\n", sifhash)
 
 	// setup some colors
 	green := color.New(color.FgGreen).SprintFunc()
