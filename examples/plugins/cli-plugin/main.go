@@ -10,6 +10,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
 
@@ -30,13 +32,24 @@ type pluginImplementation struct{}
 
 func (p pluginImplementation) Initialize(r pluginapi.Registry) {
 	r.AddCLIMutator(pluginapi.CLIMutator{
-		CmdName: "version",
-		Mutate: func(c *pluginapi.Cmd) {
-			var test string
-			c.Flags().StringVar(&test, "test", "this is a test flag from plugin", "some text to print")
+		Mutate: func(manager *cmdline.CommandManager) {
+			versionCmd := manager.GetCmd("version")
+			if versionCmd == nil {
+				sylog.Warningf("Could not find version command")
+				return
+			}
 
-			f := c.PreRun
-			c.PreRun = func(c *cobra.Command, args []string) {
+			var test string
+			manager.RegisterFlagForCmd(&cmdline.Flag{
+				Value:        &test,
+				DefaultValue: "this is a test flag from plugin",
+				Name:         "test",
+				Usage:        "some text to print",
+				Hidden:       false,
+			}, versionCmd)
+
+			f := versionCmd.PreRun
+			versionCmd.PreRun = func(c *cobra.Command, args []string) {
 				fmt.Printf("test: %v\n", test)
 				if f != nil {
 					f(c, args)
@@ -46,13 +59,23 @@ func (p pluginImplementation) Initialize(r pluginapi.Registry) {
 	})
 
 	r.AddCLIMutator(pluginapi.CLIMutator{
-		CmdName: "verify",
-		Mutate: func(c *pluginapi.Cmd) {
-			var abort bool
-			c.Flags().BoolVar(&abort, "abort", false, "should the verify command be aborted?")
+		Mutate: func(manager *cmdline.CommandManager) {
+			verifyCmd := manager.GetCmd("verify")
+			if verifyCmd == nil {
+				sylog.Warningf("Could not find verify command")
+				return
+			}
 
-			f := c.PreRunE
-			c.PreRunE = func(c *cobra.Command, args []string) error {
+			var abort bool
+			manager.RegisterFlagForCmd(&cmdline.Flag{
+				Value:        &abort,
+				DefaultValue: false,
+				Name:         "abort",
+				Usage:        "should the verify command be aborted?",
+			}, verifyCmd)
+
+			f := verifyCmd.PreRunE
+			verifyCmd.PreRunE = func(c *cobra.Command, args []string) error {
 				if f != nil {
 					if err := f(c, args); err != nil {
 						return err
@@ -68,16 +91,8 @@ func (p pluginImplementation) Initialize(r pluginapi.Registry) {
 	})
 
 	r.AddCLIMutator(pluginapi.CLIMutator{
-		CmdName: "break",
-		Mutate: func(c *pluginapi.Cmd) {
-			fmt.Println("This should not be called")
-		},
-	})
-
-	r.AddCLIMutator(pluginapi.CLIMutator{
-		CmdName: "singularity",
-		Mutate: func(c *pluginapi.Cmd) {
-			c.AddCommand(&cobra.Command{
+		Mutate: func(manager *cmdline.CommandManager) {
+			manager.RegisterCmd(&cobra.Command{
 				DisableFlagsInUseLine: true,
 				Args:                  cobra.MinimumNArgs(1),
 				Use:                   "test-cmd [args ...]",

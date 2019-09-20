@@ -21,7 +21,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/cmdline"
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 	"github.com/sylabs/singularity/pkg/syfs"
 )
 
@@ -242,15 +241,7 @@ func ExecuteSingularity() {
 	}
 
 	for _, m := range plugin.CLIMutators() {
-		cmd := cmdManager.GetCmd(m.CmdName)
-		if cmd == nil && cmdManager.GetRootCmd().Name() == m.CmdName {
-			cmd = cmdManager.GetRootCmd()
-		}
-		if cmd == nil {
-			sylog.Warningf("Could not setup %s mutator for %s: command not found", m.PluginName, m.CmdName)
-			continue
-		}
-		m.Mutate(&pluginapi.Cmd{Command: cmd})
+		m.Mutate(cmdManager)
 	}
 
 	if cmd, err := SingularityCmd.ExecuteC(); err != nil {

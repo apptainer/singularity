@@ -6,7 +6,7 @@
 package plugin
 
 import (
-	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/pkg/cmdline"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
@@ -53,13 +53,8 @@ type Registry interface {
 	AddRuntimeMutator(m RuntimeMutator) error
 }
 
-type Cmd struct {
-	*cobra.Command
-}
-
 type CLIMutator struct {
-	CmdName string
-	Mutate  func(*Cmd)
+	Mutate func(*cmdline.CommandManager)
 }
 
 type RuntimeMutator struct {
