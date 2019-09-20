@@ -218,6 +218,27 @@ func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.
 	return
 }
 
+func getSigsAllPart(fimg *sif.FileImage) ([]*sif.Descriptor, []*sif.Descriptor, error) {
+	descr := make([]*sif.Descriptor, 1)
+	var err error
+
+	descr[0], _, err = fimg.GetPartPrimSys()
+	if err != nil {
+		return nil, nil, fmt.Errorf("no primary partition found")
+	}
+
+	sigs, _, err := fimg.GetLinkedDescrsByType(descr[0].ID, sif.DataSignature)
+	//sigs, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataSignature)
+	if err != nil {
+		return nil, nil, fmt.Errorf("no signatures found for system partition")
+	}
+
+	fmt.Printf("SIGS: %d\n", len(sigs))
+	fmt.Printf("DESC: %d\n", len(descr))
+
+	return sigs, descr, nil
+}
+
 // return all signatures for specified descriptor
 func getSigsDescr(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
 	descr = make([]*sif.Descriptor, 1)
@@ -262,7 +283,8 @@ func getSigsGroup(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr
 // return all signatures for "id" being unique or group id
 func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
 	if id == 0 {
-		return getSigsPrimPart(fimg)
+		//return getSigsPrimPart(fimg)
+		return getSigsAllPart(fimg)
 	} else if isGroup {
 		return getSigsGroup(fimg, id)
 	}
