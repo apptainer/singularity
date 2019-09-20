@@ -6,25 +6,41 @@
 package plugin
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
+	"github.com/sylabs/singularity/pkg/plugin"
 )
 
-type registry struct {
-	*flagRegistry
-	*commandRegistry
+var cliMutators []CLIMutator
+
+type CLIMutator struct {
+	PluginName string
+	plugin.CLIMutator
 }
 
-var reg registry
+var runtimeMutators []RuntimeMutator
 
-func init() {
-	reg = registry{
-		flagRegistry: &flagRegistry{
-			FlagSet: pflag.NewFlagSet("flagRegistrySet", pflag.ExitOnError),
-			Hooks:   []flagHook{},
-		},
-		commandRegistry: &commandRegistry{
-			Commands: []*cobra.Command{},
-		},
-	}
+type RuntimeMutator struct {
+	PluginName string
+	plugin.RuntimeMutator
+}
+
+func CLIMutators() []CLIMutator {
+	return cliMutators
+}
+
+func RuntimeMutators() []RuntimeMutator {
+	return runtimeMutators
+}
+
+type registrar struct {
+	pluginName string
+}
+
+func (r registrar) AddCLIMutator(m plugin.CLIMutator) error {
+	cliMutators = append(cliMutators, CLIMutator{PluginName: r.pluginName, CLIMutator: m})
+	return nil
+}
+
+func (r registrar) AddRuntimeMutator(m plugin.RuntimeMutator) error {
+	runtimeMutators = append(runtimeMutators, RuntimeMutator{PluginName: r.pluginName, RuntimeMutator: m})
+	return nil
 }

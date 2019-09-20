@@ -33,10 +33,10 @@ func getSingularitySrcDir() (string, error) {
 
 	switch _, err = os.Stat(canary); {
 	case os.IsNotExist(err):
-		return "", fmt.Errorf("cannot find \"%s\"", canary)
+		return "", fmt.Errorf("cannot find %q", canary)
 
 	case err != nil:
-		return "", fmt.Errorf("unexpected error while looking for \"%s\": %s", canary, err)
+		return "", fmt.Errorf("unexpected error while looking for %q: %s", canary, err)
 
 	default:
 		return dir, nil
@@ -80,7 +80,7 @@ func CompilePlugin(sourceDir, destSif, buildTags string) error {
 }
 
 // buildPlugin takes sourceDir which is the string path the host which contains the source code of
-// the plugin. buildPlugin returns the path to the built file, along with an error
+// the plugin. buildPlugin returns the path to the built file, along with an error.
 //
 // This function essentially runs the `go build -buildmode=plugin [...]` command
 func buildPlugin(sourceDir, buildTags string) (string, error) {

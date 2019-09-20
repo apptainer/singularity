@@ -14,24 +14,9 @@ import (
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
 
-// initialized stores whether or not the plugin system has been initialized. A
-// call to Initialize MUST be made before any other functions can be called.
-var initialized = false
-
-func assertInitialized() {
-	if !initialized {
-		panic("Plugin system has not been initialized")
-	}
-}
-
-var loadedPlugins []*pluginapi.Plugin
-
-// InitializeAll loads all plugins into memory and stores their symbols
+// InitializeAll loads all plugins into memory and stores their symbols.
+// A call to InitializeAll MUST be made only only once.
 func InitializeAll(libexecdir string) error {
-	if initialized {
-		return nil
-	}
-
 	metas, err := List(libexecdir)
 	if err != nil {
 		return err
@@ -80,8 +65,6 @@ func InitializeAll(libexecdir string) error {
 		return errors.New(b.String())
 	}
 
-	// no errors, we are initialized :-)
-	initialized = true
 	return nil
 }
 
@@ -92,9 +75,8 @@ func Initialize(path string) (*pluginapi.Plugin, error) {
 		return nil, err
 	}
 
-	loadedPlugins = append(loadedPlugins, pl)
+	reg := registrar{pl.Name}
 	pl.Initialize(reg)
-
 	return pl, nil
 }
 

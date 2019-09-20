@@ -8,7 +8,6 @@ package cli
 import (
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
@@ -724,8 +723,4 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionPwdFlag, actionsCmd...)
 	cmdManager.RegisterFlagForCmd(&actionPassphraseFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionPEMPathFlag, actionsInstanceCmd...)
-
-	for _, cmd := range actionsCmd {
-		plugin.AddFlagHooks(cmd.Flags())
-	}
 }

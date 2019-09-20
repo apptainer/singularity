@@ -21,6 +21,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 	"github.com/sylabs/singularity/pkg/syfs"
 )
 
@@ -133,7 +134,7 @@ func getDefaultTokenFile() string {
 // have been properly loaded and initialized
 func initializePlugins() {
 	if err := plugin.InitializeAll(buildcfg.LIBEXECDIR); err != nil {
-		sylog.Fatalf("Unable to initialize plugins: %s\n", err)
+		sylog.Warningf("Unable to initialize plugins: %s", err)
 	}
 }
 
@@ -160,9 +161,6 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&singTokenFileFlag, SingularityCmd)
 
 	cmdManager.RegisterCmd(VersionCmd)
-
-	initializePlugins()
-	SingularityCmd.AddCommand(plugin.AllCommands()...)
 }
 
 func setSylogMessageLevel() {
@@ -241,6 +239,18 @@ func ExecuteSingularity() {
 	cliErrors := len(cmdManager.GetError())
 	if cliErrors > 0 {
 		sylog.Fatalf("CLI command manager reported %d error(s)", cliErrors)
+	}
+
+	for _, m := range plugin.CLIMutators() {
+		cmd := cmdManager.GetCmd(m.CmdName)
+		if cmd == nil && cmdManager.GetRootCmd().Name() == m.CmdName {
+			cmd = cmdManager.GetRootCmd()
+		}
+		if cmd == nil {
+			sylog.Warningf("Could not setup %s mutator for %s: command not found", m.PluginName, m.CmdName)
+			continue
+		}
+		m.Mutate(&pluginapi.Cmd{Command: cmd})
 	}
 
 	if cmd, err := SingularityCmd.ExecuteC(); err != nil {

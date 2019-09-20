@@ -1,11 +1,8 @@
 Singularity example plugin
 ==========================
 
-This directory contains an example plugin for singularity. It
-demonstrates how to add a command and flags, which are the only two
-types of hooks currently supported. In the future as support for more
-hooks is added, this plugin will be updated to demonstrate those as
-well.
+This directory contains an example CLI plugin for singularity. It
+demonstrates how to add a command and flags.
 
 Building
 --------
@@ -30,9 +27,9 @@ Obtain a copy of the source code by running:
 
 Still from within that directory, run:
 
-	singularity plugin compile ./examples/plugins/test-plugin
+	singularity plugin compile ./examples/plugins/cli-plugin
 
-This will produce a file `./examples/plugins/test-plugin/test-plugin.sif`.
+This will produce a file `./examples/plugins/cli-plugin/cli-plugin.sif`.
 
 Currently there's a limitation regarding the location of the plugin
 code: it must reside somewhere _inside_ the singularity source code
@@ -44,7 +41,7 @@ Installing
 Once you have compiled the plugin into a SIF file, you can install it
 into the correct singularity directory using the command:
 
-	$ singularity plugin install ./examples/plugins/test-plugin/test-plugin.sif
+	$ singularity plugin install ./examples/plugins/cli-plugin/cli-plugin.sif
 
 Singularity will automatically load the plugin code from now on.
 
@@ -55,24 +52,24 @@ You can query the list of installed plugins:
 
     $ singularity plugin list
     ENABLED  NAME
-        yes  sylabs.io/test-plugin
+        yes  sylabs.io/cli-plugin
 
 Disable an installed plugin:
 
-    $ singularity plugin disable sylabs.io/test-plugin
+    $ singularity plugin disable sylabs.io/cli-plugin
 
 Enable a disabled plugin:
 
-    $ singularity plugin enable sylabs.io/test-plugin
+    $ singularity plugin enable sylabs.io/cli-plugin
 
 Uninstall an installed plugin:
 
-    $ singularity plugin uninstall sylabs.io/test-plugin
+    $ singularity plugin uninstall sylabs.io/cli-plugin
 
 And inspect a SIF file before installing:
 
-    $ singularity plugin inspect examples/plugins/test-plugin/test-plugin.sif
-    Name: sylabs.io/test-plugin
-    Description: This is a short test plugin for Singularity
-    Author: Michael Bauer
-    Version: 0.0.1
+    $ singularity plugin inspect examples/plugins/cli-plugin/cli-plugin.sif
+    Name: sylabs.io/cli-plugin
+    Description: This is a short test CLI plugin for Singularity
+    Author: Toxic Team
+    Version: 0.0.2
