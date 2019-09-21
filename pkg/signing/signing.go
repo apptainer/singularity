@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/fatih/color"
@@ -515,7 +516,7 @@ func getSignerIdentity(keyring *sypgp.Handle, v *sif.Descriptor, block *clearsig
 
 	// download the key
 	sylog.Verbosef("Key not found in local keyring, checking remote keystore: %s\n", fingerprint[32:])
-	netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, true)
+	netlist, err := sypgp.FetchPubkey(http.DefaultClient, fingerprint, keyServiceURI, authToken, true)
 	if err != nil {
 		return "", false, errNotFound
 	}

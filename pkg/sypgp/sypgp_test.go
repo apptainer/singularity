@@ -59,7 +59,7 @@ func (ms *mockPKSLookup) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func TestSearchPubkey(t *testing.T) {
 	ms := &mockPKSLookup{}
-	srv := httptest.NewServer(ms)
+	srv := httptest.NewTLSServer(ms)
 	defer srv.Close()
 
 	tests := []struct {
@@ -83,7 +83,7 @@ func TestSearchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			if err := SearchPubkey(tt.search, tt.uri, tt.authToken, false); (err != nil) != tt.wantErr {
+			if err := SearchPubkey(srv.Client(), tt.search, tt.uri, tt.authToken, false); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
@@ -92,7 +92,7 @@ func TestSearchPubkey(t *testing.T) {
 
 func TestFetchPubkey(t *testing.T) {
 	ms := &mockPKSLookup{}
-	srv := httptest.NewServer(ms)
+	srv := httptest.NewTLSServer(ms)
 	defer srv.Close()
 
 	fp := hex.EncodeToString(testEntity.PrimaryKey.Fingerprint[:])
@@ -120,7 +120,7 @@ func TestFetchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			el, err := FetchPubkey(tt.fingerprint, tt.uri, tt.authToken, false)
+			el, err := FetchPubkey(srv.Client(), tt.fingerprint, tt.uri, tt.authToken, false)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("unexpected error: %v", err)
 				return
@@ -174,7 +174,7 @@ func TestPushPubkey(t *testing.T) {
 		t:       t,
 		keyText: keyText,
 	}
-	srv := httptest.NewServer(ms)
+	srv := httptest.NewTLSServer(ms)
 	defer srv.Close()
 
 	tests := []struct {
@@ -195,7 +195,7 @@ func TestPushPubkey(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms.code = tt.code
 
-			if err := PushPubkey(testEntity, tt.uri, tt.authToken); (err != nil) != tt.wantErr {
+			if err := PushPubkey(srv.Client(), testEntity, tt.uri, tt.authToken); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
