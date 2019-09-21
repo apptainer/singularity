@@ -7,6 +7,7 @@ package cli
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 
@@ -62,7 +63,7 @@ func doKeyPushCmd(fingerprint string, url string) error {
 	}
 	entity := keys[0].Entity
 
-	if err = sypgp.PushPubkey(entity, url, authToken); err != nil {
+	if err = sypgp.PushPubkey(http.DefaultClient, entity, url, authToken); err != nil {
 		return err
 	}
 

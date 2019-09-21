@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"net/http"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -36,5 +37,5 @@ var KeySearchCmd = &cobra.Command{
 
 func doKeySearchCmd(search string, url string) error {
 	// get keyring with matching search string
-	return sypgp.SearchPubkey(search, url, authToken, keySearchLongList)
+	return sypgp.SearchPubkey(http.DefaultClient, search, url, authToken, keySearchLongList)
 }
