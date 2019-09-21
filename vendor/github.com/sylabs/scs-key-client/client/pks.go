@@ -136,8 +136,14 @@ func (c *Client) PKSLookup(ctx context.Context, pd *PageDetails, search, operati
 	return string(body), nil
 }
 
-// GetKey retrieves an ASCII armored keyring from the Key Service. The context controls the
-// lifetime of the request.
-func (c *Client) GetKey(ctx context.Context, fingerprint []byte) (keyText string, err error) {
-	return c.PKSLookup(ctx, nil, fmt.Sprintf("%#x", fingerprint), OperationGet, false, true, nil)
+// GetKey retrieves an ASCII armored keyring matching search from the Key Service. A 32-bit key ID,
+// 64-bit key ID, 128-bit version 3 fingerprint, or 160-bit version 4 fingerprint can be specified
+// in search. The context controls the lifetime of the request.
+func (c *Client) GetKey(ctx context.Context, search []byte) (keyText string, err error) {
+	switch len(search) {
+	case 4, 8, 16, 20:
+		return c.PKSLookup(ctx, nil, fmt.Sprintf("%#x", search), OperationGet, false, true, nil)
+	default:
+		return "", ErrInvalidSearch
+	}
 }
