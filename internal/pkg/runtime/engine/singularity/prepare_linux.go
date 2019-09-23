@@ -369,60 +369,98 @@ func (e *EngineOperations) prepareRootCaps() error {
 	return nil
 }
 
-func (e *EngineOperations) prepareFd(starterConfig *starter.Config) error {
+func keepAutofsMount(source string, autoFsPoints []string) (int, error) {
+	resolved, err := filepath.EvalSymlinks(source)
+	if err != nil {
+		return -1, err
+	}
+
+	for _, p := range autoFsPoints {
+		if strings.HasPrefix(resolved, p) {
+			sylog.Debugf("Open file descriptor for %s", resolved)
+			f, err := os.Open(resolved)
+			if err != nil {
+				return -1, err
+			}
+			return int(f.Fd()), nil
+		}
+	}
+
+	return -1, fmt.Errorf("no mount point")
+}
+
+func (e *EngineOperations) prepareAutofs(starterConfig *starter.Config) error {
+	const mountInfoPath = "/proc/self/mountinfo"
+
+	entries, err := proc.GetMountInfoEntry(mountInfoPath)
+	if err != nil {
+		return fmt.Errorf("while parsing %s: %s", mountInfoPath, err)
+	}
+	autoFsPoints := make([]string, 0)
+	for _, e := range entries {
+		if e.FSType == "autofs" {
+			sylog.Debugf("Found %q as autofs mount point", e.Point)
+			autoFsPoints = append(autoFsPoints, e.Point)
+		}
+	}
+	if len(autoFsPoints) == 0 {
+		sylog.Debugf("No autofs mount point found")
+		return nil
+	}
+
 	fds := make([]int, 0)
 
 	if e.EngineConfig.File.UserBindControl {
 		for _, b := range e.EngineConfig.GetBindPath() {
 			splitted := strings.Split(b, ":")
 
-			src, err := filepath.Abs(splitted[0])
+			fd, err := keepAutofsMount(splitted[0], autoFsPoints)
 			if err != nil {
+				sylog.Debugf("Could not keep file descriptor for user bind path %s: %s", splitted[0], err)
 				continue
 			}
-
-			if !fs.IsDir(src) {
-				continue
-			}
-
-			sylog.Debugf("Open file descriptor for %s", src)
-			f, err := os.Open(src)
-			if err != nil {
-				continue
-			}
-			fds = append(fds, int(f.Fd()))
+			fds = append(fds, fd)
 		}
 	}
 
 	if !e.EngineConfig.GetContain() {
 		for _, bindpath := range e.EngineConfig.File.BindPath {
 			splitted := strings.Split(bindpath, ":")
-			src := splitted[0]
 
-			if !fs.IsDir(src) {
-				continue
-			}
-
-			sylog.Debugf("Open file descriptor for %s", src)
-			f, err := os.Open(src)
+			fd, err := keepAutofsMount(splitted[0], autoFsPoints)
 			if err != nil {
+				sylog.Debugf("Could not keep file descriptor for bind path %s: %s", splitted[0], err)
 				continue
 			}
-			fds = append(fds, int(f.Fd()))
-		}
-	}
-
-	for _, path := range e.EngineConfig.File.AutofsBugPath {
-		if !fs.IsDir(path) {
-			continue
+			fds = append(fds, fd)
 		}
 
-		sylog.Debugf("Open file descriptor for %s", path)
-		f, err := os.Open(path)
+		// check home source directory
+		dir := e.EngineConfig.GetHomeSource()
+		fd, err := keepAutofsMount(dir, autoFsPoints)
 		if err != nil {
-			continue
+			sylog.Debugf("Could not keep file descriptor for home directory %s: %s", dir, err)
+		} else {
+			fds = append(fds, fd)
 		}
-		fds = append(fds, int(f.Fd()))
+
+		// check the current working directory
+		dir = e.EngineConfig.GetCwd()
+		fd, err = keepAutofsMount(dir, autoFsPoints)
+		if err != nil {
+			sylog.Debugf("Could not keep file descriptor for current working directory %s: %s", dir, err)
+		} else {
+			fds = append(fds, fd)
+		}
+	} else {
+		// check workdir
+		dir := e.EngineConfig.GetWorkdir()
+		fd, err := keepAutofsMount(dir, autoFsPoints)
+		if err != nil {
+			sylog.Debugf("Could not keep file descriptor for workdir %s: %s", dir, err)
+		} else {
+			fds = append(fds, fd)
+		}
 	}
 
 	for _, f := range fds {
@@ -551,7 +589,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	}
 
 	// open file descriptors (autofs bug path)
-	return e.prepareFd(starterConfig)
+	return e.prepareAutofs(starterConfig)
 }
 
 // prepareInstanceJoinConfig is responsible for getting and
