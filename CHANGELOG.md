@@ -9,11 +9,23 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.4.0
+# Changes Since v3.4.1
 
- - Deprecated `--id` flag for `sign` and `verify`; replaced with `--sif-id`.
+  - Deprecated `--id` flag for `sign` and `verify`; replaced with `--sif-id`.
 
-# v3.4.0 - [2019.08.23]
+# v3.4.1 - [2019.09.17]
+
+  - This point release addresses the following issues:
+    - Fixes an issue where a PID namespace was always being used
+    - Fixes compilation on non 64-bit architectures
+    - Allows fakeroot builds for zypper, pacstrap, and debootstrap
+    - Correctly detects seccomp on OpenSUSE
+    - Honors GO_MODFLAGS properly in the mconfig generated makefile
+    - Passes the Mac hostname to the VM in MacOS Singularity builds
+    - Handles temporary EAGAIN failures when setting up loop devices on recent kernels
+    - Fixes excessive memory usage in singularity push
+
+# v3.4.0 - [2019.08.30]
 
 ## New features / functionalities
   
@@ -21,7 +33,7 @@ _The old changelog can be found in the `release-2.6` branch_
     - `--pem-path` option added to the `build` and action commands for RSA based encrypted containers
     - `--passphrase` option added to `build` and action commands for passphrase based encrypted containers
     - `SINGULARITY_ENCRYPTION_PEM_PATH` and `SINGULARITY_ENCRYPTION_PASSPHRASE` environment variables added to serve same functions as above
-    - `--encyrpt` option added to `build` command to build an encrypted container when environment variables contain a secret
+    - `--encrypt` option added to `build` command to build an encrypted container when environment variables contain a secret
   - New `--disable-cache` flag prevents caching of downloaded containers
   - Added support for multi-line variables in singularity def-files
   - Added support for 'indexed' def-file variables (like arrays)
