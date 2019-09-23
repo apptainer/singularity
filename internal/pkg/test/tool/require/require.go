@@ -7,40 +7,12 @@ package require
 
 import (
 	"os/exec"
-	"sync"
-	"syscall"
 	"testing"
 
 	"github.com/containerd/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
-
-var hasUserNamespace bool
-var hasUserNamespaceOnce sync.Once
-
-// UserNamespace checks that the current test could use
-// user namespace, if user namespaces are not enabled or
-// supported, the current test is skipped with a message.
-func UserNamespace(t *testing.T) {
-	// not performance critical, just save extra execution
-	// to get the same result
-	hasUserNamespaceOnce.Do(func() {
-		// user namespace is a bit special, as there is no simple
-		// way to detect if it's supported or enabled via a call
-		// on /proc/self/ns/user, the easiest and reliable way seems
-		// to directly execute a command by requesting user namespace
-		cmd := exec.Command("/bin/true")
-		cmd.SysProcAttr = &syscall.SysProcAttr{
-			Cloneflags: syscall.CLONE_NEWUSER,
-		}
-		// no error means user namespaces are enabled
-		hasUserNamespace = cmd.Run() == nil
-	})
-	if !hasUserNamespace {
-		t.Skipf("user namespaces seems not enabled or supported")
-	}
-}
 
 // Filesystem checks that the current test could use the
 // corresponding filesystem, if the filesystem is not

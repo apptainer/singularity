@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
+
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
@@ -936,6 +938,67 @@ func (c actionTests) actionBasicProfiles(t *testing.T) {
 	}
 }
 
+func (c actionTests) actionNetwork(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	e2e.Privileged(require.Network)
+
+	tests := []struct {
+		name       string
+		profile    e2e.Profile
+		netType    string
+		expectExit int
+	}{
+		{
+			name:       "BridgeNetwork",
+			profile:    e2e.RootProfile,
+			netType:    "bridge",
+			expectExit: 0,
+		},
+		{
+			name:       "PtpNetwork",
+			profile:    e2e.RootProfile,
+			netType:    "ptp",
+			expectExit: 0,
+		},
+		{
+			name:       "UnknownNetwork",
+			profile:    e2e.RootProfile,
+			netType:    "unknown",
+			expectExit: 255,
+		},
+		{
+			name:       "FakerootNetwork",
+			profile:    e2e.FakerootProfile,
+			netType:    "fakeroot",
+			expectExit: 0,
+		},
+		{
+			name:       "NoneNetwork",
+			profile:    e2e.UserProfile,
+			netType:    "none",
+			expectExit: 0,
+		},
+		{
+			name:       "UserBridgeNetwork",
+			profile:    e2e.UserProfile,
+			netType:    "bridge",
+			expectExit: 255,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs("--net", "--network", tt.netType, c.env.ImagePath, "id"),
+			e2e.ExpectExit(tt.expectExit),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := actionTests{
@@ -951,5 +1014,6 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		"STDPIPE":               c.STDPipe,             // stdin/stdout pipe
 		"action basic profiles": c.actionBasicProfiles, // run basic action under different profiles
 		"issue 4488":            c.issue4488,           // https://github.com/sylabs/singularity/issues/4488
+		"network":               c.actionNetwork,       // test basic networking
 	})
 }
