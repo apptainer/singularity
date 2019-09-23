@@ -513,7 +513,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	}
 
 	attachFlag := os.O_RDWR
-	loopFlags := uint32(loop.FlagsAutoClear)
+	loopFlags := uint32(loop.FlagsAutoClear | loop.FlagsDirectIO)
 
 	if flags&syscall.MS_RDONLY == 1 {
 		loopFlags |= loop.FlagsReadOnly

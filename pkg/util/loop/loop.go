@@ -37,15 +37,16 @@ const (
 
 // Loop device IOCTL commands
 const (
-	CmdSetFd       = 0x4C00
-	CmdClrFd       = 0x4C01
-	CmdSetStatus   = 0x4C02
-	CmdGetStatus   = 0x4C03
-	CmdSetStatus64 = 0x4C04
-	CmdGetStatus64 = 0x4C05
-	CmdChangeFd    = 0x4C06
-	CmdSetCapacity = 0x4C07
-	CmdSetDirectIO = 0x4C08
+	CmdSetFd        = 0x4C00
+	CmdClrFd        = 0x4C01
+	CmdSetStatus    = 0x4C02
+	CmdGetStatus    = 0x4C03
+	CmdSetStatus64  = 0x4C04
+	CmdGetStatus64  = 0x4C05
+	CmdChangeFd     = 0x4C06
+	CmdSetCapacity  = 0x4C07
+	CmdSetDirectIO  = 0x4C08
+	CmdSetBlockSize = 0x4C09
 )
 
 // Info64 contains information about a loop device.
