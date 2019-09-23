@@ -33,10 +33,13 @@ _NOTE:_ On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
 
 This is one of several ways to [install and configure golang](https://golang.org/doc/install).  The CentOS/RHEL instructions above already installed it so this method is not needed there.
 
-First, download the Golang archive to `/tmp/`, then extract the archive to `/usr/local`.
+First, download the Golang archive to `/tmp`, then extract the archive to `/usr/local`.
+
+_**NOTE:** if you are updating Go from a older version, make sure you remove `/usr/local/go` before
+reinstalling it._
 
 ```
-$ export VERSION=1.12.6 OS=linux ARCH=amd64  # change this as you need
+$ export VERSION=1.12.9 OS=linux ARCH=amd64  # change this as you need
 
 $ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
   sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
