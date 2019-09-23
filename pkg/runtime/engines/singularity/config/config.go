@@ -51,7 +51,6 @@ type FileConfig struct {
 	LimitContainerOwners    []string `directive:"limit container owners"`
 	LimitContainerGroups    []string `directive:"limit container groups"`
 	LimitContainerPaths     []string `directive:"limit container paths"`
-	AutofsBugPath           []string `directive:"autofs bug path"`
 	RootDefaultCapabilities string   `default:"full" authorized:"full,file,no" directive:"root default capabilities"`
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 	CniConfPath             string   `directive:"cni configuration path"`

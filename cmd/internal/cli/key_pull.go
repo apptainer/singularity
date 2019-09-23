@@ -7,6 +7,7 @@ package cli
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -41,7 +42,7 @@ func doKeyPullCmd(fingerprint string, url string) error {
 	keyring := sypgp.NewHandle("")
 
 	// get matching keyring
-	el, err := sypgp.FetchPubkey(fingerprint, url, authToken, false)
+	el, err := sypgp.FetchPubkey(http.DefaultClient, fingerprint, url, authToken, false)
 	if err != nil {
 		return fmt.Errorf("unable to pull key from server: %v", err)
 	}
