@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	jsonresp "github.com/sylabs/json-resp"
@@ -22,7 +23,7 @@ func (c *Client) Submit(ctx context.Context, br BuildRequest) (bi BuildInfo, err
 		return
 	}
 
-	req, err := c.newRequest(http.MethodPost, "/v1/build", "", bytes.NewReader(b))
+	req, err := c.newRequest(http.MethodPost, "/v1/build", bytes.NewReader(b))
 	if err != nil {
 		return
 	}
@@ -41,4 +42,24 @@ func (c *Client) Submit(ctx context.Context, br BuildRequest) (bi BuildInfo, err
 		c.Logger.Logf("Build response - id: %s, libref: %s", bi.ID, bi.LibraryRef)
 	}
 	return
+}
+
+// Cancel cancels an existing build. The context controls the lifetime of the
+// request.
+func (c *Client) Cancel(ctx context.Context, buildID string) error {
+	req, err := c.newRequest(http.MethodPut, fmt.Sprintf("/v1/build/%s/_cancel", buildID), nil)
+	if err != nil {
+		return err
+	}
+	c.Logger.Logf("Sending build cancellation request to %s", req.URL.String())
+
+	res, err := c.HTTPClient.Do(req.WithContext(ctx))
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("build cancellation failed: http status %d", res.StatusCode)
+	}
+	return nil
 }

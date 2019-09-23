@@ -200,18 +200,6 @@ allow container extfs = {{ if eq .AllowContainerExtfs true }}yes{{ else }}no{{ e
 allow container dir = {{ if eq .AllowContainerDir true }}yes{{ else }}no{{ end }}
 
 
-# AUTOFS BUG PATH: [STRING]
-# DEFAULT: Undefined
-# Define list of autofs directories which produces "Too many levels of symbolink links"
-# errors when accessed from container (typically bind mounts)
-#autofs bug path = /nfs
-#autofs bug path = /cifs-share
-{{ range $path := .AutofsBugPath }}
-{{- if ne $path "" -}}
-autofs bug path = {{$path}}
-{{ end -}}
-{{ end }}
-
 # ALWAYS USE NV ${TYPE}: [BOOL]
 # DEFAULT: no
 # This feature allows an administrator to determine that every action command

@@ -950,5 +950,6 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		"shell":                 c.actionShell,         // shell interaction
 		"STDPIPE":               c.STDPipe,             // stdin/stdout pipe
 		"action basic profiles": c.actionBasicProfiles, // run basic action under different profiles
+		"issue 4488":            c.issue4488,           // https://github.com/sylabs/singularity/issues/4488
 	})
 }

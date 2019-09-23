@@ -22,7 +22,7 @@ type VersionInfo struct {
 // GetVersion gets version information from the build service. The context
 // controls the lifetime of the request.
 func (c *Client) GetVersion(ctx context.Context) (vi VersionInfo, err error) {
-	req, err := c.newRequest(http.MethodGet, pathVersion, "", nil)
+	req, err := c.newRequest(http.MethodGet, pathVersion, nil)
 	if err != nil {
 		return VersionInfo{}, err
 	}
