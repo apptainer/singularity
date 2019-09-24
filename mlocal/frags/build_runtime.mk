@@ -1,7 +1,7 @@
 # This file contains all of the rules for building the singularity runtime
 #   and installing the necessary config files.
 
-starter_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep "$(SOURCEDIR)" "$(GO_TAGS)" "$(SOURCEDIR)/cmd/starter")
+starter_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep -v2 "$(GO)" "$(SOURCEDIR)" "$(GO_TAGS)" "$(SOURCEDIR)/cmd/starter")
 starter_CSOURCE := $(SOURCEDIR)/cmd/starter/c/starter.c \
                   $(SOURCEDIR)/cmd/starter/c/capability.c \
                   $(SOURCEDIR)/cmd/starter/c/message.c \
