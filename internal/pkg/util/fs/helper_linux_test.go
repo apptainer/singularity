@@ -525,3 +525,68 @@ func TestIsWritable(t *testing.T) {
 	}
 
 }
+
+func TestFirstExistingParent(t *testing.T) {
+	testDir, err := MakeTmpDir("", "dir", 0755)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s: %s", testDir, err)
+	}
+	defer os.RemoveAll(testDir)
+
+	testFile, err := MakeTmpFile(testDir, "file", 0644)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s: %s", testFile.Name(), err)
+	}
+	testFile.Close()
+	defer os.RemoveAll(testFile.Name())
+
+	tests := []struct {
+		name    string
+		path    string
+		correct string
+	}{
+		{
+			name:    "path exists",
+			path:    testFile.Name(),
+			correct: testFile.Name(),
+		},
+		{
+			name:    "path missing file",
+			path:    filepath.Join(testDir, "notafile"),
+			correct: testDir,
+		},
+		{
+			name:    "path missing dir",
+			path:    filepath.Join(os.TempDir(), "notadir", "notafile"),
+			correct: os.TempDir(),
+		},
+		{
+			name:    "root is first parent",
+			path:    filepath.Join("/", "notadir", "notafile"),
+			correct: "/",
+		},
+		{
+			name:    "root dir",
+			path:    "/",
+			correct: "/",
+		},
+		{
+			name:    "cwd",
+			path:    ".",
+			correct: ".",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			test.DropPrivilege(t)
+			path, err := FirstExistingParent(tt.path)
+			if err != nil {
+				t.Errorf("unexpected error finding first existing partent for path %q: %v", tt.path, err)
+			}
+			if tt.correct != path {
+				t.Errorf("test %s returned %v instead of %v (%s)", tt.name, path, tt.correct, tt.path)
+			}
+		})
+	}
+}
