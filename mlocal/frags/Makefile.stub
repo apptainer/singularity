@@ -17,13 +17,18 @@ collect:
 			>> $(BUILDDIR)/mergeddeps)			\
 	done
 
+CI_LINT_VERSION=1.17.1
 .PHONY: check
 check: $(go_OBJ)
 	@echo " CHECK golangci-lint"
 	$(V)cd $(SOURCEDIR) && \
-		(PATH=$(SOURCEDIR)/bin:$$PATH; \
+		(if [ "`bin/golangci-lint --version 2>/dev/null| \
+			sed 's/.* version //;s/ .*//'`" != $(CI_LINT_VERSION) ]; then \
+		    rm -f bin/golangci-lint; \
+		 fi; \
+		 PATH=$(SOURCEDIR)/bin:$$PATH; \
 		 (command -v golangci-lint >/dev/null || \
-		  curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.17.1) && \
+		  curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v$(CI_LINT_VERSION)) && \
 		 golangci-lint run --build-tags "$(GO_TAGS)" ./...)
 	@echo "       PASS"
 
