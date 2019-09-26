@@ -229,3 +229,23 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 func IsWritable(path string) bool {
 	return unix.Access(path, unix.W_OK) == nil
 }
+
+// FirstExistingParent walks up the supplied path and returns the first
+// parent that exists. If the supplied path exists, it will just return that path.
+// Assumes cwd and the root directory always exists
+func FirstExistingParent(path string) (string, error) {
+	p := filepath.Clean(path)
+	for p != "/" && p != "." {
+		exists, err := FileExists(p)
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return p, nil
+		}
+
+		p = filepath.Dir(p)
+	}
+
+	return p, nil
+}

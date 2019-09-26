@@ -25,29 +25,72 @@ func TestNewHandle(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	cacheNonExistentParent, err := ioutil.TempDir("", "NonExistingParent-")
+	if err != nil {
+		t.Fatalf("failed to create a temporary image cache")
+	}
+
+	cacheReadOnlyParent, err := fs.MakeTmpDir("", "ReadOnlyParent-", 0555)
+	if err != nil {
+		t.Fatalf("failed to create a temporary image cache")
+	}
+
 	tests := []struct {
 		name     string
 		dir      string
 		expected string
+		dropPriv bool
+		cleanup  func()
 	}{
 		{
 			name:     "Default root",
 			dir:      "",
 			expected: cacheDefault,
+			// we do not want to change our UID so we can access the correct users home directory
+			dropPriv: false,
+			// IMPORTANT(ikaneshiro): do nothing here since this is mapped to the users cache
+			cleanup: func() {},
 		},
 		{
 			name:     "Custom root",
 			dir:      cacheCustom,
 			expected: expectedCacheCustomRoot,
+			dropPriv: true,
+			cleanup: func() {
+				os.RemoveAll(cacheCustom)
+			},
+		},
+		{
+			name:     "Non-existing root",
+			dir:      filepath.Join(cacheNonExistentParent, "NonExistingDir"),
+			expected: filepath.Join(cacheNonExistentParent, "NonExistingDir", CacheDir),
+			dropPriv: true,
+			cleanup: func() {
+				os.RemoveAll(cacheNonExistentParent)
+			},
+		},
+		{
+			name:     "Read only root",
+			dir:      filepath.Join(cacheReadOnlyParent, "NonExistingDir"),
+			dropPriv: true,
+			cleanup: func() {
+				os.RemoveAll(cacheReadOnlyParent)
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.dropPriv {
+				test.DropPrivilege(t)
+				defer test.ResetPrivilege(t)
+			}
+
 			c, err := NewHandle(Config{BaseDir: tt.dir})
 			if err != nil {
 				t.Fatalf("failed to create new image cache handle: %s", err)
 			}
+
 			c.checkIfCacheDisabled(t)
 
 			if r := c.rootDir; r != tt.expected {
