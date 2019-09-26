@@ -108,7 +108,7 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 		sourceDir,
 	}
 
-	sylog.Debugf("Runnig: %s %s", goTool, strings.Join(args, " "))
+	sylog.Debugf("Running: %s %s", goTool, strings.Join(args, " "))
 
 	buildcmd := exec.Command(goTool, args...)
 
