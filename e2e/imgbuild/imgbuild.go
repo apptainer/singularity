@@ -963,6 +963,58 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	)
 }
 
+func (c imgBuildTests) buildUpdateSandbox(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	const badSandbox = "/bad/sandbox/path"
+
+	testDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "build-sandbox-", "")
+	defer e2e.Privileged(cleanup)
+
+	tests := []struct {
+		name     string
+		args     []string
+		exitCode int
+	}{
+		{
+			name:     "Sandbox",
+			args:     []string{"--force", "--sandbox", testDir, c.env.ImagePath},
+			exitCode: 0,
+		},
+		{
+			name:     "UpdateWithoutSandboxFlag",
+			args:     []string{"--update", testDir, c.env.ImagePath},
+			exitCode: 255,
+		},
+		{
+			name:     "UpdateWithBadSandboxpPath",
+			args:     []string{"--update", "--sandbox", badSandbox, c.env.ImagePath},
+			exitCode: 255,
+		},
+		{
+			name:     "UpdateWithFileAsSandbox",
+			args:     []string{"--update", "--sandbox", c.env.ImagePath, c.env.ImagePath},
+			exitCode: 255,
+		},
+		{
+			name:     "UpdateSandbox",
+			args:     []string{"--update", "--sandbox", testDir, c.env.ImagePath},
+			exitCode: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(tt.exitCode),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := imgBuildTests{
@@ -978,5 +1030,6 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		"from":                            c.buildFrom,                 // builds from definition file and URI
 		"multistage":                      c.buildMultiStageDefinition, // multistage build from definition templates
 		"non-root build":                  c.nonRootBuild,              // build sifs from non-root
+		"build and update sandbox":        c.buildUpdateSandbox,        // build/update sandbox
 	})
 }
