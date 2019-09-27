@@ -845,8 +845,9 @@ if [ "$host" = "unix" ]; then
 	RPMSPEC=singularity.spec
 	echo "=> generating $RPMSPEC ..."
 	rm -f $sourcedir/$RPMSPEC
-	v="`echo "${package_version}" | tr - .`"
-	sed "s/@PACKAGE_VERSION@/${v}/;s/@PACKAGE_RELEASE@/$release/" $sourcedir/dist/rpm/$RPMSPEC.in >$sourcedir/$RPMSPEC
+	package_rpm_version="`echo "${short_version}" | tr - .`"
+	sed "s/@PACKAGE_VERSION@/${short_version}/;s/@PACKAGE_RPM_VERSION@/${package_rpm_version}/;s/@PACKAGE_RELEASE@/${release_info}/" \
+		$sourcedir/dist/rpm/$RPMSPEC.in >$sourcedir/$RPMSPEC
 fi
 
 
