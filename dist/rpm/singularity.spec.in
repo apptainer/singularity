@@ -29,12 +29,12 @@
 
 Summary: Application and environment virtualization
 Name: singularity
-Version: @PACKAGE_VERSION@
+Version: @PACKAGE_RPM_VERSION@
 Release: @PACKAGE_RELEASE@%{?dist}
 # https://spdx.org/licenses/BSD-3-Clause-LBNL.html
 License: BSD-3-Clause-LBNL
 URL: https://www.sylabs.io/singularity/
-Source: %{name}-%{version}.tar.gz
+Source: %{name}-@PACKAGE_VERSION@.tar.gz
 ExclusiveOS: linux
 # RPM_BUILD_ROOT wasn't being set ... for some reason
 %if "%{sles_version}" == "11"
