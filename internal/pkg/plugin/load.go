@@ -76,7 +76,9 @@ func Initialize(path string) (*pluginapi.Plugin, error) {
 	}
 
 	reg := registrar{pl.Name}
-	pl.Initialize(reg)
+	if err := pl.Initialize(reg); err != nil {
+		return nil, fmt.Errorf("could not initialize plugin: %v", err)
+	}
 	return pl, nil
 }
 

@@ -43,7 +43,7 @@ type Plugin struct {
 // Initializer is an interface which stores the object of a plugin's implementation. The Initialize
 // method allows the plugin to register its functions with the Runtime to be called later.
 type Initializer interface {
-	Initialize(Registry)
+	Initialize(Registry) error
 }
 
 // Registry exposes functions to a plugin during Initialize()

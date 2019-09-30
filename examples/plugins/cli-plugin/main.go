@@ -30,7 +30,7 @@ var Plugin = pluginapi.Plugin{
 
 type pluginImplementation struct{}
 
-func (p pluginImplementation) Initialize(r pluginapi.Registry) {
+func (p pluginImplementation) Initialize(r pluginapi.Registry) error {
 	r.AddCLIMutator(pluginapi.CLIMutator{
 		Mutate: func(manager *cmdline.CommandManager) {
 			versionCmd := manager.GetCmd("version")
@@ -106,4 +106,6 @@ func (p pluginImplementation) Initialize(r pluginapi.Registry) {
 			})
 		},
 	})
+
+	return nil
 }

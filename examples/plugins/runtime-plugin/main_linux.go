@@ -30,7 +30,7 @@ var Plugin = pluginapi.Plugin{
 
 type pluginImplementation struct{}
 
-func (p pluginImplementation) Initialize(r pluginapi.Registry) {
+func (p pluginImplementation) Initialize(r pluginapi.Registry) error {
 	r.AddRuntimeMutator(pluginapi.RuntimeMutator{
 		Mutate: func(config *singularity.EngineConfig) {
 			cfg := cgroups.Config{
@@ -55,4 +55,6 @@ func (p pluginImplementation) Initialize(r pluginapi.Registry) {
 			config.SetCgroupsPath(path)
 		},
 	})
+
+	return nil
 }
