@@ -324,9 +324,9 @@ github.com/spf13/cobra/doc
 github.com/spf13/pflag
 # github.com/sylabs/json-resp v0.6.0
 github.com/sylabs/json-resp
-# github.com/sylabs/scs-build-client v0.0.4
+# github.com/sylabs/scs-build-client v0.1.0
 github.com/sylabs/scs-build-client/client
-# github.com/sylabs/scs-key-client v0.3.1-0.20190509220229-bce3b050c4ec
+# github.com/sylabs/scs-key-client v0.4.1
 github.com/sylabs/scs-key-client/client
 # github.com/sylabs/scs-library-client v0.4.4
 github.com/sylabs/scs-library-client/client

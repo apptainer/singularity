@@ -1,10 +1,29 @@
 #!/bin/sh
 
-srcdir=$1
-gotags=$2
-shift 2
+if [ "$1" != "-v2" ] ; then
+	cat 1>&2 <<-EOT
 
-go list -mod=vendor \
+========================================================================
+A non-backwards compatible change has been added to the build system and
+it's necessary to start fresh.
+
+Please remove the build directory ("builddir" by default) and run
+mconfig again.
+========================================================================
+
+	EOT
+	exit 1
+fi
+
+shift
+
+go=$1
+srcdir=$2
+gotags=$3
+
+shift 3
+
+"${go}" list -mod=vendor \
 	-deps \
 	-f '{{ with $d := . }}{{ range $d.GoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ range $d.CgoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ end }}' \
 	-tags "${gotags}" \

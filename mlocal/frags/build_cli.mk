@@ -2,14 +2,14 @@
 
 # singularity build config
 singularity_build_config := $(SOURCEDIR)/internal/pkg/buildcfg/config.go
-$(singularity_build_config): $(BUILDDIR)/config.h
+$(singularity_build_config): $(BUILDDIR)/config.h $(SOURCEDIR)/scripts/go-generate
 	$(V)rm -f $(singularity_build_config)
-	$(V)export BUILDDIR=$(BUILDDIR_ABSPATH) GO_BUILD_TAGS="$(GO_TAGS)" && cd $(SOURCEDIR)/internal/pkg/buildcfg && $(GO) generate
+	$(V) cd $(SOURCEDIR)/internal/pkg/buildcfg && $(SOURCEDIR)/scripts/go-generate
 
 CLEANFILES += $(singularity_build_config)
 
 # singularity
-singularity_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep "$(SOURCEDIR)" "$(GO_TAGS)" "$(SOURCEDIR)/cmd/singularity")
+singularity_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep -v2 "$(GO)" "$(SOURCEDIR)" "$(GO_TAGS)" "$(SOURCEDIR)/cmd/singularity")
 
 singularity := $(BUILDDIR)/singularity
 $(singularity): $(singularity_build_config) $(singularity_SOURCE)

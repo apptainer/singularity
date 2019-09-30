@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	stdexec "os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -19,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
@@ -660,49 +660,61 @@ func (c actionTests) RunFromURI(t *testing.T) {
 func (c actionTests) PersistentOverlay(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	var squashfsImage = filepath.Join(c.env.TestDir, "squashfs.simg")
+	require.Filesystem(t, "overlay")
 
-	if _, err := stdexec.LookPath("mkfs.ext3"); err != nil {
-		t.Skip("mkfs.ext3 not found")
-	}
+	require.Command(t, "mkfs.ext3")
+	require.Command(t, "mksquashfs")
+	require.Command(t, "dd")
 
-	dir, err := ioutil.TempDir(c.env.TestDir, "overlay_test")
+	testdir, err := ioutil.TempDir(c.env.TestDir, "persistent-overlay-")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(dir)
 
-	// Create dirfs for squashfs
-	squashDir, err := ioutil.TempDir(c.env.TestDir, "overlay_test")
+	cleanup := func(t *testing.T) {
+		if t.Failed() {
+			t.Logf("Not removing directory %s for test %s", testdir, t.Name())
+			return
+		}
+		err := os.RemoveAll(testdir)
+		if err != nil {
+			t.Logf("Error while removing directory %s for test %s: %#v", testdir, t.Name(), err)
+		}
+	}
+	// sandbox overlay implies creation of upper/work directories by
+	// Singularity, so we would need privileges to delete the test
+	// directory correctly
+	defer e2e.Privileged(cleanup)
+
+	squashfsImage := filepath.Join(testdir, "squashfs.simg")
+	ext3Img := filepath.Join(testdir, "ext3_fs.img")
+	sandboxImage := filepath.Join(testdir, "sandbox")
+
+	// create an overlay directory
+	dir, err := ioutil.TempDir(testdir, "overlay-dir-")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(squashDir)
 
-	content := []byte("temporary file's content")
-	tmpfile, err := ioutil.TempFile(squashDir, "bogus")
+	// create root directory for squashfs image
+	squashDir, err := ioutil.TempDir(testdir, "root-squash-dir-")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := tmpfile.Write(content); err != nil {
-		t.Fatal(err)
-	}
-	if err := tmpfile.Close(); err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(tmpfile.Name())
-	bogusFile := filepath.Base(tmpfile.Name())
 
+	squashMarkerFile := "squash_marker"
+	if err := fs.Touch(filepath.Join(squashDir, squashMarkerFile)); err != nil {
+		t.Fatal(err)
+	}
+
+	// create the squashfs overlay image
 	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
-	defer os.RemoveAll(squashfsImage)
 
-	ext3Img := filepath.Join(c.env.TestDir, "ext3_fs.img")
-
-	//  Create the overlay ext3 fs
-	cmd = exec.Command("dd", "if=/dev/zero", "of="+ext3Img, "bs=1M", "count=768", "status=none")
+	// create the overlay ext3 image
+	cmd = exec.Command("dd", "if=/dev/zero", "of="+ext3Img, "bs=1M", "count=64", "status=none")
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
@@ -712,11 +724,7 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
 
-	defer os.Remove(ext3Img)
-
-	sandboxImage := filepath.Join(c.env.TestDir, "sandbox")
-
-	// Create a sandbox image from test image
+	// create a sandbox image from test image
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.RootProfile),
@@ -787,7 +795,7 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 		},
 		{
 			name:    "overlay_squashFS_find",
-			argv:    []string{"--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", bogusFile)},
+			argv:    []string{"--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", squashMarkerFile)},
 			exit:    0,
 			profile: e2e.RootProfile,
 		},
@@ -811,7 +819,7 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 		},
 		{
 			name:    "overlay_multiple_find_squashfs",
-			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", bogusFile)},
+			argv:    []string{"--overlay", ext3Img, "--overlay", squashfsImage + ":ro", c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", squashMarkerFile)},
 			exit:    0,
 			profile: e2e.RootProfile,
 		},
@@ -936,6 +944,67 @@ func (c actionTests) actionBasicProfiles(t *testing.T) {
 	}
 }
 
+func (c actionTests) actionNetwork(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	e2e.Privileged(require.Network)
+
+	tests := []struct {
+		name       string
+		profile    e2e.Profile
+		netType    string
+		expectExit int
+	}{
+		{
+			name:       "BridgeNetwork",
+			profile:    e2e.RootProfile,
+			netType:    "bridge",
+			expectExit: 0,
+		},
+		{
+			name:       "PtpNetwork",
+			profile:    e2e.RootProfile,
+			netType:    "ptp",
+			expectExit: 0,
+		},
+		{
+			name:       "UnknownNetwork",
+			profile:    e2e.RootProfile,
+			netType:    "unknown",
+			expectExit: 255,
+		},
+		{
+			name:       "FakerootNetwork",
+			profile:    e2e.FakerootProfile,
+			netType:    "fakeroot",
+			expectExit: 0,
+		},
+		{
+			name:       "NoneNetwork",
+			profile:    e2e.UserProfile,
+			netType:    "none",
+			expectExit: 0,
+		},
+		{
+			name:       "UserBridgeNetwork",
+			profile:    e2e.UserProfile,
+			netType:    "bridge",
+			expectExit: 255,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs("--net", "--network", tt.netType, c.env.ImagePath, "id"),
+			e2e.ExpectExit(tt.expectExit),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := actionTests{
@@ -950,5 +1019,7 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		"shell":                 c.actionShell,         // shell interaction
 		"STDPIPE":               c.STDPipe,             // stdin/stdout pipe
 		"action basic profiles": c.actionBasicProfiles, // run basic action under different profiles
+		"issue 4488":            c.issue4488,           // https://github.com/sylabs/singularity/issues/4488
+		"network":               c.actionNetwork,       // test basic networking
 	})
 }

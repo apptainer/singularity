@@ -254,7 +254,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err != nil {
 			sylog.Fatalf("could not open image %s: %s", engineConfig.GetImage(), err)
 		}
-		defer img.File.Close()
 
 		if !img.HasRootFs() {
 			sylog.Fatalf("no root filesystem found in %s", engineConfig.GetImage())
@@ -276,6 +275,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 			engineConfig.SetEncryptionKey(plaintextKey)
 		}
+
+		// don't defer this call as in all cases it won't be
+		// called before execing starter, so it would leak the
+		// image file descriptor to the container process
+		img.File.Close()
 	}
 
 	engineConfig.SetBindPath(BindPaths)
