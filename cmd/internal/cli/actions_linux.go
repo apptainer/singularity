@@ -202,7 +202,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	starter := filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter-suid")
 	// singularity was compiled with '--without-suid' option
 	if buildcfg.SINGULARITY_SUID_INSTALL == 0 {
-		starter = filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter")
+		UserNamespace = true
 	}
 
 	// use non privileged starter binary:
