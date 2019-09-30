@@ -22,9 +22,9 @@ func (r *commandRegistry) RegisterCommand(hook pluginapi.CommandHook) error {
 	return nil
 }
 
-// AllCommands returns a slice of commands registered by plugins which need to be
-// added to the main SingularityCmd. By simply returning the slice of objects, it's
-// trivial to handle this from the CLI.
+// AllCommands returns a slice of commands registered by plugins which
+// need to be added to the root singularity command. By simply returning
+// the slice of objects, it's trivial to handle this from the CLI.
 func AllCommands() []*cobra.Command {
 	return reg.commandRegistry.Commands
 }
