@@ -16,19 +16,19 @@ type CLIMutator struct {
 	plugin.CLIMutator
 }
 
-var runtimeMutators []RuntimeMutator
+var engineConfigMutators []EngineConfigMutator
 
-type RuntimeMutator struct {
+type EngineConfigMutator struct {
 	PluginName string
-	plugin.RuntimeMutator
+	plugin.EngineConfigMutator
 }
 
 func CLIMutators() []CLIMutator {
 	return cliMutators
 }
 
-func RuntimeMutators() []RuntimeMutator {
-	return runtimeMutators
+func EngineConfigMutators() []EngineConfigMutator {
+	return engineConfigMutators
 }
 
 type registrar struct {
@@ -40,7 +40,10 @@ func (r registrar) AddCLIMutator(m plugin.CLIMutator) error {
 	return nil
 }
 
-func (r registrar) AddRuntimeMutator(m plugin.RuntimeMutator) error {
-	runtimeMutators = append(runtimeMutators, RuntimeMutator{PluginName: r.pluginName, RuntimeMutator: m})
+func (r registrar) AddEngineConfigMutator(m plugin.EngineConfigMutator) error {
+	engineConfigMutators = append(engineConfigMutators, EngineConfigMutator{
+		PluginName:          r.pluginName,
+		EngineConfigMutator: m,
+	})
 	return nil
 }

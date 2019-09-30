@@ -31,7 +31,7 @@ var Plugin = pluginapi.Plugin{
 type pluginImplementation struct{}
 
 func (p pluginImplementation) Initialize(r pluginapi.Registry) error {
-	r.AddRuntimeMutator(pluginapi.RuntimeMutator{
+	r.AddEngineConfigMutator(pluginapi.EngineConfigMutator{
 		Mutate: func(config *singularity.EngineConfig) {
 			cfg := cgroups.Config{
 				Devices: nil,

@@ -50,13 +50,13 @@ type Initializer interface {
 // which allows the plugin to register its plugin hooks.
 type Registry interface {
 	AddCLIMutator(m CLIMutator) error
-	AddRuntimeMutator(m RuntimeMutator) error
+	AddEngineConfigMutator(m EngineConfigMutator) error
 }
 
 type CLIMutator struct {
 	Mutate func(*cmdline.CommandManager)
 }
 
-type RuntimeMutator struct {
+type EngineConfigMutator struct {
 	Mutate func(*singularity.EngineConfig)
 }

@@ -523,7 +523,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
-	for _, m := range plugin.RuntimeMutators() {
+	for _, m := range plugin.EngineConfigMutators() {
 		sylog.Debugf("Running runtime mutator from plugin %s", m.PluginName)
 		m.Mutate(engineConfig)
 	}
