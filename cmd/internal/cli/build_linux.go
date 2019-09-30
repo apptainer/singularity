@@ -349,7 +349,7 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 	// 4. Passphrase envvar
 
 	if PEMFlag.Changed {
-		exists, err := fs.FileExists(encryptionPEMPath)
+		exists, err := fs.PathExists(encryptionPEMPath)
 		if err != nil {
 			sylog.Fatalf("Unable to verify existence of %s: %v", encryptionPEMPath, err)
 		}
@@ -375,7 +375,7 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 	}
 
 	if pemPathEnvOK {
-		exists, err := fs.FileExists(pemPathEnv)
+		exists, err := fs.PathExists(pemPathEnv)
 		if err != nil {
 			sylog.Fatalf("Unable to verify existence of %s: %v", pemPathEnv, err)
 		}

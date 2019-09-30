@@ -176,8 +176,8 @@ func MakeTmpFile(basedir, pattern string, mode os.FileMode) (*os.File, error) {
 	return f, nil
 }
 
-// FileExists simply checks if a path exists.
-func FileExists(path string) (bool, error) {
+// PathExists simply checks if a path exists.
+func PathExists(path string) (bool, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false, nil
 	} else if err != nil {
@@ -191,7 +191,7 @@ func FileExists(path string) (bool, error) {
 // file has permission bits set to the mode prior to umask. To honor umask
 // correctly the resulting file must not exist.
 func CopyFile(from, to string, mode os.FileMode) (err error) {
-	exist, err := FileExists(to)
+	exist, err := PathExists(to)
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func IsWritable(dir string) bool {
 func FirstExistingParent(path string) (string, error) {
 	p := filepath.Clean(path)
 	for p != "/" && p != "." {
-		exists, err := FileExists(p)
+		exists, err := PathExists(p)
 		if err != nil {
 			return "", err
 		}
