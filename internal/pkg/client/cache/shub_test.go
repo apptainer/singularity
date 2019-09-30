@@ -52,7 +52,7 @@ func TestShub(t *testing.T) {
 			c.checkIfCacheDisabled(t)
 
 			if tt.needCleanup {
-				defer c.cleanAllCaches()
+				defer os.RemoveAll(tt.dir)
 			}
 
 			if c.Shub != tt.expected {
