@@ -6,11 +6,9 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"runtime"
-	"strings"
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
@@ -278,28 +276,31 @@ func preRun(cmd *cobra.Command, args []string) {
 	sylabsToken(cmd, args)
 }
 
-// checkTargetCollision makes sure output target doesn't exist, or is ok to overwrite.
-func checkBuildTarget(path string, update bool) bool {
+// checkBuildTarget makes sure output target doesn't exist, or is ok to overwrite.
+// And checks that update flag will update an existing directory.
+func checkBuildTarget(path string) error {
+	if !sandbox && update {
+		return fmt.Errorf("only sandbox update is supported: --sandbox flag is missing")
+	}
 	if f, err := os.Stat(path); err == nil {
 		if update && !f.IsDir() {
-			sylog.Fatalf("Only sandbox updating is supported.")
+			return fmt.Errorf("only sandbox update is supported: %s is not a directory", path)
 		}
 		if !update && !force {
-			reader := bufio.NewReader(os.Stdin)
-			fmt.Print("Build target already exists. Do you want to overwrite? [N/y] ")
-			input, err := reader.ReadString('\n')
+			question := "Build target already exists. Do you want to overwrite? [N/y] "
+			input, err := interactive.AskYNQuestion("n", question)
 			if err != nil {
-				sylog.Fatalf("Error parsing input: %s", err)
+				return fmt.Errorf("while reading the input: %s", err)
 			}
-			if val := strings.Compare(strings.ToLower(input), "y\n"); val == 0 {
-				force = true
-			} else {
-				sylog.Errorf("Stopping build.")
-				return false
+			if input != "y" {
+				return fmt.Errorf("stopping build")
 			}
+			force = true
 		}
+	} else if os.IsNotExist(err) && update && sandbox {
+		return fmt.Errorf("could not update sandbox %s: doesn't exist", path)
 	}
-	return true
+	return nil
 }
 
 // definitionFromSpec is specifically for parsing specs for the remote builder
