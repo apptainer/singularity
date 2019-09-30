@@ -259,7 +259,7 @@ var buildCmd = &cobra.Command{
 	Long:             docs.BuildLong,
 	Example:          docs.BuildExample,
 	PreRun:           preRun,
-	Run:              run,
+	Run:              runBuild,
 	TraverseChildren: true,
 }
 
