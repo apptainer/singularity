@@ -270,7 +270,7 @@ func ExecuteSingularity() {
 
 // GenBashCompletionFile
 func GenBashCompletion(w io.Writer) error {
-	return singularityCmd.GenBashCompletion(fn)
+	return singularityCmd.GenBashCompletion(w)
 }
 
 // TraverseParentsUses walks the parent commands and outputs a properly formatted use string
