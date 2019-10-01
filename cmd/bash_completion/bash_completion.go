@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,7 +13,15 @@ import (
 )
 
 func main() {
-	if err := cli.SingularityCmd.GenBashCompletionFile(os.Args[1]); err != nil {
+	fh, err := os.Create(os.Args[1])
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer fh.Close()
+
+	if err := cli.GenBashCompletion(fh); err != nil {
 		fmt.Println(err)
 		return
 	}

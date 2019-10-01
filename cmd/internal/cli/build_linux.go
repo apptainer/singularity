@@ -85,7 +85,7 @@ func fakerootExec(cmdArgs []string) {
 	sylog.Fatalf("%s", err)
 }
 
-func run(cmd *cobra.Command, args []string) {
+func runBuild(cmd *cobra.Command, args []string) {
 	buildFormat := "sif"
 	if sandbox {
 		buildFormat = "sandbox"

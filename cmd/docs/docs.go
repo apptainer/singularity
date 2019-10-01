@@ -21,15 +21,15 @@ func assertAccess(dir string) {
 	}
 }
 
-func markdownDocs(outDir string) {
+func markdownDocs(rootCmd *cobra.Command, outDir string) {
 	assertAccess(outDir)
 	sylog.Infof("Creating Singularity markdown docs at %s\n", outDir)
-	if err := doc.GenMarkdownTree(cli.SingularityCmd, outDir); err != nil {
+	if err := doc.GenMarkdownTree(rootCmd, outDir); err != nil {
 		sylog.Fatalf("Failed to create markdown docs for singularity\n")
 	}
 }
 
-func manDocs(outDir string) {
+func manDocs(rootCmd *cobra.Command, outDir string) {
 	assertAccess(outDir)
 	sylog.Infof("Creating Singularity man pages at %s\n", outDir)
 	header := &doc.GenManHeader{
@@ -38,15 +38,15 @@ func manDocs(outDir string) {
 	}
 
 	// works recursively on all sub-commands (thanks bauerm97)
-	if err := doc.GenManTree(cli.SingularityCmd, header, outDir); err != nil {
+	if err := doc.GenManTree(rootCmd, header, outDir); err != nil {
 		sylog.Fatalf("Failed to create man pages for singularity\n")
 	}
 }
 
-func rstDocs(outDir string) {
+func rstDocs(rootCmd *cobra.Command, outDir string) {
 	assertAccess(outDir)
 	sylog.Infof("Creating Singularity RST docs at %s\n", outDir)
-	if err := doc.GenReSTTreeCustom(cli.SingularityCmd, outDir, func(a string) string {
+	if err := doc.GenReSTTreeCustom(rootCmd, outDir, func(a string) string {
 		return ""
 	}, func(name, ref string) string {
 		return fmt.Sprintf(":ref:`%s <%s>`", name, ref)
@@ -63,13 +63,14 @@ func main() {
 		Use:       "makeDocs {markdown | man | rst}",
 		Short:     "Generates Singularity documentation",
 		Run: func(cmd *cobra.Command, args []string) {
+			rootCmd := cli.RootCmd()
 			switch args[0] {
 			case "markdown":
-				markdownDocs(dir)
+				markdownDocs(rootCmd, dir)
 			case "man":
-				manDocs(dir)
+				manDocs(rootCmd, dir)
 			case "rst":
-				rstDocs(dir)
+				rstDocs(rootCmd, dir)
 			default:
 				sylog.Fatalf("Invalid output type %s\n", args[0])
 			}
