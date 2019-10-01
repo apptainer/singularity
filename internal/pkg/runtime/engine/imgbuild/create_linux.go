@@ -7,6 +7,7 @@ package imgbuild
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net"
 	"net/rpc"
@@ -39,7 +40,7 @@ import (
 //
 // Note that imgbuild engine is usually called by root user or by fakeroot engine, so technically this
 // method may already be run with escalated privileges.
-func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
+func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn net.Conn) error {
 	if e.CommonConfig.EngineName != imgbuildConfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}

@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -64,7 +65,7 @@ func getState(containerID string) (*ociruntime.State, error) {
 	return &engineConfig.State, nil
 }
 
-func exitContainer(containerID string, delete bool) {
+func exitContainer(ctx context.Context, containerID string, delete bool) {
 	state, err := getState(containerID)
 	if err != nil {
 		if !delete {
@@ -79,7 +80,7 @@ func exitContainer(containerID string, delete bool) {
 	}
 
 	if delete {
-		if err := OciDelete(containerID); err != nil {
+		if err := OciDelete(ctx, containerID); err != nil {
 			sylog.Errorf("%s", err)
 		}
 	}

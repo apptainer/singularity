@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
@@ -15,7 +16,7 @@ import (
 )
 
 // OciDelete deletes container resources
-func OciDelete(containerID string) error {
+func OciDelete(ctx context.Context, containerID string) error {
 	engineConfig, err := getEngineConfig(containerID)
 	if err != nil {
 		return err
@@ -38,7 +39,7 @@ func OciDelete(containerID string) error {
 	hooks := engineConfig.OciConfig.Hooks
 	if hooks != nil {
 		for _, h := range hooks.Poststop {
-			if err := exec.Hook(&h, &engineConfig.State.State); err != nil {
+			if err := exec.Hook(ctx, &h, &engineConfig.State.State); err != nil {
 				sylog.Warningf("%s", err)
 			}
 		}

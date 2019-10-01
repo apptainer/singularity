@@ -6,6 +6,7 @@
 package fakeroot
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -135,7 +136,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 }
 
 // CreateContainer does nothing for the fakeroot engine.
-func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
+func (e *EngineOperations) CreateContainer(context.Context, int, net.Conn) error {
 	return nil
 }
 
@@ -250,12 +251,12 @@ func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (sy
 }
 
 // CleanupContainer does nothing for the fakeroot engine.
-func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
+func (e *EngineOperations) CleanupContainer(context.Context, error, syscall.WaitStatus) error {
 	return nil
 }
 
 // PostStartProcess does nothing for the fakeroot engine.
-func (e *EngineOperations) PostStartProcess(pid int) error {
+func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error {
 	return nil
 }
 

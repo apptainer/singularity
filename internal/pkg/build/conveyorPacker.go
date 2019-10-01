@@ -6,6 +6,7 @@
 package build
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
@@ -14,13 +15,13 @@ import (
 
 // Conveyor is responsible for downloading from remote sources (library, shub, docker...).
 type Conveyor interface {
-	Get(*types.Bundle) error
+	Get(context.Context, *types.Bundle) error
 }
 
 // Packer is the type which is responsible for installing the chroot directory,
 // metadata directory, and potentially other files/directories within the Bundle.
 type Packer interface {
-	Pack() (*types.Bundle, error)
+	Pack(context.Context) (*types.Bundle, error)
 }
 
 // ConveyorPacker describes an interface that a ConveyorPacker type must implement.

@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -24,14 +25,14 @@ type ScratchConveyorPacker struct {
 }
 
 // Get just stores the source
-func (c *ScratchConveyor) Get(b *types.Bundle) (err error) {
+func (c *ScratchConveyor) Get(ctx context.Context, b *types.Bundle) (err error) {
 	c.b = b
 
 	return nil
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *ScratchConveyorPacker) Pack() (b *types.Bundle, err error) {
+func (cp *ScratchConveyorPacker) Pack(context.Context) (b *types.Bundle, err error) {
 	err = cp.insertBaseEnv()
 	if err != nil {
 		return nil, fmt.Errorf("while inserting base environment: %v", err)
