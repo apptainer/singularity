@@ -6,6 +6,8 @@
 package cli
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
@@ -182,7 +184,9 @@ var OciRunCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                EnsureRootPriv,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.OciRun(args[0], &ociArgs); err != nil {
+		ctx := context.TODO()
+
+		if err := singularity.OciRun(ctx, args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -214,7 +218,9 @@ var OciDeleteCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                EnsureRootPriv,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.OciDelete(args[0]); err != nil {
+		ctx := context.TODO()
+
+		if err := singularity.OciDelete(ctx, args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -272,7 +278,9 @@ var OciAttachCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                EnsureRootPriv,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.OciAttach(args[0]); err != nil {
+		ctx := context.TODO()
+
+		if err := singularity.OciAttach(ctx, args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},

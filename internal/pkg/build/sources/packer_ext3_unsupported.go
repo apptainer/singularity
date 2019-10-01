@@ -8,12 +8,13 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 // Pack puts relevant objects in a Bundle!
-func (p *Ext3Packer) Pack() (*types.Bundle, error) {
+func (p *Ext3Packer) Pack(context.Context) (*types.Bundle, error) {
 	return nil, fmt.Errorf("unsupported on this platform")
 }

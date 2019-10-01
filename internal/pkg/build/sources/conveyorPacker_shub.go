@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 
@@ -22,7 +23,7 @@ type ShubConveyorPacker struct {
 }
 
 // Get downloads container from Singularityhub.
-func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
+func (cp *ShubConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Shub")
 
 	cp.b = b

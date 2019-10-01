@@ -6,6 +6,7 @@
 package imgbuild
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -77,12 +78,12 @@ func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (sy
 }
 
 // CleanupContainer does nothing for imgbuild engine.
-func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
+func (e *EngineOperations) CleanupContainer(context.Context, error, syscall.WaitStatus) error {
 	return nil
 }
 
 // PostStartProcess does nothing for imgbuild engine.
-func (e *EngineOperations) PostStartProcess(pid int) error {
+func (e *EngineOperations) PostStartProcess(context.Context, int) error {
 	return nil
 }
 

@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -113,8 +114,8 @@ func printProgress(totalSize int64, r io.Reader, w io.Writer) error {
 
 // OrasPull will download the image specified by the provided oci reference and store
 // it at the location specified by file, it will use credentials if supplied
-func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *ocitypes.DockerAuthConfig) error {
-	sum, err := oras.ImageSHA(ref, ociAuth)
+func OrasPull(ctx context.Context, imgCache *cache.Handle, name, ref string, force bool, ociAuth *ocitypes.DockerAuthConfig) error {
+	sum, err := oras.ImageSHA(ctx, ref, ociAuth)
 	if err != nil {
 		return fmt.Errorf("failed to get checksum for %s: %s", ref, err)
 	}
@@ -174,20 +175,20 @@ func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *oci
 }
 
 // OciPull will build a SIF image from the specified oci URI
-func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCleanUp bool) error {
+func OciPull(ctx context.Context, imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCleanUp bool) error {
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify:    noHTTPS,
 		DockerInsecureSkipTLSVerify: noHTTPS,
 		DockerAuthConfig:            ociAuth,
 	}
 
-	sum, err := ociclient.ImageSHA(imageURI, sysCtx)
+	sum, err := ociclient.ImageSHA(ctx, imageURI, sysCtx)
 	if err != nil {
 		return fmt.Errorf("failed to get checksum for %s: %s", imageURI, err)
 	}
 
 	if imgCache.IsDisabled() {
-		if err := convertDockerToSIF(imgCache, imageURI, name, tmpDir, noHTTPS, noCleanUp, ociAuth); err != nil {
+		if err := convertDockerToSIF(ctx, imgCache, imageURI, name, tmpDir, noHTTPS, noCleanUp, ociAuth); err != nil {
 			return fmt.Errorf("while building SIF from layers: %v", err)
 		}
 	} else {
@@ -202,7 +203,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 			sylog.Infof("Converting OCI blobs to SIF format")
 			go interruptCleanup(imgName)
 
-			if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, noCleanUp, ociAuth); err != nil {
+			if err := convertDockerToSIF(ctx, imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, noCleanUp, ociAuth); err != nil {
 				return fmt.Errorf("while building SIF from layers: %v", err)
 			}
 			sylog.Infof("Build complete: %s", name)
@@ -230,7 +231,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 	return nil
 }
 
-func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir string, noHTTPS, noCleanUp bool, authConf *ocitypes.DockerAuthConfig) error {
+func convertDockerToSIF(ctx context.Context, imgCache *cache.Handle, image, cachedImgPath, tmpDir string, noHTTPS, noCleanUp bool, authConf *ocitypes.DockerAuthConfig) error {
 	if imgCache == nil {
 		return fmt.Errorf("image cache is undefined")
 	}
@@ -255,7 +256,7 @@ func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir str
 		return fmt.Errorf("unable to create new build: %v", err)
 	}
 
-	return b.Full()
+	return b.Full(ctx)
 }
 
 func openOutputImage(path string) (*os.File, error) {

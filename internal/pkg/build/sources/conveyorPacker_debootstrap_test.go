@@ -6,6 +6,7 @@
 package sources_test
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -42,7 +43,7 @@ func TestDebootstrapConveyor(t *testing.T) {
 
 	cp := sources.DebootstrapConveyorPacker{}
 
-	err = cp.Get(b)
+	err = cp.Get(context.Background(), b)
 	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
@@ -75,14 +76,14 @@ func TestDebootstrapPacker(t *testing.T) {
 
 	cp := sources.DebootstrapConveyorPacker{}
 
-	err = cp.Get(b)
+	err = cp.Get(context.Background(), b)
 	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("Debootstrap Get failed: %v", err)
 	}
 
-	_, err = cp.Pack()
+	_, err = cp.Pack(context.Background())
 	if err != nil {
 		t.Fatalf("Debootstrap Pack failed: %v", err)
 	}

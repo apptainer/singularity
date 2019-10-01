@@ -7,6 +7,7 @@ package sypgp
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"io/ioutil"
 	"log"
@@ -83,7 +84,7 @@ func TestSearchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			if err := SearchPubkey(srv.Client(), tt.search, tt.uri, tt.authToken, false); (err != nil) != tt.wantErr {
+			if err := SearchPubkey(context.Background(), srv.Client(), tt.search, tt.uri, tt.authToken, false); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
@@ -120,7 +121,7 @@ func TestFetchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			el, err := FetchPubkey(srv.Client(), tt.fingerprint, tt.uri, tt.authToken, false)
+			el, err := FetchPubkey(context.Background(), srv.Client(), tt.fingerprint, tt.uri, tt.authToken, false)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("unexpected error: %v", err)
 				return
@@ -195,7 +196,7 @@ func TestPushPubkey(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms.code = tt.code
 
-			if err := PushPubkey(srv.Client(), testEntity, tt.uri, tt.authToken); (err != nil) != tt.wantErr {
+			if err := PushPubkey(context.Background(), srv.Client(), testEntity, tt.uri, tt.authToken); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})

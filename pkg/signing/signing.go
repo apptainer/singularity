@@ -7,6 +7,7 @@ package signing
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha512"
 	"encoding/binary"
 	"encoding/hex"
@@ -331,8 +332,8 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 // will return true if the container is signed. Also returns a error
 // if one occures, eg. "the container is not signed", or "container is
 // signed by a unknown signer".
-func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string) (bool, error) {
-	_, noLocalKey, err := Verify(cpath, keyServerURI, id, isGroup, authToken, false, false)
+func IsSigned(ctx context.Context, cpath, keyServerURI string, id uint32, isGroup bool, authToken string) (bool, error) {
+	_, noLocalKey, err := Verify(ctx, cpath, keyServerURI, id, isGroup, authToken, false, false)
 	if err != nil {
 		return false, fmt.Errorf("unable to verify container: %s", cpath)
 	}
@@ -351,7 +352,7 @@ func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken str
 // from a key server if access is enabled, or if localVerify is false. Returns
 // a string of formatted output, or json (if jsonVerify is true), and true, if
 // theres no local key matching a signers entity.
-func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken string, localVerify, jsonVerify bool) (string, bool, error) {
+func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup bool, authToken string, localVerify, jsonVerify bool) (string, bool, error) {
 	keyring := sypgp.NewHandle("")
 
 	notLocalKey := false
@@ -413,7 +414,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		}
 
 		// (1) try to get identity of signer
-		i, local, err := getSignerIdentity(keyring, v, block, data, fingerprint, keyServiceURI, authToken, localVerify)
+		i, local, err := getSignerIdentity(ctx, keyring, v, block, data, fingerprint, keyServiceURI, authToken, localVerify)
 		if err != nil {
 			// use [MISSING] if we get an error we expect
 			if err == errNotFound || err == errNotFoundLocal {
@@ -489,7 +490,7 @@ func getFirstIdentity(e *openpgp.Entity) string {
 	return ""
 }
 
-func getSignerIdentity(keyring *sypgp.Handle, v *sif.Descriptor, block *clearsign.Block, data []byte, fingerprint, keyServiceURI, authToken string, local bool) (string, bool, error) {
+func getSignerIdentity(ctx context.Context, keyring *sypgp.Handle, v *sif.Descriptor, block *clearsign.Block, data []byte, fingerprint, keyServiceURI, authToken string, local bool) (string, bool, error) {
 	// load the public keys available locally from the cache
 	elist, err := keyring.LoadPubKeyring()
 	if err != nil {
@@ -516,7 +517,7 @@ func getSignerIdentity(keyring *sypgp.Handle, v *sif.Descriptor, block *clearsig
 
 	// download the key
 	sylog.Verbosef("Key not found in local keyring, checking remote keystore: %s\n", fingerprint[32:])
-	netlist, err := sypgp.FetchPubkey(http.DefaultClient, fingerprint, keyServiceURI, authToken, true)
+	netlist, err := sypgp.FetchPubkey(ctx, http.DefaultClient, fingerprint, keyServiceURI, authToken, true)
 	if err != nil {
 		return "", false, errNotFound
 	}

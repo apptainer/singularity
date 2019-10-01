@@ -24,7 +24,7 @@ import (
 )
 
 // unpackRootfs extracts all of the layers of the given image reference into the rootfs of the provided bundle
-func unpackRootfs(b *sytypes.Bundle, tmpfsRef types.ImageReference, sysCtx *types.SystemContext) (err error) {
+func unpackRootfs(ctx context.Context, b *sytypes.Bundle, tmpfsRef types.ImageReference, sysCtx *types.SystemContext) (err error) {
 	var mapOptions umocilayer.MapOptions
 
 	// Allow unpacking as non-root
@@ -50,11 +50,11 @@ func unpackRootfs(b *sytypes.Bundle, tmpfsRef types.ImageReference, sysCtx *type
 	}
 
 	// Obtain the manifest
-	imageSource, err := tmpfsRef.NewImageSource(context.Background(), sysCtx)
+	imageSource, err := tmpfsRef.NewImageSource(ctx, sysCtx)
 	if err != nil {
 		return fmt.Errorf("error creating image source: %s", err)
 	}
-	manifestData, mediaType, err := imageSource.GetManifest(context.Background(), nil)
+	manifestData, mediaType, err := imageSource.GetManifest(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("error obtaining manifest source: %s", err)
 	}
@@ -68,5 +68,5 @@ func unpackRootfs(b *sytypes.Bundle, tmpfsRef types.ImageReference, sysCtx *type
 	os.RemoveAll(b.RootfsPath)
 
 	// Unpack root filesystem
-	return umocilayer.UnpackRootfs(context.Background(), engineExt, b.RootfsPath, manifest, &mapOptions)
+	return umocilayer.UnpackRootfs(ctx, engineExt, b.RootfsPath, manifest, &mapOptions)
 }
