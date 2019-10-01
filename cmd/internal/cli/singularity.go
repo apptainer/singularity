@@ -250,7 +250,7 @@ func ExecuteSingularity() {
 		m.Mutate(cmdManager)
 	}
 
-	if cmd, err := SingularityCmd.ExecuteC(); err != nil {
+	if cmd, err := singularityCmd.ExecuteC(); err != nil {
 		name := cmd.Name()
 		switch err.(type) {
 		case cmdline.FlagError:
