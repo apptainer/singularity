@@ -7,6 +7,7 @@ package regressions
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 
@@ -56,6 +57,51 @@ func (c *regressionsTests) issue4203(t *testing.T) {
 	)
 }
 
+// This test will build a sandbox, as a non-root user from a dockerhub image
+// that contains a single folder and file with `000` permissions.
+// To verify we force files to be accessible / moveable / removable by the user
+// we check for `700` and `400` permissions on the folder and file respectively.
+func (c *regressionsTests) issue4524(t *testing.T) {
+	sandbox := filepath.Join(c.env.TestDir, "issue_4524")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithPrivileges(false),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--sandbox", sandbox, "docker://sylabsio/issue4524"),
+		e2e.PostRun(func(t *testing.T) {
+
+			// If we failed to build the sandbox completely, leave what we have for
+			// investigation.
+			if t.Failed() {
+				t.Logf("Test %s failed, not removing directory %s", t.Name(), sandbox)
+				return
+			}
+
+			if !e2e.PathPerms(t, path.Join(sandbox, "directory"), 0700) {
+				t.Error("Expected 0700 permissions on 000 test directory in rootless sandbox")
+			}
+			if !e2e.PathPerms(t, path.Join(sandbox, "file"), 0600) {
+				t.Error("Expected 0600 permissions on 000 test file in rootless sandbox")
+			}
+
+			// If the permissions aren't as we expect them to be, leave what we have for
+			// investigation.
+			if t.Failed() {
+				t.Logf("Test %s failed, not removing directory %s", t.Name(), sandbox)
+				return
+			}
+
+			err := os.RemoveAll(sandbox)
+			if err != nil {
+				t.Logf("Cannot remove sandbox directory: %#v", err)
+			}
+
+		}),
+		e2e.ExpectExit(0),
+	)
+}
+
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &regressionsTests{
@@ -63,7 +109,7 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
-		// https://github.com/sylabs/singularity/issues/4203
-		t.Run("Issue4203", c.issue4203)
+		t.Run("Issue 4203", c.issue4203) // https://github.com/sylabs/singularity/issues/4203
+		t.Run("Issue 4524", c.issue4524) // https://github.com/sylabs/singularity/issues/4524
 	}
 }
