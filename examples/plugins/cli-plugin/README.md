@@ -72,4 +72,4 @@ And inspect a SIF file before installing:
     Name: sylabs.io/cli-plugin
     Description: This is a short test CLI plugin for Singularity
     Author: Sylabs Team
-    Version: 0.0.1
+    Version: 0.1.0

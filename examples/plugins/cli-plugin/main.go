@@ -21,7 +21,7 @@ var Plugin = pluginapi.Plugin{
 	Manifest: pluginapi.Manifest{
 		Name:        "sylabs.io/cli-plugin",
 		Author:      "Sylabs Team",
-		Version:     "0.0.1",
+		Version:     "0.1.0",
 		Description: "This is a short test CLI plugin for Singularity",
 	},
 
