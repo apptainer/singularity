@@ -8,7 +8,7 @@ package plugin
 import (
 	"github.com/spf13/pflag"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 )
 
 type flagHook struct {

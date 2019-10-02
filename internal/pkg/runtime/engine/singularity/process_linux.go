@@ -28,7 +28,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
