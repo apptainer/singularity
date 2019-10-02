@@ -71,5 +71,5 @@ And inspect a SIF file before installing:
     $ singularity plugin inspect examples/plugins/cli-plugin/cli-plugin.sif
     Name: sylabs.io/cli-plugin
     Description: This is a short test CLI plugin for Singularity
-    Author: Toxic Team
-    Version: 0.0.2
+    Author: Sylabs Team
+    Version: 0.0.1
