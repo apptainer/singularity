@@ -13,26 +13,25 @@ import (
 
 // actionflags.go contains flag variables for action-like commands to draw from
 var (
-	AppName           string
-	BindPaths         []string
-	HomePath          string
-	OverlayPath       []string
-	ScratchPath       []string
-	WorkdirPath       string
-	PwdPath           string
-	ShellPath         string
-	Hostname          string
-	Network           string
-	NetworkArgs       []string
-	DNS               string
-	Security          []string
-	CgroupsPath       string
-	VMRAM             string
-	VMCPU             string
-	VMIP              string
-	ContainLibsPath   []string
-	encryptionPEMPath string
-	FuseMount         []string
+	AppName         string
+	BindPaths       []string
+	HomePath        string
+	OverlayPath     []string
+	ScratchPath     []string
+	WorkdirPath     string
+	PwdPath         string
+	ShellPath       string
+	Hostname        string
+	Network         string
+	NetworkArgs     []string
+	DNS             string
+	Security        []string
+	CgroupsPath     string
+	VMRAM           string
+	VMCPU           string
+	VMIP            string
+	ContainLibsPath []string
+	FuseMount       []string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -50,7 +49,6 @@ var (
 	NoNet           bool
 	IsSyOS          bool
 	disableCache    bool
-	enterPassphrase bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -298,24 +296,6 @@ var actionContainLibsFlag = cmdline.Flag{
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
-// --passphrase
-var actionPassphraseFlag = cmdline.Flag{
-	ID:           "actionEncryptionPassphrase",
-	Value:        &enterPassphrase,
-	DefaultValue: false,
-	Name:         "passphrase",
-	Usage:        "enter a passphrase for an encrypted contaner",
-}
-
-// --pem-path
-var actionPEMPathFlag = cmdline.Flag{
-	ID:           "actionEncryptionPEMPath",
-	Value:        &encryptionPEMPath,
-	DefaultValue: "",
-	Name:         "pem-path",
-	Usage:        "enter an path to a PEM formated RSA key for an encrypted container",
-}
-
 // --fusemount, hidden for now while experimental
 var actionFuseMountFlag = cmdline.Flag{
 	ID:           "actionFuseMountFlag",
@@ -326,28 +306,6 @@ var actionFuseMountFlag = cmdline.Flag{
 	EnvKeys:      []string{"FUSESPEC"},
 	ExcludedOS:   []string{cmdline.Darwin},
 	Hidden:       true,
-}
-
-// hidden flags to handle docker credentials
-var actionDockerUsernameFlag = cmdline.Flag{
-	ID:           "actionDockerUsernameFlag",
-	Value:        &dockerUsername,
-	DefaultValue: "",
-	Name:         "docker-username",
-	Usage:        "specify a username for docker authentication",
-	Hidden:       true,
-	EnvKeys:      []string{"DOCKER_USERNAME"},
-}
-
-// --docker-password
-var actionDockerPasswordFlag = cmdline.Flag{
-	ID:           "actionDockerPasswordFlag",
-	Value:        &dockerPassword,
-	DefaultValue: "",
-	Name:         "docker-password",
-	Usage:        "specify a password for docker authentication",
-	Hidden:       true,
-	EnvKeys:      []string{"DOCKER_PASSWORD"},
 }
 
 // hidden flag to handle SINGULARITY_TMPDIR environment variable
@@ -474,26 +432,6 @@ var actionNoInitFlag = cmdline.Flag{
 	Usage:        "do NOT start shim process with --pid",
 	EnvKeys:      []string{"NOSHIMINIT"},
 	ExcludedOS:   []string{cmdline.Darwin},
-}
-
-// --nohttps
-var actionNoHTTPSFlag = cmdline.Flag{
-	ID:           "actionNoHTTPSFlag",
-	Value:        &noHTTPS,
-	DefaultValue: false,
-	Name:         "nohttps",
-	Usage:        "do NOT use HTTPS, for communicating with local docker registry",
-	EnvKeys:      []string{"NOHTTPS"},
-}
-
-// --docker-login
-var actionDockerLoginFlag = cmdline.Flag{
-	ID:           "actionDockerLoginFlag",
-	Value:        &dockerLogin,
-	DefaultValue: false,
-	Name:         "docker-login",
-	Usage:        "login to a Docker Repository interactively",
-	EnvKeys:      []string{"DOCKER_LOGIN"},
 }
 
 // hidden flag to disable nvidia bindings when 'always use nv = yes'
@@ -672,55 +610,55 @@ func init() {
 
 	initPlatformDefaults()
 
+	cmdManager.RegisterFlagForCmd(&actionAddCapsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionAllowSetuidFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionAppFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&actionBindFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionHomeFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionOverlayFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionScratchFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionWorkdirFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionShellFlag, ShellCmd)
-	cmdManager.RegisterFlagForCmd(&actionHostnameFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionNetworkFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionNetworkArgsFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionDNSFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionSecurityFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionApplyCgroupsFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionVMRAMFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&actionVMCPUFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&actionVMIPFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&actionNONETFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&actionContainLibsFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionFuseMountFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionFakerootFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionDisableCacheFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionTmpDirFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionBindFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionCleanEnvFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionContainFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionContainAllFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionNvidiaFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionWritableFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionWritableTmpfsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionContainFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionContainLibsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionDisableCacheFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionDNSFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionDropCapsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionFakerootFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionFuseMountFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionHomeFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionHostnameFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionIpcNamespaceFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionKeepPrivsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNetNamespaceFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNetworkArgsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNetworkFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNoHomeFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNoInitFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionNoHTTPSFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNONETFlag, actionsCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNoNvidiaFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionVMFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&actionVMErrFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&actionSyOSFlag, ShellCmd)
-	cmdManager.RegisterFlagForCmd(&actionPidNamespaceFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionIpcNamespaceFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionNetNamespaceFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionUtsNamespaceFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionUserNamespaceFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionKeepPrivsFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNoPrivsFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionAddCapsFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionDropCapsFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionAllowSetuidFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNvidiaFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionOverlayFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&commonPromptForPassphraseFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&commonPEMFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionPidNamespaceFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionPwdFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&actionPassphraseFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionPEMPathFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionScratchFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionSecurityFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionShellFlag, ShellCmd)
+	cmdManager.RegisterFlagForCmd(&actionSyOSFlag, ShellCmd)
+	cmdManager.RegisterFlagForCmd(&actionTmpDirFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionUserNamespaceFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionUtsNamespaceFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionVMCPUFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionVMErrFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionVMFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionVMIPFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionVMRAMFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionWorkdirFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionWritableFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionWritableTmpfsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&commonNoHTTPSFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&dockerLoginFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, actionsInstanceCmd...)
 }

@@ -86,13 +86,8 @@ func fakerootExec(cmdArgs []string) {
 }
 
 func runBuild(cmd *cobra.Command, args []string) {
-	buildFormat := "sif"
-	if sandbox {
-		buildFormat = "sandbox"
-	}
-
-	if buildArch != runtime.GOARCH && !remote {
-		sylog.Fatalf("Requested architecture (%s) does not match host (%s). Cannot build locally.", buildArch, runtime.GOARCH)
+	if buildArgs.arch != runtime.GOARCH && !buildArgs.remote {
+		sylog.Fatalf("Requested architecture (%s) does not match host (%s). Cannot build locally.", buildArgs.arch, runtime.GOARCH)
 	}
 
 	dest := args[0]
@@ -103,169 +98,182 @@ func runBuild(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("%s", err)
 	}
 
-	if remote {
-		// building encrypted containers on the remote builder is not currently supported
-		if encrypt {
-			sylog.Fatalf("Building encrypted container with the remote builder is not currently supported.")
-		}
-
-		handleRemoteBuildFlags(cmd)
-
-		// submitting a remote build requires a valid authToken
-		if authToken == "" {
-			sylog.Fatalf("Unable to submit build job: %v", remoteWarning)
-		}
-
-		def, err := definitionFromSpec(spec)
-		if err != nil {
-			sylog.Fatalf("Unable to build from %s: %v", spec, err)
-		}
-
-		if sandbox {
-			// create temporary file to download sif
-			f, err := ioutil.TempFile(tmpDir, "remote-build-")
-			if err != nil {
-				sylog.Fatalf("Could not create temporary directory: %s", err)
-			}
-			os.Remove(f.Name())
-			dest = f.Name()
-
-			// remove downloaded sif
-			defer os.Remove(f.Name())
-
-			// build from sif downloaded in tmp location
-			defer func() {
-				sylog.Debugf("Building sandbox from downloaded SIF")
-				imgCache := getCacheHandle(cache.Config{})
-				if imgCache == nil {
-					sylog.Fatalf("failed to create an image cache handle")
-				}
-
-				d, err := types.NewDefinitionFromURI("localimage" + "://" + dest)
-				if err != nil {
-					sylog.Fatalf("Unable to create definition for sandbox build: %v", err)
-				}
-
-				b, err := build.New(
-					[]types.Definition{d},
-					build.Config{
-						Dest:      args[0],
-						Format:    buildFormat,
-						NoCleanUp: noCleanUp,
-						Opts: types.Options{
-							ImgCache: imgCache,
-							NoCache:  disableCache,
-							TmpDir:   tmpDir,
-							Update:   update,
-							Force:    force,
-						},
-					})
-				if err != nil {
-					sylog.Fatalf("Unable to create build: %v", err)
-				}
-
-				if err = b.Full(); err != nil {
-					sylog.Fatalf("While performing build: %v", err)
-				}
-			}()
-		}
-
-		b, err := remotebuilder.New(dest, libraryURL, def, detached, force, builderURL, authToken, buildArch)
-		if err != nil {
-			sylog.Fatalf("Failed to create builder: %v", err)
-		}
-		err = b.Build(context.TODO())
-		if err != nil {
-			sylog.Fatalf("While performing build: %v", err)
-		}
+	if buildArgs.remote {
+		runBuildRemote(cmd, dest, spec)
 	} else {
-		var keyInfo *crypt.KeyInfo
-		if encrypt || enterPassphrase || cmd.Flags().Lookup("pem-path").Changed {
-			if os.Getuid() != 0 {
-				sylog.Fatalf("You must be root to build an encrypted container")
-			}
-
-			k, err := getEncryptionMaterial(cmd)
-			if err != nil {
-				sylog.Fatalf("While handling encryption material: %v", err)
-			}
-			keyInfo = &k
-		} else {
-			_, passphraseEnvOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PASSPHRASE")
-			_, pemPathEnvOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PEM_PATH")
-			if passphraseEnvOK || pemPathEnvOK {
-				sylog.Warningf("Encryption related env vars found, but --encrypt was not specified. NOT encrypting container.")
-			}
-		}
-
-		imgCache := getCacheHandle(cache.Config{})
-		if imgCache == nil {
-			sylog.Fatalf("Failed to create an image cache handle")
-		}
-
-		if syscall.Getuid() != 0 && !fakeroot && fs.IsFile(spec) && !isImage(spec) {
-			sylog.Fatalf("You must be the root user, however you can use --remote or --fakeroot to build from a Singularity recipe file")
-		}
-
-		err := checkSections()
-		if err != nil {
-			sylog.Fatalf("Could not check build sections: %v", err)
-		}
-
-		authConf, err := makeDockerCredentials(cmd)
-		if err != nil {
-			sylog.Fatalf("While creating Docker credentials: %v", err)
-		}
-
-		// parse definition to determine build source
-		defs, err := build.MakeAllDefs(spec)
-		if err != nil {
-			sylog.Fatalf("Unable to build from %s: %v", spec, err)
-		}
-
-		// only resolve remote endpoints if library is a build source
-		for _, d := range defs {
-			if d.Header["bootstrap"] == "library" {
-				handleBuildFlags(cmd)
-				continue
-			}
-		}
-
-		b, err := build.New(
-			defs,
-			build.Config{
-				Dest:      dest,
-				Format:    buildFormat,
-				NoCleanUp: noCleanUp,
-				Opts: types.Options{
-					ImgCache:          imgCache,
-					TmpDir:            tmpDir,
-					NoCache:           disableCache,
-					Update:            update,
-					Force:             force,
-					Sections:          sections,
-					NoTest:            noTest,
-					NoHTTPS:           noHTTPS,
-					LibraryURL:        libraryURL,
-					LibraryAuthToken:  authToken,
-					DockerAuthConfig:  authConf,
-					EncryptionKeyInfo: keyInfo,
-				},
-			})
-		if err != nil {
-			sylog.Fatalf("Unable to create build: %v", err)
-		}
-
-		if err = b.Full(); err != nil {
-			sylog.Fatalf("While performing build: %v", err)
-		}
+		runBuildLocal(cmd, dest, spec)
 	}
 	sylog.Infof("Build complete: %s", dest)
 }
 
+func runBuildRemote(cmd *cobra.Command, dst, spec string) {
+	// building encrypted containers on the remote builder is not currently supported
+	if buildArgs.encrypt {
+		sylog.Fatalf("Building encrypted container with the remote builder is not currently supported.")
+	}
+
+	handleRemoteBuildFlags(cmd)
+
+	// submitting a remote build requires a valid authToken
+	if authToken == "" {
+		sylog.Fatalf("Unable to submit build job: %v", remoteWarning)
+	}
+
+	def, err := definitionFromSpec(spec)
+	if err != nil {
+		sylog.Fatalf("Unable to build from %s: %v", spec, err)
+	}
+
+	if buildArgs.sandbox {
+		// create temporary file to download sif
+		f, err := ioutil.TempFile(tmpDir, "remote-build-")
+		if err != nil {
+			sylog.Fatalf("Could not create temporary directory: %s", err)
+		}
+		os.Remove(f.Name())
+		dest := f.Name()
+
+		// remove downloaded sif
+		defer os.Remove(f.Name())
+
+		// build from sif downloaded in tmp location
+		defer func() {
+			sylog.Debugf("Building sandbox from downloaded SIF")
+			imgCache := getCacheHandle(cache.Config{})
+			if imgCache == nil {
+				sylog.Fatalf("failed to create an image cache handle")
+			}
+
+			d, err := types.NewDefinitionFromURI("localimage" + "://" + dest)
+			if err != nil {
+				sylog.Fatalf("Unable to create definition for sandbox build: %v", err)
+			}
+
+			b, err := build.New(
+				[]types.Definition{d},
+				build.Config{
+					Dest:      dst,
+					Format:    "sandbox",
+					NoCleanUp: buildArgs.noCleanUp,
+					Opts: types.Options{
+						ImgCache: imgCache,
+						NoCache:  disableCache,
+						TmpDir:   tmpDir,
+						Update:   buildArgs.update,
+						Force:    forceOverwrite,
+					},
+				})
+			if err != nil {
+				sylog.Fatalf("Unable to create build: %v", err)
+			}
+
+			if err = b.Full(); err != nil {
+				sylog.Fatalf("While performing build: %v", err)
+			}
+		}()
+	}
+
+	b, err := remotebuilder.New(dst, buildArgs.libraryURL, def, buildArgs.detached, forceOverwrite, buildArgs.builderURL, authToken, buildArgs.arch)
+	if err != nil {
+		sylog.Fatalf("Failed to create builder: %v", err)
+	}
+	err = b.Build(context.TODO())
+	if err != nil {
+		sylog.Fatalf("While performing build: %v", err)
+	}
+}
+
+func runBuildLocal(cmd *cobra.Command, dst, spec string) {
+	var keyInfo *crypt.KeyInfo
+	if buildArgs.encrypt || promptForPassphrase || cmd.Flags().Lookup("pem-path").Changed {
+		if os.Getuid() != 0 {
+			sylog.Fatalf("You must be root to build an encrypted container")
+		}
+
+		k, err := getEncryptionMaterial(cmd)
+		if err != nil {
+			sylog.Fatalf("While handling encryption material: %v", err)
+		}
+		keyInfo = &k
+	} else {
+		_, passphraseEnvOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PASSPHRASE")
+		_, pemPathEnvOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PEM_PATH")
+		if passphraseEnvOK || pemPathEnvOK {
+			sylog.Warningf("Encryption related env vars found, but --encrypt was not specified. NOT encrypting container.")
+		}
+	}
+
+	imgCache := getCacheHandle(cache.Config{})
+	if imgCache == nil {
+		sylog.Fatalf("Failed to create an image cache handle")
+	}
+
+	if syscall.Getuid() != 0 && !buildArgs.fakeroot && fs.IsFile(spec) && !isImage(spec) {
+		sylog.Fatalf("You must be the root user, however you can use --remote or --fakeroot to build from a Singularity recipe file")
+	}
+
+	err := checkSections()
+	if err != nil {
+		sylog.Fatalf("Could not check build sections: %v", err)
+	}
+
+	authConf, err := makeDockerCredentials(cmd)
+	if err != nil {
+		sylog.Fatalf("While creating Docker credentials: %v", err)
+	}
+
+	// parse definition to determine build source
+	defs, err := build.MakeAllDefs(spec)
+	if err != nil {
+		sylog.Fatalf("Unable to build from %s: %v", spec, err)
+	}
+
+	// only resolve remote endpoints if library is a build source
+	for _, d := range defs {
+		if d.Header["bootstrap"] == "library" {
+			handleBuildFlags(cmd)
+			continue
+		}
+	}
+
+	buildFormat := "sif"
+	if buildArgs.sandbox {
+		buildFormat = "sandbox"
+	}
+
+	b, err := build.New(
+		defs,
+		build.Config{
+			Dest:      dst,
+			Format:    buildFormat,
+			NoCleanUp: buildArgs.noCleanUp,
+			Opts: types.Options{
+				ImgCache:          imgCache,
+				TmpDir:            tmpDir,
+				NoCache:           disableCache,
+				Update:            buildArgs.update,
+				Force:             forceOverwrite,
+				Sections:          buildArgs.sections,
+				NoTest:            buildArgs.noTest,
+				NoHTTPS:           noHTTPS,
+				LibraryURL:        buildArgs.libraryURL,
+				LibraryAuthToken:  authToken,
+				DockerAuthConfig:  &authConf,
+				EncryptionKeyInfo: keyInfo,
+			},
+		})
+	if err != nil {
+		sylog.Fatalf("Unable to create build: %v", err)
+	}
+
+	if err = b.Full(); err != nil {
+		sylog.Fatalf("While performing build: %v", err)
+	}
+}
+
 func checkSections() error {
 	var all, none bool
-	for _, section := range sections {
+	for _, section := range buildArgs.sections {
 		if section == "none" {
 			none = true
 		}
@@ -274,10 +282,10 @@ func checkSections() error {
 		}
 	}
 
-	if all && len(sections) > 1 {
+	if all && len(buildArgs.sections) > 1 {
 		return fmt.Errorf("section specification error: cannot have all and any other option")
 	}
-	if none && len(sections) > 1 {
+	if none && len(buildArgs.sections) > 1 {
 		return fmt.Errorf("section specification error: cannot have none and any other option")
 	}
 
@@ -298,7 +306,7 @@ func handleBuildFlags(cmd *cobra.Command) {
 	// otherwise fall back on regular authtoken and URI behavior
 	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to %v", libraryURL)
+		sylog.Warningf("No default remote in use, falling back to %v", buildArgs.libraryURL)
 		return
 	} else if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
@@ -308,7 +316,7 @@ func handleBuildFlags(cmd *cobra.Command) {
 	if !cmd.Flags().Lookup("library").Changed {
 		uri, err := endpoint.GetServiceURI("library")
 		if err == nil {
-			libraryURL = uri
+			buildArgs.libraryURL = uri
 		} else {
 			sylog.Warningf("Unable to get library service URI: %v", err)
 		}

@@ -13,6 +13,7 @@ import (
 	"path"
 	"text/template"
 
+	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -43,6 +44,15 @@ var (
 		Token:  "",
 		System: true,
 	}
+
+	dockerAuthConfig ocitypes.DockerAuthConfig
+	dockerLogin      bool
+
+	encryptionPEMPath   string
+	promptForPassphrase bool
+	forceOverwrite      bool
+	noHTTPS             bool
+	tmpDir              string
 )
 
 const (
@@ -115,6 +125,88 @@ var singTokenFileFlag = cmdline.Flag{
 	ShortHand:    "t",
 	Usage:        "path to the file holding your sylabs authentication token",
 	Deprecated:   "Use 'singularity remote' to manage remote endpoints and tokens.",
+}
+
+// --docker-username
+var dockerUsernameFlag = cmdline.Flag{
+	ID:           "dockerUsernameFlag",
+	Value:        &dockerAuthConfig.Username,
+	DefaultValue: "",
+	Name:         "docker-username",
+	Usage:        "specify a username for docker authentication",
+	Hidden:       true,
+	EnvKeys:      []string{"DOCKER_USERNAME"},
+}
+
+// --docker-password
+var dockerPasswordFlag = cmdline.Flag{
+	ID:           "dockerPasswordFlag",
+	Value:        &dockerAuthConfig.Password,
+	DefaultValue: "",
+	Name:         "docker-password",
+	Usage:        "specify a password for docker authentication",
+	Hidden:       true,
+	EnvKeys:      []string{"DOCKER_PASSWORD"},
+}
+
+// --docker-login
+var dockerLoginFlag = cmdline.Flag{
+	ID:           "dockerLoginFlag",
+	Value:        &dockerLogin,
+	DefaultValue: false,
+	Name:         "docker-login",
+	Usage:        "login to a Docker Repository interactively",
+	EnvKeys:      []string{"DOCKER_LOGIN"},
+}
+
+// --passphrase
+var commonPromptForPassphraseFlag = cmdline.Flag{
+	ID:           "commonPromptForPassphraseFlag",
+	Value:        &promptForPassphrase,
+	DefaultValue: false,
+	Name:         "passphrase",
+	Usage:        "prompt for an encryption passphrase",
+}
+
+// --pem-path
+var commonPEMFlag = cmdline.Flag{
+	ID:           "actionEncryptionPEMPath",
+	Value:        &encryptionPEMPath,
+	DefaultValue: "",
+	Name:         "pem-path",
+	Usage:        "enter an path to a PEM formated RSA key for an encrypted container",
+}
+
+// -F|--force
+var commonForceFlag = cmdline.Flag{
+	ID:           "commonForceFlag",
+	Value:        &forceOverwrite,
+	DefaultValue: false,
+	Name:         "force",
+	ShortHand:    "F",
+	Usage:        "overwrite an image file if it exists",
+	EnvKeys:      []string{"FORCE"},
+}
+
+// --nohttps
+var commonNoHTTPSFlag = cmdline.Flag{
+	ID:           "commonNoHTTPSFlag",
+	Value:        &noHTTPS,
+	DefaultValue: false,
+	Name:         "nohttps",
+	Usage:        "do NOT use HTTPS with the docker:// transport (useful for local docker registries without a certificate)",
+	EnvKeys:      []string{"NOHTTPS"},
+}
+
+// --tmpdir
+var commonTmpDirFlag = cmdline.Flag{
+	ID:           "commonTmpDirFlag",
+	Value:        &tmpDir,
+	DefaultValue: os.TempDir(),
+	Hidden:       true,
+	Name:         "tmpdir",
+	Usage:        "specify a temporary directory to use for build",
+	EnvKeys:      []string{"TMPDIR"},
 }
 
 func getCurrentUser() *user.User {
