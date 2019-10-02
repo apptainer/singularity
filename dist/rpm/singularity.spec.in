@@ -29,7 +29,7 @@
 
 Summary: Application and environment virtualization
 Name: singularity
-Version: @PACKAGE_RPM_VERSION@
+Version: @PACKAGE_VERSION@
 Release: @PACKAGE_RELEASE@%{?dist}
 # https://spdx.org/licenses/BSD-3-Clause-LBNL.html
 License: BSD-3-Clause-LBNL
@@ -98,7 +98,7 @@ cd $GOPATH/%{singgopath}
 
 # Not all of these parameters currently have an effect, but they might be
 #  used someday.  They are the same parameters as in the configure macro.
-./mconfig -V %{version}-%{release} \
+./mconfig -V %{version}:%{release} \
         --prefix=%{_prefix} \
         --exec-prefix=%{_exec_prefix} \
         --bindir=%{_bindir} \

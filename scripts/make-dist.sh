@@ -11,10 +11,11 @@ if [ ! -f $package_name.spec ]; then
     exit 1
 fi
 
-version=`scripts/get-version`
+version="`sed -n 's/^Version: //p' $package_name.spec`"
+release="`sed -n 's/^Release: \([^%]*\).*/\1/p' $package_name.spec`"
 
-echo " DIST setup VERSION: ${version}"
-echo "${version}" > VERSION
+echo " DIST setup VERSION: ${version}:${release}"
+echo "${version}:${release}" > VERSION
 rmfiles="VERSION"
 tarball="${package_name}-${version}.tar.gz"
 echo " DIST create tarball: $tarball"
