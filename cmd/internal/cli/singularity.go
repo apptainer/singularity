@@ -226,7 +226,7 @@ func getDefaultTokenFile() string {
 // have been properly loaded and initialized
 func initializePlugins() {
 	if err := plugin.InitializeAll(buildcfg.LIBEXECDIR); err != nil {
-		sylog.Warningf("Unable to initialize plugins: %s", err)
+		sylog.Errorf("Unable to initialize plugins: %s", err)
 	}
 }
 
