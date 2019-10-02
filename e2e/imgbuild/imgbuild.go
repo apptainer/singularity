@@ -104,41 +104,48 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tt {
-		dn, cleanup := c.tempDir(t, "build-from")
-		defer cleanup()
+	profiles := []e2e.Profile{e2e.RootProfile, e2e.FakerootProfile}
+	for _, profile := range profiles {
+		profile := profile
 
-		imagePath := path.Join(dn, "sandbox")
+		t.Run(profile.String(), func(t *testing.T) {
+			for _, tc := range tt {
+				dn, cleanup := c.tempDir(t, "build-from")
+				defer cleanup()
 
-		// Pass --sandbox because sandboxes take less time to
-		// build by skipping the SIF creation step.
-		args := []string{"--force", "--sandbox", imagePath, tc.buildSpec}
+				imagePath := path.Join(dn, "sandbox")
 
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tc.name),
-			e2e.WithProfile(e2e.RootProfile),
-			e2e.WithCommand("build"),
-			e2e.WithArgs(args...),
-			e2e.PreRun(func(t *testing.T) {
-				if tc.dependency == "" {
-					return
-				}
+				// Pass --sandbox because sandboxes take less time to
+				// build by skipping the SIF creation step.
+				args := []string{"--force", "--sandbox", imagePath, tc.buildSpec}
 
-				if _, err := exec.LookPath(tc.dependency); err != nil {
-					t.Skipf("%v not found in path", tc.dependency)
-				}
-			}),
-			e2e.PostRun(func(t *testing.T) {
-				if t.Failed() {
-					return
-				}
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tc.name),
+					e2e.WithProfile(profile),
+					e2e.WithCommand("build"),
+					e2e.WithArgs(args...),
+					e2e.PreRun(func(t *testing.T) {
+						if tc.dependency == "" {
+							return
+						}
 
-				defer os.RemoveAll(imagePath)
-				c.env.ImageVerify(t, imagePath)
-			}),
-			e2e.ExpectExit(0),
-		)
+						if _, err := exec.LookPath(tc.dependency); err != nil {
+							t.Skipf("%v not found in path", tc.dependency)
+						}
+					}),
+					e2e.PostRun(func(t *testing.T) {
+						if t.Failed() {
+							return
+						}
+
+						defer os.RemoveAll(imagePath)
+						c.env.ImageVerify(t, imagePath, profile)
+					}),
+					e2e.ExpectExit(0),
+				)
+			}
+		})
 	}
 }
 
@@ -196,7 +203,7 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
-				c.env.ImageVerify(t, imagePath)
+				c.env.ImageVerify(t, imagePath, e2e.UserProfile)
 			}),
 			e2e.ExpectExit(0),
 		)
@@ -229,11 +236,11 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 
 	c.env.RunSingularity(
 		t,
-		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs("--sandbox", sandboxImage, c.env.ImagePath),
 		e2e.PostRun(func(t *testing.T) {
-			c.env.ImageVerify(t, sandboxImage)
+			c.env.ImageVerify(t, sandboxImage, e2e.UserProfile)
 		}),
 		e2e.ExpectExit(0),
 	)
@@ -256,19 +263,30 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 		{"LocalImageSandbox", localSandboxDefFile},
 	}
 
-	for i, tc := range tt {
-		imagePath := filepath.Join(tmpdir, fmt.Sprintf("image-%d", i))
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tc.name),
-			e2e.WithProfile(e2e.RootProfile),
-			e2e.WithCommand("build"),
-			e2e.WithArgs(imagePath, tc.buildSpec),
-			e2e.PostRun(func(t *testing.T) {
-				c.env.ImageVerify(t, imagePath)
-			}),
-			e2e.ExpectExit(0),
-		)
+	profiles := []e2e.Profile{e2e.RootProfile, e2e.FakerootProfile}
+	for _, profile := range profiles {
+		profile := profile
+
+		t.Run(profile.String(), func(t *testing.T) {
+			for i, tc := range tt {
+				imagePath := filepath.Join(tmpdir, fmt.Sprintf("image-%d", i))
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tc.name),
+					e2e.WithProfile(profile),
+					e2e.WithCommand("build"),
+					e2e.WithArgs(imagePath, tc.buildSpec),
+					e2e.PostRun(func(t *testing.T) {
+						if t.Failed() {
+							return
+						}
+						defer os.RemoveAll(imagePath)
+						c.env.ImageVerify(t, imagePath, profile)
+					}),
+					e2e.ExpectExit(0),
+				)
+			}
+		})
 	}
 }
 
@@ -758,27 +776,36 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 		},
 	}
 
-	for name, dfd := range tt {
-		dn, cleanup := c.tempDir(t, "build-definition")
-		defer cleanup()
+	profiles := []e2e.Profile{e2e.RootProfile, e2e.FakerootProfile}
+	for _, profile := range profiles {
+		profile := profile
 
-		imagePath := path.Join(dn, "container")
+		t.Run(profile.String(), func(t *testing.T) {
+			for name, dfd := range tt {
+				dn, cleanup := c.tempDir(t, "build-definition")
+				defer cleanup()
 
-		defFile := e2e.PrepareDefFile(dfd)
+				imagePath := path.Join(dn, "container")
 
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(name),
-			e2e.WithProfile(e2e.RootProfile),
-			e2e.WithCommand("build"),
-			e2e.WithArgs("--sandbox", imagePath, defFile),
-			e2e.PostRun(func(t *testing.T) {
-				defer os.Remove(defFile)
+				defFile := e2e.PrepareDefFile(dfd)
 
-				e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, dfd)
-			}),
-			e2e.ExpectExit(0),
-		)
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(name),
+					e2e.WithProfile(profile),
+					e2e.WithCommand("build"),
+					e2e.WithArgs("--sandbox", imagePath, defFile),
+					e2e.PostRun(func(t *testing.T) {
+						if t.Failed() {
+							return
+						}
+						defer os.Remove(defFile)
+						e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, dfd)
+					}),
+					e2e.ExpectExit(0),
+				)
+			}
+		})
 	}
 }
 
@@ -1022,9 +1049,9 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	}
 
 	return testhelper.TestRunner(map[string]func(*testing.T){
-		"bad path":                        c.badPath, // try to build from a non existen path
-		"build encrypt with PEM file":     c.buildEncryptPemFile,
-		"build encrypted with passphrase": c.buildEncryptPassphrase,    // build encrypted images
+		"bad path":                        c.badPath,                   // try to build from a non existent path
+		"build encrypt with PEM file":     c.buildEncryptPemFile,       // build encrypted images with certificate
+		"build encrypted with passphrase": c.buildEncryptPassphrase,    // build encrypted images with passphrase
 		"definition":                      c.buildDefinition,           // builds from definition template
 		"from local image":                c.buildLocalImage,           // build and image from an existing image
 		"from":                            c.buildFrom,                 // builds from definition file and URI
