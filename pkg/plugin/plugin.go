@@ -7,7 +7,7 @@ package plugin
 
 import (
 	"github.com/sylabs/singularity/pkg/cmdline"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 )
 
 // PluginSymbol is the name of a variable of type plugin.Plugin which all

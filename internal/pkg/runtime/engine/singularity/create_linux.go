@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc/client"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 )
 
 // CreateContainer is called from master process to prepare container

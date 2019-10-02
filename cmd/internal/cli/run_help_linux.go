@@ -18,7 +18,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/pkg/cmdline"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 )
 
 const (

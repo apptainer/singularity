@@ -12,7 +12,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 )
 
 // Plugin is the only variable which a plugin MUST export.

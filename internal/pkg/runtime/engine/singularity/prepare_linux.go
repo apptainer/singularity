@@ -31,7 +31,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/image"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"golang.org/x/sys/unix"
