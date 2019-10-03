@@ -282,18 +282,33 @@ func setSylogColor() {
 	}
 }
 
-// createConfDir tries to create the user's configuration directory and handles
-// messages and/or errors
-func createConfDir(d string) {
-	if err := fs.Mkdir(d, os.ModePerm); err != nil {
+// handleRemoteConf will make sure your 'remote.yaml' config file
+// is the correct permission.
+func handleRemoteConf() {
+	remoteConfFile := syfs.RemoteConf()
+
+	// Only check the permission if it exists.
+	if fs.IsFile(remoteConfFile) {
+		sylog.Debugf("Ensuring file permission of 0600 on %s", remoteConfFile)
+		if err := fs.EnsureFileWithPermission(remoteConfFile, 0600); err != nil {
+			sylog.Fatalf("Unable to correct the permission on %s: %s", remoteConfFile, err)
+		}
+	}
+}
+
+// handleConfDir tries to create the user's configuration directory and handles
+// messages and/or errors.
+func handleConfDir(confDir string) {
+	if err := fs.Mkdir(confDir, os.ModePerm); err != nil {
 		if os.IsExist(err) {
-			sylog.Debugf("%s already exists. Not creating.", d)
+			sylog.Debugf("%s already exists. Not creating.", confDir)
 		} else {
-			sylog.Debugf("Could not create %s: %s", d, err)
+			sylog.Debugf("Could not create %s: %s", confDir, err)
 		}
 	} else {
-		sylog.Debugf("Created %s", d)
+		sylog.Debugf("Created %s", confDir)
 	}
+	handleRemoteConf()
 }
 
 // singularityCmd is the base command when called without any subcommands
@@ -316,7 +331,7 @@ var singularityCmd = &cobra.Command{
 func persistentPreRunE(cmd *cobra.Command, _ []string) error {
 	setSylogMessageLevel()
 	setSylogColor()
-	createConfDir(syfs.ConfigDir())
+	handleConfDir(syfs.ConfigDir())
 	return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
 }
 

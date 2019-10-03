@@ -26,6 +26,7 @@ import (
 	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/syfs"
 	"golang.org/x/crypto/openpgp"
@@ -167,55 +168,17 @@ func createOrAppendPrivateFile(fn string) (*os.File, error) {
 	return os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 }
 
-// ensureFilePrivate makes sure that the file system mode for the named
-// file does not allow other users access to it (neither read nor
-// write).
-//
-// TODO(mem): move this function to a common location
-func ensureFilePrivate(fn string) error {
-	mode := os.FileMode(0600)
-
-	// just to be extra sure that we get the correct mode
-	oldumask := syscall.Umask(0077)
-
-	fs, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE, mode)
-
-	// restore umask...
-	syscall.Umask(oldumask)
-
-	// ... and check if there was an error
-	if err != nil {
-		return err
-	}
-	defer fs.Close()
-
-	// check and fix permissions
-	fsinfo, err := fs.Stat()
-	if err != nil {
-		return err
-	}
-
-	if currentMode := fsinfo.Mode(); currentMode != mode {
-		sylog.Warningf("File mode (%o) on %s needs to be %o, fixing that...", currentMode, fn, mode)
-		if err := fs.Chmod(mode); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // PathsCheck creates the sypgp home folder, secret and public keyring files
 func (keyring *Handle) PathsCheck() error {
 	if err := ensureDirPrivate(keyring.path); err != nil {
 		return err
 	}
 
-	if err := ensureFilePrivate(keyring.SecretPath()); err != nil {
+	if err := fs.EnsureFileWithPermission(keyring.SecretPath(), 0600); err != nil {
 		return err
 	}
 
-	if err := ensureFilePrivate(keyring.PublicPath()); err != nil {
+	if err := fs.EnsureFileWithPermission(keyring.PublicPath(), 0600); err != nil {
 		return err
 	}
 
