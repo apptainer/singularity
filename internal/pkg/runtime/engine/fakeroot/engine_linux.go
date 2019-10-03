@@ -22,7 +22,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )

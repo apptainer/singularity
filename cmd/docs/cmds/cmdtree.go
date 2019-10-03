@@ -215,10 +215,10 @@ func createCmdsFiles() (string, string, error) {
 		return "", "", fmt.Errorf("failed to create command text file: %s", err)
 	}
 	defer textFile.Close()
-	cli.SingularityCmd.InitDefaultHelpCmd()
-	cli.SingularityCmd.InitDefaultVersionFlag()
+	cli.RootCmd().InitDefaultHelpCmd()
+	cli.RootCmd().InitDefaultVersionFlag()
 
-	tree := buildTree(cli.SingularityCmd, textFile)
+	tree := buildTree(cli.RootCmd(), textFile)
 
 	json, err := json.MarshalIndent(tree, "", "  ")
 	if err != nil {

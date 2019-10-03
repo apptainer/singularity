@@ -14,11 +14,8 @@ import (
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
-var (
-	pluginName string
-)
-
 // -n|--name
+var pluginName string
 var pluginInstallNameFlag = cmdline.Flag{
 	ID:           "pluginInstallNameFlag",
 	Value:        &pluginName,
@@ -33,7 +30,7 @@ func init() {
 }
 
 // PluginInstallCmd takes a compiled plugin.sif file and installs it
-// in the appropriate location
+// in the appropriate location.
 //
 // singularity plugin install <path> [-n name]
 var PluginInstallCmd = &cobra.Command{

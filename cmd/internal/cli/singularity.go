@@ -7,11 +7,13 @@ package cli
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/user"
 	"path"
 	"text/template"
 
+	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -24,7 +26,7 @@ import (
 	"github.com/sylabs/singularity/pkg/syfs"
 )
 
-var cmdManager = cmdline.NewCommandManager(SingularityCmd)
+var cmdManager = cmdline.NewCommandManager(singularityCmd)
 
 // CurrentUser holds the current user account information
 var CurrentUser = getCurrentUser()
@@ -42,6 +44,15 @@ var (
 		Token:  "",
 		System: true,
 	}
+
+	dockerAuthConfig ocitypes.DockerAuthConfig
+	dockerLogin      bool
+
+	encryptionPEMPath   string
+	promptForPassphrase bool
+	forceOverwrite      bool
+	noHTTPS             bool
+	tmpDir              string
 )
 
 const (
@@ -116,6 +127,88 @@ var singTokenFileFlag = cmdline.Flag{
 	Deprecated:   "Use 'singularity remote' to manage remote endpoints and tokens.",
 }
 
+// --docker-username
+var dockerUsernameFlag = cmdline.Flag{
+	ID:           "dockerUsernameFlag",
+	Value:        &dockerAuthConfig.Username,
+	DefaultValue: "",
+	Name:         "docker-username",
+	Usage:        "specify a username for docker authentication",
+	Hidden:       true,
+	EnvKeys:      []string{"DOCKER_USERNAME"},
+}
+
+// --docker-password
+var dockerPasswordFlag = cmdline.Flag{
+	ID:           "dockerPasswordFlag",
+	Value:        &dockerAuthConfig.Password,
+	DefaultValue: "",
+	Name:         "docker-password",
+	Usage:        "specify a password for docker authentication",
+	Hidden:       true,
+	EnvKeys:      []string{"DOCKER_PASSWORD"},
+}
+
+// --docker-login
+var dockerLoginFlag = cmdline.Flag{
+	ID:           "dockerLoginFlag",
+	Value:        &dockerLogin,
+	DefaultValue: false,
+	Name:         "docker-login",
+	Usage:        "login to a Docker Repository interactively",
+	EnvKeys:      []string{"DOCKER_LOGIN"},
+}
+
+// --passphrase
+var commonPromptForPassphraseFlag = cmdline.Flag{
+	ID:           "commonPromptForPassphraseFlag",
+	Value:        &promptForPassphrase,
+	DefaultValue: false,
+	Name:         "passphrase",
+	Usage:        "prompt for an encryption passphrase",
+}
+
+// --pem-path
+var commonPEMFlag = cmdline.Flag{
+	ID:           "actionEncryptionPEMPath",
+	Value:        &encryptionPEMPath,
+	DefaultValue: "",
+	Name:         "pem-path",
+	Usage:        "enter an path to a PEM formated RSA key for an encrypted container",
+}
+
+// -F|--force
+var commonForceFlag = cmdline.Flag{
+	ID:           "commonForceFlag",
+	Value:        &forceOverwrite,
+	DefaultValue: false,
+	Name:         "force",
+	ShortHand:    "F",
+	Usage:        "overwrite an image file if it exists",
+	EnvKeys:      []string{"FORCE"},
+}
+
+// --nohttps
+var commonNoHTTPSFlag = cmdline.Flag{
+	ID:           "commonNoHTTPSFlag",
+	Value:        &noHTTPS,
+	DefaultValue: false,
+	Name:         "nohttps",
+	Usage:        "do NOT use HTTPS with the docker:// transport (useful for local docker registries without a certificate)",
+	EnvKeys:      []string{"NOHTTPS"},
+}
+
+// --tmpdir
+var commonTmpDirFlag = cmdline.Flag{
+	ID:           "commonTmpDirFlag",
+	Value:        &tmpDir,
+	DefaultValue: os.TempDir(),
+	Hidden:       true,
+	Name:         "tmpdir",
+	Usage:        "specify a temporary directory to use for build",
+	EnvKeys:      []string{"TMPDIR"},
+}
+
 func getCurrentUser() *user.User {
 	usr, err := user.Current()
 	if err != nil {
@@ -133,36 +226,33 @@ func getDefaultTokenFile() string {
 // have been properly loaded and initialized
 func initializePlugins() {
 	if err := plugin.InitializeAll(buildcfg.LIBEXECDIR); err != nil {
-		sylog.Fatalf("Unable to initialize plugins: %s\n", err)
+		sylog.Errorf("Unable to initialize plugins: %s", err)
 	}
 }
 
 func init() {
-	SingularityCmd.Flags().SetInterspersed(false)
-	SingularityCmd.PersistentFlags().SetInterspersed(false)
+	singularityCmd.Flags().SetInterspersed(false)
+	singularityCmd.PersistentFlags().SetInterspersed(false)
 
 	templateFuncs := template.FuncMap{
 		"TraverseParentsUses": TraverseParentsUses,
 	}
 	cobra.AddTemplateFuncs(templateFuncs)
 
-	SingularityCmd.SetHelpTemplate(docs.HelpTemplate)
-	SingularityCmd.SetUsageTemplate(docs.UseTemplate)
+	singularityCmd.SetHelpTemplate(docs.HelpTemplate)
+	singularityCmd.SetUsageTemplate(docs.UseTemplate)
 
 	vt := fmt.Sprintf("%s version {{printf \"%%s\" .Version}}\n", buildcfg.PACKAGE_NAME)
-	SingularityCmd.SetVersionTemplate(vt)
+	singularityCmd.SetVersionTemplate(vt)
 
-	cmdManager.RegisterFlagForCmd(&singDebugFlag, SingularityCmd)
-	cmdManager.RegisterFlagForCmd(&singNoColorFlag, SingularityCmd)
-	cmdManager.RegisterFlagForCmd(&singSilentFlag, SingularityCmd)
-	cmdManager.RegisterFlagForCmd(&singQuietFlag, SingularityCmd)
-	cmdManager.RegisterFlagForCmd(&singVerboseFlag, SingularityCmd)
-	cmdManager.RegisterFlagForCmd(&singTokenFileFlag, SingularityCmd)
+	cmdManager.RegisterFlagForCmd(&singDebugFlag, singularityCmd)
+	cmdManager.RegisterFlagForCmd(&singNoColorFlag, singularityCmd)
+	cmdManager.RegisterFlagForCmd(&singSilentFlag, singularityCmd)
+	cmdManager.RegisterFlagForCmd(&singQuietFlag, singularityCmd)
+	cmdManager.RegisterFlagForCmd(&singVerboseFlag, singularityCmd)
+	cmdManager.RegisterFlagForCmd(&singTokenFileFlag, singularityCmd)
 
 	cmdManager.RegisterCmd(VersionCmd)
-
-	initializePlugins()
-	SingularityCmd.AddCommand(plugin.AllCommands()...)
 }
 
 func setSylogMessageLevel() {
@@ -203,8 +293,8 @@ func createConfDir(d string) {
 	}
 }
 
-// SingularityCmd is the base command when called without any subcommands
-var SingularityCmd = &cobra.Command{
+// singularityCmd is the base command when called without any subcommands
+var singularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -227,12 +317,17 @@ func persistentPreRunE(cmd *cobra.Command, _ []string) error {
 	return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
 }
 
+// RootCmd returns the root singularity cobra command.
+func RootCmd() *cobra.Command {
+	return singularityCmd
+}
+
 // ExecuteSingularity adds all child commands to the root command and sets
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
 	// set persistent pre run function here to avoid initialization loop error
-	SingularityCmd.PersistentPreRunE = persistentPreRunE
+	singularityCmd.PersistentPreRunE = persistentPreRunE
 
 	for _, e := range cmdManager.GetError() {
 		sylog.Errorf("%s", e)
@@ -243,23 +338,32 @@ func ExecuteSingularity() {
 		sylog.Fatalf("CLI command manager reported %d error(s)", cliErrors)
 	}
 
-	if cmd, err := SingularityCmd.ExecuteC(); err != nil {
+	for _, m := range plugin.CLIMutators() {
+		m.Mutate(cmdManager)
+	}
+
+	if cmd, err := singularityCmd.ExecuteC(); err != nil {
 		name := cmd.Name()
 		switch err.(type) {
 		case cmdline.FlagError:
 			usage := cmd.Flags().FlagUsagesWrapped(getColumns())
-			SingularityCmd.Printf("Error for command %q: %s\n\n", name, err)
-			SingularityCmd.Printf("Options for %s command:\n\n%s\n", name, usage)
+			singularityCmd.Printf("Error for command %q: %s\n\n", name, err)
+			singularityCmd.Printf("Options for %s command:\n\n%s\n", name, usage)
 		case cmdline.CommandError:
-			SingularityCmd.Println(cmd.UsageString())
+			singularityCmd.Println(cmd.UsageString())
 		default:
-			SingularityCmd.Printf("Error for command %q: %s\n\n", name, err)
-			SingularityCmd.Println(cmd.UsageString())
+			singularityCmd.Printf("Error for command %q: %s\n\n", name, err)
+			singularityCmd.Println(cmd.UsageString())
 		}
-		SingularityCmd.Printf("Run '%s --help' for more detailed usage information.\n",
+		singularityCmd.Printf("Run '%s --help' for more detailed usage information.\n",
 			cmd.CommandPath())
 		os.Exit(1)
 	}
+}
+
+// GenBashCompletionFile
+func GenBashCompletion(w io.Writer) error {
+	return singularityCmd.GenBashCompletion(w)
 }
 
 // TraverseParentsUses walks the parent commands and outputs a properly formatted use string

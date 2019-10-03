@@ -31,7 +31,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/network"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"

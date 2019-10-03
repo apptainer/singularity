@@ -15,7 +15,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-// PluginInspectCmd displays information about a plugin
+// PluginInspectCmd displays information about a plugin.
 var PluginInspectCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := singularity.InspectPlugin(args[0], buildcfg.LIBEXECDIR)

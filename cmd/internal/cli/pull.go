@@ -77,17 +77,6 @@ var pullLibraryURIFlag = cmdline.Flag{
 	EnvKeys:      []string{"LIBRARY"},
 }
 
-// -F|--force
-var pullForceFlag = cmdline.Flag{
-	ID:           "pullForceFlag",
-	Value:        &force,
-	DefaultValue: false,
-	Name:         "force",
-	ShortHand:    "F",
-	Usage:        "overwrite an image file if it exists",
-	EnvKeys:      []string{"FORCE"},
-}
-
 // --name
 var pullNameFlag = cmdline.Flag{
 	ID:           "pullNameFlag",
@@ -119,27 +108,6 @@ var pullDisableCacheFlag = cmdline.Flag{
 	EnvKeys:      []string{"DISABLE_CACHE"},
 }
 
-// --tmpdir
-var pullTmpdirFlag = cmdline.Flag{
-	ID:           "pullTmpdirFlag",
-	Value:        &tmpDir,
-	DefaultValue: os.TempDir(),
-	Hidden:       true,
-	Name:         "tmpdir",
-	Usage:        "specify a temporary directory to use for build",
-	EnvKeys:      []string{"TMPDIR"},
-}
-
-// --nohttps
-var pullNoHTTPSFlag = cmdline.Flag{
-	ID:           "pullNoHTTPSFlag",
-	Value:        &noHTTPS,
-	DefaultValue: false,
-	Name:         "nohttps",
-	Usage:        "do NOT use HTTPS with the docker:// transport (useful for local docker registries without a certificate)",
-	EnvKeys:      []string{"NOHTTPS"},
-}
-
 // -U|--allow-unsigned
 var pullAllowUnsignedFlag = cmdline.Flag{
 	ID:           "pullAllowUnauthenticatedFlag",
@@ -167,17 +135,17 @@ var pullAllowUnauthenticatedFlag = cmdline.Flag{
 func init() {
 	cmdManager.RegisterCmd(PullCmd)
 
-	cmdManager.RegisterFlagForCmd(&pullForceFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&commonForceFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullLibraryURIFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullNameFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&pullNoHTTPSFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&pullTmpdirFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&commonNoHTTPSFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&commonTmpDirFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullDisableCacheFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullDirFlag, PullCmd)
 
-	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&dockerLoginFlag, PullCmd)
 
 	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullAllowUnsignedFlag, PullCmd)
@@ -228,7 +196,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	_, err := os.Stat(pullTo)
 	if !os.IsNotExist(err) {
 		// image already exists
-		if !force {
+		if !forceOverwrite {
 			sylog.Fatalf("Image file already exists: %q - will not overwrite", pullTo)
 		}
 		sylog.Debugf("Removing overridden file: %s", pullTo)
@@ -278,7 +246,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 		}
 
-		err = singularity.OrasPull(imgCache, pullTo, ref, force, ociAuth)
+		err = singularity.OrasPull(imgCache, pullTo, ref, forceOverwrite, &ociAuth)
 		if err != nil {
 			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}
@@ -293,7 +261,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
-		err = singularity.OciPull(imgCache, pullTo, pullFrom, tmpDir, ociAuth, noHTTPS, noCleanUp)
+		err = singularity.OciPull(imgCache, pullTo, pullFrom, tmpDir, &ociAuth, noHTTPS, buildArgs.noCleanUp)
 		if err != nil {
 			sylog.Fatalf("While making image from oci registry: %v", err)
 		}
