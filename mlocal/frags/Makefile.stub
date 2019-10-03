@@ -73,7 +73,7 @@ testall: check test
 .PHONY: rpm
 rpm: dist
 	@echo " BUILD RPM"
-	$(V)(short_version="`echo "$(SHORT_VERSION)" | tr - .`"; \
+	$(V)(short_version="`echo "$(SHORT_VERSION)" | tr '-' '~'`"; \
 	  set -x; cd $(SOURCEDIR) && \
 	  if [ -n "$(RPMPREFIX)" ]; then \
 	    rpmbuild $(RPMCLEAN) -ta \
