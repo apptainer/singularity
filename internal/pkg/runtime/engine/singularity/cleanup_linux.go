@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -33,7 +34,7 @@ import (
 // For better understanding of runtime flow in general refer to
 // https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle.
 // CleanupContainer is performing step 8/9 here.
-func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
+func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, status syscall.WaitStatus) error {
 	if e.EngineConfig.GetDeleteImage() {
 		image := e.EngineConfig.GetImage()
 		sylog.Verbosef("Removing image %s", image)
@@ -60,7 +61,7 @@ func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStat
 		if e.EngineConfig.GetFakeroot() {
 			priv.Escalate()
 		}
-		if err := e.EngineConfig.Network.DelNetworks(); err != nil {
+		if err := e.EngineConfig.Network.DelNetworks(ctx); err != nil {
 			sylog.Errorf("could not delete networks: %v", err)
 		}
 		if e.EngineConfig.GetFakeroot() {

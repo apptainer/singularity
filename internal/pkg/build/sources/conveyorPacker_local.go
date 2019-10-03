@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
@@ -22,7 +23,7 @@ type LocalConveyor struct {
 
 // LocalPacker ...
 type LocalPacker interface {
-	Pack() (*types.Bundle, error)
+	Pack(context.Context) (*types.Bundle, error)
 }
 
 // LocalConveyorPacker only needs to hold the conveyor to have the needed data to pack
@@ -77,7 +78,7 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 }
 
 // Get just stores the source.
-func (cp *LocalConveyorPacker) Get(b *types.Bundle) (err error) {
+func (cp *LocalConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	// insert base metadata before unpacking fs
 	if err = makeBaseEnv(b.RootfsPath); err != nil {
 		return fmt.Errorf("while inserting base environment: %v", err)

@@ -7,6 +7,7 @@ package sources
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -30,7 +31,7 @@ type DebootstrapConveyorPacker struct {
 }
 
 // Get downloads container information from the specified source
-func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
+func (cp *DebootstrapConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	cp.b = b
 
 	// check for debootstrap on system(script using "singularity_which" not sure about its importance)
@@ -49,7 +50,7 @@ func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	insideUserNs, setgroupsAllowed := namespaces.IsInsideUserNamespace(os.Getpid())
 	if insideUserNs && setgroupsAllowed {
-		umountFn, err := cp.prepareFakerootEnv()
+		umountFn, err := cp.prepareFakerootEnv(ctx)
 		if umountFn != nil {
 			defer umountFn()
 		}
@@ -99,7 +100,7 @@ func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *DebootstrapConveyorPacker) Pack() (*types.Bundle, error) {
+func (cp *DebootstrapConveyorPacker) Pack(context.Context) (*types.Bundle, error) {
 
 	//change root directory permissions to 0755
 	if err := os.Chmod(cp.b.RootfsPath, 0755); err != nil {
