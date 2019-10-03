@@ -8,7 +8,6 @@ package cli
 import (
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
@@ -662,8 +661,4 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&dockerLoginFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, actionsInstanceCmd...)
-
-	for _, cmd := range actionsCmd {
-		plugin.AddFlagHooks(cmd.Flags())
-	}
 }
