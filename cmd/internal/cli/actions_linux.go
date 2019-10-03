@@ -31,7 +31,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	imgutil "github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/nvidia"
@@ -527,7 +527,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
-	plugin.FlagHookCallbacks(engineConfig)
+	for _, m := range plugin.EngineConfigMutators() {
+		sylog.Debugf("Running runtime mutator from plugin %s", m.PluginName)
+		m.Mutate(engineConfig)
+	}
 
 	cfg := &config.Common{
 		EngineName:   singularityConfig.Name,

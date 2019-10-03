@@ -6,23 +6,18 @@
 package sources
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"os/exec"
-	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
-	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
 // Pack puts relevant objects in a Bundle.
 func (p *SIFPacker) Pack() (*types.Bundle, error) {
-	err := unpackSIF(p.b, p.srcFile)
+	err := unpackSIF(p.b, p.img)
 	if err != nil {
 		sylog.Errorf("unpackSIF failed: %s", err)
 		return nil, err
@@ -34,15 +29,9 @@ func (p *SIFPacker) Pack() (*types.Bundle, error) {
 // unpackSIF parses through the sif file and places each component
 // in the sandbox. First pass just assumes a single system partition,
 // later passes will handle more complex sif files.
-func unpackSIF(b *types.Bundle, srcFile string) (err error) {
-	img, err := image.Init(srcFile, false)
-	if err != nil {
-		return fmt.Errorf("could not open image %s: %s", srcFile, err)
-	}
-	defer img.File.Close()
-
+func unpackSIF(b *types.Bundle, img *image.Image) (err error) {
 	if !img.HasRootFs() {
-		return fmt.Errorf("no root filesystem found in %s", srcFile)
+		return fmt.Errorf("no root filesystem found in %s", img.Name)
 	}
 
 	switch img.Partitions[0].Type {
@@ -60,16 +49,10 @@ func unpackSIF(b *types.Bundle, srcFile string) (err error) {
 			return fmt.Errorf("root filesystem extraction failed: %s", err)
 		}
 	case image.EXT3:
-		info := &loop.Info64{
-			Offset:    img.Partitions[0].Offset,
-			SizeLimit: img.Partitions[0].Size,
-			Flags:     loop.FlagsAutoClear,
-		}
 
 		// extract ext3 partition by mounting
 		sylog.Debugf("Ext3 partition detected, mounting to extract.")
-		err = unpackImagePartition(img.File, b.RootfsPath, "ext3", info)
-		if err != nil {
+		if err := unpackExt3(b, img); err != nil {
 			return fmt.Errorf("while copying partition data to bundle: %v", err)
 		}
 	default:
@@ -88,44 +71,5 @@ func unpackSIF(b *types.Bundle, srcFile string) (err error) {
 		}
 		b.JSONObjects[types.OCIConfigJSON] = ociConfig
 	}
-	return nil
-}
-
-// unpackImagePartition temporarily mounts an image partition using a
-// loop device and then copies its contents to the destination directory.
-func unpackImagePartition(src *os.File, dest, mountType string, info *loop.Info64) (err error) {
-	number := 0
-	loopdev := new(loop.Device)
-	loopdev.MaxLoopDevices = 256
-	loopdev.Info = info
-
-	if err := loopdev.AttachFromFile(src, os.O_RDONLY, &number); err != nil {
-		return err
-	}
-
-	tmpmnt, err := ioutil.TempDir("", "tmpmnt-")
-	if err != nil {
-		return fmt.Errorf("failed to make tmp mount point: %v", err)
-	}
-	defer os.RemoveAll(tmpmnt)
-
-	path := fmt.Sprintf("/dev/loop%d", number)
-	sylog.Debugf("Mounting loop device %s to %s\n", path, tmpmnt)
-	err = syscall.Mount(path, tmpmnt, mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
-	if err != nil {
-		sylog.Errorf("mount Failed: %s", err)
-		return err
-	}
-	defer syscall.Unmount(tmpmnt, 0)
-
-	// copy filesystem into dest
-	sylog.Debugf("Copying filesystem from %s to %s\n", tmpmnt, dest)
-	var stderr bytes.Buffer
-	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, dest)
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("cp failed: %v: %v", err, stderr.String())
-	}
-
 	return nil
 }

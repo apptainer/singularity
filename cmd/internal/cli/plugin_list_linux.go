@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-// PluginListCmd lists the plugins installed in the system
+// PluginListCmd lists the plugins installed in the system.
 var PluginListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := singularity.ListPlugins(buildcfg.LIBEXECDIR)

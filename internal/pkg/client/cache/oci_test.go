@@ -50,7 +50,7 @@ func TestOciBlob(t *testing.T) {
 			c.checkIfCacheDisabled(t)
 
 			if tt.needCleanup {
-				defer c.cleanAllCaches()
+				defer os.RemoveAll(tt.dir)
 			}
 
 			if c.OciBlob != tt.expected {
@@ -96,7 +96,7 @@ func TestOciTemp(t *testing.T) {
 			c.checkIfCacheDisabled(t)
 
 			if tt.needCleanup {
-				defer c.cleanAllCaches()
+				defer os.RemoveAll(tt.dir)
 			}
 
 			if c.OciTemp != tt.expected {

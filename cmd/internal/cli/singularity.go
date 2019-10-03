@@ -226,7 +226,7 @@ func getDefaultTokenFile() string {
 // have been properly loaded and initialized
 func initializePlugins() {
 	if err := plugin.InitializeAll(buildcfg.LIBEXECDIR); err != nil {
-		sylog.Fatalf("Unable to initialize plugins: %s\n", err)
+		sylog.Errorf("Unable to initialize plugins: %s", err)
 	}
 }
 
@@ -253,9 +253,6 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&singTokenFileFlag, singularityCmd)
 
 	cmdManager.RegisterCmd(VersionCmd)
-
-	initializePlugins()
-	singularityCmd.AddCommand(plugin.AllCommands()...)
 }
 
 func setSylogMessageLevel() {
@@ -339,6 +336,10 @@ func ExecuteSingularity() {
 	cliErrors := len(cmdManager.GetError())
 	if cliErrors > 0 {
 		sylog.Fatalf("CLI command manager reported %d error(s)", cliErrors)
+	}
+
+	for _, m := range plugin.CLIMutators() {
+		m.Mutate(cmdManager)
 	}
 
 	if cmd, err := singularityCmd.ExecuteC(); err != nil {

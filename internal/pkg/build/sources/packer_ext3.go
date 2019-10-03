@@ -7,12 +7,12 @@ package sources
 
 import (
 	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/image"
 )
 
 // Ext3Packer holds the locations of where to back from and to, aswell as image offset info
 type Ext3Packer struct {
 	srcfile string
 	b       *types.Bundle
-	info    *loop.Info64
+	img     *image.Image
 }
