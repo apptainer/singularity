@@ -75,7 +75,8 @@ func New(defs []types.Definition, conf Config) (*Build, error) {
 }
 
 func newBuild(defs []types.Definition, conf Config) (*Build, error) {
-	syscall.Umask(0002)
+	oldumask := syscall.Umask(0002)
+	defer syscall.Umask(oldumask)
 
 	conf.Dest = filepath.Clean(conf.Dest)
 	// always build a sandbox if updating an existing sandbox
