@@ -11,10 +11,10 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/ociruntime"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 )
 
 // OciArgs contains CLI arguments

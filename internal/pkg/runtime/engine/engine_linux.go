@@ -13,8 +13,8 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 )
 
 // Engine is the combination of an Operations and a config.Common. The singularity
