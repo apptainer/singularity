@@ -10,7 +10,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-// PluginDisableCmd disables the named plugin
+// PluginDisableCmd disables the named plugin.
 //
 // singularity plugin disable <name>
 var PluginDisableCmd = &cobra.Command{

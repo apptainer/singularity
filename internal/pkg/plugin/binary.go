@@ -137,7 +137,7 @@ func Uninstall(name, libexecdir string) error {
 	return meta.uninstall()
 }
 
-// Enable enables the plugin named "name" found under "libexecdir"
+// Enable enables the plugin named "name" found under "libexecdir".
 func Enable(name, libexecdir string) error {
 	pluginDir := filepath.Join(libexecdir, DirRoot)
 	sylog.Debugf("Enabling plugin %q in %q", name, pluginDir)
@@ -595,7 +595,7 @@ func List(libexecdir string) ([]*Meta, error) {
 		return nil, fmt.Errorf("cannot list plugins in directory %q", pluginDir)
 	}
 
-	metas := []*Meta{}
+	var metas []*Meta
 
 	for _, entry := range entries {
 		fi, err := os.Stat(entry)

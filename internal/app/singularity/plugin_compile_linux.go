@@ -22,7 +22,7 @@ import (
 
 const manifestgenDir = "cmd/plugin_manifestgen"
 
-// getSingularitySrcDir returns the source directory for singularity
+// getSingularitySrcDir returns the source directory for singularity.
 func getSingularitySrcDir() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -33,10 +33,10 @@ func getSingularitySrcDir() (string, error) {
 
 	switch _, err = os.Stat(canary); {
 	case os.IsNotExist(err):
-		return "", fmt.Errorf("cannot find \"%s\"", canary)
+		return "", fmt.Errorf("cannot find %q", canary)
 
 	case err != nil:
-		return "", fmt.Errorf("unexpected error while looking for \"%s\": %s", canary, err)
+		return "", fmt.Errorf("unexpected error while looking for %q: %s", canary, err)
 
 	default:
 		return dir, nil
@@ -59,7 +59,7 @@ func pluginManifestPath(sourceDir string) string {
 // plugin's source code directory; and destSif, the path to the intended final
 // location of the plugin SIF file.
 func CompilePlugin(sourceDir, destSif, buildTags string) error {
-	// build plugin object using go buiild
+	// build plugin object using go build
 	_, err := buildPlugin(sourceDir, buildTags)
 	if err != nil {
 		return fmt.Errorf("while building plugin .so: %s", err)
@@ -80,7 +80,7 @@ func CompilePlugin(sourceDir, destSif, buildTags string) error {
 }
 
 // buildPlugin takes sourceDir which is the string path the host which contains the source code of
-// the plugin. buildPlugin returns the path to the built file, along with an error
+// the plugin. buildPlugin returns the path to the built file, along with an error.
 //
 // This function essentially runs the `go build -buildmode=plugin [...]` command
 func buildPlugin(sourceDir, buildTags string) (string, error) {
@@ -162,7 +162,7 @@ func generateManifest(sourceDir, buildTags string) (string, error) {
 }
 
 // makeSIF takes in two arguments: sourceDir, the path to the plugin source directory;
-// and sifPath, the path to the final .sif file which is ready to be used
+// and sifPath, the path to the final .sif file which is ready to be used.
 func makeSIF(sourceDir, sifPath string) error {
 	plCreateInfo := sif.CreateInfo{
 		Pathname:   sifPath,
