@@ -313,6 +313,7 @@ var singularityCmd = &cobra.Command{
 func persistentPreRunE(cmd *cobra.Command, _ []string) error {
 	setSylogMessageLevel()
 	setSylogColor()
+	sylog.Debugf("Singularity version: %s", buildcfg.PACKAGE_VERSION)
 	createConfDir(syfs.ConfigDir())
 	return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
 }
