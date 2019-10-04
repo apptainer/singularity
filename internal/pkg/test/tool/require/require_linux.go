@@ -6,6 +6,7 @@
 package require
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -59,6 +60,8 @@ func Network(t *testing.T) {
 			t.Logf("Could not use network: %s", err)
 		}
 
+		ctx := context.TODO()
+
 		cmd := exec.Command("/bin/cat")
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 		cmd.SysProcAttr.Cloneflags = syscall.CLONE_NEWNET
@@ -86,11 +89,11 @@ func Network(t *testing.T) {
 			logFn(err)
 			return
 		}
-		if err := setup.AddNetworks(); err != nil {
+		if err := setup.AddNetworks(ctx); err != nil {
 			logFn(err)
 			return
 		}
-		if err := setup.DelNetworks(); err != nil {
+		if err := setup.DelNetworks(ctx); err != nil {
 			logFn(err)
 			return
 		}

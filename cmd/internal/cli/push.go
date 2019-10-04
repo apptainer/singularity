@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -64,6 +65,8 @@ var PushCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(2),
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.TODO()
+
 		file, dest := args[0], args[1]
 
 		transport, ref := uri.Split(dest)
@@ -75,7 +78,7 @@ var PushCmd = &cobra.Command{
 		case LibraryProtocol, "": // Handle pushing to a library
 			handlePushFlags(cmd)
 
-			err := singularity.LibraryPush(file, dest, authToken, PushLibraryURI, keyServerURL, remoteWarning, unauthenticatedPush)
+			err := singularity.LibraryPush(ctx, file, dest, authToken, PushLibraryURI, keyServerURL, remoteWarning, unauthenticatedPush)
 			if err == singularity.ErrLibraryUnsigned {
 				fmt.Printf("TIP: You can push unsigned images with 'singularity push -U %s'.\n", file)
 				fmt.Printf("TIP: Learn how to sign your own containers by using 'singularity help sign'\n\n")

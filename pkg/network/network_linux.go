@@ -431,16 +431,16 @@ func (m *Setup) SetEnvPath(envPath string) {
 }
 
 // AddNetworks brings up networks interface in container
-func (m *Setup) AddNetworks() error {
-	return m.command("ADD")
+func (m *Setup) AddNetworks(ctx context.Context) error {
+	return m.command(ctx, "ADD")
 }
 
 // DelNetworks tears down networks interface in container
-func (m *Setup) DelNetworks() error {
-	return m.command("DEL")
+func (m *Setup) DelNetworks(ctx context.Context) error {
+	return m.command(ctx, "DEL")
 }
 
-func (m *Setup) command(command string) error {
+func (m *Setup) command(ctx context.Context, command string) error {
 	if m.envPath != "" {
 		backupEnv := os.Environ()
 		os.Clearenv()
@@ -452,7 +452,7 @@ func (m *Setup) command(command string) error {
 
 	// set a timeout context for the execution of the CNI plugin
 	// to interrupt its execution if it takes more than 5 seconds
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	if command == "ADD" {

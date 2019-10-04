@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -17,7 +18,7 @@ import (
 
 // prepareFakerootEnv prepares a build environment to
 // make fakeroot working with pacstrap.
-func (cp *ArchConveyorPacker) prepareFakerootEnv() (func(), error) {
+func (cp *ArchConveyorPacker) prepareFakerootEnv(ctx context.Context) (func(), error) {
 	truePath, err := exec.LookPath("true")
 	if err != nil {
 		return nil, fmt.Errorf("while searching true command: %s", err)

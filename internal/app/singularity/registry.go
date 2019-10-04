@@ -84,7 +84,7 @@ func (l *Library) Pull(ctx context.Context, from, to, arch string) error {
 		}
 	}
 
-	_, err = signing.IsSigned(to, l.keystoreURI, 0, false, l.client.AuthToken)
+	_, err = signing.IsSigned(ctx, to, l.keystoreURI, 0, false, l.client.AuthToken)
 	if err != nil {
 		sylog.Warningf("%v", err)
 		return ErrLibraryPullUnsigned

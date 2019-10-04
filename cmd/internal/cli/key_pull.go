@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -22,9 +23,11 @@ var KeyPullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.TODO()
+
 		handleKeyFlags(cmd)
 
-		if err := doKeyPullCmd(args[0], keyServerURI); err != nil {
+		if err := doKeyPullCmd(ctx, args[0], keyServerURI); err != nil {
 			sylog.Errorf("pull failed: %s", err)
 			os.Exit(2)
 		}
@@ -36,13 +39,13 @@ var KeyPullCmd = &cobra.Command{
 	Example: docs.KeyPullExample,
 }
 
-func doKeyPullCmd(fingerprint string, url string) error {
+func doKeyPullCmd(ctx context.Context, fingerprint string, url string) error {
 	var count int
 
 	keyring := sypgp.NewHandle("")
 
 	// get matching keyring
-	el, err := sypgp.FetchPubkey(http.DefaultClient, fingerprint, url, authToken, false)
+	el, err := sypgp.FetchPubkey(ctx, http.DefaultClient, fingerprint, url, authToken, false)
 	if err != nil {
 		return fmt.Errorf("unable to pull key from server: %v", err)
 	}

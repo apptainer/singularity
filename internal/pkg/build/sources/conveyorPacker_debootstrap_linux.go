@@ -19,7 +19,7 @@ import (
 
 // prepareFakerootEnv prepares a build environment to
 // make fakeroot working with debootstrap.
-func (cp *DebootstrapConveyorPacker) prepareFakerootEnv() (func(), error) {
+func (cp *DebootstrapConveyorPacker) prepareFakerootEnv(ctx context.Context) (func(), error) {
 	truePath, err := exec.LookPath("true")
 	if err != nil {
 		return nil, fmt.Errorf("while searching true command: %s", err)
@@ -47,7 +47,7 @@ func (cp *DebootstrapConveyorPacker) prepareFakerootEnv() (func(), error) {
 		return nil, fmt.Errorf("while creating %s: %s", devPath, err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	innerCtx, cancel := context.WithCancel(ctx)
 
 	umountFn := func() {
 		cancel()
@@ -80,7 +80,7 @@ func (cp *DebootstrapConveyorPacker) prepareFakerootEnv() (func(), error) {
 		makedevPath := filepath.Join(cp.b.RootfsPath, "/sbin/MAKEDEV")
 		for {
 			select {
-			case <-ctx.Done():
+			case <-innerCtx.Done():
 				break
 			case <-time.After(100 * time.Millisecond):
 				if _, err := os.Stat(makedevPath); err == nil {

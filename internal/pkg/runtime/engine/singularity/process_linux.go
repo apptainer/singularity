@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"context"
 	"debug/elf"
 	"encoding/binary"
 	"encoding/json"
@@ -303,7 +304,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 // and thus no additional privileges can be gained.
 //
 // Here, however, singularity engine does not escalate privileges.
-func (e *EngineOperations) PostStartProcess(pid int) error {
+func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error {
 	sylog.Debugf("Post start process")
 
 	if e.EngineConfig.GetInstance() {
