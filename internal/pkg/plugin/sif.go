@@ -8,9 +8,8 @@ package plugin
 import (
 	"encoding/json"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
-
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
 
