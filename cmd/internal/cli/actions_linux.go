@@ -539,9 +539,15 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
+	cfg := &config.Common{
+		EngineName:   singularityConfig.Name,
+		ContainerID:  name,
+		EngineConfig: engineConfig,
+	}
+
 	for _, m := range plugin.EngineConfigMutators() {
 		sylog.Debugf("Running runtime mutator from plugin %s", m.PluginName)
-		m.Mutate(engineConfig)
+		m.Mutate(cfg)
 	}
 
 	if engineConfig.GetInstance() {
