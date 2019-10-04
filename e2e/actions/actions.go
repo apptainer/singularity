@@ -924,6 +924,18 @@ func (c actionTests) actionBasicProfiles(t *testing.T) {
 			argv:    []string{"--pid", env.ImagePath, "false"},
 			exit:    1,
 		},
+		{
+			name:    "RunBindTrue",
+			command: "run",
+			argv:    []string{"--bind", "/etc/passwd", env.ImagePath, "true"},
+			exit:    0,
+		},
+		{
+			name:    "RunBindFalse",
+			command: "run",
+			argv:    []string{"--bind", "/etc/passwd", env.ImagePath, "false"},
+			exit:    1,
+		},
 	}
 
 	for _, profile := range e2e.Profiles {

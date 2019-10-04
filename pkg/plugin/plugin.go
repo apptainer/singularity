@@ -7,7 +7,7 @@ package plugin
 
 import (
 	"github.com/sylabs/singularity/pkg/cmdline"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 )
 
 // PluginSymbol is the name of a variable of type plugin.Plugin which all
@@ -58,5 +58,5 @@ type CLIMutator struct {
 }
 
 type EngineConfigMutator struct {
-	Mutate func(*singularity.EngineConfig)
+	Mutate func(*config.Common)
 }
