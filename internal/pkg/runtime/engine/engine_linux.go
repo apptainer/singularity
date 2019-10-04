@@ -6,6 +6,7 @@
 package engine
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -55,7 +56,7 @@ type Operations interface {
 	// in suid flow. However, when a user namespace is requested and it is not
 	// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
 	// and thus no additional privileges can be gained.
-	CreateContainer(int, net.Conn) error
+	CreateContainer(context.Context, int, net.Conn) error
 	// StartProcess is called during stage2 after RPC server finished
 	// environment preparation. This is the container process itself.
 	//
@@ -70,7 +71,7 @@ type Operations interface {
 	// in suid flow. However, when a user namespace is requested and it is not
 	// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
 	// and thus no additional privileges can be gained.
-	PostStartProcess(int) error
+	PostStartProcess(context.Context, int) error
 	// MonitorContainer is called from master once the container has
 	// been spawned. It will typically block until the container exists.
 	//
@@ -86,7 +87,7 @@ type Operations interface {
 	// in suid flow. However, when a user namespace is requested and it is not
 	// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
 	// and thus no additional privileges can be gained.
-	CleanupContainer(error, syscall.WaitStatus) error
+	CleanupContainer(context.Context, error, syscall.WaitStatus) error
 }
 
 // getName returns the engine name set in JSON []byte configuration.

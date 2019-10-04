@@ -7,6 +7,7 @@ package sources
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -20,7 +21,7 @@ import (
 )
 
 // Pack puts relevant objects in a Bundle!
-func (p *Ext3Packer) Pack() (*types.Bundle, error) {
+func (p *Ext3Packer) Pack(context.Context) (*types.Bundle, error) {
 	err := unpackExt3(p.b, p.img)
 	if err != nil {
 		sylog.Errorf("while unpacking ext3 image: %v", err)

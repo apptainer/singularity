@@ -10,13 +10,15 @@
 package sources
 
 import (
+	"context"
+
 	"github.com/containers/image/types"
 	imagetools "github.com/opencontainers/image-tools/image"
 	sytypes "github.com/sylabs/singularity/pkg/build/types"
 )
 
 // unpackRootfs extracts all of the layers of the given image reference into the rootfs of the provided bundle
-func unpackRootfs(b *sytypes.Bundle, _ types.ImageReference, _ *types.SystemContext) (err error) {
+func unpackRootfs(ctx context.Context, b *sytypes.Bundle, _ types.ImageReference, _ *types.SystemContext) (err error) {
 	refs := []string{"name=tmp"}
 	err = imagetools.UnpackLayout(b.TmpDir, b.RootfsPath, "amd64", refs)
 	return err

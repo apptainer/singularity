@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -24,9 +25,11 @@ var KeyPushCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.TODO()
+
 		handleKeyFlags(cmd)
 
-		if err := doKeyPushCmd(args[0], keyServerURI); err != nil {
+		if err := doKeyPushCmd(ctx, args[0], keyServerURI); err != nil {
 			sylog.Errorf("push failed: %s", err)
 			os.Exit(2)
 		}
@@ -38,7 +41,7 @@ var KeyPushCmd = &cobra.Command{
 	Example: docs.KeyPushExample,
 }
 
-func doKeyPushCmd(fingerprint string, url string) error {
+func doKeyPushCmd(ctx context.Context, fingerprint string, url string) error {
 	keyring := sypgp.NewHandle("")
 	el, err := keyring.LoadPubKeyring()
 	if err != nil {
@@ -63,7 +66,7 @@ func doKeyPushCmd(fingerprint string, url string) error {
 	}
 	entity := keys[0].Entity
 
-	if err = sypgp.PushPubkey(http.DefaultClient, entity, url, authToken); err != nil {
+	if err = sypgp.PushPubkey(ctx, http.DefaultClient, entity, url, authToken); err != nil {
 		return err
 	}
 

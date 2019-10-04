@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -21,7 +22,7 @@ type SquashfsPacker struct {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (p *SquashfsPacker) Pack() (*types.Bundle, error) {
+func (p *SquashfsPacker) Pack(context.Context) (*types.Bundle, error) {
 	// create a reader for rootfs partition
 	reader, err := image.NewPartitionReader(p.img, "", 0)
 	if err != nil {

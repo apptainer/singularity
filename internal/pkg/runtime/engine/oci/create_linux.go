@@ -7,6 +7,7 @@ package oci
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -159,7 +160,7 @@ var statusChan = make(chan string, 1)
 //
 // However, most likely this still will be executed as root since `singularity oci`
 // command set requires privileged execution.
-func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
+func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn net.Conn) error {
 	var err error
 
 	if e.CommonConfig.EngineName != Name {
