@@ -21,7 +21,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/files"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -32,6 +31,7 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types/parser"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/image/packer"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 )
 
 // Build is an abstracted way to look at the entire build process.
