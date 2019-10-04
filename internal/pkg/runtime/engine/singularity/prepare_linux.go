@@ -864,14 +864,14 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 // openDevFuse is a helper function that opens /dev/fuse once for each
 // plugin that wants to mount a FUSE filesystem.
 func openDevFuse(e *EngineOperations, starterConfig *starter.Config) error {
-	for _, name := range e.EngineConfig.GetPluginFuseMounts() {
+	for _, name := range e.CommonConfig.GetPluginFuseMounts() {
 		fd, err := syscall.Open("/dev/fuse", syscall.O_RDWR, 0)
 		if err != nil {
 			sylog.Debugf("Calling open: %+v\n", err)
 			return err
 		}
 
-		err = e.EngineConfig.SetPluginFuseFd(name, fd)
+		err = e.CommonConfig.SetPluginFuseFd(name, fd)
 		if err != nil {
 			sylog.Debugf("Unable to setup plugin %s fd: %+v\n", name, err)
 			return err

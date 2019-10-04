@@ -11,14 +11,14 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 )
 
-// EngineConfig stores both the JSONConfig and the FileConfig
+// EngineConfig stores both the JSONConfig and the FileConfig.
 type EngineConfig struct {
 	JSON      *JSONConfig `json:"jsonConfig"`
 	OciConfig *oci.Config `json:"ociConfig"`
 	File      *FileConfig `json:"-"`
 }
 
-// NewConfig returns singularity.EngineConfig with a parsed FileConfig
+// NewConfig returns singularity.EngineConfig with a parsed FileConfig.
 func NewConfig() *EngineConfig {
 	ret := &EngineConfig{
 		JSON:      &JSONConfig{},

@@ -32,6 +32,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/network"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
@@ -1899,13 +1900,13 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 // addFuseMount transforms the plugin configuration into a series of
 // mount requests for FUSE filesystems
 func (c *container) addFuseMount(system *mount.System) error {
-	for i, name := range c.engine.EngineConfig.GetPluginFuseMounts() {
+	for i, name := range c.engine.CommonConfig.GetPluginFuseMounts() {
 		var cfg struct {
-			Fuse singularity.FuseInfo
+			Fuse config.FuseInfo
 		}
 
-		if err := c.engine.EngineConfig.GetPluginConfig(name, &cfg); err != nil {
-			sylog.Debugf("Failed getting plugin config: %+v\n", err)
+		if err := c.engine.CommonConfig.GetPluginConfig(name, &cfg); err != nil {
+			sylog.Debugf("Failed getting plugin config: %v", err)
 			return err
 		}
 

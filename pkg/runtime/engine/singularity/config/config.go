@@ -21,7 +21,7 @@ const (
 	UnderlayLayer = "underlay"
 )
 
-// FileConfig describes the singularity.conf file options
+// FileConfig describes the singularity.conf file options.
 type FileConfig struct {
 	AllowSetuid             bool     `default:"yes" authorized:"yes,no" directive:"allow setuid"`
 	AllowPidNs              bool     `default:"yes" authorized:"yes,no" directive:"allow pid ns"`

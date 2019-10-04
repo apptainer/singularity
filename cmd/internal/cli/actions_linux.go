@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -122,6 +123,12 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	syscall.Umask(0022)
 
 	engineConfig := singularityConfig.NewConfig()
+	cfg := &config.Common{
+		EngineName:   singularityConfig.Name,
+		ContainerID:  name,
+		EngineConfig: engineConfig,
+		Plugin:       make(map[string]json.RawMessage),
+	}
 
 	configurationFile := buildcfg.SINGULARITY_CONF_FILE
 	if err := config.Parser(configurationFile, engineConfig.File); err != nil {
@@ -284,9 +291,14 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	engineConfig.SetBindPath(BindPaths)
 	if len(FuseMount) > 0 {
-		/* If --fusemount is given, imply --pid */
+		if !engineConfig.File.EnableFusemount {
+			sylog.Fatalf("--fusemount disabled by configuration")
+		}
+		// if --fusemount is given, imply --pid
 		PidNamespace = true
-		engineConfig.SetFuseMount(FuseMount)
+		if err := cfg.SetFuseMount(FuseMount); err != nil {
+			sylog.Fatalf("Could not set fuse mount: %v", err)
+		}
 	}
 	engineConfig.SetNetwork(Network)
 	engineConfig.SetDNS(DNS)
@@ -530,12 +542,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	for _, m := range plugin.EngineConfigMutators() {
 		sylog.Debugf("Running runtime mutator from plugin %s", m.PluginName)
 		m.Mutate(engineConfig)
-	}
-
-	cfg := &config.Common{
-		EngineName:   singularityConfig.Name,
-		ContainerID:  name,
-		EngineConfig: engineConfig,
 	}
 
 	if engineConfig.GetInstance() {

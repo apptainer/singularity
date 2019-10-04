@@ -29,7 +29,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -542,11 +542,11 @@ func (e *EngineOperations) runFuseDriver(name string, program []string, fd int) 
 // drivers before the user process starts.
 func setupFuseDrivers(e *EngineOperations) error {
 	// close file descriptors open for FUSE mount
-	for _, name := range e.EngineConfig.GetPluginFuseMounts() {
+	for _, name := range e.CommonConfig.GetPluginFuseMounts() {
 		var cfg struct {
-			Fuse singularity.FuseInfo
+			Fuse config.FuseInfo
 		}
-		if err := e.EngineConfig.GetPluginConfig(name, &cfg); err != nil {
+		if err := e.CommonConfig.GetPluginConfig(name, &cfg); err != nil {
 			return err
 		}
 
