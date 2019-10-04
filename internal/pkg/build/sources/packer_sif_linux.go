@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 
@@ -16,7 +17,7 @@ import (
 )
 
 // Pack puts relevant objects in a Bundle.
-func (p *SIFPacker) Pack() (*types.Bundle, error) {
+func (p *SIFPacker) Pack(context.Context) (*types.Bundle, error) {
 	err := unpackSIF(p.b, p.img)
 	if err != nil {
 		sylog.Errorf("unpackSIF failed: %s", err)

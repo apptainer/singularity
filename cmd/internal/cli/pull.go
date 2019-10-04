@@ -166,6 +166,8 @@ var PullCmd = &cobra.Command{
 }
 
 func pullRun(cmd *cobra.Command, args []string) {
+	ctx := context.TODO()
+
 	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 	if imgCache == nil {
 		sylog.Fatalf("Failed to create an image cache handle")
@@ -228,7 +230,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Could not initialize library: %v", err)
 		}
 
-		err = lib.Pull(context.TODO(), pullFrom, pullTo, pullArch)
+		err = lib.Pull(ctx, pullFrom, pullTo, pullArch)
 		if err != nil && err != singularity.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
@@ -246,7 +248,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 		}
 
-		err = singularity.OrasPull(imgCache, pullTo, ref, forceOverwrite, &ociAuth)
+		err = singularity.OrasPull(ctx, imgCache, pullTo, ref, forceOverwrite, &ociAuth)
 		if err != nil {
 			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}
@@ -261,7 +263,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
-		err = singularity.OciPull(imgCache, pullTo, pullFrom, tmpDir, &ociAuth, noHTTPS, buildArgs.noCleanUp)
+		err = singularity.OciPull(ctx, imgCache, pullTo, pullFrom, tmpDir, &ociAuth, noHTTPS, buildArgs.noCleanUp)
 		if err != nil {
 			sylog.Fatalf("While making image from oci registry: %v", err)
 		}

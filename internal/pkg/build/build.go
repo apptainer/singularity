@@ -6,6 +6,7 @@
 package build
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -75,7 +76,8 @@ func New(defs []types.Definition, conf Config) (*Build, error) {
 }
 
 func newBuild(defs []types.Definition, conf Config) (*Build, error) {
-	syscall.Umask(0002)
+	oldumask := syscall.Umask(0002)
+	defer syscall.Umask(oldumask)
 
 	conf.Dest = filepath.Clean(conf.Dest)
 	// always build a sandbox if updating an existing sandbox
@@ -241,7 +243,7 @@ func (b Build) cleanUp() {
 }
 
 // Full runs a standard build from start to finish.
-func (b *Build) Full() error {
+func (b *Build) Full(ctx context.Context) error {
 	sylog.Infof("Starting build...")
 
 	// monitor build for termination signal and clean up
@@ -271,7 +273,7 @@ func (b *Build) Full() error {
 				return err
 			}
 
-			_, err = p.Pack()
+			_, err = p.Pack(ctx)
 			if err != nil {
 				return err
 			}
@@ -280,11 +282,11 @@ func (b *Build) Full() error {
 			if b.Conf.Opts.ImgCache == nil {
 				return fmt.Errorf("undefined image cache")
 			}
-			if err := stage.c.Get(stage.b); err != nil {
+			if err := stage.c.Get(ctx, stage.b); err != nil {
 				return fmt.Errorf("conveyor failed to get: %v", err)
 			}
 
-			_, err := stage.c.Pack()
+			_, err := stage.c.Pack(ctx)
 			if err != nil {
 				return fmt.Errorf("packer failed to pack: %v", err)
 			}

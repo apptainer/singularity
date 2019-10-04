@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/rpc"
@@ -28,7 +29,7 @@ import (
 // network setup (see container.prepareNetworkSetup) in fakeroot flow. The rest
 // of the setup (e.g. mount operations) where privileges may be required is performed
 // by calling RPC server methods (see internal/app/starter/rpc_linux.go for details).
-func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
+func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn net.Conn) error {
 	if e.CommonConfig.EngineName != singularityConfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
@@ -50,5 +51,5 @@ func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 		return fmt.Errorf("failed to initialize RPC client")
 	}
 
-	return create(e, rpcOps, pid)
+	return create(ctx, e, rpcOps, pid)
 }
