@@ -41,7 +41,7 @@ func DownloadImage(ctx context.Context, c *client.Client, imagePath, arch, libra
 	}
 
 	// open destination file for writing
-	f, err := os.OpenFile(imagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0777)
+	f, err := os.OpenFile(imagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0755)
 	if err != nil {
 		return fmt.Errorf("error opening file %s for writing: %v", imagePath, err)
 	}
