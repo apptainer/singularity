@@ -9,9 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 // Check there is no file descriptor leaked in the container

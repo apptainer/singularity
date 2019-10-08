@@ -212,3 +212,10 @@ func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
 func (t *Methods) Chdir(arguments *args.ChdirArgs, reply *int) error {
 	return mainthread.Chdir(arguments.Dir)
 }
+
+// Stat gets file status.
+func (t *Methods) Stat(arguments *args.StatArgs, reply *args.StatReply) error {
+	var err error
+	reply.Err = syscall.Stat(arguments.Path, &reply.St)
+	return err
+}
