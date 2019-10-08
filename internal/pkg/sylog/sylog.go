@@ -159,11 +159,14 @@ func Debugf(format string, a ...interface{}) {
 func SetLevel(l int) {
 	loggerLevel = messageLevel(l)
 	// set the apex log level, for umoci
-	if loggerLevel <= log {
-		// quiet or silent options
+	if loggerLevel <= error {
+		// silent option
 		apexlog.SetLevel(apexlog.ErrorLevel)
-	} else if loggerLevel <= info {
-		// verbose option or default
+	} else if loggerLevel <= log {
+		// quiet option
+		apexlog.SetLevel(apexlog.WarnLevel)
+	} else if loggerLevel < debug {
+		// verbose option(s) or default
 		apexlog.SetLevel(apexlog.InfoLevel)
 	} else {
 		// debug option
