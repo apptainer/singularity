@@ -6,21 +6,23 @@
 package singularity
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"plugin"
 	"runtime"
 	"strings"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
-
-const manifestgenDir = "cmd/plugin_manifestgen"
 
 // getSingularitySrcDir returns the source directory for singularity.
 func getSingularitySrcDir() (string, error) {
@@ -62,11 +64,11 @@ func CompilePlugin(sourceDir, destSif, buildTags string) error {
 	// build plugin object using go build
 	_, err := buildPlugin(sourceDir, buildTags)
 	if err != nil {
-		return fmt.Errorf("while building plugin .so: %s", err)
+		return fmt.Errorf("while building plugin .so: %v", err)
 	}
 
 	// generate plugin manifest from .so
-	_, err = generateManifest(sourceDir, buildTags)
+	_, err = generateManifest(sourceDir)
 	if err != nil {
 		return fmt.Errorf("while generating plugin manifest: %s", err)
 	}
@@ -123,42 +125,34 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 
 // generateManifest takes the path to the plugin source, sourceDir, and generates
 // its corresponding manifest file.
-func generateManifest(sourceDir, buildTags string) (string, error) {
-	workpath, err := getSingularitySrcDir()
-	if err != nil {
-		return "", errors.New("singularity source directory not found")
-	}
-
+func generateManifest(sourceDir string) (string, error) {
 	in := pluginObjPath(sourceDir)
 	out := pluginManifestPath(sourceDir)
 
-	goTool, err := exec.LookPath("go")
+	pluginPointer, err := plugin.Open(in)
 	if err != nil {
-		return "", errors.New("go compiler not found")
+		return "", err
 	}
 
-	mangenpath := filepath.Join(workpath, manifestgenDir)
-
-	args := []string{
-		"run",
-		"-mod=vendor",
-		"-tags", buildTags,
-		fmt.Sprintf("-gcflags=all=-trimpath=%s", workpath),
-		fmt.Sprintf("-asmflags=all=-trimpath=%s", workpath),
-		mangenpath,
-		in,
-		out,
+	sym, err := pluginPointer.Lookup(pluginapi.PluginSymbol)
+	if err != nil {
+		return "", err
 	}
 
-	gencmd := exec.Command(goTool, args...)
+	p, ok := sym.(*pluginapi.Plugin)
+	if !ok {
+		return "", fmt.Errorf(`symbol "Plugin" not of type Plugin`)
+	}
 
-	gencmd.Dir = workpath
-	gencmd.Stderr = os.Stderr
-	gencmd.Stdout = os.Stdout
-	gencmd.Stdin = os.Stdin
-	gencmd.Env = append(os.Environ(), "GO111MODULE=on")
+	manifest, err := json.Marshal(p.Manifest)
+	if err != nil {
+		return "", fmt.Errorf("could not marshal manifest to json: %v", err)
+	}
 
-	return out, gencmd.Run()
+	if err := ioutil.WriteFile(out, manifest, 0644); err != nil {
+		return "", fmt.Errorf("could not write manifest: %v", err)
+	}
+	return out, nil
 }
 
 // makeSIF takes in two arguments: sourceDir, the path to the plugin source directory;

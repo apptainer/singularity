@@ -12,6 +12,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 )
 
@@ -32,7 +33,12 @@ type pluginImplementation struct{}
 
 func (p pluginImplementation) Initialize(r pluginapi.Registry) error {
 	r.AddEngineConfigMutator(pluginapi.EngineConfigMutator{
-		Mutate: func(config *singularity.EngineConfig) {
+		Mutate: func(common *config.Common) {
+			c, ok := common.EngineConfig.(*singularity.EngineConfig)
+			if !ok {
+				log.Printf("Unexpected engine config")
+				return
+			}
 			cfg := cgroups.Config{
 				Devices: nil,
 				Memory: &cgroups.LinuxMemory{
@@ -46,13 +52,13 @@ func (p pluginImplementation) Initialize(r pluginapi.Registry) error {
 			}
 			err = cgroups.PutConfig(cfg, path)
 			if err != nil {
-				log.Printf("Put config error: %v", err)
+				log.Printf("Put c error: %v", err)
 			}
-			if path := config.GetCgroupsPath(); path != "" {
+			if path := c.GetCgroupsPath(); path != "" {
 				sylog.Infof("Old cgroups path: %s", path)
 			}
 			sylog.Infof("Setting cgroups path to %s", path)
-			config.SetCgroupsPath(path)
+			c.SetCgroupsPath(path)
 		},
 	})
 
