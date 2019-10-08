@@ -9,7 +9,16 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.4.1
+# Changes Since v3.4.2
+
+# v3.4.2 - [2019.10.08]
+
+  - This point release addresses the following issues:
+    - Sets workable permissions on OCI -> sandbox rootless builds
+    - Fallback correctly to user namespace for non setuid installation
+    - Correctly handle the starter-suid binary for non-root installs
+    - Creates CACHEDIR if it doesn't exist
+    - Set apex loglevel for umoci to match singularity loglevel
 
 # v3.4.1 - [2019.09.17]
 
