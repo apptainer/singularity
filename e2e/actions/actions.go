@@ -1032,6 +1032,7 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		"STDPIPE":               c.STDPipe,             // stdin/stdout pipe
 		"action basic profiles": c.actionBasicProfiles, // run basic action under different profiles
 		"issue 4488":            c.issue4488,           // https://github.com/sylabs/singularity/issues/4488
+		"issue 4587":            c.issue4587,           // https://github.com/sylabs/singularity/issues/4587
 		"network":               c.actionNetwork,       // test basic networking
 	})
 }
