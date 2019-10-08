@@ -9,13 +9,14 @@ package sylog
 
 import (
 	"fmt"
-	apexlog "github.com/apex/log"
 	"io"
 	"io/ioutil"
 	"os"
 	"runtime"
 	"strconv"
 	"strings"
+
+	apexlog "github.com/apex/log"
 )
 
 type messageLevel int
@@ -157,12 +158,15 @@ func Debugf(format string, a ...interface{}) {
 // SetLevel explicitly sets the loggerLevel
 func SetLevel(l int) {
 	loggerLevel = messageLevel(l)
-	// the apex log (for umoci) is too noisy at warn level, avoid that
-	if loggerLevel < verbose {
+	// set the apex log level, for umoci
+	if loggerLevel <= log {
+		// quiet or silent options
 		apexlog.SetLevel(apexlog.ErrorLevel)
-	} else if loggerLevel < debug {
+	} else if loggerLevel <= info {
+		// verbose option or default
 		apexlog.SetLevel(apexlog.InfoLevel)
 	} else {
+		// debug option
 		apexlog.SetLevel(apexlog.DebugLevel)
 	}
 }
