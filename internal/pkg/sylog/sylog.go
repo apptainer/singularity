@@ -9,6 +9,7 @@ package sylog
 
 import (
 	"fmt"
+	apexlog "github.com/apex/log"
 	"io"
 	"io/ioutil"
 	"os"
@@ -66,17 +67,15 @@ var colorReset = "\x1b[0m"
 var loggerLevel messageLevel
 
 func init() {
-	_level, ok := os.LookupEnv("SINGULARITY_MESSAGELEVEL")
-	if !ok {
-		loggerLevel = info
-	} else {
-		_levelint, err := strconv.Atoi(_level)
-		if err != nil {
-			loggerLevel = info
-		} else {
-			loggerLevel = messageLevel(_levelint)
+	_levelint := int(messageLevel(info))
+	_levelstr, ok := os.LookupEnv("SINGULARITY_MESSAGELEVEL")
+	if ok {
+		_leveli, err := strconv.Atoi(_levelstr)
+		if err == nil {
+			_levelint = _leveli
 		}
 	}
+	SetLevel(_levelint)
 }
 
 func prefix(level messageLevel) string {
@@ -158,6 +157,14 @@ func Debugf(format string, a ...interface{}) {
 // SetLevel explicitly sets the loggerLevel
 func SetLevel(l int) {
 	loggerLevel = messageLevel(l)
+	// the apex log (for umoci) is too noisy at warn level, avoid that
+	if loggerLevel < verbose {
+		apexlog.SetLevel(apexlog.ErrorLevel)
+	} else if loggerLevel < debug {
+		apexlog.SetLevel(apexlog.InfoLevel)
+	} else {
+		apexlog.SetLevel(apexlog.DebugLevel)
+	}
 }
 
 // DisableColor for the logger
