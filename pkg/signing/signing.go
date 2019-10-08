@@ -50,6 +50,11 @@ type KeyList struct {
 	SignerKeys []*Key
 }
 
+type signatureLink struct {
+	sigIndex  int // the index of the descriptor with the signature
+	dataIndex int // the index of the descriptor of the signed data
+}
+
 // computeHashStr generates a hash from data object(s) and generates a string
 // to be stored in the signature block
 func computeHashStr(fimg *sif.FileImage, descr *sif.Descriptor) string {
@@ -277,11 +282,6 @@ func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.
 	return
 }
 
-type signatureLink struct {
-	sigPart  *sif.Descriptor
-	dataPart *sif.Descriptor
-}
-
 func getSigsAllPart(fimg *sif.FileImage) ([]signatureLink, error) {
 	var err error
 	var tbl []signatureLink
@@ -302,16 +302,16 @@ func getSigsAllPart(fimg *sif.FileImage) ([]signatureLink, error) {
 		if d.Datatype == sif.DataSignature {
 			continue
 		}
-		sp, _, err := fimg.GetLinkedDescrsByType(d.ID, sif.DataSignature)
+
+		_, idxs, err := fimg.GetLinkedDescrsByType(d.ID, sif.DataSignature)
 		if err != nil {
 			// If a partition is not signed, print a warning.
 			sylog.Warningf("Missing signature for SIF descriptor %d (%s)", didx+1, datatypeStr(d.Datatype))
 			continue
 		}
 
-		for _, s := range sp {
-			dataPart := d
-			tbl = append(tbl, signatureLink{s, &dataPart})
+		for _, sidx := range idxs {
+			tbl = append(tbl, signatureLink{sidx, didx})
 		}
 	}
 
@@ -329,19 +329,19 @@ func getSigsDescr(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
 
 	descr[0], _, err = fimg.GetFromDescrID(id)
 	if err != nil {
-		return nil, fmt.Errorf("no descriptor found for id %v", id)
+		return nil, fmt.Errorf("no descriptor found for id %d", id)
 	}
 
-	sigs, _, err := fimg.GetLinkedDescrsByType(id, sif.DataSignature)
+	_, idx, err := fimg.GetLinkedDescrsByType(id, sif.DataSignature)
 	if err != nil {
 		return nil, fmt.Errorf("no signatures found for id %v", id)
 	}
 
-	sigLink := make([]signatureLink, len(sigs))
+	sigLink := make([]signatureLink, len(idx))
 
-	for i, s := range sigs {
-		sigLink[i].sigPart = s
-		sigLink[i].dataPart = descr[0]
+	for i, l := range idx {
+		sigLink[i].sigIndex = l
+		sigLink[i].dataIndex = int(id) - 1
 	}
 
 	return sigLink, nil
@@ -353,7 +353,7 @@ func getSigsGroup(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
 	search := sif.Descriptor{
 		Groupid: id | sif.DescrGroupMask,
 	}
-	descr, _, err := fimg.GetFromDescr(search)
+	_, dindex, err := fimg.GetFromDescr(search)
 	if err != nil {
 		return nil, fmt.Errorf("no descriptors found for groupid %v", id)
 	}
@@ -363,18 +363,19 @@ func getSigsGroup(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
 		Datatype: sif.DataSignature,
 		Link:     id | sif.DescrGroupMask,
 	}
-	sigs, _, err := fimg.GetFromDescr(search)
+	_, sindex, err := fimg.GetFromDescr(search)
 	if err != nil {
 		return nil, fmt.Errorf("no signatures found for groupid %v", id)
 	}
 
-	sigLink := make([]signatureLink, len(sigs))
-
-	for i, s := range sigs {
-		sigLink[i].sigPart = s
+	if len(dindex) != len(sindex) {
+		return nil, fmt.Errorf("data and sigs not the same")
 	}
-	for i, d := range descr {
-		sigLink[i].dataPart = d
+
+	sigLink := make([]signatureLink, len(sindex))
+
+	for i := range sindex {
+		sigLink = append(sigLink, signatureLink{dindex[i], sindex[i]})
 	}
 
 	return sigLink, nil
@@ -427,7 +428,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	defer fimg.UnloadContainer()
 
 	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
-	sigsArr, err := getSigsForSelection(&fimg, id, isGroup)
+	sigsLink, err := getSigsForSelection(&fimg, id, isGroup)
 	if err != nil {
 		return "", false, fmt.Errorf("error while searching for signature blocks: %s", err)
 	}
@@ -444,32 +445,34 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	var keySigner *Key
 	keyEntityList := KeyList{}
 
-	author += fmt.Sprintf("Container is signed by %d key(s):\n\n", len(sigsArr))
+	author += fmt.Sprintf("Container is signed by %d key(s):\n\n", len(sigsLink))
 
-	for _, sig := range sigsArr {
-		// the selected data object is hashed for comparison against signature block's
-		sifhash := computeHashStr(&fimg, sig.dataPart)
+	for _, part := range sigsLink {
+		sifDataIndex := part.dataIndex
+		sifSigIndex := part.sigIndex
+
+		sifhash := computeHashStr(&fimg, &fimg.DescrArr[sifDataIndex])
 		sylog.Debugf("Verifying hash: %s\n", sifhash)
 
 		dataCheck := true
 		// get the entity fingerprint for the signature block
-		fingerprint, err := sig.sigPart.GetEntityString()
+		fingerprint, err := fimg.DescrArr[sifSigIndex].GetEntityString()
 		if err != nil {
-			sylog.Errorf("could not get the signing entity fingerprint from partition ID: %d: %s", sig.sigPart.ID, err)
+			sylog.Errorf("could not get the signing entity fingerprint from partition ID: %d: %s", sifSigIndex, err)
 			fail = true
 			continue
 		}
-		author += fmt.Sprintf("Verifying partition: %s:\n", datatypeStr(sig.dataPart.Datatype))
+		author += fmt.Sprintf("Verifying partition: %s:\n", datatypeStr(fimg.DescrArr[sifDataIndex].Datatype))
 		author += fingerprint + "\n"
 
 		// Extract hash string from signature block
-		data := sig.sigPart.GetData(&fimg)
+		data := fimg.DescrArr[sifSigIndex].GetData(&fimg)
 		block, _ := clearsign.Decode(data)
 		if block == nil {
 			sylog.Verbosef("%s signature key (%s) corrupted, unable to read data", red("error:"), fingerprint)
 			author += fmt.Sprintf("%-18s Signature corrupted, unable to read data\n\n", red("[FAIL]"))
 
-			keySigner = makeKeyEntity("", datatypeStr(sig.dataPart.Datatype), fingerprint, false, false, false)
+			keySigner = makeKeyEntity("", datatypeStr(fimg.DescrArr[sifDataIndex].Datatype), fingerprint, false, false, false)
 			keyEntityList.SignerKeys = append(keyEntityList.SignerKeys, keySigner)
 
 			fail = true
@@ -477,7 +480,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		}
 
 		// (1) try to get identity of signer
-		i, local, err := getSignerIdentity(keyring, sig.sigPart, block, data, fingerprint, keyServiceURI, authToken, localVerify)
+		i, local, err := getSignerIdentity(keyring, &fimg.DescrArr[sifSigIndex], block, data, fingerprint, keyServiceURI, authToken, localVerify)
 		if err != nil {
 			// use [MISSING] if we get an error we expect
 			if err == errNotFound || err == errNotFoundLocal {
@@ -507,11 +510,12 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		}
 		author += fmt.Sprintf("\n")
 
-		keySigner = makeKeyEntity(i, datatypeStr(sig.dataPart.Datatype), fingerprint, local, true, dataCheck)
+		keySigner = makeKeyEntity(i, datatypeStr(fimg.DescrArr[sifDataIndex].Datatype), fingerprint, local, true, dataCheck)
 		keyEntityList.SignerKeys = append(keyEntityList.SignerKeys, keySigner)
+
 	}
 
-	keyEntityList.Signatures = len(sigsArr)
+	keyEntityList.Signatures = len(sigsLink)
 
 	if jsonVerify {
 		jsonData, err := json.MarshalIndent(keyEntityList, "", "  ")
