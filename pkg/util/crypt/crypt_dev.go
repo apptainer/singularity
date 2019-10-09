@@ -6,6 +6,7 @@
 package crypt
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -29,6 +30,10 @@ var (
 	// ErrUnsupportedCryptsetupVersion is the error raised when the available version
 	// of cryptsetup is not compatible with the Singularity encryption mechanism.
 	ErrUnsupportedCryptsetupVersion = errors.New("available cryptsetup is not supported")
+
+	// ErrInvalidPassphrase raised when the passed key is not valid to open requested
+	// encrypted device.
+	ErrInvalidPassphrase = errors.New("no key available with this passphrase")
 )
 
 // createLoop attaches the specified file to the next available loop
@@ -265,28 +270,17 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 	for i := 0; i < maxRetries; i++ {
 		nextCrypt := getNextAvailableCryptDevice()
 		if nextCrypt == "" {
-			return "", errors.New("Crypt device not available")
+			return "", errors.New("сrypt device not available")
 		}
 
 		cmd := exec.Command(cryptsetup, "open", "--batch-mode", "--type", "luks2", "--key-file", "-", path, nextCrypt)
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 		cmd.SysProcAttr.Credential = &syscall.Credential{Uid: 0, Gid: 0}
 		sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
-		stdin, err := cmd.StdinPipe()
-		if err != nil {
-			return "", err
-		}
 
-		go func() {
-			stdin.Write(key)
-			stdin.Close()
-		}()
-
+		cmd.Stdin = bytes.NewBuffer(key)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			if strings.Contains(string(out), "No key available") {
-				sylog.Debugf("Invalid password")
-			}
 			if strings.Contains(string(out), "Device already exists") {
 				continue
 			}
@@ -298,11 +292,16 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 				return "", err
 			}
 
+			if strings.Contains(string(out), "No key available") {
+				sylog.Debugf("Invalid password")
+				return "", ErrInvalidPassphrase
+			}
+
 			return "", fmt.Errorf("cryptsetup open failed: %s: %v", string(out), err)
 		}
 		sylog.Debugf("Successfully opened encrypted device %s", path)
 		return nextCrypt, nil
 	}
 
-	return "", errors.New("Unable to open crypt device")
+	return "", errors.New("unable to open crypt device")
 }

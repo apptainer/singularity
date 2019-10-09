@@ -31,6 +31,7 @@ import (
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
+	buildTypes "github.com/sylabs/singularity/pkg/build/types"
 	sytypes "github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -45,7 +46,7 @@ type OCIConveyorPacker struct {
 }
 
 // Get downloads container information from the specified source
-func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
+func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err error) {
 
 	cp.b = b
 
@@ -121,7 +122,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 
 	if !cp.b.Opts.NoCache {
 		// Grab the modified source ref from the cache
-		cp.srcRef, err = ociclient.ConvertReference(b.Opts.ImgCache, cp.srcRef, cp.sysCtx)
+		cp.srcRef, err = ociclient.ConvertReference(ctx, b.Opts.ImgCache, cp.srcRef, cp.sysCtx)
 		if err != nil {
 			return err
 		}
@@ -131,12 +132,12 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 	// contains *only* this image
 	cp.tmpfsRef, err = oci.ParseReference(cp.b.TmpDir + ":" + "tmp")
 
-	err = cp.fetch()
+	err = cp.fetch(ctx)
 	if err != nil {
 		return err
 	}
 
-	cp.imgConfig, err = cp.getConfig()
+	cp.imgConfig, err = cp.getConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -144,9 +145,9 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 	return nil
 }
 
-// Pack puts relevant objects in a Bundle!
-func (cp *OCIConveyorPacker) Pack() (*sytypes.Bundle, error) {
-	err := cp.unpackTmpfs()
+// Pack puts relevant objects in a Bundle.
+func (cp *OCIConveyorPacker) Pack(ctx context.Context) (*sytypes.Bundle, error) {
+	err := cp.unpackTmpfs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("while unpacking tmpfs: %v", err)
 	}
@@ -174,9 +175,9 @@ func (cp *OCIConveyorPacker) Pack() (*sytypes.Bundle, error) {
 	return cp.b, nil
 }
 
-func (cp *OCIConveyorPacker) fetch() (err error) {
+func (cp *OCIConveyorPacker) fetch(ctx context.Context) (err error) {
 	// cp.srcRef contains the cache source reference
-	err = copy.Image(context.Background(), cp.policyCtx, cp.tmpfsRef, cp.srcRef, &copy.Options{
+	err = copy.Image(ctx, cp.policyCtx, cp.tmpfsRef, cp.srcRef, &copy.Options{
 		ReportWriter: ioutil.Discard,
 		SourceCtx:    cp.sysCtx,
 	})
@@ -187,14 +188,14 @@ func (cp *OCIConveyorPacker) fetch() (err error) {
 	return nil
 }
 
-func (cp *OCIConveyorPacker) getConfig() (imgspecv1.ImageConfig, error) {
-	img, err := cp.srcRef.NewImage(context.Background(), cp.sysCtx)
+func (cp *OCIConveyorPacker) getConfig(ctx context.Context) (imgspecv1.ImageConfig, error) {
+	img, err := cp.srcRef.NewImage(ctx, cp.sysCtx)
 	if err != nil {
 		return imgspecv1.ImageConfig{}, err
 	}
 	defer img.Close()
 
-	imgSpec, err := img.OCIConfig(context.Background())
+	imgSpec, err := img.OCIConfig(ctx)
 	if err != nil {
 		return imgspecv1.ImageConfig{}, err
 	}
@@ -208,7 +209,7 @@ func (cp *OCIConveyorPacker) insertOCIConfig() error {
 		return err
 	}
 
-	cp.b.JSONObjects["oci-config"] = conf
+	cp.b.JSONObjects[buildTypes.OCIConfigJSON] = conf
 	return nil
 }
 
@@ -289,8 +290,8 @@ func (cp *OCIConveyorPacker) extractArchive(src string, dst string) error {
 	}
 }
 
-func (cp *OCIConveyorPacker) unpackTmpfs() error {
-	return unpackRootfs(cp.b, cp.tmpfsRef, cp.sysCtx)
+func (cp *OCIConveyorPacker) unpackTmpfs(ctx context.Context) error {
+	return unpackRootfs(ctx, cp.b, cp.tmpfsRef, cp.sysCtx)
 }
 
 func (cp *OCIConveyorPacker) insertBaseEnv() (err error) {

@@ -21,7 +21,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -31,7 +30,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	imgutil "github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/nvidia"
@@ -228,21 +228,22 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				if IsWritable {
 					sylog.Warningf("NVIDIA binaries may not be bound with --writable")
 				}
-				for _, binary := range bins {
+				binaries := make([]string, len(bins))
+				for i, binary := range bins {
 					usrBinBinary := filepath.Join("/usr/bin", filepath.Base(binary))
-					bind := strings.Join([]string{binary, usrBinBinary}, ":")
-					BindPaths = append(BindPaths, bind)
+					binaries[i] = strings.Join([]string{binary, usrBinBinary}, ":")
 				}
+				engineConfig.SetFilesPath(binaries)
 			}
 			if len(libs) == 0 {
 				sylog.Warningf("Could not find any NVIDIA libraries on this host!")
 				sylog.Warningf("You may need to edit %v/nvliblist.conf", buildcfg.SINGULARITY_CONFDIR)
 			} else {
-				ContainLibsPath = append(ContainLibsPath, libs...)
+				engineConfig.SetLibrariesPath(libs)
 			}
 		}
 		// bind persistenced socket if found
-		BindPaths = append(BindPaths, nvidia.IpcsPath(userPath)...)
+		engineConfig.AppendFilesPath(nvidia.IpcsPath(userPath)...)
 	}
 
 	// early check for key material before we start engine so we can fail fast if missing
@@ -253,7 +254,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err != nil {
 			sylog.Fatalf("could not open image %s: %s", engineConfig.GetImage(), err)
 		}
-		defer img.File.Close()
 
 		if !img.HasRootFs() {
 			sylog.Fatalf("no root filesystem found in %s", engineConfig.GetImage())
@@ -275,6 +275,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 			engineConfig.SetEncryptionKey(plaintextKey)
 		}
+
+		// don't defer this call as in all cases it won't be
+		// called before execing starter, so it would leak the
+		// image file descriptor to the container process
+		img.File.Close()
 	}
 
 	engineConfig.SetBindPath(BindPaths)
@@ -304,7 +309,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetNoPrivs(NoPrivs)
 	engineConfig.SetSecurity(Security)
 	engineConfig.SetShell(ShellPath)
-	engineConfig.SetLibrariesPath(ContainLibsPath)
+	engineConfig.AppendLibrariesPath(ContainLibsPath...)
 	engineConfig.SetFakeroot(IsFakeroot)
 
 	if ShellPath != "" {
@@ -470,10 +475,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	// Clean environment
 	env.SetContainerEnv(&generator, environment, IsCleanEnv, engineConfig.GetHomeDest())
 
-	// force to use getwd syscall
-	os.Unsetenv("PWD")
-
 	if pwd, err := os.Getwd(); err == nil {
+		engineConfig.SetCwd(pwd)
 		if PwdPath != "" {
 			generator.SetProcessCwd(PwdPath)
 		} else {
@@ -524,12 +527,15 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
-	plugin.FlagHookCallbacks(engineConfig)
-
 	cfg := &config.Common{
 		EngineName:   singularityConfig.Name,
 		ContainerID:  name,
 		EngineConfig: engineConfig,
+	}
+
+	for _, m := range plugin.EngineConfigMutators() {
+		sylog.Debugf("Running runtime mutator from plugin %s", m.PluginName)
+		m.Mutate(cfg)
 	}
 
 	if engineConfig.GetInstance() {

@@ -6,14 +6,20 @@
 package sources
 
 import (
+	"bytes"
+	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 )
 
 // DebootstrapConveyorPacker holds stuff that needs to be packed into the bundle
@@ -25,7 +31,7 @@ type DebootstrapConveyorPacker struct {
 }
 
 // Get downloads container information from the specified source
-func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
+func (cp *DebootstrapConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	cp.b = b
 
 	// check for debootstrap on system(script using "singularity_which" not sure about its importance)
@@ -42,15 +48,51 @@ func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
 		return fmt.Errorf("you must be root to build with debootstrap")
 	}
 
+	insideUserNs, setgroupsAllowed := namespaces.IsInsideUserNamespace(os.Getpid())
+	if insideUserNs && setgroupsAllowed {
+		umountFn, err := cp.prepareFakerootEnv(ctx)
+		if umountFn != nil {
+			defer umountFn()
+		}
+		if err != nil {
+			return fmt.Errorf("while preparing fakeroot build environment: %s", err)
+		}
+	}
+
 	// run debootstrap command
 	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+cp.include, `--arch=`+runtime.GOARCH, cp.osversion, cp.b.RootfsPath, cp.mirrorurl)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
 	sylog.Debugf("\n\tDebootstrap Path: %s\n\tIncludes: apt(default),%s\n\tDetected Arch: %s\n\tOSVersion: %s\n\tMirrorURL: %s\n", debootstrapPath, cp.include, runtime.GOARCH, cp.osversion, cp.mirrorurl)
 
 	// run debootstrap
-	if err = cmd.Run(); err != nil {
+	out, err := cmd.CombinedOutput()
+
+	io.Copy(os.Stdout, bytes.NewReader(out))
+
+	if err != nil {
+		dumpLog := func(fn string) {
+			if _, err := os.Stat(fn); os.IsNotExist(err) {
+				return
+			}
+
+			fh, err := os.Open(fn)
+			if err != nil {
+				sylog.Debugf("Cannot open %s: %#v", fn, err)
+				return
+			}
+			defer fh.Close()
+
+			log, err := ioutil.ReadAll(fh)
+			if err != nil {
+				sylog.Debugf("Cannot read %s: %#v", fn, err)
+				return
+			}
+
+			sylog.Debugf("Contents of %s:\n%s", fn, log)
+		}
+
+		dumpLog(filepath.Join(cp.b.RootfsPath, "debootstrap/debootstrap.log"))
+
 		return fmt.Errorf("while debootstrapping: %v", err)
 	}
 
@@ -58,7 +100,7 @@ func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *DebootstrapConveyorPacker) Pack() (*types.Bundle, error) {
+func (cp *DebootstrapConveyorPacker) Pack(context.Context) (*types.Bundle, error) {
 
 	//change root directory permissions to 0755
 	if err := os.Chmod(cp.b.RootfsPath, 0755); err != nil {

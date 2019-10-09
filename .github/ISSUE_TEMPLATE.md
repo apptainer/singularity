@@ -1,18 +1,44 @@
+### Version of Singularity:
 
-## Version of Singularity:
+What version of Singularity are you using? Run:
 
-Write here.
+```
+$ singularity version
+
+```
+
+
+<!-- please include command-line output in a code block -->
 
 ### Expected behavior
 
-Write here.
+What did you expect to see when you do...?
+
 
 ### Actual behavior
 
-Write here.
+What actually happend? Why was it incorrect?
 
-### Steps to reproduce behavior
 
-Write here.
+
+<!-- if this is a feature request, you can ignore this next part -->
+
+### Steps to reproduce this behavior
+
+How can others reproduce this issue/problem?
+
+
+### What OS/distro are you running
+
+```
+$ cat /etc/os-release
+
+
+```
+
+
+### How did you install Singularity
+
+Write here how you installed Singularity. Eg. RPM, source.
 
 

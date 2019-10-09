@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"golang.org/x/sys/unix"
 )
@@ -108,7 +109,7 @@ func (c ctx) testDockerPulls(t *testing.T) {
 					if path == tmpContainerFile {
 						path = filepath.Join(tmpPath, tmpContainerFile)
 					}
-					c.env.ImageVerify(t, path)
+					c.env.ImageVerify(t, path, e2e.UserProfile)
 				}
 			}),
 			e2e.ExpectExit(tt.exit),
@@ -221,7 +222,7 @@ func (c ctx) testDockerWhiteoutSymlink(t *testing.T) {
 			if t.Failed() {
 				return
 			}
-			c.env.ImageVerify(t, imagePath)
+			c.env.ImageVerify(t, imagePath, e2e.UserProfile)
 		}),
 		e2e.ExpectExit(0),
 	)
@@ -299,7 +300,7 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 					return
 				}
 
-				c.env.ImageVerify(t, imagePath)
+				c.env.ImageVerify(t, imagePath, e2e.RootProfile)
 			}),
 			e2e.ExpectExit(0),
 		)
@@ -362,7 +363,7 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 					return
 				}
 
-				c.env.ImageVerify(t, imagePath)
+				c.env.ImageVerify(t, imagePath, e2e.RootProfile)
 			}),
 			e2e.ExpectExit(tt.exit),
 		)
@@ -375,12 +376,12 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		t.Run("dockerPulls", c.testDockerPulls)
-		t.Run("testDockerAUFS", c.testDockerAUFS)
-		t.Run("testDockerPermissions", c.testDockerPermissions)
-		t.Run("testDockerWhiteoutSymlink", c.testDockerWhiteoutSymlink)
-		t.Run("testDockerDefFile", c.testDockerDefFile)
-		t.Run("testDockerRegistry", c.testDockerRegistry)
-	}
+	return testhelper.TestRunner(map[string]func(*testing.T){
+		"AUFS":             c.testDockerAUFS,
+		"def file":         c.testDockerDefFile,
+		"permissions":      c.testDockerPermissions,
+		"pulls":            c.testDockerPulls,
+		"registry":         c.testDockerRegistry,
+		"whiteout symlink": c.testDockerWhiteoutSymlink,
+	})
 }

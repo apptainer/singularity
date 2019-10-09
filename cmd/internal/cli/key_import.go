@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
@@ -27,9 +28,18 @@ var KeyImportCmd = &cobra.Command{
 	Example: docs.KeyImportExample,
 }
 
+var keyImportWithNewPassword bool
+var keyImportWithNewPasswordFlag = cmdline.Flag{
+	ID:           "keyImportWithNewPasswordFlag",
+	Value:        &keyImportWithNewPassword,
+	DefaultValue: false,
+	Name:         "new-password",
+	Usage:        `set a new password to the private key`,
+}
+
 func importRun(cmd *cobra.Command, args []string) {
 	keyring := sypgp.NewHandle("")
-	if err := keyring.ImportKey(args[0]); err != nil {
+	if err := keyring.ImportKey(args[0], keyImportWithNewPassword); err != nil {
 		sylog.Errorf("key import command failed: %s", err)
 		os.Exit(2)
 	}

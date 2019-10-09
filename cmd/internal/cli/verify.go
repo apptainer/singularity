@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -45,14 +46,24 @@ var verifySifGroupIDFlag = cmdline.Flag{
 	Usage:        "group ID to be verified",
 }
 
-// -i|--id
+// -i|--sif-id
+var verifySifDescSifIDFlag = cmdline.Flag{
+	ID:           "verifySifDescSifIDFlag",
+	Value:        &sifDescID,
+	DefaultValue: uint32(0),
+	Name:         "sif-id",
+	ShortHand:    "i",
+	Usage:        "descriptor ID to be verified (default system-partition)",
+}
+
+// --id (deprecated)
 var verifySifDescIDFlag = cmdline.Flag{
 	ID:           "verifySifDescIDFlag",
 	Value:        &sifDescID,
 	DefaultValue: uint32(0),
 	Name:         "id",
-	ShortHand:    "i",
 	Usage:        "descriptor ID to be verified",
+	Deprecated:   "use '--sif-id'",
 }
 
 // -l|--local
@@ -81,6 +92,7 @@ func init() {
 
 	cmdManager.RegisterFlagForCmd(&verifyServerURIFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifySifGroupIDFlag, VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifySifDescSifIDFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifySifDescIDFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifyLocalFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifyJSONFlag, VerifyCmd)
@@ -93,6 +105,8 @@ var VerifyCmd = &cobra.Command{
 	PreRun:                sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.TODO()
+
 		if f, err := os.Stat(args[0]); os.IsNotExist(err) {
 			sylog.Fatalf("No such file or directory: %s", args[0])
 		} else if f.IsDir() {
@@ -105,7 +119,7 @@ var VerifyCmd = &cobra.Command{
 		}
 
 		// args[0] contains image path
-		doVerifyCmd(args[0], keyServerURI)
+		doVerifyCmd(ctx, args[0], keyServerURI)
 	},
 
 	Use:     docs.VerifyUse,
@@ -114,7 +128,7 @@ var VerifyCmd = &cobra.Command{
 	Example: docs.VerifyExample,
 }
 
-func doVerifyCmd(cpath, url string) {
+func doVerifyCmd(ctx context.Context, cpath, url string) {
 	if sifGroupID != 0 && sifDescID != 0 {
 		sylog.Fatalf("only one of -i or -g may be set")
 	}
@@ -128,7 +142,7 @@ func doVerifyCmd(cpath, url string) {
 		id = sifDescID
 	}
 
-	author, _, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, jsonVerify)
+	author, _, err := signing.Verify(ctx, cpath, url, id, isGroup, authToken, localVerify, jsonVerify)
 	fmt.Printf("%s", author)
 	if err == signing.ErrVerificationFail {
 		sylog.Fatalf("Failed to verify: %s", cpath)

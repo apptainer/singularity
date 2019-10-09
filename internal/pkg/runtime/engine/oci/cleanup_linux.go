@@ -6,6 +6,7 @@
 package oci
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"syscall"
@@ -26,7 +27,7 @@ import (
 // Specifically in oci engine, no additional privileges are gained here. However,
 // most likely this still will be executed as root since `singularity oci`
 // command set requires privileged execution.
-func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
+func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, status syscall.WaitStatus) error {
 	if e.EngineConfig.Cgroups != nil {
 		e.EngineConfig.Cgroups.Remove()
 	}

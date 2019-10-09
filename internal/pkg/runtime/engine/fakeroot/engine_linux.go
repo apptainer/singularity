@@ -6,6 +6,7 @@
 package fakeroot
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -16,13 +17,13 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	fakerootutil "github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
@@ -135,7 +136,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 }
 
 // CreateContainer does nothing for the fakeroot engine.
-func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
+func (e *EngineOperations) CreateContainer(context.Context, int, net.Conn) error {
 	return nil
 }
 
@@ -198,7 +199,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 
 	// fix potential issue with SELinux (https://github.com/sylabs/singularity/issues/4038)
-	mounts, err := proc.ParseMountInfo(mountInfo)
+	mounts, err := proc.GetMountPointMap(mountInfo)
 	if err != nil {
 		return fmt.Errorf("while parsing %s: %s", mountInfo, err)
 	}
@@ -250,12 +251,12 @@ func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (sy
 }
 
 // CleanupContainer does nothing for the fakeroot engine.
-func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
+func (e *EngineOperations) CleanupContainer(context.Context, error, syscall.WaitStatus) error {
 	return nil
 }
 
 // PostStartProcess does nothing for the fakeroot engine.
-func (e *EngineOperations) PostStartProcess(pid int) error {
+func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error {
 	return nil
 }
 

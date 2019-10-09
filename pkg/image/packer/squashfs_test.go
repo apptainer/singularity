@@ -43,38 +43,78 @@ func isExist(path string) bool {
 	return !os.IsNotExist(err)
 }
 
-func TestSquashfs(t *testing.T) {
-	s := NewSquashfs()
-
-	if !s.HasMksquashfs() {
-		t.SkipNow()
-	}
-
+func createSquashfs(t *testing.T, s *Squashfs) (string, error) {
 	image, err := ioutil.TempFile("", "packer-")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(image.Name())
+	image.Close()
 
-	savedPath := s.MksquashfsPath
-	// test with an empty unsquashfs path
+	err = s.Create([]string{"."}, image.Name(), []string{"-noappend"})
+
+	return image.Name(), err
+}
+
+func testEmptyMksquashfsPath(t *testing.T) {
+	s := NewSquashfs()
 	s.MksquashfsPath = ""
-	if err := s.Create([]string{"."}, image.Name(), []string{"-noappend"}); err == nil {
-		t.Errorf("unexpected success with empty unsquashfs path")
+
+	imageName, err := createSquashfs(t, s)
+	defer os.Remove(imageName)
+
+	if err == nil {
+		t.Errorf("unexpected success with empty mksquashfs path")
 	}
-	// test with a bad mksquashfs path
+}
+
+func testInvalidMksquashfsPath(t *testing.T) {
+	s := NewSquashfs()
 	s.MksquashfsPath = "/mksquashfs-no-exists"
-	if err := s.Create([]string{"."}, image.Name(), []string{"-noappend"}); err == nil {
-		t.Errorf("unexpected success with bad unsquashfs path")
+
+	imageName, err := createSquashfs(t, s)
+	defer os.Remove(imageName)
+
+	if err == nil {
+		t.Errorf("unexpected success with bad mksquashfs path")
 	}
+}
 
-	s.MksquashfsPath = savedPath
+func testNonZeroExitCode(t *testing.T) {
+	s := NewSquashfs()
+	s.MksquashfsPath, _ = exec.LookPath("false")
 
-	// create squashfs in temporary file
-	if err := s.Create([]string{"."}, image.Name(), []string{"-noappend"}); err != nil {
+	imageName, err := createSquashfs(t, s)
+	defer os.Remove(imageName)
+
+	if err == nil {
+		t.Errorf("unexpected success with non-zero exit code")
+	}
+}
+
+func testHappyPath(t *testing.T) {
+	s := NewSquashfs()
+
+	imageName, err := createSquashfs(t, s)
+	defer os.Remove(imageName)
+
+	if err != nil {
 		t.Error(err)
 	}
 
+	// XXX(mem): this test will fail if we modify the contents of
+	// this directory
+	//
 	// ensure we can extract these files from squashfs
-	checkArchive(t, image.Name(), []string{"squashfs.go", "squashfs_test.go"})
+	checkArchive(t, imageName, []string{"squashfs.go", "squashfs_test.go"})
+}
+
+func TestSquashfs(t *testing.T) {
+	if s := NewSquashfs(); !s.HasMksquashfs() {
+		t.Skip("mksquashfs not found, skipping")
+	}
+
+	t.Run("empty mksquashfs path", testEmptyMksquashfsPath)
+	t.Run("invalid mksquashfs path", testInvalidMksquashfsPath)
+	t.Run("non-zero exit code", testNonZeroExitCode)
+	t.Run("happy path", testHappyPath)
 }

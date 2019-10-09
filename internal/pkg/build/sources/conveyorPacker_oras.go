@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sylabs/singularity/internal/pkg/oras"
@@ -15,13 +16,13 @@ import (
 )
 
 // OrasConveyorPacker only needs to hold a packer to pack the image it pulls
-// as well as extra information about the library it's pulling from
+// as well as extra information about the library it's pulling from.
 type OrasConveyorPacker struct {
 	LocalPacker
 }
 
 // Get downloads container from Singularityhub
-func (cp *OrasConveyorPacker) Get(b *types.Bundle) (err error) {
+func (cp *OrasConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from registry using ORAS")
 
 	// uri with leading // for oras handlers to consume
@@ -29,7 +30,7 @@ func (cp *OrasConveyorPacker) Get(b *types.Bundle) (err error) {
 	// full uri for name determination and output
 	fullRef := "oras:" + ref
 
-	sum, err := oras.ImageSHA(ref, b.Opts.DockerAuthConfig)
+	sum, err := oras.ImageSHA(ctx, ref, b.Opts.DockerAuthConfig)
 	if err != nil {
 		return fmt.Errorf("failed to get SHA of %v: %v", fullRef, err)
 	}

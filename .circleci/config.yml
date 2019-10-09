@@ -1,7 +1,94 @@
 version: 2.1
 
 defaults: &defaults
-  working_directory: /go/singularity
+  working_directory: ~/go/singularity
+
+vm_defaults: &vm_defaults
+  <<: *defaults
+  machine:
+    image: ubuntu-1604:201903-01
+
+x-run:
+  debug_env: &debug_env
+    name: Debug environment
+    command: |-
+      set -x
+      env | sed -e 's,^,ENV: ,' | sort
+      test -n "$BASH_ENV" -a -e "$BASH_ENV" && sed -e 's,^,BASH_ENV: ,' < $BASH_ENV || echo "$BASH_ENV not found"
+
+  setup_environment: &setup_environment
+    name: Setup environment
+    command: |-
+      echo 'set -x' >> $BASH_ENV
+      echo 'export GOPATH=$HOME/go'           >> $BASH_ENV
+      echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
+      echo 'export GOBIN=$HOME/go/bin'        >> $BASH_ENV
+      echo 'export PATH=$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
+      env | sed -e 's,^,ENV: ,' | sort
+      test -e $BASH_ENV && sed -e 's,^,BASH_ENV: ,' < $BASH_ENV
+
+  update_go: &update_go
+    name: Update Go to 1.12.9
+    working_directory: /tmp
+    command: |-
+      wget https://dl.google.com/go/go1.12.9.linux-amd64.tar.gz
+      sudo rm -rf $GOROOT
+      sudo tar -C /usr/local -xzf go1.12.9.linux-amd64.tar.gz
+      sudo ln -s $GOROOT/bin/go /usr/local/bin/go
+
+  fetch_deb_deps: &fetch_deb_deps
+    name: Fetch deps
+    working_directory: /tmp
+    command: |-
+      # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
+      sudo killall -9 apt-get || true && \
+      sudo apt-get update -y && \
+      sudo apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools libseccomp-dev cryptsetup
+
+  build_singularity: &build_singularity
+    name: Build Singularity
+    command: |-
+      ./mconfig -v -p /usr/local
+      make -j$(nproc) -C ./builddir all
+
+  check_singularity: &check_singularity
+    name: Check Singularity
+    command: |-
+      make -j$(nproc) -C ./builddir check
+
+  install_singularity: &install_singularity
+    name: Install Singularity
+    command: |-
+      sudo make -C ./builddir install
+
+  check_changes: &check_changes
+    name: Check changes
+    command: |-
+      # Skip e2e by default
+      require_e2e=false
+
+      TARGET_BRANCH=$(curl -s "https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/pulls/${CIRCLE_PR_NUMBER}" | jq -r .base.ref)
+
+      case "${TARGET_BRANCH}" in
+          master|release-*)
+              if git --no-pager diff --name-only HEAD "origin/${TARGET_BRANCH}" |
+                 grep -q -E '^(e2e|vendor|\.circleci)/'
+              then
+                  # There are changes in .circleci, e2e or vendor
+                  # directories, require e2e
+                  require_e2e=true
+              fi
+              ;;
+          *)
+              # The branch is not master or release, skip e2e
+              require_e2e=false
+              ;;
+      esac
+
+      if ! "$require_e2e" ; then
+        echo "No changes in e2e or vendor directories, skipping tests"
+        circleci step halt
+      fi
 
 jobs:
   get_source:
@@ -11,7 +98,7 @@ jobs:
     steps:
       - checkout
       - persist_to_workspace:
-          root: /go
+          root: ~/go
           paths:
             - singularity
 
@@ -21,7 +108,7 @@ jobs:
       - image: sylabsio/golang:1.12.9-stretch
     steps:
       - attach_workspace:
-          at: /go
+          at: ~/go
       - restore_cache:
           keys:
             - go-mod-{{ checksum "go.sum" }}
@@ -31,7 +118,7 @@ jobs:
       - save_cache:
           key: go-mod-{{ checksum "go.sum" }}
           paths:
-            - '/go/pkg/mod'
+            - ~/go/pkg/mod
 
   go112-stretch:
     <<: *defaults
@@ -39,16 +126,11 @@ jobs:
       - image: sylabsio/golang:1.12.9-stretch
     steps:
       - attach_workspace:
-          at: /go
+          at: ~/go
       - run:
-          name: Build Singularity
-          command: |-
-            ./mconfig -v -p /usr/local
-            make -j$(nproc) -C ./builddir all
+          <<: *build_singularity
       - run:
-          name: Check code
-          command: |-
-            make -j$(nproc) -C ./builddir check
+          <<: *check_singularity
 
   go112-alpine:
     <<: *defaults
@@ -56,16 +138,11 @@ jobs:
       - image: sylabsio/golang:1.12.9-alpine
     steps:
       - attach_workspace:
-          at: /go
+          at: ~/go
       - run:
-          name: Build Singularity
-          command: |-
-            ./mconfig -v -p /usr/local
-            make -j$(nproc) -C ./builddir all
+          <<: *build_singularity
       - run:
-          name: Check code
-          command: |-
-            make -j$(nproc) -C ./builddir check
+          <<: *check_singularity
 
   go112-macos:
     macos:
@@ -97,105 +174,85 @@ jobs:
           command: |-
             make -j$(sysctl -n hw.logicalcpu) -C ./builddir check
 
-  unit_tests:
-    machine:
-      image: ubuntu-1604:201903-01
+  build_check_and_install:
+    <<: *vm_defaults
     steps:
       - attach_workspace:
           at: ~/go
       - run:
-          name: Setup environment
-          command: |-
-            echo 'export GOPATH=$HOME/go' >> $BASH_ENV
-            echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
-            echo 'export GOBIN=$HOME/go/bin' >> $BASH_ENV
-            echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
+          <<: *setup_environment
       - run:
-          name: Update Go to 1.12.9
-          working_directory: /tmp
-          command: |-
-            wget https://dl.google.com/go/go1.12.9.linux-amd64.tar.gz
-            sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.12.9.linux-amd64.tar.gz
-            sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
-            sudo chown -R circleci:circleci ~/go
+          <<: *update_go
       - run:
-          name: Fetch deps
-          working_directory: /tmp
-          command: |-
-            mkdir -p ${GOBIN}
-            # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
-            sudo killall -9 apt-get || true && \
-            sudo apt-get update -y && \
-            sudo apt-get install -f -y build-essential libssl-dev uuid-dev squashfs-tools libseccomp-dev
+          <<: *fetch_deb_deps
       - run:
-          name: Build and Install Singularity
-          command: |-
-            cd $HOME/go/singularity
-            ./mconfig -v -p /usr/local --without-network
-            make -j$(nproc) -C ./builddir all
-            sudo make -C ./builddir install
+          <<: *build_singularity
+      - run:
+          <<: *check_singularity
+      - persist_to_workspace:
+          root: ~/go
+          paths:
+            - singularity
+
+  unit_tests:
+    <<: *vm_defaults
+    steps:
+      - attach_workspace:
+          at: ~/go
+      - run:
+          <<: *setup_environment
+      - run:
+          <<: *update_go
+      - run:
+          <<: *fetch_deb_deps
+      - run:
+          <<: *install_singularity
       - run:
           name: Run unit tests
           command: |-
-            cd $HOME/go/singularity
             make -j$(nproc) -C ./builddir unit-test
 
-  e2e_tests:
-    machine:
-      image: ubuntu-1604:201903-01
+  integration_tests:
+    <<: *vm_defaults
     steps:
       - attach_workspace:
           at: ~/go
       - run:
-          name: Check changes
+          <<: *setup_environment
+      - run:
+          <<: *check_changes
+      - run:
+          <<: *update_go
+      - run:
+          <<: *fetch_deb_deps
+      - run:
+          <<: *install_singularity
+      - run:
+          name: Run integration tests
+          no_output_timeout: 20m
           command: |-
-            cd $HOME/go/singularity
+            make -C ./builddir integration-test
 
-            # Skip if there were no changes to the e2e or vendor directories and the branch is not master
-            if [[ ! $(git --no-pager diff --name-only HEAD origin/master | grep -e "^e2e" -e "^vendor") && "$CIRCLE_BRANCH" != "master" ]]; then
-              echo "Skipping e2e tests"
-              circleci step halt
-            fi
+  e2e_tests:
+    <<: *vm_defaults
+    steps:
+      - attach_workspace:
+          at: ~/go
       - run:
-          name: Setup environment
-          command: |-
-            echo 'export GOPATH=$HOME/go' >> $BASH_ENV
-            echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
-            echo 'export GOBIN=$HOME/go/bin' >> $BASH_ENV
-            echo 'export SINGULARITY_E2E=1' >> $BASH_ENV
-            echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
+          <<: *setup_environment
       - run:
-          name: Update Go to 1.12.9
-          working_directory: /tmp
-          command: |-
-            wget https://dl.google.com/go/go1.12.9.linux-amd64.tar.gz
-            sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.12.9.linux-amd64.tar.gz
-            sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
-            sudo chown -R circleci:circleci ~/go
+          <<: *check_changes
       - run:
-          name: Fetch deps
-          working_directory: /tmp
-          command: |-
-            mkdir -p ${GOBIN}
-            # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
-            sudo killall -9 apt-get || true && \
-            sudo apt-get update -y && \
-            sudo apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools libseccomp-dev cryptsetup
+          <<: *update_go
       - run:
-          name: Build and Install singularity
-          command: |-
-            cd $HOME/go/singularity
-            ./mconfig -v -p /usr/local
-            make -j$(nproc) -C ./builddir all
-            sudo make -C ./builddir install
+          <<: *fetch_deb_deps
+      - run:
+          <<: *install_singularity
       - run:
           name: Run E2E tests
-          no_output_timeout: 45m
+          no_output_timeout: 35m
           command: |-
-            cd $HOME/go/singularity
-            make -C ./builddir integration-test e2e-test
+            make -C ./builddir e2e-test
 
 workflows:
   version: 2
@@ -211,12 +268,16 @@ workflows:
       - go112-alpine:
           requires:
             - cache_go_mod
-      - go112-macos:
+      - go112-macos
+      - build_check_and_install:
           requires:
-            - get_source
+            - cache_go_mod
       - unit_tests:
           requires:
-            - get_source
+            - build_check_and_install
+      - integration_tests:
+          requires:
+            - build_check_and_install
       - e2e_tests:
           requires:
-            - get_source
+            - build_check_and_install

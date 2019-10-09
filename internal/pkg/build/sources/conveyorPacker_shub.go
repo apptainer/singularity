@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 
@@ -14,7 +15,7 @@ import (
 	shub "github.com/sylabs/singularity/pkg/client/shub"
 )
 
-// ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack
+// ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack.
 type ShubConveyorPacker struct {
 	recipe types.Definition
 	b      *types.Bundle
@@ -22,7 +23,7 @@ type ShubConveyorPacker struct {
 }
 
 // Get downloads container from Singularityhub.
-func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
+func (cp *ShubConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Shub")
 
 	cp.b = b

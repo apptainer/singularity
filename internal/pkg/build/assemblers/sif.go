@@ -23,7 +23,7 @@ import (
 	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
-// SIFAssembler doesnt store anything
+// SIFAssembler doesn't store anything.
 type SIFAssembler struct {
 	GzipFlag       bool
 	MksquashfsPath string
@@ -151,7 +151,7 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encOp
 	return nil
 }
 
-// Assemble creates a SIF image from a Bundle
+// Assemble creates a SIF image from a Bundle.
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	sylog.Infof("Creating SIF file...")
 
@@ -211,7 +211,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 
 	}
 
-	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, encOpts)
+	err = createSIF(path, b.Recipe.Raw, b.JSONObjects[types.OCIConfigJSON], fsPath, encOpts)
 	if err != nil {
 		return fmt.Errorf("while creating SIF: %v", err)
 	}
@@ -220,7 +220,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 }
 
 // changeOwner check the command being called with sudo with the environment
-// variable SUDO_COMMAND. Pattern match that for the singularity bin
+// variable SUDO_COMMAND. Pattern match that for the singularity bin.
 func changeOwner() (int, int, bool) {
 	r := regexp.MustCompile("(singularity)")
 	sudoCmd := os.Getenv("SUDO_COMMAND")

@@ -88,10 +88,9 @@ func New(cfg *Config) (c *Client, err error) {
 }
 
 // newRequest returns a new Request given a method, path, query, and optional body.
-func (c *Client) newRequest(method, path, rawQuery string, body io.Reader) (r *http.Request, err error) {
+func (c *Client) newRequest(method, path string, body io.Reader) (r *http.Request, err error) {
 	u := c.BaseURL.ResolveReference(&url.URL{
-		Path:     path,
-		RawQuery: rawQuery,
+		Path: path,
 	})
 
 	r, err = http.NewRequest(method, u.String(), body)

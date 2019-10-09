@@ -25,8 +25,8 @@ type LibraryConveyorPacker struct {
 	LocalPacker
 }
 
-// Get downloads container from Singularityhub
-func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
+// Get downloads container from Sylabs Cloud Library.
+func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Library")
 
 	if b.Opts.ImgCache == nil {
@@ -62,7 +62,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	imageRef := library.NormalizeLibraryRef(b.Recipe.Header["from"])
 
-	libraryImage, err := libraryClient.GetImage(context.TODO(), runtime.GOARCH, imageRef)
+	libraryImage, err := libraryClient.GetImage(ctx, runtime.GOARCH, imageRef)
 	if err == client.ErrNotFound {
 		return fmt.Errorf("image does not exist in the library: %s (%s)", imageRef, runtime.GOARCH)
 	}
@@ -83,7 +83,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 
 		sylog.Infof("Downloading library image to tmp cache: %s", imagePath)
 
-		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, runtime.GOARCH, imageRef); err != nil {
+		if err = library.DownloadImageNoProgress(ctx, libraryClient, imagePath, runtime.GOARCH, imageRef); err != nil {
 			return fmt.Errorf("unable to download image: %v", err)
 		}
 	} else {
@@ -94,7 +94,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		} else if !exists {
 			sylog.Infof("Downloading library image")
 
-			if err := library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, runtime.GOARCH, imageRef); err != nil {
+			if err := library.DownloadImageNoProgress(ctx, libraryClient, imagePath, runtime.GOARCH, imageRef); err != nil {
 				return fmt.Errorf("unable to download image: %v", err)
 			}
 
@@ -116,7 +116,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	return err
 }
 
-// CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
+// CleanUp removes any files owned by the conveyorPacker on the filesystem.
 func (cp *LibraryConveyorPacker) CleanUp() {
 	cp.b.Remove()
 }

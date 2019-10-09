@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
-	singularityconfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
+	singularityconfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 )
 
 // GetPath figures out where the mksquashfs binary is

@@ -14,7 +14,7 @@ import (
 
 // GetStatus gets the status of a build from the Build Service by build ID
 func (c *Client) GetStatus(ctx context.Context, buildID string) (bi BuildInfo, err error) {
-	req, err := c.newRequest(http.MethodGet, "/v1/build/"+buildID, "", nil)
+	req, err := c.newRequest(http.MethodGet, "/v1/build/"+buildID, nil)
 	if err != nil {
 		return
 	}

@@ -7,25 +7,24 @@ package sources
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"syscall"
 
-	args "github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
 // Pack puts relevant objects in a Bundle!
-func (p *Ext3Packer) Pack() (*types.Bundle, error) {
-	rootfs := p.srcfile
-
-	err := p.unpackExt3(p.b, p.info, rootfs)
+func (p *Ext3Packer) Pack(context.Context) (*types.Bundle, error) {
+	err := unpackExt3(p.b, p.img)
 	if err != nil {
-		sylog.Errorf("unpackExt3 Failed: %s", err)
+		sylog.Errorf("while unpacking ext3 image: %v", err)
 		return nil, err
 	}
 
@@ -33,21 +32,26 @@ func (p *Ext3Packer) Pack() (*types.Bundle, error) {
 }
 
 // unpackExt3 mounts the ext3 image using a loop device and then copies its contents to the bundle
-func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs string) error {
-	tmpmnt, err := ioutil.TempDir(p.b.TmpDir, "mnt")
-	if err != nil {
-		return fmt.Errorf("while making tmp mount point: %v", err)
+func unpackExt3(b *types.Bundle, img *image.Image) error {
+	info := &loop.Info64{
+		Offset:    img.Partitions[0].Offset,
+		SizeLimit: img.Partitions[0].Size,
+		Flags:     loop.FlagsAutoClear,
 	}
 
 	var number int
-	info.Flags = loop.FlagsAutoClear
-	arguments := &args.LoopArgs{
-		Image: rootfs,
-		Mode:  os.O_RDONLY,
-		Info:  *info,
+	loopdev := &loop.Device{
+		MaxLoopDevices: 256,
+		Info:           info,
 	}
-	if err := getLoopDevice(arguments); err != nil {
-		return err
+
+	if err := loopdev.AttachFromFile(img.File, os.O_RDONLY, &number); err != nil {
+		return fmt.Errorf("while attaching image to loop device: %v", err)
+	}
+
+	tmpmnt, err := ioutil.TempDir(b.TmpDir, "mnt")
+	if err != nil {
+		return fmt.Errorf("while making tmp mount point: %v", err)
 	}
 
 	path := fmt.Sprintf("/dev/loop%d", number)
@@ -67,16 +71,5 @@ func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs strin
 		return fmt.Errorf("while copying files: %v: %v", err, stderr.String())
 	}
 
-	return err
-}
-
-// getLoopDevice attaches a loop device with the specified arguments
-func getLoopDevice(arguments *args.LoopArgs) error {
-	reply := 1
-	loopdev := new(loop.Device)
-	loopdev.MaxLoopDevices = 256
-	loopdev.Info = &arguments.Info
-	loopdev.Shared = arguments.Shared
-
-	return loopdev.AttachFromPath(arguments.Image, arguments.Mode, &reply)
+	return nil
 }

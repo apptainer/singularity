@@ -6,11 +6,9 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"runtime"
-	"strings"
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
@@ -23,32 +21,26 @@ import (
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
-var (
-	remote         bool
-	buildArch      string
-	builderURL     string
-	detached       bool
-	libraryURL     string
-	isJSON         bool
-	sandbox        bool
-	force          bool
-	update         bool
-	noTest         bool
-	sections       []string
-	noHTTPS        bool
-	tmpDir         string
-	dockerUsername string
-	dockerPassword string
-	dockerLogin    bool
-	noCleanUp      bool
-	fakeroot       bool
-	encrypt        bool
-)
+var buildArgs struct {
+	sections   []string
+	arch       string
+	builderURL string
+	libraryURL string
+	detached   bool
+	encrypt    bool
+	fakeroot   bool
+	isJSON     bool
+	noCleanUp  bool
+	noTest     bool
+	remote     bool
+	sandbox    bool
+	update     bool
+}
 
 // -s|--sandbox
 var buildSandboxFlag = cmdline.Flag{
 	ID:           "buildSandboxFlag",
-	Value:        &sandbox,
+	Value:        &buildArgs.sandbox,
 	DefaultValue: false,
 	Name:         "sandbox",
 	ShortHand:    "s",
@@ -59,7 +51,7 @@ var buildSandboxFlag = cmdline.Flag{
 // --section
 var buildSectionFlag = cmdline.Flag{
 	ID:           "buildSectionFlag",
-	Value:        &sections,
+	Value:        &buildArgs.sections,
 	DefaultValue: []string{"all"},
 	Name:         "section",
 	Usage:        "only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)",
@@ -69,28 +61,17 @@ var buildSectionFlag = cmdline.Flag{
 // --json
 var buildJSONFlag = cmdline.Flag{
 	ID:           "buildJSONFlag",
-	Value:        &isJSON,
+	Value:        &buildArgs.isJSON,
 	DefaultValue: false,
 	Name:         "json",
 	Usage:        "interpret build definition as JSON",
 	EnvKeys:      []string{"JSON"},
 }
 
-// -F|--force
-var buildForceFlag = cmdline.Flag{
-	ID:           "buildForceFlag",
-	Value:        &force,
-	DefaultValue: false,
-	Name:         "force",
-	ShortHand:    "F",
-	Usage:        "delete and overwrite an image if it currently exists",
-	EnvKeys:      []string{"FORCE"},
-}
-
 // -u|--update
 var buildUpdateFlag = cmdline.Flag{
 	ID:           "buildUpdateFlag",
-	Value:        &update,
+	Value:        &buildArgs.update,
 	DefaultValue: false,
 	Name:         "update",
 	ShortHand:    "u",
@@ -101,7 +82,7 @@ var buildUpdateFlag = cmdline.Flag{
 // -T|--notest
 var buildNoTestFlag = cmdline.Flag{
 	ID:           "buildNoTestFlag",
-	Value:        &noTest,
+	Value:        &buildArgs.noTest,
 	DefaultValue: false,
 	Name:         "notest",
 	ShortHand:    "T",
@@ -112,7 +93,7 @@ var buildNoTestFlag = cmdline.Flag{
 // -r|--remote
 var buildRemoteFlag = cmdline.Flag{
 	ID:           "buildRemoteFlag",
-	Value:        &remote,
+	Value:        &buildArgs.remote,
 	DefaultValue: false,
 	Name:         "remote",
 	ShortHand:    "r",
@@ -123,7 +104,7 @@ var buildRemoteFlag = cmdline.Flag{
 // --arch
 var buildArchFlag = cmdline.Flag{
 	ID:           "buildArchFlag",
-	Value:        &buildArch,
+	Value:        &buildArgs.arch,
 	DefaultValue: runtime.GOARCH,
 	Name:         "arch",
 	Usage:        "architecture for remote build",
@@ -133,7 +114,7 @@ var buildArchFlag = cmdline.Flag{
 // -d|--detached
 var buildDetachedFlag = cmdline.Flag{
 	ID:           "buildDetachedFlag",
-	Value:        &detached,
+	Value:        &buildArgs.detached,
 	DefaultValue: false,
 	Name:         "detached",
 	ShortHand:    "d",
@@ -144,7 +125,7 @@ var buildDetachedFlag = cmdline.Flag{
 // --builder
 var buildBuilderFlag = cmdline.Flag{
 	ID:           "buildBuilderFlag",
-	Value:        &builderURL,
+	Value:        &buildArgs.builderURL,
 	DefaultValue: "https://build.sylabs.io",
 	Name:         "builder",
 	Usage:        "remote Build Service URL, setting this implies --remote",
@@ -154,21 +135,11 @@ var buildBuilderFlag = cmdline.Flag{
 // --library
 var buildLibraryFlag = cmdline.Flag{
 	ID:           "buildLibraryFlag",
-	Value:        &libraryURL,
+	Value:        &buildArgs.libraryURL,
 	DefaultValue: "https://library.sylabs.io",
 	Name:         "library",
 	Usage:        "container Library URL",
 	EnvKeys:      []string{"LIBRARY"},
-}
-
-// --tmpdir
-var buildTmpdirFlag = cmdline.Flag{
-	ID:           "buildTmpdirFlag",
-	Value:        &tmpDir,
-	DefaultValue: os.TempDir(),
-	Name:         "tmpdir",
-	Usage:        "specify a temporary directory to use for build",
-	EnvKeys:      []string{"TMPDIR"},
 }
 
 // --disable-cache
@@ -181,20 +152,10 @@ var buildDisableCacheFlag = cmdline.Flag{
 	EnvKeys:      []string{"DISABLE_CACHE"},
 }
 
-// --nohttps
-var buildNoHTTPSFlag = cmdline.Flag{
-	ID:           "buildNoHTTPSFlag",
-	Value:        &noHTTPS,
-	DefaultValue: false,
-	Name:         "nohttps",
-	Usage:        "do NOT use HTTPS, for communicating with local docker registry",
-	EnvKeys:      []string{"NOHTTPS"},
-}
-
 // --no-cleanup
 var buildNoCleanupFlag = cmdline.Flag{
 	ID:           "buildNoCleanupFlag",
-	Value:        &noCleanUp,
+	Value:        &buildArgs.noCleanUp,
 	DefaultValue: false,
 	Name:         "no-cleanup",
 	Usage:        "do NOT clean up bundle after failed build, can be helpul for debugging",
@@ -204,7 +165,7 @@ var buildNoCleanupFlag = cmdline.Flag{
 // --fakeroot
 var buildFakerootFlag = cmdline.Flag{
 	ID:           "buildFakerootFlag",
-	Value:        &fakeroot,
+	Value:        &buildArgs.fakeroot,
 	DefaultValue: false,
 	Name:         "fakeroot",
 	ShortHand:    "f",
@@ -215,7 +176,7 @@ var buildFakerootFlag = cmdline.Flag{
 // -e|--encrypt
 var buildEncryptFlag = cmdline.Flag{
 	ID:           "buildEncryptFlag",
-	Value:        &encrypt,
+	Value:        &buildArgs.encrypt,
 	DefaultValue: false,
 	Name:         "encrypt",
 	ShortHand:    "e",
@@ -225,30 +186,30 @@ var buildEncryptFlag = cmdline.Flag{
 func init() {
 	cmdManager.RegisterCmd(buildCmd)
 
+	cmdManager.RegisterFlagForCmd(&buildArchFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildBuilderFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildDetachedFlag, buildCmd)
-	cmdManager.RegisterFlagForCmd(&buildForceFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildDisableCacheFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildEncryptFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildJSONFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildLibraryFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, buildCmd)
-	cmdManager.RegisterFlagForCmd(&buildNoHTTPSFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildNoTestFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildRemoteFlag, buildCmd)
-	cmdManager.RegisterFlagForCmd(&buildArchFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSectionFlag, buildCmd)
-	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, buildCmd)
-	cmdManager.RegisterFlagForCmd(&buildDisableCacheFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, buildCmd)
-	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, buildCmd)
-	cmdManager.RegisterFlagForCmd(&buildEncryptFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&commonForceFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&commonNoHTTPSFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&commonTmpDirFlag, buildCmd)
 
-	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, buildCmd)
-	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, buildCmd)
-	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&dockerLoginFlag, buildCmd)
 
-	cmdManager.RegisterFlagForCmd(&actionPassphraseFlag, buildCmd)
-	cmdManager.RegisterFlagForCmd(&actionPEMPathFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&commonPromptForPassphraseFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&commonPEMFlag, buildCmd)
 }
 
 // buildCmd represents the build command.
@@ -261,12 +222,12 @@ var buildCmd = &cobra.Command{
 	Long:             docs.BuildLong,
 	Example:          docs.BuildExample,
 	PreRun:           preRun,
-	Run:              run,
+	Run:              runBuild,
 	TraverseChildren: true,
 }
 
 func preRun(cmd *cobra.Command, args []string) {
-	if fakeroot && !remote {
+	if buildArgs.fakeroot && !buildArgs.remote {
 		fakerootExec(args)
 	}
 
@@ -278,28 +239,31 @@ func preRun(cmd *cobra.Command, args []string) {
 	sylabsToken(cmd, args)
 }
 
-// checkTargetCollision makes sure output target doesn't exist, or is ok to overwrite.
-func checkBuildTarget(path string, update bool) bool {
-	if f, err := os.Stat(path); err == nil {
-		if update && !f.IsDir() {
-			sylog.Fatalf("Only sandbox updating is supported.")
-		}
-		if !update && !force {
-			reader := bufio.NewReader(os.Stdin)
-			fmt.Print("Build target already exists. Do you want to overwrite? [N/y] ")
-			input, err := reader.ReadString('\n')
-			if err != nil {
-				sylog.Fatalf("Error parsing input: %s", err)
-			}
-			if val := strings.Compare(strings.ToLower(input), "y\n"); val == 0 {
-				force = true
-			} else {
-				sylog.Errorf("Stopping build.")
-				return false
-			}
-		}
+// checkBuildTarget makes sure output target doesn't exist, or is ok to overwrite.
+// And checks that update flag will update an existing directory.
+func checkBuildTarget(path string) error {
+	if !buildArgs.sandbox && buildArgs.update {
+		return fmt.Errorf("only sandbox update is supported: --sandbox flag is missing")
 	}
-	return true
+	if f, err := os.Stat(path); err == nil {
+		if buildArgs.update && !f.IsDir() {
+			return fmt.Errorf("only sandbox update is supported: %s is not a directory", path)
+		}
+		if !buildArgs.update && !forceOverwrite {
+			question := "Build target already exists. Do you want to overwrite? [N/y] "
+			input, err := interactive.AskYNQuestion("n", question)
+			if err != nil {
+				return fmt.Errorf("while reading the input: %s", err)
+			}
+			if input != "y" {
+				return fmt.Errorf("stopping build")
+			}
+			forceOverwrite = true
+		}
+	} else if os.IsNotExist(err) && buildArgs.update && buildArgs.sandbox {
+		return fmt.Errorf("could not update sandbox %s: doesn't exist", path)
+	}
+	return nil
 }
 
 // definitionFromSpec is specifically for parsing specs for the remote builder
@@ -344,36 +308,33 @@ func definitionFromSpec(spec string) (types.Definition, error) {
 	return def, nil
 }
 
-func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthConfig, err error) {
+func makeDockerCredentials(cmd *cobra.Command) (authConf ocitypes.DockerAuthConfig, err error) {
 	usernameFlag := cmd.Flags().Lookup("docker-username")
 	passwordFlag := cmd.Flags().Lookup("docker-password")
 
 	if dockerLogin {
 		if !usernameFlag.Changed {
-			dockerUsername, err = interactive.AskQuestion("Enter Docker Username: ")
+			dockerAuthConfig.Username, err = interactive.AskQuestion("Enter Docker Username: ")
 			if err != nil {
-				return
+				return authConf, err
 			}
-			usernameFlag.Value.Set(dockerUsername)
+			usernameFlag.Value.Set(dockerAuthConfig.Username)
 			usernameFlag.Changed = true
 		}
 
-		dockerPassword, err = interactive.AskQuestionNoEcho("Enter Docker Password: ")
+		dockerAuthConfig.Password, err = interactive.AskQuestionNoEcho("Enter Docker Password: ")
 		if err != nil {
-			return
+			return authConf, err
 		}
-		passwordFlag.Value.Set(dockerPassword)
+		passwordFlag.Value.Set(dockerAuthConfig.Password)
 		passwordFlag.Changed = true
 	}
 
-	if usernameFlag.Changed && passwordFlag.Changed {
-		authConf = &ocitypes.DockerAuthConfig{
-			Username: dockerUsername,
-			Password: dockerPassword,
-		}
+	if usernameFlag.Changed || passwordFlag.Changed {
+		authConf = dockerAuthConfig
 	}
 
-	return
+	return authConf, nil
 }
 
 // remote builds need to fail if we cannot resolve remote URLS
@@ -394,13 +355,13 @@ func handleRemoteBuildFlags(cmd *cobra.Command) {
 		if err != nil {
 			sylog.Fatalf("Unable to get build service URI: %v", err)
 		}
-		builderURL = uri
+		buildArgs.builderURL = uri
 	}
 	if !cmd.Flags().Lookup("library").Changed {
 		uri, err := endpoint.GetServiceURI("library")
 		if err != nil {
 			sylog.Fatalf("Unable to get library service URI: %v", err)
 		}
-		libraryURL = uri
+		buildArgs.libraryURL = uri
 	}
 }

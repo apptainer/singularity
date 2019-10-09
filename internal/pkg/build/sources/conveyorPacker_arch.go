@@ -8,6 +8,7 @@ package sources
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 )
 
 const (
@@ -61,7 +63,7 @@ type ArchConveyorPacker struct {
 }
 
 // Get just stores the source
-func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
+func (cp *ArchConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	cp.b = b
 
 	//check for pacstrap on system
@@ -83,6 +85,17 @@ func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
 	pacConf, err := cp.getPacConf(pacmanConfURL)
 	if err != nil {
 		return fmt.Errorf("while getting pacman config: %v", err)
+	}
+
+	insideUserNs, setgroupsAllowed := namespaces.IsInsideUserNamespace(os.Getpid())
+	if insideUserNs && setgroupsAllowed {
+		umountFn, err := cp.prepareFakerootEnv(ctx)
+		if umountFn != nil {
+			defer umountFn()
+		}
+		if err != nil {
+			return fmt.Errorf("while preparing fakeroot build environment: %s", err)
+		}
 	}
 
 	args := []string{"-C", pacConf, "-c", "-d", "-G", "-M", cp.b.RootfsPath, "haveged"}
@@ -117,7 +130,7 @@ func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *ArchConveyorPacker) Pack() (b *types.Bundle, err error) {
+func (cp *ArchConveyorPacker) Pack(context.Context) (b *types.Bundle, err error) {
 	err = cp.insertBaseEnv()
 	if err != nil {
 		return nil, fmt.Errorf("while inserting base environment: %v", err)

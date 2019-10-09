@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -19,7 +20,7 @@ import (
 )
 
 // OciRun runs a container (equivalent to create/start/delete)
-func OciRun(containerID string, args *OciArgs) error {
+func OciRun(ctx context.Context, containerID string, args *OciArgs) error {
 	dir, err := instance.GetDir(containerID, instance.OciSubDir)
 	if err != nil {
 		return err
@@ -44,13 +45,13 @@ func OciRun(containerID string, args *OciArgs) error {
 		if _, err1 := getState(containerID); err1 != nil {
 			return err
 		}
-		if err := OciDelete(containerID); err != nil {
+		if err := OciDelete(ctx, containerID); err != nil {
 			sylog.Warningf("can't delete container %s", containerID)
 		}
 		return err
 	}
 
-	defer exitContainer(containerID, true)
+	defer exitContainer(ctx, containerID, true)
 	defer os.Remove(args.SyncSocketPath)
 
 	go func() {

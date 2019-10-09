@@ -6,13 +6,13 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
 // LocalConveyor only needs to hold the conveyor to have the needed data to pack
@@ -23,7 +23,7 @@ type LocalConveyor struct {
 
 // LocalPacker ...
 type LocalPacker interface {
-	Pack() (*types.Bundle, error)
+	Pack(context.Context) (*types.Bundle, error)
 }
 
 // LocalConveyorPacker only needs to hold the conveyor to have the needed data to pack
@@ -40,37 +40,30 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 		return nil, err
 	}
 
-	info := new(loop.Info64)
-
 	switch imageObject.Type {
 	case image.SIF:
 		sylog.Debugf("Packing from SIF")
 
 		return &SIFPacker{
-			srcfile: src,
+			srcFile: src,
 			b:       b,
+			img:     imageObject,
 		}, nil
 	case image.SQUASHFS:
 		sylog.Debugf("Packing from Squashfs")
 
-		info.Offset = imageObject.Partitions[0].Offset
-		info.SizeLimit = imageObject.Partitions[0].Size
-
 		return &SquashfsPacker{
 			srcfile: src,
 			b:       b,
-			info:    info,
+			img:     imageObject,
 		}, nil
 	case image.EXT3:
 		sylog.Debugf("Packing from Ext3")
 
-		info.Offset = imageObject.Partitions[0].Offset
-		info.SizeLimit = imageObject.Partitions[0].Size
-
 		return &Ext3Packer{
 			srcfile: src,
 			b:       b,
-			info:    info,
+			img:     imageObject,
 		}, nil
 	case image.SANDBOX:
 		sylog.Debugf("Packing from Sandbox")
@@ -84,8 +77,8 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 	}
 }
 
-// Get just stores the source
-func (cp *LocalConveyorPacker) Get(b *types.Bundle) (err error) {
+// Get just stores the source.
+func (cp *LocalConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	// insert base metadata before unpacking fs
 	if err = makeBaseEnv(b.RootfsPath); err != nil {
 		return fmt.Errorf("while inserting base environment: %v", err)

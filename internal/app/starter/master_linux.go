@@ -6,19 +6,24 @@
 package starter
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
+
+	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
-func createContainer(rpcSocket int, containerPid int, e *engine.Engine, fatalChan chan error) {
+func createContainer(ctx context.Context, rpcSocket int, containerPid int, e *engine.Engine, fatalChan chan error) {
 	comm := os.NewFile(uintptr(rpcSocket), "rpc-socket")
 	if comm == nil {
 		fatalChan <- fmt.Errorf("bad RPC socket file descriptor")
@@ -31,8 +36,13 @@ func createContainer(rpcSocket int, containerPid int, e *engine.Engine, fatalCha
 		return
 	}
 
-	err = e.CreateContainer(containerPid, rpcConn)
+	err = e.CreateContainer(ctx, containerPid, rpcConn)
 	if err != nil {
+		if strings.Contains(err.Error(), crypt.ErrInvalidPassphrase.Error()) {
+			sylog.Debugf("%s", err)
+			err = errors.New("failed to decrypt, ensure you have supplied appropriate key material")
+		}
+
 		fatalChan <- fmt.Errorf("container creation failed: %s", err)
 		return
 	}
@@ -40,7 +50,7 @@ func createContainer(rpcSocket int, containerPid int, e *engine.Engine, fatalCha
 	rpcConn.Close()
 }
 
-func startContainer(masterSocket int, containerPid int, e *engine.Engine, fatalChan chan error) {
+func startContainer(ctx context.Context, masterSocket int, containerPid int, e *engine.Engine, fatalChan chan error) {
 	comm := os.NewFile(uintptr(masterSocket), "master-socket")
 	if comm == nil {
 		fatalChan <- fmt.Errorf("bad master socket file descriptor")
@@ -59,7 +69,7 @@ func startContainer(masterSocket int, containerPid int, e *engine.Engine, fatalC
 	// special path for engines which needs to stop before executing
 	// container process
 	if obj, ok := e.Operations.(interface {
-		PreStartProcess(int, net.Conn, chan error) error
+		PreStartProcess(context.Context, int, net.Conn, chan error) error
 	}); ok {
 		_, err := conn.Read(data)
 		if err != nil {
@@ -79,7 +89,7 @@ func startContainer(masterSocket int, containerPid int, e *engine.Engine, fatalC
 			sylog.Debugf("stage 2 process reported an error, waiting status")
 			return
 		}
-		if err := obj.PreStartProcess(containerPid, conn, fatalChan); err != nil {
+		if err := obj.PreStartProcess(ctx, containerPid, conn, fatalChan); err != nil {
 			fatalChan <- fmt.Errorf("pre start process failed: %s", err)
 			return
 		}
@@ -94,7 +104,7 @@ func startContainer(masterSocket int, containerPid int, e *engine.Engine, fatalC
 		return
 	}
 
-	err = e.PostStartProcess(containerPid)
+	err = e.PostStartProcess(ctx, containerPid)
 	if err != nil {
 		fatalChan <- fmt.Errorf("post start process failed: %s", err)
 		return
@@ -116,9 +126,11 @@ func Master(rpcSocket, masterSocket int, containerPid int, e *engine.Engine) {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals)
 
-	go createContainer(rpcSocket, containerPid, e, fatalChan)
+	ctx := context.TODO()
 
-	go startContainer(masterSocket, containerPid, e, fatalChan)
+	go createContainer(ctx, rpcSocket, containerPid, e, fatalChan)
+
+	go startContainer(ctx, masterSocket, containerPid, e, fatalChan)
 
 	go func() {
 		var err error
@@ -128,7 +140,7 @@ func Master(rpcSocket, masterSocket int, containerPid int, e *engine.Engine) {
 
 	fatal := <-fatalChan
 
-	if err := e.CleanupContainer(fatal, status); err != nil {
+	if err := e.CleanupContainer(ctx, fatal, status); err != nil {
 		sylog.Errorf("container cleanup failed: %s", err)
 	}
 

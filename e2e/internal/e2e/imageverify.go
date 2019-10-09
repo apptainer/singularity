@@ -20,7 +20,7 @@ import (
 )
 
 // ImageVerify checks for an image integrity.
-func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
+func (env TestEnv) ImageVerify(t *testing.T, imagePath string, profile Profile) {
 	tt := []struct {
 		name string
 		argv []string
@@ -72,7 +72,7 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 		env.RunSingularity(
 			t,
 			AsSubtest(tc.name),
-			WithProfile(UserProfile),
+			WithProfile(profile),
 			WithCommand("exec"),
 			WithArgs(tc.argv...),
 			ExpectExit(tc.exit),
@@ -193,11 +193,17 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 		if !fs.IsFile(file) {
 			t.Fatalf("unexpected failure: %%Pre generated file %v does not exist on host", file)
 		}
+		if err := os.Remove(file); err != nil {
+			t.Fatalf("could not remove %s: %s", file, err)
+		}
 	}
 
 	for _, file := range dfd.Setup {
 		if !fs.IsFile(file) {
 			t.Fatalf("unexpected failure: %%Setup generated file %v does not exist on host", file)
+		}
+		if err := os.Remove(file); err != nil {
+			t.Fatalf("could not remove %s: %s", file, err)
 		}
 	}
 

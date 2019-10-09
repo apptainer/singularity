@@ -44,6 +44,8 @@ var SearchCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.TODO()
+
 		handleSearchFlags(cmd)
 
 		libraryClient, err := client.NewClient(&client.Config{
@@ -54,7 +56,7 @@ var SearchCmd = &cobra.Command{
 			sylog.Fatalf("Error initializing library client: %v", err)
 		}
 
-		if err := library.SearchLibrary(context.TODO(), libraryClient, args[0]); err != nil {
+		if err := library.SearchLibrary(ctx, libraryClient, args[0]); err != nil {
 			sylog.Fatalf("Couldn't search library: %v", err)
 		}
 

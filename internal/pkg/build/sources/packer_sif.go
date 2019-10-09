@@ -7,10 +7,12 @@ package sources
 
 import (
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/image"
 )
 
-// SIFPacker holds the locations of where to pack from and to
+// SIFPacker holds the locations of where to pack from and to.
 type SIFPacker struct {
-	srcfile string
+	srcFile string
 	b       *types.Bundle
+	img     *image.Image
 }
