@@ -5,7 +5,7 @@ go 1.11
 require (
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
-	github.com/apex/log v1.1.1 // indirect
+	github.com/apex/log v1.1.1
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible
