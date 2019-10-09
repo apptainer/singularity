@@ -50,7 +50,7 @@ func TestNet(t *testing.T) {
 			c.checkIfCacheDisabled(t)
 
 			if tt.needCleanup {
-				defer c.cleanAllCaches()
+				defer os.RemoveAll(tt.dir)
 			}
 
 			if c.Net != tt.expected {
