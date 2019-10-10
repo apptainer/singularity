@@ -28,12 +28,12 @@ x-run:
       test -e $BASH_ENV && sed -e 's,^,BASH_ENV: ,' < $BASH_ENV
 
   update_go: &update_go
-    name: Update Go to 1.12.9
+    name: Update Go to 1.13.1
     working_directory: /tmp
     command: |-
-      wget https://dl.google.com/go/go1.12.9.linux-amd64.tar.gz
+      wget https://dl.google.com/go/go1.13.1.linux-amd64.tar.gz
       sudo rm -rf $GOROOT
-      sudo tar -C /usr/local -xzf go1.12.9.linux-amd64.tar.gz
+      sudo tar -C /usr/local -xzf go1.13.1.linux-amd64.tar.gz
       sudo ln -s $GOROOT/bin/go /usr/local/bin/go
 
   fetch_deb_deps: &fetch_deb_deps
@@ -94,7 +94,7 @@ jobs:
   get_source:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.12.9-stretch
+      - image: sylabsio/golang:1.13.1-stretch
     steps:
       - checkout
       - persist_to_workspace:
@@ -105,7 +105,7 @@ jobs:
   cache_go_mod:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.12.9-stretch
+      - image: sylabsio/golang:1.13.1-stretch
     steps:
       - attach_workspace:
           at: ~/go
@@ -120,10 +120,10 @@ jobs:
           paths:
             - ~/go/pkg/mod
 
-  go112-stretch:
+  go113-stretch:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.12.9-stretch
+      - image: sylabsio/golang:1.13.1-stretch
     steps:
       - attach_workspace:
           at: ~/go
@@ -132,10 +132,10 @@ jobs:
       - run:
           <<: *check_singularity
 
-  go112-alpine:
+  go113-alpine:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.12.9-alpine
+      - image: sylabsio/golang:1.13.1-alpine
     steps:
       - attach_workspace:
           at: ~/go
@@ -144,7 +144,7 @@ jobs:
       - run:
           <<: *check_singularity
 
-  go112-macos:
+  go113-macos:
     macos:
       xcode: "10.2.0"
     working_directory: /Users/distiller/go/src/github.com/sylabs/singularity
@@ -157,12 +157,12 @@ jobs:
             echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> $BASH_ENV
       - run:
-          name: Update Go to 1.12.9
+          name: Update Go to 1.13.1
           working_directory: /tmp
           command: |-
-            curl -LO https://dl.google.com/go/go1.12.9.darwin-amd64.tar.gz
+            curl -LO https://dl.google.com/go/go1.13.1.darwin-amd64.tar.gz
             sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.12.9.darwin-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.13.1.darwin-amd64.tar.gz
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
       - run:
           name: Build Singularity
@@ -262,13 +262,13 @@ workflows:
       - cache_go_mod:
           requires:
             - get_source
-      - go112-stretch:
+      - go113-stretch:
           requires:
             - cache_go_mod
-      - go112-alpine:
+      - go113-alpine:
           requires:
             - cache_go_mod
-      - go112-macos
+      - go113-macos
       - build_check_and_install:
           requires:
             - cache_go_mod

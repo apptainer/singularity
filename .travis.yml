@@ -4,7 +4,7 @@ sudo: required
 dist: xenial
 
 go:
-  - "1.11"
+  - "1.13"
 
 # Make sure user forks of singularity build correctly
 go_import_path: github.com/sylabs/singularity
