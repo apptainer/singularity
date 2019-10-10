@@ -119,7 +119,7 @@ var VerifyCmd = &cobra.Command{
 		}
 
 		// args[0] contains image path
-		doVerifyCmd(ctx, args[0], keyServerURI)
+		doVerifyCmd(ctx, cmd, args[0], keyServerURI)
 	},
 
 	Use:     docs.VerifyUse,
@@ -128,7 +128,20 @@ var VerifyCmd = &cobra.Command{
 	Example: docs.VerifyExample,
 }
 
-func doVerifyCmd(ctx context.Context, cpath, url string) {
+func doVerifyCmd(ctx context.Context, cmd *cobra.Command, cpath, url string) {
+	// Group id should start at 1.
+	if cmd.Flag(verifySifGroupIDFlag.Name).Changed && sifGroupID == 0 {
+		sylog.Fatalf("invalid group id")
+	}
+
+	// Descriptor id should start at 1.
+	if cmd.Flag(verifySifDescSifIDFlag.Name).Changed && sifDescID == 0 {
+		sylog.Fatalf("invalid descriptor id")
+	}
+	if cmd.Flag(verifySifDescIDFlag.Name).Changed && sifDescID == 0 {
+		sylog.Fatalf("invalid descriptor id")
+	}
+
 	if sifGroupID != 0 && sifDescID != 0 {
 		sylog.Fatalf("only one of -i or -g may be set")
 	}
