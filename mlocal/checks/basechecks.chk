@@ -73,7 +73,7 @@ if [ "$hstgo" = "" ]; then
 else
 	printf " checking: host Go compiler (at least version $hstgo_version)... "
 	if env GO111MODULE=off $hstgo run $makeit_checksdir/version.go go$hstgo_version >/dev/null 2>&1; then
-		hstgo=`command -v $go`
+		hstgo=`command -v $hstgo`
 		echo $hstgo
 	else
 		echo "$hstgo cannot compile test code!"
