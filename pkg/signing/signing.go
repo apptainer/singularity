@@ -53,8 +53,9 @@ type KeyList struct {
 }
 
 type signatureLink struct {
-	sigIndex  int // the index of the descriptor with the signature
-	dataIndex int // the index of the descriptor of the signed data
+	sigIndex   int // the index of the descriptor with the signature
+	dataIndex  int // the index of the descriptor of the signed data
+	groupIndex []int
 }
 
 // computeHashStr generates a hash from data object(s) and generates a string
@@ -326,7 +327,7 @@ func getSigsAllPart(fimg *sif.FileImage) ([]signatureLink, error) {
 		}
 
 		for _, sidx := range idxs {
-			tbl = append(tbl, signatureLink{sidx, didx})
+			tbl = append(tbl, signatureLink{sidx, didx, nil})
 		}
 	}
 
@@ -383,14 +384,13 @@ func getSigsGroup(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
 		return nil, fmt.Errorf("no signatures found for groupid %v", id)
 	}
 
-	if len(dindex) != len(sindex) {
-		return nil, fmt.Errorf("data and sigs not the same")
-	}
+	sigLink := make([]signatureLink, len(sindex), len(dindex))
 
-	sigLink := make([]signatureLink, len(sindex))
-
-	for i := range sindex {
-		sigLink = append(sigLink, signatureLink{dindex[i], sindex[i]})
+	for i, s := range sindex {
+		sigLink[i].sigIndex = s
+		for g := range dindex {
+			sigLink[i].groupIndex = append(sigLink[i].groupIndex, dindex[g])
+		}
 	}
 
 	return sigLink, nil
@@ -474,7 +474,17 @@ func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup
 		sifDataIndex := part.dataIndex
 		sifSigIndex := part.sigIndex
 
-		sifhash := computeHashStr(&fimg, &fimg.DescrArr[sifDataIndex])
+		sifhash := ""
+		if isGroup {
+			var groupPart []*sif.Descriptor
+
+			for _, d := range part.groupIndex {
+				groupPart = append(groupPart, &fimg.DescrArr[d])
+			}
+			sifhash = computeHashStr(&fimg, groupPart)
+		} else {
+			sifhash = computeHashStr(&fimg, []*sif.Descriptor{&fimg.DescrArr[sifDataIndex]})
+		}
 		sylog.Debugf("Verifying hash: %s\n", sifhash)
 
 		dataCheck := true
@@ -503,7 +513,7 @@ func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup
 		}
 
 		// (1) try to get identity of signer
-		i, local, err := getSignerIdentity(keyring, &fimg.DescrArr[sifSigIndex], block, data, fingerprint, keyServiceURI, authToken, localVerify)
+		i, local, err := getSignerIdentity(ctx, keyring, &fimg.DescrArr[sifSigIndex], block, data, fingerprint, keyServiceURI, authToken, localVerify)
 		if err != nil {
 			// use [MISSING] if we get an error we expect
 			if err == errNotFound || err == errNotFoundLocal {
