@@ -2,9 +2,6 @@
 
 set -e
 
-# GO_TAGS='@GO_TAGS@'
-GO_TAGS='containers_image_openpgp sylog imgbuild_engine oci_engine singularity_engine fakeroot_engine apparmor selinux seccomp'
-
 golangci_lint_version=1.20.0
 golangci_lint_install_url=https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
 
