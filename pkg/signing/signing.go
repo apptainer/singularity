@@ -52,11 +52,12 @@ type KeyList struct {
 }
 
 // computeHashStr generates a hash from data object(s) and generates a string
-// to be stored in the signature block
-func computeHashStr(fimg *sif.FileImage, descr *sif.Descriptor) string {
+// to be stored in the signature block.
+func computeHashStr(fimg *sif.FileImage, descr []*sif.Descriptor) string {
 	hash := sha512.New384()
-	hash.Write(descr.GetData(fimg))
-
+	for _, v := range descr {
+		hash.Write(v.GetData(fimg))
+	}
 	sum := hash.Sum(nil)
 
 	return fmt.Sprintf("SIFHASH:\n%x", sum)
@@ -156,12 +157,12 @@ func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) ([]*sif.Descripto
 		}
 		descr, _, err = fimg.GetFromDescr(search)
 		if err != nil {
-			return nil, fmt.Errorf("no descriptors found for groupid %v", id)
+			return nil, fmt.Errorf("no descriptors found for groupid %d", id)
 		}
 	} else {
 		descr[0], _, err = fimg.GetFromDescrID(id)
 		if err != nil {
-			return nil, fmt.Errorf("no descriptor found for id %v", id)
+			return nil, fmt.Errorf("no descriptor found for id %d", id)
 		}
 	}
 
@@ -223,8 +224,14 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	for _, de := range descr {
 		sylog.Debugf("Signing %s partition...", datatypeStr(de.Datatype))
 
-		// signature also include data integrity check
-		sifhash := computeHashStr(&fimg, de)
+		sifhash := ""
+		if isGroup {
+			// If we are signing a group, then include all the descriptors.
+			sifhash = computeHashStr(&fimg, descr)
+		} else {
+			// Otherwise, just sign one partition at a time.
+			sifhash = computeHashStr(&fimg, []*sif.Descriptor{de})
+		}
 		sylog.Debugf("Signing hash: %s\n", sifhash)
 
 		// create an ascii armored signature block
@@ -253,6 +260,12 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 		err = sifAddSignature(&fimg, groupid, link, entity.PrimaryKey.Fingerprint, signedmsg.Bytes())
 		if err != nil {
 			return fmt.Errorf("failed adding signature block to SIF container file: %s", err)
+		}
+
+		// If we are signing a group, then only add one signatrue for all
+		// the group partitions.
+		if isGroup {
+			break
 		}
 	}
 
@@ -370,7 +383,7 @@ func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup
 	}
 
 	// the selected data object is hashed for comparison against signature block's
-	sifhash := computeHashStr(&fimg, descr[0])
+	sifhash := computeHashStr(&fimg, descr)
 
 	sylog.Debugf("Verifying hash: %s\n", sifhash)
 
