@@ -40,9 +40,10 @@ unit-test:
 
 
 .PHONY: e2e-test
+e2e-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(BUILDDIR_ABSPATH)/e2e-test.xml)
 e2e-test:
 	@echo " TEST sudo go test [e2e]"
-	$(V)cd $(SOURCEDIR) && scripts/e2e-test
+	$(V)cd $(SOURCEDIR) && scripts/e2e-test -v $(EXTRA_FLAGS)
 	@echo "       PASS"
 
 .PHONY: integration-test
