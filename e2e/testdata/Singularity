@@ -1,8 +1,8 @@
 bootstrap: library
-from: centos:7
+from: alpine:3.7
 
 %labels
-    maintainer "Eduardo Arango<eduardo@sylabs.io>"
+    maintainer "Sylabs Team <support@sylabs.io>"
 
 %help
     export BAD_GUY=Thanos
@@ -65,7 +65,8 @@ export HELLOTHISIS
 %post
     echo "POST"
     # Needed for startscript
-    yum install -y nmap-ncat hostname
+    apk update
+    apk add nmap-ncat
 
 %test
     exec "$@"
