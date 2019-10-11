@@ -60,10 +60,12 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("failed to create a new image cache handle")
 	}
 
-	replaceURIWithImage(imgCache, cmd, args)
+	ctx := context.TODO()
+
+	replaceURIWithImage(ctx, imgCache, cmd, args)
 }
 
-func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, error) {
+func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, u string) (string, error) {
 	authConf, err := makeDockerCredentials(cmd)
 	if err != nil {
 		sylog.Fatalf("While creating Docker credentials: %v", err)
@@ -72,7 +74,7 @@ func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, er
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify:    noHTTPS,
 		DockerInsecureSkipTLSVerify: noHTTPS,
-		DockerAuthConfig:            authConf,
+		DockerAuthConfig:            &authConf,
 	}
 
 	imgabs := ""
@@ -97,7 +99,7 @@ func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, er
 					NoCache:          true,
 					NoTest:           true,
 					NoHTTPS:          noHTTPS,
-					DockerAuthConfig: authConf,
+					DockerAuthConfig: &authConf,
 				},
 			})
 
@@ -105,12 +107,12 @@ func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, er
 			return "", fmt.Errorf("unable to create new build: %v", err)
 		}
 
-		if err := b.Full(); err != nil {
+		if err := b.Full(ctx); err != nil {
 			return "", fmt.Errorf("unable to build: %v", err)
 		}
 
 	} else {
-		sum, err := ociclient.ImageSHA(u, sysCtx)
+		sum, err := ociclient.ImageSHA(ctx, u, sysCtx)
 		if err != nil {
 			return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
 		}
@@ -131,7 +133,7 @@ func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, er
 						TmpDir:           tmpDir,
 						NoTest:           true,
 						NoHTTPS:          noHTTPS,
-						DockerAuthConfig: authConf,
+						DockerAuthConfig: &authConf,
 						ImgCache:         imgCache,
 					},
 				})
@@ -139,7 +141,7 @@ func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, er
 				return "", fmt.Errorf("unable to create new build: %v", err)
 			}
 
-			if err := b.Full(); err != nil {
+			if err := b.Full(ctx); err != nil {
 				return "", fmt.Errorf("unable to build: %v", err)
 			}
 
@@ -150,14 +152,14 @@ func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, er
 	return imgabs, nil
 }
 
-func handleOras(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, error) {
+func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, u string) (string, error) {
 	ociAuth, err := makeDockerCredentials(cmd)
 	if err != nil {
 		return "", fmt.Errorf("while creating docker credentials: %v", err)
 	}
 
 	_, ref := uri.Split(u)
-	sum, err := oras.ImageSHA(ref, ociAuth)
+	sum, err := oras.ImageSHA(ctx, ref, &ociAuth)
 	if err != nil {
 		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
 	}
@@ -169,7 +171,7 @@ func handleOras(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, e
 	} else if !exists {
 		sylog.Infof("Downloading image with ORAS")
 
-		if err := oras.DownloadImage(cacheImagePath, ref, ociAuth); err != nil {
+		if err := oras.DownloadImage(cacheImagePath, ref, &ociAuth); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 
@@ -183,9 +185,7 @@ func handleOras(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, e
 	return cacheImagePath, nil
 }
 
-func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error) {
-	ctx := context.TODO()
-
+func handleLibrary(ctx context.Context, imgCache *cache.Handle, u, libraryURL string) (string, error) {
 	c, err := library.NewClient(&library.Config{
 		AuthToken: authToken,
 		BaseURL:   libraryURL,
@@ -311,7 +311,7 @@ func handleNet(imgCache *cache.Handle, u string) (string, error) {
 	return imagePath, nil
 }
 
-func replaceURIWithImage(imgCache *cache.Handle, cmd *cobra.Command, args []string) {
+func replaceURIWithImage(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, args []string) {
 	// If args[0] is not transport:ref (ex. instance://...) formatted return, not a URI
 	t, _ := uri.Split(args[0])
 	if t == "instance" || t == "" {
@@ -325,13 +325,13 @@ func replaceURIWithImage(imgCache *cache.Handle, cmd *cobra.Command, args []stri
 	case uri.Library:
 		sylabsToken(cmd, args) // Fetch Auth Token for library access
 
-		image, err = handleLibrary(imgCache, args[0], handleActionRemote(cmd))
+		image, err = handleLibrary(ctx, imgCache, args[0], handleActionRemote(cmd))
 	case uri.Oras:
-		image, err = handleOras(imgCache, cmd, args[0])
+		image, err = handleOras(ctx, imgCache, cmd, args[0])
 	case uri.Shub:
 		image, err = handleShub(imgCache, args[0])
 	case ociclient.IsSupported(t):
-		image, err = handleOCI(imgCache, cmd, args[0])
+		image, err = handleOCI(ctx, imgCache, cmd, args[0])
 	case uri.HTTP:
 		image, err = handleNet(imgCache, args[0])
 	case uri.HTTPS:

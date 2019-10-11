@@ -60,7 +60,7 @@ func (c regressionsTests) issue4203(t *testing.T) {
 }
 
 // issue4407 checks that it's possible to build a sandbox image when the
-// destination directory contains a traling slash and when it doesn't.
+// destination directory contains a trailing slash and when it doesn't.
 func (c *regressionsTests) issue4407(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
@@ -103,7 +103,7 @@ func (c *regressionsTests) issue4407(t *testing.T) {
 
 				defer os.RemoveAll(imagePath)
 
-				c.env.ImageVerify(t, imagePath)
+				c.env.ImageVerify(t, imagePath, e2e.RootProfile)
 			}),
 			e2e.ExpectExit(0),
 		)

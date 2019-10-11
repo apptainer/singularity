@@ -1,11 +1,11 @@
 module github.com/sylabs/singularity
 
-go 1.11
+go 1.13
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
-	github.com/apex/log v1.1.1 // indirect
+	github.com/apex/log v1.1.1
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible
@@ -62,7 +62,7 @@ require (
 	github.com/opencontainers/runtime-spec v0.1.2-0.20181111125026-1722abf79c2f
 	github.com/opencontainers/runtime-tools v0.9.0
 	github.com/opencontainers/selinux v1.3.0
-	github.com/pelletier/go-toml v1.4.0
+	github.com/pelletier/go-toml v1.5.0
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
@@ -78,8 +78,8 @@ require (
 	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/sylabs/json-resp v0.6.0
-	github.com/sylabs/scs-build-client v0.0.4
-	github.com/sylabs/scs-key-client v0.3.1-0.20190509220229-bce3b050c4ec
+	github.com/sylabs/scs-build-client v0.1.0
+	github.com/sylabs/scs-key-client v0.4.1
 	github.com/sylabs/scs-library-client v0.4.4
 	github.com/sylabs/sif v1.0.8
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
@@ -100,7 +100,7 @@ require (
 	google.golang.org/grpc v1.20.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v2 v2.2.4
 	gotest.tools v2.2.0+incompatible // indirect
 	gotest.tools/v3 v3.0.0
 	k8s.io/client-go v0.0.0-20181010045704-56e7a63b5e38 // indirect

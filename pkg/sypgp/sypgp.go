@@ -604,11 +604,12 @@ func formatMROutput(mrString string) (int, []byte, error) {
 }
 
 // SearchPubkey connects to a key server and searches for a specific key
-func SearchPubkey(search, keyserverURI, authToken string, longOutput bool) error {
+func SearchPubkey(ctx context.Context, httpClient *http.Client, search, keyserverURI, authToken string, longOutput bool) error {
 	// Get a Key Service client.
 	c, err := client.NewClient(&client.Config{
-		BaseURL:   keyserverURI,
-		AuthToken: authToken,
+		BaseURL:    keyserverURI,
+		AuthToken:  authToken,
+		HTTPClient: httpClient,
 	})
 	if err != nil {
 		return err
@@ -623,7 +624,7 @@ func SearchPubkey(search, keyserverURI, authToken string, longOutput bool) error
 	// set the machine readable output on
 	var options = []string{client.OptionMachineReadable}
 	// Retrieve first page of search results from Key Service.
-	keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, options)
+	keyText, err := c.PKSLookup(ctx, &pd, search, client.OperationIndex, true, false, options)
 	if err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
@@ -796,7 +797,7 @@ func formatMROutputLongList(mrString string) (int, []byte, error) {
 }
 
 // FetchPubkey pulls a public key from the Key Service.
-func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (openpgp.EntityList, error) {
+func FetchPubkey(ctx context.Context, httpClient *http.Client, fingerprint, keyserverURI, authToken string, noPrompt bool) (openpgp.EntityList, error) {
 
 	// Decode fingerprint and ensure proper length.
 	var fp []byte
@@ -812,15 +813,16 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 
 	// Get a Key Service client.
 	c, err := client.NewClient(&client.Config{
-		BaseURL:   keyserverURI,
-		AuthToken: authToken,
+		BaseURL:    keyserverURI,
+		AuthToken:  authToken,
+		HTTPClient: httpClient,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	// Pull key from Key Service.
-	keyText, err := c.GetKey(context.TODO(), fp)
+	keyText, err := c.GetKey(ctx, fp)
 	if err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
@@ -1113,7 +1115,7 @@ func (keyring *Handle) ImportKey(kpath string, setNewPassword bool) error {
 }
 
 // PushPubkey pushes a public key to the Key Service.
-func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
+func PushPubkey(ctx context.Context, httpClient *http.Client, e *openpgp.Entity, keyserverURI, authToken string) error {
 	keyText, err := serializeEntity(e, openpgp.PublicKeyType)
 	if err != nil {
 		return err
@@ -1121,15 +1123,16 @@ func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
 
 	// Get a Key Service client.
 	c, err := client.NewClient(&client.Config{
-		BaseURL:   keyserverURI,
-		AuthToken: authToken,
+		BaseURL:    keyserverURI,
+		AuthToken:  authToken,
+		HTTPClient: httpClient,
 	})
 	if err != nil {
 		return err
 	}
 
 	// Push key to Key Service.
-	if err := c.PKSAdd(context.TODO(), keyText); err != nil {
+	if err := c.PKSAdd(ctx, keyText); err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			sylog.Infof(helpAuth+helpPush, e.PrimaryKey.Fingerprint)

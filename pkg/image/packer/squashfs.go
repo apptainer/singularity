@@ -24,11 +24,11 @@ func NewSquashfs() *Squashfs {
 }
 
 // HasMksquashfs returns if mksquashfs binary has set or not
-func (s *Squashfs) HasMksquashfs() bool {
+func (s Squashfs) HasMksquashfs() bool {
 	return s.MksquashfsPath != ""
 }
 
-func (s *Squashfs) create(files []string, dest string, opts []string) error {
+func (s Squashfs) create(files []string, dest string, opts []string) error {
 	var stderr bytes.Buffer
 
 	if !s.HasMksquashfs() {
@@ -50,6 +50,6 @@ func (s *Squashfs) create(files []string, dest string, opts []string) error {
 
 // Create makes a squashfs filesystem from a list of source files/directories to a
 // destination file
-func (s *Squashfs) Create(src []string, dest string, opts []string) error {
+func (s Squashfs) Create(src []string, dest string, opts []string) error {
 	return s.create(src, dest, opts)
 }

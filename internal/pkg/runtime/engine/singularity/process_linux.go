@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"context"
 	"debug/elf"
 	"encoding/binary"
 	"encoding/json"
@@ -28,7 +29,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -303,7 +304,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 // and thus no additional privileges can be gained.
 //
 // Here, however, singularity engine does not escalate privileges.
-func (e *EngineOperations) PostStartProcess(pid int) error {
+func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error {
 	sylog.Debugf("Post start process")
 
 	if e.EngineConfig.GetInstance() {

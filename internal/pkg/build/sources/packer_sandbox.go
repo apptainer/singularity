@@ -7,6 +7,7 @@ package sources
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os/exec"
 
@@ -22,7 +23,7 @@ type SandboxPacker struct {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (p *SandboxPacker) Pack() (*types.Bundle, error) {
+func (p *SandboxPacker) Pack(context.Context) (*types.Bundle, error) {
 	rootfs := p.srcdir
 
 	// copy filesystem into bundle rootfs

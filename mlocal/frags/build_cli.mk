@@ -2,14 +2,14 @@
 
 # singularity build config
 singularity_build_config := $(SOURCEDIR)/internal/pkg/buildcfg/config.go
-$(singularity_build_config): $(BUILDDIR)/config.h
+$(singularity_build_config): $(BUILDDIR)/config.h $(SOURCEDIR)/scripts/go-generate
 	$(V)rm -f $(singularity_build_config)
-	$(V)export BUILDDIR=$(BUILDDIR_ABSPATH) GO_BUILD_TAGS="$(GO_TAGS)" && cd $(SOURCEDIR)/internal/pkg/buildcfg && $(GO) generate
+	$(V) cd $(SOURCEDIR)/internal/pkg/buildcfg && $(SOURCEDIR)/scripts/go-generate
 
 CLEANFILES += $(singularity_build_config)
 
 # singularity
-singularity_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep "$(SOURCEDIR)" "$(GO_TAGS)" "$(SOURCEDIR)/cmd/singularity")
+singularity_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep -v2 "$(GO)" "$(SOURCEDIR)" "$(GO_TAGS)" "$(SOURCEDIR)/cmd/singularity")
 
 singularity := $(BUILDDIR)/singularity
 $(singularity): $(singularity_build_config) $(singularity_SOURCE)
@@ -54,10 +54,10 @@ config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/singularity.conf
 # override this to empty to avoid merging old configuration settings
 old_config := $(config_INSTALL)
 
-$(config): $(singularity_build_config) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/pkg/runtime/engines/singularity/config/data/singularity.conf $(SOURCEDIR)/pkg/runtime/engines/singularity/config/config.go
+$(config): $(singularity_build_config) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/etc/conf/singularity.conf $(SOURCEDIR)/pkg/runtime/engine/singularity/config/config.go
 	@echo " GEN $@`if [ -n "$(old_config)" ]; then echo " from $(old_config)"; fi`"
 	$(V)$(GO) run $(GO_MODFLAGS) $(GO_GCFLAGS) $(GO_ASMFLAGS) $(SOURCEDIR)/etc/conf/gen.go \
-		$(SOURCEDIR)/pkg/runtime/engines/singularity/config/data/singularity.conf $(old_config) $(config)
+		$(SOURCEDIR)/etc/conf/singularity.conf $(old_config) $(config)
 
 $(config_INSTALL): $(config)
 	@echo " INSTALL" $@

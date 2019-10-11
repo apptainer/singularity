@@ -1,7 +1,14 @@
 ### Version of Singularity:
 
-Write your Singularity version here.
+What version of Singularity are you using? Run:
 
+```
+$ singularity version
+
+```
+
+
+<!-- please include command-line output in a code block -->
 
 ### Expected behavior
 
@@ -13,31 +20,24 @@ What did you expect to see when you do...?
 What actually happend? Why was it incorrect?
 
 
-### Steps to reproduce behavior
 
-Please fill out as much information as possible.
+<!-- if this is a feature request, you can ignore this next part -->
+
+### Steps to reproduce this behavior
+
+How can others reproduce this issue/problem?
 
 
-### Environment?
-
-Please add infomation about your environment.
-
-#### OS distribution and version:
-
-```
-$ cat /etc/os-release 
+### What OS/distro are you running
 
 ```
+$ cat /etc/os-release
 
-
-#### go version:
-
-```
-$ go version
 
 ```
 
-#### How did you install Singularity
+
+### How did you install Singularity
 
 Write here how you installed Singularity. Eg. RPM, source.
 

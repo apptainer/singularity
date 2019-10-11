@@ -7,7 +7,6 @@ package cli
 
 import (
 	"context"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
@@ -18,16 +17,16 @@ func fakerootExec(cmdArgs []string) {
 	sylog.Fatalf("fakeroot is not supported on this platform")
 }
 
-func run(cmd *cobra.Command, args []string) {
+func runBuild(cmd *cobra.Command, args []string) {
 	dest := args[0]
 	spec := args[1]
 
 	// check if target collides with existing file
-	if ok := checkBuildTarget(dest, false); !ok {
-		os.Exit(1)
+	if err := checkBuildTarget(dest); err != nil {
+		sylog.Fatalf("%s", err)
 	}
 
-	if !remote {
+	if !buildArgs.remote {
 		sylog.Fatalf("Only remote builds are supported on this platform")
 	}
 
@@ -43,7 +42,7 @@ func run(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("Unable to build from %s: %v", spec, err)
 	}
 
-	b, err := remotebuilder.New(dest, libraryURL, def, detached, force, builderURL, authToken, buildArch)
+	b, err := remotebuilder.New(dest, buildArgs.libraryURL, def, buildArgs.detached, forceOverwrite, buildArgs.builderURL, authToken, buildArgs.arch)
 	if err != nil {
 		sylog.Fatalf("Failed to create builder: %v", err)
 	}

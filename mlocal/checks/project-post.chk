@@ -366,7 +366,6 @@ if test "${host}" = "unix" ; then
       echo
       echo "unable to find the cryptsetup program, is the package cryptsetup-bin installed?"
       echo
-      exit 2
    else
       echo "yes"
    fi

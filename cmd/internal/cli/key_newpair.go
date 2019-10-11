@@ -6,8 +6,10 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
@@ -91,8 +93,9 @@ type keyNewPairOptions struct {
 }
 
 func runNewPairCmd(cmd *cobra.Command, args []string) {
+	ctx := context.TODO()
+
 	keyring := sypgp.NewHandle("")
-	handleKeyNewPairEndpoint()
 
 	opts, err := collectInput(cmd)
 	if err != nil {
@@ -114,7 +117,9 @@ func runNewPairCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if err := sypgp.PushPubkey(key, keyServerURI, authToken); err != nil {
+	// Only connect to the endpoint if we are pushing the key.
+	handleKeyNewPairEndpoint()
+	if err := sypgp.PushPubkey(ctx, http.DefaultClient, key, keyServerURI, authToken); err != nil {
 		fmt.Printf("Failed to push newly created key to keystore: %s\n", err)
 	} else {
 		fmt.Printf("Key successfully pushed to: %s\n", keyServerURI)

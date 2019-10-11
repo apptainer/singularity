@@ -8,6 +8,7 @@ package sources
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -44,7 +45,7 @@ type YumConveyorPacker struct {
 }
 
 // Get downloads container information from the specified source
-func (c *YumConveyor) Get(b *types.Bundle) (err error) {
+func (c *YumConveyor) Get(ctx context.Context, b *types.Bundle) (err error) {
 	c.b = b
 
 	// check for dnf or yum on system
@@ -97,7 +98,7 @@ func (c *YumConveyor) Get(b *types.Bundle) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *YumConveyorPacker) Pack() (b *types.Bundle, err error) {
+func (cp *YumConveyorPacker) Pack(context.Context) (b *types.Bundle, err error) {
 	err = cp.insertBaseEnv()
 	if err != nil {
 		return nil, fmt.Errorf("while inserting base environment: %v", err)

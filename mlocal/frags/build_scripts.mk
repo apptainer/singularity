@@ -23,5 +23,9 @@ $(SOURCEDIR)/scripts/go-generate: $(SOURCEDIR)/scripts/go-generate.in $(SOURCEDI
 	$(V) $(GO) run $(GO_MODFLAGS) $(SOURCEDIR)/scripts/expand-env.go < $< > $@
 	$(V) chmod +x $@
 
+.PHONY: codegen
+codegen: $(SOURCEDIR)/scripts/go-generate
+	cd $(SOURCEDIR) && ./scripts/go-generate -x ./...
+
 ALL += $(SOURCEDIR)/scripts/go-generate
 

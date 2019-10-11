@@ -18,13 +18,10 @@ collect:
 	done
 
 .PHONY: check
-check: $(go_OBJ)
+check: codegen
 	@echo " CHECK golangci-lint"
-	$(V)cd $(SOURCEDIR) && \
-		(PATH=$(SOURCEDIR)/bin:$$PATH; \
-		 (command -v golangci-lint >/dev/null || \
-		  curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.17.1) && \
-		 golangci-lint run --build-tags "$(GO_TAGS)" ./...)
+	$(V) cd $(SOURCEDIR) && \
+		scripts/run-linter run --verbose --build-tags "$(GO_TAGS)" ./...
 	@echo "       PASS"
 
 .PHONY: dist
@@ -32,11 +29,12 @@ dist:
 	$(V)(cd $(SOURCEDIR) && $(SOURCEDIR)/scripts/make-dist.sh)
 
 .PHONY: unit-test
+unit-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(BUILDDIR_ABSPATH)/unit-test.xml)
 unit-test:
 	@echo " TEST sudo go test [unit]"
 	$(V)cd $(SOURCEDIR) && \
 		sudo -E \
-		scripts/go-test -v \
+		scripts/go-test -v $(EXTRA_FLAGS) \
 		./...
 	@echo "       PASS"
 
@@ -80,10 +78,10 @@ rpm: dist
 	      --define '_sysconfdir $(RPMPREFIX)/etc' \
 	      --define '_localstatedir $(RPMPREFIX)/var' \
 	      --define '_mandir $(RPMPREFIX)/share/man' \
-	      $(SOURCEDIR)/singularity-$(SHORT_VERSION).tar.gz; \
+	      $(SOURCEDIR)/singularity-$(VERSION).tar.gz; \
 	  else \
 	    rpmbuild $(RPMCLEAN) -ta \
-	      $(SOURCEDIR)/singularity-$(SHORT_VERSION).tar.gz; \
+	      $(SOURCEDIR)/singularity-$(VERSION).tar.gz; \
 	  fi)
 
 .PHONY: cscope
@@ -95,7 +93,7 @@ cscope:
 .PHONY: clean
 clean:
 	@printf " CLEAN\n"
-	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* bin/golangci-lint $(CLEANFILES)
+	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* $(CLEANFILES)
 
 .PHONY: install
 install: $(INSTALLFILES)

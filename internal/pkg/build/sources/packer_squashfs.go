@@ -6,62 +6,35 @@
 package sources
 
 import (
-	"bytes"
+	"context"
 	"fmt"
-	"io/ioutil"
-	"os/exec"
-	"strconv"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/image/unpacker"
 )
 
 // SquashfsPacker holds the locations of where to pack from and to, aswell as image offset info
 type SquashfsPacker struct {
 	srcfile string
 	b       *types.Bundle
-	info    *loop.Info64
+	img     *image.Image
 }
 
 // Pack puts relevant objects in a Bundle!
-func (p *SquashfsPacker) Pack() (*types.Bundle, error) {
-	rootfs := p.srcfile
-
-	err := unpackSquashfs(p.b, p.info, rootfs)
+func (p *SquashfsPacker) Pack(context.Context) (*types.Bundle, error) {
+	// create a reader for rootfs partition
+	reader, err := image.NewPartitionReader(p.img, "", 0)
 	if err != nil {
-		sylog.Errorf("unpackSquashfs Failed: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("could not extract root filesystem: %s", err)
+	}
+
+	s := unpacker.NewSquashfs()
+
+	// extract root filesystem
+	if err := s.ExtractAll(reader, p.b.RootfsPath); err != nil {
+		return nil, fmt.Errorf("root filesystem extraction failed: %s", err)
 	}
 
 	return p.b, nil
-}
-
-// unpackSquashfs removes the image header with dd and then unpackes image into bundle directories with unsquashfs
-func unpackSquashfs(b *types.Bundle, info *loop.Info64, rootfs string) (err error) {
-	var stderr bytes.Buffer
-
-	trimfile, err := ioutil.TempFile(b.TmpDir, "trim.squashfs")
-	if err != nil {
-		return fmt.Errorf("while making tmp file: %v", err)
-	}
-
-	// trim header
-	sylog.Debugf("Creating copy of %s without header at %s\n", rootfs, trimfile.Name())
-	cmd := exec.Command("dd", "bs="+strconv.Itoa(int(info.Offset)), "skip=1", "if="+rootfs, "of="+trimfile.Name())
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("trimming header failed: %v: %v", err, stderr.String())
-	}
-
-	// copy filesystem into bundle rootfs
-	sylog.Debugf("Unsquashing %s to %s in Bundle\n", trimfile.Name(), b.RootfsPath)
-	stderr.Reset()
-	cmd = exec.Command("unsquashfs", "-f", "-d", b.RootfsPath, trimfile.Name())
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("unsquashfs Failed: %v: %v", err, stderr.String())
-	}
-
-	return err
 }

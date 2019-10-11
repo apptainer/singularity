@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -31,7 +32,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/network"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
@@ -68,7 +69,7 @@ type container struct {
 	devSourcePath string
 }
 
-func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
+func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	var err error
 
 	c := &container{
@@ -205,7 +206,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	}
 
 	if networkSetup != nil {
-		if err := networkSetup(); err != nil {
+		if err := networkSetup(ctx); err != nil {
 			return err
 		}
 	}
@@ -1817,7 +1818,7 @@ func (c *container) addActionsMount(system *mount.System) error {
 	return system.Points.AddRemount(mount.BindsTag, containerDir, flags)
 }
 
-func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func() error, error) {
+func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(context.Context) error, error) {
 	const (
 		fakerootNet  = "fakeroot"
 		noneNet      = "none"
@@ -1873,7 +1874,7 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func() e
 		return nil, fmt.Errorf("error while setting network arguments: %s", err)
 	}
 
-	return func() error {
+	return func(ctx context.Context) error {
 		if fakeroot {
 			// prevent port hijacking between user processes
 			if err := setup.SetPortProtection(fakerootNet, 0); err != nil {
@@ -1887,7 +1888,7 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func() e
 
 		setup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
 
-		if err := setup.AddNetworks(); err != nil {
+		if err := setup.AddNetworks(ctx); err != nil {
 			return fmt.Errorf("%s", err)
 		}
 		c.engine.EngineConfig.Network = setup

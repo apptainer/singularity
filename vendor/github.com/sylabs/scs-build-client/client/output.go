@@ -10,6 +10,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gorilla/websocket"
 )
@@ -37,21 +40,32 @@ func (c *Client) GetOutput(ctx context.Context, buildID string, or OutputReader)
 	h := http.Header{}
 	c.setRequestHeaders(h)
 
-	ws, resp, err := websocket.DefaultDialer.Dial(u.String(), h)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	ws, resp, err := websocket.DefaultDialer.DialContext(ctx, u.String(), h)
 	if err != nil {
 		c.Logger.Logf("websocket dial err - %s, partial response: %+v", err, resp)
 		return err
 	}
+	defer resp.Body.Close()
 	defer ws.Close()
 
-	for {
-		// Check if context has expired
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+		fmt.Printf("\rShutting down due to signal: %v\n", <-sigCh)
+
+		if err := c.Cancel(ctx, buildID); err != nil {
+			c.Logger.Logf("build cancellation request failed: %v", err)
 		}
 
+		cancel()
+
+	}()
+
+	for {
 		// Read from websocket
 		mt, msg, err := ws.ReadMessage()
 		if err != nil {

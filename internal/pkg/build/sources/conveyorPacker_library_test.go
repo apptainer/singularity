@@ -6,6 +6,7 @@
 package sources_test
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -47,7 +48,7 @@ func TestLibraryConveyor(t *testing.T) {
 	defer cleanup()
 	b.Opts.ImgCache = imgCache
 
-	err = cp.Get(b)
+	err = cp.Get(context.Background(), b)
 	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
@@ -78,14 +79,14 @@ func TestLibraryPacker(t *testing.T) {
 	defer cleanup()
 	b.Opts.ImgCache = imgCache
 
-	err = cp.Get(b)
+	err = cp.Get(context.Background(), b)
 	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", libraryURI, err)
 	}
 
-	_, err = cp.Pack()
+	_, err = cp.Pack(context.Background())
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", libraryURI, err)
 	}
