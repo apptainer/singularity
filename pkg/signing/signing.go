@@ -442,17 +442,13 @@ func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup
 	}
 	defer fimg.UnloadContainer()
 
-	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
+	// Get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file.
 	sigsLink, err := getSigsForSelection(&fimg, id, isGroup)
 	if err != nil {
 		return "", false, fmt.Errorf("error while searching for signature blocks: %s", err)
 	}
 
-	// the selected data object is hashed for comparison against signature block's
-	sifhash := computeHashStr(&fimg, descr)
-	sylog.Debugf("Verifying hash: %s\n", sifhash)
-
-	// setup some colors
+	// Setup some colors.
 	green := color.New(color.FgGreen).SprintFunc()
 	yellow := color.New(color.FgYellow).SprintFunc()
 	red := color.New(color.FgRed).SprintFunc()
@@ -466,12 +462,13 @@ func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup
 
 	author += fmt.Sprintf("Container is signed by %d key(s):\n\n", len(sigsLink))
 
+	// Loop through the signature link, and find the signatures and
+	// corresponding partition.
 	for _, part := range sigsLink {
-		sifDataIndex := part.dataIndex
-		sifSigIndex := part.sigIndex
-
 		sifhash := ""
 		if isGroup {
+			// If we are verifying a group, then collect all
+			// the group partitions.
 			var groupPart []*sif.Descriptor
 
 			for _, d := range part.groupIndex {
@@ -479,29 +476,36 @@ func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup
 			}
 			sifhash = computeHashStr(&fimg, groupPart)
 		} else {
-			sifhash = computeHashStr(&fimg, []*sif.Descriptor{&fimg.DescrArr[sifDataIndex]})
+			sifhash = computeHashStr(&fimg, []*sif.Descriptor{&fimg.DescrArr[part.dataIndex]})
 		}
 		sylog.Debugf("Verifying hash: %s\n", sifhash)
 
 		dataCheck := true
 		// get the entity fingerprint for the signature block
-		fingerprint, err := fimg.DescrArr[sifSigIndex].GetEntityString()
+		fingerprint, err := fimg.DescrArr[part.sigIndex].GetEntityString()
 		if err != nil {
-			sylog.Errorf("could not get the signing entity fingerprint from partition ID: %d: %s", sifSigIndex, err)
+			sylog.Errorf("could not get the signing entity fingerprint from partition ID: %d: %s", part.sigIndex, err)
 			fail = true
 			continue
 		}
-		author += fmt.Sprintf("Verifying partition: %s:\n", datatypeStr(fimg.DescrArr[sifDataIndex].Datatype))
+
+		verifyPartition := ""
+		if isGroup {
+			verifyPartition = fmt.Sprintf("group: %d", id)
+		} else {
+			verifyPartition = datatypeStr(fimg.DescrArr[part.dataIndex].Datatype)
+		}
+		author += fmt.Sprintf("Verifying partition: %s:\n", verifyPartition)
 		author += fingerprint + "\n"
 
 		// Extract hash string from signature block
-		data := fimg.DescrArr[sifSigIndex].GetData(&fimg)
+		data := fimg.DescrArr[part.sigIndex].GetData(&fimg)
 		block, _ := clearsign.Decode(data)
 		if block == nil {
 			sylog.Verbosef("%s signature key (%s) corrupted, unable to read data", red("error:"), fingerprint)
 			author += fmt.Sprintf("%-18s Signature corrupted, unable to read data\n\n", red("[FAIL]"))
 
-			keySigner = makeKeyEntity("", datatypeStr(fimg.DescrArr[sifDataIndex].Datatype), fingerprint, false, false, false)
+			keySigner = makeKeyEntity("", verifyPartition, fingerprint, false, false, false)
 			keyEntityList.SignerKeys = append(keyEntityList.SignerKeys, keySigner)
 
 			fail = true
@@ -509,7 +513,7 @@ func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup
 		}
 
 		// (1) try to get identity of signer
-		i, local, err := getSignerIdentity(ctx, keyring, &fimg.DescrArr[sifSigIndex], block, data, fingerprint, keyServiceURI, authToken, localVerify)
+		i, local, err := getSignerIdentity(ctx, keyring, &fimg.DescrArr[part.sigIndex], block, data, fingerprint, keyServiceURI, authToken, localVerify)
 		if err != nil {
 			// use [MISSING] if we get an error we expect
 			if err == errNotFound || err == errNotFoundLocal {
@@ -539,7 +543,7 @@ func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup
 		}
 		author += fmt.Sprintf("\n")
 
-		keySigner = makeKeyEntity(i, datatypeStr(fimg.DescrArr[sifDataIndex].Datatype), fingerprint, local, true, dataCheck)
+		keySigner = makeKeyEntity(i, verifyPartition, fingerprint, local, true, dataCheck)
 		keyEntityList.SignerKeys = append(keyEntityList.SignerKeys, keySigner)
 
 	}
