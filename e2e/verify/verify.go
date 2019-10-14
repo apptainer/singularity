@@ -30,7 +30,7 @@ type verifyOutput struct {
 	dataCheck   bool
 }
 
-const successURL = "library://sylabs/tests/verify_success:1.0.1"
+const successURL = "library://sylabs/tests/verify_success:1.0.2"
 const corruptedURL = "library://sylabs/tests/verify_corrupted:1.0.1"
 
 func getNameJSON(keyNum int) []string {

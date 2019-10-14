@@ -18,13 +18,10 @@ collect:
 	done
 
 .PHONY: check
-check: $(go_OBJ)
+check: codegen
 	@echo " CHECK golangci-lint"
-	$(V)cd $(SOURCEDIR) && \
-		(PATH=$(SOURCEDIR)/bin:$$PATH; \
-		 (command -v golangci-lint >/dev/null || \
-		  curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.17.1) && \
-		 golangci-lint run --build-tags "$(GO_TAGS)" ./...)
+	$(V) cd $(SOURCEDIR) && \
+		scripts/run-linter run --verbose --build-tags "$(GO_TAGS)" ./...
 	@echo "       PASS"
 
 .PHONY: dist
@@ -32,19 +29,21 @@ dist:
 	$(V)(cd $(SOURCEDIR) && $(SOURCEDIR)/scripts/make-dist.sh)
 
 .PHONY: unit-test
+unit-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(BUILDDIR_ABSPATH)/unit-test.xml)
 unit-test:
 	@echo " TEST sudo go test [unit]"
 	$(V)cd $(SOURCEDIR) && \
 		sudo -E \
-		scripts/go-test -v \
+		scripts/go-test -v $(EXTRA_FLAGS) \
 		./...
 	@echo "       PASS"
 
 
 .PHONY: e2e-test
+e2e-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(BUILDDIR_ABSPATH)/e2e-test.xml)
 e2e-test:
 	@echo " TEST sudo go test [e2e]"
-	$(V)cd $(SOURCEDIR) && scripts/e2e-test
+	$(V)cd $(SOURCEDIR) && scripts/e2e-test -v $(EXTRA_FLAGS)
 	@echo "       PASS"
 
 .PHONY: integration-test
@@ -95,7 +94,7 @@ cscope:
 .PHONY: clean
 clean:
 	@printf " CLEAN\n"
-	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* bin/golangci-lint $(CLEANFILES)
+	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* $(CLEANFILES)
 
 .PHONY: install
 install: $(INSTALLFILES)

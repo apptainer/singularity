@@ -339,30 +339,45 @@ func (c *container) chdirFinal(system *mount.System) error {
 	return nil
 }
 
-func (c *container) checkMounted(dest string) string {
-	if dest[0] != '/' {
-		return ""
+func (c *container) sameInode(host string, container string) bool {
+	cst, err := c.rpcOps.Stat(container)
+	if err != nil {
+		sylog.Debugf("Could not get file status for %s: %s", container, err)
+		return false
+	}
+
+	var hst syscall.Stat_t
+	if err := syscall.Stat(host, &hst); err != nil {
+		sylog.Debugf("Could not get file status for %s: %s", host, err)
+		return false
+	}
+
+	if hst.Dev == cst.Dev && hst.Ino == cst.Ino {
+		return true
+	}
+
+	return false
+}
+
+func (c *container) isMounted(dest string) bool {
+	if !filepath.IsAbs(dest) {
+		sylog.Debugf("%s is not an absolute path", dest)
+		return false
 	}
 
 	entries, err := proc.GetMountInfoEntry(c.mountInfoPath)
 	if err != nil {
-		return ""
+		sylog.Debugf("Could not get %s entries: %s", c.mountInfoPath, err)
+		return false
 	}
-	d, err := proc.FindParentMountEntry(dest, entries)
-	if err != nil {
-		return ""
-	}
-
-	finalPath := c.session.FinalPath()
-	finalDest := filepath.Join(finalPath, dest)
 
 	for _, e := range entries {
-		if e.Dev == d.Dev && e.Point != "/" && strings.HasPrefix(finalDest, e.Point) {
-			return e.Point
+		if e.Point == dest {
+			return true
 		}
 	}
 
-	return ""
+	return false
 }
 
 // mount any generic mount (not loop dev)
@@ -418,11 +433,12 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 		sylog.Debugf("Remounting %s\n", dest)
 	} else {
 		if tag == mount.CwdTag {
-			cwd := c.engine.EngineConfig.GetCwd()
-			mounted := c.checkMounted(cwd)
-			if mounted != "" {
+			hostCwd := c.engine.EngineConfig.GetCwd()
+			containerCwd := filepath.Join(c.session.FinalPath(), hostCwd)
+
+			if c.sameInode(hostCwd, containerCwd) || c.isMounted(containerCwd) {
 				c.skippedMount = append(c.skippedMount, mnt.Destination)
-				sylog.Verbosef("Skipping mount %s, %s already mounted", cwd, mounted)
+				sylog.Verbosef("Skipping mount %s, %s already mounted", hostCwd, containerCwd)
 				return nil
 			}
 		}

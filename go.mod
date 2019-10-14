@@ -1,6 +1,6 @@
 module github.com/sylabs/singularity
 
-go 1.11
+go 1.13
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b

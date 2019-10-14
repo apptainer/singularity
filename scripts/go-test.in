@@ -1,9 +1,54 @@
 #!/bin/sh
 
+set -e
+
+info() {
+	printf 'I: %s\n' "$*"
+}
+
+error() {
+	printf 'E: %s\n' "$*"
+}
+
+gotestsum_runner() {
+	gotestsum \
+		--jsonfile "${junitOutput}.json" \
+		--format "${gotestrunner_format}" \
+		--raw-command \
+		-- \
+		"${GO}" test -json "$@"
+}
+
+gotestsum_postprocess() {
+	touch "${junitOutput}.json"
+	gotestsum \
+		--junitfile "${junitOutput}" \
+		--raw-command \
+		-- \
+		cat "${junitOutput}.json"
+}
+
+gotest_runner() {
+	"${GO}" test "$@"
+}
+
+gotest_postprocess() {
+	true
+}
+
 export GOFLAGS='@GOFLAGS@'
 export GO111MODULE='@GO111MODULE@'
 
+GO='@GO@'
 GO_TAGS='@GO_TAGS@'
+
+verbose=false
+use_gotestsum=false
+junitOutput=
+gotestrunner_format=standard-quiet
+
+test_runner=gotest_runner
+test_postprocess=gotest_postprocess
 
 skip=false
 
@@ -21,17 +66,58 @@ for arg in "$@" ; do
 			skip=true
 			;;
 
+		-junit)
+			if ! command -v gotestsum > /dev/null 2>&1 ; then
+				error 'JUnit output requested but gotestsum not found in PATH. Abort.'
+				info ''
+				info 'Looked in the following directories, in order:'
+				info ''
+				IFS=:
+				for dir in ${PATH} ; do
+					info "    ${dir}"
+				done
+				exit 1
+			fi
+
+			use_gotestsum=true
+			test_runner=gotestsum_runner
+			test_postprocess=gotestsum_postprocess
+			junitOutput="${1}"
+
+			skip=true
+			;;
+
+		-v|-verbose)
+			verbose=true
+			set -- "$@" -v
+			;;
+
 		*)
 			set -- "$@" "${arg}"
 			;;
 	esac
 done
 
-exec '@GO@' test \
+if ${use_gotestsum} ; then
+	if ${verbose} ; then
+		gotestrunner_format=standard-verbose
+	fi
+fi
+
+# capture exit code
+rc=0
+
+"${test_runner}" \
 	-count=1 \
 	-timeout=30m \
 	-tags "${GO_TAGS}" \
 	-failfast \
 	-cover \
 	-race \
-	"$@"
+	"$@" ||
+rc=$?
+
+"${test_postprocess}"
+
+# return original exit code
+exit ${rc}
