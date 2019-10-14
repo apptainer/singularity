@@ -17,159 +17,166 @@ import (
 	"text/template"
 )
 
-// Parser parses configuration found in the file with the specified path.
-func Parser(filepath string, f interface{}) error {
-	var err error
-	var c *os.File
-	var b []byte
-	directives := make(map[string][]string)
+// Directives represents the configuration directives type
+// holding directives mapped to their respective values.
+type Directives map[string][]string
 
-	if filepath != "" {
-		c, err = os.Open(filepath)
-		if err != nil {
-			return err
-		}
-		b, err = ioutil.ReadAll(c)
-		if err != nil {
-			return err
-		}
+var parserReg = regexp.MustCompile(`(?m)^\s*([a-zA-Z _]+)\s*=\s*(.*)$`)
 
-		c.Close()
+// GetDirectives parses configuration directives from reader
+// and returns a directive map with associated values.
+func GetDirectives(reader io.Reader) (Directives, error) {
+	if reader == nil {
+		return make(Directives), nil
 	}
 
-	r, err := regexp.Compile(`(?m)^\s*([a-zA-Z _]+)\s*=\s*(.*)$`)
+	data, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return fmt.Errorf("regex compilation failed")
+		return nil, fmt.Errorf("while reading data: %s", err)
 	}
 
-	for _, match := range r.FindAllSubmatch(b, -1) {
+	directives := make(Directives)
+
+	for _, match := range parserReg.FindAllSubmatch(data, -1) {
 		if match != nil {
 			key := strings.TrimSpace(string(match[1]))
 			val := strings.TrimSpace(string(match[2]))
-			directives[key] = append(directives[key], val)
+			if val != "" {
+				directives[key] = append(directives[key], val)
+			}
 		}
 	}
 
-	val := reflect.ValueOf(f).Elem()
+	return directives, nil
+}
+
+// GetConfig sets the corresponding interface fields associated
+// with directives.
+func GetConfig(directives Directives) (*FileConfig, error) {
+	config := new(FileConfig)
+
+	elem := reflect.ValueOf(config).Elem()
 
 	// Iterate over the fields of f and handle each type
-	for i := 0; i < val.NumField(); i++ {
-		valueField := val.Field(i)
-		typeField := val.Type().Field(i)
-		def := typeField.Tag.Get("default")
-		dir := typeField.Tag.Get("directive")
-		authorized := strings.Split(typeField.Tag.Get("authorized"), ",")
+	for i := 0; i < elem.NumField(); i++ {
+		valueField := elem.Field(i)
+		typeField := elem.Type().Field(i)
+
+		dir, ok := typeField.Tag.Lookup("directive")
+		if !ok {
+			return nil, fmt.Errorf("no directive tag found for field %q", typeField.Name)
+		}
+
+		defaultValue := ""
+		if v, ok := typeField.Tag.Lookup("default"); ok {
+			defaultValue = v
+		}
+
+		authorized := []string{}
+		if v, ok := typeField.Tag.Lookup("authorized"); ok {
+			authorized = strings.Split(v, ",")
+		}
+
+		value := []string{}
+		if len(directives[dir]) > 0 {
+			for _, dv := range directives[dir] {
+				if dv != "" {
+					value = append(value, strings.Split(dv, ",")...)
+				}
+			}
+		} else {
+			if defaultValue != "" {
+				value = append(value, strings.Split(defaultValue, ",")...)
+			}
+		}
 
 		switch typeField.Type.Kind() {
 		case reflect.Bool:
 			found := false
-			if directives[dir] != nil {
-				for _, a := range authorized {
-					if a == directives[dir][0] {
-						if a == "yes" {
-							valueField.SetBool(true)
-						} else {
-							valueField.SetBool(false)
-						}
-						found = true
-						break
-					}
-				}
-				if !found {
-					return fmt.Errorf("value authorized for directive '%s' are %s", dir, authorized)
-				}
-			} else {
-				if def == "yes" {
-					valueField.SetBool(true)
-				} else {
-					valueField.SetBool(false)
+			for _, a := range authorized {
+				if a == value[0] {
+					found = true
+					break
 				}
 			}
+			if !found && len(authorized) > 0 {
+				return nil, fmt.Errorf("value authorized for directive %q are %s", dir, authorized)
+			}
+			valueField.SetBool(value[0] == "yes")
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			var n int64
-			var err error
-
-			if directives[dir] != nil && directives[dir][0] != "" {
-				n, err = strconv.ParseInt(directives[dir][0], 0, 64)
-			} else {
-				n, err = strconv.ParseInt(def, 0, 64)
-			}
+			n, err := strconv.ParseInt(value[0], 0, 64)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			valueField.SetInt(n)
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			var n uint64
-			var err error
-
-			if directives[dir] != nil && directives[dir][0] != "" {
-				n, err = strconv.ParseUint(directives[dir][0], 0, 64)
-			} else {
-				n, err = strconv.ParseUint(def, 0, 64)
-			}
+			n, err := strconv.ParseUint(value[0], 0, 64)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			valueField.SetUint(n)
 		case reflect.String:
-			found := false
-			if directives[dir] != nil {
-				// To allow for string fields which are intended to be set to *any* value, we must
-				// handle the case where authorized isn't set (implies any value is acceptable)
-				if len(authorized) == 1 && authorized[0] == "" {
-					valueField.SetString(directives[dir][0])
-					found = true
-				} else {
-					for _, a := range authorized {
-						if a == directives[dir][0] {
-							valueField.SetString(a)
-							found = true
-							break
-						}
-					}
-				}
-				if !found {
-					return fmt.Errorf("value authorized for directive '%s' are %s", dir, authorized)
-				}
-			} else {
-				valueField.SetString(def)
+			if len(value) == 0 {
+				value = []string{""}
 			}
-		case reflect.Slice:
-			l := len(directives[dir])
-			switch valueField.Interface().(type) {
-			case []string:
-				if l == 1 {
-					s := strings.Split(directives[dir][0], ",")
-					l = len(s)
-					if l != 1 {
-						directives[dir] = s
-					}
-				} else if (l == 0 || c == nil) && def != "" {
-					s := strings.Split(def, ",")
-					l = len(s)
-					directives[dir] = s
+			found := false
+			for _, a := range authorized {
+				if a == value[0] {
+					found = true
+					break
 				}
-				v := reflect.MakeSlice(typeField.Type, l, l)
-				valueField.Set(v)
-				t := valueField.Interface().([]string)
-				for i, val := range directives[dir] {
+			}
+			if !found && len(authorized) > 0 && value[0] != "" {
+				return nil, fmt.Errorf("value authorized for directive '%s' are %s", dir, authorized)
+			}
+			valueField.SetString(strings.Join(value, ","))
+		case reflect.Slice:
+			l := len(value)
+			v := reflect.MakeSlice(typeField.Type, l, l)
+			valueField.Set(v)
+
+			switch t := valueField.Interface().(type) {
+			case []string:
+				for i, val := range value {
 					t[i] = strings.TrimSpace(val)
 				}
 			}
 		}
 	}
-	return nil
+
+	return config, nil
 }
 
-// Generate executes the template stored at tmplPath on object f.
-func Generate(out io.Writer, tmplPath string, f interface{}) error {
+// ParseFile parses configuration file with the specified path.
+func ParseFile(filepath string) (*FileConfig, error) {
+	if filepath == "" {
+		// grab the default configuration
+		return GetConfig(nil)
+	}
+
+	c, err := os.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+
+	directives, err := GetDirectives(c)
+	if err != nil {
+		return nil, fmt.Errorf("while parsing data: %s", err)
+	}
+
+	return GetConfig(directives)
+}
+
+// Generate executes the template stored at tmplPath on FileConfig object.
+func Generate(out io.Writer, tmplPath string, config *FileConfig) error {
 	t, err := template.ParseFiles(tmplPath)
 	if err != nil {
 		return err
 	}
 
-	if err := t.Execute(out, f); err != nil {
-		return fmt.Errorf("unable to execute template at %s on %v: %v", tmplPath, f, err)
+	if err := t.Execute(out, config); err != nil {
+		return fmt.Errorf("unable to execute template at %s on %v: %v", tmplPath, config, err)
 	}
 
 	return nil

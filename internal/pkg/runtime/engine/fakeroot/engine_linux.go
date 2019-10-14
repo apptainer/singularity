@@ -23,7 +23,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
@@ -70,8 +69,8 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("%s must be owned by root", configurationFile)
 	}
 
-	fileConfig := &singularity.FileConfig{}
-	if err := config.Parser(configurationFile, fileConfig); err != nil {
+	fileConfig, err := config.ParseFile(configurationFile)
+	if err != nil {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 

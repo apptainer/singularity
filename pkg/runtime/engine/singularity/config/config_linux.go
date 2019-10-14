@@ -17,13 +17,14 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/network"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 )
 
 // EngineConfig stores both the JSONConfig and the FileConfig
 type EngineConfig struct {
 	JSON      *JSONConfig                `json:"jsonConfig"`
 	OciConfig *oci.Config                `json:"ociConfig"`
-	File      *FileConfig                `json:"-"`
+	File      *config.FileConfig         `json:"-"`
 	Network   *network.Setup             `json:"-"`
 	Cgroups   *cgroups.Manager           `json:"-"`
 	CryptDev  string                     `json:"-"`
@@ -42,9 +43,9 @@ type FuseInfo struct {
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
 func NewConfig() *EngineConfig {
 	ret := &EngineConfig{
-		JSON:      &JSONConfig{},
-		OciConfig: &oci.Config{},
-		File:      &FileConfig{},
+		JSON:      new(JSONConfig),
+		OciConfig: new(oci.Config),
+		File:      new(config.FileConfig),
 		Plugin:    make(map[string]json.RawMessage),
 	}
 
