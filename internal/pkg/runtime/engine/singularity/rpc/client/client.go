@@ -124,6 +124,19 @@ func (t *RPC) Chdir(dir string) (int, error) {
 	return reply, err
 }
 
+// Stat calls the stat RPC using the supplied arguments.
+func (t *RPC) Stat(path string) (*syscall.Stat_t, error) {
+	arguments := &args.StatArgs{
+		Path: path,
+	}
+	var reply args.StatReply
+	err := t.Client.Call(t.Name+".Stat", arguments, &reply)
+	if err == nil {
+		err = reply.Err
+	}
+	return &reply.St, err
+}
+
 func init() {
 	var sysErrnoType syscall.Errno
 	// register syscall.Errno as a type we need to get back

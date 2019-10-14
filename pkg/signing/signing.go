@@ -448,14 +448,10 @@ func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup
 		return "", false, fmt.Errorf("error while searching for signature blocks: %s", err)
 	}
 
-	//<<<<<<< HEAD
-	//=======
-	//	// the selected data object is hashed for comparison against signature block's
-	//	sifhash := computeHashStr(&fimg, descr)
-	//
-	//	sylog.Debugf("Verifying hash: %s\n", sifhash)
-	//
-	//>>>>>>> bug_sign_fix
+	// the selected data object is hashed for comparison against signature block's
+	sifhash := computeHashStr(&fimg, descr)
+	sylog.Debugf("Verifying hash: %s\n", sifhash)
+
 	// setup some colors
 	green := color.New(color.FgGreen).SprintFunc()
 	yellow := color.New(color.FgYellow).SprintFunc()
