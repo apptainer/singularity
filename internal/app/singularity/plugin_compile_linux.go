@@ -102,11 +102,9 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 	args := []string{
 		"build",
 		"-o", out,
+		"-trimpath",
 		"-buildmode=plugin",
-		"-mod=vendor",
 		"-tags", buildTags,
-		fmt.Sprintf("-gcflags=all=-trimpath=%s", workpath),
-		fmt.Sprintf("-asmflags=all=-trimpath=%s", workpath),
 		sourceDir,
 	}
 
