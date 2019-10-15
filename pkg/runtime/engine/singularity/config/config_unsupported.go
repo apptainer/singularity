@@ -9,21 +9,22 @@ package singularity
 
 import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 )
 
 // EngineConfig stores both the JSONConfig and the FileConfig
 type EngineConfig struct {
-	JSON      *JSONConfig `json:"jsonConfig"`
-	OciConfig *oci.Config `json:"ociConfig"`
-	File      *FileConfig `json:"-"`
+	JSON      *JSONConfig        `json:"jsonConfig"`
+	OciConfig *oci.Config        `json:"ociConfig"`
+	File      *config.FileConfig `json:"-"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
 func NewConfig() *EngineConfig {
 	ret := &EngineConfig{
-		JSON:      &JSONConfig{},
-		OciConfig: &oci.Config{},
-		File:      &FileConfig{},
+		JSON:      new(JSONConfig),
+		OciConfig: new(oci.Config),
+		File:      new(config.FileConfig),
 	}
 
 	return ret

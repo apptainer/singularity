@@ -13,16 +13,15 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
-	singularityconfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 )
 
 // GetPath figures out where the mksquashfs binary is
 // and return an error is not available or not usable.
 func GetPath() (string, error) {
 	// Parse singularity configuration file
-	c := &singularityconfig.FileConfig{}
 	configFile := buildcfg.SINGULARITY_CONF_FILE
-	if err := config.Parser(configFile, c); err != nil {
+	c, err := config.ParseFile(configFile)
+	if err != nil {
 		return "", fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 

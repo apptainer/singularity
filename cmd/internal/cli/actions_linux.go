@@ -96,6 +96,8 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
+	var err error
+
 	targetUID := 0
 	targetGID := make([]int, 0)
 
@@ -123,8 +125,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	engineConfig := singularityConfig.NewConfig()
 
-	configurationFile := buildcfg.SINGULARITY_CONF_FILE
-	if err := config.Parser(configurationFile, engineConfig.File); err != nil {
+	engineConfig.File, err = config.ParseFile(buildcfg.SINGULARITY_CONF_FILE)
+	if err != nil {
 		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
 	}
 

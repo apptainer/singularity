@@ -55,6 +55,8 @@ var nsProcName = map[specs.LinuxNamespaceType]string{
 // No additional privileges can be gained as any of them are already
 // dropped by the time PrepareConfig is called.
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
+	var err error
+
 	if e.CommonConfig.EngineName != singularityConfig.Name {
 		return fmt.Errorf("incorrect engine")
 	}
@@ -64,7 +66,8 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	}
 
 	configurationFile := buildcfg.SINGULARITY_CONF_FILE
-	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
+	e.EngineConfig.File, err = config.ParseFile(configurationFile)
+	if err != nil {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 
