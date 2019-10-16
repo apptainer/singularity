@@ -214,10 +214,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	var libs, bins []string
 	var gpuConfFile, gpuPlatform string
-	var err error
+	userPath := os.Getenv("USER_PATH")
 
 	if !NoNvidia && (Nvidia || engineConfig.File.AlwaysUseNv) {
-		userPath := os.Getenv("USER_PATH")
 		gpuPlatform = "nv"
 		gpuConfFile = filepath.Join(buildcfg.SINGULARITY_CONFDIR, "nvliblist.conf")
 
@@ -263,7 +262,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			}
 			if len(libs) == 0 {
 				sylog.Warningf("Could not find any %s libraries on this host!", gpuPlatform)
-				sylog.Warningf("You may need to manually edit %", gpuConfFile)
+				sylog.Warningf("You may need to manually edit %s", gpuConfFile)
 			} else {
 				engineConfig.SetLibrariesPath(libs)
 			}

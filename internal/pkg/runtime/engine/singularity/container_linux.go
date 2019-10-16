@@ -37,7 +37,6 @@ import (
 	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
-	"github.com/sylabs/singularity/pkg/util/nvidia"
 	"golang.org/x/crypto/ssh/terminal"
 )
 

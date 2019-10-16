@@ -397,7 +397,7 @@ var actionRocmFlag = cmdline.Flag{
 	Value:        &Rocm,
 	DefaultValue: false,
 	Name:         "rocm",
-	Usage:        "enable Rocm support",
+	Usage:        "enable experimental Rocm support",
 	EnvKeys:      []string{"ROCM"},
 	ExcludedOS:   []string{cmdline.Darwin},
 }

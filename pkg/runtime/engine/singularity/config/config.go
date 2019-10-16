@@ -54,6 +54,7 @@ type JSONConfig struct {
 	WritableTmpfs     bool          `json:"writableTmpfs,omitempty"`
 	Contain           bool          `json:"container,omitempty"`
 	Nv                bool          `json:"nv,omitempty"`
+	Rocm              bool          `json:"rocm,omitempty"`
 	CustomHome        bool          `json:"customHome,omitempty"`
 	Instance          bool          `json:"instance,omitempty"`
 	InstanceJoin      bool          `json:"instanceJoin,omitempty"`
