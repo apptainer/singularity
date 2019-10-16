@@ -19,6 +19,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -42,10 +43,11 @@ type groupTest struct {
 }
 
 func downloadImage(t *testing.T) string {
-	sexec, err := exec.LookPath("singularity")
-	if err != nil {
-		t.Log("cannot find singularity path, skipping test")
-		t.SkipNow()
+	// Use singularity located at BUILDDIR, where the singularity
+	// binary should be found after building it.
+	sexec := filepath.Join(buildcfg.BUILDDIR, "singularity")
+	if _, err := exec.LookPath(sexec); err != nil {
+		t.Fatalf("cannot find singularity binary at %s", sexec)
 	}
 	f, err := ioutil.TempFile("", "image-")
 	if err != nil {
