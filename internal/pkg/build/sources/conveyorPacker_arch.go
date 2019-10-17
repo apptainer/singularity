@@ -8,6 +8,7 @@ package sources
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -62,7 +63,7 @@ type ArchConveyorPacker struct {
 }
 
 // Get just stores the source
-func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
+func (cp *ArchConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	cp.b = b
 
 	//check for pacstrap on system
@@ -88,7 +89,7 @@ func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	insideUserNs, setgroupsAllowed := namespaces.IsInsideUserNamespace(os.Getpid())
 	if insideUserNs && setgroupsAllowed {
-		umountFn, err := cp.prepareFakerootEnv()
+		umountFn, err := cp.prepareFakerootEnv(ctx)
 		if umountFn != nil {
 			defer umountFn()
 		}
@@ -129,7 +130,7 @@ func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *ArchConveyorPacker) Pack() (b *types.Bundle, err error) {
+func (cp *ArchConveyorPacker) Pack(context.Context) (b *types.Bundle, err error) {
 	err = cp.insertBaseEnv()
 	if err != nil {
 		return nil, fmt.Errorf("while inserting base environment: %v", err)

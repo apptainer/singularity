@@ -21,7 +21,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -31,6 +30,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	imgutil "github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
@@ -96,6 +96,8 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
+	var err error
+
 	targetUID := 0
 	targetGID := make([]int, 0)
 
@@ -123,8 +125,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	engineConfig := singularityConfig.NewConfig()
 
-	configurationFile := buildcfg.SINGULARITY_CONF_FILE
-	if err := config.Parser(configurationFile, engineConfig.File); err != nil {
+	engineConfig.File, err = config.ParseFile(buildcfg.SINGULARITY_CONF_FILE)
+	if err != nil {
 		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
 	}
 
@@ -527,12 +529,15 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
-	plugin.FlagHookCallbacks(engineConfig)
-
 	cfg := &config.Common{
 		EngineName:   singularityConfig.Name,
 		ContainerID:  name,
 		EngineConfig: engineConfig,
+	}
+
+	for _, m := range plugin.EngineConfigMutators() {
+		sylog.Debugf("Running runtime mutator from plugin %s", m.PluginName)
+		m.Mutate(cfg)
 	}
 
 	if engineConfig.GetInstance() {

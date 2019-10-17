@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -92,6 +93,8 @@ type keyNewPairOptions struct {
 }
 
 func runNewPairCmd(cmd *cobra.Command, args []string) {
+	ctx := context.TODO()
+
 	keyring := sypgp.NewHandle("")
 
 	opts, err := collectInput(cmd)
@@ -116,7 +119,7 @@ func runNewPairCmd(cmd *cobra.Command, args []string) {
 
 	// Only connect to the endpoint if we are pushing the key.
 	handleKeyNewPairEndpoint()
-	if err := sypgp.PushPubkey(http.DefaultClient, key, keyServerURI, authToken); err != nil {
+	if err := sypgp.PushPubkey(ctx, http.DefaultClient, key, keyServerURI, authToken); err != nil {
 		fmt.Printf("Failed to push newly created key to keystore: %s\n", err)
 	} else {
 		fmt.Printf("Key successfully pushed to: %s\n", keyServerURI)

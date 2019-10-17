@@ -180,12 +180,12 @@ func ensureSIF(filepath string) error {
 // sha512 is currently optional for implementations, this function will return an error when
 // encountering such digests.
 // https://github.com/opencontainers/image-spec/blob/master/descriptor.md#registered-algorithms
-func ImageSHA(uri string, ociAuth *ocitypes.DockerAuthConfig) (string, error) {
+func ImageSHA(ctx context.Context, uri string, ociAuth *ocitypes.DockerAuthConfig) (string, error) {
 	ref := strings.TrimPrefix(uri, "//")
 
 	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: genCredfn(ociAuth)})
 
-	_, desc, err := resolver.Resolve(context.Background(), ref)
+	_, desc, err := resolver.Resolve(ctx, ref)
 	if err != nil {
 		return "", fmt.Errorf("while resolving reference: %v", err)
 	}
@@ -195,12 +195,12 @@ func ImageSHA(uri string, ociAuth *ocitypes.DockerAuthConfig) (string, error) {
 		return "", fmt.Errorf("could not get image manifest, received mediaType: %s", desc.MediaType)
 	}
 
-	fetcher, err := resolver.Fetcher(context.Background(), ref)
+	fetcher, err := resolver.Fetcher(ctx, ref)
 	if err != nil {
 		return "", fmt.Errorf("while creating fetcher for reference: %v", err)
 	}
 
-	rc, err := fetcher.Fetch(context.Background(), desc)
+	rc, err := fetcher.Fetch(ctx, desc)
 	if err != nil {
 		return "", fmt.Errorf("while fetching manifest: %v", err)
 	}

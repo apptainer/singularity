@@ -40,7 +40,7 @@ func onError(cmd *cobra.Command, err error) error {
 	return FlagError(err.Error())
 }
 
-// NewCommandManager instantiates a CommandManager
+// NewCommandManager instantiates a CommandManager.
 func NewCommandManager(rootCmd *cobra.Command) *CommandManager {
 	if rootCmd == nil {
 		panic("nil root command passed")
@@ -69,7 +69,7 @@ func (m *CommandManager) pushError(err error) {
 	m.errPool = append(m.errPool, err)
 }
 
-// GetError returns the error pool
+// GetError returns the error pool.
 func (m *CommandManager) GetError() []error {
 	return m.errPool
 }

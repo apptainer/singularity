@@ -7,8 +7,11 @@
 
 package sources
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
-func (cp *DebootstrapConveyorPacker) prepareFakerootEnv() (func(), error) {
+func (cp *DebootstrapConveyorPacker) prepareFakerootEnv(context.Context) (func(), error) {
 	return nil, fmt.Errorf("fakeroot not supported on this platform")
 }

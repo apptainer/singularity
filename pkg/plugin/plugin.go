@@ -5,31 +5,24 @@
 
 package plugin
 
+import (
+	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
+)
+
 // PluginSymbol is the name of a variable of type plugin.Plugin which all
 // plugin implementations MUST define.
 const PluginSymbol = "Plugin"
 
-// DefaultConfigSymbol is the name of a variable that a plugin can optionally
-// define which stores the plugins config type initialized with default values.
-// This variable will be used when installing a plugin to initialize its config
-// file to the appropriate default values. If empty, default Go initialization
-// values will be used.
-//
-//     type Config struct {
-//             FeatureEnabled bool
-//     }
-//
-//     var DefaultConfig = &Config{true}
-const DefaultConfigSymbol = "DefaultConfig"
-
-// Plugin is the "meta-type" which encompasses the plugins implementation struct (PluginType interface),
-// and a type (potentially more to be added) which is defined in the syplugin package (Manifest). The plugin
-// implementation must have an exported symbol named "Plugin" of type syplugin.Plugin.
+// Plugin is the "meta-type" which encompasses the plugins
+// implementation struct (Initializer interface), and a Manifest
+// (potentially more to be added). The plugin implementation must
+// have an exported symbol named "Plugin" of this type.
 //
 // An example of how this will look from a plugins main package:
 //     type myPluginImplementation struct {...}
 //
-//     func (pl myPluginImplementation) Init() {
+//     func (pl myPluginImplementation) Initialize(r Registry) {
 //             // Do some initialization work!
 //     }
 //
@@ -42,27 +35,28 @@ const DefaultConfigSymbol = "DefaultConfig"
 //             },
 //             myPluginImplementation{...},
 //     }
-//
-// In addition, type Plugin also exposes useful helper methods to a plugin
 type Plugin struct {
 	Manifest
-	Config
 	Initializer
 }
 
-// Config is an empty interface which can optionally store plugin-specific configuration
-// files. This can contain any fields, as long as they are able to be Marshaled/Unmarshaled
-// into/from YAML format. Optionally this interface can implement the yaml.Marshaler and
-// yaml.Unmarshaler interfaces for custom parsing behavior. For ease of use, Config should
-// generally be assigned to a pointer to a concrete type stored inside the plugin's
-// Initializer implementation.
-//
-// For an example of this design pattern and others, see the example plugins included
-// with Singularity.
-type Config interface{}
-
 // Initializer is an interface which stores the object of a plugin's implementation. The Initialize
-// method allows the plugin to register its functions with the Runtime to be called later
+// method allows the plugin to register its functions with the Runtime to be called later.
 type Initializer interface {
-	Initialize(HookRegistration)
+	Initialize(Registry) error
+}
+
+// Registry exposes functions to a plugin during Initialize()
+// which allows the plugin to register its plugin hooks.
+type Registry interface {
+	AddCLIMutator(m CLIMutator) error
+	AddEngineConfigMutator(m EngineConfigMutator) error
+}
+
+type CLIMutator struct {
+	Mutate func(*cmdline.CommandManager)
+}
+
+type EngineConfigMutator struct {
+	Mutate func(*config.Common)
 }

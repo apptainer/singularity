@@ -14,7 +14,7 @@ import (
 )
 
 // PluginUninstallCmd takes the name of a plugin and uninstalls it from the
-// plugin directory
+// plugin directory.
 //
 // singularity plugin uninstall <name>
 var PluginUninstallCmd = &cobra.Command{

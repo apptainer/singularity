@@ -16,11 +16,8 @@ import (
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
-var (
-	out string
-)
-
 // -o|--out
+var out string
 var pluginCompileOutFlag = cmdline.Flag{
 	ID:           "pluginCompileOutFlag",
 	Value:        &out,
@@ -33,19 +30,17 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&pluginCompileOutFlag, PluginCompileCmd)
 }
 
-// PluginCompileCmd allows a user to compile a plugin
+// PluginCompileCmd allows a user to compile a plugin.
 //
 // singularity plugin compile <path> [-o name]
 var PluginCompileCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
-		s, err := filepath.Abs(args[0])
+		sourceDir, err := filepath.Abs(args[0])
 		if err != nil {
 			sylog.Fatalf("While sanitizing input path: %s", err)
 		}
-		sourceDir := filepath.Clean(s)
 
 		destSif := out
-
 		if destSif == "" {
 			destSif = sifPath(sourceDir)
 		}

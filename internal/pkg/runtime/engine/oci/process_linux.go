@@ -6,6 +6,7 @@
 package oci
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -156,7 +157,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 // in suid flow. However, when a user namespace is requested and it is not
 // a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
 // and thus no additional privileges can be gained.
-func (e *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fatalChan chan error) error {
+func (e *EngineOperations) PreStartProcess(ctx context.Context, pid int, masterConn net.Conn, fatalChan chan error) error {
 	if e.EngineConfig.Exec {
 		return nil
 	}
@@ -218,7 +219,7 @@ func (e *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fatalCh
 	hooks := e.EngineConfig.OciConfig.Hooks
 	if hooks != nil {
 		for _, h := range hooks.Prestart {
-			if err := exec.Hook(&h, &e.EngineConfig.State.State); err != nil {
+			if err := exec.Hook(ctx, &h, &e.EngineConfig.State.State); err != nil {
 				return err
 			}
 		}
@@ -249,14 +250,14 @@ func (e *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fatalCh
 //
 // Most likely this still will be executed as root since `singularity oci`
 // command set requires privileged execution.
-func (e *EngineOperations) PostStartProcess(pid int) error {
+func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error {
 	if err := e.updateState(ociruntime.Running); err != nil {
 		return err
 	}
 	hooks := e.EngineConfig.OciConfig.Hooks
 	if hooks != nil {
 		for _, h := range hooks.Poststart {
-			if err := exec.Hook(&h, &e.EngineConfig.State.State); err != nil {
+			if err := exec.Hook(ctx, &h, &e.EngineConfig.State.State); err != nil {
 				sylog.Warningf("%s", err)
 			}
 		}

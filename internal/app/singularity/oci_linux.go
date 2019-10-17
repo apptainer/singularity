@@ -6,15 +6,16 @@
 package singularity
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/ociruntime"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 )
 
 // OciArgs contains CLI arguments
@@ -64,7 +65,7 @@ func getState(containerID string) (*ociruntime.State, error) {
 	return &engineConfig.State, nil
 }
 
-func exitContainer(containerID string, delete bool) {
+func exitContainer(ctx context.Context, containerID string, delete bool) {
 	state, err := getState(containerID)
 	if err != nil {
 		if !delete {
@@ -79,7 +80,7 @@ func exitContainer(containerID string, delete bool) {
 	}
 
 	if delete {
-		if err := OciDelete(containerID); err != nil {
+		if err := OciDelete(ctx, containerID); err != nil {
 			sylog.Errorf("%s", err)
 		}
 	}

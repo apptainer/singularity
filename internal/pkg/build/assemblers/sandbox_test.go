@@ -6,6 +6,7 @@
 package assemblers_test
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -50,11 +51,11 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 
 	ocp := &sources.OCIConveyorPacker{}
 
-	if err := ocp.Get(b); err != nil {
+	if err := ocp.Get(context.Background(), b); err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", assemblerDockerURI, err)
 	}
 
-	_, err = ocp.Pack()
+	_, err = ocp.Pack(context.Background())
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerDockerURI, err)
 	}
@@ -89,11 +90,11 @@ func TestSandboxAssemblerShub(t *testing.T) {
 
 	scp := &sources.ShubConveyorPacker{}
 
-	if err := scp.Get(b); err != nil {
+	if err := scp.Get(context.Background(), b); err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", assemblerShubURI, err)
 	}
 
-	_, err = scp.Pack()
+	_, err = scp.Pack(context.Background())
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerShubURI, err)
 	}

@@ -14,9 +14,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 )
 
 var (
@@ -55,8 +54,8 @@ func cryptsetup(cfgpath string) (string, error) {
 		return "", errCryptsetupNotFound
 	}
 
-	cfg := singularity.FileConfig{}
-	if err := config.Parser(cfgpath, &cfg); err != nil {
+	cfg, err := config.ParseFile(cfgpath)
+	if err != nil {
 		return "", errors.Wrap(err, "unable to parse singularity configuration file")
 	}
 

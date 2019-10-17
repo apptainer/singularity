@@ -7,6 +7,7 @@ package signing
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha512"
 	"encoding/binary"
 	"encoding/hex"
@@ -37,6 +38,7 @@ type Key struct {
 
 // KeyEntity holds all the key info, used for json output.
 type KeyEntity struct {
+	Partition   string
 	Name        string
 	Fingerprint string
 	KeyLocal    bool
@@ -50,12 +52,19 @@ type KeyList struct {
 	SignerKeys []*Key
 }
 
-// computeHashStr generates a hash from data object(s) and generates a string
-// to be stored in the signature block
-func computeHashStr(fimg *sif.FileImage, descr *sif.Descriptor) string {
-	hash := sha512.New384()
-	hash.Write(descr.GetData(fimg))
+type signatureLink struct {
+	sigIndex   int // the index of the descriptor with the signature
+	dataIndex  int // the index of the descriptor of the signed data
+	groupIndex []int
+}
 
+// computeHashStr generates a hash from data object(s) and generates a string
+// to be stored in the signature block.
+func computeHashStr(fimg *sif.FileImage, descr []*sif.Descriptor) string {
+	hash := sha512.New384()
+	for _, v := range descr {
+		hash.Write(v.GetData(fimg))
+	}
 	sum := hash.Sum(nil)
 
 	return fmt.Sprintf("SIFHASH:\n%x", sum)
@@ -106,6 +115,8 @@ func datatypeStr(dtype sif.Datatype) string {
 		return "JSON.Generic"
 	case sif.DataGeneric:
 		return "Generic/Raw"
+	case sif.DataCryptoMessage:
+		return "CryptoMessage"
 	}
 	return "Unknown data-type"
 }
@@ -155,12 +166,12 @@ func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) ([]*sif.Descripto
 		}
 		descr, _, err = fimg.GetFromDescr(search)
 		if err != nil {
-			return nil, fmt.Errorf("no descriptors found for groupid %v", id)
+			return nil, fmt.Errorf("no descriptors found for groupid %d", id)
 		}
 	} else {
 		descr[0], _, err = fimg.GetFromDescrID(id)
 		if err != nil {
-			return nil, fmt.Errorf("no descriptor found for id %v", id)
+			return nil, fmt.Errorf("no descriptor found for id %d", id)
 		}
 	}
 
@@ -222,8 +233,14 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	for _, de := range descr {
 		sylog.Debugf("Signing %s partition...", datatypeStr(de.Datatype))
 
-		// signature also include data integrity check
-		sifhash := computeHashStr(&fimg, de)
+		sifhash := ""
+		if isGroup {
+			// If we are signing a group, then include all the descriptors.
+			sifhash = computeHashStr(&fimg, descr)
+		} else {
+			// Otherwise, just sign one partition at a time.
+			sifhash = computeHashStr(&fimg, []*sif.Descriptor{de})
+		}
 		sylog.Debugf("Signing hash: %s\n", sifhash)
 
 		// create an ascii armored signature block
@@ -253,6 +270,12 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 		if err != nil {
 			return fmt.Errorf("failed adding signature block to SIF container file: %s", err)
 		}
+
+		// If we are signing a group, then only add one signatrue for all
+		// the group partitions.
+		if isGroup {
+			break
+		}
 	}
 
 	return nil
@@ -275,32 +298,80 @@ func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.
 	return
 }
 
-// return all signatures for specified descriptor
-func getSigsDescr(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
-	descr = make([]*sif.Descriptor, 1)
+func getSigsAllPart(fimg *sif.FileImage) ([]signatureLink, error) {
+	var err error
+	var tbl []signatureLink
+
+	// Ensure theres a primary partition.
+	_, _, err = fimg.GetPartPrimSys()
+	if err != nil {
+		return nil, fmt.Errorf("no primary partition found")
+	}
+
+	// Loop through all the partitions, (skipping DataSignatures)
+	// and collect all the signatures for a data partition.
+	for didx, d := range fimg.DescrArr {
+		if !d.Used {
+			continue
+		}
+		// No need to verify a signature.
+		if d.Datatype == sif.DataSignature {
+			continue
+		}
+
+		_, idxs, err := fimg.GetLinkedDescrsByType(d.ID, sif.DataSignature)
+		if err != nil {
+			// If a partition is not signed, print a warning.
+			sylog.Warningf("Missing signature for SIF descriptor %d (%s)", didx+1, datatypeStr(d.Datatype))
+			continue
+		}
+
+		for _, sidx := range idxs {
+			tbl = append(tbl, signatureLink{sidx, didx, nil})
+		}
+	}
+
+	if len(tbl) == 0 {
+		return nil, fmt.Errorf("no signature(s) found in image")
+	}
+
+	return tbl, nil
+}
+
+// getSigsDescr returns all signatures for specified descriptor.
+func getSigsDescr(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
+	descr := make([]*sif.Descriptor, 1)
+	var err error
 
 	descr[0], _, err = fimg.GetFromDescrID(id)
 	if err != nil {
-		return nil, nil, fmt.Errorf("no descriptor found for id %v", id)
+		return nil, fmt.Errorf("no descriptor found for id %d", id)
 	}
 
-	sigs, _, err = fimg.GetLinkedDescrsByType(id, sif.DataSignature)
+	_, idx, err := fimg.GetLinkedDescrsByType(id, sif.DataSignature)
 	if err != nil {
-		return nil, nil, fmt.Errorf("no signatures found for id %v", id)
+		return nil, fmt.Errorf("no signatures found for id %v", id)
 	}
 
-	return
+	sigLink := make([]signatureLink, len(idx))
+
+	for i, l := range idx {
+		sigLink[i].sigIndex = l
+		sigLink[i].dataIndex = int(id) - 1
+	}
+
+	return sigLink, nil
 }
 
-// return all signatures for specified group
-func getSigsGroup(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+// getSigsGroup returns all signatures for specified group.
+func getSigsGroup(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
 	// find descriptors that are part of a signing group
 	search := sif.Descriptor{
 		Groupid: id | sif.DescrGroupMask,
 	}
-	descr, _, err = fimg.GetFromDescr(search)
+	_, dindex, err := fimg.GetFromDescr(search)
 	if err != nil {
-		return nil, nil, fmt.Errorf("no descriptors found for groupid %v", id)
+		return nil, fmt.Errorf("no descriptors found for groupid %v", id)
 	}
 
 	// find signature blocks pointing to specified group
@@ -308,18 +379,27 @@ func getSigsGroup(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr
 		Datatype: sif.DataSignature,
 		Link:     id | sif.DescrGroupMask,
 	}
-	sigs, _, err = fimg.GetFromDescr(search)
+	_, sindex, err := fimg.GetFromDescr(search)
 	if err != nil {
-		return nil, nil, fmt.Errorf("no signatures found for groupid %v", id)
+		return nil, fmt.Errorf("no signatures found for groupid %v", id)
 	}
 
-	return
+	sigLink := make([]signatureLink, len(sindex), len(dindex))
+
+	for i, s := range sindex {
+		sigLink[i].sigIndex = s
+		for g := range dindex {
+			sigLink[i].groupIndex = append(sigLink[i].groupIndex, dindex[g])
+		}
+	}
+
+	return sigLink, nil
 }
 
 // return all signatures for "id" being unique or group id
-func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) ([]signatureLink, error) {
 	if id == 0 {
-		return getSigsPrimPart(fimg)
+		return getSigsAllPart(fimg)
 	} else if isGroup {
 		return getSigsGroup(fimg, id)
 	}
@@ -331,8 +411,8 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 // will return true if the container is signed. Also returns a error
 // if one occures, eg. "the container is not signed", or "container is
 // signed by a unknown signer".
-func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string) (bool, error) {
-	_, noLocalKey, err := Verify(cpath, keyServerURI, id, isGroup, authToken, false, false)
+func IsSigned(ctx context.Context, cpath, keyServerURI string, id uint32, isGroup bool, authToken string) (bool, error) {
+	_, noLocalKey, err := Verify(ctx, cpath, keyServerURI, id, isGroup, authToken, false, false)
 	if err != nil {
 		return false, fmt.Errorf("unable to verify container: %s", cpath)
 	}
@@ -351,7 +431,7 @@ func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken str
 // from a key server if access is enabled, or if localVerify is false. Returns
 // a string of formatted output, or json (if jsonVerify is true), and true, if
 // theres no local key matching a signers entity.
-func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken string, localVerify, jsonVerify bool) (string, bool, error) {
+func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup bool, authToken string, localVerify, jsonVerify bool) (string, bool, error) {
 	keyring := sypgp.NewHandle("")
 
 	notLocalKey := false
@@ -362,18 +442,13 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	}
 	defer fimg.UnloadContainer()
 
-	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
-	signatures, descr, err := getSigsForSelection(&fimg, id, isGroup)
+	// Get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file.
+	sigsLink, err := getSigsForSelection(&fimg, id, isGroup)
 	if err != nil {
 		return "", false, fmt.Errorf("error while searching for signature blocks: %s", err)
 	}
 
-	// the selected data object is hashed for comparison against signature block's
-	sifhash := computeHashStr(&fimg, descr[0])
-
-	sylog.Debugf("Verifying hash: %s\n", sifhash)
-
-	// setup some colors
+	// Setup some colors.
 	green := color.New(color.FgGreen).SprintFunc()
 	yellow := color.New(color.FgYellow).SprintFunc()
 	red := color.New(color.FgRed).SprintFunc()
@@ -385,27 +460,52 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	var keySigner *Key
 	keyEntityList := KeyList{}
 
-	author += fmt.Sprintf("Container is signed by %d key(s):\n\n", len(signatures))
-	// compare freshly computed hash with hashes stored in signatures block(s)
-	for _, v := range signatures {
+	author += fmt.Sprintf("Container is signed by %d key(s):\n\n", len(sigsLink))
+
+	// Loop through the signature link, and find the signatures and
+	// corresponding partition.
+	for _, part := range sigsLink {
+		sifhash := ""
+		if isGroup {
+			// If we are verifying a group, then collect all
+			// the group partitions.
+			var groupPart []*sif.Descriptor
+
+			for _, d := range part.groupIndex {
+				groupPart = append(groupPart, &fimg.DescrArr[d])
+			}
+			sifhash = computeHashStr(&fimg, groupPart)
+		} else {
+			sifhash = computeHashStr(&fimg, []*sif.Descriptor{&fimg.DescrArr[part.dataIndex]})
+		}
+		sylog.Debugf("Verifying hash: %s\n", sifhash)
+
 		dataCheck := true
 		// get the entity fingerprint for the signature block
-		fingerprint, err := v.GetEntityString()
+		fingerprint, err := fimg.DescrArr[part.sigIndex].GetEntityString()
 		if err != nil {
-			sylog.Errorf("could not get the signing entity fingerprint from partition ID: %d: %s", v.ID, err)
+			sylog.Errorf("could not get the signing entity fingerprint from partition ID: %d: %s", part.sigIndex, err)
 			fail = true
 			continue
 		}
-		author += fmt.Sprintf("Verifying signature F: %s:\n", fingerprint)
+
+		verifyPartition := ""
+		if isGroup {
+			verifyPartition = fmt.Sprintf("group: %d", id)
+		} else {
+			verifyPartition = datatypeStr(fimg.DescrArr[part.dataIndex].Datatype)
+		}
+		author += fmt.Sprintf("Verifying partition: %s:\n", verifyPartition)
+		author += fingerprint + "\n"
 
 		// Extract hash string from signature block
-		data := v.GetData(&fimg)
+		data := fimg.DescrArr[part.sigIndex].GetData(&fimg)
 		block, _ := clearsign.Decode(data)
 		if block == nil {
 			sylog.Verbosef("%s signature key (%s) corrupted, unable to read data", red("error:"), fingerprint)
 			author += fmt.Sprintf("%-18s Signature corrupted, unable to read data\n\n", red("[FAIL]"))
 
-			keySigner = makeKeyEntity("", fingerprint, false, false, false)
+			keySigner = makeKeyEntity("", verifyPartition, fingerprint, false, false, false)
 			keyEntityList.SignerKeys = append(keyEntityList.SignerKeys, keySigner)
 
 			fail = true
@@ -413,7 +513,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		}
 
 		// (1) try to get identity of signer
-		i, local, err := getSignerIdentity(keyring, v, block, data, fingerprint, keyServiceURI, authToken, localVerify)
+		i, local, err := getSignerIdentity(ctx, keyring, &fimg.DescrArr[part.sigIndex], block, data, fingerprint, keyServiceURI, authToken, localVerify)
 		if err != nil {
 			// use [MISSING] if we get an error we expect
 			if err == errNotFound || err == errNotFoundLocal {
@@ -443,10 +543,12 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		}
 		author += fmt.Sprintf("\n")
 
-		keySigner = makeKeyEntity(i, fingerprint, local, true, dataCheck)
+		keySigner = makeKeyEntity(i, verifyPartition, fingerprint, local, true, dataCheck)
 		keyEntityList.SignerKeys = append(keyEntityList.SignerKeys, keySigner)
+
 	}
-	keyEntityList.Signatures = len(signatures)
+
+	keyEntityList.Signatures = len(sigsLink)
 
 	if jsonVerify {
 		jsonData, err := json.MarshalIndent(keyEntityList, "", "  ")
@@ -463,13 +565,14 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	return author, notLocalKey, errRet
 }
 
-func makeKeyEntity(name, fingerprint string, local, corrupted, dataCheck bool) *Key {
+func makeKeyEntity(name, partition, fingerprint string, local, corrupted, dataCheck bool) *Key {
 	if name == "" {
 		name = "unknown"
 	}
 
 	keySigner := &Key{
 		Signer: KeyEntity{
+			Partition:   partition,
 			Name:        name,
 			Fingerprint: fingerprint,
 			KeyLocal:    local,
@@ -489,7 +592,7 @@ func getFirstIdentity(e *openpgp.Entity) string {
 	return ""
 }
 
-func getSignerIdentity(keyring *sypgp.Handle, v *sif.Descriptor, block *clearsign.Block, data []byte, fingerprint, keyServiceURI, authToken string, local bool) (string, bool, error) {
+func getSignerIdentity(ctx context.Context, keyring *sypgp.Handle, v *sif.Descriptor, block *clearsign.Block, data []byte, fingerprint, keyServiceURI, authToken string, local bool) (string, bool, error) {
 	// load the public keys available locally from the cache
 	elist, err := keyring.LoadPubKeyring()
 	if err != nil {
@@ -516,7 +619,7 @@ func getSignerIdentity(keyring *sypgp.Handle, v *sif.Descriptor, block *clearsig
 
 	// download the key
 	sylog.Verbosef("Key not found in local keyring, checking remote keystore: %s\n", fingerprint[32:])
-	netlist, err := sypgp.FetchPubkey(http.DefaultClient, fingerprint, keyServiceURI, authToken, true)
+	netlist, err := sypgp.FetchPubkey(ctx, http.DefaultClient, fingerprint, keyServiceURI, authToken, true)
 	if err != nil {
 		return "", false, errNotFound
 	}

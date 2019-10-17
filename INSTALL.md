@@ -31,7 +31,8 @@ _NOTE:_ On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
 
 ## Install Golang
 
-This is one of several ways to [install and configure golang](https://golang.org/doc/install).  The CentOS/RHEL instructions above already installed it so this method is not needed there.
+This is one of several ways to [install and configure golang](https://golang.org/doc/install).
+The CentOS/RHEL instructions above already installed it so this method is not needed there.
 
 First, download the Golang archive to `/tmp`, then extract the archive to `/usr/local`.
 
@@ -39,7 +40,7 @@ _**NOTE:** if you are updating Go from a older version, make sure you remove `/u
 reinstalling it._
 
 ```
-$ export VERSION=1.12.9 OS=linux ARCH=amd64  # change this as you need
+$ export VERSION=1.13.1 OS=linux ARCH=amd64  # change this as you need
 
 $ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
   sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
@@ -88,7 +89,7 @@ $ mkdir -p ${GOPATH}/src/github.com/sylabs && \
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.4.1
+$ git checkout v3.4.2
 ```
 
 ## Compiling Singularity
@@ -131,7 +132,7 @@ as shown above.  Then download the latest
 and use it to install the RPM like this: 
 
 ```
-$ export VERSION=3.4.1  # this is the singularity version, change as you need
+$ export VERSION=3.4.2  # this is the singularity version, change as you need
 
 $ wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-${VERSION}.tar.gz && \

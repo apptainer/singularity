@@ -197,7 +197,7 @@ func (c *Config) Close() error {
 // find the first available range. It doesn't return any error
 // if the user is already present and ignores the operation.
 func (c *Config) AddUser(username string) error {
-	_, err := c.GetUserEntry(username, false)
+	_, err := c.GetUserEntry(username)
 	if err == nil {
 		return nil
 	}
@@ -241,7 +241,7 @@ func (c *Config) AddUser(username string) error {
 // RemoveUser removes a user mapping entry. It returns an error
 // if there is no entry for the user.
 func (c *Config) RemoveUser(username string) error {
-	e, err := c.GetUserEntry(username, false)
+	e, err := c.GetUserEntry(username)
 	if err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func (c *Config) RemoveUser(username string) error {
 // It returns an error if there is no entry for the user but will
 // ignore the operation if the user entry is already enabled.
 func (c *Config) EnableUser(username string) error {
-	e, err := c.GetUserEntry(username, false)
+	e, err := c.GetUserEntry(username)
 	if err != nil {
 		return err
 	}
@@ -277,7 +277,7 @@ func (c *Config) EnableUser(username string) error {
 // error if there is no entry for the user but will ignore the
 // operation if the user entry is already disabled.
 func (c *Config) DisableUser(username string) error {
-	e, err := c.GetUserEntry(username, false)
+	e, err := c.GetUserEntry(username)
 	if err != nil {
 		return err
 	}
@@ -291,7 +291,8 @@ func (c *Config) DisableUser(username string) error {
 
 // GetUserEntry returns a user entry associated to a user and returns
 // an error if there is no entry for this user.
-func (c *Config) GetUserEntry(username string, reportBadEntry bool) (*Entry, error) {
+func (c *Config) GetUserEntry(username string) (*Entry, error) {
+	var largeRangeEntries []*Entry
 	entryCount := 0
 
 	u, err := c.getUserFn(username)
@@ -305,33 +306,53 @@ func (c *Config) GetUserEntry(username string, reportBadEntry bool) (*Entry, err
 		if entry.UID == u.UID {
 			if entry.Count == validRangeCount {
 				return entry, nil
+			} else if entry.Count > validRangeCount {
+				largeRangeEntries = append(largeRangeEntries, entry)
+				continue
 			}
 			entryCount++
 		}
 	}
-	if reportBadEntry && entryCount > 0 {
+	var largestEntry *Entry
+
+	for _, e := range largeRangeEntries {
+		if largestEntry == nil {
+			largestEntry = e
+		} else if e.Count > largestEntry.Count {
+			largestEntry = e
+		}
+	}
+	if largestEntry != nil {
+		return largestEntry, nil
+	}
+
+	if entryCount > 0 {
 		return nil, fmt.Errorf(
-			"mapping entries for user %s found in %s but all with a range count different from %d",
+			"mapping entries for user %s found in %s but all with a range count lower than %d",
 			username, c.file.Name(), validRangeCount,
 		)
 	}
 	return nil, fmt.Errorf("no mapping entry found in %s for %s", c.file.Name(), username)
 }
 
+// getPwUID is also used for mocking purpose
+var getPwUID = user.GetPwUID
+var getPwNam = user.GetPwNam
+
 // GetIDRange determines UID/GID mappings based on configuration
 // file provided in path.
 func GetIDRange(path string, uid uint32) (*specs.LinuxIDMapping, error) {
-	config, err := GetConfig(path, false, nil)
+	config, err := GetConfig(path, false, getPwNam)
 	if err != nil {
 		return nil, err
 	}
 	defer config.Close()
 
-	userinfo, err := user.GetPwUID(uid)
+	userinfo, err := getPwUID(uid)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve user with UID %d: %s", uid, err)
 	}
-	e, err := config.GetUserEntry(userinfo.Name, true)
+	e, err := config.GetUserEntry(userinfo.Name)
 	if err != nil {
 		return nil, err
 	}

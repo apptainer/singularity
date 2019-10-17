@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -139,7 +140,7 @@ func attach(engineConfig *oci.EngineConfig, run bool) error {
 }
 
 // OciAttach attaches console to a running container
-func OciAttach(containerID string) error {
+func OciAttach(ctx context.Context, containerID string) error {
 	engineConfig, err := getEngineConfig(containerID)
 	if err != nil {
 		return err
@@ -148,7 +149,7 @@ func OciAttach(containerID string) error {
 		return fmt.Errorf("could not attach to %s: not in running state", containerID)
 	}
 
-	defer exitContainer(containerID, false)
+	defer exitContainer(ctx, containerID, false)
 
 	return attach(engineConfig, false)
 }

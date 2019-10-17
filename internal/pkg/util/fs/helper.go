@@ -203,8 +203,8 @@ func MakeTmpFile(basedir, pattern string, mode os.FileMode) (*os.File, error) {
 	return f, nil
 }
 
-// FileExists simply checks if a path exists.
-func FileExists(path string) (bool, error) {
+// PathExists simply checks if a path exists.
+func PathExists(path string) (bool, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false, nil
 	} else if err != nil {
@@ -218,7 +218,7 @@ func FileExists(path string) (bool, error) {
 // file has permission bits set to the mode prior to umask. To honor umask
 // correctly the resulting file must not exist.
 func CopyFile(from, to string, mode os.FileMode) (err error) {
-	exist, err := FileExists(to)
+	exist, err := PathExists(to)
 	if err != nil {
 		return err
 	}
@@ -255,4 +255,24 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 // is writable by the user (note: uid is checked, not euid).
 func IsWritable(path string) bool {
 	return unix.Access(path, unix.W_OK) == nil
+}
+
+// FirstExistingParent walks up the supplied path and returns the first
+// parent that exists. If the supplied path exists, it will just return that path.
+// Assumes cwd and the root directory always exists
+func FirstExistingParent(path string) (string, error) {
+	p := filepath.Clean(path)
+	for p != "/" && p != "." {
+		exists, err := PathExists(p)
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return p, nil
+		}
+
+		p = filepath.Dir(p)
+	}
+
+	return p, nil
 }

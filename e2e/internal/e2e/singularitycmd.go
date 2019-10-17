@@ -533,6 +533,12 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 			cmd.Dir = s.profile.defaultCwd
 		}
 
+		// when duplicated environment variables are found
+		// only the last one in the slice is taken
+		if cmd.Dir != "" {
+			cmd.Env = append(cmd.Env, fmt.Sprintf("PWD=%s", cmd.Dir))
+		}
+
 		cmd.Stdin = s.stdin
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr

@@ -130,15 +130,26 @@ func NewHandle(cfg Config) (*Handle, error) {
 	if baseDir == "" {
 		baseDir = getCacheBasedir()
 	}
-	// We check if we can write to the basedir, if not we disable the caching mechanism
-	if !fs.IsWritable(baseDir) {
+
+	ep, err := fs.FirstExistingParent(baseDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get first existing parent of cache directory: %v", err)
+	}
+
+	// We check if we can write to the basedir or its first existing parent,
+	// if not we disable the caching mechanism
+	if !fs.IsWritable(ep) {
 		newCache.disabled = true
 		return newCache, nil
 	}
 
+	// create basedir plus any required parent dir if cache is enabled and it does not exist
+	if err := initCacheDir(baseDir); err != nil {
+		return nil, fmt.Errorf("failed initializing cache directory: %s", err)
+	}
+
 	/* Initialize the root directory of the cache */
 	rootDir := getCacheRoot(baseDir)
-
 	// We make sure that the rootDir is actually a valid value
 	// FIXME: not really necessary anymore
 	user, err := user.Current()

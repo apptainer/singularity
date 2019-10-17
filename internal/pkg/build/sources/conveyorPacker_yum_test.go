@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -50,7 +51,7 @@ func TestYumConveyor(t *testing.T) {
 
 	yc := &YumConveyor{}
 
-	err = yc.Get(b)
+	err = yc.Get(context.Background(), b)
 	// clean up bundle since assembler isnt called
 	defer yc.b.Remove()
 	if err != nil {
@@ -90,14 +91,14 @@ func TestYumPacker(t *testing.T) {
 
 	ycp := &YumConveyorPacker{}
 
-	err = ycp.Get(b)
+	err = ycp.Get(context.Background(), b)
 	// clean up tmpfs since assembler isnt called
 	defer ycp.b.Remove()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", yumDef, err)
 	}
 
-	_, err = ycp.Pack()
+	_, err = ycp.Pack(context.Background())
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", yumDef, err)
 	}

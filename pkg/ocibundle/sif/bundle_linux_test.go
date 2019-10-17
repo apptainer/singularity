@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 
 	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
@@ -41,9 +42,11 @@ func TestFromSif(t *testing.T) {
 	f.Close()
 	defer os.Remove(sifFile)
 
-	sing, err := exec.LookPath("singularity")
-	if err != nil {
-		t.Fatal(err)
+	// Use singularity located at BUILDDIR, where the singularity
+	// binary should be found after building it.
+	sing := filepath.Join(buildcfg.BUILDDIR, "singularity")
+	if _, err := exec.LookPath(sing); err != nil {
+		t.Fatalf("cannot find singularity binary at %s", sing)
 	}
 	args := []string{"build", "-F", sifFile, "docker://busybox"}
 

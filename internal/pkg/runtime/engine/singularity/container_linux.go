@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -68,7 +69,7 @@ type container struct {
 	devSourcePath string
 }
 
-func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
+func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	var err error
 
 	c := &container{
@@ -205,7 +206,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	}
 
 	if networkSetup != nil {
-		if err := networkSetup(); err != nil {
+		if err := networkSetup(ctx); err != nil {
 			return err
 		}
 	}
@@ -338,30 +339,45 @@ func (c *container) chdirFinal(system *mount.System) error {
 	return nil
 }
 
-func (c *container) checkMounted(dest string) string {
-	if dest[0] != '/' {
-		return ""
+func (c *container) sameInode(host string, container string) bool {
+	cst, err := c.rpcOps.Stat(container)
+	if err != nil {
+		sylog.Debugf("Could not get file status for %s: %s", container, err)
+		return false
+	}
+
+	var hst syscall.Stat_t
+	if err := syscall.Stat(host, &hst); err != nil {
+		sylog.Debugf("Could not get file status for %s: %s", host, err)
+		return false
+	}
+
+	if hst.Dev == cst.Dev && hst.Ino == cst.Ino {
+		return true
+	}
+
+	return false
+}
+
+func (c *container) isMounted(dest string) bool {
+	if !filepath.IsAbs(dest) {
+		sylog.Debugf("%s is not an absolute path", dest)
+		return false
 	}
 
 	entries, err := proc.GetMountInfoEntry(c.mountInfoPath)
 	if err != nil {
-		return ""
+		sylog.Debugf("Could not get %s entries: %s", c.mountInfoPath, err)
+		return false
 	}
-	d, err := proc.FindParentMountEntry(dest, entries)
-	if err != nil {
-		return ""
-	}
-
-	finalPath := c.session.FinalPath()
-	finalDest := filepath.Join(finalPath, dest)
 
 	for _, e := range entries {
-		if e.Dev == d.Dev && e.Point != "/" && strings.HasPrefix(finalDest, e.Point) {
-			return e.Point
+		if e.Point == dest {
+			return true
 		}
 	}
 
-	return ""
+	return false
 }
 
 // mount any generic mount (not loop dev)
@@ -417,11 +433,12 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 		sylog.Debugf("Remounting %s\n", dest)
 	} else {
 		if tag == mount.CwdTag {
-			cwd := c.engine.EngineConfig.GetCwd()
-			mounted := c.checkMounted(cwd)
-			if mounted != "" {
+			hostCwd := c.engine.EngineConfig.GetCwd()
+			containerCwd := filepath.Join(c.session.FinalPath(), hostCwd)
+
+			if c.sameInode(hostCwd, containerCwd) || c.isMounted(containerCwd) {
 				c.skippedMount = append(c.skippedMount, mnt.Destination)
-				sylog.Verbosef("Skipping mount %s, %s already mounted", cwd, mounted)
+				sylog.Verbosef("Skipping mount %s, %s already mounted", hostCwd, containerCwd)
 				return nil
 			}
 		}
@@ -442,6 +459,7 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 		}
 	}
 
+mount:
 	err = c.rpcOps.Mount(source, dest, mnt.Type, flags, optsString)
 	if os.IsNotExist(err) {
 		switch tag {
@@ -468,9 +486,16 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 		}
 	} else if err != nil {
 		if !bindMount {
-			if mnt.Source == "devpts" {
+			if mnt.Type == "devpts" {
 				sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY allocation functionality disabled")
 				return nil
+			} else if mnt.Type == "overlay" && err == syscall.ESTALE {
+				// overlay mount can return this error when a previous mount was
+				// done with an upper layer and overlay inodes index is enabled
+				// by default, see https://github.com/sylabs/singularity/issues/4539
+				sylog.Verbosef("Overlay mount failed with %s, mounting with index=off", err)
+				optsString = fmt.Sprintf("%s,index=off", optsString)
+				goto mount
 			}
 			// mount error for other filesystems is considered fatal
 			return fmt.Errorf("can't mount %s filesystem to %s: %s", mnt.Type, mnt.Destination, err)
@@ -1817,7 +1842,7 @@ func (c *container) addActionsMount(system *mount.System) error {
 	return system.Points.AddRemount(mount.BindsTag, containerDir, flags)
 }
 
-func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func() error, error) {
+func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(context.Context) error, error) {
 	const (
 		fakerootNet  = "fakeroot"
 		noneNet      = "none"
@@ -1873,7 +1898,7 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func() e
 		return nil, fmt.Errorf("error while setting network arguments: %s", err)
 	}
 
-	return func() error {
+	return func(ctx context.Context) error {
 		if fakeroot {
 			// prevent port hijacking between user processes
 			if err := setup.SetPortProtection(fakerootNet, 0); err != nil {
@@ -1887,7 +1912,7 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func() e
 
 		setup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
 
-		if err := setup.AddNetworks(); err != nil {
+		if err := setup.AddNetworks(ctx); err != nil {
 			return fmt.Errorf("%s", err)
 		}
 		c.engine.EngineConfig.Network = setup
