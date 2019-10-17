@@ -14,8 +14,35 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"golang.org/x/sys/unix"
 )
+
+// EnsureFileWithPermission takes a file path, and 1. Creates it with
+// the specified permission, or 2. ensures a file is the specified
+// permission.
+func EnsureFileWithPermission(fn string, mode os.FileMode) error {
+	fs, err := os.OpenFile(fn, os.O_CREATE, mode)
+	if err != nil {
+		return err
+	}
+	defer fs.Close()
+
+	// check the permissions.
+	fsinfo, err := fs.Stat()
+	if err != nil {
+		return err
+	}
+
+	if currentMode := fsinfo.Mode(); currentMode != mode {
+		sylog.Warningf("File mode (%o) on %s needs to be %o, fixing that...", currentMode, fn, mode)
+		if err := fs.Chmod(mode); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // IsFile check if name component is regular file.
 func IsFile(name string) bool {
