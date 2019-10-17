@@ -281,9 +281,7 @@ func setSylogColor() {
 
 // handleRemoteConf will make sure your 'remote.yaml' config file
 // is the correct permission.
-func handleRemoteConf() {
-	remoteConfFile := syfs.RemoteConf()
-
+func handleRemoteConf(remoteConfFile string) {
 	// Only check the permission if it exists.
 	if fs.IsFile(remoteConfFile) {
 		sylog.Debugf("Ensuring file permission of 0600 on %s", remoteConfFile)
@@ -305,7 +303,6 @@ func handleConfDir(confDir string) {
 	} else {
 		sylog.Debugf("Created %s", confDir)
 	}
-	handleRemoteConf()
 }
 
 // singularityCmd is the base command when called without any subcommands
@@ -329,7 +326,11 @@ func persistentPreRunE(cmd *cobra.Command, _ []string) error {
 	setSylogMessageLevel()
 	setSylogColor()
 	sylog.Debugf("Singularity version: %s", buildcfg.PACKAGE_VERSION)
+
+	// Handle the config dir (~/.singularity),
+	// then check the remove conf file permission.
 	handleConfDir(syfs.ConfigDir())
+	handleRemoteConf(syfs.RemoteConf())
 	return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
 }
 
