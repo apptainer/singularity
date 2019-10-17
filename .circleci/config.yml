@@ -113,8 +113,8 @@ jobs:
           keys:
             - go-mod-{{ checksum "go.sum" }}
       - run:
-          name: Check vendor/ module is up-to-date
-          command: scripts/check-vendor
+          name: Check go.mod
+          command: scripts/check-go.mod
       - save_cache:
           key: go-mod-{{ checksum "go.sum" }}
           paths:

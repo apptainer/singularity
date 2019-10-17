@@ -459,6 +459,7 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 		}
 	}
 
+mount:
 	err = c.rpcOps.Mount(source, dest, mnt.Type, flags, optsString)
 	if os.IsNotExist(err) {
 		switch tag {
@@ -485,9 +486,16 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 		}
 	} else if err != nil {
 		if !bindMount {
-			if mnt.Source == "devpts" {
+			if mnt.Type == "devpts" {
 				sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY allocation functionality disabled")
 				return nil
+			} else if mnt.Type == "overlay" && err == syscall.ESTALE {
+				// overlay mount can return this error when a previous mount was
+				// done with an upper layer and overlay inodes index is enabled
+				// by default, see https://github.com/sylabs/singularity/issues/4539
+				sylog.Verbosef("Overlay mount failed with %s, mounting with index=off", err)
+				optsString = fmt.Sprintf("%s,index=off", optsString)
+				goto mount
 			}
 			// mount error for other filesystems is considered fatal
 			return fmt.Errorf("can't mount %s filesystem to %s: %s", mnt.Type, mnt.Destination, err)
