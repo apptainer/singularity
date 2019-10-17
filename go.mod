@@ -21,14 +21,12 @@ require (
 	github.com/containernetworking/plugins v0.8.2
 	github.com/containers/image v0.0.0-20180612162315-2e4f799f5eba
 	github.com/containers/storage v0.0.0-20180604200230-88d80428f9b1 // indirect
-	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/deislabs/oras v0.4.0
 	github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572 // indirect
 	github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
 	github.com/docker/docker-credential-helpers v0.6.0 // indirect
 	github.com/docker/go-connections v0.3.0 // indirect
 	github.com/docker/go-metrics v0.0.0-20180209012529-399ea8c73916 // indirect
-	github.com/docker/go-units v0.3.3 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.7.0
@@ -41,8 +39,6 @@ require (
 	github.com/gorilla/mux v1.6.2 // indirect
 	github.com/gorilla/websocket v1.4.1
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
-	github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce // indirect
-	github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
@@ -54,12 +50,12 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
-	github.com/openSUSE/umoci v0.4.2
+	github.com/openSUSE/umoci v0.4.4
 	github.com/opencontainers/go-digest v1.0.0-rc1
-	github.com/opencontainers/image-spec v0.0.0-20180411145040-e562b0440392
+	github.com/opencontainers/image-spec v1.0.0
 	github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74
 	github.com/opencontainers/runc v0.1.1 // indirect
-	github.com/opencontainers/runtime-spec v0.1.2-0.20181111125026-1722abf79c2f
+	github.com/opencontainers/runtime-spec v1.0.0
 	github.com/opencontainers/runtime-tools v0.9.0
 	github.com/opencontainers/selinux v1.3.0
 	github.com/pelletier/go-toml v1.5.0
@@ -70,7 +66,6 @@ require (
 	github.com/prometheus/client_model v0.0.0-20171117100541-99fa1f4be8e5 // indirect
 	github.com/prometheus/common v0.0.0-20180518154759-7600349dcfe1 // indirect
 	github.com/prometheus/procfs v0.0.0-20180612222113-7d6f385de8be // indirect
-	github.com/rootless-containers/proto v0.1.0 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/seccomp/libseccomp-golang v0.9.0
 	github.com/spf13/cobra v0.0.5
@@ -82,13 +77,9 @@ require (
 	github.com/sylabs/scs-key-client v0.4.1
 	github.com/sylabs/scs-library-client v0.4.4
 	github.com/sylabs/sif v1.0.8
-	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
 	github.com/urfave/cli v1.21.0 // indirect
 	github.com/vbatts/go-mtree v0.4.4 // indirect
 	github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6 // indirect
-	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
-	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	github.com/xeipuuv/gojsonschema v0.0.0-20180618132009-1d523034197f // indirect
 	github.com/xenolf/lego v2.5.0+incompatible // indirect
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
