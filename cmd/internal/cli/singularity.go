@@ -279,17 +279,29 @@ func setSylogColor() {
 	}
 }
 
-// createConfDir tries to create the user's configuration directory and handles
-// messages and/or errors
-func createConfDir(d string) {
-	if err := fs.Mkdir(d, os.ModePerm); err != nil {
+// handleRemoteConf will make sure your 'remote.yaml' config file
+// is the correct permission.
+func handleRemoteConf(remoteConfFile string) {
+	// Only check the permission if it exists.
+	if fs.IsFile(remoteConfFile) {
+		sylog.Debugf("Ensuring file permission of 0600 on %s", remoteConfFile)
+		if err := fs.EnsureFileWithPermission(remoteConfFile, 0600); err != nil {
+			sylog.Fatalf("Unable to correct the permission on %s: %s", remoteConfFile, err)
+		}
+	}
+}
+
+// handleConfDir tries to create the user's configuration directory and handles
+// messages and/or errors.
+func handleConfDir(confDir string) {
+	if err := fs.Mkdir(confDir, os.ModePerm); err != nil {
 		if os.IsExist(err) {
-			sylog.Debugf("%s already exists. Not creating.", d)
+			sylog.Debugf("%s already exists. Not creating.", confDir)
 		} else {
-			sylog.Debugf("Could not create %s: %s", d, err)
+			sylog.Debugf("Could not create %s: %s", confDir, err)
 		}
 	} else {
-		sylog.Debugf("Created %s", d)
+		sylog.Debugf("Created %s", confDir)
 	}
 }
 
@@ -314,7 +326,11 @@ func persistentPreRunE(cmd *cobra.Command, _ []string) error {
 	setSylogMessageLevel()
 	setSylogColor()
 	sylog.Debugf("Singularity version: %s", buildcfg.PACKAGE_VERSION)
-	createConfDir(syfs.ConfigDir())
+
+	// Handle the config dir (~/.singularity),
+	// then check the remove conf file permission.
+	handleConfDir(syfs.ConfigDir())
+	handleRemoteConf(syfs.RemoteConf())
 	return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
 }
 
