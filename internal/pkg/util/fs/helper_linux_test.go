@@ -715,3 +715,44 @@ func TestFirstExistingParent(t *testing.T) {
 		})
 	}
 }
+
+func TestForceRemoveAll(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+	// Setup a structure that os.RemoveAll should fail to remove
+	testDir, err := MakeTmpDir("", "dir", 0755)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s: %s", testDir, err)
+	}
+	testFile, err := MakeTmpFile(testDir, "file", 0644)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s: %s", testFile.Name(), err)
+	}
+	testFile.Close()
+	// Change the perm on testDir so that RemoveAll should fail
+	err = os.Chmod(testDir, 000)
+	if err != nil {
+		t.Fatalf("failed to set permissions on temporary directory %s: %s", testDir, err)
+	}
+	// Ensure that os.RemoveAll does fail with perm error (i.e. our test dir is sane)
+	err = os.RemoveAll(testDir)
+	if err == nil {
+		t.Fatalf("os.RemoveAll unexpectedly succeeded removing test directory %s", testDir)
+	}
+	if !os.IsPermission(err) {
+		t.Fatalf("os.RemoveAll unexpectedly errored trying removing test directory %s: %s", testDir, err)
+	}
+
+	// Our Test - Ensure ForceRemoveAll does *not* fail & the directory is gone
+	err = ForceRemoveAll(testDir)
+	if err != nil {
+		t.Errorf("ForceRemoveAll unexpectedly errored trying to remove test directory %s: %s", testDir, err)
+	}
+	ok, err := PathExists(testDir)
+	if err != nil {
+		t.Errorf("Error checking success of ForceRemoveAll on %s: %s", testDir, err)
+	}
+	if ok {
+		t.Errorf("ForceRemoveAll failed to remove %s", testDir)
+	}
+}
