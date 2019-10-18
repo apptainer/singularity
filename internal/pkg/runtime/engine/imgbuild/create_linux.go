@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/rpc"
 	"os"
@@ -77,24 +78,36 @@ func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn
 		return fmt.Errorf("failed to resolved session directory %s: %s", buildcfg.SESSIONDIR, err)
 	}
 
+	flags := uintptr(syscall.MS_NOSUID | syscall.MS_NOEXEC | syscall.MS_NODEV)
+	tmpfsOpts := "mode=0755,size=2m"
+
+	if err := rpcOps.Mount("tmpfs", sessionPath, "tmpfs", flags, tmpfsOpts); err != nil {
+		return fmt.Errorf("failed to mount tmpfs filesystem on %s: %s", sessionPath, err)
+	}
+
+	sessionRootFs := filepath.Join(sessionPath, "rootfs")
+	if err := os.Mkdir(sessionRootFs, 0755); err != nil {
+		return fmt.Errorf("failed to create %s: %s", sessionRootFs, err)
+	}
+
 	// sensible mount point options to avoid accidental system settings override
-	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NOEXEC | syscall.MS_NODEV | syscall.MS_RDONLY)
+	flags = uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NOEXEC | syscall.MS_NODEV | syscall.MS_RDONLY)
 	if insideUserNs {
 		flags = uintptr(syscall.MS_BIND | syscall.MS_REC)
 	}
 
 	sylog.Debugf("Mounting image directory %s\n", rootfs)
-	if err := rpcOps.Mount(rootfs, sessionPath, "", syscall.MS_BIND, "errors=remount-ro"); err != nil {
+	if err := rpcOps.Mount(rootfs, sessionRootFs, "", syscall.MS_BIND, "errors=remount-ro"); err != nil {
 		return fmt.Errorf("failed to mount directory filesystem %s: %s", rootfs, err)
 	}
 
-	dest := filepath.Join(sessionPath, "tmp")
+	dest := filepath.Join(sessionRootFs, "tmp")
 	sylog.Debugf("Mounting /tmp at %s\n", dest)
 	if err := rpcOps.Mount("/tmp", dest, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
 		return fmt.Errorf("mount /tmp failed: %s", err)
 	}
 
-	dest = filepath.Join(sessionPath, "var", "tmp")
+	dest = filepath.Join(sessionRootFs, "var", "tmp")
 	sylog.Debugf("Mounting /var/tmp at %s\n", dest)
 	if err := rpcOps.Mount("/var/tmp", dest, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
 		return fmt.Errorf("mount /var/tmp failed: %s", err)
@@ -113,7 +126,7 @@ func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn
 		}
 	}
 
-	dest = filepath.Join(sessionPath, "proc")
+	dest = filepath.Join(sessionRootFs, "proc")
 	sylog.Debugf("Mounting /proc at %s\n", dest)
 	if err := rpcOps.Mount("/proc", dest, "", flags, ""); err != nil {
 		return fmt.Errorf("mount proc failed: %s", err)
@@ -124,7 +137,7 @@ func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn
 		}
 	}
 
-	dest = filepath.Join(sessionPath, "sys")
+	dest = filepath.Join(sessionRootFs, "sys")
 	sylog.Debugf("Mounting /sys at %s\n", dest)
 	if err := rpcOps.Mount("/sys", dest, "", flags, ""); err != nil {
 		return fmt.Errorf("mount sys failed: %s", err)
@@ -135,36 +148,38 @@ func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn
 		}
 	}
 
-	dest = filepath.Join(sessionPath, "dev")
+	dest = filepath.Join(sessionRootFs, "dev")
 	sylog.Debugf("Mounting /dev at %s\n", dest)
 	if err := rpcOps.Mount("/dev", dest, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
 		return fmt.Errorf("mount /dev failed: %s", err)
 	}
 
-	dest = filepath.Join(sessionPath, "etc", "resolv.conf")
-	sylog.Debugf("Mounting /etc/resolv.conf at %s\n", dest)
-	if err := rpcOps.Mount("/etc/resolv.conf", dest, "", flags, ""); err != nil {
-		return fmt.Errorf("mount /etc/resolv.conf failed: %s", err)
-	}
-	if !insideUserNs {
-		if err := rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, ""); err != nil {
-			return fmt.Errorf("remount /etc/resolv.conf failed: %s", err)
-		}
+	// copy /etc/resolv.conf to tmpfs and bind copy into container
+	sessionResolv, err := stageFile("/etc/resolv.conf", sessionPath)
+	if err != nil {
+		return err
 	}
 
-	dest = filepath.Join(sessionPath, "etc", "hosts")
-	sylog.Debugf("Mounting /etc/hosts at %s\n", dest)
-	if err := rpcOps.Mount("/etc/hosts", dest, "", flags, ""); err != nil {
-		return fmt.Errorf("mount /etc/hosts failed: %s", err)
-	}
-	if !insideUserNs {
-		if err := rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, ""); err != nil {
-			return fmt.Errorf("remount /etc/hosts failed: %s", err)
-		}
+	dest = filepath.Join(sessionRootFs, "etc", "resolv.conf")
+	sylog.Debugf("Mounting %s at %s\n", sessionResolv, dest)
+	if err := rpcOps.Mount(sessionResolv, dest, "", syscall.MS_BIND, ""); err != nil {
+		return fmt.Errorf("mount %s failed: %s", sessionResolv, err)
 	}
 
-	sylog.Debugf("Chdir into %s\n", sessionPath)
-	err = syscall.Chdir(sessionPath)
+	// copy /etc/hosts to tmpfs and bind copy into container
+	sessionHosts, err := stageFile("/etc/hosts", sessionPath)
+	if err != nil {
+		return err
+	}
+
+	dest = filepath.Join(sessionRootFs, "etc", "hosts")
+	sylog.Debugf("Mounting %s at %s\n", sessionHosts, dest)
+	if err := rpcOps.Mount(sessionHosts, dest, "", syscall.MS_BIND, ""); err != nil {
+		return fmt.Errorf("mount %s failed: %s", sessionHosts, err)
+	}
+
+	sylog.Debugf("Chdir into %s\n", sessionRootFs)
+	err = syscall.Chdir(sessionRootFs)
 	if err != nil {
 		return fmt.Errorf("change directory failed: %s", err)
 	}
@@ -174,11 +189,11 @@ func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn
 		return err
 	}
 
-	sylog.Debugf("Chroot into %s\n", buildcfg.SESSIONDIR)
-	_, err = rpcOps.Chroot(buildcfg.SESSIONDIR, "pivot")
+	sylog.Debugf("Chroot into %s\n", sessionRootFs)
+	_, err = rpcOps.Chroot(sessionRootFs, "pivot")
 	if err != nil {
 		sylog.Debugf("Fallback to move/chroot")
-		_, err = rpcOps.Chroot(buildcfg.SESSIONDIR, "move")
+		_, err = rpcOps.Chroot(sessionRootFs, "move")
 		if err != nil {
 			return fmt.Errorf("chroot failed: %s", err)
 		}
@@ -194,6 +209,25 @@ func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn
 	}
 
 	return nil
+}
+
+func stageFile(source, destDir string) (string, error) {
+	sessionFile := filepath.Join(destDir, filepath.Base(source))
+	stageFile, err := os.Create(sessionFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to create staging %s file: %s", sessionFile, err)
+	}
+	defer stageFile.Close()
+
+	content, err := ioutil.ReadFile(source)
+	if err != nil {
+		return "", fmt.Errorf("failed to read %s: %s", source, err)
+	}
+	if _, err := stageFile.Write(content); err != nil {
+		return "", fmt.Errorf("failed to copy %s content to %s: %s", source, sessionFile, err)
+	}
+
+	return sessionFile, nil
 }
 
 func (e *EngineOperations) copyFiles() error {
