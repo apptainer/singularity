@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 const (
@@ -347,6 +349,16 @@ func makeSymlinks(rootPath string) error {
 }
 
 func makeFile(name string, perm os.FileMode, s string) (err error) {
+	// #4532 - If the file already exists ensure it has requested permissions
+	// as OpenFile won't set on an existing file and some docker
+	// containers have hosts or resolv.conf without write perm.
+	if fs.IsFile(name) {
+		if err = os.Chmod(name, perm); err != nil {
+			return
+		}
+	}
+	// Create the file if it's not in the container, or truncate and write s
+	// into it otherwise.
 	f, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
 	if err != nil {
 		return
