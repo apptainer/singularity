@@ -124,6 +124,10 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		return err
 	}
 
+	if err := system.RunAfterTag(mount.SessionTag, c.addMountInfo); err != nil {
+		return err
+	}
+
 	if err := system.RunAfterTag(mount.SharedTag, c.addIdentityMount); err != nil {
 		return err
 	}
@@ -327,6 +331,28 @@ func (c *container) setPropagationMount(system *mount.System) error {
 
 	if err := c.rpcOps.Mount("", "/", "", pflags, ""); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// addMountinfo handles the case where hidepid is set on /proc mount
+// point preventing this process from accessing /proc/<rpc_pid>/mountinfo
+// without error, so we bind mount /proc/self/mountinfo from RPC process
+// to a session file and read mount information from there.
+func (c *container) addMountInfo(system *mount.System) error {
+	const (
+		mountinfo = "/mountinfo"
+		self      = "/proc/self/mountinfo"
+	)
+
+	c.mountInfoPath = filepath.Join(c.session.Path(), mountinfo)
+	if err := fs.Touch(c.mountInfoPath); err != nil {
+		return fmt.Errorf("while creating %s: %s", c.mountInfoPath, err)
+	}
+
+	if err := c.rpcOps.Mount(self, c.mountInfoPath, "", syscall.MS_BIND, ""); err != nil {
+		return fmt.Errorf("while mounting %s to %s: %s", c.mountInfoPath, self, err)
 	}
 
 	return nil
