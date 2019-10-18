@@ -244,7 +244,7 @@ func (c actionTests) actionExec(t *testing.T) {
 		{
 			name: "NoHome",
 			argv: []string{"--no-home", c.env.ImagePath, "ls", "-ld", user.Dir},
-			exit: 2,
+			exit: 1,
 		},
 	}
 
