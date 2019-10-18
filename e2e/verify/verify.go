@@ -72,7 +72,7 @@ func (c ctx) singularityVerifyKeyNum(t *testing.T) {
 		},
 		{
 			name:         "verify number signers success",
-			expectNumOut: 1,
+			expectNumOut: 2,
 			imageURL:     successURL,
 			imagePath:    c.successImage,
 			expectExit:   0,
