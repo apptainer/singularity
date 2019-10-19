@@ -5,4 +5,4 @@
 
 package buildcfg
 
-//go:generate go run confgen/gen.go "${BUILDDIR}/config.h"
+//go:generate "${GO_TOOL}" run confgen/gen.go "${BUILDDIR}/config.h"
