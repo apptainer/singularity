@@ -53,9 +53,9 @@ type KeyList struct {
 }
 
 type signatureLink struct {
-	sigIndex   int // the index of the descriptor with the signature
-	dataIndex  int // the index of the descriptor of the signed data
-	groupIndex []int
+	sigIndex   int   // The index of the descriptor with the signature.
+	dataIndex  int   // The index of the descriptor of the signed data.
+	groupIndex []int // The descriptor index per/group signature.
 }
 
 // computeHashStr generates a hash from data object(s) and generates a string
@@ -281,23 +281,7 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	return nil
 }
 
-// return all signatures for the primary partition
-func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
-	descr = make([]*sif.Descriptor, 1)
-
-	descr[0], _, err = fimg.GetPartPrimSys()
-	if err != nil {
-		return nil, nil, fmt.Errorf("no primary partition found")
-	}
-
-	sigs, _, err = fimg.GetLinkedDescrsByType(descr[0].ID, sif.DataSignature)
-	if err != nil {
-		return nil, nil, fmt.Errorf("no signatures found for system partition")
-	}
-
-	return
-}
-
+// getSigsAllPart returns a signatureLink for every non-signature partition.
 func getSigsAllPart(fimg *sif.FileImage) ([]signatureLink, error) {
 	var err error
 	var tbl []signatureLink
@@ -338,7 +322,7 @@ func getSigsAllPart(fimg *sif.FileImage) ([]signatureLink, error) {
 	return tbl, nil
 }
 
-// getSigsDescr returns all signatures for specified descriptor.
+// getSigsDescr returns a signatureLink for specified descriptor.
 func getSigsDescr(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
 	descr := make([]*sif.Descriptor, 1)
 	var err error
@@ -350,7 +334,7 @@ func getSigsDescr(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
 
 	_, idx, err := fimg.GetLinkedDescrsByType(id, sif.DataSignature)
 	if err != nil {
-		return nil, fmt.Errorf("no signatures found for id %v", id)
+		return nil, fmt.Errorf("no signatures found for id %d", id)
 	}
 
 	sigLink := make([]signatureLink, len(idx))
@@ -363,9 +347,9 @@ func getSigsDescr(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
 	return sigLink, nil
 }
 
-// getSigsGroup returns all signatures for specified group.
+// getSigsGroup returns a signatureLink for specified group.
 func getSigsGroup(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
-	// find descriptors that are part of a signing group
+	// find descriptors that are part of a signing group.
 	search := sif.Descriptor{
 		Groupid: id | sif.DescrGroupMask,
 	}
@@ -374,7 +358,7 @@ func getSigsGroup(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
 		return nil, fmt.Errorf("no descriptors found for groupid %v", id)
 	}
 
-	// find signature blocks pointing to specified group
+	// Find signature blocks pointing to specified group.
 	search = sif.Descriptor{
 		Datatype: sif.DataSignature,
 		Link:     id | sif.DescrGroupMask,
@@ -388,9 +372,7 @@ func getSigsGroup(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
 
 	for i, s := range sindex {
 		sigLink[i].sigIndex = s
-		for g := range dindex {
-			sigLink[i].groupIndex = append(sigLink[i].groupIndex, dindex[g])
-		}
+		sigLink[i].groupIndex = append(sigLink[i].groupIndex, dindex...)
 	}
 
 	return sigLink, nil
@@ -411,8 +393,8 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) ([]signat
 // will return true if the container is signed. Also returns a error
 // if one occures, eg. "the container is not signed", or "container is
 // signed by a unknown signer".
-func IsSigned(ctx context.Context, cpath, keyServerURI string, id uint32, isGroup bool, authToken string) (bool, error) {
-	_, noLocalKey, err := Verify(ctx, cpath, keyServerURI, id, isGroup, authToken, false, false)
+func IsSigned(ctx context.Context, cpath, keyServerURI string, authToken string) (bool, error) {
+	_, noLocalKey, err := Verify(ctx, cpath, keyServerURI, uint32(0), false, authToken, false, false)
 	if err != nil {
 		return false, fmt.Errorf("unable to verify container: %s", cpath)
 	}
@@ -632,6 +614,23 @@ func getSignerIdentity(ctx context.Context, keyring *sypgp.Handle, v *sif.Descri
 	}
 
 	return "", false, err
+}
+
+// return all signatures for the primary partition
+func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+	descr = make([]*sif.Descriptor, 1)
+
+	descr[0], _, err = fimg.GetPartPrimSys()
+	if err != nil {
+		return nil, nil, fmt.Errorf("no primary partition found")
+	}
+
+	sigs, _, err = fimg.GetLinkedDescrsByType(descr[0].ID, sif.DataSignature)
+	if err != nil {
+		return nil, nil, fmt.Errorf("no signatures found for system partition")
+	}
+
+	return
 }
 
 func getSignEntities(fimg *sif.FileImage) ([]string, error) {
