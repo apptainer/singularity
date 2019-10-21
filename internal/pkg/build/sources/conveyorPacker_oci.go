@@ -58,7 +58,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 
 	cp.sysCtx = &types.SystemContext{
 		OCIInsecureSkipTLSVerify:    cp.b.Opts.NoHTTPS,
-		DockerInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
+		DockerInsecureSkipTLSVerify: types.NewOptionalBool(cp.b.Opts.NoHTTPS),
 		DockerAuthConfig:            cp.b.Opts.DockerAuthConfig,
 		OSChoice:                    "linux",
 	}
@@ -175,17 +175,13 @@ func (cp *OCIConveyorPacker) Pack(ctx context.Context) (*sytypes.Bundle, error) 
 	return cp.b, nil
 }
 
-func (cp *OCIConveyorPacker) fetch(ctx context.Context) (err error) {
+func (cp *OCIConveyorPacker) fetch(ctx context.Context) error {
 	// cp.srcRef contains the cache source reference
-	err = copy.Image(ctx, cp.policyCtx, cp.tmpfsRef, cp.srcRef, &copy.Options{
+	_, err := copy.Image(ctx, cp.policyCtx, cp.tmpfsRef, cp.srcRef, &copy.Options{
 		ReportWriter: ioutil.Discard,
 		SourceCtx:    cp.sysCtx,
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (cp *OCIConveyorPacker) getConfig(ctx context.Context) (imgspecv1.ImageConfig, error) {
