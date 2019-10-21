@@ -85,10 +85,10 @@ x-run:
       case "${TARGET_BRANCH}" in
           master|release-*)
               if git --no-pager diff --name-only HEAD "origin/${TARGET_BRANCH}" |
-                 grep -q -E '^(e2e|vendor|\.circleci)/'
+                 grep -q -E -f .ci/e2e_triggers
               then
-                  # There are changes in .circleci, e2e or vendor
-                  # directories, require e2e
+                  # There are changes in critical components, require
+                  # e2e
                   require_e2e=true
               fi
               ;;
@@ -99,7 +99,7 @@ x-run:
       esac
 
       if ! "$require_e2e" ; then
-        echo "No changes in e2e or vendor directories, skipping tests"
+        echo "No changes in critical components, skipping tests"
         circleci step halt
       fi
 
