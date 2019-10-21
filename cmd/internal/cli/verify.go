@@ -23,6 +23,7 @@ var (
 	sifDescID   uint32 // -i id specification
 	localVerify bool   // -l flag
 	jsonVerify  bool   // -j flag
+	verifyAll   bool
 )
 
 // -u|--url
@@ -87,6 +88,16 @@ var verifyJSONFlag = cmdline.Flag{
 	Usage:        "output json",
 }
 
+// -a|--all
+var verifyAllFlag = cmdline.Flag{
+	ID:           "verifyAllFlag",
+	Value:        &verifyAll,
+	DefaultValue: false,
+	Name:         "all",
+	ShortHand:    "a",
+	Usage:        "verify all non-signature partitions in a SIF",
+}
+
 func init() {
 	cmdManager.RegisterCmd(VerifyCmd)
 
@@ -96,6 +107,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&verifySifDescIDFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifyLocalFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifyJSONFlag, VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifyAllFlag, VerifyCmd)
 }
 
 // VerifyCmd singularity verify
@@ -155,7 +167,11 @@ func doVerifyCmd(ctx context.Context, cmd *cobra.Command, cpath, url string) {
 		id = sifDescID
 	}
 
-	author, _, err := signing.Verify(ctx, cpath, url, id, isGroup, authToken, localVerify, jsonVerify)
+	if (id != 0 || isGroup) && verifyAll {
+		sylog.Fatalf("'--all' not compatible with '--sif-id' or '--groupid'")
+	}
+
+	author, _, err := signing.Verify(ctx, cpath, url, id, isGroup, verifyAll, authToken, localVerify, jsonVerify)
 	fmt.Printf("%s", author)
 	if err == signing.ErrVerificationFail {
 		sylog.Fatalf("Failed to verify: %s", cpath)
