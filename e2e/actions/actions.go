@@ -244,7 +244,7 @@ func (c actionTests) actionExec(t *testing.T) {
 		{
 			name: "NoHome",
 			argv: []string{"--no-home", c.env.ImagePath, "ls", "-ld", user.Dir},
-			exit: 2,
+			exit: 1,
 		},
 	}
 
@@ -924,6 +924,18 @@ func (c actionTests) actionBasicProfiles(t *testing.T) {
 			argv:    []string{"--pid", env.ImagePath, "false"},
 			exit:    1,
 		},
+		{
+			name:    "RunBindTrue",
+			command: "run",
+			argv:    []string{"--bind", "/etc/passwd", env.ImagePath, "true"},
+			exit:    0,
+		},
+		{
+			name:    "RunBindFalse",
+			command: "run",
+			argv:    []string{"--bind", "/etc/passwd", env.ImagePath, "false"},
+			exit:    1,
+		},
 	}
 
 	for _, profile := range e2e.Profiles {
@@ -1005,6 +1017,358 @@ func (c actionTests) actionNetwork(t *testing.T) {
 	}
 }
 
+func (c actionTests) actionBinds(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	workspace, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "bind-workspace-", "")
+	sandbox, _ := e2e.MakeTempDir(t, workspace, "sandbox-", "")
+	defer e2e.Privileged(cleanup)
+
+	contCanaryDir := "/canary"
+	hostCanaryDir := filepath.Join(workspace, "canary")
+
+	contCanaryFile := "/canary/file"
+	hostCanaryFile := filepath.Join(hostCanaryDir, "file")
+
+	canaryFileBind := hostCanaryFile + ":" + contCanaryFile
+	canaryDirBind := hostCanaryDir + ":" + contCanaryDir
+
+	hostHomeDir := filepath.Join(workspace, "home")
+	hostWorkDir := filepath.Join(workspace, "workdir")
+
+	createWorkspaceDirs := func(t *testing.T) {
+		e2e.Privileged(func(t *testing.T) {
+			if err := os.RemoveAll(hostCanaryDir); err != nil && !os.IsNotExist(err) {
+				t.Fatalf("failed to delete canary_dir: %s", err)
+			}
+			if err := os.RemoveAll(hostHomeDir); err != nil && !os.IsNotExist(err) {
+				t.Fatalf("failed to delete workspace home: %s", err)
+			}
+			if err := os.RemoveAll(hostWorkDir); err != nil && !os.IsNotExist(err) {
+				t.Fatalf("failed to delete workspace work: %s", err)
+			}
+		})(t)
+
+		if err := fs.Mkdir(hostCanaryDir, 0777); err != nil {
+			t.Fatalf("failed to create canary_dir: %s", err)
+		}
+		if err := fs.Touch(hostCanaryFile); err != nil {
+			t.Fatalf("failed to create canary_file: %s", err)
+		}
+		if err := os.Chmod(hostCanaryFile, 0777); err != nil {
+			t.Fatalf("failed to apply permissions on canary_file: %s", err)
+		}
+		if err := fs.Mkdir(hostHomeDir, 0777); err != nil {
+			t.Fatalf("failed to create workspace home directory: %s", err)
+		}
+		if err := fs.Mkdir(hostWorkDir, 0777); err != nil {
+			t.Fatalf("failed to create workspace work directory: %s", err)
+		}
+	}
+
+	// convert test image to sandbox
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", sandbox, c.env.ImagePath),
+		e2e.ExpectExit(0),
+	)
+
+	checkHostFn := func(path string, fn func(string) bool) func(*testing.T) {
+		return func(t *testing.T) {
+			if t.Failed() {
+				return
+			}
+			if !fn(path) {
+				t.Errorf("%s not found on host", path)
+			}
+			if err := os.RemoveAll(path); err != nil {
+				t.Errorf("failed to delete %s: %s", path, err)
+			}
+		}
+	}
+	checkHostFile := func(path string) func(*testing.T) {
+		return checkHostFn(path, fs.IsFile)
+	}
+	checkHostDir := func(path string) func(*testing.T) {
+		return checkHostFn(path, fs.IsDir)
+	}
+
+	tests := []struct {
+		name    string
+		args    []string
+		postRun func(*testing.T)
+		exit    int
+	}{
+		{
+			name: "NonExistentSource",
+			args: []string{
+				"--bind", "/non/existent/source/path",
+				sandbox,
+				"true",
+			},
+			exit: 255,
+		},
+		{
+			name: "RelativeBindDestination",
+			args: []string{
+				"--bind", hostCanaryFile + ":relative",
+				sandbox,
+				"true",
+			},
+			exit: 255,
+		},
+		{
+			name: "SimpleFile",
+			args: []string{
+				"--bind", canaryFileBind,
+				sandbox,
+				"test", "-f", contCanaryFile,
+			},
+			exit: 0,
+		},
+		{
+			name: "SimpleFilePwd",
+			args: []string{
+				"--bind", canaryFileBind,
+				"--pwd", contCanaryDir,
+				sandbox,
+				"test", "-f", "file",
+			},
+			exit: 0,
+		},
+		{
+			name: "SimpleDir",
+			args: []string{
+				"--bind", canaryDirBind,
+				sandbox,
+				"test", "-f", contCanaryFile,
+			},
+			exit: 0,
+		},
+		{
+			name: "SimpleDirPwd",
+			args: []string{
+				"--bind", canaryDirBind,
+				"--pwd", contCanaryDir,
+				sandbox,
+				"test", "-f", "file",
+			},
+			exit: 0,
+		},
+		{
+			name: "SimpleFileWritableOK",
+			args: []string{
+				"--writable",
+				"--bind", hostCanaryFile,
+				sandbox,
+				"test", "-f", hostCanaryFile,
+			},
+			exit: 0,
+		},
+		{
+			name: "SimpleFileWritableKO",
+			args: []string{
+				"--writable",
+				"--bind", canaryFileBind,
+				sandbox,
+				"test", "-f", contCanaryFile,
+			},
+			exit: 255,
+		},
+		{
+			name: "SimpleDirWritableOK",
+			args: []string{
+				"--writable",
+				"--bind", hostCanaryDir,
+				sandbox,
+				"test", "-f", hostCanaryFile,
+			},
+			exit: 0,
+		},
+		{
+			name: "SimpleDirWritableKO",
+			args: []string{
+				"--writable",
+				"--bind", canaryDirBind,
+				sandbox,
+				"test", "-f", contCanaryFile,
+			},
+			exit: 255,
+		},
+		{
+			name: "NestedBindFile",
+			args: []string{
+				"--bind", canaryDirBind,
+				"--bind", hostCanaryFile + ":" + filepath.Join(contCanaryDir, "file2"),
+				sandbox,
+				"test", "-f", "/canary/file2",
+			},
+			postRun: checkHostFile(filepath.Join(hostCanaryDir, "file2")),
+			exit:    0,
+		},
+		{
+			name: "NestedBindDir",
+			args: []string{
+				"--bind", canaryDirBind,
+				"--bind", hostCanaryDir + ":" + filepath.Join(contCanaryDir, "dir2"),
+				sandbox,
+				"test", "-d", "/canary/dir2",
+			},
+			postRun: checkHostDir(filepath.Join(hostCanaryDir, "dir2")),
+			exit:    0,
+		},
+		{
+			name: "MultipleNestedBindDir",
+			args: []string{
+				"--bind", canaryDirBind,
+				"--bind", hostCanaryDir + ":" + filepath.Join(contCanaryDir, "dir2"),
+				"--bind", hostCanaryFile + ":" + filepath.Join(filepath.Join(contCanaryDir, "dir2"), "nested"),
+				sandbox,
+				"test", "-f", "/canary/dir2/nested",
+			},
+			postRun: checkHostFile(filepath.Join(hostCanaryDir, "nested")),
+			exit:    0,
+		},
+		{
+			name: "CustomHomeOneToOne",
+			args: []string{
+				"--home", hostHomeDir,
+				"--bind", hostCanaryDir + ":" + filepath.Join(hostHomeDir, "canary121RO"),
+				sandbox,
+				"test", "-f", filepath.Join(hostHomeDir, "canary121RO/file"),
+			},
+			postRun: checkHostDir(filepath.Join(hostHomeDir, "canary121RO")),
+			exit:    0,
+		},
+		{
+			name: "CustomHomeBind",
+			args: []string{
+				"--home", hostHomeDir + ":/home/e2e",
+				"--bind", hostCanaryDir + ":/home/e2e/canaryRO",
+				sandbox,
+				"test", "-f", "/home/e2e/canaryRO/file",
+			},
+			postRun: checkHostDir(filepath.Join(hostHomeDir, "canaryRO")),
+			exit:    0,
+		},
+		{
+			name: "CustomHomeBindWritableOK",
+			args: []string{
+				"--home", hostHomeDir + ":/home/e2e",
+				"--bind", hostCanaryDir + ":/home/e2e/canaryRW",
+				"--writable",
+				sandbox,
+				"test", "-f", "/home/e2e/canaryRW/file",
+			},
+			postRun: checkHostDir(filepath.Join(hostHomeDir, "canaryRW")),
+			exit:    0,
+		},
+		{
+			name: "CustomHomeBindWritableKO",
+			args: []string{
+				"--home", canaryDirBind,
+				"--writable",
+				sandbox,
+				"true",
+			},
+			exit: 255,
+		},
+		{
+			name: "WorkdirTmpBind",
+			args: []string{
+				"--workdir", hostWorkDir,
+				"--contain",
+				"--bind", hostCanaryDir + ":/tmp/canary/dir",
+				sandbox,
+				"test", "-f", "/tmp/canary/dir/file",
+			},
+			postRun: checkHostDir(filepath.Join(hostWorkDir, "tmp", "canary/dir")),
+			exit:    0,
+		},
+		{
+			name: "WorkdirTmpBindWritable",
+			args: []string{
+				"--writable",
+				"--workdir", hostWorkDir,
+				"--contain",
+				"--bind", hostCanaryDir + ":/tmp/canary/dir",
+				sandbox,
+				"test", "-f", "/tmp/canary/dir/file",
+			},
+			postRun: checkHostDir(filepath.Join(hostWorkDir, "tmp", "canary/dir")),
+			exit:    0,
+		},
+		{
+			name: "WorkdirVarTmpBind",
+			args: []string{
+				"--workdir", hostWorkDir,
+				"--contain",
+				"--bind", hostCanaryDir + ":/var/tmp/canary/dir",
+				sandbox,
+				"test", "-f", "/var/tmp/canary/dir/file",
+			},
+			postRun: checkHostDir(filepath.Join(hostWorkDir, "var_tmp", "canary/dir")),
+			exit:    0,
+		},
+		{
+			name: "WorkdirVarTmpBindWritable",
+			args: []string{
+				"--writable",
+				"--workdir", hostWorkDir,
+				"--contain",
+				"--bind", hostCanaryDir + ":/var/tmp/canary/dir",
+				sandbox,
+				"test", "-f", "/var/tmp/canary/dir/file",
+			},
+			postRun: checkHostDir(filepath.Join(hostWorkDir, "var_tmp", "canary/dir")),
+			exit:    0,
+		},
+		{
+			name: "ScratchTmpfsBind",
+			args: []string{
+				"--scratch", "/scratch",
+				"--bind", hostCanaryDir + ":/scratch/dir",
+				sandbox,
+				"test", "-f", "/scratch/dir/file",
+			},
+			exit: 0,
+		},
+		{
+			name: "ScratchWorkdirBind",
+			args: []string{
+				"--workdir", hostWorkDir,
+				"--scratch", "/scratch",
+				"--bind", hostCanaryDir + ":/scratch/dir",
+				sandbox,
+				"test", "-f", "/scratch/dir/file",
+			},
+			postRun: checkHostDir(filepath.Join(hostWorkDir, "scratch/scratch", "dir")),
+			exit:    0,
+		},
+	}
+
+	for _, profile := range e2e.Profiles {
+		profile := profile
+		createWorkspaceDirs(t)
+
+		t.Run(profile.String(), func(t *testing.T) {
+			for _, tt := range tests {
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tt.name),
+					e2e.WithProfile(profile),
+					e2e.WithCommand("exec"),
+					e2e.WithArgs(tt.args...),
+					e2e.PostRun(tt.postRun),
+					e2e.ExpectExit(tt.exit),
+				)
+			}
+		})
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := actionTests{
@@ -1020,6 +1384,8 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		"STDPIPE":               c.STDPipe,             // stdin/stdout pipe
 		"action basic profiles": c.actionBasicProfiles, // run basic action under different profiles
 		"issue 4488":            c.issue4488,           // https://github.com/sylabs/singularity/issues/4488
+		"issue 4587":            c.issue4587,           // https://github.com/sylabs/singularity/issues/4587
 		"network":               c.actionNetwork,       // test basic networking
+		"binds":                 c.actionBinds,         // test various binds
 	})
 }

@@ -7,6 +7,7 @@ package rpc
 
 import (
 	"os"
+	"syscall"
 
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
@@ -63,4 +64,15 @@ type SetFsIDArgs struct {
 // ChdirArgs defines the arguments to chdir.
 type ChdirArgs struct {
 	Dir string
+}
+
+// StatReply defines the reply for stat.
+type StatReply struct {
+	Err error
+	St  syscall.Stat_t
+}
+
+// StatArgs defines the arguments to stat.
+type StatArgs struct {
+	Path string
 }

@@ -7,9 +7,9 @@ package oci
 
 import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	ociServer "github.com/sylabs/singularity/internal/pkg/runtime/engine/oci/rpc/server"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc/server"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 )
 
 // EngineOperations is a Singularity OCI runtime engine that implements engine.Operations.

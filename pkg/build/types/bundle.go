@@ -14,6 +14,7 @@ import (
 	ocitypes "github.com/containers/image/types"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
@@ -91,7 +92,7 @@ func (b *Bundle) RunSection(s string) bool {
 func (b *Bundle) Remove() error {
 	var errors []string
 	for _, dir := range []string{b.TmpDir, b.RootfsPath} {
-		if err := os.RemoveAll(dir); err != nil {
+		if err := fs.ForceRemoveAll(dir); err != nil {
 			errors = append(errors, fmt.Sprintf("could not remove %q: %v", dir, err))
 		}
 	}

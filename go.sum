@@ -204,8 +204,6 @@ github.com/onsi/ginkgo v1.8.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+W
 github.com/onsi/gomega v0.0.0-20151007035656-2152b45fa28a/go.mod h1:C1qb7wdrVGGVU+Z6iS04AVkA3Q65CEZX59MT0QO5uiA=
 github.com/onsi/gomega v1.5.0 h1:izbySO9zDPmjJ8rDjLvkA2zJHIo+HkYXHnf7eN7SSyo=
 github.com/onsi/gomega v1.5.0/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1CpauHY=
-github.com/openSUSE/umoci v0.4.2 h1:mTPbly5PZqFhb1FgWSIA6HpRFsWzu5njAnicimmwua0=
-github.com/openSUSE/umoci v0.4.2/go.mod h1:FeYjqMzUOsc49joNE3Rndjk4bV3O3cG91RDUwCYaVd4=
 github.com/opencontainers/go-digest v1.0.0-rc1 h1:WzifXhOVOEOuFYOJAW6aQqW0TooG2iki3E3Ii+WN7gQ=
 github.com/opencontainers/go-digest v1.0.0-rc1/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
 github.com/opencontainers/image-spec v0.0.0-20180411145040-e562b0440392 h1:rBwY4zl6Rvzh0RyFbELnswKxVfiq7xB/d2sfgy3PmHI=
@@ -220,8 +218,8 @@ github.com/opencontainers/selinux v1.3.0 h1:xsI95WzPZu5exzA6JzkLSfdr/DilzOhCJOqG
 github.com/opencontainers/selinux v1.3.0/go.mod h1:+BLncwf63G4dgOzykXAxcmnFlUaOlkDdmw/CqsW6pjs=
 github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
-github.com/pelletier/go-toml v1.4.0 h1:u3Z1r+oOXJIkxqw34zVhyPgjBsm6X2wn21NWs/HfSeg=
-github.com/pelletier/go-toml v1.4.0/go.mod h1:PN7xzY2wHTK0K9p34ErDQMlFxa51Fk0OUruD3k1mMwo=
+github.com/pelletier/go-toml v1.5.0 h1:5BakdOZdtKJ1FFk6QdL8iSGrMWsXgchNJcrnarjbmJQ=
+github.com/pelletier/go-toml v1.5.0/go.mod h1:5N711Q9dKgbdkxHL+MEfF31hpT7l0S0s/t2kKREewys=
 github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2 h1:JhzVVoYvbOACxoUmOs6V/G4D5nPVUW73rKvXxP4XUJc=
 github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2/go.mod h1:iIss55rKnNBTvrwdmkUpLnDpZoAHvWaiq5+iMmen4AE=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
@@ -288,6 +286,8 @@ github.com/sylabs/scs-library-client v0.4.4 h1:DJpXTEV1TyHe3lGQ9EJ4RzK+0ES+3rDgj
 github.com/sylabs/scs-library-client v0.4.4/go.mod h1:FV1aajXP99oKFFagiomGI6WkWFniKnhIq/z1mITeeb4=
 github.com/sylabs/sif v1.0.8 h1:BK55XU0UhUsbimCr1Sl1tCLDrFsB71EDYDcHRfPpw8k=
 github.com/sylabs/sif v1.0.8/go.mod h1:/W42wtEREMjfQCNz1HhqD2PHW8ZPqjiU7Z2pZQXTRqI=
+github.com/sylabs/umoci v0.4.3-0.20191017185224-21061af9a1e7 h1:xrkM1WVrjk74eTmQSr9CIiV8qklNyykYn+k9zWm6faQ=
+github.com/sylabs/umoci v0.4.3-0.20191017185224-21061af9a1e7/go.mod h1:8rMy7mg/N4lGwWNeoc09op5EoTcFcmmf9D+Kg8HIVKI=
 github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e h1:QjF5rxNgRSLHJDwKUvfYP3qOx1vTDzUi/+oSC8FXnCI=
 github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/tj/assert v0.0.0-20171129193455-018094318fb0/go.mod h1:mZ9/Rh9oLWpLLDRpvE+3b7gP/C2YyLFYxNmcLnPTMe0=
@@ -371,8 +371,8 @@ gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7/go.mod h1:dt/ZhP58zS4L8KSrWD
 gopkg.in/yaml.v2 v2.2.1/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.2 h1:ZCJp+EgiOT7lHqUV2J862kp8Qj64Jo6az82+3Td9dZw=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
-gopkg.in/yaml.v2 v2.2.3 h1:fvjTMHxHEw/mxHbtzPi3JCcKXQRAnQTBRo6YCJSVHKI=
-gopkg.in/yaml.v2 v2.2.3/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
+gopkg.in/yaml.v2 v2.2.4 h1:/eiJrUcujPVeJ3xlSWaiNi3uSVmDGBK1pDHUHAnao1I=
+gopkg.in/yaml.v2 v2.2.4/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gotest.tools v2.2.0+incompatible h1:VsBPFP1AI068pPrMxtb/S8Zkgf9xEmTLJjfM+P5UIEo=
 gotest.tools v2.2.0+incompatible/go.mod h1:DsYFclhRJ6vuDpmuTbkuFWG+y2sxOXAzmJt81HFBacw=
 gotest.tools/v3 v3.0.0 h1:d+tVGRu6X0ZBQ+kyAR8JKi6AXhTP2gmQaoIYaGFz634=

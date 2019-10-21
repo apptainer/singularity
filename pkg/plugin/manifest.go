@@ -5,7 +5,7 @@
 
 package plugin
 
-// Manifest is the plugin manifest, stored as a data object in the plugin SIF
+// Manifest is the plugin manifest, stored as a data object in the plugin SIF.
 type Manifest struct {
 	// Name is, by convention, a fully-qualified domain name which uniquely identifies a plugin.
 	// This convention is not enforced, but rather is best practice.
@@ -17,10 +17,10 @@ type Manifest struct {
 	// Bad Names:
 	//     - test-plugin
 	Name string `json:"name"`
-	// Author of the plugin
+	// Author of the plugin.
 	Author string `json:"author"`
-	// Version describes the SemVer of the plugin
+	// Version describes the SemVer of the plugin.
 	Version string `json:"version"`
-	// Description describes the plugin
+	// Description describes the plugin.
 	Description string `json:"description"`
 }

@@ -6,13 +6,14 @@
 package singularity
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/rpc"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc/client"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 )
 
@@ -28,7 +29,9 @@ import (
 // network setup (see container.prepareNetworkSetup) in fakeroot flow. The rest
 // of the setup (e.g. mount operations) where privileges may be required is performed
 // by calling RPC server methods (see internal/app/starter/rpc_linux.go for details).
-func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
+func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn net.Conn) error {
+	var err error
+
 	if e.CommonConfig.EngineName != singularityConfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
@@ -37,8 +40,8 @@ func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 		return nil
 	}
 
-	configurationFile := buildcfg.SINGULARITY_CONF_FILE
-	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
+	e.EngineConfig.File, err = config.ParseFile(buildcfg.SINGULARITY_CONF_FILE)
+	if err != nil {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 
@@ -50,5 +53,5 @@ func (e *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 		return fmt.Errorf("failed to initialize RPC client")
 	}
 
-	return create(e, rpcOps, pid)
+	return create(ctx, e, rpcOps, pid)
 }

@@ -14,11 +14,8 @@ import (
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
-var (
-	pluginName string
-)
-
 // -n|--name
+var pluginName string
 var pluginInstallNameFlag = cmdline.Flag{
 	ID:           "pluginInstallNameFlag",
 	Value:        &pluginName,
@@ -33,13 +30,13 @@ func init() {
 }
 
 // PluginInstallCmd takes a compiled plugin.sif file and installs it
-// in the appropriate location
+// in the appropriate location.
 //
 // singularity plugin install <path> [-n name]
 var PluginInstallCmd = &cobra.Command{
 	PreRun: EnsureRootPriv,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := singularity.InstallPlugin(args[0], buildcfg.LIBEXECDIR)
+		err := singularity.InstallPlugin(args[0], pluginName, buildcfg.LIBEXECDIR)
 		if err != nil {
 			sylog.Fatalf("Failed to install plugin %q: %s.", args[0], err)
 		}

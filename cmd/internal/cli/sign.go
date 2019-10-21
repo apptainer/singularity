@@ -7,7 +7,6 @@ package cli
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
@@ -87,14 +86,9 @@ var SignCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
-
 		// args[0] contains image path
 		fmt.Printf("Signing image: %s\n", args[0])
-		if err := doSignCmd(args[0], keyServerURI); err != nil {
-			sylog.Errorf("signing container failed: %s", err)
-			os.Exit(2)
-		}
-		fmt.Printf("Signature created and applied to %v\n", args[0])
+		doSignCmd(cmd, args[0])
 	},
 
 	Use:     docs.SignUse,
@@ -103,9 +97,22 @@ var SignCmd = &cobra.Command{
 	Example: docs.SignExample,
 }
 
-func doSignCmd(cpath, url string) error {
+func doSignCmd(cmd *cobra.Command, cpath string) {
+	// Group id should start at 1.
+	if cmd.Flag(verifySifGroupIDFlag.Name).Changed && sifGroupID == 0 {
+		sylog.Fatalf("invalid group id")
+	}
+
+	// Descriptor id should start at 1.
+	if cmd.Flag(verifySifDescSifIDFlag.Name).Changed && sifDescID == 0 {
+		sylog.Fatalf("invalid descriptor id")
+	}
+	if cmd.Flag(verifySifDescIDFlag.Name).Changed && sifDescID == 0 {
+		sylog.Fatalf("invalid descriptor id")
+	}
+
 	if sifGroupID != 0 && sifDescID != 0 {
-		return fmt.Errorf("only one of -i or -g may be set")
+		sylog.Fatalf("only one of -i or -g may be set")
 	}
 
 	var isGroup bool
@@ -117,5 +124,8 @@ func doSignCmd(cpath, url string) error {
 		id = sifDescID
 	}
 
-	return signing.Sign(cpath, id, isGroup, privKey)
+	if err := signing.Sign(cpath, id, isGroup, privKey); err != nil {
+		sylog.Fatalf("Failed to sign container: %s", err)
+	}
+	fmt.Printf("Signature created and applied to %s\n", cpath)
 }

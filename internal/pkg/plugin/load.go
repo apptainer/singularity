@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE.md file distributed with the URIs of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package plugin
@@ -14,30 +14,15 @@ import (
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
 
-// initialized stores whether or not the plugin system has been initialized. A
-// call to Initialize MUST be made before any other functions can be called.
-var initialized = false
-
-func assertInitialized() {
-	if !initialized {
-		panic("Plugin system has not been initialized")
-	}
-}
-
-var loadedPlugins []*pluginapi.Plugin
-
-// InitializeAll loads all plugins into memory and stores their symbols
+// InitializeAll loads all plugins into memory and stores their symbols.
+// A call to InitializeAll MUST be made only only once.
 func InitializeAll(libexecdir string) error {
-	if initialized {
-		return nil
-	}
-
 	metas, err := List(libexecdir)
 	if err != nil {
 		return err
 	}
 
-	errs := []error{}
+	var errs []error
 
 	for _, meta := range metas {
 		if !meta.Enabled {
@@ -80,21 +65,20 @@ func InitializeAll(libexecdir string) error {
 		return errors.New(b.String())
 	}
 
-	// no errors, we are initialized :-)
-	initialized = true
 	return nil
 }
 
-// Initialize loads the plugin located at path and returns it
+// Initialize loads the plugin located at path and returns it.
 func Initialize(path string) (*pluginapi.Plugin, error) {
 	pl, err := open(path)
 	if err != nil {
 		return nil, err
 	}
 
-	loadedPlugins = append(loadedPlugins, pl)
-	pl.Initialize(reg)
-
+	reg := registrar{pl.Name}
+	if err := pl.Initialize(reg); err != nil {
+		return nil, fmt.Errorf("could not initialize plugin: %v", err)
+	}
 	return pl, nil
 }
 

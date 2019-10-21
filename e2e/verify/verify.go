@@ -30,7 +30,7 @@ type verifyOutput struct {
 	dataCheck   bool
 }
 
-const successURL = "library://sylabs/tests/verify_success:1.0.1"
+const successURL = "library://sylabs/tests/verify_success:1.0.2"
 const corruptedURL = "library://sylabs/tests/verify_corrupted:1.0.1"
 
 func getNameJSON(keyNum int) []string {
@@ -72,7 +72,7 @@ func (c ctx) singularityVerifyKeyNum(t *testing.T) {
 		},
 		{
 			name:         "verify number signers success",
-			expectNumOut: 1,
+			expectNumOut: 2,
 			imageURL:     successURL,
 			imagePath:    c.successImage,
 			expectExit:   0,
@@ -295,7 +295,7 @@ func (c ctx) singularityVerifySigner(t *testing.T) {
 }
 
 func (c ctx) checkGroupidOption(t *testing.T) {
-	cmdArgs := []string{"--groupid", "0", c.successImage}
+	cmdArgs := []string{"--groupid", "1", c.successImage}
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.UserProfile),
@@ -309,7 +309,7 @@ func (c ctx) checkGroupidOption(t *testing.T) {
 }
 
 func (c ctx) checkIDOption(t *testing.T) {
-	cmdArgs := []string{"--sif-id", "0", c.successImage}
+	cmdArgs := []string{"--sif-id", "1", c.successImage}
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.UserProfile),

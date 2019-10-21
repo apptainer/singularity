@@ -7,6 +7,7 @@ package sypgp
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"io/ioutil"
 	"log"
@@ -83,7 +84,7 @@ func TestSearchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			if err := SearchPubkey(srv.Client(), tt.search, tt.uri, tt.authToken, false); (err != nil) != tt.wantErr {
+			if err := SearchPubkey(context.Background(), srv.Client(), tt.search, tt.uri, tt.authToken, false); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
@@ -120,7 +121,7 @@ func TestFetchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			el, err := FetchPubkey(srv.Client(), tt.fingerprint, tt.uri, tt.authToken, false)
+			el, err := FetchPubkey(context.Background(), srv.Client(), tt.fingerprint, tt.uri, tt.authToken, false)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("unexpected error: %v", err)
 				return
@@ -195,7 +196,7 @@ func TestPushPubkey(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms.code = tt.code
 
-			if err := PushPubkey(srv.Client(), testEntity, tt.uri, tt.authToken); (err != nil) != tt.wantErr {
+			if err := PushPubkey(context.Background(), srv.Client(), testEntity, tt.uri, tt.authToken); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
@@ -272,83 +273,6 @@ func TestEnsureDirPrivate(t *testing.T) {
 
 			if actual, expected := fi.Mode() & ^os.ModeDir, os.FileMode(0700); actual != expected {
 				t.Errorf("Expecting mode %o, got %o after calling ensureDirPrivate(%q)", expected, actual, testEntry)
-			}
-		}
-	}
-}
-
-func TestEnsureFilePrivate(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
-	tmpdir, err := ioutil.TempDir("", "test-ensure-file-private")
-	if err != nil {
-		t.Fatalf("Cannot create temporary directory")
-	}
-	defer os.RemoveAll(tmpdir)
-
-	cases := []struct {
-		name        string
-		preFunc     func(string) error
-		entry       string
-		expectError bool
-	}{
-		{
-			name:        "non-existent file",
-			entry:       "f1",
-			expectError: false,
-		},
-		{
-			name:        "file exists",
-			entry:       "f2",
-			expectError: false,
-			preFunc: func(fn string) error {
-				fh, err := os.Create(fn)
-				if err != nil {
-					return err
-				}
-				fh.Close()
-				return os.Chmod(fn, 0666)
-			},
-		},
-	}
-
-	for _, tc := range cases {
-		testEntry := filepath.Join(tmpdir, tc.entry)
-
-		if tc.preFunc != nil {
-			if err := tc.preFunc(testEntry); err != nil {
-				t.Errorf("Unexpected failure when calling prep function: %+v", err)
-				continue
-			}
-		}
-
-		err := ensureFilePrivate(testEntry)
-		switch {
-		case !tc.expectError && err != nil:
-			t.Errorf("Unexpected failure when calling ensureFilePrivate(%q): %+v", testEntry, err)
-
-		case tc.expectError && err == nil:
-			t.Errorf("Expecting failure when calling ensureFilePrivate(%q), but got none", testEntry)
-
-		case tc.expectError && err != nil:
-			t.Logf("Expecting failure when calling ensureFilePrivate(%q), got: %+v", testEntry, err)
-			continue
-
-		case !tc.expectError && err == nil:
-			// everything ok
-
-			fi, err := os.Stat(testEntry)
-			if err != nil {
-				t.Errorf("Error while examining test directory %q: %+v", testEntry, err)
-			}
-
-			if fi.IsDir() {
-				t.Errorf("Expecting a non-directory after calling ensureFilePrivate(%q), found something else", testEntry)
-			}
-
-			if actual, expected := fi.Mode(), os.FileMode(0600); actual != expected {
-				t.Errorf("Expecting mode %o, got %o after calling ensureFilePrivate(%q)", expected, actual, testEntry)
 			}
 		}
 	}

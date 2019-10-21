@@ -1,0 +1,183 @@
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE.md file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
+package config
+
+import (
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"reflect"
+	"regexp"
+	"strconv"
+	"strings"
+	"text/template"
+)
+
+// Directives represents the configuration directives type
+// holding directives mapped to their respective values.
+type Directives map[string][]string
+
+var parserReg = regexp.MustCompile(`(?m)^\s*([a-zA-Z _]+)\s*=\s*(.*)$`)
+
+// GetDirectives parses configuration directives from reader
+// and returns a directive map with associated values.
+func GetDirectives(reader io.Reader) (Directives, error) {
+	if reader == nil {
+		return make(Directives), nil
+	}
+
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("while reading data: %s", err)
+	}
+
+	directives := make(Directives)
+
+	for _, match := range parserReg.FindAllSubmatch(data, -1) {
+		if match != nil {
+			key := strings.TrimSpace(string(match[1]))
+			val := strings.TrimSpace(string(match[2]))
+			if val != "" {
+				directives[key] = append(directives[key], val)
+			}
+		}
+	}
+
+	return directives, nil
+}
+
+// GetConfig sets the corresponding interface fields associated
+// with directives.
+func GetConfig(directives Directives) (*FileConfig, error) {
+	config := new(FileConfig)
+
+	elem := reflect.ValueOf(config).Elem()
+
+	// Iterate over the fields of f and handle each type
+	for i := 0; i < elem.NumField(); i++ {
+		valueField := elem.Field(i)
+		typeField := elem.Type().Field(i)
+
+		dir, ok := typeField.Tag.Lookup("directive")
+		if !ok {
+			return nil, fmt.Errorf("no directive tag found for field %q", typeField.Name)
+		}
+
+		defaultValue := ""
+		if v, ok := typeField.Tag.Lookup("default"); ok {
+			defaultValue = v
+		}
+
+		authorized := []string{}
+		if v, ok := typeField.Tag.Lookup("authorized"); ok {
+			authorized = strings.Split(v, ",")
+		}
+
+		value := []string{}
+		if len(directives[dir]) > 0 {
+			for _, dv := range directives[dir] {
+				if dv != "" {
+					value = append(value, strings.Split(dv, ",")...)
+				}
+			}
+		} else {
+			if defaultValue != "" {
+				value = append(value, strings.Split(defaultValue, ",")...)
+			}
+		}
+
+		switch typeField.Type.Kind() {
+		case reflect.Bool:
+			found := false
+			for _, a := range authorized {
+				if a == value[0] {
+					found = true
+					break
+				}
+			}
+			if !found && len(authorized) > 0 {
+				return nil, fmt.Errorf("value authorized for directive %q are %s", dir, authorized)
+			}
+			valueField.SetBool(value[0] == "yes")
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			n, err := strconv.ParseInt(value[0], 0, 64)
+			if err != nil {
+				return nil, err
+			}
+			valueField.SetInt(n)
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			n, err := strconv.ParseUint(value[0], 0, 64)
+			if err != nil {
+				return nil, err
+			}
+			valueField.SetUint(n)
+		case reflect.String:
+			if len(value) == 0 {
+				value = []string{""}
+			}
+			found := false
+			for _, a := range authorized {
+				if a == value[0] {
+					found = true
+					break
+				}
+			}
+			if !found && len(authorized) > 0 && value[0] != "" {
+				return nil, fmt.Errorf("value authorized for directive '%s' are %s", dir, authorized)
+			}
+			valueField.SetString(strings.Join(value, ","))
+		case reflect.Slice:
+			l := len(value)
+			v := reflect.MakeSlice(typeField.Type, l, l)
+			valueField.Set(v)
+
+			switch t := valueField.Interface().(type) {
+			case []string:
+				for i, val := range value {
+					t[i] = strings.TrimSpace(val)
+				}
+			}
+		}
+	}
+
+	return config, nil
+}
+
+// ParseFile parses configuration file with the specified path.
+func ParseFile(filepath string) (*FileConfig, error) {
+	if filepath == "" {
+		// grab the default configuration
+		return GetConfig(nil)
+	}
+
+	c, err := os.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+
+	directives, err := GetDirectives(c)
+	if err != nil {
+		return nil, fmt.Errorf("while parsing data: %s", err)
+	}
+
+	return GetConfig(directives)
+}
+
+// Generate executes the template stored at tmplPath on FileConfig object.
+func Generate(out io.Writer, tmplPath string, config *FileConfig) error {
+	t, err := template.ParseFiles(tmplPath)
+	if err != nil {
+		return err
+	}
+
+	if err := t.Execute(out, config); err != nil {
+		return fmt.Errorf("unable to execute template at %s on %v: %v", tmplPath, config, err)
+	}
+
+	return nil
+}

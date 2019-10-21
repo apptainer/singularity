@@ -6,12 +6,12 @@
 package singularity
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 
-	"github.com/deislabs/oras/pkg/context"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -51,7 +51,7 @@ func (c *progressCallback) Finish() {
 // LibraryPush will upload the image specified by file to the library specified by libraryURI.
 // Before uploading, the image will be checked for a valid signature, unless specified not to by the
 // unauthenticated bool
-func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning string, unauthenticated bool) error {
+func LibraryPush(ctx context.Context, file, dest, authToken, libraryURI, keyServerURL, remoteWarning string, unauthenticated bool) error {
 	// Push to library requires a valid authToken
 	if authToken == "" {
 		return fmt.Errorf("couldn't push image to library: %v", remoteWarning)
@@ -68,7 +68,7 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 
 	if !unauthenticated {
 		// check if the container is signed
-		imageSigned, err := signing.IsSigned(file, keyServerURL, 0, false, authToken)
+		imageSigned, err := signing.IsSigned(ctx, file, keyServerURL, authToken)
 		if err != nil {
 			// err will be: "unable to verify container: %v", err
 			sylog.Warningf("%v", err)
@@ -103,7 +103,7 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 	}
 	defer f.Close()
 
-	return libraryClient.UploadImage(context.Background(), f, r.Host+r.Path, arch, r.Tags, "No Description", &progressCallback{})
+	return libraryClient.UploadImage(ctx, f, r.Host+r.Path, arch, r.Tags, "No Description", &progressCallback{})
 }
 
 func sifArch(filename string) (string, error) {

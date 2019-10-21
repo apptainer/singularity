@@ -8,6 +8,7 @@ package sources
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -49,7 +50,7 @@ func machine() (string, error) {
 }
 
 // Get downloads container information from the specified source
-func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
+func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	var suseconnectProduct, suseconnectModver string
 	var suseconnectPath string
 	var pgpfile string
@@ -334,7 +335,7 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *ZypperConveyorPacker) Pack() (b *types.Bundle, err error) {
+func (cp *ZypperConveyorPacker) Pack(context.Context) (b *types.Bundle, err error) {
 	err = cp.insertBaseEnv()
 	if err != nil {
 		return nil, fmt.Errorf("while inserting base environment: %v", err)

@@ -20,7 +20,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -29,6 +28,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
@@ -86,6 +86,8 @@ func fakerootExec(cmdArgs []string) {
 }
 
 func runBuild(cmd *cobra.Command, args []string) {
+	ctx := context.TODO()
+
 	if buildArgs.arch != runtime.GOARCH && !buildArgs.remote {
 		sylog.Fatalf("Requested architecture (%s) does not match host (%s). Cannot build locally.", buildArgs.arch, runtime.GOARCH)
 	}
@@ -99,14 +101,14 @@ func runBuild(cmd *cobra.Command, args []string) {
 	}
 
 	if buildArgs.remote {
-		runBuildRemote(cmd, dest, spec)
+		runBuildRemote(ctx, cmd, dest, spec)
 	} else {
-		runBuildLocal(cmd, dest, spec)
+		runBuildLocal(ctx, cmd, dest, spec)
 	}
 	sylog.Infof("Build complete: %s", dest)
 }
 
-func runBuildRemote(cmd *cobra.Command, dst, spec string) {
+func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	// building encrypted containers on the remote builder is not currently supported
 	if buildArgs.encrypt {
 		sylog.Fatalf("Building encrypted container with the remote builder is not currently supported.")
@@ -167,7 +169,7 @@ func runBuildRemote(cmd *cobra.Command, dst, spec string) {
 				sylog.Fatalf("Unable to create build: %v", err)
 			}
 
-			if err = b.Full(); err != nil {
+			if err = b.Full(ctx); err != nil {
 				sylog.Fatalf("While performing build: %v", err)
 			}
 		}()
@@ -177,13 +179,13 @@ func runBuildRemote(cmd *cobra.Command, dst, spec string) {
 	if err != nil {
 		sylog.Fatalf("Failed to create builder: %v", err)
 	}
-	err = b.Build(context.TODO())
+	err = b.Build(ctx)
 	if err != nil {
 		sylog.Fatalf("While performing build: %v", err)
 	}
 }
 
-func runBuildLocal(cmd *cobra.Command, dst, spec string) {
+func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	var keyInfo *crypt.KeyInfo
 	if buildArgs.encrypt || promptForPassphrase || cmd.Flags().Lookup("pem-path").Changed {
 		if os.Getuid() != 0 {
@@ -266,7 +268,7 @@ func runBuildLocal(cmd *cobra.Command, dst, spec string) {
 		sylog.Fatalf("Unable to create build: %v", err)
 	}
 
-	if err = b.Full(); err != nil {
+	if err = b.Full(ctx); err != nil {
 		sylog.Fatalf("While performing build: %v", err)
 	}
 }
@@ -345,7 +347,7 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 	// 4. Passphrase envvar
 
 	if PEMFlag.Changed {
-		exists, err := fs.FileExists(encryptionPEMPath)
+		exists, err := fs.PathExists(encryptionPEMPath)
 		if err != nil {
 			sylog.Fatalf("Unable to verify existence of %s: %v", encryptionPEMPath, err)
 		}
@@ -371,7 +373,7 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 	}
 
 	if pemPathEnvOK {
-		exists, err := fs.FileExists(pemPathEnv)
+		exists, err := fs.PathExists(pemPathEnv)
 		if err != nil {
 			sylog.Fatalf("Unable to verify existence of %s: %v", pemPathEnv, err)
 		}

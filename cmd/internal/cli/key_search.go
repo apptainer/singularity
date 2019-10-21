@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -21,9 +22,11 @@ var KeySearchCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.TODO()
+
 		handleKeyFlags(cmd)
 
-		if err := doKeySearchCmd(args[0], keyServerURI); err != nil {
+		if err := doKeySearchCmd(ctx, args[0], keyServerURI); err != nil {
 			sylog.Errorf("search failed: %s", err)
 			os.Exit(2)
 		}
@@ -35,7 +38,7 @@ var KeySearchCmd = &cobra.Command{
 	Example: docs.KeySearchExample,
 }
 
-func doKeySearchCmd(search string, url string) error {
+func doKeySearchCmd(ctx context.Context, search string, url string) error {
 	// get keyring with matching search string
-	return sypgp.SearchPubkey(http.DefaultClient, search, url, authToken, keySearchLongList)
+	return sypgp.SearchPubkey(ctx, http.DefaultClient, search, url, authToken, keySearchLongList)
 }

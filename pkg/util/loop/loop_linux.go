@@ -73,21 +73,26 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 		}
 		if loop.Shared {
 			status, err := GetStatusFromFd(uintptr(loopFd))
-			syscall.Close(loopFd)
 			if err != nil {
+				syscall.Close(loopFd)
 				return err
 			}
 			// there is no associated image with loop device, save indice so second loop
 			// iteration will start from this device
 			if status.Inode == 0 && freeDevice == -1 {
 				freeDevice = device
+				syscall.Close(loopFd)
 				continue
 			}
 			if status.Inode == imageIno && status.Device == imageDev &&
 				status.Flags&FlagsReadOnly == loop.Info.Flags&FlagsReadOnly &&
 				status.Offset == loop.Info.Offset && status.SizeLimit == loop.Info.SizeLimit {
+				// keep the reference to the loop device file descriptor to
+				// be sure that the loop device won't be released between this
+				// check and the mount of the filesystem
 				return nil
 			}
+			syscall.Close(loopFd)
 		} else {
 			_, _, esys := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdSetFd, image.Fd())
 			if esys != 0 {

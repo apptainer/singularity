@@ -17,8 +17,7 @@ import (
 )
 
 // Hook execute an OCI hook command and pass state over stdin.
-func Hook(hook *specs.Hook, state *specs.State) error {
-	var ctx context.Context
+func Hook(ctx context.Context, hook *specs.Hook, state *specs.State) error {
 	var cancel context.CancelFunc
 	var timeout time.Duration
 	var cmd *exec.Cmd
@@ -28,7 +27,7 @@ func Hook(hook *specs.Hook, state *specs.State) error {
 	}
 
 	if timeout != 0 {
-		ctx, cancel = context.WithTimeout(context.Background(), timeout)
+		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
 

@@ -16,7 +16,10 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-const singularityDir = ".singularity"
+const (
+	RemoteConfFile = "remote.yaml"
+	singularityDir = ".singularity"
+)
 
 // cache contains the information for the current user
 var cache struct {
@@ -51,6 +54,10 @@ func configDir() string {
 	}
 
 	return filepath.Join(user.HomeDir, singularityDir)
+}
+
+func RemoteConf() string {
+	return filepath.Join(ConfigDir(), RemoteConfFile)
 }
 
 // ConfigDirForUsername returns the directory where the singularity

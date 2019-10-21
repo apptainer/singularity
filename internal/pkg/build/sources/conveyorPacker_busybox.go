@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -29,7 +30,7 @@ type BusyBoxConveyorPacker struct {
 }
 
 // Get just stores the source
-func (c *BusyBoxConveyor) Get(b *types.Bundle) (err error) {
+func (c *BusyBoxConveyor) Get(ctx context.Context, b *types.Bundle) (err error) {
 	c.b = b
 
 	// get mirrorURL, OSVerison, and Includes components to definition
@@ -66,7 +67,7 @@ func (c *BusyBoxConveyor) Get(b *types.Bundle) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *BusyBoxConveyorPacker) Pack() (b *types.Bundle, err error) {
+func (cp *BusyBoxConveyorPacker) Pack(context.Context) (b *types.Bundle, err error) {
 	err = cp.insertRunScript()
 	if err != nil {
 		return nil, fmt.Errorf("while inserting base environment: %v", err)
