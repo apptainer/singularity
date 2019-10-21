@@ -73,7 +73,7 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify:    noHTTPS,
-		DockerInsecureSkipTLSVerify: noHTTPS,
+		DockerInsecureSkipTLSVerify: ocitypes.NewOptionalBool(noHTTPS),
 		DockerAuthConfig:            &authConf,
 	}
 

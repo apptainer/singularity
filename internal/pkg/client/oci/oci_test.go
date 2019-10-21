@@ -207,7 +207,7 @@ func createValidSysCtx() *types.SystemContext {
 	}
 	validSysCtx := &types.SystemContext{
 		OCIInsecureSkipTLSVerify:    opts.NoHTTPS,
-		DockerInsecureSkipTLSVerify: opts.NoHTTPS,
+		DockerInsecureSkipTLSVerify: types.NewOptionalBool(opts.NoHTTPS),
 		OSChoice:                    "linux",
 	}
 
