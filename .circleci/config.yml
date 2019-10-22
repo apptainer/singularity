@@ -71,7 +71,9 @@ x-run:
 
       curl -s "https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/pulls/${CIRCLE_PR_NUMBER}" > "${pull_info_file}"
 
-      E2E_LABELS=$(jq -r '.labels[].name' < "${pull_info_file}" | grep --line-regexp --fixed-strings ci:e2e)
+      # Keep the matching lines instead of simply looking at the exit
+      # code for debugging purposes
+      E2E_LABELS=$(jq -r '.labels[].name' < "${pull_info_file}" | grep --line-regexp --fixed-strings ci:e2e || true)
 
       if test -n "${E2E_LABELS}" ; then
         echo "Honoring request to run E2E tests from pull request labels"
