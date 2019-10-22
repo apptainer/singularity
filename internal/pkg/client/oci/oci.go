@@ -67,7 +67,7 @@ func (t *ImageReference) newImageSource(ctx context.Context, sys *types.SystemCo
 	}
 
 	// First we are fetching into the cache
-	err = copy.Image(ctx, policyCtx, t.ImageReference, t.source, &copy.Options{
+	_, err = copy.Image(ctx, policyCtx, t.ImageReference, t.source, &copy.Options{
 		ReportWriter: w,
 		SourceCtx:    sys,
 	})

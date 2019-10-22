@@ -49,7 +49,12 @@ type Manager struct {
 	rootPath string
 	entries  map[string]interface{}
 	dirs     []*dir
-	ovDirs   map[string]string
+
+	// each entries can contain multiple directories, the first
+	// directory of each entry is always substituted to the bound
+	// directory, the others if any are the directories to create
+	// for nested binds support
+	ovDirs map[string][]string
 }
 
 func (m *Manager) checkPath(path string, checkExist bool) (string, error) {
@@ -87,8 +92,11 @@ func (m *Manager) createParentDir(path string) {
 				d := &dir{mode: m.DirMode, uid: uid, gid: gid}
 				m.entries[p] = d
 				m.dirs = append(m.dirs, d)
-				if ovDir, ok := m.ovDirs[filepath.Dir(p)]; ok {
-					m.ovDirs[p] = filepath.Join(ovDir, filepath.Base(p))
+				// check if the parent directory is part of the overrided
+				// directories to force the creation of the destination
+				// directory in the right parent directory (nested binds)
+				if ovDirs, ok := m.ovDirs[filepath.Dir(p)]; ok {
+					m.overrideDir(p, filepath.Join(ovDirs[0], filepath.Base(p)))
 				}
 			}
 		}
@@ -107,7 +115,7 @@ func (m *Manager) SetRootPath(path string) error {
 		return fmt.Errorf("root path is already set")
 	}
 	if m.ovDirs == nil {
-		m.ovDirs = make(map[string]string)
+		m.ovDirs = make(map[string][]string)
 	}
 	if m.dirs == nil {
 		m.dirs = make([]*dir, 0)
@@ -160,15 +168,21 @@ func (m *Manager) AddSymlink(path string, target string) error {
 }
 
 // overrideDir will substitute another directory to the one associated
-// to directory located by path
+// to directory located by path. When called multiple times subsequent
+// path are used to store directories to be created for nested binds.
 func (m *Manager) overrideDir(path string, realpath string) {
-	m.ovDirs[path] = realpath
+	for _, ovDir := range m.ovDirs[path] {
+		if ovDir == realpath {
+			return
+		}
+	}
+	m.ovDirs[path] = append(m.ovDirs[path], realpath)
 }
 
 // GetOverridePath returns the real path for the session path
 func (m *Manager) GetOverridePath(path string) (string, error) {
 	if p, ok := m.ovDirs[path]; ok {
-		return p, nil
+		return p[0], nil
 	}
 	return "", fmt.Errorf("no override directory %s", path)
 }
@@ -246,9 +260,20 @@ func (m *Manager) sync() error {
 		for p, e := range m.entries {
 			if e == d {
 				path = m.rootPath + p
-				if ovDir, ok := m.ovDirs[p]; ok {
-					if _, err := os.Stat(ovDir); err != nil {
-						path = ovDir
+				if ovDirs, ok := m.ovDirs[p]; ok {
+					// overrided path, we won't create directories
+					// in the session directory
+					if len(ovDirs) > 1 {
+						path = ""
+					}
+					for i, ovDir := range ovDirs {
+						if _, err := os.Stat(ovDir); err != nil {
+							if i == 0 {
+								path = ovDir
+							} else if err := os.Mkdir(ovDir, m.DirMode); err != nil {
+								return fmt.Errorf("failed to create %s directory: %s", ovDir, err)
+							}
+						}
 					}
 				}
 				break
@@ -276,7 +301,7 @@ func (m *Manager) sync() error {
 
 	for p, e := range m.entries {
 		path := m.rootPath + p
-		if ovDir, ok := m.ovDirs[filepath.Dir(p)]; ok {
+		if ovDir, err := m.GetOverridePath(filepath.Dir(p)); err == nil {
 			path = filepath.Join(ovDir, filepath.Base(p))
 		}
 		switch entry := e.(type) {

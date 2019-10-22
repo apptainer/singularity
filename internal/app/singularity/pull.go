@@ -178,7 +178,7 @@ func OrasPull(ctx context.Context, imgCache *cache.Handle, name, ref string, for
 func OciPull(ctx context.Context, imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCleanUp bool) error {
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify:    noHTTPS,
-		DockerInsecureSkipTLSVerify: noHTTPS,
+		DockerInsecureSkipTLSVerify: ocitypes.NewOptionalBool(noHTTPS),
 		DockerAuthConfig:            ociAuth,
 	}
 

@@ -6,136 +6,138 @@
 package config
 
 import (
+	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 )
 
-type testConfig struct {
-	BoolYes            bool     `default:"yes" authorized:"yes,no" directive:"bool_yes"`
-	BoolNo             bool     `default:"no" authorized:"yes,no" directive:"bool_no"`
-	Uint               uint     `default:"0" directive:"uint"`
-	Int                int      `default:"-0" directive:"int"`
-	String             string   `directive:"string"`
-	StringAuthorized   string   `authorized:"value1,value2" directive:"string_authorized"`
-	StringSlice        []string `directive:"string_slice"`
-	StringSliceDefault []string `default:"value1,value2" directive:"string_slice_default"`
-}
+var configTemplate = filepath.Join(buildcfg.SOURCEDIR, "etc/conf/singularity.conf")
 
-func genConfig(content []byte) (string, error) {
-	f, err := ioutil.TempFile("", "parser-")
-	if err != nil {
-		return "", err
+func TestGenerate(t *testing.T) {
+	discard := ioutil.Discard
+
+	if err := Generate(discard, "", nil); err == nil {
+		t.Fatalf("unexpected success with non-existent template")
 	}
-	defer f.Close()
-	if _, err := f.Write(content); err != nil {
-		return "", err
+	if err := Generate(discard, configTemplate, nil); err == nil {
+		t.Fatalf("unexpected success with non-existent template")
 	}
-	return f.Name(), nil
 }
 
 func TestParser(t *testing.T) {
-	var def testConfig
-	var valid testConfig
+	f, err := ioutil.TempFile("", "singularity.conf-")
+	if err != nil {
+		t.Fatalf("failed to create temporary configuration file: %s", err)
+	}
+	configFile := f.Name()
+	defer os.Remove(configFile)
 
-	if err := Parser("test_samples/no.conf", &def); err == nil {
+	defaultConfig, err := GetConfig(nil)
+	if err != nil {
+		t.Fatalf("failed to get the default configuration: %s", err)
+	}
+
+	if err := Generate(f, configTemplate, defaultConfig); err != nil {
+		t.Fatalf("failed to generate default configuration: %s", err)
+	}
+
+	f.Close()
+
+	if _, err = ParseFile("test_samples/no.conf"); err == nil {
 		t.Errorf("unexpected success while opening non existent configuration file")
 	}
 
-	if err := Parser("", &def); err != nil {
-		t.Error(err)
-	}
-	if def.BoolYes != true {
-		t.Errorf("unexpected value for bool_yes: %v", def.BoolYes)
-	}
-	if def.BoolNo != false {
-		t.Errorf("unexpected value for bool_no: %v", def.BoolNo)
-	}
-	if def.Uint != 0 {
-		t.Errorf("unexpected value for uint: %v", def.Uint)
-	}
-	if def.Int != 0 {
-		t.Errorf("unexpected value for int: %v", def.Int)
-	}
-	if def.String != "" {
-		t.Errorf("unexpected value for string: %v", def.String)
-	}
-	if def.StringAuthorized != "" {
-		t.Errorf("unexpected value for string_authorized: %v", def.StringAuthorized)
-	}
-	if !reflect.DeepEqual(def.StringSlice, []string{}) {
-		t.Errorf("unexpected value for string_slice: %v", def.StringSlice)
-	}
-	if !reflect.DeepEqual(def.StringSliceDefault, []string{"value1", "value2"}) {
-		t.Errorf("unexpected value for string_slice_default: %v", def.StringSliceDefault)
-	}
-
-	validConfig := []byte(`
-		bool_yes = no
-		bool_no = yes
-		uint = 1
-		int = -1
-		string = data
-		string_authorized = value2
-		string_slice = value1
-		string_slice = value2
-		string_slice = value3
-		string_slice_default = value3
-	`)
-
-	path, err := genConfig(validConfig)
+	config, err := ParseFile(configFile)
 	if err != nil {
-		t.Error(err)
-	}
-	defer os.Remove(path)
-
-	if err := Parser(path, &valid); err != nil {
-		t.Error(err)
-	}
-	if valid.BoolYes != false {
-		t.Errorf("unexpected value for bool_yes: %v", valid.BoolYes)
-	}
-	if valid.BoolNo != true {
-		t.Errorf("unexpected value for bool_no: %v", valid.BoolNo)
-	}
-	if valid.Uint != 1 {
-		t.Errorf("unexpected value for uint: %v", valid.Uint)
-	}
-	if valid.Int != -1 {
-		t.Errorf("unexpected value for int: %v", valid.Int)
-	}
-	if valid.String != "data" {
-		t.Errorf("unexpected value for string: %v", valid.String)
-	}
-	if valid.StringAuthorized != "value2" {
-		t.Errorf("unexpected value for string_authorized: %v", valid.StringAuthorized)
-	}
-	if !reflect.DeepEqual(valid.StringSlice, []string{"value1", "value2", "value3"}) {
-		t.Errorf("unexpected value for string_slice: %v", valid.StringSlice)
-	}
-	if !reflect.DeepEqual(valid.StringSliceDefault, []string{"value3"}) {
-		t.Errorf("unexpected value for string_slice_default: %v", valid.StringSliceDefault)
+		t.Errorf("unexpected error while parsing %s: %s", configFile, err)
 	}
 
-	for _, s := range []string{
-		"bool_yes = enable",
-		"bool_no = disable",
-		"uint = -1",
-		"int = string",
-		"string_authorized = value3",
-	} {
-		badConfig := []byte(s)
+	if !reflect.DeepEqual(config, defaultConfig) {
+		t.Errorf("config != defaultConfig")
+	}
 
-		path, err = genConfig(badConfig)
-		if err != nil {
-			t.Error(err)
-		}
+	config, err = ParseFile("")
+	if err != nil {
+		t.Errorf("unexpected error while parsing %s: %s", configFile, err)
+	}
 
-		if err := Parser(path, &valid); err == nil {
-			t.Errorf("unexpected success while parsing %s", s)
-		}
+	if !reflect.DeepEqual(config, defaultConfig) {
+		t.Errorf("parsed configuration doesn't match the default configuration")
+	}
+}
 
-		os.Remove(path)
+type faultyReader struct {
+	io.Reader
+}
+
+func (f *faultyReader) Read([]byte) (int, error) {
+	return 0, fmt.Errorf("faulty read")
+}
+
+func TestGetDirectives(t *testing.T) {
+	emptyDirectives := make(Directives)
+
+	faulty := new(faultyReader)
+	if _, err := GetDirectives(faulty); err == nil {
+		t.Fatalf("unexpected success while getting directives from faulty reader")
+	}
+
+	directives, err := GetDirectives(nil)
+	if err != nil {
+		t.Fatalf("unexpected error while getting directives from nil reader: %s", err)
+	}
+
+	if !reflect.DeepEqual(directives, emptyDirectives) {
+		t.Errorf("parsed configuration doesn't match the default configuration")
+	}
+}
+
+func TestGetConfig(t *testing.T) {
+	directives := make(Directives)
+
+	directives["allow setuid"] = []string{"bad"}
+
+	if _, err := GetConfig(directives); err == nil {
+		t.Errorf("unexpected success while getting config with bad value")
+	}
+
+	directives["allow setuid"] = []string{"no"}
+	directives["mount dev"] = []string{"bad"}
+
+	if _, err := GetConfig(directives); err == nil {
+		t.Errorf("unexpected success while getting config with bad value")
+	}
+
+	directives["max loop devices"] = []string{"-42"}
+	directives["mount dev"] = []string{"minimal"}
+
+	if _, err := GetConfig(directives); err == nil {
+		t.Errorf("unexpected success while getting config with bad value")
+	}
+
+	directives["max loop devices"] = []string{"42"}
+	directives["bind path"] = []string{"/etc/hosts"}
+
+	config, err := GetConfig(directives)
+	if err != nil {
+		t.Errorf("unexpected error while getting config: %s", err)
+	}
+	if config.AllowSetuid != false {
+		t.Errorf("bad value for AllowSetuid: %v", config.AllowSetuid)
+	}
+	if config.MaxLoopDevices != 42 {
+		t.Errorf("bad value for MaxLoopDevices: %v", config.MaxLoopDevices)
+	}
+	if config.MountDev != "minimal" {
+		t.Errorf("bad value for MountDev: %v", config.MountDev)
+	}
+	if !reflect.DeepEqual(config.BindPath, directives["bind path"]) {
+		t.Errorf("bad value for BindPath: %v", config.BindPath)
 	}
 }

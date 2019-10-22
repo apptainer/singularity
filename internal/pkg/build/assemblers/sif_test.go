@@ -15,7 +15,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
-	"github.com/sylabs/singularity/internal/pkg/test"
 	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/pkg/build/types"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -36,9 +35,6 @@ func TestMain(m *testing.M) {
 
 // TestSIFAssemblerDocker sees if we can build a SIF image from an image from a Docker registry
 func TestSIFAssemblerDocker(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
 	mksquashfsPath, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		t.Fatalf("could not find mksquashfs: %v", err)
@@ -91,8 +87,6 @@ func TestSIFAssemblerDocker(t *testing.T) {
 func TestSIFAssemblerShub(t *testing.T) {
 	// TODO(mem): reenable this; disabled while shub is down
 	t.Skip("Skipping tests that access singularity hub")
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
 
 	mksquashfsPath, err := exec.LookPath("mksquashfs")
 	if err != nil {

@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	fileName      = "remote.yaml"
 	sysDir        = "singularity"
 	remoteWarning = "no authentication token, log in with `singularity remote login`"
 )
@@ -32,8 +31,8 @@ var (
 )
 
 // assemble values of remoteConfig for user/sys locations
-var remoteConfigUser = filepath.Join(syfs.ConfigDir(), fileName)
-var remoteConfigSys = filepath.Join(buildcfg.SYSCONFDIR, sysDir, fileName)
+var remoteConfigUser = syfs.RemoteConf()
+var remoteConfigSys = filepath.Join(buildcfg.SYSCONFDIR, sysDir, syfs.RemoteConfFile)
 
 // -g|--global
 var remoteGlobalFlag = cmdline.Flag{

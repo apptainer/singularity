@@ -100,10 +100,4 @@ clean:
 install: $(INSTALLFILES)
 	@echo " DONE"
 
-# generate the vendor folder with dep
-.PHONY: vendor
-vendor:
-	@echo " VENDOR"
-	$(V)$(GO) mod vendor >/dev/null
-
 -include $(BUILDDIR)/mergeddeps
