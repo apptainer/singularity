@@ -3,7 +3,7 @@ module github.com/sylabs/singularity
 go 1.13
 
 require (
-	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
+	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
 	github.com/VividCortex/ewma v1.1.1 // indirect
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
 	github.com/apex/log v1.1.1
@@ -12,7 +12,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/bshuster-repo/logrus-logstash-hook v0.4.1 // indirect
-	github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23
+	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
@@ -22,6 +22,7 @@ require (
 	github.com/containernetworking/plugins v0.8.2
 	github.com/containers/image v3.0.2+incompatible
 	github.com/containers/storage v1.13.5 // indirect
+	github.com/creack/pty v1.1.9 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/deislabs/oras v0.4.0
 	github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572 // indirect
@@ -94,7 +95,7 @@ require (
 	go.etcd.io/bbolt v1.3.3 // indirect
 	go4.org v0.0.0-20180417224846-9599cf28b011 // indirect
 	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
-	golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb
+	golang.org/x/sys v0.0.0-20191020212454-3e7259c5e7c2
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/grpc v1.20.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
