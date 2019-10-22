@@ -32,7 +32,7 @@ dist:
 		exit 1 ; \
 	fi
 	$(V) cd $(SOURCEDIR) && $(GO) mod vendor
-	$(V) cd $(SOURCEDIR) && $(SOURCEDIR)/scripts/make-dist.sh
+	$(V) cd $(SOURCEDIR) && $(SOURCEDIR)/scripts/make-dist.sh $(VERSION)
 	$(V) rm -rf '$(SOURCEDIR)/vendor'
 
 .PHONY: unit-test
