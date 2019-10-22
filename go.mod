@@ -3,7 +3,7 @@ module github.com/sylabs/singularity
 go 1.13
 
 require (
-	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
+	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
 	github.com/VividCortex/ewma v1.1.1 // indirect
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
 	github.com/apex/log v1.1.1
@@ -22,6 +22,7 @@ require (
 	github.com/containernetworking/plugins v0.8.2
 	github.com/containers/image v3.0.2+incompatible
 	github.com/containers/storage v1.13.5 // indirect
+	github.com/creack/pty v1.1.9 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/deislabs/oras v0.4.0
 	github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572 // indirect
