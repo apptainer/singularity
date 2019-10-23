@@ -113,7 +113,7 @@ replace (
 	// where the patches have been merged. Dependency conflicts currently
 	// prevent this.
 	// For more detail see: https://github.com/sylabs/umoci/blob/singularity/README.md
-	github.com/openSUSE/umoci => github.com/sylabs/umoci v0.4.3-0.20191017185224-21061af9a1e7
+	github.com/openSUSE/umoci => github.com/sylabs/umoci v0.4.3-0.20191023165551-c75d775ed7fd
 	github.com/opencontainers/image-tools => github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568
 	golang.org/x/crypto => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
 )
