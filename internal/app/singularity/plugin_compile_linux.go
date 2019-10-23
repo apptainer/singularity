@@ -93,6 +93,18 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 		return "", errors.New("singularity source directory not found")
 	}
 
+	modFlag := "-mod=readonly"
+
+	hasVendor := func() bool {
+		vendorDir := filepath.Join(workpath, "vendor")
+		_, err := os.Stat(vendorDir)
+		return !os.IsNotExist(err)
+	}()
+
+	if hasVendor {
+		modFlag = "-mod=vendor"
+	}
+
 	// assuming that sourceDir is within trimpath for now
 	out := pluginObjPath(sourceDir)
 
@@ -104,6 +116,7 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 	args := []string{
 		"build",
 		"-o", out,
+		modFlag,
 		"-trimpath",
 		"-buildmode=plugin",
 		"-tags", buildTags,

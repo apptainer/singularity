@@ -23,5 +23,15 @@ pathtop="$package_name"
 ln -sf .. builddir/$pathtop
 rmfiles="$rmfiles builddir/$pathtop"
 trap "rm -f $rmfiles" 0
-(echo VERSION; echo $package_name.spec; git ls-files) | \
-    sed "s,^,$pathtop/," | tar -C builddir -T - -czf $tarball
+
+# modules should have been vendored using the correct version of the Go
+# tool, so we expect to find a vendor directory. Bail out if there isn't
+# one.
+if test ! -d vendor ; then
+    echo 'E: vendor directory not found. Abort.'
+    exit 1
+fi
+
+(echo VERSION; echo $package_name.spec; echo vendor; git ls-files) | \
+    sed "s,^,$pathtop/," |
+    tar -C builddir -T - -czf $tarball
