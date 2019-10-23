@@ -26,7 +26,14 @@ check: codegen
 
 .PHONY: dist
 dist:
-	$(V)(cd $(SOURCEDIR) && $(SOURCEDIR)/scripts/make-dist.sh)
+	$(V) if test -e '$(SOURCEDIR)/vendor' ; then \
+		echo 'E: There is a vendor directory in $(SOURCEDIR).' ; \
+		echo 'E: This is unexpected. Abort.' ; \
+		exit 1 ; \
+	fi
+	$(V) cd $(SOURCEDIR) && $(GO) mod vendor
+	$(V) cd $(SOURCEDIR) && $(SOURCEDIR)/scripts/make-dist.sh
+	$(V) rm -rf '$(SOURCEDIR)/vendor'
 
 .PHONY: unit-test
 unit-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(BUILDDIR_ABSPATH)/unit-test.xml)

@@ -27,7 +27,13 @@ shift 3
 # get propagated down to go list.
 export GOPROXY
 
-"${go}" list -mod=readonly \
+if test -e "${srcdir}/vendor/modules.txt" ; then
+	mod_mode=vendor
+else
+	mod_mode=readonly
+fi
+
+"${go}" list -mod=${mod_mode} \
 	-deps \
 	-f '{{ with $d := . }}{{ range $d.GoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ range $d.CgoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ end }}' \
 	-tags "${gotags}" \
