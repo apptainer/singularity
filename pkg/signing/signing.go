@@ -134,12 +134,12 @@ func getDataPartitionToSign(fimg *sif.FileImage, dataType sif.Datatype) ([]*sif.
 	return data, nil
 }
 
-// descrToSign determines via argument or interactively which descriptor to sign
-func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) ([]*sif.Descriptor, error) {
+// descrToSign returns a *sif.Descriptor for every partition to sign determined by argument.
+func descrToSign(fimg *sif.FileImage, id uint32, isGroup, signAll bool) ([]*sif.Descriptor, error) {
 	descr := make([]*sif.Descriptor, 1)
 	var err error
 
-	if id == 0 {
+	if signAll {
 		descr[0], _, err = fimg.GetPartPrimSys()
 		if err != nil {
 			return nil, fmt.Errorf("no primary partition found")
@@ -168,10 +168,15 @@ func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) ([]*sif.Descripto
 		if err != nil {
 			return nil, fmt.Errorf("no descriptors found for groupid %d", id)
 		}
-	} else {
+	} else if id != 0 {
 		descr[0], _, err = fimg.GetFromDescrID(id)
 		if err != nil {
 			return nil, fmt.Errorf("no descriptor found for id %d", id)
+		}
+	} else {
+		descr[0], _, err = fimg.GetPartPrimSys()
+		if err != nil {
+			return nil, fmt.Errorf("no primary partition found")
 		}
 	}
 
@@ -181,7 +186,7 @@ func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) ([]*sif.Descripto
 // Sign takes the path of a container and generates an OpenPGP signature block for
 // its system partition. Sign uses the private keys found in the default
 // location.
-func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
+func Sign(cpath string, id uint32, isGroup, signAll bool, keyIdx int) error {
 	keyring := sypgp.NewHandle("")
 
 	// Load a private key usable for signing
@@ -225,7 +230,7 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	defer fimg.UnloadContainer()
 
 	// figure out which descriptor has data to sign
-	descr, err := descrToSign(&fimg, id, isGroup)
+	descr, err := descrToSign(&fimg, id, isGroup, signAll)
 	if err != nil {
 		return fmt.Errorf("unable to find a signable partition: %s", err)
 	}
@@ -379,13 +384,16 @@ func getSigsGroup(fimg *sif.FileImage, id uint32) ([]signatureLink, error) {
 }
 
 // return all signatures for "id" being unique or group id
-func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) ([]signatureLink, error) {
-	if id == 0 {
+func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup, verifyAll bool) ([]signatureLink, error) {
+	if verifyAll {
 		return getSigsAllPart(fimg)
 	} else if isGroup {
 		return getSigsGroup(fimg, id)
+	} else if id != 0 {
+		return getSigsDescr(fimg, id)
 	}
-	return getSigsDescr(fimg, id)
+
+	return getSigsLinkPrimPart(fimg)
 }
 
 // IsSigned Takse a container path (cpath), and will verify that
@@ -394,7 +402,7 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) ([]signat
 // if one occures, eg. "the container is not signed", or "container is
 // signed by a unknown signer".
 func IsSigned(ctx context.Context, cpath, keyServerURI string, authToken string) (bool, error) {
-	_, noLocalKey, err := Verify(ctx, cpath, keyServerURI, uint32(0), false, authToken, false, false)
+	_, noLocalKey, err := Verify(ctx, cpath, keyServerURI, uint32(0), false, false, authToken, false, false)
 	if err != nil {
 		return false, fmt.Errorf("unable to verify container: %s", cpath)
 	}
@@ -413,7 +421,7 @@ func IsSigned(ctx context.Context, cpath, keyServerURI string, authToken string)
 // from a key server if access is enabled, or if localVerify is false. Returns
 // a string of formatted output, or json (if jsonVerify is true), and true, if
 // theres no local key matching a signers entity.
-func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup bool, authToken string, localVerify, jsonVerify bool) (string, bool, error) {
+func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup, verifyAll bool, authToken string, localVerify, jsonVerify bool) (string, bool, error) {
 	keyring := sypgp.NewHandle("")
 
 	notLocalKey := false
@@ -425,7 +433,7 @@ func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup
 	defer fimg.UnloadContainer()
 
 	// Get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file.
-	sigsLink, err := getSigsForSelection(&fimg, id, isGroup)
+	sigsLink, err := getSigsForSelection(&fimg, id, isGroup, verifyAll)
 	if err != nil {
 		return "", false, fmt.Errorf("error while searching for signature blocks: %s", err)
 	}
@@ -614,6 +622,29 @@ func getSignerIdentity(ctx context.Context, keyring *sypgp.Handle, v *sif.Descri
 	}
 
 	return "", false, err
+}
+
+// getSigsLinkPrimPart is just like getSigsPrimPart, but returns a []signatureLink
+// instead of descriptors.
+func getSigsLinkPrimPart(fimg *sif.FileImage) ([]signatureLink, error) {
+	_, systemPartID, err := fimg.GetPartPrimSys()
+	if err != nil {
+		return nil, fmt.Errorf("no primary partition found")
+	}
+
+	_, sigIdx, err := fimg.GetLinkedDescrsByType(uint32(systemPartID+1), sif.DataSignature)
+	if err != nil {
+		return nil, fmt.Errorf("no signatures found for system partition")
+	}
+
+	sigLink := make([]signatureLink, len(sigIdx))
+
+	for i, s := range sigIdx {
+		sigLink[i].sigIndex = s
+		sigLink[i].dataIndex = systemPartID
+	}
+
+	return sigLink, nil
 }
 
 // return all signatures for the primary partition
