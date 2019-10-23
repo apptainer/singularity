@@ -53,7 +53,7 @@ func getDataCheckJSON(keyNum int) []string {
 	return []string{"SignerKeys", fmt.Sprintf("[%d]", keyNum), "Signer", "DataCheck"}
 }
 
-func (c ctx) singularityVerifyKeyNum(t *testing.T) {
+func (c ctx) singularityVerifyAllKeyNum(t *testing.T) {
 	keyNumPath := []string{"Signatures"}
 
 	tests := []struct {
@@ -368,7 +368,7 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		e2e.PullImage(t, c.env, corruptedURL, c.corruptedImage)
 
 		t.Run("checkAllOption", c.checkAllOption)
-		t.Run("singularityVerifyKeyNum", c.singularityVerifyKeyNum)
+		t.Run("singularityVerifyAllKeyNum", c.singularityVerifyAllKeyNum)
 		t.Run("singularityVerifySigner", c.singularityVerifySigner)
 		t.Run("singularityVerifyGroupIdOption", c.checkGroupidOption)
 		t.Run("singularityVerifyIDOption", c.checkIDOption)
