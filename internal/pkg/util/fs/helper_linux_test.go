@@ -16,6 +16,131 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
+func TestEnsureFileWithPermission(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	tmpDir, err := ioutil.TempDir("", "ensure_file_perm-")
+	if err != nil {
+		t.Errorf("Unable to make tmpdir %s", err)
+	}
+
+	//
+	// First test: Ensure a already-existing file is the
+	// correct permssion.
+	//
+
+	existFile := filepath.Join(tmpDir, "already-exists")
+
+	// Create the test file.
+	fp, err := os.OpenFile(existFile, os.O_CREATE, 0755)
+	if err != nil {
+		t.Errorf("Unable to create test file: %s", err)
+	}
+
+	// Ensure the test file is the currect permission.
+	err = fp.Chmod(0755)
+	if err != nil {
+		t.Errorf("Unable to change file permission: %s", err)
+	}
+
+	// Check the permissions.
+	finfo, err := fp.Stat()
+	if err != nil {
+		t.Errorf("Unable to stat file: %s", err)
+	}
+
+	// Double check the permission is what we expect.
+	if currentMode := finfo.Mode(); currentMode != 0755 {
+		t.Errorf("Unexpect file permission: expecting 755, got %o", currentMode)
+	}
+
+	// Now the actral test!
+	err = EnsureFileWithPermission(existFile, 0655)
+	if err != nil {
+		t.Errorf("Failed to ensure file permission: %s", err)
+	}
+
+	// Re-stat the file.
+	finfo, err = fp.Stat()
+	if err != nil {
+		t.Errorf("Unable to stat file: %s", err)
+	}
+
+	// Finally, check the file permission.
+	if currentMode := finfo.Mode(); currentMode != 0655 {
+		t.Errorf("Unexpect file permission: expecting 655, got %o", currentMode)
+	}
+
+	// Test again with another permission.
+	err = EnsureFileWithPermission(existFile, 0777)
+	if err != nil {
+		t.Errorf("Failed to ensure file permission: %s", err)
+	}
+
+	// Re-stat the file.
+	finfo, err = fp.Stat()
+	if err != nil {
+		t.Errorf("Unable to stat file: %s", err)
+	}
+
+	// Finally, check the file permission.
+	if currentMode := finfo.Mode(); currentMode != 0777 {
+		t.Errorf("Unexpect file permission: expecting 777, got %o", currentMode)
+	}
+
+	// And close the file.
+	fp.Close()
+
+	//
+	// Second test: Ensure a non-existing file is the
+	// correct permssion.
+	//
+
+	nonExistFile := filepath.Join(tmpDir, "non-exists")
+
+	// This test, EnsureFileWithPermission will need to create
+	// this file, with the correct permission.
+	err = EnsureFileWithPermission(nonExistFile, 0755)
+	if err != nil {
+		t.Errorf("Failed to create/ensure file permission: %s", err)
+	}
+
+	// Stat the file.
+	einfo, err := os.Stat(nonExistFile)
+	if err != nil {
+		t.Errorf("Unable to stat file: %s", err)
+	}
+
+	// Finally, check the file permission.
+	if currentMode := einfo.Mode(); currentMode != 0755 {
+		t.Errorf("Unexpect file permission: expecting 755, got %o", currentMode)
+	}
+
+	// Test again with another permission.
+	err = EnsureFileWithPermission(nonExistFile, 0544)
+	if err != nil {
+		t.Errorf("Failed to ensure file permission: %s", err)
+	}
+
+	// Stat the file again.
+	einfo, err = os.Stat(nonExistFile)
+	if err != nil {
+		t.Errorf("Unable to stat file: %s", err)
+	}
+
+	// Finally, check the file permission.
+	if currentMode := einfo.Mode(); currentMode != 0544 {
+		t.Errorf("Unexpect file permission: expecting 544, got %o", currentMode)
+	}
+
+	// Cleanup.
+	err = os.RemoveAll(tmpDir)
+	if err != nil {
+		t.Errorf("Unable to remove tmpdir: %s", err)
+	}
+}
+
 func TestIsFile(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -588,5 +713,46 @@ func TestFirstExistingParent(t *testing.T) {
 				t.Errorf("test %s returned %v instead of %v (%s)", tt.name, path, tt.correct, tt.path)
 			}
 		})
+	}
+}
+
+func TestForceRemoveAll(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+	// Setup a structure that os.RemoveAll should fail to remove
+	testDir, err := MakeTmpDir("", "dir", 0755)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s: %s", testDir, err)
+	}
+	testFile, err := MakeTmpFile(testDir, "file", 0644)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s: %s", testFile.Name(), err)
+	}
+	testFile.Close()
+	// Change the perm on testDir so that RemoveAll should fail
+	err = os.Chmod(testDir, 000)
+	if err != nil {
+		t.Fatalf("failed to set permissions on temporary directory %s: %s", testDir, err)
+	}
+	// Ensure that os.RemoveAll does fail with perm error (i.e. our test dir is sane)
+	err = os.RemoveAll(testDir)
+	if err == nil {
+		t.Fatalf("os.RemoveAll unexpectedly succeeded removing test directory %s", testDir)
+	}
+	if !os.IsPermission(err) {
+		t.Fatalf("os.RemoveAll unexpectedly errored trying removing test directory %s: %s", testDir, err)
+	}
+
+	// Our Test - Ensure ForceRemoveAll does *not* fail & the directory is gone
+	err = ForceRemoveAll(testDir)
+	if err != nil {
+		t.Errorf("ForceRemoveAll unexpectedly errored trying to remove test directory %s: %s", testDir, err)
+	}
+	ok, err := PathExists(testDir)
+	if err != nil {
+		t.Errorf("Error checking success of ForceRemoveAll on %s: %s", testDir, err)
+	}
+	if ok {
+		t.Errorf("ForceRemoveAll failed to remove %s", testDir)
 	}
 }

@@ -53,7 +53,7 @@ func getDataCheckJSON(keyNum int) []string {
 	return []string{"SignerKeys", fmt.Sprintf("[%d]", keyNum), "Signer", "DataCheck"}
 }
 
-func (c ctx) singularityVerifyKeyNum(t *testing.T) {
+func (c ctx) singularityVerifyAllKeyNum(t *testing.T) {
 	keyNumPath := []string{"Signatures"}
 
 	tests := []struct {
@@ -72,7 +72,7 @@ func (c ctx) singularityVerifyKeyNum(t *testing.T) {
 		},
 		{
 			name:         "verify number signers success",
-			expectNumOut: 1,
+			expectNumOut: 2,
 			imageURL:     successURL,
 			imagePath:    c.successImage,
 			expectExit:   0,
@@ -102,7 +102,7 @@ func (c ctx) singularityVerifyKeyNum(t *testing.T) {
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("verify"),
-			e2e.WithArgs("--json", tt.imagePath),
+			e2e.WithArgs("--all", "--json", tt.imagePath),
 			e2e.ExpectExit(tt.expectExit, verifyOutput),
 		)
 	}
@@ -322,6 +322,20 @@ func (c ctx) checkIDOption(t *testing.T) {
 	)
 }
 
+func (c ctx) checkAllOption(t *testing.T) {
+	cmdArgs := []string{"--all", c.successImage}
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("verify"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.RegexMatch, "^Container is signed by"),
+		),
+	)
+}
+
 func (c ctx) checkURLOption(t *testing.T) {
 	if !fs.IsFile(c.successImage) {
 		t.Fatalf("image file (%s) does not exist", c.successImage)
@@ -353,7 +367,8 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		e2e.PullImage(t, c.env, successURL, c.successImage)
 		e2e.PullImage(t, c.env, corruptedURL, c.corruptedImage)
 
-		t.Run("singularityVerifyKeyNum", c.singularityVerifyKeyNum)
+		t.Run("checkAllOption", c.checkAllOption)
+		t.Run("singularityVerifyAllKeyNum", c.singularityVerifyAllKeyNum)
 		t.Run("singularityVerifySigner", c.singularityVerifySigner)
 		t.Run("singularityVerifyGroupIdOption", c.checkGroupidOption)
 		t.Run("singularityVerifyIDOption", c.checkIDOption)

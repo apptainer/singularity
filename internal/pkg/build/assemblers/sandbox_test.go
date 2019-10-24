@@ -14,7 +14,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
-	"github.com/sylabs/singularity/internal/pkg/test"
 	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -26,9 +25,6 @@ const (
 
 // TestSandboxAssemblerDocker sees if we can build a sandbox from an image from a Docker registry
 func TestSandboxAssemblerDocker(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
 	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-sandboxAssembler"), os.TempDir())
 	if err != nil {
 		t.Fatalf("unable to make bundle: %v", err)
@@ -74,8 +70,6 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 func TestSandboxAssemblerShub(t *testing.T) {
 	// TODO(mem): reenable this; disabled while shub is down
 	t.Skip("Skipping tests that access singularity hub")
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
 
 	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-sandboxAssembler"), os.TempDir())
 	if err != nil {

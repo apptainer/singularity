@@ -8,9 +8,11 @@ package sources
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 func testWithGoodDir(t *testing.T, f func(d string) error) {
@@ -58,6 +60,18 @@ func TestMakeFiles(t *testing.T) {
 		return makeFiles(d)
 	})
 	testWithBadDir(t, makeFiles)
+	// #4532 - Check that we can succeed with an existing file that doesn't have
+	// write permission.
+	testWithGoodDir(t, func(d string) error {
+		if err := makeDirs(d); err != nil {
+			return err
+		}
+		err := fs.EnsureFileWithPermission(filepath.Join(d, "etc", "hosts"), 0400)
+		if err != nil {
+			t.Fatalf("Failed to make test hosts file: %s", err)
+		}
+		return makeFiles(d)
+	})
 }
 
 func TestMakeBaseEnv(t *testing.T) {

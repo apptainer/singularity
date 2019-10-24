@@ -95,6 +95,46 @@ func (c ctx) singularitySignIDOption(t *testing.T) {
 	}
 }
 
+func (c ctx) singularitySignAllOption(t *testing.T) {
+	imgPath, cleanup := c.prepareImage(t)
+	defer cleanup(t)
+
+	tests := []struct {
+		name       string
+		args       []string
+		expectOp   e2e.SingularityCmdResultOp
+		expectExit int
+	}{
+		{
+			name:       "sign default",
+			args:       []string{imgPath},
+			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied to "+imgPath),
+			expectExit: 0,
+		},
+		{
+			name:       "sign all",
+			args:       []string{"--all", imgPath},
+			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied to "+imgPath),
+			expectExit: 0,
+		},
+	}
+
+	c.env.KeyringDir = c.keyringDir
+	c.env.ImgCacheDir = c.imgCache
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("sign"),
+			e2e.WithArgs(tt.args...),
+			e2e.ConsoleRun(c.passphraseInput...),
+			e2e.ExpectExit(tt.expectExit, tt.expectOp),
+		)
+	}
+}
+
 func (c ctx) singularitySignGroupIDOption(t *testing.T) {
 	imgPath, cleanup := c.prepareImage(t)
 	defer cleanup(t)
@@ -212,7 +252,7 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		c.passphraseInput = []e2e.SingularityConsoleOp{
 			e2e.ConsoleSendLine("passphrase"),
 		}
-
+		t.Run("singularitySignAllOption", c.singularitySignAllOption)
 		t.Run("singularitySignHelpOption", c.singularitySignHelpOption)
 		t.Run("singularitySignIDOption", c.singularitySignIDOption)
 		t.Run("singularitySignGroupIDOption", c.singularitySignGroupIDOption)

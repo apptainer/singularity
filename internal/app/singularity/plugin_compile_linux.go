@@ -62,16 +62,18 @@ func pluginManifestPath(sourceDir string) string {
 // location of the plugin SIF file.
 func CompilePlugin(sourceDir, destSif, buildTags string) error {
 	// build plugin object using go build
-	_, err := buildPlugin(sourceDir, buildTags)
+	soPath, err := buildPlugin(sourceDir, buildTags)
 	if err != nil {
 		return fmt.Errorf("while building plugin .so: %v", err)
 	}
+	defer os.Remove(soPath)
 
 	// generate plugin manifest from .so
-	_, err = generateManifest(sourceDir)
+	mPath, err := generateManifest(sourceDir)
 	if err != nil {
 		return fmt.Errorf("while generating plugin manifest: %s", err)
 	}
+	defer os.Remove(mPath)
 
 	// convert the built plugin object into a sif
 	if err := makeSIF(sourceDir, destSif); err != nil {
@@ -84,11 +86,23 @@ func CompilePlugin(sourceDir, destSif, buildTags string) error {
 // buildPlugin takes sourceDir which is the string path the host which contains the source code of
 // the plugin. buildPlugin returns the path to the built file, along with an error.
 //
-// This function essentially runs the `go build -buildmode=plugin [...]` command
+// This function essentially runs the `go build -buildmode=plugin [...]` command.
 func buildPlugin(sourceDir, buildTags string) (string, error) {
 	workpath, err := getSingularitySrcDir()
 	if err != nil {
 		return "", errors.New("singularity source directory not found")
+	}
+
+	modFlag := "-mod=readonly"
+
+	hasVendor := func() bool {
+		vendorDir := filepath.Join(workpath, "vendor")
+		_, err := os.Stat(vendorDir)
+		return !os.IsNotExist(err)
+	}()
+
+	if hasVendor {
+		modFlag = "-mod=vendor"
 	}
 
 	// assuming that sourceDir is within trimpath for now
@@ -102,11 +116,10 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 	args := []string{
 		"build",
 		"-o", out,
+		modFlag,
+		"-trimpath",
 		"-buildmode=plugin",
-		"-mod=vendor",
 		"-tags", buildTags,
-		fmt.Sprintf("-gcflags=all=-trimpath=%s", workpath),
-		fmt.Sprintf("-asmflags=all=-trimpath=%s", workpath),
 		sourceDir,
 	}
 

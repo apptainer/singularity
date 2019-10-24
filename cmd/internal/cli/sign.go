@@ -17,6 +17,7 @@ import (
 
 var (
 	privKey int // -k encryption key (index from 'keys list') specification
+	signAll bool
 )
 
 // -u|--url
@@ -70,6 +71,16 @@ var signKeyIdxFlag = cmdline.Flag{
 	Usage:        "private key to use (index from 'keys list')",
 }
 
+// -a|--all
+var signAllFlag = cmdline.Flag{
+	ID:           "signAllFlag",
+	Value:        &signAll,
+	DefaultValue: false,
+	Name:         "all",
+	ShortHand:    "a",
+	Usage:        "sign all non-signature partitions in a SIF",
+}
+
 func init() {
 	cmdManager.RegisterCmd(SignCmd)
 
@@ -78,6 +89,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&signSifDescSifIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifDescIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signKeyIdxFlag, SignCmd)
+	cmdManager.RegisterFlagForCmd(&signAllFlag, SignCmd)
 }
 
 // SignCmd singularity sign
@@ -124,7 +136,11 @@ func doSignCmd(cmd *cobra.Command, cpath string) {
 		id = sifDescID
 	}
 
-	if err := signing.Sign(cpath, id, isGroup, privKey); err != nil {
+	if (id != 0 || isGroup) && signAll {
+		sylog.Fatalf("'--all' not compatible with '--sif-id' or '--groupid'")
+	}
+
+	if err := signing.Sign(cpath, id, isGroup, signAll, privKey); err != nil {
 		sylog.Fatalf("Failed to sign container: %s", err)
 	}
 	fmt.Printf("Signature created and applied to %s\n", cpath)

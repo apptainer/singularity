@@ -18,7 +18,6 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
-	"github.com/sylabs/singularity/internal/pkg/test"
 	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/pkg/build/types"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -53,9 +52,6 @@ func TestOCIConveyorDocker(t *testing.T) {
 		t.SkipNow()
 	}
 
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
 	// set a clean image cache
 	imgCache, cleanup := setupCache(t)
 	defer cleanup()
@@ -88,9 +84,6 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
-
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
 
 	archive, err := getTestTar(dockerArchiveURI)
 	if err != nil {
@@ -127,9 +120,6 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 // TestOCIConveyerDockerDaemon tests if we can use an oci laytout dir
 // as a source
 func TestOCIConveyorDockerDaemon(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
 	cmd := exec.Command("docker", "ps")
 	err := cmd.Run()
 	if err != nil {
@@ -173,9 +163,6 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 // TestOCIConveyorOCIArchive tests if we can use an oci archive
 // as a source
 func TestOCIConveyorOCIArchive(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
 	archive, err := getTestTar(ociArchiveURI)
 	if err != nil {
 		t.Fatalf("Could not download oci archive test file: %v", err)
@@ -211,9 +198,6 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 // TestOCIConveyerOCILayout tests if we can use an oci layout dir
 // as a source
 func TestOCIConveyorOCILayout(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
 	archive, err := getTestTar(ociArchiveURI)
 	if err != nil {
 		t.Fatalf("Could not download oci archive test file: %v", err)
@@ -261,9 +245,6 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 
 // TestOCIPacker checks if we can create a Kitchen
 func TestOCIPacker(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
 	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-oci"), os.TempDir())
 	if err != nil {
 		return

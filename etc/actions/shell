@@ -6,6 +6,18 @@ for script in /.singularity.d/env/*.sh; do
     fi
 done
 
+# See https://github.com/sylabs/singularity/issues/2721,
+# as bash is often used as the current shell it may confuse
+# users when entering in singularity container via -s /bin/bash
+# implying to override PS1 set by singularity and we may end up
+# with a shell prompt identical to the host one, so we force PS1
+# through bash PROMPT_COMMAND
+if test -z "${PROMPT_COMMAND:-}"; then
+    export PROMPT_COMMAND="PS1=\"${PS1}\"; unset PROMPT_COMMAND"
+else
+    export PROMPT_COMMAND="${PROMPT_COMMAND:-}; PS1=\"${PS1}\"; PROMPT_COMMAND=\"${PROMPT_COMMAND:-}\""
+fi
+
 if test -n "$SINGULARITY_SHELL" -a -x "$SINGULARITY_SHELL"; then
     exec $SINGULARITY_SHELL "$@"
 

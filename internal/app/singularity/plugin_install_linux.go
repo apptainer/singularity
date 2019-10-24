@@ -6,26 +6,26 @@
 package singularity
 
 import (
+	"fmt"
+
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 )
 
 // InstallPlugin takes a plugin located at path and installs it into
-// the singularity folder in libexecdir.
+// the singularity folder in libexecDir.
 //
 // Installing a plugin will also automatically enable it.
-func InstallPlugin(pluginPath, libexecdir string) error {
+func InstallPlugin(pluginPath, pluginName, libexecDir string) error {
 	fimg, err := sif.LoadContainer(pluginPath, true)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not load plugin: %w", err)
 	}
-
 	defer fimg.UnloadContainer()
 
-	_, err = plugin.InstallFromSIF(&fimg, libexecdir)
+	err = plugin.InstallFromSIF(&fimg, pluginName, libexecDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not install plugin: %w", err)
 	}
-
 	return nil
 }

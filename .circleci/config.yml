@@ -67,15 +67,28 @@ x-run:
       # Skip e2e by default
       require_e2e=false
 
-      TARGET_BRANCH=$(curl -s "https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/pulls/${CIRCLE_PR_NUMBER}" | jq -r .base.ref)
+      pull_info_file=$(mktemp)
+
+      curl -s "https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/pulls/${CIRCLE_PR_NUMBER}" > "${pull_info_file}"
+
+      # Keep the matching lines instead of simply looking at the exit
+      # code for debugging purposes
+      E2E_LABELS=$(jq -r '.labels[].name' < "${pull_info_file}" | grep --line-regexp --fixed-strings ci:e2e || true)
+
+      if test -n "${E2E_LABELS}" ; then
+        echo "Honoring request to run E2E tests from pull request labels"
+        exit 0
+      fi
+
+      TARGET_BRANCH=$(jq -r .base.ref < "${pull_info_file}")
 
       case "${TARGET_BRANCH}" in
           master|release-*)
               if git --no-pager diff --name-only HEAD "origin/${TARGET_BRANCH}" |
-                 grep -q -E '^(e2e|vendor|\.circleci)/'
+                 grep -q -E -f .ci/e2e_triggers
               then
-                  # There are changes in .circleci, e2e or vendor
-                  # directories, require e2e
+                  # There are changes in critical components, require
+                  # e2e
                   require_e2e=true
               fi
               ;;
@@ -86,7 +99,7 @@ x-run:
       esac
 
       if ! "$require_e2e" ; then
-        echo "No changes in e2e or vendor directories, skipping tests"
+        echo "No changes in critical components, skipping tests"
         circleci step halt
       fi
 
@@ -113,8 +126,8 @@ jobs:
           keys:
             - go-mod-{{ checksum "go.sum" }}
       - run:
-          name: Check vendor/ module is up-to-date
-          command: scripts/check-vendor
+          name: Check go.mod
+          command: scripts/check-go.mod
       - save_cache:
           key: go-mod-{{ checksum "go.sum" }}
           paths:

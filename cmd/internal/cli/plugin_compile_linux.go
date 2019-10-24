@@ -13,6 +13,7 @@ import (
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
@@ -38,6 +39,15 @@ var PluginCompileCmd = &cobra.Command{
 		sourceDir, err := filepath.Abs(args[0])
 		if err != nil {
 			sylog.Fatalf("While sanitizing input path: %s", err)
+		}
+
+		exists, err := fs.PathExists(sourceDir)
+		if err != nil {
+			sylog.Fatalf("Could not check %q exists: %v", sourceDir, err)
+		}
+
+		if !exists {
+			sylog.Fatalf("Compilation failed: %q doesn't exist", sourceDir)
 		}
 
 		destSif := out

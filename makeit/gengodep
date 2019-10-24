@@ -23,7 +23,17 @@ gotags=$3
 
 shift 3
 
-"${go}" list -mod=vendor \
+# this is needed so that the value we are getting from the makefile does
+# get propagated down to go list.
+export GOPROXY
+
+if test -e "${srcdir}/vendor/modules.txt" ; then
+	mod_mode=vendor
+else
+	mod_mode=readonly
+fi
+
+"${go}" list -mod=${mod_mode} \
 	-deps \
 	-f '{{ with $d := . }}{{ range $d.GoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ range $d.CgoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ end }}' \
 	-tags "${gotags}" \
