@@ -76,7 +76,7 @@ func unpackRootfs(ctx context.Context, b *sytypes.Bundle, tmpfsRef types.ImageRe
 		return fmt.Errorf("error unpacking rootfs: %s", err)
 	}
 
-	// If the `--fixperms` flag was used, then modify the permissions so that
+	// If the `--fix-perms` flag was used, then modify the permissions so that
 	// content has owner rwX and we're done
 	if b.Opts.FixPerms {
 		sylog.Warningf("The --fix-perms option modifies the filesystem permissions on the resulting container and will be removed in a future release.")
@@ -85,7 +85,7 @@ func unpackRootfs(ctx context.Context, b *sytypes.Bundle, tmpfsRef types.ImageRe
 		return fixPerms(b.RootfsPath)
 	}
 
-	// If `--fixperms` was not used and this is a sandbox, scan for restrictive
+	// If `--fix-perms` was not used and this is a sandbox, scan for restrictive
 	// perms that would stop the user doing an `rm` without a chmod first,
 	// and warn if they exist
 	if b.Opts.SandboxTarget {
@@ -93,7 +93,7 @@ func unpackRootfs(ctx context.Context, b *sytypes.Bundle, tmpfsRef types.ImageRe
 		return checkPerms(b.RootfsPath)
 	}
 
-	// No `--fixperms` and no sandbox... we are fine
+	// No `--fix-perms` and no sandbox... we are fine
 	return err
 
 }
