@@ -29,6 +29,7 @@ var buildArgs struct {
 	detached   bool
 	encrypt    bool
 	fakeroot   bool
+	fixPerms   bool
 	isJSON     bool
 	noCleanUp  bool
 	noTest     bool
@@ -183,6 +184,17 @@ var buildEncryptFlag = cmdline.Flag{
 	Usage:        "build an image with an encrypted file system",
 }
 
+// TODO: Deprecate at 3.6, remove at 3.8
+// --fix-perms
+var buildFixPermsFlag = cmdline.Flag{
+	ID:           "fixPermsFlag",
+	Value:        &buildArgs.fixPerms,
+	DefaultValue: false,
+	Name:         "fix-perms",
+	Usage:        "ensure owner has rwX permissions on all container content for oci/docker sources",
+	EnvKeys:      []string{"FIXPERMS"},
+}
+
 func init() {
 	cmdManager.RegisterCmd(buildCmd)
 
@@ -192,6 +204,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildDisableCacheFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildEncryptFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildFixPermsFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildJSONFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildLibraryFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, buildCmd)

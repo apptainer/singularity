@@ -296,7 +296,7 @@ func ForceRemoveAll(path string) error {
 	// tree and set perms that work.
 	sylog.Debugf("Forcing permissions to remove %q completely", path)
 	errors := 0
-	err = permWalk(path, func(path string, f os.FileInfo, err error) error {
+	err = PermWalk(path, func(path string, f os.FileInfo, err error) error {
 		if err != nil {
 			sylog.Errorf("Unable to access path %s: %s", path, err)
 			errors++
@@ -327,19 +327,19 @@ func ForceRemoveAll(path string) error {
 	return os.RemoveAll(path)
 }
 
-// permWalk is similar to filepath.Walk - but:
+// PermWalk is similar to filepath.Walk - but:
 //   1. The skipDir checks are removed (we never want to skip anything here)
 //   2. Our walk will call walkFn on a directory *before* attempting to look
 //      inside that directory.
-func permWalk(root string, walkFn filepath.WalkFunc) error {
+func PermWalk(root string, walkFn filepath.WalkFunc) error {
 	info, err := os.Lstat(root)
 	if err != nil {
-		return fmt.Errorf("could not access rootfs %s: %s", root, err)
+		return fmt.Errorf("could not access path %s: %s", root, err)
 	}
-	return walk(root, info, walkFn)
+	return permWalk(root, info, walkFn)
 }
 
-func walk(path string, info os.FileInfo, walkFn filepath.WalkFunc) error {
+func permWalk(path string, info os.FileInfo, walkFn filepath.WalkFunc) error {
 	if !info.IsDir() {
 		return walkFn(path, info, nil)
 	}
@@ -364,7 +364,7 @@ func walk(path string, info os.FileInfo, walkFn filepath.WalkFunc) error {
 				return err
 			}
 		} else {
-			err = walk(filename, fileInfo, walkFn)
+			err = permWalk(filename, fileInfo, walkFn)
 			if err != nil {
 				if !fileInfo.IsDir() {
 					return err
@@ -372,6 +372,51 @@ func walk(path string, info os.FileInfo, walkFn filepath.WalkFunc) error {
 			}
 		}
 	}
+	return nil
+}
+
+// PermWalkRaiseError is similar to filepath.Walk - but:
+//   1. The skipDir checks are removed (we never want to skip anything here)
+//   2. Our walk will call walkFn on a directory *before* attempting to look
+//      inside that directory.
+//   3. We back out of the recursion at the *first* error... we don't attempt
+//      to go through as much as we can.
+func PermWalkRaiseError(root string, walkFn filepath.WalkFunc) error {
+	info, err := os.Lstat(root)
+	if err != nil {
+		return fmt.Errorf("could not access path %s: %s", root, err)
+	}
+	return permWalkRaiseError(root, info, walkFn)
+}
+
+func permWalkRaiseError(path string, info os.FileInfo, walkFn filepath.WalkFunc) error {
+	if !info.IsDir() {
+		return walkFn(path, info, nil)
+	}
+
+	// Unlike filepath.walk we call walkFn *before* trying to list the content of
+	// the directory, so that walkFn has a chance to assign perms that allow us into
+	// the directory, if we can't get in there already.
+	if err := walkFn(path, info, nil); err != nil {
+		return err
+	}
+
+	names, err := readDirNames(path)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range names {
+		filename := filepath.Join(path, name)
+		fileInfo, err := os.Lstat(filename)
+		if err != nil {
+			return err
+		}
+		if err = permWalkRaiseError(filename, fileInfo, walkFn); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
