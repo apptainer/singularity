@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 
@@ -110,6 +111,52 @@ func (c *regressionsTests) issue4407(t *testing.T) {
 	}
 }
 
+// This test will build a sandbox, as a non-root user from a dockerhub image
+// that contains a single folder and file with `000` permission.
+// It will verify that with `--fix-perms` we force files to be accessible,
+// moveable, removable by the user. We check for `700` and `400` permissions on
+// the folder and file respectively.
+func (c *regressionsTests) issue4524(t *testing.T) {
+	sandbox := filepath.Join(c.env.TestDir, "issue_4524")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--fix-perms", "--sandbox", sandbox, "docker://sylabsio/issue4524"),
+		e2e.PostRun(func(t *testing.T) {
+
+			// If we failed to build the sandbox completely, leave what we have for
+			// investigation.
+			if t.Failed() {
+				t.Logf("Test %s failed, not removing directory %s", t.Name(), sandbox)
+				return
+			}
+
+			if !e2e.PathPerms(t, path.Join(sandbox, "directory"), 0700) {
+				t.Error("Expected 0700 permissions on 000 test directory in rootless sandbox")
+			}
+			if !e2e.PathPerms(t, path.Join(sandbox, "file"), 0600) {
+				t.Error("Expected 0600 permissions on 000 test file in rootless sandbox")
+			}
+
+			// If the permissions aren't as we expect them to be, leave what we have for
+			// investigation.
+			if t.Failed() {
+				t.Logf("Test %s failed, not removing directory %s", t.Name(), sandbox)
+				return
+			}
+
+			err := os.RemoveAll(sandbox)
+			if err != nil {
+				t.Logf("Cannot remove sandbox directory: %#v", err)
+			}
+
+		}),
+		e2e.ExpectExit(0),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := regressionsTests{
@@ -119,5 +166,6 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	return testhelper.TestRunner(map[string]func(*testing.T){
 		"issue 4203": c.issue4203, // https://github.com/sylabs/singularity/issues/4203
 		"issue 4407": c.issue4407, // https://github.com/sylabs/singularity/issues/4407
+		"issue 4524": c.issue4524, // https://github.com/sylabs/singularity/issues/4524
 	})
 }

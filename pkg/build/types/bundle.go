@@ -46,6 +46,8 @@ type Options struct {
 	// encryption if applicable.
 	// A nil value indicates encryption should not occur.
 	EncryptionKeyInfo *crypt.KeyInfo
+	// ImgCache stores a pointer to the image cache to use.
+	ImgCache *cache.Handle
 	// NoTest indicates if build should skip running the test script.
 	NoTest bool `json:"noTest"`
 	// Force automatically deletes an existing container at build destination while performing build.
@@ -59,8 +61,13 @@ type Options struct {
 	NoCleanUp bool `json:"noCleanUp"`
 	// NoCache when true, will not use any cache, or make cache.
 	NoCache bool
-	// ImgCache stores a pointer to the image cache to use.
-	ImgCache *cache.Handle
+	// FixPerms controls if we will ensure owner rwX on container content
+	// to preserve <=3.4 behavior.
+	// TODO: Deprecate in 3.6, remove in 3.8
+	FixPerms bool
+	// To warn when the above is needed, we need to know if the target of this
+	// bundle will be a sandbox
+	SandboxTarget bool
 }
 
 // NewEncryptedBundle creates an Encrypted Bundle environment.
