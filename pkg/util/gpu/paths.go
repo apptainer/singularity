@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package nvidia
+package gpu
 
 import (
 	"bufio"
@@ -59,15 +59,12 @@ func nvidiaContainerCli(args ...string) ([]string, error) {
 	return libs, nil
 }
 
-// nvliblist returns the libraries specified in the file specified by
-// nvliblistFile.
-//
-// Blank lines and lines starting with # are ignored; the rest of them
-// are assumed to contain the path to a library.
-func nvliblist(nvliblistFile string) ([]string, error) {
-	file, err := os.Open(nvliblistFile)
+// gpuliblist returns libraries listed in a gpu lib list config file, typically
+// located in buildcfg.SINGULARITY_CONFDIR
+func gpuliblist(configFilePath string) ([]string, error) {
+	file, err := os.Open(configFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("could not open %s: %v", nvliblistFile, err)
+		return nil, fmt.Errorf("could not open %s: %v", configFilePath, err)
 	}
 	defer file.Close()
 
@@ -82,9 +79,53 @@ func nvliblist(nvliblistFile string) ([]string, error) {
 	return libs, nil
 }
 
-// Paths returns list of nvidia libraries and binaries that should
-// be added to mounted into container if it needs NVIDIA GPUs.
-func Paths(nvliblistFile string, envPath string) ([]string, []string, error) {
+// NvidiaPaths returns a list of Nvidia libraries/binaries that should be
+// mounted into the container in order to use Nvidia GPUs
+func NvidiaPaths(configFilePath, userEnvPath string) ([]string, []string, error) {
+	if userEnvPath != "" {
+		oldPath := os.Getenv("PATH")
+		os.Setenv("PATH", userEnvPath)
+		defer os.Setenv("PATH", oldPath)
+	}
+
+	// Parse nvidia-container-cli for the necessary binaries/libs, fallback to a
+	// list of required binaries/libs if the nvidia-container-cli is unavailable
+	nvidiaFiles, err := nvidiaContainerCli("list", "--binaries", "--libraries")
+	if err != nil {
+		sylog.Verbosef("nvidiaContainerCli returned: %v", err)
+		sylog.Verbosef("Falling back to nvliblist.conf")
+
+		nvidiaFiles, err = gpuliblist(configFilePath)
+		if err != nil {
+			return nil, nil, fmt.Errorf("could not read %s: %v", filepath.Base(configFilePath), err)
+		}
+	}
+
+	return paths(nvidiaFiles)
+}
+
+// RocmPaths returns a list of rocm libraries/binaries that should be
+// mounted into the container in order to use AMD GPUs
+func RocmPaths(configFilePath, userEnvPath string) ([]string, []string, error) {
+	if userEnvPath != "" {
+		oldPath := os.Getenv("PATH")
+		os.Setenv("PATH", userEnvPath)
+		defer os.Setenv("PATH", oldPath)
+	}
+
+	rocmFiles, err := gpuliblist(configFilePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not read %s: %v", filepath.Base(configFilePath), err)
+	}
+
+	return paths(rocmFiles)
+}
+
+// paths handles generic library parsing functionality once the platform
+// specific libs/binaries have been identified
+func paths(gpuFileList []string) ([]string, []string, error) {
+	// walk through the ldconfig output and add entries which contain the filenames
+	// returned by nvidia-container-cli OR the nvliblist.conf file contents
 	ldConfig, err := exec.LookPath("ldconfig")
 	if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
 		sylog.Debugf("Could not find ldconfig in PATH")
@@ -93,26 +134,6 @@ func Paths(nvliblistFile string, envPath string) ([]string, []string, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not lookup ldconfig: %v", err)
 	}
-	if envPath != "" {
-		oldPath := os.Getenv("PATH")
-		os.Setenv("PATH", envPath)
-		defer os.Setenv("PATH", oldPath)
-	}
-
-	var nvidiaFiles []string
-	nvidiaFiles, err = nvidiaContainerCli("list", "--binaries", "--libraries")
-	if err != nil {
-		sylog.Verbosef("nvidiaContainerCli returned: %v", err)
-		sylog.Verbosef("Falling back to nvliblist.conf")
-
-		nvidiaFiles, err = nvliblist(nvliblistFile)
-		if err != nil {
-			return nil, nil, fmt.Errorf("could not read nvliblist.conf: %v", err)
-		}
-	}
-
-	// walk through the ldconfig output and add entries which contain the filenames
-	// returned by nvidia-container-cli OR the nvliblist.conf file contents
 	out, err := exec.Command(ldConfig, "-p").Output()
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not execute ldconfig: %v", err)
@@ -154,11 +175,11 @@ func Paths(nvliblistFile string, envPath string) ([]string, []string, error) {
 
 	var libraries []string
 	var binaries []string
-	for _, nvidiaFile := range nvidiaFiles {
+	for _, file := range gpuFileList {
 		// if the file contains a ".so", treat it as a library
-		if strings.Contains(nvidiaFile, ".so") {
+		if strings.Contains(file, ".so") {
 			for libPath, libName := range ldCache {
-				if !strings.HasPrefix(libName, nvidiaFile) {
+				if !strings.HasPrefix(libName, file) {
 					continue
 				}
 				if _, ok := libs[libName]; !ok {
@@ -181,7 +202,7 @@ func Paths(nvliblistFile string, envPath string) ([]string, []string, error) {
 		} else {
 			// treat the file as a binary file - add it to the bind list
 			// no need to check the ldconfig output
-			binary, err := exec.LookPath(nvidiaFile)
+			binary, err := exec.LookPath(file)
 			if err != nil {
 				continue
 			}
@@ -195,8 +216,8 @@ func Paths(nvliblistFile string, envPath string) ([]string, []string, error) {
 	return libraries, binaries, nil
 }
 
-// IpcsPath returns list of nvidia ipcs driver.
-func IpcsPath(envPath string) []string {
+// NvidiaIpcsPath returns list of nvidia ipcs driver.
+func NvidiaIpcsPath(envPath string) []string {
 	const persistencedSocket = "/var/run/nvidia-persistenced/socket"
 
 	if envPath != "" {

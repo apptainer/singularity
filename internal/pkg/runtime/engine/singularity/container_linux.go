@@ -34,9 +34,9 @@ import (
 	"github.com/sylabs/singularity/pkg/network"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
-	"github.com/sylabs/singularity/pkg/util/nvidia"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -1114,9 +1114,21 @@ func (c *container) addDevMount(system *mount.System) error {
 			return err
 		}
 		if c.engine.EngineConfig.GetNv() {
-			devs, err := nvidia.Devices(true)
+			devs, err := gpu.NvidiaDevices(true)
 			if err != nil {
 				return fmt.Errorf("failed to get nvidia devices: %v", err)
+			}
+			for _, dev := range devs {
+				if err := c.addSessionDev(dev, system); err != nil {
+					return err
+				}
+			}
+		}
+
+		if c.engine.EngineConfig.GetRocm() {
+			devs, err := gpu.RocmDevices(true)
+			if err != nil {
+				return fmt.Errorf("failed to get rocm devices: %v", err)
 			}
 			for _, dev := range devs {
 				if err := c.addSessionDev(dev, system); err != nil {

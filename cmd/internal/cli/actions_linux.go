@@ -33,8 +33,8 @@ import (
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/crypt"
+	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
-	"github.com/sylabs/singularity/pkg/util/nvidia"
 )
 
 // EnsureRootPriv ensures that a command is executed with root privileges.
@@ -212,23 +212,46 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
+	var libs, bins []string
+	var gpuConfFile, gpuPlatform string
+	userPath := os.Getenv("USER_PATH")
+
 	if !NoNvidia && (Nvidia || engineConfig.File.AlwaysUseNv) {
-		userPath := os.Getenv("USER_PATH")
+		gpuPlatform = "nv"
+		gpuConfFile = filepath.Join(buildcfg.SINGULARITY_CONFDIR, "nvliblist.conf")
 
 		if engineConfig.File.AlwaysUseNv {
+			Nvidia = true
 			sylog.Verbosef("'always use nv = yes' found in singularity.conf")
 			sylog.Verbosef("binding nvidia files into container")
 		}
 
-		libs, bins, err := nvidia.Paths(buildcfg.NVIDIALIBS_FILE, userPath)
+		// bind persistenced socket if found
+		BindPaths = append(BindPaths, gpu.NvidiaIpcsPath(userPath)...)
+		libs, bins, err = gpu.NvidiaPaths(gpuConfFile, userPath)
+
+	} else if !NoRocm && (Rocm || engineConfig.File.AlwaysUseRocm) { // Mount rocm GPU
+		gpuPlatform = "rocm"
+		gpuConfFile = filepath.Join(buildcfg.SINGULARITY_CONFDIR, "rocmliblist.conf")
+
+		if engineConfig.File.AlwaysUseRocm {
+			Rocm = true
+			sylog.Verbosef("'always use rocm = yes' found in singularity.conf")
+			sylog.Verbosef("binding rocm files into container")
+		}
+
+		libs, bins, err = gpu.RocmPaths(gpuConfFile, userPath)
+	}
+
+	if Nvidia || Rocm {
 		if err != nil {
-			sylog.Warningf("Unable to capture NVIDIA bind points: %v", err)
+			sylog.Warningf("Unable to capture %s bind points: %v", gpuPlatform, err)
 		} else {
 			if len(bins) == 0 {
-				sylog.Infof("Could not find any NVIDIA binaries on this host!")
+				sylog.Infof("Could not find any %s binaries on this host!", gpuPlatform)
 			} else {
 				if IsWritable {
-					sylog.Warningf("NVIDIA binaries may not be bound with --writable")
+					sylog.Warningf("%s binaries may not be bound with --writable", gpuPlatform)
 				}
 				binaries := make([]string, len(bins))
 				for i, binary := range bins {
@@ -238,14 +261,12 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				engineConfig.SetFilesPath(binaries)
 			}
 			if len(libs) == 0 {
-				sylog.Warningf("Could not find any NVIDIA libraries on this host!")
-				sylog.Warningf("You may need to edit %v/nvliblist.conf", buildcfg.SINGULARITY_CONFDIR)
+				sylog.Warningf("Could not find any %s libraries on this host!", gpuPlatform)
+				sylog.Warningf("You may need to manually edit %s", gpuConfFile)
 			} else {
 				engineConfig.SetLibrariesPath(libs)
 			}
 		}
-		// bind persistenced socket if found
-		engineConfig.AppendFilesPath(nvidia.IpcsPath(userPath)...)
 	}
 
 	// early check for key material before we start engine so we can fail fast if missing
@@ -297,6 +318,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetWritableImage(IsWritable)
 	engineConfig.SetNoHome(NoHome)
 	engineConfig.SetNv(Nvidia)
+	engineConfig.SetRocm(Rocm)
 	engineConfig.SetAddCaps(AddCaps)
 	engineConfig.SetDropCaps(DropCaps)
 

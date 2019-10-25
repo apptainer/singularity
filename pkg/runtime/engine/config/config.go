@@ -38,6 +38,7 @@ type FileConfig struct {
 	AllowContainerExtfs     bool     `default:"yes" authorized:"yes,no" directive:"allow container extfs"`
 	AllowContainerDir       bool     `default:"yes" authorized:"yes,no" directive:"allow container dir"`
 	AlwaysUseNv             bool     `default:"no" authorized:"yes,no" directive:"always use nv"`
+	AlwaysUseRocm           bool     `default:"no" authorized:"yes,no" directive:"always use rocm"`
 	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
 	SessiondirMaxSize       uint     `default:"16" directive:"sessiondir max size"`
