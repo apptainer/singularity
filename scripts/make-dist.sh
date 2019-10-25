@@ -1,5 +1,5 @@
 #!/bin/sh -
-# Copyright (c) Sylabs Inc. All rights reserved.
+# Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be found
 # in the LICENSE file.
 set -e
@@ -11,7 +11,16 @@ if [ ! -f $package_name.spec ]; then
     exit 1
 fi
 
-version=`scripts/get-version`
+version=$1
+
+if test -z "${version}" ; then
+    cat >&2 <-EOT
+	This program requires a version number as argument.
+	
+	        $0 {version}
+	EOT
+    exit 1
+fi
 
 echo " DIST setup VERSION: ${version}"
 echo "${version}" > VERSION
@@ -32,6 +41,10 @@ if test ! -d vendor ; then
     exit 1
 fi
 
+# XXX(mem): In order to accept filenames with colons in it (because of a
+# version number like x.y.z:1.2.3), pass the --force-local flag to tar.
+# This is understood by GNU tar. If other tar programs (also called
+# "tar") don't, this will need to be fixed.
 (echo VERSION; echo $package_name.spec; echo vendor; git ls-files) | \
     sed "s,^,$pathtop/," |
-    tar -C builddir -T - -czf $tarball
+    tar --force-local -C builddir -T - -czf "$tarball"
