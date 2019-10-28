@@ -7,6 +7,7 @@ package instance
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 
 	uuid "github.com/satori/go.uuid"
@@ -29,13 +31,13 @@ type ctx struct {
 }
 
 // Test that no instances are running.
-func (c ctx) testNoInstances(t *testing.T) {
+func (c *ctx) testNoInstances(t *testing.T) {
 	c.expectedNumberOfInstances(t, 0)
 }
 
 // Test that a basic echo server instance can be started, communicated with,
 // and stopped.
-func (c ctx) testBasicEchoServer(t *testing.T) {
+func (c *ctx) testBasicEchoServer(t *testing.T) {
 	const instanceName = "echo1"
 
 	args := []string{c.env.ImagePath, instanceName, strconv.Itoa(instanceStartPort)}
@@ -59,7 +61,7 @@ func (c ctx) testBasicEchoServer(t *testing.T) {
 }
 
 // Test creating many instances, but don't stop them.
-func (c ctx) testCreateManyInstances(t *testing.T) {
+func (c *ctx) testCreateManyInstances(t *testing.T) {
 	const n = 10
 
 	// Start n instances.
@@ -84,13 +86,13 @@ func (c ctx) testCreateManyInstances(t *testing.T) {
 }
 
 // Test stopping all running instances.
-func (c ctx) testStopAll(t *testing.T) {
+func (c *ctx) testStopAll(t *testing.T) {
 	c.stopInstance(t, "", "--all")
 }
 
 // Test basic options like mounting a custom home directory, changing the
 // hostname, etc.
-func (c ctx) testBasicOptions(t *testing.T) {
+func (c *ctx) testBasicOptions(t *testing.T) {
 	const fileName = "hello"
 	const instanceName = "testbasic"
 	const testHostname = "echoserver99"
@@ -149,7 +151,7 @@ func (c ctx) testBasicOptions(t *testing.T) {
 }
 
 // Test that contain works.
-func (c ctx) testContain(t *testing.T) {
+func (c *ctx) testContain(t *testing.T) {
 	const instanceName = "testcontain"
 	const fileName = "thegreattestfile"
 
@@ -194,7 +196,7 @@ func (c ctx) testContain(t *testing.T) {
 }
 
 // Test by running directly from URI
-func (c ctx) testInstanceFromURI(t *testing.T) {
+func (c *ctx) testInstanceFromURI(t *testing.T) {
 	instances := []struct {
 		name string
 		uri  string
@@ -235,7 +237,7 @@ func (c ctx) testInstanceFromURI(t *testing.T) {
 
 // Execute an instance process, kill master process
 // and try to start another instance with same name
-func (c ctx) testGhostInstance(t *testing.T) {
+func (c *ctx) testGhostInstance(t *testing.T) {
 	// pick up a random name
 	instanceName := uuid.NewV4().String()
 	pidfile := filepath.Join(c.env.TestDir, instanceName)
@@ -304,9 +306,39 @@ func (c ctx) testGhostInstance(t *testing.T) {
 	)
 }
 
+func (c *ctx) applyCgroupsInstance(t *testing.T) {
+	require.Cgroups(t)
+
+	if !c.profile.In(e2e.RootProfile) {
+		t.Skipf("%s requires %s profile, current profile: %s", t.Name(), e2e.RootProfile, c.profile)
+	}
+
+	// pick up a random name
+	instanceName := uuid.NewV4().String()
+	joinName := fmt.Sprintf("instance://%s", instanceName)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(c.profile),
+		e2e.WithCommand("instance start"),
+		e2e.WithArgs("--apply-cgroups", "testdata/cgroups/deny_device.toml", c.env.ImagePath, instanceName),
+		e2e.ExpectExit(0),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(c.profile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(joinName, "cat", "/dev/null"),
+		e2e.ExpectExit(1),
+	)
+
+	c.stopInstance(t, instanceName)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := ctx{
+	c := &ctx{
 		env:     env,
 		profile: e2e.UserProfile,
 	}
@@ -328,17 +360,22 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 			{"StopAll", c.testStopAll},
 			{"FinalNoInstances", c.testNoInstances},
 			{"GhostInstance", c.testGhostInstance},
+			{"ApplyCgroupsInstance", c.applyCgroupsInstance},
 		}
 
-		// run unprivileged
-		for _, tt := range tests {
-			t.Run(tt.name, tt.function)
+		profiles := []e2e.Profile{
+			e2e.UserProfile,
+			e2e.RootProfile,
 		}
 
-		// run privileged
-		c.profile = e2e.RootProfile
-		for _, tt := range tests {
-			t.Run("WithPriv"+tt.name, tt.function)
+		for _, profile := range profiles {
+			profile := profile
+			t.Run(profile.String(), func(t *testing.T) {
+				c.profile = profile
+				for _, tt := range tests {
+					t.Run(tt.name, tt.function)
+				}
+			})
 		}
 	}
 }

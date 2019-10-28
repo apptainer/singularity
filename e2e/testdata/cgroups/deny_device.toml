@@ -1,0 +1,7 @@
+# deny access to /dev/null
+[[devices]]
+  access = "rw"
+  allow = false
+  major = 1
+  minor = 3
+  type = "c"
