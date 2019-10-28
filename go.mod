@@ -62,7 +62,7 @@ require (
 	github.com/opencontainers/runtime-spec v0.1.2-0.20181111125026-1722abf79c2f
 	github.com/opencontainers/runtime-tools v0.9.0
 	github.com/opencontainers/selinux v1.3.0
-	github.com/pelletier/go-toml v1.5.0
+	github.com/pelletier/go-toml v1.6.0
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.0.0-20180607123607-faf4ec335fe0 // indirect
