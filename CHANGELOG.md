@@ -11,6 +11,36 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.4.2
 
+## New features / functionalities
+
+  - New support for AMD GPUs via `--rocm` option added to bind ROCm devices and
+    libraries into containers.
+  - Plugins can now modify Singularity behaviour with two mutators: CLI and
+    Runtime.
+  - Introduced the `config global` command to edit `singularity.conf` settings
+    from the CLI.
+  - Introduced the `config fakeroot` command to setup `subuid` and `subgid`
+    mappings for `--fakeroot` from the Singularity CLI.
+      
+## Changed defaults / behaviours
+
+  - Go 1.13 adopted.
+  - Vendored modules removed from the Git tree, will be included in release tarballs.
+  - Docker/OCI image extraction now faithfully respects layer
+    permissions.
+    - This may lead to sandboxes that cannot be removed without
+    modifying permissions.
+    - `--fix-perms` option added to preserve old behaviour when
+    building sandboxes.
+    - Discussion issue for this change at: https://github.com/sylabs/singularity/issues/4671
+  - `Singularity>` prompt is always set when entering shell in a container.
+  - The current `umask` will be honored when building a SIF file.
+  - `instance exec` processes acquire cgroups set on `instance start`
+  - `--fakeroot` supports uid/subgid ranges >65536
+  - `singularity version` now reports semver compliant version
+      information.
+    
+
 # v3.4.2 - [2019.10.08]
 
   - This point release addresses the following issues:
