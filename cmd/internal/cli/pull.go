@@ -8,10 +8,8 @@ package cli
 import (
 	"context"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"runtime"
-	"syscall"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
@@ -201,21 +199,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if !forceOverwrite {
 			sylog.Fatalf("Image file already exists: %q - will not overwrite", pullTo)
 		}
-		sylog.Debugf("Removing overridden file: %s", pullTo)
-		if err := os.Remove(pullTo); err != nil {
-			sylog.Fatalf("Unable to remove %q: %s", pullTo, err)
-		}
 	}
-
-	// monitor for OS signals and remove invalid file
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func(fileName string) {
-		<-c
-		sylog.Debugf("Removing incomplete file because of receiving Termination signal")
-		os.Remove(fileName)
-		os.Exit(1)
-	}(pullTo)
 
 	switch transport {
 	case LibraryProtocol, "":
