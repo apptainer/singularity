@@ -24,4 +24,5 @@ func init() {
 	cmdManager.RegisterCmd(configCmd)
 
 	cmdManager.RegisterSubCmd(configCmd, configFakerootCmd)
+	cmdManager.RegisterSubCmd(configCmd, configGlobalCmd)
 }

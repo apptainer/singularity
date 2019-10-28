@@ -16,17 +16,6 @@ import (
 
 func TestGenConf(t *testing.T) {
 	tmpl := "testdata/test_default.tmpl"
-	var testerUID, testerGid int
-	files := []string{"testdata/test_2.in", "testdata/test_3.in"}
-
-	for _, conf := range files {
-		// Config file must be root owned
-		err := os.Chown(conf, 0, 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
 	tests := []struct {
 		name            string
 		confInPath      string
@@ -40,9 +29,6 @@ func TestGenConf(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			testerUID = os.Getuid()
-			testerGid = os.Getgid()
-
 			defer os.Remove(tt.confOutPath)
 
 			genConf(tmpl, tt.confInPath, tt.confOutPath)
@@ -53,14 +39,6 @@ func TestGenConf(t *testing.T) {
 				t.Fatalf("Output file %v does not match correct output %v\n", tt.confOutPath, tt.confCorrectPath)
 			}
 		}))
-	}
-
-	// Return files to default owner
-	for _, conf := range files {
-		err := os.Chown(conf, testerUID, testerGid)
-		if err != nil {
-			t.Fatal(err)
-		}
 	}
 }
 
