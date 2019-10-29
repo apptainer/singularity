@@ -1006,4 +1006,25 @@ Enterprise Performance Computing (EPC)`
 
   To enable a fakeroot user mapping for vagrant user:
   $ singularity config fakeroot --enable vagrant`
+
+	ConfigGlobalUse   string = `global <option> <directive> [value,...]`
+	ConfigGlobalShort string = `Edit singularity.conf from command line (root user only)`
+	ConfigGlobalLong  string = `
+  The config global command allow administrators to set/unset/get/reset configuration
+  directives of singularity.conf from command line.`
+	ConfigGlobalExample string = `
+  To add a path to "bind path" directive:
+  $ singularity config global --set "bind path" /etc/resolv.conf
+
+  To remove a path from "bind path" directive:
+  $ singularity config global --unset "bind path" /etc/resolv.conf
+
+  To set "bind path" to the default value:
+  $ singularity config global --reset "bind path"
+
+  To get "bind path" directive value:
+  $ singularity config global --get "bind path"
+
+  To display the resulting configuration instead of writing it to file:
+  $ singularity config global --dry-run --set "bind path" /etc/resolv.conf`
 )

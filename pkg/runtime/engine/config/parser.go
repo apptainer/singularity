@@ -50,6 +50,26 @@ func GetDirectives(reader io.Reader) (Directives, error) {
 	return directives, nil
 }
 
+// HasDirective returns if the directive is present or not.
+func HasDirective(directive string) bool {
+	if directive == "" {
+		return false
+	}
+
+	config := new(FileConfig)
+	elem := reflect.ValueOf(config).Elem()
+
+	for i := 0; i < elem.NumField(); i++ {
+		typeField := elem.Type().Field(i)
+
+		if typeField.Tag.Get("directive") == directive {
+			return true
+		}
+	}
+
+	return false
+}
+
 // GetConfig sets the corresponding interface fields associated
 // with directives.
 func GetConfig(directives Directives) (*FileConfig, error) {
@@ -129,7 +149,7 @@ func GetConfig(directives Directives) (*FileConfig, error) {
 			if !found && len(authorized) > 0 && value[0] != "" {
 				return nil, fmt.Errorf("value authorized for directive '%s' are %s", dir, authorized)
 			}
-			valueField.SetString(strings.Join(value, ","))
+			valueField.SetString(value[0])
 		case reflect.Slice:
 			l := len(value)
 			v := reflect.MakeSlice(typeField.Type, l, l)
@@ -168,15 +188,27 @@ func ParseFile(filepath string) (*FileConfig, error) {
 	return GetConfig(directives)
 }
 
-// Generate executes the template stored at tmplPath on FileConfig object.
+// Generate executes the default template asset on FileConfig object if
+// no custom template path is provided otherwise it uses the template
+// found in the path.
 func Generate(out io.Writer, tmplPath string, config *FileConfig) error {
-	t, err := template.ParseFiles(tmplPath)
-	if err != nil {
-		return err
+	var err error
+	var t *template.Template
+
+	if tmplPath != "" {
+		t, err = template.ParseFiles(tmplPath)
+		if err != nil {
+			return fmt.Errorf("unable to parse template %s: %s", tmplPath, err)
+		}
+	} else {
+		t, err = template.New("singularity.conf").Parse(TemplateAsset)
+		if err != nil {
+			return fmt.Errorf("unable to create template: %s", err)
+		}
 	}
 
 	if err := t.Execute(out, config); err != nil {
-		return fmt.Errorf("unable to execute template at %s on %v: %v", tmplPath, config, err)
+		return fmt.Errorf("unable to execute template text for %s on %v: %v", t.Name(), config, err)
 	}
 
 	return nil

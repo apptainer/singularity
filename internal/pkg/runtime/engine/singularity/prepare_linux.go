@@ -16,6 +16,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/containerd/cgroups"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	fakerootutil "github.com/sylabs/singularity/internal/pkg/fakeroot"
@@ -850,6 +851,17 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 			e.EngineConfig.OciConfig.Linux = &specs.Linux{}
 		}
 		e.EngineConfig.OciConfig.Linux.Seccomp = instanceEngineConfig.OciConfig.Linux.Seccomp
+	}
+
+	if uid == 0 && !file.UserNs {
+		pid := os.Getppid()
+		path := fmt.Sprintf("/singularity/%d", file.Pid)
+		control, err := cgroups.Load(cgroups.V1, cgroups.StaticPath(path))
+		if err == nil {
+			if err := control.Add(cgroups.Process{Pid: pid}); err != nil {
+				return fmt.Errorf("while adding process to instance cgroups: %s", err)
+			}
+		}
 	}
 
 	// only root user can set this value based on instance file
