@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,65 +9,44 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
-var signalMap = map[string]syscall.Signal{
-	"SIGHUP":    syscall.SIGHUP,
-	"SIGINT":    syscall.SIGINT,
-	"SIGQUIT":   syscall.SIGQUIT,
-	"SIGILL":    syscall.SIGILL,
-	"SIGTRAP":   syscall.SIGTRAP,
-	"SIGABRT":   syscall.SIGABRT,
-	"SIGBUS":    syscall.SIGBUS,
-	"SIGFPE":    syscall.SIGFPE,
-	"SIGKILL":   syscall.SIGKILL,
-	"SIGUSR1":   syscall.SIGUSR1,
-	"SIGSEGV":   syscall.SIGSEGV,
-	"SIGUSR2":   syscall.SIGUSR2,
-	"SIGPIPE":   syscall.SIGPIPE,
-	"SIGALRM":   syscall.SIGALRM,
-	"SIGTERM":   syscall.SIGTERM,
-	"SIGSTKFLT": syscall.SIGSTKFLT,
-	"SIGCHLD":   syscall.SIGCHLD,
-	"SIGCONT":   syscall.SIGCONT,
-	"SIGSTOP":   syscall.SIGSTOP,
-	"SIGTSTP":   syscall.SIGTSTP,
-	"SIGTTIN":   syscall.SIGTTIN,
-	"SIGTTOU":   syscall.SIGTTOU,
-	"SIGURG":    syscall.SIGURG,
-	"SIGXCPU":   syscall.SIGXCPU,
-	"SIGXFSZ":   syscall.SIGXFSZ,
-	"SIGVTALRM": syscall.SIGVTALRM,
-	"SIGPROF":   syscall.SIGPROF,
-	"SIGWINCH":  syscall.SIGWINCH,
-	"SIGIO":     syscall.SIGIO,
-	"SIGPWR":    syscall.SIGPWR,
-	"SIGSYS":    syscall.SIGSYS,
+// similarSignals maps similar signals not handled
+// by unix package.
+var similarSignals = map[string]string{
+	"SIGIOT":  "SIGABRT",
+	"SIGCLD":  "SIGCHLD",
+	"SIGPOLL": "SIGIO",
 }
 
-const signalMax = syscall.SIGSYS
-
 // Convert converts a signal string to corresponding signal number
-func Convert(sig string) (syscall.Signal, error) {
-	var sigNum syscall.Signal
+func Convert(sig string) (unix.Signal, error) {
+	sigStr := strings.ToUpper(sig)
 
-	if strings.HasPrefix(sig, "SIG") {
-		if sigNum, ok := signalMap[sig]; ok {
-			return sigNum, nil
-		}
+	if !strings.HasPrefix(sigStr, "SIG") {
+		sigStr = "SIG" + sigStr
+	}
+	if s, ok := similarSignals[sigStr]; ok {
+		sigStr = s
 	}
 
-	if sigNum, ok := signalMap["SIG"+sig]; ok {
+	sigNum := unix.SignalNum(sigStr)
+	if sigNum != 0 {
 		return sigNum, nil
 	}
 
 	sigConv, err := strconv.ParseInt(sig, 10, 32)
-	if err == nil {
-		if sigConv <= int64(signalMax) && sigConv > 0 {
-			return syscall.Signal(sigConv), nil
-		}
+	if err != nil {
+		return sigNum, fmt.Errorf("%s is not a number", sig)
 	}
 
-	return sigNum, fmt.Errorf("can't convert %s to signal number", sig)
+	sigName := unix.SignalName(unix.Signal(sigConv))
+	sigNum = unix.SignalNum(sigName)
+	if sigNum == 0 {
+		return sigNum, fmt.Errorf("can't convert %s to signal number", sig)
+	}
+
+	return sigNum, nil
 }
