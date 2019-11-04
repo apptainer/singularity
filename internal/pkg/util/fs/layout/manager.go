@@ -284,11 +284,21 @@ func (m *Manager) sync() error {
 		}
 		if d.mode != m.DirMode {
 			if err := os.Mkdir(path, d.mode); err != nil {
-				return fmt.Errorf("failed to create %s directory: %s", path, err)
+				if !os.IsExist(err) {
+					return fmt.Errorf("failed to create %s directory: %s", path, err)
+				}
+				// skip owner change, not created by us
+				d.created = true
+				continue
 			}
 		} else {
 			if err := os.Mkdir(path, m.DirMode); err != nil {
-				return fmt.Errorf("failed to create %s directory: %s", path, err)
+				if !os.IsExist(err) {
+					return fmt.Errorf("failed to create %s directory: %s", path, err)
+				}
+				// skip owner change, not created by us
+				d.created = true
+				continue
 			}
 		}
 		if d.uid != uid || d.gid != gid {
@@ -309,9 +319,14 @@ func (m *Manager) sync() error {
 			if entry.created {
 				continue
 			}
-			f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, entry.mode)
+			f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, entry.mode)
 			if err != nil {
-				return fmt.Errorf("failed to create file %s: %s", path, err)
+				if !os.IsExist(err) {
+					return fmt.Errorf("failed to create file %s: %s", path, err)
+				}
+				// skip content write or owner change, not created by us
+				entry.created = true
+				continue
 			}
 			l := len(entry.content)
 			if l > 0 {
@@ -333,7 +348,19 @@ func (m *Manager) sync() error {
 				continue
 			}
 			if err := os.Symlink(entry.target, path); err != nil {
-				return fmt.Errorf("failed to create symlink %s: %s", path, err)
+				if !os.IsExist(err) {
+					return fmt.Errorf("failed to create symlink %s: %s", path, err)
+				}
+				// check that current symlink point to the right target
+				target, err := os.Readlink(path)
+				if err == nil && target != entry.target {
+					return fmt.Errorf("symlink %s point to %s instead of %s", path, target, entry.target)
+				} else if err != nil {
+					return fmt.Errorf("failed to read symlink %s: %s", path, err)
+				}
+				// skip symlink owner change, not created by us
+				entry.created = true
+				continue
 			}
 			if entry.uid != uid || entry.gid != gid {
 				if err := os.Lchown(path, entry.uid, entry.gid); err != nil {
