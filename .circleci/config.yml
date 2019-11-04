@@ -245,6 +245,8 @@ jobs:
           no_output_timeout: 35m
           command: |-
             make -C ./builddir e2e-test
+      - store_artifacts:
+          path: builddir/e2e-cmd-report.txt
 
 workflows:
   version: 2
