@@ -79,8 +79,7 @@ func unpackRootfs(ctx context.Context, b *sytypes.Bundle, tmpfsRef types.ImageRe
 	// If the `--fix-perms` flag was used, then modify the permissions so that
 	// content has owner rwX and we're done
 	if b.Opts.FixPerms {
-		sylog.Warningf("The --fix-perms option modifies the filesystem permissions on the resulting container and will be removed in a future release.")
-		sylog.Warningf("You can provide feedback about this change at https://github.com/sylabs/singularity/issues/4671")
+		sylog.Warningf("The --fix-perms option modifies the filesystem permissions on the resulting container.")
 		sylog.Debugf("Modifying permissions for file/directory owners")
 		return fixPerms(b.RootfsPath)
 	}
@@ -169,6 +168,7 @@ func checkPerms(rootfs string) (err error) {
 		sylog.Warningf("The sandbox will contain files/dirs that cannot be removed until permissions are modified")
 		sylog.Warningf("Use 'chmod -R u+rwX' to set permissions that allow removal")
 		sylog.Warningf("Use the '--fix-perms' option to 'singularity build' to modify permissions at build time")
+		sylog.Warningf("You can provide feedback about this change at https://github.com/sylabs/singularity/issues/4671")
 		// It's not an error any further up... the rootfs is still usable
 		return nil
 	}
