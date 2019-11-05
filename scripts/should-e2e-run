@@ -8,7 +8,7 @@ usage() {
 
 	Usage:
 
-	    $0 {github_username} {github_reponame} {pr_number}
+	    $0 {github_username} {github_reponame} {github_pr_url}
 	EOT
 }
 
@@ -17,18 +17,20 @@ require_e2e=false
 
 GITHUB_USERNAME=$1
 GITHUB_REPONAME=$2
-PR_NUMBER=$3
+GITHUB_PR_URL=$3
 
 if test -z "${GITHUB_USERNAME}" ; then
 	usage "$0"
-	exit 1
+	exit 2
 elif test -z "${GITHUB_REPONAME}" ; then
 	usage "$0"
-	exit 1
-elif test -z "${PR_NUMBER}" ; then
+	exit 2
+elif test -z "${GITHUB_PR_URL}" ; then
 	usage "$0"
-	exit 1
+	exit 2
 fi
+
+PR_NUMBER=$(echo "${GITHUB_PR_URL}" | sed -e 's,.*/,,')
 
 pull_info_file=$(mktemp)
 trap "rm -f ${pull_info_file}" EXIT

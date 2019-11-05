@@ -64,12 +64,23 @@ x-run:
   check_changes: &check_changes
     name: Check changes
     command: |-
-      if scripts/should-e2e-run ; then
-        echo "Verifying critical changes"
-      else
-        echo "No critical changes, skipping tests"
-        circleci step halt
-      fi
+      rc=0
+      scripts/should-e2e-run "${CIRCLE_PROJECT_USERNAME}" "${CIRCLE_PROJECT_REPONAME}" "${CIRCLE_PULL_REQUEST}" || rc=$?
+      case $rc in
+        0)
+          echo "Verifying critical changes"
+          ;;
+
+        1)
+          echo "No critical changes, skipping tests"
+          circleci step halt
+          ;;
+
+        *)
+          echo "E: scripts/should-e2e-run returned with exit code $rc. Abort."
+          exit $rc
+          ;;
+      esac
 
 jobs:
   get_source:
