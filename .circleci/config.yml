@@ -64,42 +64,10 @@ x-run:
   check_changes: &check_changes
     name: Check changes
     command: |-
-      # Skip e2e by default
-      require_e2e=false
-
-      pull_info_file=$(mktemp)
-
-      curl -s "https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/pulls/${CIRCLE_PR_NUMBER}" > "${pull_info_file}"
-
-      # Keep the matching lines instead of simply looking at the exit
-      # code for debugging purposes
-      E2E_LABELS=$(jq -r '.labels[].name' < "${pull_info_file}" | grep --line-regexp --fixed-strings ci:e2e || true)
-
-      if test -n "${E2E_LABELS}" ; then
-        echo "Honoring request to run E2E tests from pull request labels"
-        exit 0
-      fi
-
-      TARGET_BRANCH=$(jq -r .base.ref < "${pull_info_file}")
-
-      case "${TARGET_BRANCH}" in
-          master|release-*)
-              if git --no-pager diff --name-only HEAD "origin/${TARGET_BRANCH}" |
-                 grep -q -E -f .ci/e2e_triggers
-              then
-                  # There are changes in critical components, require
-                  # e2e
-                  require_e2e=true
-              fi
-              ;;
-          *)
-              # The branch is not master or release, skip e2e
-              require_e2e=false
-              ;;
-      esac
-
-      if ! "$require_e2e" ; then
-        echo "No changes in critical components, skipping tests"
+      if scripts/should-e2e-run ; then
+        echo "Verifying critical changes"
+      else
+        echo "No critical changes, skipping tests"
         circleci step halt
       fi
 
