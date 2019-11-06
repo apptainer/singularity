@@ -28,6 +28,12 @@ _The old changelog can be found in the `release-2.6` branch_
 
   - Go 1.13 adopted.
   - Vendored modules removed from the Git tree, will be included in release tarballs.
+  - Singularity will now fail with an error if a requested bind mount cannot be
+      made.
+    - This is beneficial to fail fast in workflows where a task may fail a long
+         way downstream if a bind mount is unavailable.
+    - Any unavailable bind mount sources must be removed from
+        `singularity.conf`.
   - Docker/OCI image extraction now faithfully respects layer
     permissions.
     - This may lead to sandboxes that cannot be removed without
