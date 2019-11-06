@@ -18,9 +18,9 @@ Check out [who is using Singularity](https://www.sylabs.io/singularity/whos-usin
 
 To install Singularity from source, see the [installation instructions](INSTALL.md). For other installation options, see [our website](https://www.sylabs.io/guides/3.0/user-guide/installation.html).
 
-For system administrators, see the [administrator documentation](https://www.sylabs.io/guides/3.0/admin-guide/).
+For system administrators, see the [administrator documentation](https://www.sylabs.io/guides/3.4/admin-guide/).
 
-For users, see the [user documentation](https://www.sylabs.io/guides/3.0/user-guide/).
+For users, see the [user documentation](https://www.sylabs.io/guides/3.4/user-guide/).
 
 ## Contributing to Singularity
 
