@@ -295,20 +295,38 @@ func TestEvalRelative(t *testing.T) {
 	// - /bin/sbin -> ../sbin
 	// - /sbin/sbin2 -> ../../sbin
 
+	// symlink $TMP/bin -> usr/bin
 	os.Symlink("usr/bin", filepath.Join(tmpdir, "bin"))
+	// symlink $TMP/sbin -> usr/sbin
 	os.Symlink("usr/sbin", filepath.Join(tmpdir, "sbin"))
 
+	// directory $TMP/usr/bin
 	MkdirAll(filepath.Join(tmpdir, "usr", "bin"), 0755)
+	// directory $TMP/usr/sbin
 	MkdirAll(filepath.Join(tmpdir, "usr", "sbin"), 0755)
 
+	// symlink $TMP/usr/bin/bin -> /bin
 	os.Symlink("/bin", filepath.Join(tmpdir, "bin", "bin"))
+	// symlink $TMP/usr/bin/sbin -> ../sbin
 	os.Symlink("../sbin", filepath.Join(tmpdir, "bin", "sbin"))
+	// symlink $TMP/usr/sbin/sbin2 -> ../../sbin
 	os.Symlink("../../sbin", filepath.Join(tmpdir, "sbin", "sbin2"))
+	// symlink $TMP/rootfs -> ../../../../
+	os.Symlink("../../../../", filepath.Join(tmpdir, "rootfs"))
+
+	// symlink $TMP/pool -> loop
+	os.Symlink("loop", filepath.Join(tmpdir, "pool"))
+	// symlink $TMP/loop -> pool
+	os.Symlink("pool", filepath.Join(tmpdir, "loop"))
+	// symlink $TMP/loop2 -> loop2
+	os.Symlink("loop2", filepath.Join(tmpdir, "loop2"))
 
 	testPath := []struct {
 		path string
 		eval string
 	}{
+		{"", "/"},
+		{"/", "/"},
 		{"/bin", "/usr/bin"},
 		{"/sbin", "/usr/sbin"},
 		{"/bin/bin", "/usr/bin"},
@@ -322,10 +340,14 @@ func TestEvalRelative(t *testing.T) {
 		{"/bin/sbin/test", "/usr/sbin/test"},
 		{"/sbin/sbin2/test", "/usr/sbin/test"},
 		{"/bin/bin/sbin/sbin2/test", "/usr/sbin/test"},
+		{"/rootfs", "/"},
 		{"/fake/test", "/fake/test"},
+		{"/loop", "/loop"},
+		{"/loop2", "/loop2"},
 	}
 
 	for _, p := range testPath {
+		// evaluate paths from $TMP test directory
 		eval := EvalRelative(p.path, tmpdir)
 		if eval != p.eval {
 			t.Errorf("evaluated path %s expected path %s got %s", p.path, p.eval, eval)
