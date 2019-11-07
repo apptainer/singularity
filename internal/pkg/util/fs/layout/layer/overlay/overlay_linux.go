@@ -123,8 +123,16 @@ func (o *Overlay) createLayer(rootFsPath string, system *mount.System) error {
 			if strings.HasPrefix(point.Destination, sessionDir) {
 				continue
 			}
-			p := rootFsPath + point.Destination
-			if syscall.Stat(p, st) == nil {
+
+			// get rid of symlinks and resolve the path within the
+			// rootfs path to not have false positive while creating
+			// the layer with calls below
+			dest := fs.EvalRelative(point.Destination, rootFsPath)
+
+			// now we are (almost) sure that we will get path information
+			// for a path in the rootfs path and we would create the right
+			// destination in the layer
+			if syscall.Stat(filepath.Join(rootFsPath, dest), st) == nil {
 				continue
 			}
 			if point.Type == "" {
@@ -133,8 +141,6 @@ func (o *Overlay) createLayer(rootFsPath string, system *mount.System) error {
 					continue
 				}
 			}
-
-			dest := fs.EvalRelative(point.Destination, rootFsPath)
 
 			dest = filepath.Join(lowerDir, dest)
 			if _, err := o.session.GetPath(dest); err == nil {

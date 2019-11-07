@@ -1198,6 +1198,42 @@ func (c actionTests) actionBinds(t *testing.T) {
 			exit: 255,
 		},
 		{
+			name: "SymlinkOneLevelFileBind",
+			args: []string{
+				"--bind", hostCanaryFile + ":/var/etc/symlink1",
+				sandbox,
+				"test", "-f", "/etc/symlink1",
+			},
+			exit: 0,
+		},
+		{
+			name: "SymlinkTwoLevelFileBind",
+			args: []string{
+				"--bind", hostCanaryFile + ":/var/etc/madness/symlink2",
+				sandbox,
+				"test", "-f", "/madness/symlink2",
+			},
+			exit: 0,
+		},
+		{
+			name: "SymlinkOneLevelDirBind",
+			args: []string{
+				"--bind", hostCanaryDir + ":/var/etc",
+				sandbox,
+				"test", "-f", "/etc/file",
+			},
+			exit: 0,
+		},
+		{
+			name: "SymlinkTwoLevelDirBind",
+			args: []string{
+				"--bind", hostCanaryDir + ":/var/etc/madness",
+				sandbox,
+				"test", "-f", "/madness/file",
+			},
+			exit: 0,
+		},
+		{
 			name: "NestedBindFile",
 			args: []string{
 				"--bind", canaryDirBind,
