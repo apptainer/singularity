@@ -68,5 +68,11 @@ export HELLOTHISIS
     apk update
     apk add nmap-ncat
 
+    # for symlink tests, ensure runtime will bind
+    # in the image and not on /etc on host filesystem
+    ln -s /etc /var/etc
+    mkdir /madness
+    ln -s /madness /var/etc/madness
+
 %test
     exec "$@"
