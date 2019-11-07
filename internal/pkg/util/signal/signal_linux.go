@@ -5,6 +5,16 @@
 
 package signal
 
+/*
+#include <signal.h>
+
+void raiseSignal(int sig) {
+	signal(sig, SIG_DFL);
+	raise(sig);
+}
+*/
+import "C"
+
 import (
 	"fmt"
 	"strconv"
@@ -49,4 +59,16 @@ func Convert(sig string) (unix.Signal, error) {
 	}
 
 	return sigNum, nil
+}
+
+// Raise sends a signal to the current process and ensure the
+// current signal handler is set to its default handler for the
+// corresponding signal. It allows to send signals like SIGABRT
+// without triggering Go core dump handler.
+func Raise(sig unix.Signal) {
+	// signal handlers like the one for SIGABRT can't be reset
+	// easily from Go without using rt_sigaction syscall implying
+	// to defines sigaction structure for various architecture so
+	// let's proceed with C
+	C.raiseSignal(C.int(int(sig)))
 }
