@@ -65,7 +65,7 @@ x-run:
     name: Check changes
     command: |-
       rc=0
-      scripts/should-e2e-run "${CIRCLE_PROJECT_USERNAME}" "${CIRCLE_PROJECT_REPONAME}" "${CIRCLE_PULL_REQUEST}" || rc=$?
+      scripts/should-e2e-run "${CIRCLE_PROJECT_USERNAME}" "${CIRCLE_PROJECT_REPONAME}" "${CIRCLE_BRANCH}" "${CIRCLE_PULL_REQUEST}" || rc=$?
       case $rc in
         0)
           echo "Verifying critical changes"
