@@ -51,16 +51,6 @@ var signSifDescSifIDFlag = cmdline.Flag{
 	Usage:        "descriptor ID to be signed (default system-partition)",
 }
 
-// --id (deprecated)
-var signSifDescIDFlag = cmdline.Flag{
-	ID:           "signSifDescIDFlag",
-	Value:        &sifDescID,
-	DefaultValue: uint32(0),
-	Name:         "id",
-	Usage:        "descriptor ID to be signed",
-	Deprecated:   "use '--sif-id'",
-}
-
 // -k|--keyidx
 var signKeyIdxFlag = cmdline.Flag{
 	ID:           "signKeyIdxFlag",
@@ -87,7 +77,6 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&signServerURIFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifGroupIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifDescSifIDFlag, SignCmd)
-	cmdManager.RegisterFlagForCmd(&signSifDescIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signKeyIdxFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signAllFlag, SignCmd)
 }
@@ -117,9 +106,6 @@ func doSignCmd(cmd *cobra.Command, cpath string) {
 
 	// Descriptor id should start at 1.
 	if cmd.Flag(verifySifDescSifIDFlag.Name).Changed && sifDescID == 0 {
-		sylog.Fatalf("invalid descriptor id")
-	}
-	if cmd.Flag(verifySifDescIDFlag.Name).Changed && sifDescID == 0 {
 		sylog.Fatalf("invalid descriptor id")
 	}
 

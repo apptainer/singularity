@@ -57,16 +57,6 @@ var verifySifDescSifIDFlag = cmdline.Flag{
 	Usage:        "descriptor ID to be verified (default system-partition)",
 }
 
-// --id (deprecated)
-var verifySifDescIDFlag = cmdline.Flag{
-	ID:           "verifySifDescIDFlag",
-	Value:        &sifDescID,
-	DefaultValue: uint32(0),
-	Name:         "id",
-	Usage:        "descriptor ID to be verified",
-	Deprecated:   "use '--sif-id'",
-}
-
 // -l|--local
 var verifyLocalFlag = cmdline.Flag{
 	ID:           "verifyLocalFlag",
@@ -104,7 +94,6 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&verifyServerURIFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifySifGroupIDFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifySifDescSifIDFlag, VerifyCmd)
-	cmdManager.RegisterFlagForCmd(&verifySifDescIDFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifyLocalFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifyJSONFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifyAllFlag, VerifyCmd)
@@ -148,9 +137,6 @@ func doVerifyCmd(ctx context.Context, cmd *cobra.Command, cpath, url string) {
 
 	// Descriptor id should start at 1.
 	if cmd.Flag(verifySifDescSifIDFlag.Name).Changed && sifDescID == 0 {
-		sylog.Fatalf("invalid descriptor id")
-	}
-	if cmd.Flag(verifySifDescIDFlag.Name).Changed && sifDescID == 0 {
 		sylog.Fatalf("invalid descriptor id")
 	}
 
