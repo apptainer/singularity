@@ -11,6 +11,8 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.5.0
 
+ - Deprecated `--groupid` flag for `sign` and `verify`; replaced with `--group-id`.
+
 # v3.5.0 - [2019.10.29]
 
 ## New features / functionalities
