@@ -11,7 +11,7 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.5.0
 
-# v3.5.0 - [2019.10.29]
+# v3.5.0 - [2019.11.13]
 
 ## New features / functionalities
 
@@ -47,7 +47,10 @@ _The old changelog can be found in the `release-2.6` branch_
   - `--fakeroot` supports uid/subgid ranges >65536
   - `singularity version` now reports semver compliant version
       information.
-    
+
+## Deprecated / removed commands
+
+  - Deprecated `--id` flag for `sign` and `verify`; replaced with `--sif-id`.
 
 # v3.4.2 - [2019.10.08]
 
@@ -57,8 +60,6 @@ _The old changelog can be found in the `release-2.6` branch_
     - Correctly handle the starter-suid binary for non-root installs
     - Creates CACHEDIR if it doesn't exist
     - Set apex loglevel for umoci to match singularity loglevel
-
-  - Deprecated `--id` flag for `sign` and `verify`; replaced with `--sif-id`.
 
 # v3.4.1 - [2019.09.17]
 
