@@ -295,7 +295,7 @@ func (c ctx) singularityVerifySigner(t *testing.T) {
 }
 
 func (c ctx) checkGroupidOption(t *testing.T) {
-	cmdArgs := []string{"--groupid", "1", c.successImage}
+	cmdArgs := []string{"--group-id", "1", c.successImage}
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.UserProfile),

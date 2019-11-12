@@ -37,14 +37,24 @@ var verifyServerURIFlag = cmdline.Flag{
 	EnvKeys:      []string{"URL"},
 }
 
-// -g|--groupid
+// -g|--group-id
 var verifySifGroupIDFlag = cmdline.Flag{
 	ID:           "verifySifGroupIDFlag",
 	Value:        &sifGroupID,
 	DefaultValue: uint32(0),
-	Name:         "groupid",
+	Name:         "group-id",
 	ShortHand:    "g",
 	Usage:        "group ID to be verified",
+}
+
+// --groupid (deprecated)
+var verifyOldSifGroupIDFlag = cmdline.Flag{
+	ID:           "verifyOldSifGroupIDFlag",
+	Value:        &sifGroupID,
+	DefaultValue: uint32(0),
+	Name:         "groupid",
+	Usage:        "group ID to be verified",
+	Deprecated:   "use '--group-id'",
 }
 
 // -i|--sif-id
@@ -103,6 +113,7 @@ func init() {
 
 	cmdManager.RegisterFlagForCmd(&verifyServerURIFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifySifGroupIDFlag, VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifyOldSifGroupIDFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifySifDescSifIDFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifySifDescIDFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifyLocalFlag, VerifyCmd)
@@ -168,7 +179,7 @@ func doVerifyCmd(ctx context.Context, cmd *cobra.Command, cpath, url string) {
 	}
 
 	if (id != 0 || isGroup) && verifyAll {
-		sylog.Fatalf("'--all' not compatible with '--sif-id' or '--groupid'")
+		sylog.Fatalf("'--all' not compatible with '--sif-id' or '--group-id'")
 	}
 
 	author, _, err := signing.Verify(ctx, cpath, url, id, isGroup, verifyAll, authToken, localVerify, jsonVerify)
