@@ -109,7 +109,7 @@ var SignCmd = &cobra.Command{
 }
 
 func doSignCmd(cmd *cobra.Command, cpath string) {
-	id, isGroup, err := ensureImageFlags(cmd, cpath, sifDescID, sifGroupID, signAll)
+	id, isGroup, err := checkImageAndFlags(cmd, cpath, sifDescID, sifGroupID, signAll)
 	if err != nil {
 		sylog.Fatalf("%s", err)
 	}

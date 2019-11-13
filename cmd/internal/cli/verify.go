@@ -136,7 +136,7 @@ var VerifyCmd = &cobra.Command{
 }
 
 func doVerifyCmd(ctx context.Context, cmd *cobra.Command, cpath, url string) {
-	id, isGroup, err := ensureImageFlags(cmd, cpath, sifDescID, sifGroupID, verifyAll)
+	id, isGroup, err := checkImageAndFlags(cmd, cpath, sifDescID, sifGroupID, verifyAll)
 	if err != nil {
 		sylog.Fatalf("%s", err)
 	}
@@ -156,8 +156,9 @@ func doVerifyCmd(ctx context.Context, cmd *cobra.Command, cpath, url string) {
 	sylog.Infof("Container verified: %s", cpath)
 }
 
-// ensureImageFlags takes a container path, sif id and group id, and formats to a more usable output.
-func ensureImageFlags(cmd *cobra.Command, cpath string, descrID, groupID uint32, all bool) (uint32, bool, error) {
+// checkImageAndFlags will: 1. ensure the image exists, 2. make sure the flags
+// wont collide with each other, 3. format the flags to a more usable input.
+func checkImageAndFlags(cmd *cobra.Command, cpath string, descrID, groupID uint32, all bool) (uint32, bool, error) {
 	// First ensure the image is there.
 	if finfo, err := os.Stat(cpath); os.IsNotExist(err) || finfo.IsDir() {
 		return 0, false, fmt.Errorf("Failed to open: %s: %s", cpath, err)
