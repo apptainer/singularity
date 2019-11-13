@@ -18,6 +18,7 @@ import (
 	"github.com/containers/image/signature"
 	"github.com/containers/image/transports"
 	"github.com/containers/image/types"
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
@@ -114,17 +115,22 @@ func ImageSHA(ctx context.Context, uri string, sys *types.SystemContext) (string
 	return calculateRefHash(ctx, ref, sys)
 }
 
-func calculateRefHash(ctx context.Context, ref types.ImageReference, sys *types.SystemContext) (string, error) {
+func calculateRefHash(ctx context.Context, ref types.ImageReference, sys *types.SystemContext) (hash string, err error) {
 	source, err := ref.NewImageSource(ctx, sys)
 	if err != nil {
 		return "", err
 	}
+	defer func() {
+		if closeErr := source.Close(); closeErr != nil {
+			err = errors.Wrapf(err, " (src: %v)", closeErr)
+		}
+	}()
 
 	man, _, err := source.GetManifest(ctx, nil)
 	if err != nil {
 		return "", err
 	}
 
-	hash := fmt.Sprintf("%x", sha256.Sum256(man))
+	hash = fmt.Sprintf("%x", sha256.Sum256(man))
 	return hash, nil
 }
