@@ -31,14 +31,24 @@ var signServerURIFlag = cmdline.Flag{
 	EnvKeys:      []string{"URL"},
 }
 
-// -g|--groupid
+// -g|--group-id
 var signSifGroupIDFlag = cmdline.Flag{
 	ID:           "signSifGroupIDFlag",
 	Value:        &sifGroupID,
 	DefaultValue: uint32(0),
-	Name:         "groupid",
+	Name:         "group-id",
 	ShortHand:    "g",
 	Usage:        "group ID to be signed",
+}
+
+// --groupid (deprecated)
+var signOldSifGroupIDFlag = cmdline.Flag{
+	ID:           "signOldSifGroupIDFlag",
+	Value:        &sifGroupID,
+	DefaultValue: uint32(0),
+	Name:         "groupid",
+	Usage:        "group ID to be signed",
+	Deprecated:   "use '--group-id'",
 }
 
 // -i| --sif-id
@@ -86,6 +96,7 @@ func init() {
 
 	cmdManager.RegisterFlagForCmd(&signServerURIFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifGroupIDFlag, SignCmd)
+	cmdManager.RegisterFlagForCmd(&signOldSifGroupIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifDescSifIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifDescIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signKeyIdxFlag, SignCmd)
