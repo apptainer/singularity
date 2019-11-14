@@ -13,21 +13,18 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 )
 
 const listAppsCommand = "echo apps:`ls \"$app/scif/apps\" | wc -c`; for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename \"$app\"`\n        echo \"$APPNAME\"\n    fi\ndone\n"
@@ -425,34 +422,26 @@ var InspectCmd = &cobra.Command{
 }
 
 func getFileContent(abspath, name string, args []string) (string, error) {
-	engineConfig := singularityConfig.NewConfig()
-	ociConfig := &oci.Config{}
-	generator := generate.Generator{Config: &ociConfig.Spec}
-	engineConfig.OciConfig = ociConfig
-
-	generator.SetProcessArgs(args)
-	generator.SetProcessCwd("/")
-	engineConfig.SetImage(abspath)
-
-	cfg := &config.Common{
-		EngineName:   singularityConfig.Name,
-		ContainerID:  name,
-		EngineConfig: engineConfig,
-	}
-
 	// Record from stdout and store as a string to return as the contents of the file.
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
-	err := starter.Run(
-		"Singularity inspect",
-		cfg,
-		starter.UseSuid(true),
-		starter.WithStdout(&stdout),
-		starter.WithStderr(&stderr),
-	)
-	if err != nil {
-		sylog.Fatalf("Unable to process command: %s: %s", err, stderr.String())
+	// re-use singularity exec to grab image file content,
+	// we reduce binds to the bare minimum with options below
+	cmdArgs := []string{"exec", "--contain", "--no-home", "--no-nv", abspath}
+	cmdArgs = append(cmdArgs, args...)
+
+	singularityCmd := filepath.Join(buildcfg.BINDIR, "singularity")
+
+	cmd := exec.Command(singularityCmd, cmdArgs...)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	// move to the root to not bind the current working directory
+	// while inspecting the image
+	cmd.Dir = "/"
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("unable to process command: %s: error output:\n%s", err, stderr.String())
 	}
 
 	return stdout.String(), nil
