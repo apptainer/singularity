@@ -156,8 +156,12 @@ func doVerifyCmd(ctx context.Context, cmd *cobra.Command, cpath, url string) {
 	sylog.Infof("Container verified: %s", cpath)
 }
 
-// checkImageAndFlags will: 1. ensure the image exists, 2. make sure the flags
-// wont collide with each other, 3. format the flags to a more usable input.
+// checkImageAndFlags verifies that the SIF image and SIF descriptor / group
+// ID flags provided are usable, and returns which SIF ID to sign or verify:
+//  - checks that a descrID and groupID are not being used together
+//  - checks that a descrID or groupID are not being used with a request to verify all
+//  - returns an error if flags are not usable
+//  - returns an ID to sign or verify, and true if it is a group ID / false if it is a descriptor ID
 func checkImageAndFlags(cmd *cobra.Command, cpath string, descrID, groupID uint32, all bool) (uint32, bool, error) {
 	// First ensure the image is there.
 	if finfo, err := os.Stat(cpath); os.IsNotExist(err) || finfo.IsDir() {
