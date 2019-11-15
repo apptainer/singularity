@@ -1405,6 +1405,53 @@ func (c actionTests) actionBinds(t *testing.T) {
 	}
 }
 
+func (c actionTests) exitSignals(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	tests := []struct {
+		name string
+		args []string
+		exit int
+	}{
+		{
+			name: "Exit0",
+			args: []string{c.env.ImagePath, "/bin/sh", "-c", "exit 0"},
+			exit: 0,
+		},
+		{
+			name: "Exit1",
+			args: []string{c.env.ImagePath, "/bin/sh", "-c", "exit 1"},
+			exit: 1,
+		},
+		{
+			name: "Exit134",
+			args: []string{c.env.ImagePath, "/bin/sh", "-c", "exit 134"},
+			exit: 134,
+		},
+		{
+			name: "SignalKill",
+			args: []string{c.env.ImagePath, "/bin/sh", "-c", "kill -KILL $$"},
+			exit: 137,
+		},
+		{
+			name: "SignalAbort",
+			args: []string{c.env.ImagePath, "/bin/sh", "-c", "kill -ABRT $$"},
+			exit: 134,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(tt.exit),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := actionTests{
@@ -1423,5 +1470,6 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		"issue 4587":            c.issue4587,           // https://github.com/sylabs/singularity/issues/4587
 		"network":               c.actionNetwork,       // test basic networking
 		"binds":                 c.actionBinds,         // test various binds
+		"exit and signals":      c.exitSignals,         // test exit and signals propagation
 	})
 }

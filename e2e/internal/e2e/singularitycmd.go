@@ -391,9 +391,14 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 		switch x := cause.(type) {
 		case *exec.ExitError:
 			if status, ok := x.Sys().(syscall.WaitStatus); ok {
-				if code != status.ExitStatus() {
+				exitCode := status.ExitStatus()
+				if status.Signaled() {
+					s := status.Signal()
+					exitCode = 128 + int(s)
+				}
+				if code != exitCode {
 					t.Logf("\n%q output:\n%s%s\n", r.FullCmd, string(r.Stderr), string(r.Stdout))
-					t.Errorf("got %d as exit code and was expecting %d: %+v", status.ExitStatus(), code, s.waitErr)
+					t.Errorf("got %d as exit code and was expecting %d: %+v", exitCode, code, s.waitErr)
 					return
 				}
 			}
