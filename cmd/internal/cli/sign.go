@@ -20,17 +20,6 @@ var (
 	signAll bool
 )
 
-// -u|--url
-var signServerURIFlag = cmdline.Flag{
-	ID:           "signServerURIFlag",
-	Value:        &keyServerURI,
-	DefaultValue: defaultKeyServer,
-	Name:         "url",
-	ShortHand:    "u",
-	Usage:        "key server URL",
-	EnvKeys:      []string{"URL"},
-}
-
 // -g|--group-id
 var signSifGroupIDFlag = cmdline.Flag{
 	ID:           "signSifGroupIDFlag",
@@ -94,7 +83,6 @@ var signAllFlag = cmdline.Flag{
 func init() {
 	cmdManager.RegisterCmd(SignCmd)
 
-	cmdManager.RegisterFlagForCmd(&signServerURIFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifGroupIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signOldSifGroupIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifDescSifIDFlag, SignCmd)
