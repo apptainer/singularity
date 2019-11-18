@@ -35,6 +35,7 @@ import (
 	"github.com/sylabs/singularity/pkg/util/crypt"
 	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
+	"github.com/sylabs/singularity/pkg/util/rlimit"
 )
 
 // EnsureRootPriv ensures that a command is executed with root privileges.
@@ -549,6 +550,17 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				sylog.Errorf("unable to remove tmp image: %s: %v", image, err)
 			}
 		}
+	}
+
+	// setuid workflow set RLIMIT_STACK to its default value,
+	// get the original value to restore it before executing
+	// container process
+	if useSuid {
+		soft, hard, err := rlimit.Get("RLIMIT_STACK")
+		if err != nil {
+			sylog.Warningf("can't retrieve stack size limit: %s", err)
+		}
+		generator.AddProcessRlimits("RLIMIT_STACK", hard, soft)
 	}
 
 	cfg := &config.Common{

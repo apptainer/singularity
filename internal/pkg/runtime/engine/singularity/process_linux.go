@@ -30,6 +30,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
+	"github.com/sylabs/singularity/pkg/util/rlimit"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -152,6 +153,16 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	for _, fd := range e.EngineConfig.GetOpenFd() {
 		if err := syscall.Close(fd); err != nil {
 			return fmt.Errorf("aborting failed to close file descriptor: %s", err)
+		}
+	}
+
+	// restore the stack size limit for setuid workflow
+	for _, limit := range e.EngineConfig.OciConfig.Process.Rlimits {
+		if limit.Type == "RLIMIT_STACK" {
+			if err := rlimit.Set(limit.Type, limit.Soft, limit.Hard); err != nil {
+				return fmt.Errorf("while restoring stack size limit: %s", err)
+			}
+			break
 		}
 	}
 
