@@ -19,7 +19,7 @@ require (
 	github.com/containerd/containerd v1.2.9
 	github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd // indirect
 	github.com/containernetworking/cni v0.7.1
-	github.com/containernetworking/plugins v0.8.2
+	github.com/containernetworking/plugins v0.8.3
 	github.com/containers/image v3.0.2+incompatible
 	github.com/containers/storage v1.13.5 // indirect
 	github.com/creack/pty v1.1.9 // indirect
