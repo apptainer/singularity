@@ -40,7 +40,7 @@ _**NOTE:** if you are updating Go from a older version, make sure you remove `/u
 reinstalling it._
 
 ```
-$ export VERSION=1.13.1 OS=linux ARCH=amd64  # change this as you need
+$ export VERSION=1.13.3 OS=linux ARCH=amd64  # change this as you need
 
 $ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
   sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
@@ -89,7 +89,7 @@ $ mkdir -p ${GOPATH}/src/github.com/sylabs && \
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.4.2
+$ git checkout v3.5.0
 ```
 
 ## Compiling Singularity

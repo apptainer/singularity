@@ -34,9 +34,9 @@ import (
 	"github.com/sylabs/singularity/pkg/network"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
-	"github.com/sylabs/singularity/pkg/util/nvidia"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -434,7 +434,7 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 	} else {
 		if tag == mount.CwdTag {
 			hostCwd := c.engine.EngineConfig.GetCwd()
-			containerCwd := filepath.Join(c.session.FinalPath(), hostCwd)
+			containerCwd := filepath.Join(c.session.FinalPath(), mnt.Destination)
 
 			if c.sameInode(hostCwd, containerCwd) || c.isMounted(containerCwd) {
 				c.skippedMount = append(c.skippedMount, mnt.Destination)
@@ -1114,9 +1114,21 @@ func (c *container) addDevMount(system *mount.System) error {
 			return err
 		}
 		if c.engine.EngineConfig.GetNv() {
-			devs, err := nvidia.Devices(true)
+			devs, err := gpu.NvidiaDevices(true)
 			if err != nil {
 				return fmt.Errorf("failed to get nvidia devices: %v", err)
+			}
+			for _, dev := range devs {
+				if err := c.addSessionDev(dev, system); err != nil {
+					return err
+				}
+			}
+		}
+
+		if c.engine.EngineConfig.GetRocm() {
+			devs, err := gpu.RocmDevices(true)
+			if err != nil {
+				return fmt.Errorf("failed to get rocm devices: %v", err)
 			}
 			for _, dev := range devs {
 				if err := c.addSessionDev(dev, system); err != nil {
@@ -1593,6 +1605,25 @@ func (c *container) addCwdMount(system *mount.System) error {
 		sylog.Verbosef("Default mount: %v: to the container", cwd)
 	} else {
 		sylog.Warningf("Could not bind CWD to container %s: %s", cwd, err)
+	}
+
+	// welcome to the symlink madness ... instead of adding a
+	// superfluous bind mount, we will create a symlink for the
+	// last element of the path which doesn't necessarily reflect
+	// the real symlink(s) found in the path but does the same
+	// job as a bind mount would do. We can do that only when a
+	// layer is enabled, if it's not the case we display a warning
+	if cwd != current {
+		if c.isLayerEnabled() {
+			linkPath := filepath.Join(c.session.Layer.Dir(), cwd)
+			if err := c.session.AddSymlink(linkPath, current); err != nil {
+				return fmt.Errorf("can't create symlink %s: %s", linkPath, err)
+			}
+			return nil
+		}
+		sylog.Warningf(
+			"Your current working directory is a symlink and may not be available " +
+				"in container, you should use real path with --writable when possible")
 	}
 
 	return nil

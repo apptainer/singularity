@@ -1131,7 +1131,11 @@ __attribute__((constructor)) static void init(void) {
          * user namespace not enabled, continue with privileged workflow
          * this will fail if starter is run without suid
          */
-        priv_escalate(true);
+        if ( sconfig->starter.isSuid ) {
+            priv_escalate(true);
+        } else if ( uid != 0 ) {
+            fatalf("No setuid installation found, for unprivileged installation use: ./mconfig --without-suid");
+        }
         break;
     case ENTER_NAMESPACE:
         if ( sconfig->starter.isSuid && !sconfig->starter.hybridWorkflow ) {

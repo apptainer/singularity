@@ -239,8 +239,11 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	}
 
 	buildFormat := "sif"
+	sandboxTarget := false
 	if buildArgs.sandbox {
 		buildFormat = "sandbox"
+		sandboxTarget = true
+
 	}
 
 	b, err := build.New(
@@ -262,6 +265,8 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 				LibraryAuthToken:  authToken,
 				DockerAuthConfig:  &authConf,
 				EncryptionKeyInfo: keyInfo,
+				FixPerms:          buildArgs.fixPerms,
+				SandboxTarget:     sandboxTarget,
 			},
 		})
 	if err != nil {

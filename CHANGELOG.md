@@ -9,7 +9,51 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.4.2
+# Changes Since v3.5.0
+
+ - Deprecated `--groupid` flag for `sign` and `verify`; replaced with `--group-id`.
+ - Removed useless flag `--url` for `sign`.
+
+# v3.5.0 - [2019.11.13]
+
+## New features / functionalities
+
+  - New support for AMD GPUs via `--rocm` option added to bind ROCm devices and
+    libraries into containers.
+  - Plugins can now modify Singularity behaviour with two mutators: CLI and
+    Runtime.
+  - Introduced the `config global` command to edit `singularity.conf` settings
+    from the CLI.
+  - Introduced the `config fakeroot` command to setup `subuid` and `subgid`
+    mappings for `--fakeroot` from the Singularity CLI.
+      
+## Changed defaults / behaviours
+
+  - Go 1.13 adopted.
+  - Vendored modules removed from the Git tree, will be included in release tarballs.
+  - Singularity will now fail with an error if a requested bind mount cannot be
+      made.
+    - This is beneficial to fail fast in workflows where a task may fail a long
+         way downstream if a bind mount is unavailable.
+    - Any unavailable bind mount sources must be removed from
+        `singularity.conf`.
+  - Docker/OCI image extraction now faithfully respects layer
+    permissions.
+    - This may lead to sandboxes that cannot be removed without
+    modifying permissions.
+    - `--fix-perms` option added to preserve old behaviour when
+    building sandboxes.
+    - Discussion issue for this change at: https://github.com/sylabs/singularity/issues/4671
+  - `Singularity>` prompt is always set when entering shell in a container.
+  - The current `umask` will be honored when building a SIF file.
+  - `instance exec` processes acquire cgroups set on `instance start`
+  - `--fakeroot` supports uid/subgid ranges >65536
+  - `singularity version` now reports semver compliant version
+      information.
+
+## Deprecated / removed commands
+
+  - Deprecated `--id` flag for `sign` and `verify`; replaced with `--sif-id`.
 
 # v3.4.2 - [2019.10.08]
 
@@ -19,8 +63,6 @@ _The old changelog can be found in the `release-2.6` branch_
     - Correctly handle the starter-suid binary for non-root installs
     - Creates CACHEDIR if it doesn't exist
     - Set apex loglevel for umoci to match singularity loglevel
-
-  - Deprecated `--id` flag for `sign` and `verify`; replaced with `--sif-id`.
 
 # v3.4.1 - [2019.09.17]
 

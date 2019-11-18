@@ -147,13 +147,13 @@ func (c ctx) singularitySignGroupIDOption(t *testing.T) {
 	}{
 		{
 			name:       "groupID 0",
-			args:       []string{"--groupid", "1", imgPath},
+			args:       []string{"--group-id", "1", imgPath},
 			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied to "+imgPath),
 			expectExit: 0,
 		},
 		{
 			name:       "groupID 5",
-			args:       []string{"--groupid", "5", imgPath},
+			args:       []string{"--group-id", "5", imgPath},
 			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, "no descriptors found for groupid 5"),
 			expectExit: 255,
 		},

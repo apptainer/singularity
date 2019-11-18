@@ -19,7 +19,7 @@ require (
 	github.com/containerd/containerd v1.2.9
 	github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd // indirect
 	github.com/containernetworking/cni v0.7.1
-	github.com/containernetworking/plugins v0.8.2
+	github.com/containernetworking/plugins v0.8.3
 	github.com/containers/image v3.0.2+incompatible
 	github.com/containers/storage v1.13.5 // indirect
 	github.com/creack/pty v1.1.9 // indirect
@@ -62,7 +62,7 @@ require (
 	github.com/opencontainers/runtime-spec v0.1.2-0.20181111125026-1722abf79c2f
 	github.com/opencontainers/runtime-tools v0.9.0
 	github.com/opencontainers/selinux v1.3.0
-	github.com/pelletier/go-toml v1.5.0
+	github.com/pelletier/go-toml v1.6.0
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.0.0-20180607123607-faf4ec335fe0 // indirect
@@ -100,7 +100,7 @@ require (
 	google.golang.org/grpc v1.20.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
-	gopkg.in/yaml.v2 v2.2.4
+	gopkg.in/yaml.v2 v2.2.5
 	gotest.tools v2.2.0+incompatible // indirect
 	gotest.tools/v3 v3.0.0
 	k8s.io/client-go v0.0.0-20181010045704-56e7a63b5e38 // indirect

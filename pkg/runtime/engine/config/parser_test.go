@@ -10,23 +10,18 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
-
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 )
-
-var configTemplate = filepath.Join(buildcfg.SOURCEDIR, "etc/conf/singularity.conf")
 
 func TestGenerate(t *testing.T) {
 	discard := ioutil.Discard
 
-	if err := Generate(discard, "", nil); err == nil {
+	if err := Generate(discard, "/non-existent/template", nil); err == nil {
 		t.Fatalf("unexpected success with non-existent template")
 	}
-	if err := Generate(discard, configTemplate, nil); err == nil {
-		t.Fatalf("unexpected success with non-existent template")
+	if err := Generate(discard, "", nil); err == nil {
+		t.Fatalf("unexpected success with nil config")
 	}
 }
 
@@ -43,7 +38,7 @@ func TestParser(t *testing.T) {
 		t.Fatalf("failed to get the default configuration: %s", err)
 	}
 
-	if err := Generate(f, configTemplate, defaultConfig); err != nil {
+	if err := Generate(f, "", defaultConfig); err != nil {
 		t.Fatalf("failed to generate default configuration: %s", err)
 	}
 
@@ -139,5 +134,17 @@ func TestGetConfig(t *testing.T) {
 	}
 	if !reflect.DeepEqual(config.BindPath, directives["bind path"]) {
 		t.Errorf("bad value for BindPath: %v", config.BindPath)
+	}
+}
+
+func TestHasDirective(t *testing.T) {
+	if HasDirective("") {
+		t.Errorf("empty directive should return false")
+	}
+	if !HasDirective("bind path") {
+		t.Errorf("'bind path' should be present")
+	}
+	if HasDirective("fake directive") {
+		t.Errorf("'fake directive' should not be present")
 	}
 }
