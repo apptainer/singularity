@@ -159,7 +159,17 @@ func writeLabelsIfExists(w io.Writer, l map[string]string) {
 // populateRaw is a helper func to output a Definition struct
 // into a definition file.
 func populateRaw(d *Definition, w io.Writer) {
+	// ensure bootstrap is the first parameter in the header
+	if v, ok := d.Header["bootstrap"]; ok {
+		fmt.Fprintf(w, "%s: %s\n", "bootstrap", v)
+	}
+
 	for k, v := range d.Header {
+		// filter out bootsrap parameter since it should already be added
+		if k == "bootstrap" {
+			continue
+		}
+
 		fmt.Fprintf(w, "%s: %s\n", k, v)
 	}
 	fmt.Fprintln(w)

@@ -136,11 +136,6 @@ var VerifyCmd = &cobra.Command{
 			sylog.Fatalf("File is a directory: %s", args[0])
 		}
 
-		// dont need to resolve remote endpoint
-		if !localVerify {
-			handleVerifyFlags(cmd)
-		}
-
 		// args[0] contains image path
 		doVerifyCmd(ctx, cmd, args[0], keyServerURI)
 	},
@@ -152,34 +147,14 @@ var VerifyCmd = &cobra.Command{
 }
 
 func doVerifyCmd(ctx context.Context, cmd *cobra.Command, cpath, url string) {
-	// Group id should start at 1.
-	if cmd.Flag(verifySifGroupIDFlag.Name).Changed && sifGroupID == 0 {
-		sylog.Fatalf("invalid group id")
+	id, isGroup, err := checkImageAndFlags(cmd, cpath, sifDescID, sifGroupID, verifyAll)
+	if err != nil {
+		sylog.Fatalf("%s", err)
 	}
 
-	// Descriptor id should start at 1.
-	if cmd.Flag(verifySifDescSifIDFlag.Name).Changed && sifDescID == 0 {
-		sylog.Fatalf("invalid descriptor id")
-	}
-	if cmd.Flag(verifySifDescIDFlag.Name).Changed && sifDescID == 0 {
-		sylog.Fatalf("invalid descriptor id")
-	}
-
-	if sifGroupID != 0 && sifDescID != 0 {
-		sylog.Fatalf("only one of -i or -g may be set")
-	}
-
-	var isGroup bool
-	var id uint32
-	if sifGroupID != 0 {
-		isGroup = true
-		id = sifGroupID
-	} else {
-		id = sifDescID
-	}
-
-	if (id != 0 || isGroup) && verifyAll {
-		sylog.Fatalf("'--all' not compatible with '--sif-id' or '--group-id'")
+	// Dont need to resolve remote endpoint.
+	if !localVerify {
+		handleVerifyFlags(cmd)
 	}
 
 	author, _, err := signing.Verify(ctx, cpath, url, id, isGroup, verifyAll, authToken, localVerify, jsonVerify)
@@ -190,6 +165,51 @@ func doVerifyCmd(ctx context.Context, cmd *cobra.Command, cpath, url string) {
 		sylog.Fatalf("Failed to verify: %s: %s", cpath, err)
 	}
 	sylog.Infof("Container verified: %s", cpath)
+}
+
+// checkImageAndFlags verifies that the SIF image and SIF descriptor / group
+// ID flags provided are usable, and returns which SIF ID to sign or verify:
+//  - checks that a descrID and groupID are not being used together
+//  - checks that a descrID or groupID are not being used with a request to verify all
+//  - returns an error if flags are not usable
+//  - returns an ID to sign or verify, and true if it is a group ID / false if it is a descriptor ID
+func checkImageAndFlags(cmd *cobra.Command, cpath string, descrID, groupID uint32, all bool) (uint32, bool, error) {
+	// First ensure the image is there.
+	if finfo, err := os.Stat(cpath); os.IsNotExist(err) || finfo.IsDir() {
+		return 0, false, fmt.Errorf("Failed to open: %s: %s", cpath, err)
+	}
+
+	// Group id should start at 1.
+	if cmd.Flag(verifySifGroupIDFlag.Name).Changed && groupID == 0 {
+		return 0, false, fmt.Errorf("invalid group id")
+	}
+
+	// Descriptor id should start at 1.
+	if cmd.Flag(verifySifDescSifIDFlag.Name).Changed && descrID == 0 {
+		return 0, false, fmt.Errorf("invalid descriptor id")
+	}
+	if cmd.Flag(verifySifDescIDFlag.Name).Changed && descrID == 0 {
+		sylog.Fatalf("invalid descriptor id")
+	}
+
+	if groupID != 0 && descrID != 0 {
+		return 0, false, fmt.Errorf("only one of -i or -g may be set")
+	}
+
+	var isGroup bool
+	var id uint32
+	if groupID != 0 {
+		isGroup = true
+		id = groupID
+	} else {
+		id = descrID
+	}
+
+	if (id != 0 || isGroup) && all {
+		return 0, false, fmt.Errorf("'--all' not compatible with '--sif-id' or '--group-id'")
+	}
+
+	return id, isGroup, nil
 }
 
 func handleVerifyFlags(cmd *cobra.Command) {

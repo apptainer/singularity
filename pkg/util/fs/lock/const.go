@@ -3,7 +3,7 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build !linux
+// +build linux,!386 linux,!arm linux,!mips linux,!mipsle darwin
 
 package lock
 

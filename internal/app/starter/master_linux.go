@@ -19,7 +19,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
-
+	signalutil "github.com/sylabs/singularity/internal/pkg/util/signal"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
@@ -157,16 +157,14 @@ func Master(rpcSocket, masterSocket int, containerPid int, e *engine.Engine) {
 		s := status.Signal()
 		sylog.Debugf("Child exited due to signal %d", s)
 		exitCode = 128 + int(s)
+
+		// mimic signal
+		mainthread.Execute(func() {
+			signalutil.Raise(s)
+		})
 	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
 		exitCode = status.ExitStatus()
-	}
-
-	// mimic signal
-	if exitCode > 128 && exitCode < 128+int(syscall.SIGUNUSED) {
-		mainthread.Execute(func() {
-			syscall.Kill(os.Getpid(), syscall.Signal(exitCode-128))
-		})
 	}
 
 	// if previous signal didn't interrupt process
