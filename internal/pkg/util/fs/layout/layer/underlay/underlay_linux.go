@@ -64,6 +64,7 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 	st := new(syscall.Stat_t)
 	points := system.Points
 	createdPath := make([]pathLen, 0)
+	destinations := make(map[string]struct{})
 
 	sessionDir := u.session.Path()
 	for _, tag := range mount.GetTagList() {
@@ -80,6 +81,10 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 			// rootfs path to not have false positive while creating
 			// the layer with calls below
 			dst := fs.EvalRelative(point.Destination, rootFsPath)
+
+			// keep track of destination mount points to not duplicate
+			// directory uselessly
+			destinations[dst] = struct{}{}
 
 			// now we are (almost) sure that we will get path information
 			// for a path in the rootfs path and we would create the right
@@ -133,6 +138,12 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 					}
 				}
 				dir := fs.EvalRelative(p, rootFsPath)
+				// if the directory is overrided by a bind mount we won't
+				// need to duplicate the container image directory
+				if _, ok := destinations[dir]; ok {
+					continue
+				}
+				// directory not overrided, duplicate it
 				if err := u.duplicateDir(dir, system, pl.path); err != nil {
 					return err
 				}
