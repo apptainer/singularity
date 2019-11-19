@@ -22,6 +22,7 @@ import (
 	e2ebuildcfg "github.com/sylabs/singularity/e2e/buildcfg"
 	"github.com/sylabs/singularity/e2e/cache"
 	"github.com/sylabs/singularity/e2e/cmdenvvars"
+	"github.com/sylabs/singularity/e2e/config"
 	"github.com/sylabs/singularity/e2e/delete"
 	"github.com/sylabs/singularity/e2e/docker"
 	singularityenv "github.com/sylabs/singularity/e2e/env"
@@ -74,30 +75,6 @@ func Run(t *testing.T) {
 		return filepath.Join(buildcfg.SYSCONFDIR, "singularity", fn)
 	}
 
-	// e2e tests need to run in a somehow agnostic environment, so we
-	// don't use environment of user executing tests in order to not
-	// wrongly interfering with cache stuff, sylabs library tokens,
-	// PGP keys
-	e2e.SetupHomeDirectories(t)
-
-	// Ensure config files are installed
-	configFiles := []string{
-		sysconfdir("singularity.conf"),
-		sysconfdir("ecl.toml"),
-		sysconfdir("capability.json"),
-		sysconfdir("nvliblist.conf"),
-	}
-
-	for _, cf := range configFiles {
-		if fi, err := os.Stat(cf); err != nil {
-			log.Fatalf("%s is not installed on this system: %v", cf, err)
-		} else if !fi.Mode().IsRegular() {
-			log.Fatalf("%s is not a regular file", cf)
-		} else if fi.Sys().(*syscall.Stat_t).Uid != 0 {
-			log.Fatalf("%s must be owned by root", cf)
-		}
-	}
-
 	// Make temp dir for tests
 	name, err := ioutil.TempDir("", "stest.")
 	if err != nil {
@@ -116,6 +93,33 @@ func Run(t *testing.T) {
 		log.Fatalf("failed to chmod temporary directory: %v", err)
 	}
 	testenv.TestDir = name
+
+	// e2e tests need to run in a somehow agnostic environment, so we
+	// don't use environment of user executing tests in order to not
+	// wrongly interfering with cache stuff, sylabs library tokens,
+	// PGP keys
+	e2e.SetupHomeDirectories(t)
+
+	// generate singularity.conf with default values
+	e2e.SetupDefaultConfig(t, filepath.Join(testenv.TestDir, "singularity.conf"))
+
+	// Ensure config files are installed
+	configFiles := []string{
+		sysconfdir("singularity.conf"),
+		sysconfdir("ecl.toml"),
+		sysconfdir("capability.json"),
+		sysconfdir("nvliblist.conf"),
+	}
+
+	for _, cf := range configFiles {
+		if fi, err := os.Stat(cf); err != nil {
+			log.Fatalf("%s is not installed on this system: %v", cf, err)
+		} else if !fi.Mode().IsRegular() {
+			log.Fatalf("%s is not a regular file", cf)
+		} else if fi.Sys().(*syscall.Stat_t).Uid != 0 {
+			log.Fatalf("%s must be owned by root", cf)
+		}
+	}
 
 	// Build a base image for tests
 	imagePath := path.Join(name, "test.sif")
@@ -147,6 +151,7 @@ func Run(t *testing.T) {
 		"BUILD":       imgbuild.E2ETests(testenv),
 		"CACHE":       cache.E2ETests(testenv),
 		"CMDENVVARS":  cmdenvvars.E2ETests(testenv),
+		"CONFIG":      config.E2ETests(testenv),
 		"DELETE":      delete.E2ETests(testenv),
 		"DOCKER":      docker.E2ETests(testenv),
 		"ENV":         singularityenv.E2ETests(testenv),
