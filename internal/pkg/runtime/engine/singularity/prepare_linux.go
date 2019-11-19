@@ -1213,6 +1213,10 @@ func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, 
 		if !e.EngineConfig.File.AllowContainerSquashfs {
 			return nil, fmt.Errorf("configuration disallows users from running squashFS based containers")
 		}
+	case image.ENCRYPTSQUASHFS:
+		if !e.EngineConfig.File.AllowContainerEncrypted {
+			return nil, fmt.Errorf("configuration disallows users from running encrypted containers")
+		}
 	}
 	return imgObject, nil
 }
