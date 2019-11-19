@@ -6,6 +6,7 @@
 package actions
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -54,6 +55,45 @@ func (c actionTests) issue4587(t *testing.T) {
 		e2e.WithDir(u.Dir),
 		e2e.WithCommand("exec"),
 		e2e.WithArgs("--home", homeBind, c.env.ImagePath, "test", "-f", filepath.Join(u.Dir, "canary_file")),
+		e2e.ExpectExit(0),
+	)
+}
+
+// Check that current working directory doesn't interfere
+// with image content when using underlay.
+func (c actionTests) issue4755(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	sandbox, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "sandbox-", "")
+	defer cleanup(t)
+
+	// convert test image to sandbox
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", sandbox, c.env.ImagePath),
+		e2e.ExpectExit(0),
+	)
+
+	// create a file in image /tmp in order to trigger the issue
+	// with underlay layer
+	baseDir := filepath.Join(sandbox, filepath.Dir(c.env.TestDir))
+	if err := os.MkdirAll(baseDir, 0700); err != nil {
+		t.Fatalf("can't create image directory %s: %s", baseDir, err)
+	}
+	path := filepath.Join(baseDir, "underlay-test")
+	if err := fs.Touch(path); err != nil {
+		t.Fatalf("can't create %s: %s", path, err)
+	}
+
+	// use of user namespace to force runtime to use underlay
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserNamespaceProfile),
+		e2e.WithDir(c.env.TestDir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(sandbox, "true"),
 		e2e.ExpectExit(0),
 	)
 }

@@ -1198,6 +1198,36 @@ func (c actionTests) actionBinds(t *testing.T) {
 			exit: 255,
 		},
 		{
+			name: "HomeContainOverride",
+			args: []string{
+				"--contain",
+				"--bind", hostCanaryDir + ":/home",
+				sandbox,
+				"test", "-f", "/home/file",
+			},
+			exit: 0,
+		},
+		{
+			name: "TmpContainOverride",
+			args: []string{
+				"--contain",
+				"--bind", hostCanaryDir + ":/tmp",
+				sandbox,
+				"test", "-f", "/tmp/file",
+			},
+			exit: 0,
+		},
+		{
+			name: "VarTmpContainOverride",
+			args: []string{
+				"--contain",
+				"--bind", hostCanaryDir + ":/var/tmp",
+				sandbox,
+				"test", "-f", "/var/tmp/file",
+			},
+			exit: 0,
+		},
+		{
 			name: "SymlinkOneLevelFileBind",
 			args: []string{
 				"--bind", hostCanaryFile + ":/var/etc/symlink1",
@@ -1230,6 +1260,24 @@ func (c actionTests) actionBinds(t *testing.T) {
 				"--bind", hostCanaryDir + ":/var/etc/madness",
 				sandbox,
 				"test", "-f", "/madness/file",
+			},
+			exit: 0,
+		},
+		{
+			name: "SymlinkOneLevelNewDirBind",
+			args: []string{
+				"--bind", hostCanaryDir + ":/var/etc/new",
+				sandbox,
+				"test", "-f", "/etc/new/file",
+			},
+			exit: 0,
+		},
+		{
+			name: "SymlinkTwoLevelNewDirBind",
+			args: []string{
+				"--bind", hostCanaryDir + ":/var/etc/madness/new",
+				sandbox,
+				"test", "-f", "/madness/new/file",
 			},
 			exit: 0,
 		},
@@ -1421,6 +1469,7 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		"action basic profiles": c.actionBasicProfiles, // run basic action under different profiles
 		"issue 4488":            c.issue4488,           // https://github.com/sylabs/singularity/issues/4488
 		"issue 4587":            c.issue4587,           // https://github.com/sylabs/singularity/issues/4587
+		"issue 4755":            c.issue4755,           // https://github.com/sylabs/singularity/issues/4755
 		"network":               c.actionNetwork,       // test basic networking
 		"binds":                 c.actionBinds,         // test various binds
 	})
