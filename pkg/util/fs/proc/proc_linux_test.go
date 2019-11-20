@@ -71,7 +71,8 @@ var mountInfoData = `22 28 0:21 / /sys rw,nosuid,nodev,noexec,relatime shared:7 
 88 28 253:1 / /home rw,noatime,nodiratime shared:33 - ext4 /dev/mapper/pdc_egggdecf1 rw,errors=remount-ro,stripe=64
 90 47 0:47 / /proc/sys/fs/binfmt_misc rw,relatime shared:34 - binfmt_misc binfmt_misc rw
 381 26 0:54 / /run/user/1000 rw,nosuid,nodev,relatime shared:245 - tmpfs tmpfs rw,size=1635868k,mode=700,uid=1000,gid=1000
-363 381 0:52 / /run/user/1000/gvfs rw,nosuid,nodev,relatime shared:233 - fuse.gvfsd-fuse gvfsd-fuse rw,user_id=1000,group_id=1000`
+363 381 0:52 / /run/user/1000/gvfs rw,nosuid,nodev,relatime shared:233 - fuse.gvfsd-fuse gvfsd-fuse rw,user_id=1000,group_id=1000
+579 28 0:65 / /tmp/squashfs rw,relatime - squashfs /dev/loop0 rw`
 
 var expectedMap = map[string][]string{
 	"/": {
@@ -80,6 +81,7 @@ var expectedMap = map[string][]string{
 		"/dev",
 		"/run",
 		"/home",
+		"/tmp/squashfs",
 	},
 	"/dev": {
 		"/dev/pts",
@@ -191,6 +193,17 @@ func TestGetMountInfo(t *testing.T) {
 			Source:       "/dev/mapper/pdc_egggdecf1",
 			SuperOptions: []string{"rw", "errors=remount-ro", "stripe=64"},
 			Options:      []string{"rw", "noatime", "nodiratime"},
+		},
+		{
+			ParentID:     "28",
+			ID:           "579",
+			Dev:          "0:65",
+			Root:         "/",
+			Fields:       "",
+			FSType:       "squashfs",
+			Source:       "/dev/loop0",
+			SuperOptions: []string{"rw"},
+			Options:      []string{"rw", "relatime"},
 		},
 	}
 
