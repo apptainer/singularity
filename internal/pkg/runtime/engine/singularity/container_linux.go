@@ -1619,7 +1619,12 @@ func (c *container) addCwdMount(system *mount.System) error {
 	if cwd != current {
 		if c.isLayerEnabled() {
 			linkPath := filepath.Join(c.session.Layer.Dir(), cwd)
-			if err := c.session.AddSymlink(linkPath, current); err != nil {
+			// if the last element is a symlink, duplicate the target
+			target, err := os.Readlink(cwd)
+			if err != nil {
+				target = current
+			}
+			if err := c.session.AddSymlink(linkPath, target); err != nil {
 				return fmt.Errorf("can't create symlink %s: %s", linkPath, err)
 			}
 			return nil
