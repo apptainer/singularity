@@ -163,7 +163,7 @@ func checkPerms(rootfs string) (err error) {
 		return nil
 	})
 
-	if errors.Is(err, errRestrictivePerm) {
+	if err == errRestrictivePerm {
 		sylog.Warningf("Permission handling has changed in Singularity 3.5 for improved OCI compatibility")
 		sylog.Warningf("The sandbox will contain files/dirs that cannot be removed until permissions are modified")
 		sylog.Warningf("Use 'chmod -R u+rwX' to set permissions that allow removal")

@@ -7,7 +7,7 @@ GO_BUILDMODE := -buildmode=default
 GO_GCFLAGS :=
 GO_ASMFLAGS :=
 GO_MODFLAGS := $(if $(wildcard $(SOURCEDIR)/vendor/modules.txt),-mod=vendor,-mod=readonly)
-GOFLAGS := $(GO_MODFLAGS) -trimpath
+GOFLAGS := $(GO_MODFLAGS)
 GOPROXY := https://proxy.golang.org
 
 export GOFLAGS GO111MODULE GOPROXY

@@ -18,7 +18,7 @@ var ErrPluginNotFound = errors.New("plugin not found")
 // UninstallPlugin removes the named plugin from the system.
 func UninstallPlugin(name, libexecdir string) error {
 	err := plugin.Uninstall(name, libexecdir)
-	if errors.Is(err, os.ErrNotExist) {
+	if err == os.ErrNotExist {
 		return ErrPluginNotFound
 	}
 	if err != nil {
