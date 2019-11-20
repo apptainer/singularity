@@ -260,19 +260,10 @@ func (m *Manager) sync() error {
 		for p, e := range m.entries {
 			if e == d {
 				path = m.rootPath + p
-				if ovDirs, ok := m.ovDirs[p]; ok {
-					// overrided path, we won't create directories
-					// in the session directory
-					if len(ovDirs) > 1 {
-						path = ""
-					}
-					for i, ovDir := range ovDirs {
-						if _, err := os.Stat(ovDir); err != nil {
-							if i == 0 {
-								path = ovDir
-							} else if err := os.Mkdir(ovDir, m.DirMode); err != nil {
-								return fmt.Errorf("failed to create %s directory: %s", ovDir, err)
-							}
+				for _, ovDir := range m.ovDirs[p] {
+					if _, err := os.Stat(ovDir); err != nil {
+						if err := os.Mkdir(ovDir, m.DirMode); err != nil {
+							return fmt.Errorf("failed to create %s directory: %s", ovDir, err)
 						}
 					}
 				}

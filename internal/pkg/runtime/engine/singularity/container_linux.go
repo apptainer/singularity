@@ -1426,7 +1426,10 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 		} else if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
 		} else {
-			c.session.OverrideDir(dst, src)
+			fi, err := os.Stat(src)
+			if err == nil && fi.IsDir() {
+				c.session.OverrideDir(dst, src)
+			}
 			system.Points.AddRemount(mount.UserbindsTag, dst, flags)
 		}
 	}
