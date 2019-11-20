@@ -97,3 +97,30 @@ func (c actionTests) issue4755(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 }
+
+// Check that the last element of current working directory when it's
+// a symlink pointing to a relative target is correctly handled by the
+// runtime.
+func (c actionTests) issue4768(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	homeDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-4768-", "")
+	defer cleanup(t)
+
+	symCwdPath := filepath.Join(homeDir, "symlink")
+	if err := os.Symlink(".", symCwdPath); err != nil {
+		t.Fatalf("failed to create symlink %s: %s", symCwdPath, err)
+	}
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithDir(symCwdPath),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(c.env.ImagePath, "pwd"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ExactMatch, homeDir),
+		),
+	)
+}

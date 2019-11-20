@@ -1470,6 +1470,7 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		"issue 4488":            c.issue4488,           // https://github.com/sylabs/singularity/issues/4488
 		"issue 4587":            c.issue4587,           // https://github.com/sylabs/singularity/issues/4587
 		"issue 4755":            c.issue4755,           // https://github.com/sylabs/singularity/issues/4755
+		"issue 4768":            c.issue4768,           // https://github.com/sylabs/singularity/issues/4768
 		"network":               c.actionNetwork,       // test basic networking
 		"binds":                 c.actionBinds,         // test various binds
 	})
