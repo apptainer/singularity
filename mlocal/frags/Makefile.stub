@@ -55,10 +55,13 @@ e2e-test:
 		SINGULARITY_E2E_COVERAGE=$(BUILDDIR_ABSPATH)/e2e-cmd-coverage \
 		scripts/e2e-test -v $(EXTRA_FLAGS)
 	@echo "       PASS"
-	@echo " TEST e2e-coverage"
-	$(V)$(GO) run $(GO_MODFLAGS) -tags "$(GO_TAGS)" $(GO_GCFLAGS) $(GO_ASMFLAGS) \
-		$(SOURCEDIR)/cmd/docs/cmds/cmdtree.go \
-		-coverage $(BUILDDIR_ABSPATH)/e2e-cmd-coverage -report $(BUILDDIR_ABSPATH)/e2e-cmd-report.txt
+	@echo " TEST sudo e2e-coverage"
+	$(V)cd $(SOURCEDIR) && \
+	    sudo -E \
+		$(GO) run $(GO_MODFLAGS) -tags "$(GO_TAGS)" $(GO_GCFLAGS) $(GO_ASMFLAGS) \
+			$(SOURCEDIR)/cmd/docs/cmds/cmdtree.go \
+			-coverage $(BUILDDIR_ABSPATH)/e2e-cmd-coverage \
+			-report $(BUILDDIR_ABSPATH)/e2e-cmd-report.txt
 
 .PHONY: integration-test
 integration-test:
