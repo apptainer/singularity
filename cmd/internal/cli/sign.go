@@ -27,7 +27,7 @@ var signSifGroupIDFlag = cmdline.Flag{
 	DefaultValue: uint32(0),
 	Name:         "group-id",
 	ShortHand:    "g",
-	Usage:        "group ID to be signed",
+	Usage:        "sign a specified group ID (default non)",
 }
 
 // --groupid (deprecated)
@@ -47,7 +47,7 @@ var signSifDescSifIDFlag = cmdline.Flag{
 	DefaultValue: uint32(0),
 	Name:         "sif-id",
 	ShortHand:    "i",
-	Usage:        "descriptor ID to be signed (default system-partition)",
+	Usage:        "sign a specified descriptor ID (default system-partition)",
 }
 
 // --id (deprecated)
@@ -67,7 +67,7 @@ var signKeyIdxFlag = cmdline.Flag{
 	DefaultValue: -1,
 	Name:         "keyidx",
 	ShortHand:    "k",
-	Usage:        "private key to use (index from 'keys list')",
+	Usage:        "private key to use (index from 'key list')",
 }
 
 // -a|--all
@@ -77,7 +77,7 @@ var signAllFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "all",
 	ShortHand:    "a",
-	Usage:        "sign all non-signature partitions in a SIF",
+	Usage:        "sign all non-signature partitions",
 }
 
 func init() {

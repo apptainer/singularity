@@ -33,7 +33,7 @@ var verifyServerURIFlag = cmdline.Flag{
 	DefaultValue: defaultKeyServer,
 	Name:         "url",
 	ShortHand:    "u",
-	Usage:        "key server URL",
+	Usage:        "specify a URL for a key server",
 	EnvKeys:      []string{"URL"},
 }
 
@@ -44,7 +44,7 @@ var verifySifGroupIDFlag = cmdline.Flag{
 	DefaultValue: uint32(0),
 	Name:         "group-id",
 	ShortHand:    "g",
-	Usage:        "group ID to be verified",
+	Usage:        "verify a specified group ID (default non)",
 }
 
 // --groupid (deprecated)
@@ -64,7 +64,7 @@ var verifySifDescSifIDFlag = cmdline.Flag{
 	DefaultValue: uint32(0),
 	Name:         "sif-id",
 	ShortHand:    "i",
-	Usage:        "descriptor ID to be verified (default system-partition)",
+	Usage:        "verify a specified descriptor ID (default system-partition)",
 }
 
 // --id (deprecated)
@@ -84,7 +84,7 @@ var verifyLocalFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "local",
 	ShortHand:    "l",
-	Usage:        "only verify with local keys",
+	Usage:        "only verify with local key(s) in keyring",
 	EnvKeys:      []string{"LOCAL_VERIFY"},
 }
 
@@ -105,7 +105,7 @@ var verifyAllFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "all",
 	ShortHand:    "a",
-	Usage:        "verify all non-signature partitions in a SIF",
+	Usage:        "verify all non-signature partitions",
 }
 
 func init() {
