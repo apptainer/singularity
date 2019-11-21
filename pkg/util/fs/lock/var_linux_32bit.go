@@ -9,6 +9,6 @@ package lock
 
 import "golang.org/x/sys/unix"
 
-const (
+func init() {
 	setLk = unix.F_SETLK64
-)
+}
