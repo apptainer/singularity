@@ -29,7 +29,7 @@ func (p *SandboxPacker) Pack(context.Context) (*types.Bundle, error) {
 	// copy filesystem into bundle rootfs
 	sylog.Debugf("Copying file system from %s to %s in Bundle\n", rootfs, p.b.RootfsPath)
 	var stderr bytes.Buffer
-	cmd := exec.Command("cp", "-r", rootfs+`/.`, p.b.RootfsPath)
+	cmd := exec.Command("cp", "-a", rootfs+`/.`, p.b.RootfsPath)
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return nil, fmt.Errorf("cp Failed: %v: %v", err, stderr.String())
