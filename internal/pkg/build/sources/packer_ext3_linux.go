@@ -65,7 +65,7 @@ func unpackExt3(b *types.Bundle, img *image.Image) error {
 	// copy filesystem into bundle rootfs
 	sylog.Debugf("Copying filesystem from %s to %s in Bundle\n", tmpmnt, b.RootfsPath)
 	var stderr bytes.Buffer
-	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, b.RootfsPath)
+	cmd := exec.Command("cp", "-a", tmpmnt+`/.`, b.RootfsPath)
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("while copying files: %v: %v", err, stderr.String())
