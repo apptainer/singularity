@@ -3,10 +3,12 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// +build linux,386 linux,arm linux,mips linux,mipsle
+
 package lock
 
 import "golang.org/x/sys/unix"
 
-const (
+func init() {
 	setLk = unix.F_SETLK64
-)
+}

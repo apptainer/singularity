@@ -3,12 +3,8 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build !linux
-
 package lock
 
 import "golang.org/x/sys/unix"
 
-const (
-	setLk = unix.F_SETLK
-)
+var setLk = unix.F_SETLK
