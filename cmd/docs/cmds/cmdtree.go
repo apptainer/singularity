@@ -6,15 +6,12 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -53,7 +50,7 @@ type singularityCmd struct {
 	Children []singularityCmd `json:"children"`
 }
 
-func checkCmd(sCmd string, e2eCmds string, resultFile *os.File) error {
+func checkCmd(sCmd string, e2eCmds string, resultFile *os.File, verbose bool) error {
 	currentCmd := sCmd
 	currentOpt := ""
 	if strings.Index(sCmd, "--") > 0 {
@@ -82,11 +79,15 @@ func checkCmd(sCmd string, e2eCmds string, resultFile *os.File) error {
 
 	str := fmt.Sprintf("UNTESTED: %s\n", sCmd)
 	if isTested {
-		fmt.Printf("%s%s%s\n", "\x1b[32m", sCmd, "\x1b[0m")
+		if verbose {
+			fmt.Printf("%s%s%s\n", "\x1b[32m", sCmd, "\x1b[0m")
+		}
 		str = fmt.Sprintf("TESTED: %s\n", sCmd)
 		tested++
 	} else {
-		fmt.Printf("%s%s%s\n", "\x1b[31m", sCmd, "\x1b[0m")
+		if verbose {
+			fmt.Printf("%s%s%s\n", "\x1b[31m", sCmd, "\x1b[0m")
+		}
 	}
 	resultFile.WriteString(str)
 
@@ -100,6 +101,12 @@ func loadData(singularityCmdsFile, e2eCmdsFile string) (string, string, error) {
 	}
 	e2eCmds := string(e2eData)
 
+	// Strip ` --debug` (and ` -d` just in case) from commands
+	// This is needed as the generated command tree doesn't have anything ahead
+	// of the command name, so --debug will stop a match happening
+	e2eCmds = strings.ReplaceAll(e2eCmds, "singularity --debug", "singularity")
+	e2eCmds = strings.ReplaceAll(e2eCmds, "singularity -d", "singularity")
+
 	singularityData, err := ioutil.ReadFile(singularityCmdsFile)
 	if err != nil {
 		return "", "", err
@@ -109,8 +116,16 @@ func loadData(singularityCmdsFile, e2eCmdsFile string) (string, string, error) {
 	return singularityCmds, e2eCmds, nil
 }
 
-func analyseData(singularityCmds string, e2eCmds string) (string, error) {
-	resultFile, err := ioutil.TempFile("", "singularity-cmd-coverage-")
+func analyseData(singularityCmds string, e2eCmds string, report string, verbose bool) (string, error) {
+	var (
+		err        error
+		resultFile *os.File
+	)
+	if report == "" {
+		resultFile, err = ioutil.TempFile("", "singularity-cmd-coverage-")
+	} else {
+		resultFile, err = os.OpenFile(report, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	}
 	if err != nil {
 		return "", fmt.Errorf("failed to create file to store coverage results: %s", err)
 	}
@@ -118,7 +133,7 @@ func analyseData(singularityCmds string, e2eCmds string) (string, error) {
 
 	for _, singularityCmd := range strings.Split(singularityCmds, "\n") {
 		if singularityCmd != "" {
-			err = checkCmd(singularityCmd, e2eCmds, resultFile)
+			err = checkCmd(singularityCmd, e2eCmds, resultFile, verbose)
 			if err != nil {
 				return "", fmt.Errorf("failed to check cmd %s", singularityCmd)
 			}
@@ -127,8 +142,7 @@ func analyseData(singularityCmds string, e2eCmds string) (string, error) {
 
 	totalCmds := len(strings.Split(singularityCmds, "\n"))
 	ratio := tested * 100 / totalCmds
-	fmt.Printf("Coverage: %d/%d (%d%%)\n", tested, totalCmds, ratio)
-
+	fmt.Printf("E2E cmd coverage: %d/%d (%d%%)\n", tested, totalCmds, ratio)
 	return resultFile.Name(), nil
 }
 
@@ -230,35 +244,10 @@ func createCmdsFiles() (string, string, error) {
 	return jsonFile.Name(), textFile.Name(), nil
 }
 
-func runE2ETests() (string, error) {
-	tempCoverageFileStr, err := ioutil.TempFile("", "e2e-cmds-")
-	if err != nil {
-		return "", fmt.Errorf("failed to create file to store e2e-cmds: %s", err)
-	}
-
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", fmt.Errorf("failed to get current directory: %s", err)
-	}
-
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("make", "-C", "builddir", "e2e-test")
-	coverageFileStr := "SINGULARITY_E2E_COVERAGE=" + tempCoverageFileStr.Name()
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	cmd.Env = append(os.Environ(), coverageFileStr)
-	cmd.Dir = filepath.Join(dir, "../../..")
-	err = cmd.Run()
-	if err != nil {
-		return "", fmt.Errorf("failed to run E2E tests - stderr: %s; stdout: %s", stderr.String(), stdout.String())
-	}
-
-	return tempCoverageFileStr.Name(), nil
-}
-
 func main() {
 	verbose := flag.Bool("v", false, "Enable verbose mode")
-	coverage := flag.Bool("coverage", false, "Analyze the results")
+	coverage := flag.String("coverage", "", "Use specified coverage file from e2e-test to produce a cmd coverage report")
+	report := flag.String("report", "", "Specify location for cmd coverage report")
 
 	flag.Parse()
 
@@ -268,28 +257,22 @@ func main() {
 	}
 
 	resultFilePath := ""
-	e2eCmdsFilePath := ""
-	if *coverage {
-		e2eCmdsFilePath, err = runE2ETests()
+	if *coverage != "" {
+		singularityCmds, e2eCmds, err := loadData(textFilePath, *coverage)
 		if err != nil {
-			log.Fatalf("failed to run E2E tests: %s", err)
+			log.Fatalf("failed to load e2e-test coverage data: %s", err)
 		}
-		singularityCmds, e2eCmds, err := loadData(textFilePath, e2eCmdsFilePath)
+		resultFilePath, err = analyseData(singularityCmds, e2eCmds, *report, *verbose)
 		if err != nil {
-			log.Fatalf("failed to load data: %s", err)
-		}
-		resultFilePath, err = analyseData(singularityCmds, e2eCmds)
-		if err != nil {
-			log.Fatalf("failed to analyze data: %s", err)
+			log.Fatalf("failed to analyze e2e-test coverage data: %s", err)
 		}
 	}
 
 	if *verbose {
 		fmt.Printf("List of all the Singularity commands (JSON) is in: %s\n", jsonFilePath)
 		fmt.Printf("List of all the Singularity commands (text) is in: %s\n", textFilePath)
-		if *coverage {
-			fmt.Printf("List of all the Singularity commands currently tested by E2E: %s\n", e2eCmdsFilePath)
-			fmt.Printf("Coverage results are saved in: %s\n", resultFilePath)
-		}
+	}
+	if *coverage != "" {
+		fmt.Printf("E2E coverage report saved in: %s\n", resultFilePath)
 	}
 }
