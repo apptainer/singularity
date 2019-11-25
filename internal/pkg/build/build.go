@@ -257,6 +257,8 @@ func (b *Build) Full(ctx context.Context) error {
 	// clean up build normally
 	defer b.cleanUp()
 
+	oldumask := syscall.Umask(0002)
+
 	// build each stage one after the other
 	for i, stage := range b.stages {
 		if err := stage.runPreScript(); err != nil {
@@ -318,6 +320,8 @@ func (b *Build) Full(ctx context.Context) error {
 			return fmt.Errorf("while inserting metadata to bundle: %v", err)
 		}
 	}
+
+	syscall.Umask(oldumask)
 
 	sylog.Debugf("Calling assembler")
 	if err := b.stages[len(b.stages)-1].Assemble(b.Conf.Dest); err != nil {
