@@ -13,6 +13,7 @@ import (
 	"syscall"
 
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/util/machine"
 )
 
 type sifFormat struct{}
@@ -60,24 +61,6 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 		return err
 	}
 
-	// Check the compatibility of the image's target architecture
-	// TODO: we should check if we need to deal with compatible architectures:
-	// For example, i386 can run on amd64 and maybe some ARM processor can run <= armv6 instructions
-	// on asasrch64 (someone should double check).
-	// TODO: The typically workflow is:
-	// 1. pull image from docker/library/shub (pull/build commands)
-	// 2. extract image file system to temp folder (build commands)
-	// 3. if definition file contains a 'executable' section, the architecture check should
-	// occur (or delegate to runtime which would fail during execution).
-	// The current code will be called by the starter which will cover most of the
-	// workflow described above. However, SIF is currently build upon the assumption
-	// that the architecture is assigned based on the architecture defined by a Go
-	// runtime, which is not 100% compliant with the intended workflow.
-	sifArch := string(fimg.Header.Arch[:sif.HdrArchLen-1])
-	if sifArch != sif.HdrArchUnknown && sifArch != sif.GetSIFArch(runtime.GOARCH) {
-		return fmt.Errorf("the image's architecture (%s) is incompatible with the host's (%s)", sif.GetGoArch(sifArch), runtime.GOARCH)
-	}
-
 	groupID := -1
 
 	// Get the default system partition image
@@ -106,6 +89,16 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 		htype, err := checkPartitionType(img, fstype, desc.Fileoff)
 		if err != nil {
 			return fmt.Errorf("while checking system partition header: %s", err)
+		}
+
+		// Check the compatibility of the image's target architecture, the
+		// CompatibleWith call will also check that the current machine
+		// has persistent emulation enabled in /proc/sys/fs/binfmt_misc to
+		// be able to execute container process correctly
+		sifArch := string(fimg.Header.Arch[:sif.HdrArchLen-1])
+		goArch := sif.GetGoArch(sifArch)
+		if sifArch != sif.HdrArchUnknown && !machine.CompatibleWith(goArch) {
+			return fmt.Errorf("the image's architecture (%s) could not run on the host's (%s)", goArch, runtime.GOARCH)
 		}
 
 		img.Partitions = []Section{
