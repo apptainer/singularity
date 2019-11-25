@@ -1200,19 +1200,26 @@ func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, 
 		}
 	}
 
-	switch imgObject.Type {
-	case image.SANDBOX:
-		if !e.EngineConfig.File.AllowContainerDir {
-			return nil, fmt.Errorf("configuration disallows users from running sandbox based containers")
-		}
-	case image.EXT3:
-		if !e.EngineConfig.File.AllowContainerExtfs {
-			return nil, fmt.Errorf("configuration disallows users from running extFS based containers")
-		}
-	case image.SQUASHFS:
-		if !e.EngineConfig.File.AllowContainerSquashfs {
-			return nil, fmt.Errorf("configuration disallows users from running squashFS based containers")
+	for _, p := range imgObject.Partitions {
+		switch p.Type {
+		case image.SANDBOX:
+			if !e.EngineConfig.File.AllowContainerDir {
+				return nil, fmt.Errorf("configuration disallows users from running sandbox based containers")
+			}
+		case image.EXT3:
+			if !e.EngineConfig.File.AllowContainerExtfs {
+				return nil, fmt.Errorf("configuration disallows users from running extFS based containers")
+			}
+		case image.SQUASHFS:
+			if !e.EngineConfig.File.AllowContainerSquashfs {
+				return nil, fmt.Errorf("configuration disallows users from running squashFS based containers")
+			}
+		case image.ENCRYPTSQUASHFS:
+			if !e.EngineConfig.File.AllowContainerEncrypted {
+				return nil, fmt.Errorf("configuration disallows users from running encrypted containers")
+			}
 		}
 	}
+
 	return imgObject, nil
 }
