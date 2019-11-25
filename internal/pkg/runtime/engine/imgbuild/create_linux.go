@@ -6,7 +6,6 @@
 package imgbuild
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -259,28 +258,53 @@ func (e *EngineOperations) copyFiles() error {
 	return nil
 }
 
+func createScript(path string, content []byte) error {
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to create script: %s", err)
+	}
+
+	if _, err := f.Write(content); err != nil {
+		f.Close()
+		return fmt.Errorf("failed to write script: %s", err)
+	}
+
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("failed to close script: %s", err)
+	}
+
+	return nil
+}
+
 // runScriptSection executes the provided script by piping the
 // script to /bin/sh command.
 func (e *EngineOperations) runScriptSection(name string, s types.Script, setEnv bool) {
+	sylog.Infof("Running %s scriptlet\n", name)
+
+	script := filepath.Join(e.EngineConfig.RootfsPath, ".build-script-"+name)
+
+	// write the script section in a temporary file to avoid
+	// potential "starvation" issue when passing the script
+	// over stdin pipe, because commands in the script could
+	// read piped data and consume the remaining bytes of the
+	// script causing subsequent lines of the script to not
+	// be executed by the shell
+	if err := createScript(script, []byte(s.Script)); err != nil {
+		sylog.Fatalf("while creating script %s: %s", script, err)
+	}
+	defer os.Remove(script)
+
 	args := []string{"-ex"}
 	// trim potential trailing comment from args and append to args list
 	args = append(args, strings.Fields(strings.Split(s.Args, "#")[0])...)
-
-	envs := []string{}
-	if setEnv {
-		envs = e.EngineConfig.OciConfig.Process.Env
-	}
-
-	sylog.Infof("Running %s scriptlet\n", name)
-
-	var b bytes.Buffer
-	b.WriteString(s.Script)
+	args = append(args, script)
 
 	cmd := exec.Command("/bin/sh", args...)
-	cmd.Env = envs
+	if setEnv {
+		cmd.Env = e.EngineConfig.OciConfig.Process.Env
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Stdin = &b
 
 	if err := cmd.Run(); err != nil {
 		sylog.Fatalf("failed to execute %%%s proc: %v\n", name, err)
