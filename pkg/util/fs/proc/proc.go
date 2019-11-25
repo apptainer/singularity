@@ -99,17 +99,32 @@ func parseMountInfoLine(line string) MountInfoEntry {
 	// mount options field
 	entry.Options = strings.Split(fields[5], ",")
 	// optional fields field
-	shift := 0
-	if fields[6] != "-" {
-		entry.Fields = fields[6]
-		shift++
+	index := 6
+	for ; fields[index] != "-"; index++ {
+		entry.Fields += " " + fields[index]
 	}
+	entry.Fields = strings.TrimSpace(entry.Fields)
+
 	// filesystem type field
-	entry.FSType = fields[7+shift]
+	entry.FSType = fields[index+1]
 	// mount source field
-	entry.Source = fields[8+shift]
+	entry.Source = fields[index+2]
 	// super block options field
-	entry.SuperOptions = strings.Split(fields[9+shift], ",")
+	entry.SuperOptions = strings.Split(fields[index+3], ",")
+
+	// major/minor number reported in mountinfo may
+	// be wrong for btrfs filesystem as it uses virtual
+	// device numbers, st_dev from stat will return numbers
+	// different from those shown in mountinfo, to fix that
+	// we need to get major/minor directly from a stat call
+	// on the corresponding mount point
+	if entry.FSType == "btrfs" {
+		fi, err := os.Stat(entry.Point)
+		if err == nil {
+			st := fi.Sys().(*syscall.Stat_t)
+			entry.Dev = fmt.Sprintf("%d:%d", unix.Major(st.Dev), unix.Minor(st.Dev))
+		}
+	}
 
 	return entry
 }
