@@ -1426,7 +1426,10 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 		} else if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
 		} else {
-			c.session.OverrideDir(dst, src)
+			fi, err := os.Stat(src)
+			if err == nil && fi.IsDir() {
+				c.session.OverrideDir(dst, src)
+			}
 			system.Points.AddRemount(mount.UserbindsTag, dst, flags)
 		}
 	}
@@ -1616,7 +1619,12 @@ func (c *container) addCwdMount(system *mount.System) error {
 	if cwd != current {
 		if c.isLayerEnabled() {
 			linkPath := filepath.Join(c.session.Layer.Dir(), cwd)
-			if err := c.session.AddSymlink(linkPath, current); err != nil {
+			// if the last element is a symlink, duplicate the target
+			target, err := os.Readlink(cwd)
+			if err != nil {
+				target = current
+			}
+			if err := c.session.AddSymlink(linkPath, target); err != nil {
 				return fmt.Errorf("can't create symlink %s: %s", linkPath, err)
 			}
 			return nil
