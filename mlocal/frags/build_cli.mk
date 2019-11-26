@@ -8,11 +8,15 @@ $(singularity_build_config): $(BUILDDIR)/config.h $(SOURCEDIR)/scripts/go-genera
 
 CLEANFILES += $(singularity_build_config)
 
-# singularity
-singularity_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep -v2 "$(GO)" "$(SOURCEDIR)" "$(GO_TAGS)" "$(SOURCEDIR)/cmd/singularity")
+# contain singularity_SOURCE variable list
+singularity_deps := $(BUILDDIR_ABSPATH)/singularity.d
+
+$(singularity_deps): $(GO_MODFILES) $(singularity_SOURCE)
+	@echo " GEN GO DEP" $@
+	$(V)$(SOURCEDIR)/makeit/gengodep -v3 "$(GO)" "singularity_SOURCE" "$(GO_TAGS)" "$@" "$(SOURCEDIR)/cmd/singularity"
 
 singularity := $(BUILDDIR)/singularity
-$(singularity): $(singularity_build_config) $(singularity_SOURCE)
+$(singularity): $(singularity_build_config) $(singularity_deps) $(singularity_SOURCE)
 	@echo " GO" $@; echo "    [+] GO_TAGS" \"$(GO_TAGS)\"
 	$(V)$(GO) build $(GO_MODFLAGS) $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) $(GO_GCFLAGS) $(GO_ASMFLAGS) \
 		-o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/singularity
@@ -78,3 +82,4 @@ $(remote_config_INSTALL): $(remote_config)
 
 INSTALLFILES += $(remote_config_INSTALL)
 
+-include $(singularity_deps)

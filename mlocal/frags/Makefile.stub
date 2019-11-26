@@ -1,3 +1,8 @@
+# as go build already parallelize things, running make in parallel
+# just slow down the whole process and we also requires to respect
+# a specific order
+.NOTPARALLEL:
+
 all: $(ALL)
 
 .PHONY: man

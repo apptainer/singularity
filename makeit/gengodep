@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "$1" != "-v2" ] ; then
+if [ "$1" != "-v3" ] ; then
 	cat 1>&2 <<-EOT
 
 ========================================================================
@@ -18,10 +18,11 @@ fi
 shift
 
 go=$1
-srcdir=$2
+var=$2
 gotags=$3
+depfile=$4
 
-shift 3
+shift 4
 
 # this is needed so that the value we are getting from the makefile does
 # get propagated down to go list.
@@ -33,11 +34,10 @@ else
 	mod_mode=readonly
 fi
 
-"${go}" list -mod=${mod_mode} \
-	-deps \
-	-f '{{ with $d := . }}{{ range $d.GoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ range $d.CgoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ end }}' \
-	-tags "${gotags}" \
-	"$@" |
-tr ' ' '\n' |
-sort -u |
-grep "^${srcdir}"
+template='{{ with $d := . }}{{ if not $d.Standard }}{{ range $d.GoFiles }}{{ printf "%s/%s\n" $d.Dir . }}{{ end }}{{ range $d.CgoFiles }}{{ printf "%s/%s\n" $d.Dir . }}{{ end }}{{ end }}{{ end }}'
+
+godeps=`${go} list -mod=${mod_mode} -deps -f "${template}" -tags "${gotags}" "$@" | sort -u`
+
+for m in ${godeps}; do
+    echo "$var += $m" >> ${depfile}
+done
