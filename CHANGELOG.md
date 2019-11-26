@@ -9,7 +9,31 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.5.0
+# Changes Since v3.5.1
+
+# v3.5.1 - [2019.12.03]
+
+## New features / functionalities
+
+A single feature has been added in the bugfix release, with specific
+functionality:
+
+  - A new option `allow container encrypted` can be set to `no` in
+      `singularity.conf` to prevent execution of encrypted containers.
+
+## Bug Fixes
+
+This point release addresses the following issues:
+
+  - Fixes a disk space leak when building from docker-archive.
+  - Makes container process SIGABRT return the expected code.
+  - Fixes the `inspect` command in unpriveleged workflow.
+  - Sets an appropriate default umask during build stages, to avoid issues with
+      very restrictive user umasks.
+  - Fixes an issue with build script content being consumed from STDIN.
+  - Corrects the behaviour of underlay with non-empty / symlinked CWD.
+  - Fixes execution of containers when binding BTRFS filesystems.
+  - Fixes build / check failures for MIPS & PPC64.
 
 # v3.5.0 - [2019.11.13]
 

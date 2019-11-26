@@ -4,7 +4,7 @@ Since you are reading this from the Singularity source code, it will be assumed
 that you are building/compiling.
 
 For full instructions on installation, check out our
-[installation guide](https://www.sylabs.io/guides/3.0/user-guide/installation.html).
+[installation guide](https://www.sylabs.io/guides/3.5/user-guide/installation.html).
 
 ## Install system dependencies
 
@@ -89,7 +89,7 @@ $ mkdir -p ${GOPATH}/src/github.com/sylabs && \
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.5.0
+$ git checkout v3.5.1
 ```
 
 ## Compiling Singularity
