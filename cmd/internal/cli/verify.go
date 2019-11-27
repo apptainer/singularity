@@ -44,7 +44,7 @@ var verifySifGroupIDFlag = cmdline.Flag{
 	DefaultValue: uint32(0),
 	Name:         "group-id",
 	ShortHand:    "g",
-	Usage:        "verify a specified group ID (default non)",
+	Usage:        "verify all partitions in the specified group (default non)",
 }
 
 // --groupid (deprecated)
@@ -64,7 +64,7 @@ var verifySifDescSifIDFlag = cmdline.Flag{
 	DefaultValue: uint32(0),
 	Name:         "sif-id",
 	ShortHand:    "i",
-	Usage:        "verify a specified descriptor ID (default system-partition)",
+	Usage:        "verify a single partition with the specified ID (default system-partition)",
 }
 
 // --id (deprecated)

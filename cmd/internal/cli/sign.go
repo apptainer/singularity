@@ -27,7 +27,7 @@ var signSifGroupIDFlag = cmdline.Flag{
 	DefaultValue: uint32(0),
 	Name:         "group-id",
 	ShortHand:    "g",
-	Usage:        "sign a specified group ID (default non)",
+	Usage:        "sign all partitions in the specified group (default non)",
 }
 
 // --groupid (deprecated)
@@ -47,7 +47,7 @@ var signSifDescSifIDFlag = cmdline.Flag{
 	DefaultValue: uint32(0),
 	Name:         "sif-id",
 	ShortHand:    "i",
-	Usage:        "sign a specified descriptor ID (default system-partition)",
+	Usage:        "sign a single partition with the specified ID (default system-partition)",
 }
 
 // --id (deprecated)
