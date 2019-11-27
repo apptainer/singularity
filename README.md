@@ -20,7 +20,7 @@ To install Singularity from source, see the [installation instructions](INSTALL.
 
 For system administrators, see the [administrator documentation](https://www.sylabs.io/guides/3.4/admin-guide/).
 
-For users, see the [user documentation](https://www.sylabs.io/guides/3.4/user-guide/).
+For users, see the [user documentation](https://www.sylabs.io/guides/3.5/user-guide/).
 
 ## Contributing to Singularity
 

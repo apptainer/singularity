@@ -96,7 +96,7 @@ func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn
 	}
 
 	sylog.Debugf("Mounting image directory %s\n", rootfs)
-	if err := rpcOps.Mount(rootfs, sessionRootFs, "", syscall.MS_BIND, "errors=remount-ro"); err != nil {
+	if err := rpcOps.Mount(rootfs, sessionRootFs, "", syscall.MS_BIND, ""); err != nil {
 		return fmt.Errorf("failed to mount directory filesystem %s: %s", rootfs, err)
 	}
 

@@ -124,3 +124,51 @@ func (c actionTests) issue4768(t *testing.T) {
 		),
 	)
 }
+
+// Check that underlay layer handle relative/absolute symlinks
+// when those are bind mount points.
+func (c actionTests) issue4797(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	// /etc/relative-slink in the image point to ../usr/share/zoneinfo/Etc/UTC
+	// /etc/absolute-slink in the image point to /usr/share/zoneinfo/Etc/UTC
+	tests := []struct {
+		name string
+		args []string
+		exit int
+	}{
+		{
+			// check /usr/bin presence in the container
+			name: "RelativeUsrBin",
+			args: []string{"--bind", "/etc/passwd:/etc/relative-slink", c.env.ImagePath, "test", "-d", "/usr/bin"},
+			exit: 0,
+		},
+		{
+			// check /usr/share/zoneinfo/Etc/UTC presence in the container
+			name: "RelativeUTC",
+			args: []string{"--bind", "/etc/passwd:/etc/relative-slink", c.env.ImagePath, "test", "-f", "/usr/share/zoneinfo/Etc/UTC"},
+			exit: 0,
+		},
+		{
+			name: "AbsoluteUsrBin",
+			args: []string{"--bind", "/etc/passwd:/etc/absolute-slink", c.env.ImagePath, "test", "-d", "/usr/bin"},
+			exit: 0,
+		},
+		{
+			name: "AbsoluteUTC",
+			args: []string{"--bind", "/etc/passwd:/etc/absolute-slink", c.env.ImagePath, "test", "-f", "/usr/share/zoneinfo/Etc/UTC"},
+			exit: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserNamespaceProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(tt.exit),
+		)
+	}
+}
