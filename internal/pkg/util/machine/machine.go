@@ -183,7 +183,7 @@ func ArchFromElf(binary string) (string, error) {
 func ArchFromContainer(container string) string {
 	// fast path if we can get architecture from shell binary
 	shell := fs.EvalRelative("/bin/sh", container)
-	arch, err := ArchFromElf(filepath.Join(shell, container))
+	arch, err := ArchFromElf(filepath.Join(container, shell))
 	if err == nil {
 		return arch
 	}
