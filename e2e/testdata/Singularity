@@ -74,5 +74,9 @@ export HELLOTHISIS
     mkdir /madness
     ln -s /madness /var/etc/madness
 
+    # for underlay regression tests
+    ln -s ../usr/share/zoneinfo/Etc/UTC /etc/relative-slink
+    ln -s /usr/share/zoneinfo/Etc/UTC /etc/absolute-slink
+
 %test
     exec "$@"
