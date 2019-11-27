@@ -96,25 +96,25 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 				sylog.Warningf("skipping mount of %s: %s", point.Source, err)
 				continue
 			}
-			dst = filepath.Join(underlayDir, dst)
-			if _, err := u.session.GetPath(dst); err == nil {
+			underlayDst := filepath.Join(underlayDir, dst)
+			if _, err := u.session.GetPath(underlayDst); err == nil {
 				continue
 			}
 			switch st.Mode & syscall.S_IFMT {
 			case syscall.S_IFDIR:
-				if err := u.session.AddDir(dst); err != nil {
+				if err := u.session.AddDir(underlayDst); err != nil {
 					return err
 				}
 			default:
-				if err := u.session.AddFile(dst, nil); err != nil {
+				if err := u.session.AddFile(underlayDst, nil); err != nil {
 					return err
 				}
 			}
 			createdPath = append(
 				createdPath,
 				pathLen{
-					path: point.Destination,
-					len:  uint16(strings.Count(point.Destination, "/")),
+					path: dst,
+					len:  uint16(strings.Count(dst, "/")),
 				},
 			)
 		}
@@ -137,14 +137,13 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 						return err
 					}
 				}
-				dir := fs.EvalRelative(p, rootFsPath)
 				// if the directory is overrided by a bind mount we won't
 				// need to duplicate the container image directory
-				if _, ok := destinations[dir]; ok {
+				if _, ok := destinations[p]; ok {
 					continue
 				}
 				// directory not overrided, duplicate it
-				if err := u.duplicateDir(dir, system, pl.path); err != nil {
+				if err := u.duplicateDir(p, system, pl.path); err != nil {
 					return err
 				}
 			}
