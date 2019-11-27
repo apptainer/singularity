@@ -34,6 +34,7 @@ This point release addresses the following issues:
   - Corrects the behaviour of underlay with non-empty / symlinked CWD.
   - Fixes execution of containers when binding BTRFS filesystems.
   - Fixes build / check failures for MIPS & PPC64.
+  - Ensures file ownership maintained when building image from sandbox.
 
 # v3.5.0 - [2019.11.13]
 
