@@ -31,10 +31,12 @@ This point release addresses the following issues:
   - Sets an appropriate default umask during build stages, to avoid issues with
       very restrictive user umasks.
   - Fixes an issue with build script content being consumed from STDIN.
-  - Corrects the behaviour of underlay with non-empty / symlinked CWD.
+  - Corrects the behaviour of underlay with non-empty / symlinked CWD and absolute
+    symlink binds targets.
   - Fixes execution of containers when binding BTRFS filesystems.
   - Fixes build / check failures for MIPS & PPC64.
   - Ensures file ownership maintained when building image from sandbox.
+  - Fixes a squashfs mount error on kernel 5.4.0 and above.
 
 # v3.5.0 - [2019.11.13]
 
