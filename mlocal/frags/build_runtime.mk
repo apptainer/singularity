@@ -18,6 +18,8 @@ $(BUILDDIR)/.clean-starter: $(starter_CSOURCE)
 
 
 # starter
+# Look at dependencies file changes via starter_deps
+# because it means that a module was updated.
 starter := $(BUILDDIR)/cmd/starter/c/starter
 $(starter): $(BUILDDIR)/.clean-starter $(singularity_build_config) $(starter_deps) $(starter_SOURCE)
 	@echo " GO" $@

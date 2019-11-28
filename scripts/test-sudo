@@ -1,0 +1,12 @@
+#!/bin/sh
+
+sudocmd="sudo -E ${sudo_args}"
+unset sudo_args
+
+# reset timeout for each invocation or exit
+# if a password is required
+if ! sudo -vn ; then
+    exit 1
+fi
+
+exec ${sudocmd} "$@"

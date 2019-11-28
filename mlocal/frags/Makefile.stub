@@ -5,6 +5,9 @@
 
 all: $(ALL)
 
+test_sudo := $(SOURCEDIR)/scripts/test-sudo
+e2e_sudo := $(SOURCEDIR)/scripts/e2e-sudo
+
 .PHONY: man
 man: singularity
 	mkdir -p $(DESTDIR)$(MANDIR)/man1
@@ -45,8 +48,7 @@ unit-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(B
 unit-test:
 	@echo " TEST sudo go test [unit]"
 	$(V)cd $(SOURCEDIR) && \
-		sudo -E \
-		scripts/go-test -v $(EXTRA_FLAGS) \
+		scripts/go-test -sudo -v $(EXTRA_FLAGS) \
 		./...
 	@echo "       PASS"
 
@@ -60,9 +62,8 @@ e2e-test:
 		SINGULARITY_E2E_COVERAGE=$(BUILDDIR_ABSPATH)/e2e-cmd-coverage \
 		scripts/e2e-test -v $(EXTRA_FLAGS)
 	@echo "       PASS"
-	@echo " TEST sudo e2e-coverage"
+	@echo " TEST e2e-coverage"
 	$(V)cd $(SOURCEDIR) && \
-	    sudo -E \
 		$(GO) run $(GO_MODFLAGS) -tags "$(GO_TAGS)" $(GO_GCFLAGS) $(GO_ASMFLAGS) \
 			$(SOURCEDIR)/cmd/docs/cmds/cmdtree.go \
 			-coverage $(BUILDDIR_ABSPATH)/e2e-cmd-coverage \
@@ -72,8 +73,7 @@ e2e-test:
 integration-test:
 	@echo " TEST sudo go test [integration]"
 	$(V)cd $(SOURCEDIR) && \
-		sudo -E \
-		scripts/go-test -v -tags 'integration_test' \
+		scripts/go-test -sudo -v -tags 'integration_test' \
 		./cmd/singularity ./pkg/network
 	@echo "       PASS"
 
@@ -83,8 +83,7 @@ test:
 	$(V)M=0; eval 'while [ $$M -le 20 ]; do sleep 60; M=`expr $$M + 1`; echo "Still testing ($$M) ..."; done &' ; \
     	trap "kill $$! || true" 0; \
 		cd $(SOURCEDIR) && \
-		sudo -E \
-		scripts/go-test -v -tags 'integration_test' \
+		scripts/go-test -sudo -v -tags 'integration_test' \
 		./...
 	@echo "       PASS"
 
