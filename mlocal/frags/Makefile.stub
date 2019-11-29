@@ -5,9 +5,6 @@
 
 all: $(ALL)
 
-test_sudo := $(SOURCEDIR)/scripts/test-sudo
-e2e_sudo := $(SOURCEDIR)/scripts/e2e-sudo
-
 .PHONY: man
 man: singularity
 	mkdir -p $(DESTDIR)$(MANDIR)/man1

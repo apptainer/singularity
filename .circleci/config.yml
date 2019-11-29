@@ -49,12 +49,12 @@ x-run:
     name: Build Singularity
     command: |-
       ./mconfig -v -p /usr/local
-      make -j$(nproc) -C ./builddir all
+      make -C ./builddir all
 
   check_singularity: &check_singularity
     name: Check Singularity
     command: |-
-      make -j$(nproc) -C ./builddir check
+      make -C ./builddir check
 
   install_singularity: &install_singularity
     name: Install Singularity
@@ -82,6 +82,20 @@ x-run:
           ;;
       esac
 
+aliases:
+  - &attach_workspace
+    attach_workspace:
+      at: ~/go
+  - &restore_cache
+    restore_cache:
+      keys:
+        - go-vm-mod-{{ checksum "go.sum" }}
+  - &save_cache
+    save_cache:
+      key: go-vm-mod-{{ checksum "go.sum" }}
+      paths:
+        - ~/go/pkg
+
 jobs:
   get_source:
     <<: *defaults
@@ -95,30 +109,25 @@ jobs:
             - singularity
 
   cache_go_mod:
-    <<: *defaults
-    docker:
-      - image: sylabsio/golang:1.13.1-stretch
+    <<: *vm_defaults
     steps:
-      - attach_workspace:
-          at: ~/go
-      - restore_cache:
-          keys:
-            - go-mod-{{ checksum "go.sum" }}
+      - *attach_workspace
+      - *restore_cache
+      - run:
+          <<: *setup_environment
+      - run:
+          <<: *update_go
       - run:
           name: Check go.mod
           command: scripts/check-go.mod
-      - save_cache:
-          key: go-mod-{{ checksum "go.sum" }}
-          paths:
-            - ~/go/pkg/mod
+      - *save_cache
 
   go113-stretch:
     <<: *defaults
     docker:
       - image: sylabsio/golang:1.13.1-stretch
     steps:
-      - attach_workspace:
-          at: ~/go
+      - *attach_workspace
       - run:
           <<: *build_singularity
       - run:
@@ -129,8 +138,7 @@ jobs:
     docker:
       - image: sylabsio/golang:1.13.1-alpine
     steps:
-      - attach_workspace:
-          at: ~/go
+      - *attach_workspace
       - run:
           <<: *build_singularity
       - run:
@@ -160,17 +168,17 @@ jobs:
           name: Build Singularity
           command: |-
             ./mconfig -v -p /usr/local
-            make -j$(sysctl -n hw.logicalcpu) -C ./builddir all
+            make -C ./builddir all
       - run:
           name: Check code
           command: |-
-            make -j$(sysctl -n hw.logicalcpu) -C ./builddir check
+            make -C ./builddir check
 
   build_check_and_install:
     <<: *vm_defaults
     steps:
-      - attach_workspace:
-          at: ~/go
+      - *attach_workspace
+      - *restore_cache
       - run:
           <<: *setup_environment
       - run:
@@ -189,8 +197,8 @@ jobs:
   unit_tests:
     <<: *vm_defaults
     steps:
-      - attach_workspace:
-          at: ~/go
+      - *attach_workspace
+      - *restore_cache
       - run:
           <<: *setup_environment
       - run:
@@ -202,13 +210,13 @@ jobs:
       - run:
           name: Run unit tests
           command: |-
-            make -j$(nproc) -C ./builddir unit-test
+            make -C ./builddir unit-test
 
   integration_tests:
     <<: *vm_defaults
     steps:
-      - attach_workspace:
-          at: ~/go
+      - *attach_workspace
+      - *restore_cache
       - run:
           <<: *setup_environment
       - run:
@@ -228,8 +236,8 @@ jobs:
   e2e_tests:
     <<: *vm_defaults
     steps:
-      - attach_workspace:
-          at: ~/go
+      - *attach_workspace
+      - *restore_cache
       - run:
           <<: *setup_environment
       - run:
@@ -253,16 +261,16 @@ workflows:
   build_and_test:
     jobs:
       - get_source
+      - go113-stretch:
+          requires:
+            - get_source
+      - go113-alpine:
+          requires:
+            - get_source
+      - go113-macos
       - cache_go_mod:
           requires:
             - get_source
-      - go113-stretch:
-          requires:
-            - cache_go_mod
-      - go113-alpine:
-          requires:
-            - cache_go_mod
-      - go113-macos
       - build_check_and_install:
           requires:
             - cache_go_mod

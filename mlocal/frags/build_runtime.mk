@@ -4,7 +4,9 @@
 # contain starter_SOURCE variable list
 starter_deps := $(BUILDDIR_ABSPATH)/starter.d
 
-$(starter_deps): $(GO_MODFILES) $(starter_SOURCE)
+-include $(starter_deps)
+
+$(starter_deps): $(GO_MODFILES)
 	@echo " GEN GO DEP" $@
 	$(V)$(SOURCEDIR)/makeit/gengodep -v3 "$(GO)" "starter_SOURCE" "$(GO_TAGS)" "$@" "$(SOURCEDIR)/cmd/starter"
 
@@ -139,5 +141,3 @@ $(cgroups_config_INSTALL): $(cgroups_config)
 	$(V)install -m 0644 $< $@
 
 INSTALLFILES += $(cgroups_config_INSTALL)
-
--include $(starter_deps)

@@ -11,7 +11,9 @@ CLEANFILES += $(singularity_build_config)
 # contain singularity_SOURCE variable list
 singularity_deps := $(BUILDDIR_ABSPATH)/singularity.d
 
-$(singularity_deps): $(GO_MODFILES) $(singularity_SOURCE)
+-include $(singularity_deps)
+
+$(singularity_deps): $(GO_MODFILES)
 	@echo " GEN GO DEP" $@
 	$(V)$(SOURCEDIR)/makeit/gengodep -v3 "$(GO)" "singularity_SOURCE" "$(GO_TAGS)" "$@" "$(SOURCEDIR)/cmd/singularity"
 
@@ -83,5 +85,3 @@ $(remote_config_INSTALL): $(remote_config)
 	$(V)install -m 0644 $< $@
 
 INSTALLFILES += $(remote_config_INSTALL)
-
--include $(singularity_deps)
