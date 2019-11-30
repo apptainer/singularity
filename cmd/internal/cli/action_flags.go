@@ -453,6 +453,7 @@ var actionNoNvidiaFlag = cmdline.Flag{
 	Value:        &NoNvidia,
 	DefaultValue: false,
 	Name:         "no-nv",
+	Hidden:       true,
 	EnvKeys:      []string{"NV_OFF", "NO_NV"},
 	ExcludedOS:   []string{cmdline.Darwin},
 }
