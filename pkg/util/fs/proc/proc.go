@@ -122,7 +122,8 @@ func parseMountInfoLine(line string) MountInfoEntry {
 		fi, err := os.Stat(entry.Point)
 		if err == nil {
 			st := fi.Sys().(*syscall.Stat_t)
-			entry.Dev = fmt.Sprintf("%d:%d", unix.Major(st.Dev), unix.Minor(st.Dev))
+			// cast to uint64 as st.Dev is uint32 on MIPS
+			entry.Dev = fmt.Sprintf("%d:%d", unix.Major(uint64(st.Dev)), unix.Minor(uint64(st.Dev)))
 		}
 	}
 
@@ -161,7 +162,8 @@ func FindParentMountEntry(path string, entries []MountInfoEntry) (*MountInfoEntr
 		return nil, fmt.Errorf("while getting stat for %s: %s", path, err)
 	}
 	st := fi.Sys().(*syscall.Stat_t)
-	dev := fmt.Sprintf("%d:%d", unix.Major(st.Dev), unix.Minor(st.Dev))
+	// cast to uint64 as st.Dev is uint32 on MIPS
+	dev := fmt.Sprintf("%d:%d", unix.Major(uint64(st.Dev)), unix.Minor(uint64(st.Dev)))
 
 	var entry *MountInfoEntry
 	matchLen := 0
