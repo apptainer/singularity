@@ -11,7 +11,7 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.5.1
 
-# v3.5.1 - [2019.12.03]
+# v3.5.1 - [2019.12.05]
 
 ## New features / functionalities
 
@@ -37,6 +37,8 @@ This point release addresses the following issues:
   - Fixes build / check failures for MIPS & PPC64.
   - Ensures file ownership maintained when building image from sandbox.
   - Fixes a squashfs mount error on kernel 5.4.0 and above.
+  - Fixes an underlay fallback problem, which prevented use of sandboxes on
+    lustre filesystems.
 
 # v3.5.0 - [2019.11.13]
 
