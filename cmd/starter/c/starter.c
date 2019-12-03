@@ -228,7 +228,7 @@ static int apply_container_privileges(struct privileges *privileges) {
      * and to set ambient capabilities. We can't use capset before changing uid/gid
      * because CAP_SETUID/CAP_SETGID could be already dropped
      */
-    if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
+    if ( prctl(PR_SET_SECUREBITS, SECBIT_KEEP_CAPS) < 0 ) {
         fatalf("Failed to set securebits: %s\n", strerror(errno));
     }
 

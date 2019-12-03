@@ -73,7 +73,8 @@ func TestLoop(t *testing.T) {
 	}
 
 	st := fi.Sys().(*syscall.Stat_t)
-	if st.Dev != i1.Device || st.Ino != i1.Inode {
+	// cast to uint64 as st.Dev is uint32 on MIPS
+	if uint64(st.Dev) != i1.Device || st.Ino != i1.Inode {
 		t.Errorf("bad file association for %s", path)
 	}
 

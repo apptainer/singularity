@@ -31,7 +31,8 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 	}
 	st := fi.Sys().(*syscall.Stat_t)
 	imageIno := st.Ino
-	imageDev := st.Dev
+	// cast to uint64 as st.Dev is uint32 on MIPS
+	imageDev := uint64(st.Dev)
 
 	fd, err := lock.Exclusive("/dev")
 	if err != nil {
