@@ -1043,24 +1043,44 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 	writableOverlayPath := ""
 	overlayPartitions := []string{}
 
+	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
+		return err
+	}
+
 	// sandbox are handled differently for security reasons
 	if img.Type == image.SANDBOX {
 		if img.Path == "/" {
 			return fmt.Errorf("/ as sandbox is not authorized")
 		}
 
+		// C starter code will position current working directory
+		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
+
 		if err := overlay.CheckLower(img.Path); overlay.IsIncompatible(err) {
-			// a warning message would be better but on some systems it
-			// could annoy users, make it verbose instead
-			sylog.Verbosef("Fallback to underlay layer: %s", err)
 			e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
+
+			// show a warning message if --writable-tmpfs or overlay images
+			// are requested otherwise make it verbose to not annoy users
+			if e.EngineConfig.GetWritableTmpfs() || len(e.EngineConfig.GetOverlayImage()) > 0 {
+				sylog.Warningf("Fallback to underlay layer: %s", err)
+
+				if e.EngineConfig.GetWritableTmpfs() {
+					e.EngineConfig.SetWritableTmpfs(false)
+					sylog.Warningf("--writable-tmpfs disabled due to sandbox filesystem incompatibility with overlay")
+				}
+				if len(e.EngineConfig.GetOverlayImage()) > 0 {
+					e.EngineConfig.SetOverlayImage(nil)
+					sylog.Warningf("overlay image(s) not loaded due to sandbox filesystem incompatibility with overlay")
+				}
+			} else {
+				sylog.Verbosef("Fallback to underlay layer: %s", err)
+			}
+
+			e.EngineConfig.SetImageList(images)
 			return nil
 		} else if err != nil {
 			return fmt.Errorf("while checking image compatibility with overlay: %s", err)
 		}
-
-		// C starter code will position current working directory
-		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
 	} else if img.Type == image.SIF {
 		// query the ECL module, proceed if an ecl config file is found
 		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
@@ -1096,10 +1116,6 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		if img.Writable && img.Partitions[0].Type != image.EXT3 && writableOverlayPath == "" {
 			return fmt.Errorf("no SIF writable overlay partition found in %s", img.Path)
 		}
-	}
-
-	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
-		return err
 	}
 
 	// lock all ext3 partitions if any to prevent concurrent writes
