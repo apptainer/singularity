@@ -7,12 +7,19 @@ package e2e
 
 import (
 	"os"
+	"sync"
 	"testing"
 )
+
+var ensureMutex sync.Mutex
+var pullMutex sync.Mutex
 
 // EnsureImage checks if e2e test image is already built or built
 // it otherwise.
 func EnsureImage(t *testing.T, env TestEnv) {
+	ensureMutex.Lock()
+	defer ensureMutex.Unlock()
+
 	switch _, err := os.Stat(env.ImagePath); {
 	case err == nil:
 		// OK: file exists, return
@@ -39,6 +46,9 @@ func EnsureImage(t *testing.T, env TestEnv) {
 
 // PullImage will pull a test image.
 func PullImage(t *testing.T, env TestEnv, imageURL string, path string) {
+	pullMutex.Lock()
+	defer pullMutex.Unlock()
+
 	switch _, err := os.Stat(path); {
 	case err == nil:
 		// OK: file exists, return

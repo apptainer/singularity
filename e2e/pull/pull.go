@@ -24,6 +24,7 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"golang.org/x/sys/unix"
 )
@@ -572,19 +573,23 @@ func (c ctx) testPullUmask(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		// Run the tests the do not require setup.
-		t.Run("pullUmaskCheck", c.testPullUmask)
+	// FIX: should run in parallel but the use of Chdir conflicts
+	// with other tests and can lead to test failures
+	return testhelper.Tests{
+		"ordered": testhelper.NoParallel(func(t *testing.T) {
+			// Run the tests the do not require setup.
+			t.Run("pullUmaskCheck", c.testPullUmask)
 
-		// Setup a test registry to pull from (for oras).
-		c.setup(t)
+			// Setup a test registry to pull from (for oras).
+			c.setup(t)
 
-		t.Run("pull", c.testPullCmd)
-		t.Run("pullDisableCache", c.testPullDisableCacheCmd)
+			t.Run("pull", c.testPullCmd)
+			t.Run("pullDisableCache", c.testPullDisableCacheCmd)
+		}),
 	}
 }

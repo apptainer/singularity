@@ -13,6 +13,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
@@ -355,23 +356,25 @@ func (c ctx) checkURLOption(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
 		env:            env,
 		corruptedImage: filepath.Join(env.TestDir, "verify_corrupted.sif"),
 		successImage:   filepath.Join(env.TestDir, "verify_success.sif"),
 	}
 
-	return func(t *testing.T) {
-		// We pull the two images required for the tests once
-		e2e.PullImage(t, c.env, successURL, c.successImage)
-		e2e.PullImage(t, c.env, corruptedURL, c.corruptedImage)
+	return testhelper.Tests{
+		"ordered": func(t *testing.T) {
+			// We pull the two images required for the tests once
+			e2e.PullImage(t, c.env, successURL, c.successImage)
+			e2e.PullImage(t, c.env, corruptedURL, c.corruptedImage)
 
-		t.Run("checkAllOption", c.checkAllOption)
-		t.Run("singularityVerifyAllKeyNum", c.singularityVerifyAllKeyNum)
-		t.Run("singularityVerifySigner", c.singularityVerifySigner)
-		t.Run("singularityVerifyGroupIdOption", c.checkGroupidOption)
-		t.Run("singularityVerifyIDOption", c.checkIDOption)
-		t.Run("singularityVerifyURLOption", c.checkURLOption)
+			t.Run("checkAllOption", c.checkAllOption)
+			t.Run("singularityVerifyAllKeyNum", c.singularityVerifyAllKeyNum)
+			t.Run("singularityVerifySigner", c.singularityVerifySigner)
+			t.Run("singularityVerifyGroupIdOption", c.checkGroupidOption)
+			t.Run("singularityVerifyIDOption", c.checkIDOption)
+			t.Run("singularityVerifyURLOption", c.checkURLOption)
+		},
 	}
 }

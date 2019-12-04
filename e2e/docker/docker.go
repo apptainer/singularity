@@ -8,7 +8,6 @@ package docker
 import (
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"testing"
 
@@ -119,8 +118,9 @@ func (c ctx) testDockerPulls(t *testing.T) {
 
 // AUFS sanity tests
 func (c ctx) testDockerAUFS(t *testing.T) {
-	imagePath := path.Join(c.env.TestDir, "container")
-	defer os.Remove(imagePath)
+	imageDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "aufs-", "")
+	defer cleanup(t)
+	imagePath := filepath.Join(imageDir, "container")
 
 	c.env.RunSingularity(
 		t,
@@ -165,8 +165,9 @@ func (c ctx) testDockerAUFS(t *testing.T) {
 
 // Check force permissions for user builds #977
 func (c ctx) testDockerPermissions(t *testing.T) {
-	imagePath := path.Join(c.env.TestDir, "container")
-	defer os.Remove(imagePath)
+	imageDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "perm-", "")
+	defer cleanup(t)
+	imagePath := filepath.Join(imageDir, "container")
 
 	c.env.RunSingularity(
 		t,
@@ -210,8 +211,9 @@ func (c ctx) testDockerPermissions(t *testing.T) {
 
 // Check whiteout of symbolic links #1592 #1576
 func (c ctx) testDockerWhiteoutSymlink(t *testing.T) {
-	imagePath := path.Join(c.env.TestDir, "container")
-	defer os.Remove(imagePath)
+	imageDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "whiteout-", "")
+	defer cleanup(t)
+	imagePath := filepath.Join(imageDir, "container")
 
 	c.env.RunSingularity(
 		t,
@@ -229,6 +231,10 @@ func (c ctx) testDockerWhiteoutSymlink(t *testing.T) {
 }
 
 func (c ctx) testDockerDefFile(t *testing.T) {
+	imageDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "def-", "")
+	defer cleanup(t)
+	imagePath := filepath.Join(imageDir, "container")
+
 	getKernelMajor := func(t *testing.T) (major int) {
 		var buf unix.Utsname
 		if err := unix.Uname(&buf); err != nil {
@@ -273,8 +279,6 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 		},
 	}
 
-	imagePath := path.Join(c.env.TestDir, "container")
-
 	for _, tt := range tests {
 		deffile := e2e.PrepareDefFile(e2e.DefFileDetails{
 			Bootstrap: "docker",
@@ -308,6 +312,10 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 }
 
 func (c ctx) testDockerRegistry(t *testing.T) {
+	imageDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "registry-", "")
+	defer cleanup(t)
+	imagePath := filepath.Join(imageDir, "container")
+
 	e2e.PrepRegistry(t, c.env)
 
 	tests := []struct {
@@ -344,8 +352,6 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 		},
 	}
 
-	imagePath := path.Join(c.env.TestDir, "container")
-
 	for _, tt := range tests {
 		defFile := e2e.PrepareDefFile(tt.dfd)
 
@@ -371,17 +377,17 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
 		env: env,
 	}
 
-	return testhelper.TestRunner(map[string]func(*testing.T){
+	return testhelper.Tests{
 		"AUFS":             c.testDockerAUFS,
 		"def file":         c.testDockerDefFile,
 		"permissions":      c.testDockerPermissions,
 		"pulls":            c.testDockerPulls,
 		"registry":         c.testDockerRegistry,
 		"whiteout symlink": c.testDockerWhiteoutSymlink,
-	})
+	}
 }

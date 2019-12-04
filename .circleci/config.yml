@@ -244,7 +244,7 @@ jobs:
           name: Run E2E tests
           no_output_timeout: 35m
           command: |-
-            make -C ./builddir e2e-test
+            export E2E_PARALLEL=8 && make -C ./builddir e2e-test
       - store_artifacts:
           path: builddir/e2e-cmd-report.txt
 

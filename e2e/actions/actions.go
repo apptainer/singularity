@@ -1501,12 +1501,12 @@ func (c actionTests) exitSignals(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := actionTests{
 		env: env,
 	}
 
-	return testhelper.TestRunner(map[string]func(*testing.T){
+	return testhelper.Tests{
 		"action URI":            c.RunFromURI,          // action_URI
 		"exec":                  c.actionExec,          // singularity exec
 		"persistent overlay":    c.PersistentOverlay,   // Persistent Overlay
@@ -1524,5 +1524,5 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		"network":               c.actionNetwork,       // test basic networking
 		"binds":                 c.actionBinds,         // test various binds
 		"exit and signals":      c.exitSignals,         // test exit and signals propagation
-	})
+	}
 }

@@ -158,14 +158,14 @@ func (c *regressionsTests) issue4524(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := regressionsTests{
 		env: env,
 	}
 
-	return testhelper.TestRunner(map[string]func(*testing.T){
+	return testhelper.Tests{
 		"issue 4203": c.issue4203, // https://github.com/sylabs/singularity/issues/4203
 		"issue 4407": c.issue4407, // https://github.com/sylabs/singularity/issues/4407
 		"issue 4524": c.issue4524, // https://github.com/sylabs/singularity/issues/4524
-	})
+	}
 }

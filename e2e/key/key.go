@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 type ctx struct {
@@ -488,7 +489,7 @@ func (c ctx) singularityKeyCmd(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
 		env:                    env,
 		publicExportPath:       filepath.Join(env.TestDir, "public_key.asc"),
@@ -497,10 +498,12 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		privateExportASCIIPath: filepath.Join(env.TestDir, "private_ascii_key.asc"),
 		keyRing:                filepath.Join(env.TestDir, "sypgp-test-keyring"),
 	}
+	c.env.KeyringDir = c.keyRing
 
-	return func(t *testing.T) {
-		c.env.KeyringDir = c.keyRing
-		t.Run("keyCmd", c.singularityKeyCmd)                       // Run all the tests in order
-		t.Run("keyNewpairWithLen", c.singularityKeyNewpairWithLen) // We run a separate test for `key newpair --bit-length` because it requires handling a keyring a specific way
+	return testhelper.Tests{
+		"ordered": func(t *testing.T) {
+			t.Run("keyCmd", c.singularityKeyCmd)                       // Run all the tests in order
+			t.Run("keyNewpairWithLen", c.singularityKeyNewpairWithLen) // We run a separate test for `key newpair --bit-length` because it requires handling a keyring a specific way
+		},
 	}
 }

@@ -389,12 +389,14 @@ func (c configTests) configGlobal(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := configTests{
 		env: env,
 	}
 
-	return testhelper.TestRunner(map[string]func(*testing.T){
-		"config global": c.configGlobal, // test various global configuration
-	})
+	np := testhelper.NoParallel
+
+	return testhelper.Tests{
+		"config global": np(c.configGlobal), // test various global configuration
+	}
 }
