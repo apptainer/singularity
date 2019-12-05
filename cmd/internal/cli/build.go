@@ -159,7 +159,7 @@ var buildNoCleanupFlag = cmdline.Flag{
 	Value:        &buildArgs.noCleanUp,
 	DefaultValue: false,
 	Name:         "no-cleanup",
-	Usage:        "do NOT clean up bundle after failed build, can be helpul for debugging",
+	Usage:        "do NOT clean up bundle after failed build, can be helpful for debugging",
 	EnvKeys:      []string{"NO_CLEANUP"},
 }
 
