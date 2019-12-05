@@ -1,3 +1,9 @@
+branches:
+  only:
+    - master
+    - /^release-\d+\..+$/
+    - /^v\d+\..+$/
+
 language: go
 
 sudo: required
