@@ -342,12 +342,12 @@ func (m *Manager) sync() error {
 				if !os.IsExist(err) {
 					return fmt.Errorf("failed to create symlink %s: %s", path, err)
 				}
-				// check that current symlink point to the right target
+				// check that current symlink point to the right target if it's a symlink
+				// otherwise we consider the entry as already created no matter if it's a
+				// file, a directory or something else
 				target, err := os.Readlink(path)
 				if err == nil && target != entry.target {
 					return fmt.Errorf("symlink %s point to %s instead of %s", path, target, entry.target)
-				} else if err != nil {
-					return fmt.Errorf("failed to read symlink %s: %s", path, err)
 				}
 				// skip symlink owner change, not created by us
 				entry.created = true
