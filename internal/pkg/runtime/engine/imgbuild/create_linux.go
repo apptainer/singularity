@@ -281,7 +281,12 @@ func createScript(path string, content []byte) error {
 func (e *EngineOperations) runScriptSection(name string, s types.Script, setEnv bool) {
 	sylog.Infof("Running %s scriptlet\n", name)
 
-	script := filepath.Join(e.EngineConfig.RootfsPath, ".build-script-"+name)
+	// all sections except setup are executed inside chroot
+	scriptName := ".build-script-" + name
+	script := filepath.Join("/", scriptName)
+	if name == "setup" {
+		script = filepath.Join(e.EngineConfig.RootfsPath, scriptName)
+	}
 
 	// write the script section in a temporary file to avoid
 	// potential "starvation" issue when passing the script
