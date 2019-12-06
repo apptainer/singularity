@@ -215,8 +215,12 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	if seccomp.Enabled() {
 		if err := seccomp.LoadSeccompConfig(fakerootSeccompProfile(), false, 0); err != nil {
-			sylog.Warningf("could not apply seccomp filter, some bootstrap may not work correctly")
+			sylog.Warningf("Could not apply seccomp filter, some bootstrap may not work correctly")
 		}
+	} else {
+		sylog.Warningf("Not compiled with seccomp, fakeroot may not work correctly, " +
+			"if you get permission denied error during creation of pseudo devices, " +
+			"you should install seccomp library and recompile Singularity")
 	}
 	return syscall.Exec(args[0], args, env)
 }
