@@ -172,3 +172,44 @@ func (c actionTests) issue4797(t *testing.T) {
 		)
 	}
 }
+
+// Check that current working directory is correctly handled when an
+// element of the path is a symlink.
+func (c actionTests) issue4836(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	// $TMPDIR/issue-4836-XXXX directory
+	issueDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-4836-", "")
+	defer cleanup(t)
+
+	// $TMPDIR/issue-4836-XXXX/dir/child directory
+	dir := filepath.Join(issueDir, "dir", "child")
+	if err := os.MkdirAll(filepath.Join(issueDir, "dir", "child"), 0755); err != nil {
+		t.Fatalf("failed to create dir %s: %s", dir, err)
+	}
+
+	// $TMPDIR/issue-4836-XXXX/symlink -> $TMPDIR/issue-4836-XXXX/dir
+	symlink := filepath.Join(issueDir, "symlink")
+	if err := os.Symlink(filepath.Join(issueDir, "dir"), symlink); err != nil {
+		t.Fatalf("failed to create symlink %s: %s", symlink, err)
+	}
+
+	// will trigger the issue by traversing symlinked path into
+	// the child directory :
+	// PWD = $TMPDIR/issue-4836-XXXX/symlink/child
+	cwd := filepath.Join(symlink, "child")
+
+	// chdir will resolve the path so we check against dir, we could also
+	// check $PWD content but that's enough
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithDir(cwd),
+		e2e.WithArgs(c.env.ImagePath, "pwd"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ExactMatch, dir),
+		),
+	)
+}
