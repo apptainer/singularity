@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	ocitypes "github.com/containers/image/types"
@@ -16,6 +17,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/util/crypt"
+	"golang.org/x/sys/unix"
 )
 
 const OCIConfigJSON = "oci-config"
@@ -110,26 +112,90 @@ func (b *Bundle) Remove() error {
 	return nil
 }
 
+func canChown(rootfs string) (bool, error) {
+	// we always return true when building as user otherwise
+	// build process would always fail at this step
+	if os.Getuid() != 0 {
+		return true, nil
+	}
+
+	chownFile := filepath.Join(rootfs, ".chownTest")
+
+	f, err := os.OpenFile(chownFile, os.O_CREATE|os.O_EXCL|unix.O_NOFOLLOW, 0600)
+	if err != nil {
+		return false, fmt.Errorf("could not create %q: %v", chownFile, err)
+	}
+	defer f.Close()
+	defer os.Remove(chownFile)
+
+	if err := f.Chown(1, 1); os.IsPermission(err) {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func cleanupDir(path string) {
+	if err := os.Remove(path); err != nil {
+		sylog.Errorf("Could not cleanup dir %q: %v", path, err)
+	}
+}
+
 // newBundle creates a minimum bundle with root filesystem in rootfs.
 // Any temporary files created during build process will be in tempDir/bundle-temp-*
 // directory, that will be cleaned up after successful build.
 func newBundle(rootfs, tempDir string, keyInfo *crypt.KeyInfo) (*Bundle, error) {
+	rootfsPath := rootfs
+
 	tmpPath, err := ioutil.TempDir(tempDir, "bundle-temp-")
 	if err != nil {
 		return nil, fmt.Errorf("could not create temp dir in %q: %v", tempDir, err)
 	}
 	sylog.Debugf("Created temporary directory %q for the bundle", tmpPath)
 
-	if err := os.MkdirAll(rootfs, 0755); err != nil {
-		if err := os.Remove(tmpPath); err != nil {
-			sylog.Errorf("Could not cleanup temp dir %q: %v", tmpPath, err)
-		}
-		return nil, fmt.Errorf("could not create %q: %v", rootfs, err)
+	if err := os.MkdirAll(rootfsPath, 0755); err != nil {
+		cleanupDir(tmpPath)
+		return nil, fmt.Errorf("could not create %q: %v", rootfsPath, err)
 	}
-	sylog.Debugf("Created directory %q for the bundle", rootfs)
+
+	// check that chown works with the underlying filesystem containing
+	// the temporary sandbox image
+	can, err := canChown(rootfsPath)
+	if err != nil {
+		cleanupDir(tmpPath)
+		cleanupDir(rootfsPath)
+		return nil, err
+	} else if !can {
+		defer cleanupDir(rootfsPath)
+
+		rootfsNewPath := filepath.Join(tempDir, filepath.Base(rootfsPath))
+		if rootfsNewPath != rootfsPath {
+			if err := os.MkdirAll(rootfsNewPath, 0755); err != nil {
+				cleanupDir(tmpPath)
+				return nil, fmt.Errorf("could not create rootfs dir in %q: %v", rootfsNewPath, err)
+			}
+			// check that chown works with the underlying filesystem pointed
+			// by $TMPDIR and return an error if chown doesn't work
+			can, err := canChown(rootfsNewPath)
+			if err != nil {
+				cleanupDir(tmpPath)
+				cleanupDir(rootfsNewPath)
+				return nil, err
+			} else if !can {
+				cleanupDir(tmpPath)
+				cleanupDir(rootfsNewPath)
+				sylog.Errorf("Could not set files/directories ownership, if %s is on a network filesystem, "+
+					"you must set TMPDIR to a local path (eg: TMPDIR=/var/tmp singularity build ...)", rootfsNewPath)
+				return nil, fmt.Errorf("ownership change not allowed in %s, aborting", tempDir)
+			}
+			rootfsPath = rootfsNewPath
+		}
+	}
+
+	sylog.Debugf("Created directory %q for the bundle", rootfsPath)
 
 	return &Bundle{
-		RootfsPath:  rootfs,
+		RootfsPath:  rootfsPath,
 		TmpDir:      tmpPath,
 		JSONObjects: make(map[string][]byte),
 		Opts: Options{
