@@ -6,20 +6,62 @@
 package inspect
 
 import (
+	"io"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/buger/jsonparser"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/pkg/image"
 )
 
 type ctx struct {
 	env e2e.TestEnv
 }
 
-const containerTesterSIF = "testdata/inspecter_container.sif"
+const (
+	containerTesterDEF = "testdata/inspecter_container.def"
+)
 
 func (c ctx) singularityInspect(t *testing.T) {
+	testDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "inspect-", "")
+	defer cleanup(t)
+
+	sifImage := filepath.Join(testDir, "image.sif")
+	squashImage := filepath.Join(testDir, "image.sqs")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("-F", sifImage, containerTesterDEF),
+		e2e.PostRun(func(t *testing.T) {
+			if t.Failed() {
+				return
+			}
+			img, err := image.Init(sifImage, false)
+			if err != nil {
+				t.Fatalf("failed to open %s: %s", sifImage, err)
+			}
+			r, err := image.NewPartitionReader(img, image.RootFs, -1)
+			if err != nil {
+				t.Fatalf("failed to get root partition: %s", err)
+			}
+			f, err := os.Create(squashImage)
+			if err != nil {
+				t.Fatalf("failed to create %s: %s", squashImage, err)
+			}
+			defer f.Close()
+
+			if _, err := io.Copy(f, r); err != nil {
+				t.Fatalf("failed to copy squash image %s: %s", squashImage, err)
+			}
+		}),
+		e2e.ExpectExit(0),
+	)
+
 	tests := []struct {
 		name      string
 		insType   string   // insType the type of 'inspect' flag, eg. '--deffile'
@@ -33,49 +75,49 @@ func (c ctx) singularityInspect(t *testing.T) {
 			expectOut: "\"WestleyK \u003cwestley@sylabs.io\u003e\"",
 		},
 		{
-			name:      "label",
+			name:      "label_E2E",
 			insType:   "--labels",
 			json:      []string{"data", "attributes", "labels", "E2E"},
 			expectOut: "AWSOME",
 		},
 		{
-			name:      "label",
+			name:      "label_HI",
 			insType:   "--labels",
 			json:      []string{"data", "attributes", "labels", "HI"},
 			expectOut: "\"HELLO WORLD\"",
 		},
 		{
-			name:      "label",
+			name:      "label_e2e",
 			insType:   "--labels",
 			json:      []string{"data", "attributes", "labels", "e2e"},
 			expectOut: "awsome",
 		},
 		{
-			name:      "label",
+			name:      "label_hi",
 			insType:   "--labels",
 			json:      []string{"data", "attributes", "labels", "hi"},
 			expectOut: "\"hello world\"",
 		},
 		{
-			name:      "label",
+			name:      "label_org.label-schema.usage",
 			insType:   "--labels",
 			json:      []string{"data", "attributes", "labels", "org.label-schema.usage"},
 			expectOut: "/.singularity.d/runscript.help",
 		},
 		{
-			name:      "label",
+			name:      "label_org.label-schema.usage.singularity.deffile.bootstrap",
 			insType:   "--labels",
 			json:      []string{"data", "attributes", "labels", "org.label-schema.usage.singularity.deffile.bootstrap"},
 			expectOut: "library",
 		},
 		{
-			name:      "label",
+			name:      "label_org.label-schema.usage.singularity.deffile.from",
 			insType:   "--labels",
 			json:      []string{"data", "attributes", "labels", "org.label-schema.usage.singularity.deffile.from"},
 			expectOut: "alpine:latest",
 		},
 		{
-			name:      "label",
+			name:      "label_org.label-schema.usage.singularity.runscript.help",
 			insType:   "--labels",
 			json:      []string{"data", "attributes", "labels", "org.label-schema.usage.singularity.runscript.help"},
 			expectOut: "/.singularity.d/runscript.help",
@@ -122,14 +164,22 @@ func (c ctx) singularityInspect(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
-			e2e.AsSubtest(tt.name),
+			e2e.AsSubtest("SIF/"+tt.name),
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("inspect"),
-			e2e.WithArgs("--json", tt.insType, containerTesterSIF),
+			e2e.WithArgs("--json", tt.insType, sifImage),
+			e2e.ExpectExit(0, compareOutput),
+		)
+
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest("Squash/"+tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("inspect"),
+			e2e.WithArgs("--json", tt.insType, squashImage),
 			e2e.ExpectExit(0, compareOutput),
 		)
 	}
-
 }
 
 // E2ETests is the main func to trigger the test suite

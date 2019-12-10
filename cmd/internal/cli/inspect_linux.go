@@ -12,7 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
+	"io/ioutil"
 	"os/exec"
 	"path/filepath"
 	"sort"
@@ -25,11 +25,12 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/image"
 )
 
 const listAppsCommand = "echo apps:`ls \"$app/scif/apps\" | wc -c`; for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename \"$app\"`\n        echo \"$APPNAME\"\n    fi\ndone\n"
 
-var errNoLabelPartition = errors.New("no label partition found")
+var errNoSIFMetadata = errors.New("no SIF metadata found")
 var errNoSIF = errors.New("invalid SIF")
 
 var (
@@ -193,59 +194,65 @@ func defaultToLabels() bool {
 	return !(helpfile || deffile || runscript || testfile || environment || listApps)
 }
 
-func inspectLabelPartition(inspectData *inspectFormat, fimg *sif.FileImage) error {
-	if fimg == nil {
-		return errNoSIF
+func getSIFMetadata(img *image.Image, dataType uint32) ([]byte, error) {
+	if img.Type != image.SIF {
+		return nil, errNoSIF
 	}
 
-	labelDescriptor, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataLabels)
-	if err != nil {
-		sylog.Warningf("No metadata partition, searching in container...")
-		return errNoLabelPartition
-	}
-
-	for _, v := range labelDescriptor {
-		metaData := v.GetData(fimg)
-		var hrOut map[string]json.RawMessage
-		err = json.Unmarshal(metaData, &hrOut)
+	for i, section := range img.Sections {
+		if section.Type != dataType {
+			continue
+		}
+		r, err := image.NewSectionReader(img, "", i)
 		if err != nil {
-			return fmt.Errorf("unable to get json: %s", err)
+			return nil, fmt.Errorf("while reading SIF section: %s", err)
 		}
+		b, err := ioutil.ReadAll(r)
+		if err != nil {
+			return nil, fmt.Errorf("while reading metadata: %s", err)
+		}
+		return b, nil
+	}
 
-		for k, v := range hrOut {
-			value := string(v)
-			// Only remove the extra quotes if json output.
-			if jsonfmt {
-				var err error
-				value, err = strconv.Unquote(value)
-				if err != nil {
-					return fmt.Errorf("unable to remove quotes from data: %s", err)
-				}
+	sylog.Warningf("No SIF metadata partition, searching in container...")
+	return nil, errNoSIFMetadata
+}
+
+func inspectLabelPartition(inspectData *inspectFormat, img *image.Image) error {
+	data, err := getSIFMetadata(img, uint32(sif.DataLabels))
+	if err != nil {
+		return err
+	}
+
+	var hrOut map[string]json.RawMessage
+	err = json.Unmarshal(data, &hrOut)
+	if err != nil {
+		return fmt.Errorf("unable to get json: %s", err)
+	}
+
+	for k, v := range hrOut {
+		value := string(v)
+		// Only remove the extra quotes if json output.
+		if jsonfmt {
+			var err error
+			value, err = strconv.Unquote(value)
+			if err != nil {
+				return fmt.Errorf("unable to remove quotes from data: %s", err)
 			}
-			inspectData.Data.Attributes.Labels[k] = value
 		}
+		inspectData.Data.Attributes.Labels[k] = value
 	}
 
 	return nil
 }
 
-func inspectDeffilePartition(inspectData *inspectFormat, fimg *sif.FileImage) error {
-	if fimg == nil {
-		return errNoSIF
-	}
-
-	labelDescriptor, _, err := fimg.GetLinkedDescrsByType(uint32(0), sif.DataDeffile)
+func inspectDeffilePartition(inspectData *inspectFormat, img *image.Image) error {
+	data, err := getSIFMetadata(img, uint32(sif.DataDeffile))
 	if err != nil {
-		sylog.Warningf("No metadata partition, searching in container...")
-		return errNoLabelPartition
+		return err
 	}
 
-	for _, v := range labelDescriptor {
-		metaData := v.GetData(fimg)
-		data := string(metaData)
-		inspectData.Data.Attributes.Deffile = data
-	}
-
+	inspectData.Data.Attributes.Deffile = string(data)
 	return nil
 }
 
@@ -261,22 +268,9 @@ var InspectCmd = &cobra.Command{
 	Example: docs.InspectExample,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		f, err := os.Stat(args[0])
-		if os.IsNotExist(err) {
-			sylog.Fatalf("Container not found: %s\n", err)
-		} else if err != nil {
-			sylog.Fatalf("Unable to stat file: %s", err)
-		}
-		sandboxImage := f.IsDir()
-
-		var fimg sif.FileImage
-		if !sandboxImage {
-			var err error
-			fimg, err = sif.LoadContainer(args[0], true)
-			if err != nil {
-				sylog.Fatalf("Failed to load SIF container file: %s", err)
-			}
-			defer fimg.UnloadContainer()
+		img, err := image.Init(args[0], false)
+		if err != nil {
+			sylog.Fatalf("Failed to open image %s: %s", args[0], err)
 		}
 
 		var inspectData inspectFormat
@@ -287,25 +281,27 @@ var InspectCmd = &cobra.Command{
 
 		// Try to inspect the label partition, if not, then exec/shell
 		// the container to get the data.
-		if (labels || defaultToLabels()) && AppName == "" {
-			err := inspectLabelPartition(&inspectData, &fimg)
-			if err == errNoLabelPartition || err == errNoSIF {
-				sylog.Debugf("Cant get label partition, looking in container...")
+		if labels || defaultToLabels() {
+			if AppName == "" {
+				err := inspectLabelPartition(&inspectData, img)
+				if err == errNoSIFMetadata || err == errNoSIF {
+					sylog.Debugf("Cant get label partition, looking in container...")
+					inspectShellCmd[2] += getLabelsCommand(AppName)
+				} else if err != nil {
+					sylog.Fatalf("Unable to inspect container: %s", err)
+				}
+			} else {
+				// If '--app' is specified, then we need to shell/exec the
+				// container.
+				sylog.Debugf("Inspection of labels selected.")
 				inspectShellCmd[2] += getLabelsCommand(AppName)
-			} else if err != nil {
-				sylog.Fatalf("Unable to inspect container: %s", err)
 			}
-		} else if (labels || defaultToLabels()) && AppName != "" {
-			// If '--app' is specified, then we need to shell/exec the
-			// container.
-			sylog.Debugf("Inspection of labels selected.")
-			inspectShellCmd[2] += getLabelsCommand(AppName)
 		}
 
 		// Inspect the deffile.
 		if deffile {
-			err := inspectDeffilePartition(&inspectData, &fimg)
-			if err == errNoLabelPartition || err == errNoSIF {
+			err := inspectDeffilePartition(&inspectData, img)
+			if err == errNoSIFMetadata || err == errNoSIF {
 				sylog.Debugf("Inspection of deffile selected.")
 				inspectShellCmd[2] += getDefinitionCommand()
 			} else if err != nil {
