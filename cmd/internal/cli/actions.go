@@ -7,11 +7,15 @@ package cli
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
@@ -290,11 +294,35 @@ func handleShub(imgCache *cache.Handle, u string) (string, error) {
 }
 
 func handleNet(imgCache *cache.Handle, u string) (string, error) {
-	refParts := strings.Split(u, "/")
-	imageName := refParts[len(refParts)-1]
-	imagePath := imgCache.NetImage("hash", imageName)
+	// We will cache using a sha256 over the URL and the date of the file that
+	// is to be fetched, as returned by an HTTP HEAD call and the Last-Modified
+	// header. If no date is available, use the current date-time, which will
+	// effectively result in no caching.
+	imageDate := time.Now().String()
 
-	exists, err := imgCache.NetImageExists("hash", imageName)
+	req, err := http.NewRequest("HEAD", u, nil)
+	if err != nil {
+		sylog.Fatalf("Error constructing http request: %v\n", err)
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		sylog.Fatalf("Error making http request: %v\n", err)
+	}
+
+	headerDate := res.Header.Get("Last-Modified")
+	sylog.Debugf("HTTP Last-Modified header is: %s", headerDate)
+	if headerDate != "" {
+		imageDate = headerDate
+	}
+
+	h := sha256.New()
+	h.Write([]byte(u + imageDate))
+	imageHash := hex.EncodeToString(h.Sum(nil))
+	sylog.Debugf("Image hash for cache is: %s", imageHash)
+
+	imagePath := imgCache.NetImage("hash", imageHash)
+
+	exists, err := imgCache.NetImageExists("hash", imageHash)
 	if err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	}
@@ -305,7 +333,7 @@ func handleNet(imgCache *cache.Handle, u string) (string, error) {
 			sylog.Fatalf("%v\n", err)
 		}
 	} else {
-		sylog.Verbosef("Use image from cache")
+		sylog.Verbosef("Using image from cache")
 	}
 
 	return imagePath, nil

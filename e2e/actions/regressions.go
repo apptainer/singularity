@@ -6,11 +6,16 @@
 package actions
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
@@ -212,4 +217,101 @@ func (c actionTests) issue4836(t *testing.T) {
 			e2e.ExpectOutput(e2e.ExactMatch, dir),
 		),
 	)
+}
+
+// Check that image caching from an http source works correctly, using
+// the HTTP Last-Modified header to invalidate previously pulled images,
+// and that if we exec c1/v1.sif and then c1/v2.sif the latter is *not*
+// run from the cached image of the former.
+func (c actionTests) issue4823(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	// Copy image to a local tempdir so we can modify times on it
+	issueDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-4823-", "")
+	defer cleanup(t)
+	issueImage := path.Join(issueDir, "test.sif")
+	if err := fs.CopyFile(c.env.ImagePath, issueImage, 0755); err != nil {
+		t.Fatalf("Could not copy test image file: %v", err)
+	}
+
+	// Start an http server that always serves the same file from
+	// whatever URL is requested
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, issueImage)
+	}))
+	defer srv.Close()
+
+	tests := []struct {
+		name         string
+		urlPath      string
+		touchFile    bool
+		expectCached bool
+	}{
+		// First time we use an image at a URL it is not cached
+		{
+			name:         "http_c1v1.sif_uncached",
+			urlPath:      "/c1/v1.sif",
+			touchFile:    false,
+			expectCached: false,
+		},
+		// Second time at same URL is cached
+		{
+			name:         "http_c1v1.sif_cached",
+			urlPath:      "/c1/v1.sif",
+			touchFile:    false,
+			expectCached: true,
+		},
+		// Date of file at the URL is modified - not cached
+		{
+			name:         "http_c1v1.sif_touched_uncached",
+			urlPath:      "/c1/v1.sif",
+			touchFile:    true,
+			expectCached: false,
+		},
+		// Different URL - not cached
+		{
+			name:         "http_c2v1.sif_uncached",
+			urlPath:      "/c2/v1.sif",
+			touchFile:    false,
+			expectCached: false,
+		},
+	}
+
+	// Share a cache dir for all of the subtests
+	cacheDir, cleanup := e2e.MakeCacheDir(t, "")
+	defer cleanup(t)
+	h, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
+	if err != nil {
+		t.Fatalf("Could not create image cache handle: %v", err)
+	}
+
+	for _, tt := range tests {
+		if tt.touchFile {
+			// touch it into the future by a minute, in case tests
+			// are running on fs with poor timestamp resolution
+			newTime := time.Now().Add(time.Minute)
+			err := os.Chtimes(issueImage, newTime, newTime)
+			if err != nil {
+				t.Fatalf("Error setting test file times: %v", err)
+			}
+		}
+
+		expected := e2e.ExpectError(e2e.ContainMatch, "Downloading network image")
+		if tt.expectCached {
+			expected = e2e.ExpectError(e2e.ContainMatch, "Using image from cache")
+		}
+
+		c.env.ImgCacheDir = h.GetBasedir()
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(srv.URL+tt.urlPath, "/bin/true"),
+			e2e.ExpectExit(
+				0,
+				expected,
+			),
+		)
+	}
 }
