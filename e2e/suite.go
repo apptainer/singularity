@@ -36,6 +36,7 @@ import (
 	"github.com/sylabs/singularity/e2e/regressions"
 	"github.com/sylabs/singularity/e2e/remote"
 	"github.com/sylabs/singularity/e2e/run"
+	"github.com/sylabs/singularity/e2e/runhelp"
 	"github.com/sylabs/singularity/e2e/security"
 	"github.com/sylabs/singularity/e2e/sign"
 	"github.com/sylabs/singularity/e2e/verify"
@@ -159,6 +160,7 @@ func Run(t *testing.T) {
 		"REGRESSIONS": regressions.E2ETests(testenv),
 		"REMOTE":      remote.E2ETests(testenv),
 		"RUN":         run.E2ETests(testenv),
+		"RUNHELP":     runhelp.E2ETests(testenv),
 		"SECURITY":    security.E2ETests(testenv),
 		"SIGN":        sign.E2ETests(testenv),
 		"VERIFY":      verify.E2ETests(testenv),

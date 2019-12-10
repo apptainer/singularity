@@ -7,14 +7,11 @@ package cli
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os/exec"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -22,7 +19,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/image"
@@ -335,14 +331,8 @@ var InspectCmd = &cobra.Command{
 		}
 
 		if inspectShellCmd[2] != "" {
-			abspath, err := filepath.Abs(args[0])
-			if err != nil {
-				sylog.Fatalf("While determining absolute file path: %v", err)
-			}
-			name := filepath.Base(abspath)
-
 			// Execute the compound command string.
-			fileContents, err := getFileContent(abspath, name, inspectShellCmd)
+			fileContents, err := singularityExec(args[0], inspectShellCmd)
 			if err != nil {
 				sylog.Fatalf("Could not inspect container: %v", err)
 			}
@@ -415,30 +405,4 @@ var InspectCmd = &cobra.Command{
 		}
 	},
 	TraverseChildren: true,
-}
-
-func getFileContent(abspath, name string, args []string) (string, error) {
-	// Record from stdout and store as a string to return as the contents of the file.
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-
-	// re-use singularity exec to grab image file content,
-	// we reduce binds to the bare minimum with options below
-	cmdArgs := []string{"exec", "--contain", "--no-home", "--no-nv", abspath}
-	cmdArgs = append(cmdArgs, args...)
-
-	singularityCmd := filepath.Join(buildcfg.BINDIR, "singularity")
-
-	cmd := exec.Command(singularityCmd, cmdArgs...)
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	// move to the root to not bind the current working directory
-	// while inspecting the image
-	cmd.Dir = "/"
-
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("unable to process command: %s: error output:\n%s", err, stderr.String())
-	}
-
-	return stdout.String(), nil
 }
