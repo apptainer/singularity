@@ -297,9 +297,21 @@ func handleRemoteConf(remoteConfFile string) {
 // handleConfDir tries to create the user's configuration directory and handles
 // messages and/or errors.
 func handleConfDir(confDir string) {
-	if err := fs.Mkdir(confDir, os.ModePerm); err != nil {
+	if err := fs.Mkdir(confDir, 0700); err != nil {
 		if os.IsExist(err) {
 			sylog.Debugf("%s already exists. Not creating.", confDir)
+			fi, err := os.Stat(confDir)
+			if err != nil {
+				sylog.Fatalf("Failed to retrieve information for %s: %s", confDir, err)
+			}
+			if fi.Mode().Perm() != 0700 {
+				sylog.Debugf("Enforce permission 0700 on %s", confDir)
+				// enforce permission on user configuration directory
+				if err := os.Chmod(confDir, 0700); err != nil {
+					// best effort as chmod could fail for various reasons (eg: readonly FS)
+					sylog.Warningf("Couldn't enforce permission 0700 on %s: %s", confDir, err)
+				}
+			}
 		} else {
 			sylog.Debugf("Could not create %s: %s", confDir, err)
 		}
