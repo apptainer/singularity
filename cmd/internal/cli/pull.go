@@ -232,7 +232,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 		}
 
-		err = singularity.OrasPull(ctx, imgCache, pullTo, ref, forceOverwrite, &ociAuth)
+		err = singularity.OrasPull(ctx, imgCache, pullTo, ref, forceOverwrite, ociAuth)
 		if err != nil {
 			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}
@@ -247,7 +247,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
-		err = singularity.OciPull(ctx, imgCache, pullTo, pullFrom, tmpDir, &ociAuth, noHTTPS, buildArgs.noCleanUp)
+		err = singularity.OciPull(ctx, imgCache, pullTo, pullFrom, tmpDir, ociAuth, noHTTPS, buildArgs.noCleanUp)
 		if err != nil {
 			sylog.Fatalf("While making image from oci registry: %v", err)
 		}
