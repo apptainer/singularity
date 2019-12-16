@@ -9,7 +9,24 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.5.1
+# Changes Since v3.5.2
+
+# v3.5.2 - [2019.12.19]
+
+This point release addresses the following issues:
+
+  - Fixes an issue preventing use of `.docker/config` for docker registry
+    authentication.
+  - Fixes the `run-help` command in unprivileged workflow.
+  - Fixes a regression in the `inspect` command to support older image formats.
+  - Adds a workaround for an EL6 kernel bug regarding shared bind mounts.
+  - Fixes caching of http(s) sources with conflicting filenames.
+  - Fixes a fakeroot sandbox build error on certain lustre, GPFS.
+  - Fixes a fakeroot build failure to a sandbox is in $HOME.
+  - Fixes a fakeroot build failure from a bad def file section script location.
+  - Fixes container execution errors when CWD is a symlink.
+  - Provides a useful warning r.e. possible fakeroot build issues when seccomp
+    support is not available.
 
 # v3.5.1 - [2019.12.05]
 
@@ -27,7 +44,7 @@ This point release addresses the following issues:
 
   - Fixes a disk space leak when building from docker-archive.
   - Makes container process SIGABRT return the expected code.
-  - Fixes the `inspect` command in unpriveleged workflow.
+  - Fixes the `inspect` command in unprivileged workflow.
   - Sets an appropriate default umask during build stages, to avoid issues with
       very restrictive user umasks.
   - Fixes an issue with build script content being consumed from STDIN.
