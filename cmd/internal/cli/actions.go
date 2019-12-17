@@ -59,7 +59,7 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	os.Setenv("PATH", defaultPath)
 
 	// create an handle for the current image cache
-	imgCache := getCacheHandle(cache.Config{})
+	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 	if imgCache == nil {
 		sylog.Fatalf("failed to create a new image cache handle")
 	}
