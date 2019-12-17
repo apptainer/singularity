@@ -248,9 +248,10 @@ func (e *EngineOperations) copyFiles() error {
 			transfer.Dst = transfer.Src
 		}
 		// copy each file into bundle rootfs
+		// copying from host to container should follow symlinks
 		transfer.Dst = files.AddPrefix(e.EngineConfig.RootfsPath, transfer.Dst)
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
-		if err := files.Copy(transfer.Src, transfer.Dst); err != nil {
+		if err := files.Copy(transfer.Src, transfer.Dst, true); err != nil {
 			return err
 		}
 	}
