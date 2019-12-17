@@ -141,7 +141,7 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		// build from sif downloaded in tmp location
 		defer func() {
 			sylog.Debugf("Building sandbox from downloaded SIF")
-			imgCache := getCacheHandle(cache.Config{})
+			imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 			if imgCache == nil {
 				sylog.Fatalf("failed to create an image cache handle")
 			}
@@ -205,7 +205,7 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		}
 	}
 
-	imgCache := getCacheHandle(cache.Config{})
+	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 	if imgCache == nil {
 		sylog.Fatalf("Failed to create an image cache handle")
 	}
