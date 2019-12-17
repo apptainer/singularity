@@ -11,22 +11,27 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.5.2
 
-# v3.5.2 - [2019.12.19]
+# v3.5.2 - [2019.12.17]
 
-This point release addresses the following issues:
+## [Security related fix](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2019-19724)
+  - 700 permissions are enforced on `$HOME/.singularity` and `SINGULARITY_CACHEDIR`
+  directories (CVE-2019-19724). Many thanks to Stuart Barkley for reporting this issue.
+
+## Bug Fixes
 
   - Fixes an issue preventing use of `.docker/config` for docker registry
     authentication.
-  - Fixes the `run-help` command in unprivileged workflow.
+  - Fixes the `run-help` command in the unprivileged workflow.
   - Fixes a regression in the `inspect` command to support older image formats.
   - Adds a workaround for an EL6 kernel bug regarding shared bind mounts.
   - Fixes caching of http(s) sources with conflicting filenames.
-  - Fixes a fakeroot sandbox build error on certain lustre, GPFS.
-  - Fixes a fakeroot build failure to a sandbox is in $HOME.
+  - Fixes a fakeroot sandbox build error on certain filesystems, e.g. lustre, GPFS.
+  - Fixes a fakeroot build failure to a sandbox in $HOME.
   - Fixes a fakeroot build failure from a bad def file section script location.
   - Fixes container execution errors when CWD is a symlink.
   - Provides a useful warning r.e. possible fakeroot build issues when seccomp
     support is not available.
+  - Fixes an issue where the `--disable-cache` option was not being honored.
 
 # v3.5.1 - [2019.12.05]
 
