@@ -122,7 +122,7 @@ func (l *Library) Pull(ctx context.Context, from, to, arch string) error {
 	if dst != to {
 		os.Remove(to)
 		sylog.Debugf("Copying %s to %s", dst, to)
-		if err := fs.CopyFile(dst, to, 0777); err != nil {
+		if err := fs.CopyFile(dst, to, 0755); err != nil {
 			return fmt.Errorf("cannot copy cache element %s to final destination %s: %w", dst, to, err)
 		}
 	}

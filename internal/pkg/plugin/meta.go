@@ -112,7 +112,7 @@ func (m *Meta) config() (*os.File, error) {
 // install installs the plugin represented by m into the destination
 // directory. This should normally only be called in InstallFromSIF.
 func (m *Meta) install(dstdir string) error {
-	if err := os.MkdirAll(m.Path, 0777); err != nil {
+	if err := os.MkdirAll(m.Path, 0755); err != nil {
 		return err
 	}
 

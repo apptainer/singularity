@@ -8,17 +8,11 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
-	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 )
 
 const (
@@ -54,33 +48,13 @@ var RunHelpCmd = &cobra.Command{
 			sylog.Fatalf("container not found: %s", err)
 		}
 
-		// Help prints (if set) the sourced %help section on the definition file
-		abspath, err := filepath.Abs(args[0])
-		if err != nil {
-			sylog.Fatalf("While getting absolute path: %s", err)
-		}
-		name := filepath.Base(abspath)
-
 		a := []string{"/bin/sh", "-c", getCommand(getHelpPath(cmd))}
-		procname := "Singularity help"
 
-		engineConfig := singularityConfig.NewConfig()
-		ociConfig := &oci.Config{}
-		generator := generate.Generator{Config: &ociConfig.Spec}
-		engineConfig.OciConfig = ociConfig
-
-		generator.SetProcessArgs(a)
-		generator.SetProcessCwd("/")
-		engineConfig.SetImage(abspath)
-
-		cfg := &config.Common{
-			EngineName:   singularityConfig.Name,
-			ContainerID:  name,
-			EngineConfig: engineConfig,
+		stdout, err := singularityExec(args[0], a)
+		if err != nil {
+			sylog.Fatalf("While getting run-help: %s", err)
 		}
-
-		err = starter.Exec(procname, cfg, starter.UseSuid(true))
-		sylog.Fatalf("%s", err)
+		fmt.Printf("%s", stdout)
 	},
 
 	Use:     docs.RunHelpUse,

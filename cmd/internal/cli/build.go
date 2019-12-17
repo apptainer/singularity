@@ -321,7 +321,11 @@ func definitionFromSpec(spec string) (types.Definition, error) {
 	return def, nil
 }
 
-func makeDockerCredentials(cmd *cobra.Command) (authConf ocitypes.DockerAuthConfig, err error) {
+// makeDockerCredentials creates an *ocitypes.DockerAuthConfig to use for
+// OCI/Docker registry operation configuration. Note that if we don't have a
+// username or password set it will return a nil pointer, as containers/image
+// requires this to fall back to .docker/config based authentication.
+func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthConfig, err error) {
 	usernameFlag := cmd.Flags().Lookup("docker-username")
 	passwordFlag := cmd.Flags().Lookup("docker-password")
 
@@ -344,10 +348,13 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf ocitypes.DockerAuthConf
 	}
 
 	if usernameFlag.Changed || passwordFlag.Changed {
-		authConf = dockerAuthConfig
+		return &dockerAuthConfig, nil
 	}
 
-	return authConf, nil
+	// If a username / password have not been explicitly set, return a nil
+	// pointer, which will mean containers/image falls back to looking for
+	// .docker/config.json
+	return nil, nil
 }
 
 // remote builds need to fail if we cannot resolve remote URLS
