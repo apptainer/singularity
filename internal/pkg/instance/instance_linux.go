@@ -238,7 +238,7 @@ func (i *File) Update() error {
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
 
-	if err := os.MkdirAll(path, 0755); err != nil {
+	if err := os.MkdirAll(path, 0700); err != nil {
 		return err
 	}
 	file, err := os.OpenFile(i.Path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY|syscall.O_NOFOLLOW, 0644)
@@ -267,10 +267,10 @@ func SetLogFile(name string, uid int, subDir string) (*os.File, *os.File, error)
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
 
-	if err := os.MkdirAll(filepath.Dir(stderrPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(stderrPath), 0700); err != nil {
 		return nil, nil, err
 	}
-	if err := os.MkdirAll(filepath.Dir(stdoutPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(stdoutPath), 0700); err != nil {
 		return nil, nil, err
 	}
 

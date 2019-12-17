@@ -688,7 +688,16 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		if err := system.Points.AddBind(mount.RootfsTag, rootfs, c.session.RootFsPath(), flags); err != nil {
 			return err
 		}
-		return system.Points.AddRemount(mount.RootfsTag, c.session.RootFsPath(), flags)
+		if err := system.Points.AddRemount(mount.RootfsTag, c.session.RootFsPath(), flags); err != nil {
+			return err
+		}
+		// re-apply mount propagation flag, on EL6 a kernel bug reset propagation flag
+		// and may lead to crash (see https://github.com/sylabs/singularity/issues/4851)
+		flags = syscall.MS_SLAVE
+		if !c.engine.EngineConfig.File.MountSlave {
+			flags = syscall.MS_PRIVATE
+		}
+		return system.Points.AddPropagation(mount.RootfsTag, c.session.RootFsPath(), flags)
 	}
 
 	sylog.Debugf("Mounting block [%v] image: %v\n", mountType, rootfs)

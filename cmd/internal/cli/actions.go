@@ -59,7 +59,7 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	os.Setenv("PATH", defaultPath)
 
 	// create an handle for the current image cache
-	imgCache := getCacheHandle(cache.Config{})
+	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 	if imgCache == nil {
 		sylog.Fatalf("failed to create a new image cache handle")
 	}
@@ -78,7 +78,7 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify:    noHTTPS,
 		DockerInsecureSkipTLSVerify: ocitypes.NewOptionalBool(noHTTPS),
-		DockerAuthConfig:            &authConf,
+		DockerAuthConfig:            authConf,
 	}
 
 	imgabs := ""
@@ -103,7 +103,7 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 					NoCache:          true,
 					NoTest:           true,
 					NoHTTPS:          noHTTPS,
-					DockerAuthConfig: &authConf,
+					DockerAuthConfig: authConf,
 				},
 			})
 
@@ -137,7 +137,7 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 						TmpDir:           tmpDir,
 						NoTest:           true,
 						NoHTTPS:          noHTTPS,
-						DockerAuthConfig: &authConf,
+						DockerAuthConfig: authConf,
 						ImgCache:         imgCache,
 					},
 				})
@@ -163,7 +163,7 @@ func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command,
 	}
 
 	_, ref := uri.Split(u)
-	sum, err := oras.ImageSHA(ctx, ref, &ociAuth)
+	sum, err := oras.ImageSHA(ctx, ref, ociAuth)
 	if err != nil {
 		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
 	}
@@ -175,7 +175,7 @@ func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command,
 	} else if !exists {
 		sylog.Infof("Downloading image with ORAS")
 
-		if err := oras.DownloadImage(cacheImagePath, ref, &ociAuth); err != nil {
+		if err := oras.DownloadImage(cacheImagePath, ref, ociAuth); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 
