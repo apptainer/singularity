@@ -12,9 +12,10 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 )
 
-// ListPlugins lists the singularity plugins installed in libexecdir.
-func ListPlugins(libexecdir string) error {
-	plugins, err := plugin.List(libexecdir)
+// ListPlugins lists the singularity plugins installed in the plugin
+// plugin installation directory.
+func ListPlugins() error {
+	plugins, err := plugin.List()
 	if err != nil {
 		return err
 	}

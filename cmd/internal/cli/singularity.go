@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,6 +14,7 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	ocitypes "github.com/containers/image/types"
@@ -26,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
 	"github.com/sylabs/singularity/pkg/syfs"
 )
 
@@ -343,11 +345,13 @@ func Init(loadPlugins bool) {
 
 	// load plugins and register commands/flags if any
 	if loadPlugins {
-		if err := plugin.InitializeAll(buildcfg.LIBEXECDIR); err != nil {
-			sylog.Errorf("Unable to initialize plugins: %s", err)
+		callbackType := (clicallback.Command)(nil)
+		callbacks, err := plugin.LoadCallbacks(callbackType)
+		if err != nil {
+			sylog.Fatalf("Failed to load plugins callbacks '%T': %s", callbackType, err)
 		}
-		for _, m := range plugin.CLIMutators() {
-			m.Mutate(cmdManager)
+		for _, c := range callbacks {
+			c.(clicallback.Command)(cmdManager)
 		}
 	}
 
@@ -387,7 +391,16 @@ func RootCmd() *cobra.Command {
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
-	Init(true)
+	loadPlugins := true
+
+	// we avoid to load installed plugins to not double load
+	// them during execution of plugin compile and plugin install
+	args := os.Args
+	if len(args) > 1 {
+		loadPlugins = !strings.HasPrefix(args[1], "plugin")
+	}
+
+	Init(loadPlugins)
 
 	if cmd, err := singularityCmd.ExecuteC(); err != nil {
 		name := cmd.Name()

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -30,6 +30,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	imgutil "github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
+	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/crypt"
@@ -601,9 +602,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		EngineConfig: engineConfig,
 	}
 
-	for _, m := range plugin.EngineConfigMutators() {
-		sylog.Debugf("Running runtime mutator from plugin %s", m.PluginName)
-		m.Mutate(cfg)
+	callbackType := (clicallback.SingularityEngineConfig)(nil)
+	callbacks, err := plugin.LoadCallbacks(callbackType)
+	if err != nil {
+		sylog.Fatalf("While loading plugins callbacks '%T': %s", callbackType, err)
+	}
+	for _, c := range callbacks {
+		c.(clicallback.SingularityEngineConfig)(cfg)
 	}
 
 	if engineConfig.GetInstance() {

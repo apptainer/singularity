@@ -16,8 +16,8 @@ import (
 var ErrPluginNotFound = errors.New("plugin not found")
 
 // UninstallPlugin removes the named plugin from the system.
-func UninstallPlugin(name, libexecdir string) error {
-	err := plugin.Uninstall(name, libexecdir)
+func UninstallPlugin(name string) error {
+	err := plugin.Uninstall(name)
 	if errors.Is(err, os.ErrNotExist) {
 		return ErrPluginNotFound
 	}

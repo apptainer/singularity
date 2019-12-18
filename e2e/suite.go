@@ -32,6 +32,7 @@ import (
 	"github.com/sylabs/singularity/e2e/instance"
 	"github.com/sylabs/singularity/e2e/key"
 	"github.com/sylabs/singularity/e2e/oci"
+	"github.com/sylabs/singularity/e2e/plugin"
 	"github.com/sylabs/singularity/e2e/pull"
 	"github.com/sylabs/singularity/e2e/push"
 	"github.com/sylabs/singularity/e2e/regressions"
@@ -104,6 +105,9 @@ func Run(t *testing.T) {
 	// generate singularity.conf with default values
 	e2e.SetupDefaultConfig(t, filepath.Join(testenv.TestDir, "singularity.conf"))
 
+	// create an empty plugin directory
+	e2e.SetupPluginDir(t, testenv.TestDir)
+
 	// Ensure config files are installed
 	configFiles := []string{
 		sysconfdir("singularity.conf"),
@@ -162,6 +166,7 @@ func Run(t *testing.T) {
 	suite.AddGroup("INSTANCE", instance.E2ETests)
 	suite.AddGroup("KEY", key.E2ETests)
 	suite.AddGroup("OCI", oci.E2ETests)
+	suite.AddGroup("PLUGIN", plugin.E2ETests)
 	suite.AddGroup("PULL", pull.E2ETests)
 	suite.AddGroup("PUSH", push.E2ETests)
 	suite.AddGroup("REGRESSIONS", regressions.E2ETests)

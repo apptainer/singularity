@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
@@ -23,7 +22,7 @@ var PluginUninstallCmd = &cobra.Command{
 	PreRun: EnsureRootPriv,
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		err := singularity.UninstallPlugin(name, buildcfg.LIBEXECDIR)
+		err := singularity.UninstallPlugin(name)
 		if err != nil {
 			sylog.Fatalf("Failed to uninstall plugin %q: %s.", name, err)
 		}

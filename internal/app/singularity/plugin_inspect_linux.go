@@ -11,9 +11,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 )
 
-// InspectPlugin inspects the named plugin
-func InspectPlugin(name, libexecdir string) error {
-	manifest, err := plugin.Inspect(name, libexecdir)
+// InspectPlugin inspects the named plugin.
+func InspectPlugin(name string) error {
+	manifest, err := plugin.Inspect(name)
 	if err != nil {
 		return err
 	}
