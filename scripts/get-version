@@ -38,7 +38,7 @@ if test -n "${head}" ; then
 	# cannot pass --dirty when using commit-ish
 	dirty_info=${current_commit}
 else
-	dirty_info=$(gitdesc --dirty=+dirty)
+	dirty_info=$(gitdesc --dirty)
 fi
 
 # First figure out if the current commit matches a tag:
