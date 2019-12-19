@@ -88,7 +88,6 @@ func SearchLibrary(ctx context.Context, c *client.Client, value string) error {
 
 	// If the user is searched for a container uri (eg. library/default/alpine) then
 	// try to get the image infomation, if unsuccessful, then search as usual.
-	// TODO: handle the 'library://' prefix if the user passed it.
 	if ref := strings.Split(value, "/"); len(ref) > 2 {
 		searchImage := value
 		if strings.HasPrefix(searchImage, "library://") {
