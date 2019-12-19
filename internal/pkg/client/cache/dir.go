@@ -269,13 +269,19 @@ func updateCacheSubdir(c *Handle, subdir string) (string, error) {
 }
 
 func initCacheDir(dir string) error {
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
+	if fi, err := os.Stat(dir); os.IsNotExist(err) {
 		sylog.Debugf("Creating cache directory: %s", dir)
-		if err := fs.MkdirAll(dir, 0755); err != nil {
+		if err := fs.MkdirAll(dir, 0700); err != nil {
 			return fmt.Errorf("couldn't create cache directory %v: %v", dir, err)
 		}
 	} else if err != nil {
 		return fmt.Errorf("unable to stat %s: %s", dir, err)
+	} else if fi.Mode().Perm() != 0700 {
+		// enforce permission on cache directory to prevent
+		// potential information leak
+		if err := os.Chmod(dir, 0700); err != nil {
+			return fmt.Errorf("couldn't enforce permission 0700 on %s: %s", dir, err)
+		}
 	}
 
 	return nil

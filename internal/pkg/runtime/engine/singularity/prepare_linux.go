@@ -16,6 +16,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/containerd/cgroups"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	fakerootutil "github.com/sylabs/singularity/internal/pkg/fakeroot"
@@ -852,6 +853,17 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		e.EngineConfig.OciConfig.Linux.Seccomp = instanceEngineConfig.OciConfig.Linux.Seccomp
 	}
 
+	if uid == 0 && !file.UserNs {
+		pid := os.Getppid()
+		path := fmt.Sprintf("/singularity/%d", file.Pid)
+		control, err := cgroups.Load(cgroups.V1, cgroups.StaticPath(path))
+		if err == nil {
+			if err := control.Add(cgroups.Process{Pid: pid}); err != nil {
+				return fmt.Errorf("while adding process to instance cgroups: %s", err)
+			}
+		}
+	}
+
 	// only root user can set this value based on instance file
 	// and always set to true for normal users or if instance file
 	// returned a wrong configuration
@@ -1031,24 +1043,44 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 	writableOverlayPath := ""
 	overlayPartitions := []string{}
 
+	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
+		return err
+	}
+
 	// sandbox are handled differently for security reasons
 	if img.Type == image.SANDBOX {
 		if img.Path == "/" {
 			return fmt.Errorf("/ as sandbox is not authorized")
 		}
 
+		// C starter code will position current working directory
+		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
+
 		if err := overlay.CheckLower(img.Path); overlay.IsIncompatible(err) {
-			// a warning message would be better but on some systems it
-			// could annoy users, make it verbose instead
-			sylog.Verbosef("Fallback to underlay layer: %s", err)
 			e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
+
+			// show a warning message if --writable-tmpfs or overlay images
+			// are requested otherwise make it verbose to not annoy users
+			if e.EngineConfig.GetWritableTmpfs() || len(e.EngineConfig.GetOverlayImage()) > 0 {
+				sylog.Warningf("Fallback to underlay layer: %s", err)
+
+				if e.EngineConfig.GetWritableTmpfs() {
+					e.EngineConfig.SetWritableTmpfs(false)
+					sylog.Warningf("--writable-tmpfs disabled due to sandbox filesystem incompatibility with overlay")
+				}
+				if len(e.EngineConfig.GetOverlayImage()) > 0 {
+					e.EngineConfig.SetOverlayImage(nil)
+					sylog.Warningf("overlay image(s) not loaded due to sandbox filesystem incompatibility with overlay")
+				}
+			} else {
+				sylog.Verbosef("Fallback to underlay layer: %s", err)
+			}
+
+			e.EngineConfig.SetImageList(images)
 			return nil
 		} else if err != nil {
 			return fmt.Errorf("while checking image compatibility with overlay: %s", err)
 		}
-
-		// C starter code will position current working directory
-		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
 	} else if img.Type == image.SIF {
 		// query the ECL module, proceed if an ecl config file is found
 		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
@@ -1084,10 +1116,6 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		if img.Writable && img.Partitions[0].Type != image.EXT3 && writableOverlayPath == "" {
 			return fmt.Errorf("no SIF writable overlay partition found in %s", img.Path)
 		}
-	}
-
-	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
-		return err
 	}
 
 	// lock all ext3 partitions if any to prevent concurrent writes
@@ -1188,19 +1216,26 @@ func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, 
 		}
 	}
 
-	switch imgObject.Type {
-	case image.SANDBOX:
-		if !e.EngineConfig.File.AllowContainerDir {
-			return nil, fmt.Errorf("configuration disallows users from running sandbox based containers")
-		}
-	case image.EXT3:
-		if !e.EngineConfig.File.AllowContainerExtfs {
-			return nil, fmt.Errorf("configuration disallows users from running extFS based containers")
-		}
-	case image.SQUASHFS:
-		if !e.EngineConfig.File.AllowContainerSquashfs {
-			return nil, fmt.Errorf("configuration disallows users from running squashFS based containers")
+	for _, p := range imgObject.Partitions {
+		switch p.Type {
+		case image.SANDBOX:
+			if !e.EngineConfig.File.AllowContainerDir {
+				return nil, fmt.Errorf("configuration disallows users from running sandbox based containers")
+			}
+		case image.EXT3:
+			if !e.EngineConfig.File.AllowContainerExtfs {
+				return nil, fmt.Errorf("configuration disallows users from running extFS based containers")
+			}
+		case image.SQUASHFS:
+			if !e.EngineConfig.File.AllowContainerSquashfs {
+				return nil, fmt.Errorf("configuration disallows users from running squashFS based containers")
+			}
+		case image.ENCRYPTSQUASHFS:
+			if !e.EngineConfig.File.AllowContainerEncrypted {
+				return nil, fmt.Errorf("configuration disallows users from running encrypted containers")
+			}
 		}
 	}
+
 	return imgObject, nil
 }

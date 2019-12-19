@@ -54,6 +54,7 @@ type JSONConfig struct {
 	WritableTmpfs     bool          `json:"writableTmpfs,omitempty"`
 	Contain           bool          `json:"container,omitempty"`
 	Nv                bool          `json:"nv,omitempty"`
+	Rocm              bool          `json:"rocm,omitempty"`
 	CustomHome        bool          `json:"customHome,omitempty"`
 	Instance          bool          `json:"instance,omitempty"`
 	InstanceJoin      bool          `json:"instanceJoin,omitempty"`
@@ -127,6 +128,16 @@ func (e *EngineConfig) SetNv(nv bool) {
 // GetNv returns if nv flag is set or not.
 func (e *EngineConfig) GetNv() bool {
 	return e.JSON.Nv
+}
+
+// SetRocm sets rocm flag to bind rocm libraries into containee.JSON.
+func (e *EngineConfig) SetRocm(rocm bool) {
+	e.JSON.Rocm = rocm
+}
+
+// GetRocm returns if rocm flag is set or not.
+func (e *EngineConfig) GetRocm() bool {
+	return e.JSON.Rocm
 }
 
 // SetWorkdir sets a work directory path.

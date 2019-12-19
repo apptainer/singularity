@@ -41,9 +41,11 @@ var (
 	IsWritable      bool
 	IsWritableTmpfs bool
 	Nvidia          bool
+	Rocm            bool
 	NoHome          bool
 	NoInit          bool
 	NoNvidia        bool
+	NoRocm          bool
 	VM              bool
 	VMErr           bool
 	NoNet           bool
@@ -389,6 +391,17 @@ var actionNvidiaFlag = cmdline.Flag{
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
+// --rocm flag to automatically bind
+var actionRocmFlag = cmdline.Flag{
+	ID:           "actionRocmFlag",
+	Value:        &Rocm,
+	DefaultValue: false,
+	Name:         "rocm",
+	Usage:        "enable experimental Rocm support",
+	EnvKeys:      []string{"ROCM"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
 // -w|--writable
 var actionWritableFlag = cmdline.Flag{
 	ID:           "actionWritableFlag",
@@ -440,7 +453,19 @@ var actionNoNvidiaFlag = cmdline.Flag{
 	Value:        &NoNvidia,
 	DefaultValue: false,
 	Name:         "no-nv",
+	Hidden:       true,
 	EnvKeys:      []string{"NV_OFF", "NO_NV"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// hidden flag to disable rocm bindings when 'always use rocm = yes'
+var actionNoRocmFlag = cmdline.Flag{
+	ID:           "actionNoRocmFlag",
+	Value:        &NoRocm,
+	DefaultValue: false,
+	Name:         "no-rocm",
+	Hidden:       true,
+	EnvKeys:      []string{"ROCM_OFF", "NO_ROCM"},
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
@@ -635,8 +660,10 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionNoInitFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNONETFlag, actionsCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNoNvidiaFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNoRocmFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNoPrivsFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNvidiaFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionRocmFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionOverlayFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&commonPromptForPassphraseFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&commonPEMFlag, actionsInstanceCmd...)

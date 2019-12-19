@@ -100,6 +100,7 @@ func getProcInfo(pid int) (ppid int, uid int, gid int) {
 	if err != nil {
 		log.Fatalf("failed to open /proc/%v/status", pid)
 	}
+	defer f.Close()
 
 	for s := bufio.NewScanner(f); s.Scan(); {
 		var temp int

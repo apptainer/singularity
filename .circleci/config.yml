@@ -64,31 +64,23 @@ x-run:
   check_changes: &check_changes
     name: Check changes
     command: |-
-      # Skip e2e by default
-      require_e2e=false
+      rc=0
+      scripts/should-e2e-run "${CIRCLE_PROJECT_USERNAME}" "${CIRCLE_PROJECT_REPONAME}" "${CIRCLE_BRANCH}" "${CIRCLE_PULL_REQUEST}" || rc=$?
+      case $rc in
+        0)
+          echo "Verifying critical changes"
+          ;;
 
-      TARGET_BRANCH=$(curl -s "https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/pulls/${CIRCLE_PR_NUMBER}" | jq -r .base.ref)
+        1)
+          echo "No critical changes, skipping tests"
+          circleci step halt
+          ;;
 
-      case "${TARGET_BRANCH}" in
-          master|release-*)
-              if git --no-pager diff --name-only HEAD "origin/${TARGET_BRANCH}" |
-                 grep -q -E '^(e2e|vendor|\.circleci)/'
-              then
-                  # There are changes in .circleci, e2e or vendor
-                  # directories, require e2e
-                  require_e2e=true
-              fi
-              ;;
-          *)
-              # The branch is not master or release, skip e2e
-              require_e2e=false
-              ;;
+        *)
+          echo "E: scripts/should-e2e-run returned with exit code $rc. Abort."
+          exit $rc
+          ;;
       esac
-
-      if ! "$require_e2e" ; then
-        echo "No changes in e2e or vendor directories, skipping tests"
-        circleci step halt
-      fi
 
 jobs:
   get_source:
@@ -253,6 +245,8 @@ jobs:
           no_output_timeout: 35m
           command: |-
             make -C ./builddir e2e-test
+      - store_artifacts:
+          path: builddir/e2e-cmd-report.txt
 
 workflows:
   version: 2

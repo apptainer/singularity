@@ -6,23 +6,26 @@
 package singularity
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"plugin"
 	"runtime"
 	"strings"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
+
+type buildToolchain struct {
+	goPath    string
+	workPath  string
+	buildTags string
+	envs      []string
+}
 
 // getSingularitySrcDir returns the source directory for singularity.
 func getSingularitySrcDir() (string, error) {
@@ -61,17 +64,35 @@ func pluginManifestPath(sourceDir string) string {
 // plugin's source code directory; and destSif, the path to the intended final
 // location of the plugin SIF file.
 func CompilePlugin(sourceDir, destSif, buildTags string) error {
+	workpath, err := getSingularitySrcDir()
+	if err != nil {
+		return errors.New("singularity source directory not found")
+	}
+	goPath, err := exec.LookPath("go")
+	if err != nil {
+		return errors.New("go compiler not found")
+	}
+
+	bTool := buildToolchain{
+		buildTags: buildTags,
+		workPath:  workpath,
+		goPath:    goPath,
+		envs:      append(os.Environ(), "GO111MODULE=on"),
+	}
+
 	// build plugin object using go build
-	_, err := buildPlugin(sourceDir, buildTags)
+	soPath, err := buildPlugin(sourceDir, bTool)
 	if err != nil {
 		return fmt.Errorf("while building plugin .so: %v", err)
 	}
+	defer os.Remove(soPath)
 
 	// generate plugin manifest from .so
-	_, err = generateManifest(sourceDir)
+	mPath, err := generateManifest(sourceDir, bTool)
 	if err != nil {
 		return fmt.Errorf("while generating plugin manifest: %s", err)
 	}
+	defer os.Remove(mPath)
 
 	// convert the built plugin object into a sif
 	if err := makeSIF(sourceDir, destSif); err != nil {
@@ -81,76 +102,90 @@ func CompilePlugin(sourceDir, destSif, buildTags string) error {
 	return nil
 }
 
-// buildPlugin takes sourceDir which is the string path the host which contains the source code of
-// the plugin. buildPlugin returns the path to the built file, along with an error.
+// buildPlugin takes sourceDir which is the string path the host which
+// contains the source code of the plugin. buildPlugin returns the path
+// to the built file, along with an error.
 //
-// This function essentially runs the `go build -buildmode=plugin [...]` command
-func buildPlugin(sourceDir, buildTags string) (string, error) {
-	workpath, err := getSingularitySrcDir()
-	if err != nil {
-		return "", errors.New("singularity source directory not found")
+// This function essentially runs the `go build -buildmode=plugin [...]`
+// command.
+func buildPlugin(sourceDir string, bTool buildToolchain) (string, error) {
+	modFlag := "-mod=readonly"
+
+	hasVendor := func() bool {
+		vendorDir := filepath.Join(bTool.workPath, "vendor")
+		_, err := os.Stat(vendorDir)
+		return !os.IsNotExist(err)
+	}()
+
+	if hasVendor {
+		modFlag = "-mod=vendor"
 	}
 
 	// assuming that sourceDir is within trimpath for now
 	out := pluginObjPath(sourceDir)
 
-	goTool, err := exec.LookPath("go")
-	if err != nil {
-		return "", errors.New("go compiler not found")
-	}
-
 	args := []string{
 		"build",
 		"-o", out,
+		modFlag,
 		"-trimpath",
 		"-buildmode=plugin",
-		"-tags", buildTags,
+		"-tags", bTool.buildTags,
 		sourceDir,
 	}
 
-	sylog.Debugf("Running: %s %s", goTool, strings.Join(args, " "))
+	sylog.Debugf("Running: %s %s", bTool.goPath, strings.Join(args, " "))
 
-	buildcmd := exec.Command(goTool, args...)
+	buildcmd := exec.Command(bTool.goPath, args...)
 
-	buildcmd.Dir = workpath
+	buildcmd.Dir = bTool.workPath
 	buildcmd.Stderr = os.Stderr
 	buildcmd.Stdout = os.Stdout
 	buildcmd.Stdin = os.Stdin
-	buildcmd.Env = append(os.Environ(), "GO111MODULE=on")
+	buildcmd.Env = bTool.envs
 
 	return out, buildcmd.Run()
 }
 
-// generateManifest takes the path to the plugin source, sourceDir, and generates
-// its corresponding manifest file.
-func generateManifest(sourceDir string) (string, error) {
+// generateManifest takes the path to the plugin source, extracts
+// plugin's manifest and stores it's json representation in a separate
+// file. Extraction and store are happens in a separate process to avoid
+// double loading plugin, in case when we are compiling already
+// installed plugin.
+//
+// This function essentially runs the `go run cmd/plugin/plugin.go [...]` command.
+func generateManifest(sourceDir string, bTool buildToolchain) (string, error) {
+	modFlag := "-mod=readonly"
+
+	hasVendor := func() bool {
+		vendorDir := filepath.Join(bTool.workPath, "vendor")
+		_, err := os.Stat(vendorDir)
+		return !os.IsNotExist(err)
+	}()
+
+	if hasVendor {
+		modFlag = "-mod=vendor"
+	}
+
 	in := pluginObjPath(sourceDir)
 	out := pluginManifestPath(sourceDir)
 
-	pluginPointer, err := plugin.Open(in)
-	if err != nil {
-		return "", err
+	args := []string{
+		"run",
+		"-trimpath",
+		modFlag,
+		"-tags", bTool.buildTags,
+		"cmd/plugin/plugin.go",
+		in,
+		out,
 	}
 
-	sym, err := pluginPointer.Lookup(pluginapi.PluginSymbol)
-	if err != nil {
-		return "", err
-	}
+	runCmd := exec.Command(bTool.goPath, args...)
+	runCmd.Dir = bTool.workPath
+	runCmd.Env = bTool.envs
+	runCmd.Stderr = os.Stderr
 
-	p, ok := sym.(*pluginapi.Plugin)
-	if !ok {
-		return "", fmt.Errorf(`symbol "Plugin" not of type Plugin`)
-	}
-
-	manifest, err := json.Marshal(p.Manifest)
-	if err != nil {
-		return "", fmt.Errorf("could not marshal manifest to json: %v", err)
-	}
-
-	if err := ioutil.WriteFile(out, manifest, 0644); err != nil {
-		return "", fmt.Errorf("could not write manifest: %v", err)
-	}
-	return out, nil
+	return out, runCmd.Run()
 }
 
 // makeSIF takes in two arguments: sourceDir, the path to the plugin source directory;

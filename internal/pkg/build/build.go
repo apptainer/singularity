@@ -15,6 +15,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
+
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/internal/pkg/build/apps"
@@ -76,10 +78,16 @@ func New(defs []types.Definition, conf Config) (*Build, error) {
 }
 
 func newBuild(defs []types.Definition, conf Config) (*Build, error) {
+	sandboxCopy := false
 	oldumask := syscall.Umask(0002)
 	defer syscall.Umask(oldumask)
 
-	conf.Dest = filepath.Clean(conf.Dest)
+	dest, err := filepath.Abs(conf.Dest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine absolute path for %q: %v", conf.Dest, err)
+	}
+	conf.Dest = dest
+
 	// always build a sandbox if updating an existing sandbox
 	if conf.Opts.Update {
 		conf.Format = "sandbox"
@@ -89,8 +97,17 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		Conf: conf,
 	}
 
+	// look if there is mount options set which could conflict
+	// with the build process like nodev and noexec
+	entries, err := proc.GetMountInfoEntry("/proc/self/mountinfo")
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve mount information: %v", err)
+	}
+
+	lastStageIndex := len(defs) - 1
+
 	// create stages
-	for _, d := range defs {
+	for i, d := range defs {
 		// verify every definition has a header if there are multiple stages
 		if d.Header == nil {
 			return nil, fmt.Errorf("multiple stages detected, all must have headers")
@@ -115,6 +132,45 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		s.name = d.Header["stage"]
 		s.b.Recipe = d
 
+		if conf.Format == "sandbox" && lastStageIndex == i {
+			// rootfs path changed during bundle creation it means that chown
+			// is not possible within the temporary rootfs, we will switch to
+			// the old behavior which is to create the temporary rootfs inside
+			// $TMPDIR and copy the final root filesystem to the destination
+			// provided
+			if s.b.RootfsPath != rootfs {
+				sandboxCopy = true
+				sylog.Warningf("The underlying filesystem on which resides %q won't allow to set ownership, "+
+					"as a consequence the sandbox could not preserve image's files/directories ownerships", conf.Dest)
+			} else {
+				// check if the final sandbox directory doesn't have noexec set
+				destEntry, err := proc.FindParentMountEntry(rootfsParent, entries)
+				if err != nil {
+					return nil, fmt.Errorf("failed to find mount point for %s: %v", rootfsParent, err)
+				}
+				for _, opt := range destEntry.Options {
+					if opt == "noexec" {
+						return nil, fmt.Errorf("'noexec' mount option set on %s, sandbox %s won't be usable at this location", destEntry.Point, conf.Dest)
+					}
+				}
+			}
+		}
+		if lastStageIndex == i {
+			// check if TMPDIR mount point have nodev and/or noexec set
+			tmpdirEntry, err := proc.FindParentMountEntry(conf.Opts.TmpDir, entries)
+			if err != nil {
+				return nil, fmt.Errorf("failed to find mount point for %s: %v", conf.Opts.TmpDir, err)
+			}
+			for _, opt := range tmpdirEntry.Options {
+				switch opt {
+				case "nodev":
+					sylog.Warningf("'nodev' mount option set on %s, it could be a source of failure during build process", tmpdirEntry.Point)
+				case "noexec":
+					return nil, fmt.Errorf("'noexec' mount option set on %s, temporary root filesystem won't be usable at this location", tmpdirEntry.Point)
+				}
+			}
+		}
+
 		s.b.Opts = conf.Opts
 		// dont need to get cp if we're skipping bootstrap
 		if !conf.Opts.Update || conf.Opts.Force {
@@ -129,10 +185,9 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 	}
 
 	// only need an assembler for last stage
-	lastStageIndex := len(defs) - 1
 	switch conf.Format {
 	case "sandbox":
-		b.stages[lastStageIndex].a = &assemblers.SandboxAssembler{}
+		b.stages[lastStageIndex].a = &assemblers.SandboxAssembler{Copy: sandboxCopy}
 	case "sif":
 		mksquashfsPath, err := squashfs.GetPath()
 		if err != nil {
@@ -257,6 +312,8 @@ func (b *Build) Full(ctx context.Context) error {
 	// clean up build normally
 	defer b.cleanUp()
 
+	oldumask := syscall.Umask(0002)
+
 	// build each stage one after the other
 	for i, stage := range b.stages {
 		if err := stage.runPreScript(); err != nil {
@@ -318,6 +375,8 @@ func (b *Build) Full(ctx context.Context) error {
 			return fmt.Errorf("while inserting metadata to bundle: %v", err)
 		}
 	}
+
+	syscall.Umask(oldumask)
 
 	sylog.Debugf("Calling assembler")
 	if err := b.stages[len(b.stages)-1].Assemble(b.Conf.Dest); err != nil {

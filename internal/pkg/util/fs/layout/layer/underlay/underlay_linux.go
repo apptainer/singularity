@@ -15,7 +15,7 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
 )
@@ -64,6 +64,7 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 	st := new(syscall.Stat_t)
 	points := system.Points
 	createdPath := make([]pathLen, 0)
+	destinations := make(map[string]struct{})
 
 	sessionDir := u.session.Path()
 	for _, tag := range mount.GetTagList() {
@@ -75,32 +76,53 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 			if strings.HasPrefix(point.Destination, sessionDir) {
 				continue
 			}
-			if err := syscall.Stat(rootFsPath+point.Destination, st); err == nil {
+
+			// get rid of symlinks and resolve the path within the
+			// rootfs path to not have false positive while creating
+			// the layer with calls below
+			dst := fs.EvalRelative(point.Destination, rootFsPath)
+
+			// keep track of destination mount points to not duplicate
+			// directory uselessly
+			destinations[dst] = struct{}{}
+
+			// now we are (almost) sure that we will get path information
+			// for a path in the rootfs path and we would create the right
+			// destination in the layer
+			if err := syscall.Stat(filepath.Join(rootFsPath, dst), st); err == nil {
 				continue
 			}
 			if err := syscall.Stat(point.Source, st); err != nil {
 				sylog.Warningf("skipping mount of %s: %s", point.Source, err)
 				continue
 			}
-			dst := underlayDir + point.Destination
-			if _, err := u.session.GetPath(dst); err == nil {
+			underlayDst := filepath.Join(underlayDir, dst)
+			if _, err := u.session.GetPath(underlayDst); err == nil {
 				continue
 			}
 			switch st.Mode & syscall.S_IFMT {
 			case syscall.S_IFDIR:
-				if err := u.session.AddDir(dst); err != nil {
+				if err := u.session.AddDir(underlayDst); err != nil {
 					return err
 				}
 			default:
-				if err := u.session.AddFile(dst, nil); err != nil {
+				if err := u.session.AddFile(underlayDst, nil); err != nil {
 					return err
 				}
 			}
-			createdPath = append(createdPath, pathLen{path: point.Destination, len: uint16(strings.Count(point.Destination, "/"))})
+			createdPath = append(
+				createdPath,
+				pathLen{
+					path: dst,
+					len:  uint16(strings.Count(dst, "/")),
+				},
+			)
 		}
 	}
 
-	sort.SliceStable(createdPath, func(i, j int) bool { return createdPath[i].len < createdPath[j].len })
+	sort.SliceStable(createdPath, func(i, j int) bool {
+		return createdPath[i].len < createdPath[j].len
+	})
 
 	for _, pl := range createdPath {
 		splitted := strings.Split(filepath.Dir(pl.path), string(os.PathSeparator))
@@ -115,6 +137,12 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 						return err
 					}
 				}
+				// if the directory is overrided by a bind mount we won't
+				// need to duplicate the container image directory
+				if _, ok := destinations[p]; ok {
+					continue
+				}
+				// directory not overrided, duplicate it
 				if err := u.duplicateDir(p, system, pl.path); err != nil {
 					return err
 				}
@@ -143,14 +171,14 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 
 func (u *Underlay) duplicateDir(dir string, system *mount.System, existingPath string) error {
 	binds := 0
-	path := filepath.Clean(u.session.RootFsPath() + dir)
+	path := filepath.Join(u.session.RootFsPath(), dir)
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		// directory doesn't exists, nothing to duplicate
 		return nil
 	}
 	for _, file := range files {
-		dst := filepath.Join(underlayDir+dir, file.Name())
+		dst := filepath.Join(underlayDir, dir, file.Name())
 		src := filepath.Join(path, file.Name())
 
 		// no error means entry is already created

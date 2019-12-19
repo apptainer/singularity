@@ -125,7 +125,7 @@ func (s *sifBundle) Create(ociConfig *specs.Spec) error {
 	}
 
 	rootFs := tools.RootFs(s.bundlePath).Path()
-	if err := syscall.Mount(loop, rootFs, "squashfs", syscall.MS_RDONLY, "errors=remount-ro"); err != nil {
+	if err := syscall.Mount(loop, rootFs, "squashfs", syscall.MS_RDONLY, ""); err != nil {
 		tools.DeleteBundle(s.bundlePath)
 		return fmt.Errorf("failed to mount SIF partition: %s", err)
 	}

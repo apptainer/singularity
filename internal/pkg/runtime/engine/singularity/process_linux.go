@@ -7,8 +7,6 @@ package singularity
 
 import (
 	"context"
-	"debug/elf"
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,36 +26,14 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/machine"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
+	"github.com/sylabs/singularity/pkg/util/rlimit"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 const defaultShell = "/bin/sh"
-
-// Convert an ELF architecture into a GOARCH-style string. This is not an
-// exhaustive list, so there is a default for rare cases. Adapted from
-// https://golang.org/src/cmd/internal/objfile/elf.go
-func elfToGoArch(elfFile *elf.File) string {
-	switch elfFile.Machine {
-	case elf.EM_386:
-		return "386"
-	case elf.EM_X86_64:
-		return "amd64"
-	case elf.EM_ARM:
-		return "arm"
-	case elf.EM_AARCH64:
-		return "arm64"
-	case elf.EM_PPC64:
-		if elfFile.ByteOrder == binary.LittleEndian {
-			return "ppc64le"
-		}
-		return "ppc64"
-	case elf.EM_S390:
-		return "s390x"
-	}
-	return "UNKNOWN"
-}
 
 // StartProcess is called during stage2 after RPC server finished
 // environment preparation. This is the container process itself.
@@ -155,6 +131,16 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 	}
 
+	// restore the stack size limit for setuid workflow
+	for _, limit := range e.EngineConfig.OciConfig.Process.Rlimits {
+		if limit.Type == "RLIMIT_STACK" {
+			if err := rlimit.Set(limit.Type, limit.Soft, limit.Hard); err != nil {
+				return fmt.Errorf("while restoring stack size limit: %s", err)
+			}
+			break
+		}
+	}
+
 	if err := security.Configure(&e.EngineConfig.OciConfig.Spec); err != nil {
 		return fmt.Errorf("failed to apply security configuration: %s", err)
 	}
@@ -167,13 +153,14 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 			if shell == "" {
 				shell = defaultShell
 			}
-			self, errElf := elf.Open(shell)
-			if errElf != nil {
-				return fmt.Errorf("failed to open %s for inspection: %s", shell, errElf)
+			elfArch, elfErr := machine.ArchFromElf(shell)
+			if elfErr != nil && elfErr != machine.ErrUnknownArch {
+				return fmt.Errorf("failed to open %s for inspection: %s", shell, elfErr)
+			} else if elfErr == machine.ErrUnknownArch {
+				elfArch = "unknown architecture"
 			}
-			defer self.Close()
-			if elfArch := elfToGoArch(self); elfArch != runtime.GOARCH {
-				return fmt.Errorf("image targets %s, cannot run on %s", elfArch, runtime.GOARCH)
+			if elfArch != runtime.GOARCH {
+				return fmt.Errorf("image targets '%s', cannot run on '%s'", elfArch, runtime.GOARCH)
 			}
 			// Assume a missing shared library on ENOENT
 			if err == syscall.ENOENT {

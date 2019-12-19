@@ -34,9 +34,9 @@ import (
 	"github.com/sylabs/singularity/pkg/network"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
-	"github.com/sylabs/singularity/pkg/util/nvidia"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -460,7 +460,7 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 	} else {
 		if tag == mount.CwdTag {
 			hostCwd := c.engine.EngineConfig.GetCwd()
-			containerCwd := filepath.Join(c.session.FinalPath(), hostCwd)
+			containerCwd := filepath.Join(c.session.FinalPath(), mnt.Destination)
 
 			if c.sameInode(hostCwd, containerCwd) || c.isMounted(containerCwd) {
 				c.skippedMount = append(c.skippedMount, mnt.Destination)
@@ -714,7 +714,16 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		if err := system.Points.AddBind(mount.RootfsTag, rootfs, c.session.RootFsPath(), flags); err != nil {
 			return err
 		}
-		return system.Points.AddRemount(mount.RootfsTag, c.session.RootFsPath(), flags)
+		if err := system.Points.AddRemount(mount.RootfsTag, c.session.RootFsPath(), flags); err != nil {
+			return err
+		}
+		// re-apply mount propagation flag, on EL6 a kernel bug reset propagation flag
+		// and may lead to crash (see https://github.com/sylabs/singularity/issues/4851)
+		flags = syscall.MS_SLAVE
+		if !c.engine.EngineConfig.File.MountSlave {
+			flags = syscall.MS_PRIVATE
+		}
+		return system.Points.AddPropagation(mount.RootfsTag, c.session.RootFsPath(), flags)
 	}
 
 	sylog.Debugf("Mounting block [%v] image: %v\n", mountType, rootfs)
@@ -1140,9 +1149,21 @@ func (c *container) addDevMount(system *mount.System) error {
 			return err
 		}
 		if c.engine.EngineConfig.GetNv() {
-			devs, err := nvidia.Devices(true)
+			devs, err := gpu.NvidiaDevices(true)
 			if err != nil {
 				return fmt.Errorf("failed to get nvidia devices: %v", err)
+			}
+			for _, dev := range devs {
+				if err := c.addSessionDev(dev, system); err != nil {
+					return err
+				}
+			}
+		}
+
+		if c.engine.EngineConfig.GetRocm() {
+			devs, err := gpu.RocmDevices(true)
+			if err != nil {
+				return fmt.Errorf("failed to get rocm devices: %v", err)
 			}
 			for _, dev := range devs {
 				if err := c.addSessionDev(dev, system); err != nil {
@@ -1440,7 +1461,10 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 		} else if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
 		} else {
-			c.session.OverrideDir(dst, src)
+			fi, err := os.Stat(src)
+			if err == nil && fi.IsDir() {
+				c.session.OverrideDir(dst, src)
+			}
 			system.Points.AddRemount(mount.UserbindsTag, dst, flags)
 		}
 	}
@@ -1619,6 +1643,30 @@ func (c *container) addCwdMount(system *mount.System) error {
 		sylog.Verbosef("Default mount: %v: to the container", cwd)
 	} else {
 		sylog.Warningf("Could not bind CWD to container %s: %s", cwd, err)
+	}
+
+	// welcome to the symlink madness ... instead of adding a
+	// superfluous bind mount, we will create a symlink for the
+	// last element of the path which doesn't necessarily reflect
+	// the real symlink(s) found in the path but does the same
+	// job as a bind mount would do. We can do that only when a
+	// layer is enabled, if it's not the case we display a warning
+	if cwd != current {
+		if c.isLayerEnabled() {
+			linkPath := filepath.Join(c.session.Layer.Dir(), cwd)
+			// if the last element is a symlink, duplicate the target
+			target, err := os.Readlink(cwd)
+			if err != nil {
+				target = current
+			}
+			if err := c.session.AddSymlink(linkPath, target); err != nil {
+				return fmt.Errorf("can't create symlink %s: %s", linkPath, err)
+			}
+			return nil
+		}
+		sylog.Warningf(
+			"Your current working directory is a symlink and may not be available " +
+				"in container, you should use real path with --writable when possible")
 	}
 
 	return nil

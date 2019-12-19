@@ -9,7 +9,102 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.4.2
+# Changes Since v3.5.2
+
+# v3.5.2 - [2019.12.17]
+
+## [Security related fix](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2019-19724)
+  - 700 permissions are enforced on `$HOME/.singularity` and `SINGULARITY_CACHEDIR`
+  directories (CVE-2019-19724). Many thanks to Stuart Barkley for reporting this issue.
+
+## Bug Fixes
+
+  - Fixes an issue preventing use of `.docker/config` for docker registry
+    authentication.
+  - Fixes the `run-help` command in the unprivileged workflow.
+  - Fixes a regression in the `inspect` command to support older image formats.
+  - Adds a workaround for an EL6 kernel bug regarding shared bind mounts.
+  - Fixes caching of http(s) sources with conflicting filenames.
+  - Fixes a fakeroot sandbox build error on certain filesystems, e.g. lustre, GPFS.
+  - Fixes a fakeroot build failure to a sandbox in $HOME.
+  - Fixes a fakeroot build failure from a bad def file section script location.
+  - Fixes container execution errors when CWD is a symlink.
+  - Provides a useful warning r.e. possible fakeroot build issues when seccomp
+    support is not available.
+  - Fixes an issue where the `--disable-cache` option was not being honored.
+
+ - Deprecated `--groupid` flag for `sign` and `verify`; replaced with `--group-id`.
+ - Removed useless flag `--url` for `sign`.
+
+# v3.5.1 - [2019.12.05]
+
+## New features / functionalities
+
+A single feature has been added in the bugfix release, with specific
+functionality:
+
+  - A new option `allow container encrypted` can be set to `no` in
+      `singularity.conf` to prevent execution of encrypted containers.
+
+## Bug Fixes
+
+This point release addresses the following issues:
+
+  - Fixes a disk space leak when building from docker-archive.
+  - Makes container process SIGABRT return the expected code.
+  - Fixes the `inspect` command in unprivileged workflow.
+  - Sets an appropriate default umask during build stages, to avoid issues with
+      very restrictive user umasks.
+  - Fixes an issue with build script content being consumed from STDIN.
+  - Corrects the behaviour of underlay with non-empty / symlinked CWD and absolute
+    symlink binds targets.
+  - Fixes execution of containers when binding BTRFS filesystems.
+  - Fixes build / check failures for MIPS & PPC64.
+  - Ensures file ownership maintained when building image from sandbox.
+  - Fixes a squashfs mount error on kernel 5.4.0 and above.
+  - Fixes an underlay fallback problem, which prevented use of sandboxes on
+    lustre filesystems.
+
+# v3.5.0 - [2019.11.13]
+
+## New features / functionalities
+
+  - New support for AMD GPUs via `--rocm` option added to bind ROCm devices and
+    libraries into containers.
+  - Plugins can now modify Singularity behaviour with two mutators: CLI and
+    Runtime.
+  - Introduced the `config global` command to edit `singularity.conf` settings
+    from the CLI.
+  - Introduced the `config fakeroot` command to setup `subuid` and `subgid`
+    mappings for `--fakeroot` from the Singularity CLI.
+      
+## Changed defaults / behaviours
+
+  - Go 1.13 adopted.
+  - Vendored modules removed from the Git tree, will be included in release tarballs.
+  - Singularity will now fail with an error if a requested bind mount cannot be
+      made.
+    - This is beneficial to fail fast in workflows where a task may fail a long
+         way downstream if a bind mount is unavailable.
+    - Any unavailable bind mount sources must be removed from
+        `singularity.conf`.
+  - Docker/OCI image extraction now faithfully respects layer
+    permissions.
+    - This may lead to sandboxes that cannot be removed without
+    modifying permissions.
+    - `--fix-perms` option added to preserve old behaviour when
+    building sandboxes.
+    - Discussion issue for this change at: https://github.com/sylabs/singularity/issues/4671
+  - `Singularity>` prompt is always set when entering shell in a container.
+  - The current `umask` will be honored when building a SIF file.
+  - `instance exec` processes acquire cgroups set on `instance start`
+  - `--fakeroot` supports uid/subgid ranges >65536
+  - `singularity version` now reports semver compliant version
+      information.
+
+## Deprecated / removed commands
+
+  - Deprecated `--id` flag for `sign` and `verify`; replaced with `--sif-id`.
 
 # v3.4.2 - [2019.10.08]
 
@@ -19,8 +114,6 @@ _The old changelog can be found in the `release-2.6` branch_
     - Correctly handle the starter-suid binary for non-root installs
     - Creates CACHEDIR if it doesn't exist
     - Set apex loglevel for umoci to match singularity loglevel
-
-  - Deprecated `--id` flag for `sign` and `verify`; replaced with `--sif-id`.
 
 # v3.4.1 - [2019.09.17]
 

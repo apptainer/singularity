@@ -610,7 +610,10 @@ func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype 
 		return fmt.Errorf("invalid image size, zero length")
 	}
 	keyB64 := base64.StdEncoding.EncodeToString(key)
-	options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,key=%s,errors=remount-ro", offset, sizelimit, keyB64)
+	options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,key=%s", offset, sizelimit, keyB64)
+	if fstype == "ext3" {
+		options += ",errors=remount-ro"
+	}
 	return p.add(tag, source, dest, fstype, flags, options)
 }
 

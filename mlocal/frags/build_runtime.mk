@@ -111,6 +111,18 @@ $(nvidia_liblist_INSTALL): $(nvidia_liblist)
 INSTALLFILES += $(nvidia_liblist_INSTALL)
 
 
+# rocm liblist config file
+rocm_liblist := $(SOURCEDIR)/etc/rocmliblist.conf
+
+ rocm_liblist_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/rocmliblist.conf
+$(rocm_liblist_INSTALL): $(rocm_liblist)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
+
+INSTALLFILES += $(rocm_liblist_INSTALL)
+
+
 # cgroups config file
 cgroups_config := $(SOURCEDIR)/internal/pkg/cgroups/example/cgroups.toml
 

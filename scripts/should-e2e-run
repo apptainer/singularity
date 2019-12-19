@@ -1,0 +1,100 @@
+#!/bin/sh
+
+set -e
+
+usage() {
+	cat <<-EOT
+	E: Invalid usage. Abort.
+
+	Usage:
+
+	    $0 {github_username} {github_reponame} {github_branch} [github_pr_url]
+
+	If a {github_pr_url} is provided, it's used to obtain additional
+	information like the target branch and the labels. Otherwise it
+	is assumed that the code is already merged and that only the
+	most recent commit should be examined.
+	EOT
+}
+
+# Give the possibility to force E2E run
+if ! test -z "${FORCE_E2E}" ; then
+    echo "FORCE_E2E set, forcing e2e tests."
+    exit 0
+fi
+
+# Skip e2e by default
+require_e2e=false
+
+GITHUB_USERNAME=$1
+GITHUB_REPONAME=$2
+GITHUB_BRANCH=$3
+GITHUB_PR_URL=$4
+
+if test -z "${GITHUB_USERNAME}" ; then
+	usage "$0"
+	exit 2
+elif test -z "${GITHUB_REPONAME}" ; then
+	usage "$0"
+	exit 2
+elif test -z "${GITHUB_BRANCH}" ; then
+	usage "$0"
+	exit 2
+fi
+
+if test -z "${GITHUB_PR_URL}" ; then
+	echo "Running directly against branch ${GITHUB_BRANCH}"
+	TARGET_BRANCH="${GITHUB_BRANCH}"
+	BASE_COMMIT="HEAD~"
+	# Assume E2E is required for all runs against a branch; below we
+	# constrain this to specific branches.
+	require_e2e=true
+else
+	PR_NUMBER=$(echo "${GITHUB_PR_URL}" | sed -e 's,.*/,,')
+
+	pull_info_file=$(mktemp)
+	trap "rm -f ${pull_info_file}" EXIT
+
+	curl -s "https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPONAME}/pulls/${PR_NUMBER}" > "${pull_info_file}"
+
+	# Keep the matching lines instead of simply looking at the exit
+	# code for debugging purposes
+	E2E_LABELS=$(jq -r '.labels[].name' < "${pull_info_file}" | grep --line-regexp --fixed-strings ci:e2e || true)
+
+	if test -n "${E2E_LABELS}" ; then
+		echo "Honoring request to run E2E tests from pull request labels"
+		exit 0
+	fi
+
+	TARGET_BRANCH=$(jq -r .base.ref < "${pull_info_file}")
+	BASE_COMMIT="origin/${TARGET_BRANCH}"
+fi
+
+case "${TARGET_BRANCH}" in
+	master)
+		if git --no-pager diff --name-only HEAD "${BASE_COMMIT}" |
+			grep -q -E -f .ci/e2e_triggers
+		then
+			# There are changes in critical components, require e2e
+			require_e2e=true
+		fi
+		;;
+
+	release-*)
+		# Require E2E for all changes going into a release branch
+		require_e2e=true
+		;;
+
+	*)
+		# The branch is not master or release, skip e2e
+		require_e2e=false
+		;;
+esac
+
+if ${require_e2e} ; then
+	echo "Critical changes detected."
+	exit 0
+else
+	echo "No critical changes detected."
+	exit 1
+fi

@@ -29,6 +29,7 @@ var buildArgs struct {
 	detached   bool
 	encrypt    bool
 	fakeroot   bool
+	fixPerms   bool
 	isJSON     bool
 	noCleanUp  bool
 	noTest     bool
@@ -158,7 +159,7 @@ var buildNoCleanupFlag = cmdline.Flag{
 	Value:        &buildArgs.noCleanUp,
 	DefaultValue: false,
 	Name:         "no-cleanup",
-	Usage:        "do NOT clean up bundle after failed build, can be helpul for debugging",
+	Usage:        "do NOT clean up bundle after failed build, can be helpful for debugging",
 	EnvKeys:      []string{"NO_CLEANUP"},
 }
 
@@ -183,6 +184,17 @@ var buildEncryptFlag = cmdline.Flag{
 	Usage:        "build an image with an encrypted file system",
 }
 
+// TODO: Deprecate at 3.6, remove at 3.8
+// --fix-perms
+var buildFixPermsFlag = cmdline.Flag{
+	ID:           "fixPermsFlag",
+	Value:        &buildArgs.fixPerms,
+	DefaultValue: false,
+	Name:         "fix-perms",
+	Usage:        "ensure owner has rwX permissions on all container content for oci/docker sources",
+	EnvKeys:      []string{"FIXPERMS"},
+}
+
 func init() {
 	cmdManager.RegisterCmd(buildCmd)
 
@@ -192,6 +204,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildDisableCacheFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildEncryptFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, buildCmd)
+	cmdManager.RegisterFlagForCmd(&buildFixPermsFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildJSONFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildLibraryFlag, buildCmd)
 	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, buildCmd)
@@ -308,7 +321,11 @@ func definitionFromSpec(spec string) (types.Definition, error) {
 	return def, nil
 }
 
-func makeDockerCredentials(cmd *cobra.Command) (authConf ocitypes.DockerAuthConfig, err error) {
+// makeDockerCredentials creates an *ocitypes.DockerAuthConfig to use for
+// OCI/Docker registry operation configuration. Note that if we don't have a
+// username or password set it will return a nil pointer, as containers/image
+// requires this to fall back to .docker/config based authentication.
+func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthConfig, err error) {
 	usernameFlag := cmd.Flags().Lookup("docker-username")
 	passwordFlag := cmd.Flags().Lookup("docker-password")
 
@@ -331,10 +348,13 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf ocitypes.DockerAuthConf
 	}
 
 	if usernameFlag.Changed || passwordFlag.Changed {
-		authConf = dockerAuthConfig
+		return &dockerAuthConfig, nil
 	}
 
-	return authConf, nil
+	// If a username / password have not been explicitly set, return a nil
+	// pointer, which will mean containers/image falls back to looking for
+	// .docker/config.json
+	return nil, nil
 }
 
 // remote builds need to fail if we cannot resolve remote URLS

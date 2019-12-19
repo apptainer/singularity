@@ -16,46 +16,48 @@ import (
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
 
-// InstallFromSIF returns a new meta object which hasn't yet been installed from
-// a pointer to an on disk SIF. It will:
+// InstallFromSIF installs a plugin under libexecDir. It will:
 //     1. Check that the SIF is a valid plugin
-//     2. Open the Manifest to retrieve name and calculate the path
+//     2. Use name (or retrieve one from Manifest) and calculate the installation path
 //     3. Copy the SIF into the plugin path
 //     4. Extract the binary object into the path
 //     5. Generate a default config file in the path
 //     6. Write the Meta struct onto disk in dirRoot
-func InstallFromSIF(fimg *sif.FileImage, libexecdir string) (*Meta, error) {
-	sylog.Debugf("Installing plugin from SIF to %q", libexecdir)
+func InstallFromSIF(fimg *sif.FileImage, name, libexecDir string) error {
+	sylog.Debugf("Installing plugin from SIF to %q", libexecDir)
 
-	sr := newSifFileImageReader(fimg)
-
-	if !isPluginFile(sr) {
-		return nil, fmt.Errorf("while opening SIF file: not a valid plugin")
+	if name == "" {
+		sr := newSifFileImageReader(fimg)
+		if !isPluginFile(sr) {
+			return fmt.Errorf("not a valid plugin")
+		}
+		manifest := getManifest(sr)
+		name = manifest.Name
 	}
 
-	manifest := getManifest(sr)
-
-	plugindir := filepath.Join(libexecdir, dirRoot)
-
-	dstdir, err := filepath.Abs(filepath.Join(plugindir, pathFromName(manifest.Name)))
+	pluginDir := filepath.Join(libexecDir, dirRoot)
+	dstDir, err := filepath.Abs(filepath.Join(pluginDir, pathFromName(name)))
 	if err != nil {
-		return nil, fmt.Errorf("while getting absolute path to plugin installation: %s", err)
+		return fmt.Errorf("could not get plugin installation path: %w", err)
 	}
 
 	m := &Meta{
-		Name:    manifest.Name,
-		Path:    dstdir,
+		Name:    name,
+		Path:    dstDir,
 		Enabled: true,
 
 		fimg: fimg,
 	}
 
-	err = m.install(plugindir)
-	return m, err
+	err = m.install(pluginDir)
+	if err != nil {
+		return fmt.Errorf("could not install plugin: %w", err)
+	}
+	return nil
 }
 
 // Uninstall removes the plugin matching "name" from the specified
-// singularity installation directory
+// singularity installation directory.
 func Uninstall(name, libexecdir string) error {
 	pluginDir := filepath.Join(libexecdir, dirRoot)
 	sylog.Debugf("Uninstalling plugin %q from %q", name, pluginDir)
@@ -189,7 +191,7 @@ func Inspect(name, libexecdir string) (pluginapi.Manifest, error) {
 	r := newSifFileImageReader(&fimg)
 
 	if !isPluginFile(r) {
-		return manifest, fmt.Errorf("while opening SIF file: not a valid plugin")
+		return manifest, fmt.Errorf("not a valid plugin")
 	}
 
 	manifest = getManifest(r)

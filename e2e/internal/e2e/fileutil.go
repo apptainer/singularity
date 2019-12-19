@@ -82,3 +82,14 @@ func PathExists(t *testing.T, path string) bool {
 
 	return true
 }
+
+// PathPerms return true if the path (file or directory) has specified permissions, false otherwise.
+func PathPerms(t *testing.T, path string, perms os.FileMode) bool {
+	s, err := os.Stat(path)
+
+	if err != nil {
+		t.Fatalf("While stating file: %v", err)
+	}
+
+	return s.Mode().Perm() == perms
+}

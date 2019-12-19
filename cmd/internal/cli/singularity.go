@@ -6,11 +6,14 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"os/user"
 	"path"
+	"path/filepath"
 	"text/template"
 
 	ocitypes "github.com/containers/image/types"
@@ -294,9 +297,21 @@ func handleRemoteConf(remoteConfFile string) {
 // handleConfDir tries to create the user's configuration directory and handles
 // messages and/or errors.
 func handleConfDir(confDir string) {
-	if err := fs.Mkdir(confDir, os.ModePerm); err != nil {
+	if err := fs.Mkdir(confDir, 0700); err != nil {
 		if os.IsExist(err) {
 			sylog.Debugf("%s already exists. Not creating.", confDir)
+			fi, err := os.Stat(confDir)
+			if err != nil {
+				sylog.Fatalf("Failed to retrieve information for %s: %s", confDir, err)
+			}
+			if fi.Mode().Perm() != 0700 {
+				sylog.Debugf("Enforce permission 0700 on %s", confDir)
+				// enforce permission on user configuration directory
+				if err := os.Chmod(confDir, 0700); err != nil {
+					// best effort as chmod could fail for various reasons (eg: readonly FS)
+					sylog.Warningf("Couldn't enforce permission 0700 on %s: %s", confDir, err)
+				}
+			}
 		} else {
 			sylog.Debugf("Could not create %s: %s", confDir, err)
 		}
@@ -517,4 +532,35 @@ func sylabsRemote(filepath string) (*scs.EndPoint, error) {
 	}
 
 	return endpoint, nil
+}
+
+func singularityExec(image string, args []string) (string, error) {
+	// Record from stdout and store as a string to return as the contents of the file.
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	abspath, err := filepath.Abs(image)
+	if err != nil {
+		return "", fmt.Errorf("while determining absolute path for %s: %v", image, err)
+	}
+
+	// re-use singularity exec to grab image file content,
+	// we reduce binds to the bare minimum with options below
+	cmdArgs := []string{"exec", "--contain", "--no-home", "--no-nv", "--no-rocm", abspath}
+	cmdArgs = append(cmdArgs, args...)
+
+	singularityCmd := filepath.Join(buildcfg.BINDIR, "singularity")
+
+	cmd := exec.Command(singularityCmd, cmdArgs...)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	// move to the root to not bind the current working directory
+	// while inspecting the image
+	cmd.Dir = "/"
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("unable to process command: %s: error output:\n%s", err, stderr.String())
+	}
+
+	return stdout.String(), nil
 }

@@ -18,6 +18,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/machine"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image/packer"
 	"github.com/sylabs/singularity/pkg/util/crypt"
@@ -34,7 +35,7 @@ type encryptionOptions struct {
 	plaintext []byte
 }
 
-func createSIF(path string, definition, ociConf []byte, squashfile string, encOpts *encryptionOptions) (err error) {
+func createSIF(path string, definition, ociConf []byte, squashfile string, encOpts *encryptionOptions, arch string) (err error) {
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -99,7 +100,7 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encOp
 		sifType = sif.FsEncryptedSquashfs
 	}
 
-	err = parinput.SetPartExtra(sifType, sif.PartPrimSys, sif.GetSIFArch(runtime.GOARCH))
+	err = parinput.SetPartExtra(sifType, sif.PartPrimSys, sif.GetSIFArch(arch))
 	if err != nil {
 		return
 	}
@@ -177,6 +178,13 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 		flags = append(flags, "-comp", "gzip")
 	}
 
+	arch := machine.ArchFromContainer(b.RootfsPath)
+	if arch == "" {
+		sylog.Infof("Architecture not recognized, use native")
+		arch = runtime.GOARCH
+	}
+	sylog.Verbosef("Set SIF container architecture to %s", arch)
+
 	if err := s.Create([]string{b.RootfsPath}, fsPath, flags); err != nil {
 		return fmt.Errorf("while creating squashfs: %v", err)
 	}
@@ -211,7 +219,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 
 	}
 
-	err = createSIF(path, b.Recipe.Raw, b.JSONObjects[types.OCIConfigJSON], fsPath, encOpts)
+	err = createSIF(path, b.Recipe.Raw, b.JSONObjects[types.OCIConfigJSON], fsPath, encOpts, arch)
 	if err != nil {
 		return fmt.Errorf("while creating SIF: %v", err)
 	}

@@ -5,9 +5,8 @@
 # Maintainers:
 
     - Adam Hughes <adam@sylabs.io>, <stickmanica@gmail.com>
-    - Dave Godlove <d@sylabs.io>, <davidgodlove@gmail.com>
-    - Michael Bauer <m@sylabs.io>, <bauerm@umich.edu>
-    - Mike Gray <mike@sylabs.io>
+    - Cedric Clerget <cedric@sylabs.io>, <cedric.clerget@univ-fcomte.fr>
+    - David Trudgian <david.trudgian@sylabs.io>, <dave@trudgian.net>
 
 # Contributors:
 
@@ -27,7 +26,7 @@
     - Dave Dykstra <dwd@fnal.gov>
     - Dave Godlove <d@sylabs.io>, <davidgodlove@gmail.com>
     - Dave Love <d.love@liverpool.ac.uk>
-    - David Trudgian <david.trudgian@utsouthwestern.edu>
+    - David Trudgian <david.trudgian@utsouthwestern.edu>, <david.trudgian@sylabs.io>, <dave@trudgian.net>
     - Diana Langenbach <dcl@dcl.sh>
     - Divya Cote <divya.cote@gmail.com>
     - Eduardo Arango <eduardo@sylabs.io>, <arangogutierrez@gmail.com>

@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
+	"golang.org/x/sys/unix"
 )
 
 type ctx struct {
@@ -464,6 +465,112 @@ func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 	}
 }
 
+// testPullUmask will run some pull tests with different umasks, and
+// ensure the output file hase the correct permissions.
+func (c ctx) testPullUmask(t *testing.T) {
+	umask22Image := "0022-umask-pull"
+	umask77Image := "0077-umask-pull"
+	umask27Image := "0027-umask-pull"
+
+	umaskTests := []struct {
+		name       string
+		imagePath  string
+		umask      int
+		expectPerm uint32
+		force      bool
+	}{
+		{
+			name:       "0022 umask pull",
+			imagePath:  filepath.Join(c.env.TestDir, umask22Image),
+			umask:      0022,
+			expectPerm: 0755,
+		},
+		{
+			name:       "0077 umask pull",
+			imagePath:  filepath.Join(c.env.TestDir, umask77Image),
+			umask:      0077,
+			expectPerm: 0700,
+		},
+		{
+			name:       "0027 umask pull",
+			imagePath:  filepath.Join(c.env.TestDir, umask27Image),
+			umask:      0027,
+			expectPerm: 0750,
+		},
+
+		// With the force flag, and overide the image. The permission will
+		// reset to 0666 after every test.
+		{
+			name:       "0022 umask pull overide",
+			imagePath:  filepath.Join(c.env.TestDir, umask22Image),
+			umask:      0022,
+			expectPerm: 0755,
+			force:      true,
+		},
+		{
+			name:       "0077 umask pull overide",
+			imagePath:  filepath.Join(c.env.TestDir, umask77Image),
+			umask:      0077,
+			expectPerm: 0700,
+			force:      true,
+		},
+		{
+			name:       "0027 umask pull overide",
+			imagePath:  filepath.Join(c.env.TestDir, umask27Image),
+			umask:      0027,
+			expectPerm: 0750,
+			force:      true,
+		},
+	}
+
+	// Helper function to get the file mode for a file.
+	getFilePerm := func(t *testing.T, path string) uint32 {
+		finfo, err := os.Stat(path)
+		if err != nil {
+			t.Fatalf("failed while getting file permission: %s", err)
+		}
+		return uint32(finfo.Mode().Perm())
+	}
+
+	// Set a common umask, then reset it back later.
+	oldUmask := unix.Umask(0022)
+	defer unix.Umask(oldUmask)
+
+	// TODO: should also check the cache umask.
+	for _, tc := range umaskTests {
+		var cmdArgs []string
+		if tc.force {
+			cmdArgs = append(cmdArgs, "--force")
+		}
+		cmdArgs = append(cmdArgs, tc.imagePath, "library://alpine")
+
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.PreRun(func(t *testing.T) {
+				// Reset the file permission after every pull.
+				err := os.Chmod(tc.imagePath, 0666)
+				if !os.IsNotExist(err) && err != nil {
+					t.Fatalf("failed chmod-ing file: %s", err)
+				}
+
+				// Set the test umask.
+				unix.Umask(tc.umask)
+			}),
+			e2e.PostRun(func(t *testing.T) {
+				// Check the file permission.
+				permOut := getFilePerm(t, tc.imagePath)
+				if tc.expectPerm != permOut {
+					t.Fatalf("Unexpected failure: expecting file perm: %o, got: %o", tc.expectPerm, permOut)
+				}
+			}),
+			e2e.WithCommand("pull"),
+			e2e.WithArgs(cmdArgs...),
+			e2e.ExpectExit(0),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := ctx{
@@ -471,7 +578,12 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
+		// Run the tests the do not require setup.
+		t.Run("pullUmaskCheck", c.testPullUmask)
+
+		// Setup a test registry to pull from (for oras).
 		c.setup(t)
+
 		t.Run("pull", c.testPullCmd)
 		t.Run("pullDisableCache", c.testPullDisableCacheCmd)
 	}

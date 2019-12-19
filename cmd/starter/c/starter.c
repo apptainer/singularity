@@ -29,12 +29,14 @@
 #include <sys/prctl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/statfs.h>
 #include <signal.h>
 #include <sched.h>
 #include <setjmp.h>
 #include <sys/syscall.h>
 #include <net/if.h>
 #include <sys/eventfd.h>
+#include <linux/magic.h>
 
 #ifdef SINGULARITY_SECUREBITS
 #  include <linux/securebits.h>
@@ -226,7 +228,7 @@ static int apply_container_privileges(struct privileges *privileges) {
      * and to set ambient capabilities. We can't use capset before changing uid/gid
      * because CAP_SETUID/CAP_SETGID could be already dropped
      */
-    if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
+    if ( prctl(PR_SET_SECUREBITS, SECBIT_KEEP_CAPS) < 0 ) {
         fatalf("Failed to set securebits: %s\n", strerror(errno));
     }
 
@@ -1131,7 +1133,11 @@ __attribute__((constructor)) static void init(void) {
          * user namespace not enabled, continue with privileged workflow
          * this will fail if starter is run without suid
          */
-        priv_escalate(true);
+        if ( sconfig->starter.isSuid ) {
+            priv_escalate(true);
+        } else if ( uid != 0 ) {
+            fatalf("No setuid installation found, for unprivileged installation use: ./mconfig --without-suid");
+        }
         break;
     case ENTER_NAMESPACE:
         if ( sconfig->starter.isSuid && !sconfig->starter.hybridWorkflow ) {
@@ -1318,10 +1324,47 @@ __attribute__((constructor)) static void init(void) {
 
         /* engine requested to propagate mount to container */
         if ( sconfig->starter.masterPropagateMount && userns != ENTER_NAMESPACE ) {
+            struct stat rootfs, newrootfs;
+
+            /* keep stat information for root filesystem comparison */
+            if ( stat("/", &rootfs) < 0 ) {
+                fatalf("Failed to get root directory information: %s", strerror(errno));
+            }
+
             /* join child shared mount namespace with relative path */
             if ( enter_namespace("ns/mnt", CLONE_NEWNS) < 0 ) {
                 fatalf("Failed to enter in shared mount namespace: %s\n", strerror(errno));
             }
+
+            /* take stat information after namespace join */
+            if ( stat("/", &newrootfs) < 0 ) {
+                fatalf("Failed to get root directory information: %s", strerror(errno));
+            }
+
+            /*
+             * we compare st_dev and st_ino to check if we are in the current root
+             * filesystem, on some systems the mount namespace join above could escape the
+             * current root filesystem when an init process (initrd, container or chrooted process)
+             * do a chroot instead of switch_root for the initrd case or didn't use
+             * pivot_root/mount MS_MOVE for the container solution case
+             */
+            if ( rootfs.st_dev != newrootfs.st_dev || rootfs.st_ino != newrootfs.st_ino ) {
+                struct statfs fs;
+
+                debugf("Root filesystem change detected, retrieving new root filesystem information\n");
+                if ( statfs("/", &fs) < 0 ) {
+                    fatalf("Failed to retrieve root filesystem information: %s", strerror(errno));
+                }
+
+                /* check if we are in the ram disk filesystem */
+                if ( newrootfs.st_ino == 2 && (fs.f_type == RAMFS_MAGIC || fs.f_type == TMPFS_MAGIC) ) {
+                    warningf("Initrd uses chroot instead of switch_root to setup the root filesystem\n");
+                } else {
+                    warningf("Running inside a weak chrooted environment, prefer pivot_root instead of chroot\n");
+                }
+                fatalf("Aborting as Singularity cannot run correctly without modifications to your environment\n");
+            }
+
             send_event(master_socket[0]);
         }
 

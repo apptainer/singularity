@@ -295,20 +295,38 @@ func TestEvalRelative(t *testing.T) {
 	// - /bin/sbin -> ../sbin
 	// - /sbin/sbin2 -> ../../sbin
 
+	// symlink $TMP/bin -> usr/bin
 	os.Symlink("usr/bin", filepath.Join(tmpdir, "bin"))
+	// symlink $TMP/sbin -> usr/sbin
 	os.Symlink("usr/sbin", filepath.Join(tmpdir, "sbin"))
 
+	// directory $TMP/usr/bin
 	MkdirAll(filepath.Join(tmpdir, "usr", "bin"), 0755)
+	// directory $TMP/usr/sbin
 	MkdirAll(filepath.Join(tmpdir, "usr", "sbin"), 0755)
 
+	// symlink $TMP/usr/bin/bin -> /bin
 	os.Symlink("/bin", filepath.Join(tmpdir, "bin", "bin"))
+	// symlink $TMP/usr/bin/sbin -> ../sbin
 	os.Symlink("../sbin", filepath.Join(tmpdir, "bin", "sbin"))
+	// symlink $TMP/usr/sbin/sbin2 -> ../../sbin
 	os.Symlink("../../sbin", filepath.Join(tmpdir, "sbin", "sbin2"))
+	// symlink $TMP/rootfs -> ../../../../
+	os.Symlink("../../../../", filepath.Join(tmpdir, "rootfs"))
+
+	// symlink $TMP/pool -> loop
+	os.Symlink("loop", filepath.Join(tmpdir, "pool"))
+	// symlink $TMP/loop -> pool
+	os.Symlink("pool", filepath.Join(tmpdir, "loop"))
+	// symlink $TMP/loop2 -> loop2
+	os.Symlink("loop2", filepath.Join(tmpdir, "loop2"))
 
 	testPath := []struct {
 		path string
 		eval string
 	}{
+		{"", "/"},
+		{"/", "/"},
 		{"/bin", "/usr/bin"},
 		{"/sbin", "/usr/sbin"},
 		{"/bin/bin", "/usr/bin"},
@@ -322,10 +340,14 @@ func TestEvalRelative(t *testing.T) {
 		{"/bin/sbin/test", "/usr/sbin/test"},
 		{"/sbin/sbin2/test", "/usr/sbin/test"},
 		{"/bin/bin/sbin/sbin2/test", "/usr/sbin/test"},
+		{"/rootfs", "/"},
 		{"/fake/test", "/fake/test"},
+		{"/loop", "/loop"},
+		{"/loop2", "/loop2"},
 	}
 
 	for _, p := range testPath {
+		// evaluate paths from $TMP test directory
 		eval := EvalRelative(p.path, tmpdir)
 		if eval != p.eval {
 			t.Errorf("evaluated path %s expected path %s got %s", p.path, p.eval, eval)
@@ -713,5 +735,46 @@ func TestFirstExistingParent(t *testing.T) {
 				t.Errorf("test %s returned %v instead of %v (%s)", tt.name, path, tt.correct, tt.path)
 			}
 		})
+	}
+}
+
+func TestForceRemoveAll(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+	// Setup a structure that os.RemoveAll should fail to remove
+	testDir, err := MakeTmpDir("", "dir", 0755)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s: %s", testDir, err)
+	}
+	testFile, err := MakeTmpFile(testDir, "file", 0644)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s: %s", testFile.Name(), err)
+	}
+	testFile.Close()
+	// Change the perm on testDir so that RemoveAll should fail
+	err = os.Chmod(testDir, 000)
+	if err != nil {
+		t.Fatalf("failed to set permissions on temporary directory %s: %s", testDir, err)
+	}
+	// Ensure that os.RemoveAll does fail with perm error (i.e. our test dir is sane)
+	err = os.RemoveAll(testDir)
+	if err == nil {
+		t.Fatalf("os.RemoveAll unexpectedly succeeded removing test directory %s", testDir)
+	}
+	if !os.IsPermission(err) {
+		t.Fatalf("os.RemoveAll unexpectedly errored trying removing test directory %s: %s", testDir, err)
+	}
+
+	// Our Test - Ensure ForceRemoveAll does *not* fail & the directory is gone
+	err = ForceRemoveAll(testDir)
+	if err != nil {
+		t.Errorf("ForceRemoveAll unexpectedly errored trying to remove test directory %s: %s", testDir, err)
+	}
+	ok, err := PathExists(testDir)
+	if err != nil {
+		t.Errorf("Error checking success of ForceRemoveAll on %s: %s", testDir, err)
+	}
+	if ok {
+		t.Errorf("ForceRemoveAll failed to remove %s", testDir)
 	}
 }

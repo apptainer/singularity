@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"syscall"
 
@@ -133,34 +134,117 @@ func RootDir(path string) string {
 	return p
 }
 
-// EvalRelative evaluates symlinks in path relative to root path. This
-// function doesn't return error but always returns an evaluated path.
-func EvalRelative(path string, root string) string {
-	splitted := strings.Split(filepath.Clean(path), string(os.PathSeparator))
-	dest := string(os.PathSeparator)
+// walkSymRelative follows and resolves all symlinks found in a path
+// located in root, it ensures symlinks resolution never go past the
+// provided root path.
+func walkSymRelative(path string, root string, maxLinks uint) string {
+	// symlinks counter
+	symlinks := uint(0)
 
-	for i := 1; i < len(splitted); i++ {
-		s := splitted[i : i+1][0]
-		dest = filepath.Join(dest, s)
+	// generate clean absolute path
+	absRoot := filepath.Join("/", root)
+	absPath := filepath.Join("/", path)
 
-		if s != "" {
-			rootDestPath := filepath.Join(root, dest)
-			for {
-				target, err := filepath.EvalSymlinks(rootDestPath)
-				if err != nil {
-					break
-				}
-				if !strings.HasPrefix(target, root) {
-					rootDestPath = filepath.Join(root, target)
-					continue
-				}
-				dest = strings.Replace(target, root, "", 1)
-				break
-			}
+	sep := string(os.PathSeparator)
+
+	// get path components by skipping the first
+	// character as it will be always "/" to avoid
+	// to add an empty first element in the array
+	comp := strings.Split(absPath[1:], sep)
+
+	// start from absolute root path
+	dest := absRoot
+
+	for i := 0; i < len(comp); i++ {
+		dest = filepath.Join(dest, comp[i])
+
+		// this call can return various errors that we don't need
+		// or want to deal with like a lack of permission for a
+		// directory traversal, not a symlink, non-existent path.
+		// As this function doesn't return any error we ignore them
+		// and generate the path assuming there is no hidden symlink
+		// in the next components
+		d, err := os.Readlink(dest)
+		if err != nil {
+			continue
 		}
+		symlinks++
+
+		newDest := absRoot
+
+		if !filepath.IsAbs(d) {
+			// this is a relative target, we are taking the current
+			// parent path of dest concatenated with the target
+			parentDest := filepath.Dir(dest)
+			dest = filepath.Join(parentDest, d)
+
+			// if we are outside of root, we join the relative target
+			// with "/" to obtain an absolute path as we were at root
+			// of "/" thanks to filepath.Clean implicitly called by
+			// filepath.Join
+			if !strings.HasPrefix(dest, absRoot) {
+				d = filepath.Join("/", d)
+				dest = filepath.Join(absRoot, d)
+			} else {
+				if strings.HasPrefix(dest, parentDest) {
+					// trivial case where the resulting path is
+					// within the current path
+					d = strings.TrimPrefix(dest, parentDest)
+					newDest = parentDest
+				} else {
+					// we go back in the hierarchy and take a
+					// naive approach by trimming root prefix
+					// from path instead of finding the exact
+					// path chunk involving too much complexity
+					d = strings.TrimPrefix(dest, absRoot)
+				}
+			}
+		} else {
+			// it's an absolute path, simply concatenate root
+			// and symlink target
+			dest = filepath.Join(absRoot, d)
+		}
+
+		// too many symbolic links, stop and return the
+		// resolved path as is, should not happen with
+		// sane images
+		if symlinks == maxLinks {
+			break
+		}
+		// symlink target point to the current destination,
+		// nothing to do
+		if len(d) == 0 {
+			continue
+		}
+
+		dest = newDest
+		// either replace current path components or merge
+		// the components of the symlink target with the next
+		// components
+		if i+1 < len(comp) {
+			comp = append(strings.Split(d[1:], sep), comp[i+1:]...)
+		} else {
+			comp = strings.Split(d[1:], sep)
+		}
+		i = -1
 	}
 
-	return dest
+	// ensure the final path is absolute
+	return filepath.Join("/", strings.TrimPrefix(dest, absRoot))
+}
+
+// EvalRelative evaluates symlinks in path relative to root path, it returns
+// a path as if it was evaluated from chroot. This function always returns
+// an absolute path and is intended to be used to resolve mount points
+// destinations, it helps the runtime to not bind mount directories/files
+// outside of the container image provided by the root argument.
+func EvalRelative(path string, root string) string {
+	// return "/ if path is empty
+	if path == "" {
+		return "/"
+	}
+	// resolve path and allow up to 40 symlinks
+	return walkSymRelative(path, root, 40)
 }
 
 // Touch behaves like touch command.
@@ -275,4 +359,162 @@ func FirstExistingParent(path string) (string, error) {
 	}
 
 	return p, nil
+}
+
+// ForceRemoveAll removes a directory like os.RemoveAll, except that it will
+// chmod any directory who's permissions are preventing the removal of contents
+func ForceRemoveAll(path string) error {
+	// First try to remove the directory with os.RemoveAll. This will remove
+	// as much as it can, and return the first error (if any) - so we can avoid
+	// messing with permissions unless we need to.
+	err := os.RemoveAll(path)
+	// Anything other than an permission error is out of scope for us to deal
+	// with here.
+	if err == nil || !os.IsPermission(err) {
+		return err
+	}
+
+	// At this point there is a permissions error. Removal of files is dependent
+	// on the permissions of the containing directory, so walk the (remaining)
+	// tree and set perms that work.
+	sylog.Debugf("Forcing permissions to remove %q completely", path)
+	errors := 0
+	err = PermWalk(path, func(path string, f os.FileInfo, err error) error {
+		if err != nil {
+			sylog.Errorf("Unable to access path %s: %s", path, err)
+			errors++
+			return nil
+		}
+		// Directories must have the owner 'rx' bits to allow traversal, reading content, and the 'w' bit
+		// so their content can be deleted by the user when the bundle is deleted
+		if f.Mode().IsDir() {
+			if err := os.Chmod(path, f.Mode().Perm()|0700); err != nil {
+				sylog.Errorf("Error setting permissions to remove %s: %s", path, err)
+				errors++
+			}
+		}
+		return nil
+	})
+
+	// Catastrophic error during the permission walk
+	if err != nil {
+		sylog.Errorf("Unable to set permissions to remove %q: %s", path, err)
+	}
+	// Individual errors accumulated while setting permissions in the walk
+	if errors > 0 {
+		sylog.Errorf("%d errors were encountered when setting permissions to remove bundle", errors)
+	}
+
+	// Call RemoveAll again to get rid of things... even if we had errors when
+	// trying to set permissions, so we remove as much as possible.
+	return os.RemoveAll(path)
+}
+
+// PermWalk is similar to filepath.Walk - but:
+//   1. The skipDir checks are removed (we never want to skip anything here)
+//   2. Our walk will call walkFn on a directory *before* attempting to look
+//      inside that directory.
+func PermWalk(root string, walkFn filepath.WalkFunc) error {
+	info, err := os.Lstat(root)
+	if err != nil {
+		return fmt.Errorf("could not access path %s: %s", root, err)
+	}
+	return permWalk(root, info, walkFn)
+}
+
+func permWalk(path string, info os.FileInfo, walkFn filepath.WalkFunc) error {
+	if !info.IsDir() {
+		return walkFn(path, info, nil)
+	}
+
+	// Unlike filepath.walk we call walkFn *before* trying to list the content of
+	// the directory, so that walkFn has a chance to assign perms that allow us into
+	// the directory, if we can't get in there already.
+	if err := walkFn(path, info, nil); err != nil {
+		return err
+	}
+
+	names, err := readDirNames(path)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range names {
+		filename := filepath.Join(path, name)
+		fileInfo, err := os.Lstat(filename)
+		if err != nil {
+			if err := walkFn(filename, fileInfo, err); err != nil {
+				return err
+			}
+		} else {
+			err = permWalk(filename, fileInfo, walkFn)
+			if err != nil {
+				if !fileInfo.IsDir() {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// PermWalkRaiseError is similar to filepath.Walk - but:
+//   1. The skipDir checks are removed (we never want to skip anything here)
+//   2. Our walk will call walkFn on a directory *before* attempting to look
+//      inside that directory.
+//   3. We back out of the recursion at the *first* error... we don't attempt
+//      to go through as much as we can.
+func PermWalkRaiseError(root string, walkFn filepath.WalkFunc) error {
+	info, err := os.Lstat(root)
+	if err != nil {
+		return fmt.Errorf("could not access path %s: %s", root, err)
+	}
+	return permWalkRaiseError(root, info, walkFn)
+}
+
+func permWalkRaiseError(path string, info os.FileInfo, walkFn filepath.WalkFunc) error {
+	if !info.IsDir() {
+		return walkFn(path, info, nil)
+	}
+
+	// Unlike filepath.walk we call walkFn *before* trying to list the content of
+	// the directory, so that walkFn has a chance to assign perms that allow us into
+	// the directory, if we can't get in there already.
+	if err := walkFn(path, info, nil); err != nil {
+		return err
+	}
+
+	names, err := readDirNames(path)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range names {
+		filename := filepath.Join(path, name)
+		fileInfo, err := os.Lstat(filename)
+		if err != nil {
+			return err
+		}
+		if err = permWalkRaiseError(filename, fileInfo, walkFn); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// readDirNames reads the directory named by dirname and returns
+// a sorted list of directory entries.
+func readDirNames(dirname string) ([]string, error) {
+	f, err := os.Open(dirname)
+	if err != nil {
+		return nil, err
+	}
+	names, err := f.Readdirnames(-1)
+	f.Close()
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(names)
+	return names, nil
 }

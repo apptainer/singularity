@@ -17,27 +17,27 @@ import (
 
 var (
 	privKey int // -k encryption key (index from 'keys list') specification
+	signAll bool
 )
 
-// -u|--url
-var signServerURIFlag = cmdline.Flag{
-	ID:           "signServerURIFlag",
-	Value:        &keyServerURI,
-	DefaultValue: defaultKeyServer,
-	Name:         "url",
-	ShortHand:    "u",
-	Usage:        "key server URL",
-	EnvKeys:      []string{"URL"},
-}
-
-// -g|--groupid
+// -g|--group-id
 var signSifGroupIDFlag = cmdline.Flag{
 	ID:           "signSifGroupIDFlag",
 	Value:        &sifGroupID,
 	DefaultValue: uint32(0),
-	Name:         "groupid",
+	Name:         "group-id",
 	ShortHand:    "g",
+	Usage:        "sign all partitions in the specified group (default non)",
+}
+
+// --groupid (deprecated)
+var signOldSifGroupIDFlag = cmdline.Flag{
+	ID:           "signOldSifGroupIDFlag",
+	Value:        &sifGroupID,
+	DefaultValue: uint32(0),
+	Name:         "groupid",
 	Usage:        "group ID to be signed",
+	Deprecated:   "use '--group-id'",
 }
 
 // -i| --sif-id
@@ -47,7 +47,7 @@ var signSifDescSifIDFlag = cmdline.Flag{
 	DefaultValue: uint32(0),
 	Name:         "sif-id",
 	ShortHand:    "i",
-	Usage:        "descriptor ID to be signed (default system-partition)",
+	Usage:        "sign a single partition with the specified ID (default system-partition)",
 }
 
 // --id (deprecated)
@@ -67,17 +67,28 @@ var signKeyIdxFlag = cmdline.Flag{
 	DefaultValue: -1,
 	Name:         "keyidx",
 	ShortHand:    "k",
-	Usage:        "private key to use (index from 'keys list')",
+	Usage:        "private key to use (index from 'key list')",
+}
+
+// -a|--all
+var signAllFlag = cmdline.Flag{
+	ID:           "signAllFlag",
+	Value:        &signAll,
+	DefaultValue: false,
+	Name:         "all",
+	ShortHand:    "a",
+	Usage:        "sign all non-signature partitions",
 }
 
 func init() {
 	cmdManager.RegisterCmd(SignCmd)
 
-	cmdManager.RegisterFlagForCmd(&signServerURIFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifGroupIDFlag, SignCmd)
+	cmdManager.RegisterFlagForCmd(&signOldSifGroupIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifDescSifIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signSifDescIDFlag, SignCmd)
 	cmdManager.RegisterFlagForCmd(&signKeyIdxFlag, SignCmd)
+	cmdManager.RegisterFlagForCmd(&signAllFlag, SignCmd)
 }
 
 // SignCmd singularity sign
@@ -87,7 +98,6 @@ var SignCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
-		fmt.Printf("Signing image: %s\n", args[0])
 		doSignCmd(cmd, args[0])
 	},
 
@@ -98,33 +108,13 @@ var SignCmd = &cobra.Command{
 }
 
 func doSignCmd(cmd *cobra.Command, cpath string) {
-	// Group id should start at 1.
-	if cmd.Flag(verifySifGroupIDFlag.Name).Changed && sifGroupID == 0 {
-		sylog.Fatalf("invalid group id")
+	id, isGroup, err := checkImageAndFlags(cmd, cpath, sifDescID, sifGroupID, signAll)
+	if err != nil {
+		sylog.Fatalf("%s", err)
 	}
 
-	// Descriptor id should start at 1.
-	if cmd.Flag(verifySifDescSifIDFlag.Name).Changed && sifDescID == 0 {
-		sylog.Fatalf("invalid descriptor id")
-	}
-	if cmd.Flag(verifySifDescIDFlag.Name).Changed && sifDescID == 0 {
-		sylog.Fatalf("invalid descriptor id")
-	}
-
-	if sifGroupID != 0 && sifDescID != 0 {
-		sylog.Fatalf("only one of -i or -g may be set")
-	}
-
-	var isGroup bool
-	var id uint32
-	if sifGroupID != 0 {
-		isGroup = true
-		id = sifGroupID
-	} else {
-		id = sifDescID
-	}
-
-	if err := signing.Sign(cpath, id, isGroup, privKey); err != nil {
+	fmt.Printf("Signing image: %s\n", cpath)
+	if err := signing.Sign(cpath, id, isGroup, signAll, privKey); err != nil {
 		sylog.Fatalf("Failed to sign container: %s", err)
 	}
 	fmt.Printf("Signature created and applied to %s\n", cpath)
