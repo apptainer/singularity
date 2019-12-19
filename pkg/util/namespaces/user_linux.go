@@ -69,7 +69,11 @@ func HostUID() (int, error) {
 
 	f, err := os.Open(uidMap)
 	if err != nil {
-		return 0, fmt.Errorf("failed to read: %s: %s", uidMap, err)
+		if !os.IsNotExist(err) {
+			return 0, fmt.Errorf("failed to read: %s: %s", uidMap, err)
+		}
+		// user namespace not supported
+		return currentUID, nil
 	}
 	defer f.Close()
 
