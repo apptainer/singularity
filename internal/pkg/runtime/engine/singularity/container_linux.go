@@ -38,6 +38,7 @@ import (
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/sys/unix"
 )
 
 // defaultCNIConfPath is the default directory to CNI network configuration files.
@@ -2039,16 +2040,25 @@ func (c *container) getBindFlags(source string, defaultFlags uintptr) (uintptr, 
 		return defaultFlags, nil
 	}
 
-	entries, err := proc.GetMountInfoEntry(c.mountInfoPath)
-	if err != nil {
-		return 0, fmt.Errorf("error while reading %s: %s", c.mountInfoPath, err)
-	}
+	var stfs unix.Statfs_t
 
-	e, err := proc.FindParentMountEntry(source, entries)
-	if err != nil {
-		return 0, fmt.Errorf("while searching parent mount point entry for %s: %s", source, err)
+	// use statfs to retrieve mount options or fallback to /proc/self/mountinfo
+	// in case of failure
+	if err := unix.Statfs(source, &stfs); err != nil {
+		entries, err := proc.GetMountInfoEntry(c.mountInfoPath)
+		if err != nil {
+			return 0, fmt.Errorf("error while reading %s: %s", c.mountInfoPath, err)
+		}
+
+		e, err := proc.FindParentMountEntry(source, entries)
+		if err != nil {
+			return 0, fmt.Errorf("while searching parent mount point entry for %s: %s", source, err)
+		}
+		addFlags, _ = mount.ConvertOptions(e.Options)
+	} else {
+		// clear bits MS_REMOUNT (32) and MS_BIND/ST_RELATIME (4096)
+		addFlags = uintptr(stfs.Flags &^ 4128)
 	}
-	addFlags, _ = mount.ConvertOptions(e.Options)
 
 	if addFlags&syscall.MS_RDONLY != 0 && defaultFlags&syscall.MS_RDONLY == 0 {
 		if !strings.HasPrefix(source, buildcfg.SESSIONDIR) {
