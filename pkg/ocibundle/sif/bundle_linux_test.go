@@ -20,6 +20,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
 func TestFromSif(t *testing.T) {
@@ -72,33 +73,51 @@ func TestFromSif(t *testing.T) {
 		t.Errorf("unexpected success while creating OCI bundle")
 	}
 
-	// create OCI bundle from SIF
-	bundle, err = FromSif(sifFile, bundlePath, true)
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name     string
+		writable bool
+	}{
+		{"FromSif", false},
+		{"FromSifWritable", true},
 	}
-	// generate a default configuration
-	g, err := generate.New(runtime.GOOS)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// remove seccomp filter for CI
-	g.Config.Linux.Seccomp = nil
-	g.SetProcessArgs([]string{tools.RunScript, "id"})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 
-	if err := bundle.Create(g.Config); err != nil {
-		// check if cleanup occurred
-		t.Fatal(err)
+			if tt.writable {
+				require.Filesystem(t, "overlay")
+			}
+
+			// create OCI bundle from SIF
+			bundle, err = FromSif(sifFile, bundlePath, tt.writable)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// generate a default configuration
+			g, err := generate.New(runtime.GOOS)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// remove seccomp filter for CI
+			g.Config.Linux.Seccomp = nil
+			g.SetProcessArgs([]string{tools.RunScript, "id"})
+
+			if err := bundle.Create(g.Config); err != nil {
+				// check if cleanup occurred
+				t.Fatal(err)
+			}
+
+			// execute oci run command
+			args = []string{"oci", "run", "-b", bundlePath, filepath.Base(sifFile)}
+			cmd = exec.Command(sing, args...)
+			if err := cmd.Run(); err != nil {
+				t.Error(err)
+			}
+
+			if err := bundle.Delete(); err != nil {
+				t.Error(err)
+			}
+
+		})
 	}
 
-	// execute oci run command
-	args = []string{"oci", "run", "-b", bundlePath, filepath.Base(sifFile)}
-	cmd = exec.Command(sing, args...)
-	if err := cmd.Run(); err != nil {
-		t.Error(err)
-	}
-
-	if err := bundle.Delete(); err != nil {
-		t.Error(err)
-	}
 }
