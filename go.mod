@@ -12,7 +12,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/bshuster-repo/logrus-logstash-hook v0.4.1 // indirect
-	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
+	github.com/buger/jsonparser v0.0.0-20191204142016-1a29609e0929
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
@@ -115,5 +115,6 @@ replace (
 	// For more detail see: https://github.com/sylabs/umoci/blob/singularity/README.md
 	github.com/openSUSE/umoci => github.com/sylabs/umoci v0.4.3-0.20191023165551-c75d775ed7fd
 	github.com/opencontainers/image-tools => github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568
+	github.com/sylabs/scs-library-client => github.com/WestleyK/scs-library-client v0.4.5-0.20191127145606-c3d5a5e554be
 	golang.org/x/crypto => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
 )

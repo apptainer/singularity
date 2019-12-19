@@ -7,11 +7,8 @@ package library
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"strings"
 
@@ -74,32 +71,6 @@ func DownloadImageNoProgress(ctx context.Context, c *client.Client, imagePath, a
 	return DownloadImage(ctx, c, imagePath, arch, libraryRef, nil)
 }
 
-// getConrainerInfo will take a image (eg. library/default/alpine) and returns
-// the image infomation on a *containerInfo struct.
-// TODO: this function can be elsewhere, or some other function like this
-// already exists?...
-func getContainerInfo(image string, info *containerInfo) error {
-	// TODO: handle remotes here
-	url := "https://library.sylabs.io" + "/v1/containers/" + image
-	response, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	if response.StatusCode != 200 {
-		return fmt.Errorf("invalid image")
-	}
-	defer response.Body.Close()
-	out, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(out, &info)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func getImageTags(image map[string]string) []string {
 	var ret []string
 	for t, _ := range image {
@@ -107,10 +78,6 @@ func getImageTags(image map[string]string) []string {
 	}
 
 	return ret
-}
-
-type containerInfo struct {
-	Data client.Container `json:"data"`
 }
 
 // SearchLibrary searches the library and outputs results to stdout
@@ -123,16 +90,19 @@ func SearchLibrary(ctx context.Context, c *client.Client, value string) error {
 	// try to get the image infomation, if unsuccessful, then search as usual.
 	// TODO: handle the 'library://' prefix if the user passed it.
 	if ref := strings.Split(value, "/"); len(ref) > 2 {
-		var cinfo containerInfo
-		sylog.Debugf("Attempting to get image info for: %s", value)
-		err := getContainerInfo(value, &cinfo)
+		searchImage := value
+		if strings.HasPrefix(searchImage, "library://") {
+			searchImage = strings.TrimPrefix(searchImage, "library://")
+		}
+		sylog.Debugf("Attempting to get image info for: %s", searchImage)
+		cont, err := c.GetContainer(ctx, searchImage)
 		if err == nil {
-			fmt.Printf("Image:           %s\n", "library://"+value)
-			fmt.Printf("Tags:            %s\n", getImageTags(cinfo.Data.ImageTags))
-			fmt.Printf("Description:     %s\n", cinfo.Data.Description)
+			fmt.Printf("Image:           %s\n", "library://"+searchImage)
+			fmt.Printf("Tags:            %s\n", getImageTags(cont.ImageTags))
+			fmt.Printf("Description:     %s\n", cont.Description)
 			// TODO: print if the image is signed or not
-			fmt.Printf("Total downloads: %d\n", cinfo.Data.DownloadCount)
-			fmt.Printf("Stars:           %d\n", cinfo.Data.Stars)
+			fmt.Printf("Total downloads: %d\n", cont.DownloadCount)
+			fmt.Printf("Stars:           %d\n", cont.Stars)
 			return nil
 		} else {
 			sylog.Verbosef("Failed to search container info: %s", err)
