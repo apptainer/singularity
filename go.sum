@@ -311,6 +311,8 @@ github.com/sylabs/scs-library-client v0.4.4 h1:DJpXTEV1TyHe3lGQ9EJ4RzK+0ES+3rDgj
 github.com/sylabs/scs-library-client v0.4.4/go.mod h1:FV1aajXP99oKFFagiomGI6WkWFniKnhIq/z1mITeeb4=
 github.com/sylabs/sif v1.0.8 h1:BK55XU0UhUsbimCr1Sl1tCLDrFsB71EDYDcHRfPpw8k=
 github.com/sylabs/sif v1.0.8/go.mod h1:/W42wtEREMjfQCNz1HhqD2PHW8ZPqjiU7Z2pZQXTRqI=
+github.com/sylabs/sif v1.0.9 h1:AT1lIoFJUCHpAiV2qVWaDZZROAa9JsCP/y32NwwY+6I=
+github.com/sylabs/sif v1.0.9/go.mod h1:1g6W6iWoK6BAgkDvR+Tc3FpLAjkpT5Z+nPtRl9FFptk=
 github.com/sylabs/umoci v0.4.3-0.20191023165551-c75d775ed7fd h1:JZ7kZUI+IHSrK+XdTXaFgZqKJxgfUIif6XMBN8TFQCU=
 github.com/sylabs/umoci v0.4.3-0.20191023165551-c75d775ed7fd/go.mod h1:8rMy7mg/N4lGwWNeoc09op5EoTcFcmmf9D+Kg8HIVKI=
 github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2 h1:b6uOv7YOFK0TYG7HtkIgExQo+2RdLuwRft63jn2HWj8=
