@@ -97,32 +97,8 @@ func sifAddSignature(fimg *sif.FileImage, groupid, link uint32, fingerprint [20]
 	return nil
 }
 
-// Copy-paste from sylabs/sif
-// datatypeStr returns a string representation of a datatype.
-func datatypeStr(dtype sif.Datatype) string {
-	switch dtype {
-	case sif.DataDeffile:
-		return "Def.FILE"
-	case sif.DataEnvVar:
-		return "Env.Vars"
-	case sif.DataLabels:
-		return "JSON.Labels"
-	case sif.DataPartition:
-		return "FS"
-	case sif.DataSignature:
-		return "Signature"
-	case sif.DataGenericJSON:
-		return "JSON.Generic"
-	case sif.DataGeneric:
-		return "Generic/Raw"
-	case sif.DataCryptoMessage:
-		return "CryptoMessage"
-	}
-	return "Unknown data-type"
-}
-
 func getDataPartitionToSign(fimg *sif.FileImage, dataType sif.Datatype) ([]*sif.Descriptor, error) {
-	sylog.Debugf("Looking for: %s partition to sign...", datatypeStr(dataType))
+	sylog.Debugf("Looking for: %s partition to sign...", dataType)
 	// We are using ID 0 (skipping ID), because we are looking for all Datatypes,
 	// and ID's will limit the search.
 	data, _, err := fimg.GetLinkedDescrsByType(uint32(0), dataType)
@@ -236,7 +212,7 @@ func Sign(cpath string, id uint32, isGroup, signAll bool, keyIdx int) error {
 	}
 
 	for _, de := range descr {
-		sylog.Debugf("Signing %s partition...", datatypeStr(de.Datatype))
+		sylog.Debugf("Signing %s partition...", de.Datatype)
 
 		sifhash := ""
 		if isGroup {
@@ -311,7 +287,7 @@ func getSigsAllPart(fimg *sif.FileImage) ([]signatureLink, error) {
 		_, idxs, err := fimg.GetLinkedDescrsByType(d.ID, sif.DataSignature)
 		if err != nil {
 			// If a partition is not signed, print a warning.
-			sylog.Warningf("Missing signature for SIF descriptor %d (%s)", didx+1, datatypeStr(d.Datatype))
+			sylog.Warningf("Missing signature for SIF descriptor %d (%s)", didx+1, d.Datatype)
 			continue
 		}
 
@@ -483,7 +459,7 @@ func Verify(ctx context.Context, cpath, keyServiceURI string, id uint32, isGroup
 		if isGroup {
 			verifyPartition = fmt.Sprintf("group: %d", id)
 		} else {
-			verifyPartition = datatypeStr(fimg.DescrArr[part.dataIndex].Datatype)
+			verifyPartition = fimg.DescrArr[part.dataIndex].Datatype.String()
 		}
 		author += fmt.Sprintf("Verifying partition: %s:\n", verifyPartition)
 		author += fingerprint + "\n"
