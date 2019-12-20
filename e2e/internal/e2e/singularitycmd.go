@@ -570,8 +570,8 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 		if s.consoleFn != nil {
 			var err error
 
-			s.console, err = expect.NewTestConsole(
-				t,
+			// NewTestConsole is prone to race, use NewConsole for now
+			s.console, err = expect.NewConsole(
 				expect.WithStdout(cmd.Stdout, cmd.Stderr),
 				expect.WithDefaultTimeout(10*time.Second),
 			)

@@ -23,6 +23,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 type ctx struct {
@@ -337,45 +338,47 @@ func (c *ctx) applyCgroupsInstance(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := &ctx{
 		env:     env,
 		profile: e2e.UserProfile,
 	}
 
-	return func(t *testing.T) {
-		e2e.EnsureImage(t, c.env)
+	return testhelper.Tests{
+		"ordered": func(t *testing.T) {
+			e2e.EnsureImage(t, c.env)
 
-		// Define and loop through tests.
-		tests := []struct {
-			name     string
-			function func(*testing.T)
-		}{
-			{"InitialNoInstances", c.testNoInstances},
-			{"BasicEchoServer", c.testBasicEchoServer},
-			{"BasicOptions", c.testBasicOptions},
-			{"Contain", c.testContain},
-			{"InstanceFromURI", c.testInstanceFromURI},
-			{"CreateManyInstances", c.testCreateManyInstances},
-			{"StopAll", c.testStopAll},
-			{"FinalNoInstances", c.testNoInstances},
-			{"GhostInstance", c.testGhostInstance},
-			{"ApplyCgroupsInstance", c.applyCgroupsInstance},
-		}
+			// Define and loop through tests.
+			tests := []struct {
+				name     string
+				function func(*testing.T)
+			}{
+				{"InitialNoInstances", c.testNoInstances},
+				{"BasicEchoServer", c.testBasicEchoServer},
+				{"BasicOptions", c.testBasicOptions},
+				{"Contain", c.testContain},
+				{"InstanceFromURI", c.testInstanceFromURI},
+				{"CreateManyInstances", c.testCreateManyInstances},
+				{"StopAll", c.testStopAll},
+				{"FinalNoInstances", c.testNoInstances},
+				{"GhostInstance", c.testGhostInstance},
+				{"ApplyCgroupsInstance", c.applyCgroupsInstance},
+			}
 
-		profiles := []e2e.Profile{
-			e2e.UserProfile,
-			e2e.RootProfile,
-		}
+			profiles := []e2e.Profile{
+				e2e.UserProfile,
+				e2e.RootProfile,
+			}
 
-		for _, profile := range profiles {
-			profile := profile
-			t.Run(profile.String(), func(t *testing.T) {
-				c.profile = profile
-				for _, tt := range tests {
-					t.Run(tt.name, tt.function)
-				}
-			})
-		}
+			for _, profile := range profiles {
+				profile := profile
+				t.Run(profile.String(), func(t *testing.T) {
+					c.profile = profile
+					for _, tt := range tests {
+						t.Run(tt.name, tt.function)
+					}
+				})
+			}
+		},
 	}
 }

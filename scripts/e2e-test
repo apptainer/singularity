@@ -10,6 +10,17 @@ if test ! -d e2e ; then
 	exit 1
 fi
 
+os=`uname -s`
+if [ ! -z "$E2E_PARALLEL" ]; then
+    procs=$E2E_PARALLEL
+elif [ "$os" = "Linux" ]; then
+    procs=`nproc --all`
+elif [ "$os" = "Darwin" ]; then
+    procs=`sysctl -n hw.ncpu`
+else
+    procs=`getconf _NPROCESSORS_ONLN`
+fi
+
 sudo -v
 
 sudo \
@@ -17,4 +28,4 @@ sudo \
 		PATH=$PATH \
 		HOME=$HOME \
 		SINGULARITY_E2E_COVERAGE=$SINGULARITY_E2E_COVERAGE \
-	scripts/go-test -tags "e2e_test" "$@" ./e2e
+	scripts/go-test -parallel $procs -tags "e2e_test" "$@" ./e2e

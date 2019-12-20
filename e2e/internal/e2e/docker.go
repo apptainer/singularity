@@ -21,13 +21,16 @@ const dockerInstanceName = "e2e-docker-instance"
 var registrySetup struct {
 	sync.Once
 	up uint32 // 1 if the registry is running, 0 otherwise
+	sync.Mutex
 }
 
 // PrepRegistry run a docker registry and push a busybox
 // image and the test image with oras transport.
 func PrepRegistry(t *testing.T, env TestEnv) {
+	registrySetup.Lock()
+	defer registrySetup.Unlock()
+
 	registrySetup.Do(func() {
-		atomic.StoreUint32(&registrySetup.up, 1)
 
 		EnsureImage(t, env)
 
@@ -79,6 +82,8 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 				t.Fatalf("docker registry unreachable after 30 seconds: %+v", err)
 			}
 		}
+
+		atomic.StoreUint32(&registrySetup.up, 1)
 
 		env.RunSingularity(
 			t,

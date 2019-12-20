@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 type ctx struct {
@@ -217,45 +218,47 @@ func (c *ctx) generateKeypair(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		var err error
-		// To speed up the tests, we use a common image cache (we pull the same image several times)
-		c.imgCache, err = ioutil.TempDir("", "e2e-sign-imgcache-")
-		if err != nil {
-			t.Fatalf("failed to create temporary directory: %s", err)
-		}
-		defer func() {
-			err := os.RemoveAll(c.imgCache)
+	return testhelper.Tests{
+		"ordered": func(t *testing.T) {
+			var err error
+			// To speed up the tests, we use a common image cache (we pull the same image several times)
+			c.imgCache, err = ioutil.TempDir("", "e2e-sign-imgcache-")
 			if err != nil {
-				t.Fatalf("failed to delete temporary cache: %s", err)
+				t.Fatalf("failed to create temporary directory: %s", err)
 			}
-		}()
+			defer func() {
+				err := os.RemoveAll(c.imgCache)
+				if err != nil {
+					t.Fatalf("failed to delete temporary cache: %s", err)
+				}
+			}()
 
-		// We need one single key pair in a single keyring for all the tests
-		c.keyringDir, err = ioutil.TempDir("", "e2e-sign-keyring-")
-		if err != nil {
-			t.Fatalf("failed to create temporary directory: %s", err)
-		}
-		defer func() {
-			err := os.RemoveAll(c.keyringDir)
+			// We need one single key pair in a single keyring for all the tests
+			c.keyringDir, err = ioutil.TempDir("", "e2e-sign-keyring-")
 			if err != nil {
-				t.Fatalf("failed to delete temporary directory: %s", err)
+				t.Fatalf("failed to create temporary directory: %s", err)
 			}
-		}()
-		c.generateKeypair(t)
+			defer func() {
+				err := os.RemoveAll(c.keyringDir)
+				if err != nil {
+					t.Fatalf("failed to delete temporary directory: %s", err)
+				}
+			}()
+			c.generateKeypair(t)
 
-		c.passphraseInput = []e2e.SingularityConsoleOp{
-			e2e.ConsoleSendLine("passphrase"),
-		}
-		t.Run("singularitySignAllOption", c.singularitySignAllOption)
-		t.Run("singularitySignHelpOption", c.singularitySignHelpOption)
-		t.Run("singularitySignIDOption", c.singularitySignIDOption)
-		t.Run("singularitySignGroupIDOption", c.singularitySignGroupIDOption)
-		t.Run("singularitySignKeyidxOption", c.singularitySignKeyidxOption)
+			c.passphraseInput = []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("passphrase"),
+			}
+			t.Run("singularitySignAllOption", c.singularitySignAllOption)
+			t.Run("singularitySignHelpOption", c.singularitySignHelpOption)
+			t.Run("singularitySignIDOption", c.singularitySignIDOption)
+			t.Run("singularitySignGroupIDOption", c.singularitySignGroupIDOption)
+			t.Run("singularitySignKeyidxOption", c.singularitySignKeyidxOption)
+		},
 	}
 }

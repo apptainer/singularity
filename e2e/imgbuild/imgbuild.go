@@ -1069,12 +1069,12 @@ func (c imgBuildTests) issue4837(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := imgBuildTests{
 		env: env,
 	}
 
-	return testhelper.TestRunner(map[string]func(*testing.T){
+	return testhelper.Tests{
 		"bad path":                        c.badPath,                   // try to build from a non existent path
 		"build encrypt with PEM file":     c.buildEncryptPemFile,       // build encrypted images with certificate
 		"build encrypted with passphrase": c.buildEncryptPassphrase,    // build encrypted images with passphrase
@@ -1085,5 +1085,5 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		"non-root build":                  c.nonRootBuild,              // build sifs from non-root
 		"build and update sandbox":        c.buildUpdateSandbox,        // build/update sandbox
 		"issue 4837":                      c.issue4837,                 // https://github.com/sylabs/singularity/issues/4837
-	})
+	}
 }

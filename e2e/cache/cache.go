@@ -298,13 +298,15 @@ func ensureCacheNotEmpty(t *testing.T, testName string, imagePath string, h *cac
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := cacheTests{
 		env: env,
 	}
 
-	return testhelper.TestRunner(map[string]func(*testing.T){
-		"interactive commands":     c.testInteractiveCacheCmds,
-		"non-interactive commands": c.testNoninteractiveCacheCmds,
-	})
+	np := testhelper.NoParallel
+
+	return testhelper.Tests{
+		"interactive commands":     np(c.testInteractiveCacheCmds),
+		"non-interactive commands": np(c.testNoninteractiveCacheCmds),
+	}
 }

@@ -44,6 +44,7 @@ import (
 	"github.com/sylabs/singularity/e2e/version"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
@@ -142,37 +143,35 @@ func Run(t *testing.T) {
 	// is stopped after tests run.
 	defer e2e.KillRegistry(t, testenv)
 
+	suite := testhelper.NewSuite(t, testenv)
+
 	// RunE2ETests by functionality.
 	//
 	// Please keep this list sorted.
-	suites := map[string]func(*testing.T){
-		"ACTIONS":     actions.E2ETests(testenv),
-		"BUILDCFG":    e2ebuildcfg.E2ETests(testenv),
-		"BUILD":       imgbuild.E2ETests(testenv),
-		"CACHE":       cache.E2ETests(testenv),
-		"CMDENVVARS":  cmdenvvars.E2ETests(testenv),
-		"CONFIG":      config.E2ETests(testenv),
-		"DELETE":      delete.E2ETests(testenv),
-		"DOCKER":      docker.E2ETests(testenv),
-		"ENV":         singularityenv.E2ETests(testenv),
-		"HELP":        help.E2ETests(testenv),
-		"INSPECT":     inspect.E2ETests(testenv),
-		"INSTANCE":    instance.E2ETests(testenv),
-		"KEY":         key.E2ETests(testenv),
-		"OCI":         oci.E2ETests(testenv),
-		"PULL":        pull.E2ETests(testenv),
-		"PUSH":        push.E2ETests(testenv),
-		"REGRESSIONS": regressions.E2ETests(testenv),
-		"REMOTE":      remote.E2ETests(testenv),
-		"RUN":         run.E2ETests(testenv),
-		"RUNHELP":     runhelp.E2ETests(testenv),
-		"SECURITY":    security.E2ETests(testenv),
-		"SIGN":        sign.E2ETests(testenv),
-		"VERIFY":      verify.E2ETests(testenv),
-		"VERSION":     version.E2ETests(testenv),
-	}
+	suite.AddGroup("ACTIONS", actions.E2ETests)
+	suite.AddGroup("BUILDCFG", e2ebuildcfg.E2ETests)
+	suite.AddGroup("BUILD", imgbuild.E2ETests)
+	suite.AddGroup("CACHE", cache.E2ETests)
+	suite.AddGroup("CMDENVVARS", cmdenvvars.E2ETests)
+	suite.AddGroup("CONFIG", config.E2ETests)
+	suite.AddGroup("DELETE", delete.E2ETests)
+	suite.AddGroup("DOCKER", docker.E2ETests)
+	suite.AddGroup("ENV", singularityenv.E2ETests)
+	suite.AddGroup("HELP", help.E2ETests)
+	suite.AddGroup("INSPECT", inspect.E2ETests)
+	suite.AddGroup("INSTANCE", instance.E2ETests)
+	suite.AddGroup("KEY", key.E2ETests)
+	suite.AddGroup("OCI", oci.E2ETests)
+	suite.AddGroup("PULL", pull.E2ETests)
+	suite.AddGroup("PUSH", push.E2ETests)
+	suite.AddGroup("REGRESSIONS", regressions.E2ETests)
+	suite.AddGroup("REMOTE", remote.E2ETests)
+	suite.AddGroup("RUN", run.E2ETests)
+	suite.AddGroup("RUNHELP", runhelp.E2ETests)
+	suite.AddGroup("SECURITY", security.E2ETests)
+	suite.AddGroup("SIGN", sign.E2ETests)
+	suite.AddGroup("VERIFY", verify.E2ETests)
+	suite.AddGroup("VERSION", version.E2ETests)
 
-	for name, fn := range suites {
-		t.Run(name, fn)
-	}
+	suite.Run()
 }

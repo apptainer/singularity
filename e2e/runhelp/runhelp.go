@@ -66,12 +66,12 @@ func (c ctx) testRunHelp(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
 		env: env,
 	}
 
-	return testhelper.TestRunner(map[string]func(*testing.T){
+	return testhelper.Tests{
 		"run-help command": c.testRunHelp,
-	})
+	}
 }

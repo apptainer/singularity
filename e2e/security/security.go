@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
@@ -230,14 +231,16 @@ func (c ctx) testSecurityConfOwnership(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		t.Run("singularitySecurityUnpriv", c.testSecurityUnpriv)
-		t.Run("singularitySecurityPriv", c.testSecurityPriv)
-		t.Run("testSecurityConfOwnership", c.testSecurityConfOwnership)
+	np := testhelper.NoParallel
+
+	return testhelper.Tests{
+		"singularitySecurityUnpriv": c.testSecurityUnpriv,
+		"singularitySecurityPriv":   c.testSecurityPriv,
+		"testSecurityConfOwnership": np(c.testSecurityConfOwnership),
 	}
 }

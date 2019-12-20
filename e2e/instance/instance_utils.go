@@ -12,6 +12,7 @@ import (
 	"net"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
@@ -116,16 +117,24 @@ func (c *ctx) expectedNumberOfInstances(t *testing.T, n int) {
 func echo(t *testing.T, port int) {
 	const message = "b40cbeaaea293f7e8bd40fb61f389cfca9823467\n"
 
-	sock, sockErr := net.Dial("tcp", "127.0.0.1:"+strconv.Itoa(port))
-	if sockErr != nil {
-		t.Errorf("Failed to dial echo server: %v", sockErr)
-		return
-	}
+	// give it some time for responding, attempt 10 times by
+	// waiting 100 millisecond between each try
+	for retries := 0; ; retries++ {
+		sock, sockErr := net.Dial("tcp", "127.0.0.1:"+strconv.Itoa(port))
+		if sockErr != nil && retries < 10 {
+			time.Sleep(100 * time.Millisecond)
+			continue
+		} else if sockErr != nil {
+			t.Errorf("Failed to dial echo server: %v", sockErr)
+			return
+		}
 
-	fmt.Fprintf(sock, message)
+		fmt.Fprintf(sock, message)
 
-	response, responseErr := bufio.NewReader(sock).ReadString('\n')
-	if responseErr != nil || response != message {
-		t.Errorf("Bad response: err = %v, response = %v", responseErr, response)
+		response, responseErr := bufio.NewReader(sock).ReadString('\n')
+		if responseErr != nil || response != message {
+			t.Errorf("Bad response: err = %v, response = %v", responseErr, response)
+		}
+		break
 	}
 }

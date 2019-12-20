@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 type ctx struct {
@@ -56,12 +57,12 @@ func (c ctx) testDeleteCmd(t *testing.T) {
 }
 
 // E2ETests is the main func to trigger the test suite.
-func E2ETests(env e2e.TestEnv) func(*testing.T) {
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
 		env: env,
 	}
 
-	return func(t *testing.T) {
-		t.Run("delete", c.testDeleteCmd)
+	return testhelper.Tests{
+		"delete": c.testDeleteCmd,
 	}
 }
