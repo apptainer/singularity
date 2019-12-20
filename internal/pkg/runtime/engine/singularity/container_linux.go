@@ -165,9 +165,6 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 	if err := c.addScratchMount(system); err != nil {
 		return err
 	}
-	if err := c.addCwdMount(system); err != nil {
-		return err
-	}
 	if err := c.addLibsMount(system); err != nil {
 		return err
 	}
@@ -181,6 +178,9 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		return err
 	}
 	if err := c.addFuseMount(system); err != nil {
+		return err
+	}
+	if err := c.addCwdMount(system); err != nil {
 		return err
 	}
 
@@ -1615,9 +1615,9 @@ func (c *container) addCwdMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 	if err := system.Points.AddBind(mount.CwdTag, cwd, current, flags); err == nil {
 		system.Points.AddRemount(mount.CwdTag, current, flags)
-		sylog.Verbosef("Default mount: %v: to the container", cwd)
+		sylog.Verbosef("Default mount: %v: to the container", current)
 	} else {
-		sylog.Warningf("Could not bind CWD to container %s: %s", cwd, err)
+		sylog.Warningf("Could not bind CWD to container %s: %s", current, err)
 	}
 
 	// welcome to the symlink madness ... instead of adding a
@@ -1628,6 +1628,17 @@ func (c *container) addCwdMount(system *mount.System) error {
 	// layer is enabled, if it's not the case we display a warning
 	if cwd != current {
 		if c.isLayerEnabled() {
+			// symlink creation below may enter in a recursive
+			// situation where CWD contains a symlink element
+			// and a previous bind overlap an element of CWD path
+			for p := cwd; p != "/"; p = filepath.Dir(p) {
+				lp := filepath.Join(c.session.Layer.Dir(), p)
+				if b, err := c.session.GetOverridePath(lp); err == nil {
+					sylog.Warningf("Bind mount '%s => %s' overlaps container CWD %s, may not be available", b, p, cwd)
+					return nil
+				}
+			}
+
 			linkPath := filepath.Join(c.session.Layer.Dir(), cwd)
 			// if the last element is a symlink, duplicate the target
 			target, err := os.Readlink(cwd)
