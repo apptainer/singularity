@@ -112,13 +112,13 @@ func parseMountInfoLine(line string) MountInfoEntry {
 	// super block options field
 	entry.SuperOptions = strings.Split(fields[index+3], ",")
 
-	// major/minor number reported in mountinfo may
-	// be wrong for btrfs filesystem as it uses virtual
+	// major/minor number reported in mountinfo may be wrong
+	// for btrfs/overlay filesystems as it uses virtual
 	// device numbers, st_dev from stat will return numbers
 	// different from those shown in mountinfo, to fix that
 	// we need to get major/minor directly from a stat call
 	// on the corresponding mount point
-	if entry.FSType == "btrfs" {
+	if entry.FSType == "btrfs" || entry.FSType == "overlay" {
 		fi, err := os.Stat(entry.Point)
 		if err == nil {
 			st := fi.Sys().(*syscall.Stat_t)
