@@ -262,14 +262,29 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 			from:                "busybox:latest",
 		},
 		{
-			name:                "CentOS",
+			name:                "CentOS_6",
 			kernelMajorRequired: 0,
-			from:                "centos:latest",
+			from:                "centos:6",
 		},
 		{
-			name:                "Ubuntu",
+			name:                "CentOS_7",
+			kernelMajorRequired: 0,
+			from:                "centos:7",
+		},
+		{
+			name:                "CentOS_8",
+			kernelMajorRequired: 3,
+			from:                "centos:8",
+		},
+		{
+			name:                "Ubuntu_1604",
 			kernelMajorRequired: 0,
 			from:                "ubuntu:16.04",
+		},
+		{
+			name:                "Ubuntu_1804",
+			kernelMajorRequired: 3,
+			from:                "ubuntu:18.04",
 		},
 	}
 
