@@ -597,6 +597,9 @@ func TestAddDelNetworks(t *testing.T) {
 		nsPath := fmt.Sprintf("/proc/%d/ns/net", cmd.Process.Pid)
 		if err := c.runFunc(nsPath, cniPath, stdinPipe, stdoutPipe); err != nil {
 			t.Errorf("unexpected failure for %q: %s", c.name, err)
+			if err := cmd.Process.Kill(); err != nil {
+				t.Fatalf("error killing process %q: %s", cmdPath, err)
+			}
 		}
 
 		stdoutPipe.Close()
