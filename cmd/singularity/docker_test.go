@@ -176,8 +176,11 @@ func TestDockerDefFile(t *testing.T) {
 	}{
 		{"Arch", 3, "dock0/arch:latest"},
 		{"BusyBox", 0, "busybox:latest"},
-		{"CentOS", 0, "centos:latest"},
-		{"Ubuntu", 0, "ubuntu:16.04"},
+		{"CentOS_6", 0, "centos:6"},
+		{"CentOS_7", 0, "centos:7"},
+		{"CentOS_8", 3, "centos:8"},
+		{"Ubuntu_1604", 0, "ubuntu:16.04"},
+		{"Ubuntu_1804", 3, "ubuntu:18.04"},
 	}
 
 	for _, tt := range tests {
