@@ -364,6 +364,7 @@ func testRunFromURI(t *testing.T) {
 
 // testPersistentOverlay test the --overlay function
 func testPersistentOverlay(t *testing.T) {
+	require.Filesystem(t, "overlay")
 	const squashfsImage = "squashfs.simg"
 	//  Create the overlay dir
 	cwd, err := os.Getwd()
