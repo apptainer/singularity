@@ -10,6 +10,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
 
@@ -46,22 +47,27 @@ func (c configTests) configGlobal(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		argv           []string
-		profile        e2e.Profile
-		cwd            string
-		directive      string
-		directiveValue string
-		exit           int
-		resultOp       e2e.SingularityCmdResultOp
+		name              string
+		argv              []string
+		profile           e2e.Profile
+		addRequirementsFn func(*testing.T)
+		cwd               string
+		directive         string
+		directiveValue    string
+		exit              int
+		resultOp          e2e.SingularityCmdResultOp
 	}{
 		{
-			name:           "AllowSetuid",
-			argv:           []string{c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
-			directive:      "allow setuid",
-			directiveValue: "no",
-			exit:           0,
+			name: "AllowSetuid",
+			argv: []string{c.env.ImagePath, "true"},
+			// We are testing if we fall back to user namespace without `--userns`
+			// so we need to use the UserProfile, and check separately if userns
+			// support is possible.
+			profile:           e2e.UserProfile,
+			addRequirementsFn: require.UserNamespace,
+			directive:         "allow setuid",
+			directiveValue:    "no",
+			exit:              0,
 		},
 		{
 			name:           "MaxLoopDevices",
@@ -376,6 +382,9 @@ func (c configTests) configGlobal(t *testing.T) {
 			e2e.WithProfile(tt.profile),
 			e2e.WithDir(tt.cwd),
 			e2e.PreRun(func(t *testing.T) {
+				if tt.addRequirementsFn != nil {
+					tt.addRequirementsFn(t)
+				}
 				setDirective(t, tt.directive, tt.directiveValue)
 			}),
 			e2e.PostRun(func(t *testing.T) {
