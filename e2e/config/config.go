@@ -91,7 +91,7 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "ConfigPasswdNo",
-			argv:           []string{c.env.ImagePath, "grep", "/etc/passwd", "/proc/self/mountinfo"},
+			argv:           []string{c.env.ImagePath, "grep", "/etc/passwd.*- tmpfs", "/proc/self/mountinfo"},
 			profile:        e2e.UserProfile,
 			directive:      "config passwd",
 			directiveValue: "no",
@@ -99,7 +99,7 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "ConfigPasswdYes",
-			argv:           []string{c.env.ImagePath, "grep", "/etc/passwd", "/proc/self/mountinfo"},
+			argv:           []string{c.env.ImagePath, "grep", "/etc/passwd.*- tmpfs", "/proc/self/mountinfo"},
 			profile:        e2e.UserProfile,
 			directive:      "config passwd",
 			directiveValue: "yes",
@@ -107,7 +107,7 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "ConfigGroupNo",
-			argv:           []string{c.env.ImagePath, "grep", "/etc/group", "/proc/self/mountinfo"},
+			argv:           []string{c.env.ImagePath, "grep", "/etc/group.*- tmpfs", "/proc/self/mountinfo"},
 			profile:        e2e.UserProfile,
 			directive:      "config group",
 			directiveValue: "no",
@@ -115,7 +115,7 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "ConfigGroupYes",
-			argv:           []string{c.env.ImagePath, "grep", "/etc/group", "/proc/self/mountinfo"},
+			argv:           []string{c.env.ImagePath, "grep", "/etc/group.*- tmpfs", "/proc/self/mountinfo"},
 			profile:        e2e.UserProfile,
 			directive:      "config group",
 			directiveValue: "yes",
@@ -123,7 +123,7 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "ConfigResolvConfNo",
-			argv:           []string{c.env.ImagePath, "grep", "/etc/resolv.conf", "/proc/self/mountinfo"},
+			argv:           []string{c.env.ImagePath, "grep", "/etc/resolv.conf.*- tmpfs", "/proc/self/mountinfo"},
 			profile:        e2e.UserProfile,
 			directive:      "config resolv_conf",
 			directiveValue: "no",
@@ -131,7 +131,7 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "ConfigResolvConfYes",
-			argv:           []string{c.env.ImagePath, "grep", "/etc/resolv.conf", "/proc/self/mountinfo"},
+			argv:           []string{c.env.ImagePath, "grep", "/etc/resolv.conf.*- tmpfs", "/proc/self/mountinfo"},
 			profile:        e2e.UserProfile,
 			directive:      "config resolv_conf",
 			directiveValue: "yes",
