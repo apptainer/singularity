@@ -136,7 +136,7 @@ func TestCopyFile(t *testing.T) {
 
 			// manually concatenating because I don't want a Join function to clean the trailing slash
 			dst := dstDir + "/" + tt.dst
-			if err := Copy(tt.src, dst); err != nil {
+			if err := Copy(tt.src, dst, false); err != nil {
 				t.Errorf("unexpected failure running %s test: %s", t.Name(), err)
 			}
 
@@ -201,7 +201,7 @@ func TestCopyDir(t *testing.T) {
 
 			// manually concatenating because I don't want a Join function to clean the trailing slash
 			dst := dstDir + "/" + tt.dst
-			if err := Copy(tt.src, dst); err != nil {
+			if err := Copy(tt.src, dst, false); err != nil {
 				t.Errorf("unexpected failure running %s test: %s", t.Name(), err)
 			}
 
@@ -255,7 +255,7 @@ func TestCopyFail(t *testing.T) {
 			defer os.RemoveAll(dstDir)
 
 			dst := filepath.Join(dstDir, tt.dst)
-			if err := Copy(tt.src, dst); err == nil {
+			if err := Copy(tt.src, dst, false); err == nil {
 				t.Errorf("unexpected success running %s test: %s", t.Name(), err)
 			}
 		})

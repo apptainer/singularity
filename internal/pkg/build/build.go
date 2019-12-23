@@ -526,10 +526,11 @@ func (s *stage) copyFiles(b *Build) error {
 
 			// copy each file into bundle rootfs
 			// prepend appropriate bundle path to supplied paths
+			// copying between stages should not follow symlinks
 			transfer.Src = files.AddPrefix(b.stages[stageIndex].b.RootfsPath, transfer.Src)
 			transfer.Dst = files.AddPrefix(s.b.RootfsPath, transfer.Dst)
 			sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
-			if err := files.Copy(transfer.Src, transfer.Dst); err != nil {
+			if err := files.Copy(transfer.Src, transfer.Dst, false); err != nil {
 				return err
 			}
 		}

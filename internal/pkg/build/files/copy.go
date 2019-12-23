@@ -42,7 +42,7 @@ func makeParentDir(path string, numSrcPaths int) error {
 // Copy calls cp with src and dst as its arguments
 // checks dst and creates parent directories if they do not exist
 // before calling cp
-func Copy(src, dst string) error {
+func Copy(src, dst string, followLinks bool) error {
 	// resolve any bash globbing in filepath
 	paths, err := expandPath(src)
 	if err != nil {
@@ -54,7 +54,10 @@ func Copy(src, dst string) error {
 	}
 
 	// set flags for cp
-	args := []string{"-fLr"}
+	args := []string{"-fr"}
+	if followLinks {
+		args = []string{"-fLr"}
+	}
 	// append file(s) to be copied
 	args = append(args, paths...)
 	// append dst as last arg
