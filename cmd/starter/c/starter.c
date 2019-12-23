@@ -1280,7 +1280,6 @@ __attribute__((constructor)) static void init(void) {
         if ( cwdfd < 0 ) {
             fatalf("Failed to open current working directory: %s\n", strerror(errno));
         }
-        chdir_to_proc_pid(sconfig->container.pid);
 
         /* user namespace created, write user mappings */
         if ( userns == CREATE_NAMESPACE ) {
@@ -1294,8 +1293,10 @@ __attribute__((constructor)) static void init(void) {
                      * call.
                      */
                     priv_escalate(false);
+                    chdir_to_proc_pid(sconfig->container.pid);
                     setup_userns_mappings(&sconfig->container.privileges);
                 } else {
+                    chdir_to_proc_pid(sconfig->container.pid);
                     /* use newuidmap/newgidmap as fallback for hybrid workflow */
                     setup_userns_mappings_external(&sconfig->container);
                     /*
@@ -1307,9 +1308,12 @@ __attribute__((constructor)) static void init(void) {
                     }
                 }
             } else {
+                chdir_to_proc_pid(sconfig->container.pid);
                 setup_userns_mappings(&sconfig->container.privileges);
             }
             send_event(master_socket[0]);
+        } else {
+            chdir_to_proc_pid(sconfig->container.pid);
         }
 
         /* wait child finish namespaces initialization */
