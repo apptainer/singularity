@@ -32,7 +32,7 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 		EnsureImage(t, env)
 
 		dockerDefinition := "testdata/Docker_registry.def"
-		dockerImage := filepath.Join(env.TestDir, "docker-e2e.sif")
+		dockerImage := filepath.Join(env.TestDir, "docker-registry")
 
 		env.RunSingularity(
 			t,
@@ -48,7 +48,7 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 			t,
 			WithProfile(RootProfile),
 			WithCommand("instance start"),
-			WithArgs("-w", "-B", "/sys", dockerImage, dockerInstanceName),
+			WithArgs("-w", dockerImage, dockerInstanceName),
 			PreRun(func(t *testing.T) {
 				umountFn = shadowInstanceDirectory(t, env)
 			}),
