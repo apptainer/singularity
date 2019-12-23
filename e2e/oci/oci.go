@@ -48,6 +48,7 @@ func (c *ctx) checkOciState(t *testing.T, containerID, state string) {
 }
 
 func genericOciMount(t *testing.T, c *ctx) (string, func()) {
+	require.Filesystem(t, "overlay")
 	bundleDir, err := ioutil.TempDir(c.env.TestDir, "bundle-")
 	if err != nil {
 		err = errors.Wrapf(err, "creating temporary bundle directory at %q", c.env.TestDir)
