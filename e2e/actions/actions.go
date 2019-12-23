@@ -984,7 +984,7 @@ func (c actionTests) actionBasicProfiles(t *testing.T) {
 func (c actionTests) actionNetwork(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	e2e.Privileged(require.Network)
+	e2e.Privileged(require.Network)(t)
 
 	tests := []struct {
 		name       string
