@@ -486,6 +486,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		command string
 		argv    []string
 		exit    int
+		profile e2e.Profile
 	}{
 		// Run from supported URI's and check the runscript call works
 		{
@@ -493,12 +494,14 @@ func (c actionTests) RunFromURI(t *testing.T) {
 			command: "run",
 			argv:    []string{"--bind", bind, "docker://busybox:latest", size},
 			exit:    0,
+			profile: e2e.UserProfile,
 		},
 		{
 			name:    "RunFromLibraryOK",
 			command: "run",
 			argv:    []string{"--bind", bind, "library://busybox:latest", size},
 			exit:    0,
+			profile: e2e.UserProfile,
 		},
 		// TODO(mem): reenable this; disabled while shub is down
 		// {
@@ -506,24 +509,28 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		// 	command: "run",
 		// 	argv:    []string{"--bind", bind, "shub://singularityhub/busybox", size},
 		// 	exit:    0,
+		// 	profile: e2e.UserProfile,
 		// },
 		{
 			name:    "RunFromOrasOK",
 			command: "run",
 			argv:    []string{"--bind", bind, c.env.OrasTestImage, size},
 			exit:    0,
+			profile: e2e.UserProfile,
 		},
 		{
 			name:    "RunFromDockerKO",
 			command: "run",
 			argv:    []string{"--bind", bind, "docker://busybox:latest", "0"},
 			exit:    1,
+			profile: e2e.UserProfile,
 		},
 		{
 			name:    "RunFromLibraryKO",
 			command: "run",
 			argv:    []string{"--bind", bind, "library://busybox:latest", "0"},
 			exit:    1,
+			profile: e2e.UserProfile,
 		},
 		// TODO(mem): reenable this; disabled while shub is down
 		// {
@@ -531,12 +538,14 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		// 	command: "run",
 		// 	argv:    []string{"--bind", bind, "shub://singularityhub/busybox", "0"},
 		// 	exit:    1,
+		// 	profile: e2e.UserProfile,
 		// },
 		{
 			name:    "RunFromOrasKO",
 			command: "run",
 			argv:    []string{"--bind", bind, c.env.OrasTestImage, "0"},
 			exit:    1,
+			profile: e2e.UserProfile,
 		},
 
 		// exec from a supported URI's and check the exit code
@@ -545,12 +554,14 @@ func (c actionTests) RunFromURI(t *testing.T) {
 			command: "exec",
 			argv:    []string{"docker://busybox:latest", "true"},
 			exit:    0,
+			profile: e2e.UserProfile,
 		},
 		{
 			name:    "ExecTrueLibrary",
 			command: "exec",
 			argv:    []string{"library://busybox:latest", "true"},
 			exit:    0,
+			profile: e2e.UserProfile,
 		},
 		// TODO(mem): reenable this; disabled while shub is down
 		// {
@@ -558,24 +569,28 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		// 	command: "exec",
 		// 	argv:    []string{"shub://singularityhub/busybox", "true"},
 		// 	exit:    0,
+		// 	profile: e2e.UserProfile,
 		// },
 		{
 			name:    "ExecTrueOras",
 			command: "exec",
 			argv:    []string{c.env.OrasTestImage, "true"},
 			exit:    0,
+			profile: e2e.UserProfile,
 		},
 		{
 			name:    "ExecFalseDocker",
 			command: "exec",
 			argv:    []string{"docker://busybox:latest", "false"},
 			exit:    1,
+			profile: e2e.UserProfile,
 		},
 		{
 			name:    "ExecFalseLibrary",
 			command: "exec",
 			argv:    []string{"library://busybox:latest", "false"},
 			exit:    1,
+			profile: e2e.UserProfile,
 		},
 		// TODO(mem): reenable this; disabled while shub is down
 		// {
@@ -583,64 +598,74 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		// 	command: "exec",
 		// 	argv:    []string{"shub://singularityhub/busybox", "false"},
 		// 	exit:    1,
+		// 	profile: e2e.UserProfile,
 		// },
 		{
 			name:    "ExecFalseOras",
 			command: "exec",
 			argv:    []string{c.env.OrasTestImage, "false"},
 			exit:    1,
+			profile: e2e.UserProfile,
 		},
 
 		// exec from URI with user namespace enabled
 		{
 			name:    "ExecTrueDockerUserns",
 			command: "exec",
-			argv:    []string{"--userns", "docker://busybox:latest", "true"},
+			argv:    []string{"docker://busybox:latest", "true"},
 			exit:    0,
+			profile: e2e.UserNamespaceProfile,
 		},
 		{
 			name:    "ExecTrueLibraryUserns",
 			command: "exec",
-			argv:    []string{"--userns", "library://busybox:latest", "true"},
+			argv:    []string{"library://busybox:latest", "true"},
 			exit:    0,
+			profile: e2e.UserNamespaceProfile,
 		},
 		// TODO(mem): reenable this; disabled while shub is down
 		// {
 		// 	name:    "ExecTrueShubUserns",
 		// 	command: "exec",
-		// 	argv:    []string{"--userns", "shub://singularityhub/busybox", "true"},
+		// 	argv:    []string{"shub://singularityhub/busybox", "true"},
 		// 	exit:    0,
+		// 	profile: e2e.UserNamespaceProfile,
 		// },
 		{
 			name:    "ExecTrueOrasUserns",
 			command: "exec",
-			argv:    []string{"--userns", c.env.OrasTestImage, "true"},
+			argv:    []string{c.env.OrasTestImage, "true"},
 			exit:    0,
+			profile: e2e.UserNamespaceProfile,
 		},
 		{
 			name:    "ExecFalseDockerUserns",
 			command: "exec",
-			argv:    []string{"--userns", "docker://busybox:latest", "false"},
+			argv:    []string{"docker://busybox:latest", "false"},
 			exit:    1,
+			profile: e2e.UserNamespaceProfile,
 		},
 		{
 			name:    "ExecFalseLibraryUserns",
 			command: "exec",
-			argv:    []string{"--userns", "library://busybox:latest", "false"},
+			argv:    []string{"library://busybox:latest", "false"},
 			exit:    1,
+			profile: e2e.UserNamespaceProfile,
 		},
 		// TODO(mem): reenable this; disabled while shub is down
 		// {
 		// 	name:    "ExecFalseShubUserns",
 		// 	command: "exec",
-		// 	argv:    []string{"--userns", "shub://singularityhub/busybox", "false"},
+		// 	argv:    []string{"shub://singularityhub/busybox", "false"},
 		// 	exit:    1,
+		// 	profile: e2e.UserNamespaceProfile,
 		// },
 		{
 			name:    "ExecFalseOrasUserns",
 			command: "exec",
-			argv:    []string{"--userns", c.env.OrasTestImage, "false"},
+			argv:    []string{c.env.OrasTestImage, "false"},
 			exit:    1,
+			profile: e2e.UserNamespaceProfile,
 		},
 	}
 
@@ -648,7 +673,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithProfile(tt.profile),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),
