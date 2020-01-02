@@ -118,7 +118,7 @@ func parseMountInfoLine(line string) MountInfoEntry {
 	// different from those shown in mountinfo, to fix that
 	// we need to get major/minor directly from a stat call
 	// on the corresponding mount point
-	if entry.FSType == "btrfs" || entry.FSType == "overlay" {
+	if entry.FSType == "btrfs" || entry.FSType == "overlay" || entry.FSType == "ceph" {
 		fi, err := os.Stat(entry.Point)
 		if err == nil {
 			st := fi.Sys().(*syscall.Stat_t)
