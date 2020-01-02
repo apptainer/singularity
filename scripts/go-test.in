@@ -61,6 +61,23 @@ for arg in "$@" ; do
 	fi
 
 	case "${arg}" in
+		-sudo)
+			# prepare sudo execution
+			sudo_exec='-exec @SUDO_SCRIPT@'
+			if [ `id -u` = 0 ]; then
+				error "Run $0 as user when specifying -sudo. Abort."
+				exit 1
+			fi
+			if ! command -v sudo > /dev/null 2>&1; then
+				error "sudo command not found in PATH. Abort."
+				exit 1
+			fi
+			# ask for password or reset the session timeout
+			if ! sudo -v; then
+				exit 1
+			fi
+			;;
+
 		-tags)
 			GO_TAGS="${GO_TAGS} ${1}"
 			skip=true
@@ -114,6 +131,7 @@ rc=0
 	-failfast \
 	-cover \
 	-race \
+	${sudo_exec} \
 	"$@" ||
 rc=$?
 

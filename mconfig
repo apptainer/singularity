@@ -811,6 +811,11 @@ cat $makeit_interdir/all.mk >> $makeit_makefile
 drawline $makeit_fragsdir/build_cli.mk
 cat $makeit_fragsdir/build_cli.mk >> $makeit_makefile
 
+if [ "$with_network" = 1 ]; then
+    drawline $makeit_fragsdir/build_network.mk
+    cat $makeit_fragsdir/build_network.mk >> $makeit_makefile
+fi
+
 if [ "$build_runtime" = 1 ]; then
 	drawline $makeit_fragsdir/build_runtime.mk
 	cat $makeit_fragsdir/build_runtime.mk >> $makeit_makefile
@@ -819,11 +824,6 @@ fi
 if [ "$with_suid" = 1 ]; then
 	drawline $makeit_fragsdir/build_runtime_suid.mk
 	cat $makeit_fragsdir/build_runtime_suid.mk >> $makeit_makefile
-fi
-
-if [ "$with_network" = 1 ]; then
-	drawline $makeit_fragsdir/build_network.mk
-	cat $makeit_fragsdir/build_network.mk >> $makeit_makefile
 fi
 
 drawline $makeit_fragsdir/build_scripts.mk
