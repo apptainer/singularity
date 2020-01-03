@@ -1248,7 +1248,40 @@ func (c *container) addBindsMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
 	if c.engine.EngineConfig.GetContain() {
-		sylog.Debugf("Skipping bind mounts as contain was requested")
+		const (
+			hostsPath     = "/etc/hosts"
+			localtimePath = "/etc/localtime"
+		)
+		hosts := hostsPath
+
+		// handle special case for /etc/hosts as it is required,
+		// if no network namespace was requested we simply bind
+		// /etc/hosts from host, if network namespace is requested
+		// we create a minimal default hosts for localhost resolution
+		if !c.netNS {
+			sylog.Debugf("Binding /etc/hosts and /etc/localtime only with contain")
+		} else {
+			sylog.Debugf("Skipping bind mounts as contain was requested")
+
+			sylog.Verbosef("Binding staging /etc/hosts as contain is set")
+			if err := c.session.AddFile(hostsPath, files.DefaultHosts()); err != nil {
+				return fmt.Errorf("while adding /etc/hosts staging file: %s", err)
+			}
+			hosts, _ = c.session.GetPath(hostsPath)
+		}
+
+		if err := system.Points.AddBind(mount.BindsTag, hosts, hostsPath, flags); err != nil {
+			return fmt.Errorf("unable to add %s to mount list: %s", hosts, err)
+		}
+		if err := system.Points.AddRemount(mount.BindsTag, hostsPath, flags); err != nil {
+			return fmt.Errorf("unable to add %s for remount: %s", hostsPath, err)
+		}
+		if err := system.Points.AddBind(mount.BindsTag, localtimePath, localtimePath, flags); err != nil {
+			return fmt.Errorf("unable to add %s to mount list: %s", hosts, err)
+		}
+		if err := system.Points.AddRemount(mount.BindsTag, localtimePath, flags); err != nil {
+			return fmt.Errorf("unable to add %s for remount: %s", localtimePath, err)
+		}
 		return nil
 	}
 
@@ -1266,6 +1299,9 @@ func (c *container) addBindsMount(system *mount.System) error {
 		err := system.Points.AddBind(mount.BindsTag, src, dst, flags)
 		if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
+		}
+		if err := system.Points.AddRemount(mount.BindsTag, dst, flags); err != nil {
+			return fmt.Errorf("unable to add %s for remount: %s", dst, err)
 		}
 	}
 

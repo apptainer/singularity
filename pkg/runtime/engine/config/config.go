@@ -160,7 +160,9 @@ mount hostfs = {{ if eq .MountHostfs true }}yes{{ else }}no{{ end }}
 # the container. The file or directory must exist within the container on
 # which to attach to. you can specify a different source and destination
 # path (respectively) with a colon; otherwise source and dest are the same.
-# NOTE: these are ignored if singularity is invoked with --contain.
+# NOTE: these are ignored if singularity is invoked with --contain except
+# for /etc/hosts and /etc/localtime. When invoked with --contain and --net,
+# /etc/hosts would contain a default generated content for localhost resolution.
 #bind path = /etc/singularity/default-nsswitch.conf:/etc/nsswitch.conf
 #bind path = /opt
 #bind path = /scratch
