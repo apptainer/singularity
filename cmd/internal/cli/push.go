@@ -50,13 +50,15 @@ var pushAllowUnsignedFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(PushCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(PushCmd)
 
-	cmdManager.RegisterFlagForCmd(&pushLibraryURIFlag, PushCmd)
-	cmdManager.RegisterFlagForCmd(&pushAllowUnsignedFlag, PushCmd)
+		cmdManager.RegisterFlagForCmd(&pushLibraryURIFlag, PushCmd)
+		cmdManager.RegisterFlagForCmd(&pushAllowUnsignedFlag, PushCmd)
 
-	cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, PushCmd)
-	cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, PushCmd)
+		cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, PushCmd)
+		cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, PushCmd)
+	})
 }
 
 // PushCmd singularity push

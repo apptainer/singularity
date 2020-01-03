@@ -10,12 +10,15 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 func init() {
-	cmdManager.RegisterCmd(CacheCmd)
-	cmdManager.RegisterSubCmd(CacheCmd, cacheCleanCmd)
-	cmdManager.RegisterSubCmd(CacheCmd, CacheListCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(CacheCmd)
+		cmdManager.RegisterSubCmd(CacheCmd, cacheCleanCmd)
+		cmdManager.RegisterSubCmd(CacheCmd, CacheListCmd)
+	})
 }
 
 // CacheCmd : aka, `singularity cache`

@@ -10,13 +10,16 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 func init() {
-	cmdManager.RegisterCmd(instanceCmd)
-	cmdManager.RegisterSubCmd(instanceCmd, instanceStartCmd)
-	cmdManager.RegisterSubCmd(instanceCmd, instanceStopCmd)
-	cmdManager.RegisterSubCmd(instanceCmd, instanceListCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(instanceCmd)
+		cmdManager.RegisterSubCmd(instanceCmd, instanceStartCmd)
+		cmdManager.RegisterSubCmd(instanceCmd, instanceStopCmd)
+		cmdManager.RegisterSubCmd(instanceCmd, instanceListCmd)
+	})
 }
 
 // singularity instance

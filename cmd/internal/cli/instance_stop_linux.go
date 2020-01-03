@@ -20,11 +20,13 @@ import (
 )
 
 func init() {
-	cmdManager.RegisterFlagForCmd(&instanceStopUserFlag, instanceStopCmd)
-	cmdManager.RegisterFlagForCmd(&instanceStopAllFlag, instanceStopCmd)
-	cmdManager.RegisterFlagForCmd(&instanceStopForceFlag, instanceStopCmd)
-	cmdManager.RegisterFlagForCmd(&instanceStopSignalFlag, instanceStopCmd)
-	cmdManager.RegisterFlagForCmd(&instanceStopTimeoutFlag, instanceStopCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterFlagForCmd(&instanceStopUserFlag, instanceStopCmd)
+		cmdManager.RegisterFlagForCmd(&instanceStopAllFlag, instanceStopCmd)
+		cmdManager.RegisterFlagForCmd(&instanceStopForceFlag, instanceStopCmd)
+		cmdManager.RegisterFlagForCmd(&instanceStopSignalFlag, instanceStopCmd)
+		cmdManager.RegisterFlagForCmd(&instanceStopTimeoutFlag, instanceStopCmd)
+	})
 }
 
 // -u|--user

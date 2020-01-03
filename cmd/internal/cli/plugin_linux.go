@@ -10,17 +10,20 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 func init() {
-	cmdManager.RegisterCmd(PluginCmd)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginListCmd)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginInstallCmd)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginUninstallCmd)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginEnableCmd)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginDisableCmd)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginCompileCmd)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginInspectCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(PluginCmd)
+		cmdManager.RegisterSubCmd(PluginCmd, PluginListCmd)
+		cmdManager.RegisterSubCmd(PluginCmd, PluginInstallCmd)
+		cmdManager.RegisterSubCmd(PluginCmd, PluginUninstallCmd)
+		cmdManager.RegisterSubCmd(PluginCmd, PluginEnableCmd)
+		cmdManager.RegisterSubCmd(PluginCmd, PluginDisableCmd)
+		cmdManager.RegisterSubCmd(PluginCmd, PluginCompileCmd)
+		cmdManager.RegisterSubCmd(PluginCmd, PluginInspectCmd)
+	})
 }
 
 // PluginCmd is the root command for all plugin related functionality

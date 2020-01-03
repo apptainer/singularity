@@ -16,8 +16,10 @@ import (
 )
 
 func init() {
-	cmdManager.RegisterFlagForCmd(&instanceListUserFlag, instanceListCmd)
-	cmdManager.RegisterFlagForCmd(&instanceListJSONFlag, instanceListCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterFlagForCmd(&instanceListUserFlag, instanceListCmd)
+		cmdManager.RegisterFlagForCmd(&instanceListJSONFlag, instanceListCmd)
+	})
 }
 
 // -u|--user

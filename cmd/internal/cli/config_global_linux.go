@@ -104,9 +104,11 @@ var configGlobalCmd = &cobra.Command{
 }
 
 func init() {
-	cmdManager.RegisterFlagForCmd(&globalConfigSetFlag, configGlobalCmd)
-	cmdManager.RegisterFlagForCmd(&globalConfigUnsetFlag, configGlobalCmd)
-	cmdManager.RegisterFlagForCmd(&globalConfigGetFlag, configGlobalCmd)
-	cmdManager.RegisterFlagForCmd(&globalConfigResetFlag, configGlobalCmd)
-	cmdManager.RegisterFlagForCmd(&globalConfigDryRunFlag, configGlobalCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterFlagForCmd(&globalConfigSetFlag, configGlobalCmd)
+		cmdManager.RegisterFlagForCmd(&globalConfigUnsetFlag, configGlobalCmd)
+		cmdManager.RegisterFlagForCmd(&globalConfigGetFlag, configGlobalCmd)
+		cmdManager.RegisterFlagForCmd(&globalConfigResetFlag, configGlobalCmd)
+		cmdManager.RegisterFlagForCmd(&globalConfigDryRunFlag, configGlobalCmd)
+	})
 }

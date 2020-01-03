@@ -81,14 +81,16 @@ var signAllFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(SignCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(SignCmd)
 
-	cmdManager.RegisterFlagForCmd(&signSifGroupIDFlag, SignCmd)
-	cmdManager.RegisterFlagForCmd(&signOldSifGroupIDFlag, SignCmd)
-	cmdManager.RegisterFlagForCmd(&signSifDescSifIDFlag, SignCmd)
-	cmdManager.RegisterFlagForCmd(&signSifDescIDFlag, SignCmd)
-	cmdManager.RegisterFlagForCmd(&signKeyIdxFlag, SignCmd)
-	cmdManager.RegisterFlagForCmd(&signAllFlag, SignCmd)
+		cmdManager.RegisterFlagForCmd(&signSifGroupIDFlag, SignCmd)
+		cmdManager.RegisterFlagForCmd(&signOldSifGroupIDFlag, SignCmd)
+		cmdManager.RegisterFlagForCmd(&signSifDescSifIDFlag, SignCmd)
+		cmdManager.RegisterFlagForCmd(&signSifDescIDFlag, SignCmd)
+		cmdManager.RegisterFlagForCmd(&signKeyIdxFlag, SignCmd)
+		cmdManager.RegisterFlagForCmd(&signAllFlag, SignCmd)
+	})
 }
 
 // SignCmd singularity sign

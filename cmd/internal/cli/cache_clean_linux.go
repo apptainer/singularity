@@ -20,10 +20,12 @@ import (
 )
 
 func init() {
-	cmdManager.RegisterFlagForCmd(&cacheCleanTypesFlag, cacheCleanCmd)
-	cmdManager.RegisterFlagForCmd(&cacheCleanNameFlag, cacheCleanCmd)
-	cmdManager.RegisterFlagForCmd(&cacheCleanDryFlag, cacheCleanCmd)
-	cmdManager.RegisterFlagForCmd(&cacheCleanForceFlag, cacheCleanCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterFlagForCmd(&cacheCleanTypesFlag, cacheCleanCmd)
+		cmdManager.RegisterFlagForCmd(&cacheCleanNameFlag, cacheCleanCmd)
+		cmdManager.RegisterFlagForCmd(&cacheCleanDryFlag, cacheCleanCmd)
+		cmdManager.RegisterFlagForCmd(&cacheCleanForceFlag, cacheCleanCmd)
+	})
 }
 
 var (

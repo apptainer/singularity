@@ -55,27 +55,29 @@ var keyNewpairBitLengthFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(KeyCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(KeyCmd)
 
-	cmdManager.RegisterSubCmd(KeyCmd, KeyNewPairCmd)
-	cmdManager.RegisterFlagForCmd(KeyNewPairNameFlag, KeyNewPairCmd)
-	cmdManager.RegisterFlagForCmd(KeyNewPairEmailFlag, KeyNewPairCmd)
-	cmdManager.RegisterFlagForCmd(KeyNewPairCommentFlag, KeyNewPairCmd)
-	cmdManager.RegisterFlagForCmd(KeyNewPairPasswordFlag, KeyNewPairCmd)
-	cmdManager.RegisterFlagForCmd(KeyNewPairPushFlag, KeyNewPairCmd)
+		cmdManager.RegisterSubCmd(KeyCmd, KeyNewPairCmd)
+		cmdManager.RegisterFlagForCmd(KeyNewPairNameFlag, KeyNewPairCmd)
+		cmdManager.RegisterFlagForCmd(KeyNewPairEmailFlag, KeyNewPairCmd)
+		cmdManager.RegisterFlagForCmd(KeyNewPairCommentFlag, KeyNewPairCmd)
+		cmdManager.RegisterFlagForCmd(KeyNewPairPasswordFlag, KeyNewPairCmd)
+		cmdManager.RegisterFlagForCmd(KeyNewPairPushFlag, KeyNewPairCmd)
 
-	cmdManager.RegisterSubCmd(KeyCmd, KeyListCmd)
-	cmdManager.RegisterSubCmd(KeyCmd, KeySearchCmd)
-	cmdManager.RegisterSubCmd(KeyCmd, KeyPullCmd)
-	cmdManager.RegisterSubCmd(KeyCmd, KeyPushCmd)
-	cmdManager.RegisterSubCmd(KeyCmd, KeyImportCmd)
-	cmdManager.RegisterSubCmd(KeyCmd, KeyRemoveCmd)
-	cmdManager.RegisterSubCmd(KeyCmd, KeyExportCmd)
+		cmdManager.RegisterSubCmd(KeyCmd, KeyListCmd)
+		cmdManager.RegisterSubCmd(KeyCmd, KeySearchCmd)
+		cmdManager.RegisterSubCmd(KeyCmd, KeyPullCmd)
+		cmdManager.RegisterSubCmd(KeyCmd, KeyPushCmd)
+		cmdManager.RegisterSubCmd(KeyCmd, KeyImportCmd)
+		cmdManager.RegisterSubCmd(KeyCmd, KeyRemoveCmd)
+		cmdManager.RegisterSubCmd(KeyCmd, KeyExportCmd)
 
-	cmdManager.RegisterFlagForCmd(&keyServerURIFlag, KeySearchCmd, KeyPushCmd, KeyPullCmd)
-	cmdManager.RegisterFlagForCmd(&keySearchLongListFlag, KeySearchCmd)
-	cmdManager.RegisterFlagForCmd(&keyNewpairBitLengthFlag, KeyNewPairCmd)
-	cmdManager.RegisterFlagForCmd(&keyImportWithNewPasswordFlag, KeyImportCmd)
+		cmdManager.RegisterFlagForCmd(&keyServerURIFlag, KeySearchCmd, KeyPushCmd, KeyPullCmd)
+		cmdManager.RegisterFlagForCmd(&keySearchLongListFlag, KeySearchCmd)
+		cmdManager.RegisterFlagForCmd(&keyNewpairBitLengthFlag, KeyNewPairCmd)
+		cmdManager.RegisterFlagForCmd(&keyImportWithNewPasswordFlag, KeyImportCmd)
+	})
 }
 
 // KeyCmd is the 'key' command that allows management of key stores
