@@ -42,8 +42,10 @@ var cacheListVerboseFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterFlagForCmd(&cacheListTypesFlag, CacheListCmd)
-	cmdManager.RegisterFlagForCmd(&cacheListVerboseFlag, CacheListCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterFlagForCmd(&cacheListTypesFlag, CacheListCmd)
+		cmdManager.RegisterFlagForCmd(&cacheListVerboseFlag, CacheListCmd)
+	})
 }
 
 // CacheListCmd is 'singularity cache list' and will list your local singularity cache

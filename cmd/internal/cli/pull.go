@@ -131,24 +131,26 @@ var pullAllowUnauthenticatedFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(PullCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(PullCmd)
 
-	cmdManager.RegisterFlagForCmd(&commonForceFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&pullLibraryURIFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&pullNameFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&commonNoHTTPSFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&commonTmpDirFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&pullDisableCacheFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&pullDirFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&commonForceFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&pullLibraryURIFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&pullNameFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&commonNoHTTPSFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&commonTmpDirFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&pullDisableCacheFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&pullDirFlag, PullCmd)
 
-	cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&dockerLoginFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&dockerLoginFlag, PullCmd)
 
-	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&pullAllowUnsignedFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&pullArchFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&pullAllowUnsignedFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&pullArchFlag, PullCmd)
+	})
 }
 
 // PullCmd singularity pull

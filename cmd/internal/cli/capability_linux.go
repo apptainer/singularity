@@ -156,13 +156,15 @@ var CapabilityCmd = &cobra.Command{
 }
 
 func init() {
-	cmdManager.RegisterCmd(CapabilityCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(CapabilityCmd)
 
-	cmdManager.RegisterSubCmd(CapabilityCmd, CapabilityAddCmd)
-	cmdManager.RegisterSubCmd(CapabilityCmd, CapabilityDropCmd)
-	cmdManager.RegisterSubCmd(CapabilityCmd, CapabilityListCmd)
-	cmdManager.RegisterSubCmd(CapabilityCmd, CapabilityAvailCmd)
+		cmdManager.RegisterSubCmd(CapabilityCmd, CapabilityAddCmd)
+		cmdManager.RegisterSubCmd(CapabilityCmd, CapabilityDropCmd)
+		cmdManager.RegisterSubCmd(CapabilityCmd, CapabilityListCmd)
+		cmdManager.RegisterSubCmd(CapabilityCmd, CapabilityAvailCmd)
 
-	cmdManager.RegisterFlagForCmd(&capUserFlag, CapabilityAddCmd, CapabilityDropCmd)
-	cmdManager.RegisterFlagForCmd(&capGroupFlag, CapabilityAddCmd, CapabilityDropCmd)
+		cmdManager.RegisterFlagForCmd(&capUserFlag, CapabilityAddCmd, CapabilityDropCmd)
+		cmdManager.RegisterFlagForCmd(&capGroupFlag, CapabilityAddCmd, CapabilityDropCmd)
+	})
 }

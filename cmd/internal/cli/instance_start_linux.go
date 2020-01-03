@@ -14,7 +14,9 @@ import (
 )
 
 func init() {
-	cmdManager.RegisterFlagForCmd(&instanceStartPidFileFlag, instanceStartCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterFlagForCmd(&instanceStartPidFileFlag, instanceStartCmd)
+	})
 }
 
 // --pid-file

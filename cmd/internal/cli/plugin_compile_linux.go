@@ -28,7 +28,9 @@ var pluginCompileOutFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterFlagForCmd(&pluginCompileOutFlag, PluginCompileCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterFlagForCmd(&pluginCompileOutFlag, PluginCompileCmd)
+	})
 }
 
 // PluginCompileCmd allows a user to compile a plugin.

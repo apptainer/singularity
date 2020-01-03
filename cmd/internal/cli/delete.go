@@ -21,10 +21,12 @@ import (
 )
 
 func init() {
-	cmdManager.RegisterCmd(deleteImageCmd)
-	cmdManager.RegisterFlagForCmd(&deleteImageArchFlag, deleteImageCmd)
-	cmdManager.RegisterFlagForCmd(&deleteImageTimeoutFlag, deleteImageCmd)
-	cmdManager.RegisterFlagForCmd(&deleteLibraryURIFlag, deleteImageCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(deleteImageCmd)
+		cmdManager.RegisterFlagForCmd(&deleteImageArchFlag, deleteImageCmd)
+		cmdManager.RegisterFlagForCmd(&deleteImageTimeoutFlag, deleteImageCmd)
+		cmdManager.RegisterFlagForCmd(&deleteLibraryURIFlag, deleteImageCmd)
+	})
 }
 
 var deleteImageArch string

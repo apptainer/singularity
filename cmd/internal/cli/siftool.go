@@ -7,6 +7,7 @@ package cli
 
 import (
 	"github.com/sylabs/sif/pkg/siftool"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 // SiftoolCmd is easily set since the sif repo allows the cobra.Command struct to be
@@ -14,5 +15,7 @@ import (
 var SiftoolCmd = siftool.Siftool()
 
 func init() {
-	cmdManager.RegisterCmd(SiftoolCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(SiftoolCmd)
+	})
 }

@@ -16,14 +16,17 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 func init() {
-	cmdManager.RegisterCmd(InspectCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(InspectCmd)
 
-	cmdManager.RegisterFlagForCmd(&inspectDeffileFlag, InspectCmd)
-	cmdManager.RegisterFlagForCmd(&inspectJSONFlag, InspectCmd)
-	cmdManager.RegisterFlagForCmd(&inspectLabelsFlag, InspectCmd)
+		cmdManager.RegisterFlagForCmd(&inspectDeffileFlag, InspectCmd)
+		cmdManager.RegisterFlagForCmd(&inspectJSONFlag, InspectCmd)
+		cmdManager.RegisterFlagForCmd(&inspectLabelsFlag, InspectCmd)
+	})
 }
 
 // InspectCmd represents the 'inspect' command.

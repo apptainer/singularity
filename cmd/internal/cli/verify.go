@@ -109,16 +109,18 @@ var verifyAllFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(VerifyCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(VerifyCmd)
 
-	cmdManager.RegisterFlagForCmd(&verifyServerURIFlag, VerifyCmd)
-	cmdManager.RegisterFlagForCmd(&verifySifGroupIDFlag, VerifyCmd)
-	cmdManager.RegisterFlagForCmd(&verifyOldSifGroupIDFlag, VerifyCmd)
-	cmdManager.RegisterFlagForCmd(&verifySifDescSifIDFlag, VerifyCmd)
-	cmdManager.RegisterFlagForCmd(&verifySifDescIDFlag, VerifyCmd)
-	cmdManager.RegisterFlagForCmd(&verifyLocalFlag, VerifyCmd)
-	cmdManager.RegisterFlagForCmd(&verifyJSONFlag, VerifyCmd)
-	cmdManager.RegisterFlagForCmd(&verifyAllFlag, VerifyCmd)
+		cmdManager.RegisterFlagForCmd(&verifyServerURIFlag, VerifyCmd)
+		cmdManager.RegisterFlagForCmd(&verifySifGroupIDFlag, VerifyCmd)
+		cmdManager.RegisterFlagForCmd(&verifyOldSifGroupIDFlag, VerifyCmd)
+		cmdManager.RegisterFlagForCmd(&verifySifDescSifIDFlag, VerifyCmd)
+		cmdManager.RegisterFlagForCmd(&verifySifDescIDFlag, VerifyCmd)
+		cmdManager.RegisterFlagForCmd(&verifyLocalFlag, VerifyCmd)
+		cmdManager.RegisterFlagForCmd(&verifyJSONFlag, VerifyCmd)
+		cmdManager.RegisterFlagForCmd(&verifyAllFlag, VerifyCmd)
+	})
 }
 
 // VerifyCmd singularity verify

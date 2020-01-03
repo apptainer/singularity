@@ -8,13 +8,15 @@ package cli
 import (
 	"fmt"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 func init() {
-	cmdManager.RegisterCmd(BuildConfigCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(BuildConfigCmd)
+	})
 }
 
 // BuildConfigCmd outputs a list of the compile-time parameters with which

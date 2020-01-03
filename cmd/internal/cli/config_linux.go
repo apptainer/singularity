@@ -8,6 +8,7 @@ package cli
 import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 // configCmd is the config command
@@ -21,8 +22,10 @@ var configCmd = &cobra.Command{
 }
 
 func init() {
-	cmdManager.RegisterCmd(configCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterCmd(configCmd)
 
-	cmdManager.RegisterSubCmd(configCmd, configFakerootCmd)
-	cmdManager.RegisterSubCmd(configCmd, configGlobalCmd)
+		cmdManager.RegisterSubCmd(configCmd, configFakerootCmd)
+		cmdManager.RegisterSubCmd(configCmd, configGlobalCmd)
+	})
 }

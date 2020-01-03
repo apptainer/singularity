@@ -29,7 +29,9 @@ import (
 	"github.com/sylabs/singularity/pkg/syfs"
 )
 
-var cmdManager = cmdline.NewCommandManager(singularityCmd)
+// cmdInits holds all the init function to be called
+// for commands/flags registration.
+var cmdInits = make([]func(*cmdline.CommandManager), 0)
 
 // CurrentUser holds the current user account information
 var CurrentUser = getCurrentUser()
@@ -224,38 +226,8 @@ func getDefaultTokenFile() string {
 	return path.Join(syfs.ConfigDir(), "sylabs-token")
 }
 
-// initializePlugins should be called in any init() function which needs to interact with the plugin
-// systems internal API. This will guarantee that any internal API calls happen AFTER all plugins
-// have been properly loaded and initialized
-func initializePlugins() {
-	if err := plugin.InitializeAll(buildcfg.LIBEXECDIR); err != nil {
-		sylog.Errorf("Unable to initialize plugins: %s", err)
-	}
-}
-
-func init() {
-	singularityCmd.Flags().SetInterspersed(false)
-	singularityCmd.PersistentFlags().SetInterspersed(false)
-
-	templateFuncs := template.FuncMap{
-		"TraverseParentsUses": TraverseParentsUses,
-	}
-	cobra.AddTemplateFuncs(templateFuncs)
-
-	singularityCmd.SetHelpTemplate(docs.HelpTemplate)
-	singularityCmd.SetUsageTemplate(docs.UseTemplate)
-
-	vt := fmt.Sprintf("%s version {{printf \"%%s\" .Version}}\n", buildcfg.PACKAGE_NAME)
-	singularityCmd.SetVersionTemplate(vt)
-
-	cmdManager.RegisterFlagForCmd(&singDebugFlag, singularityCmd)
-	cmdManager.RegisterFlagForCmd(&singNoColorFlag, singularityCmd)
-	cmdManager.RegisterFlagForCmd(&singSilentFlag, singularityCmd)
-	cmdManager.RegisterFlagForCmd(&singQuietFlag, singularityCmd)
-	cmdManager.RegisterFlagForCmd(&singVerboseFlag, singularityCmd)
-	cmdManager.RegisterFlagForCmd(&singTokenFileFlag, singularityCmd)
-
-	cmdManager.RegisterCmd(VersionCmd)
+func addCmdInit(cmdInit func(*cmdline.CommandManager)) {
+	cmdInits = append(cmdInits, cmdInit)
 }
 
 func setSylogMessageLevel() {
@@ -320,6 +292,74 @@ func handleConfDir(confDir string) {
 	}
 }
 
+func persistentPreRun(*cobra.Command, []string) {
+	setSylogMessageLevel()
+	setSylogColor()
+	sylog.Debugf("Singularity version: %s", buildcfg.PACKAGE_VERSION)
+
+	// Handle the config dir (~/.singularity),
+	// then check the remove conf file permission.
+	handleConfDir(syfs.ConfigDir())
+	handleRemoteConf(syfs.RemoteConf())
+}
+
+func initCommands(loadPlugins bool) {
+	cmdManager := cmdline.NewCommandManager(singularityCmd)
+
+	singularityCmd.Flags().SetInterspersed(false)
+	singularityCmd.PersistentFlags().SetInterspersed(false)
+
+	templateFuncs := template.FuncMap{
+		"TraverseParentsUses": TraverseParentsUses,
+	}
+	cobra.AddTemplateFuncs(templateFuncs)
+
+	singularityCmd.SetHelpTemplate(docs.HelpTemplate)
+	singularityCmd.SetUsageTemplate(docs.UseTemplate)
+
+	vt := fmt.Sprintf("%s version {{printf \"%%s\" .Version}}\n", buildcfg.PACKAGE_NAME)
+	singularityCmd.SetVersionTemplate(vt)
+
+	// set persistent pre run function here to avoid initialization loop error
+	singularityCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		persistentPreRun(cmd, args)
+		return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
+	}
+
+	cmdManager.RegisterFlagForCmd(&singDebugFlag, singularityCmd)
+	cmdManager.RegisterFlagForCmd(&singNoColorFlag, singularityCmd)
+	cmdManager.RegisterFlagForCmd(&singSilentFlag, singularityCmd)
+	cmdManager.RegisterFlagForCmd(&singQuietFlag, singularityCmd)
+	cmdManager.RegisterFlagForCmd(&singVerboseFlag, singularityCmd)
+	cmdManager.RegisterFlagForCmd(&singTokenFileFlag, singularityCmd)
+
+	cmdManager.RegisterCmd(VersionCmd)
+
+	// register all others commands/flags
+	for _, cmdInit := range cmdInits {
+		cmdInit(cmdManager)
+	}
+
+	// load plugins and register commands/flags if any
+	if loadPlugins {
+		if err := plugin.InitializeAll(buildcfg.LIBEXECDIR); err != nil {
+			sylog.Errorf("Unable to initialize plugins: %s", err)
+		}
+		for _, m := range plugin.CLIMutators() {
+			m.Mutate(cmdManager)
+		}
+	}
+
+	// any error reported by command manager is considered as fatal
+	cliErrors := len(cmdManager.GetError())
+	if cliErrors > 0 {
+		for _, e := range cmdManager.GetError() {
+			sylog.Errorf("%s", e)
+		}
+		sylog.Fatalf("CLI command manager reported %d error(s)", cliErrors)
+	}
+}
+
 // singularityCmd is the base command when called without any subcommands
 var singularityCmd = &cobra.Command{
 	TraverseChildren:      true,
@@ -337,18 +377,6 @@ var singularityCmd = &cobra.Command{
 	SilenceUsage:  true,
 }
 
-func persistentPreRunE(cmd *cobra.Command, _ []string) error {
-	setSylogMessageLevel()
-	setSylogColor()
-	sylog.Debugf("Singularity version: %s", buildcfg.PACKAGE_VERSION)
-
-	// Handle the config dir (~/.singularity),
-	// then check the remove conf file permission.
-	handleConfDir(syfs.ConfigDir())
-	handleRemoteConf(syfs.RemoteConf())
-	return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
-}
-
 // RootCmd returns the root singularity cobra command.
 func RootCmd() *cobra.Command {
 	return singularityCmd
@@ -358,21 +386,7 @@ func RootCmd() *cobra.Command {
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
-	// set persistent pre run function here to avoid initialization loop error
-	singularityCmd.PersistentPreRunE = persistentPreRunE
-
-	for _, e := range cmdManager.GetError() {
-		sylog.Errorf("%s", e)
-	}
-	// any error reported by command manager is considered as fatal
-	cliErrors := len(cmdManager.GetError())
-	if cliErrors > 0 {
-		sylog.Fatalf("CLI command manager reported %d error(s)", cliErrors)
-	}
-
-	for _, m := range plugin.CLIMutators() {
-		m.Mutate(cmdManager)
-	}
+	initCommands(true)
 
 	if cmd, err := singularityCmd.ExecuteC(); err != nil {
 		name := cmd.Name()
@@ -395,6 +409,7 @@ func ExecuteSingularity() {
 
 // GenBashCompletionFile
 func GenBashCompletion(w io.Writer) error {
+	initCommands(false)
 	return singularityCmd.GenBashCompletion(w)
 }
 

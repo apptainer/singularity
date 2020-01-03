@@ -94,8 +94,10 @@ var configFakerootCmd = &cobra.Command{
 }
 
 func init() {
-	cmdManager.RegisterFlagForCmd(&fakerootConfigAddFlag, configFakerootCmd)
-	cmdManager.RegisterFlagForCmd(&fakerootConfigRemoveFlag, configFakerootCmd)
-	cmdManager.RegisterFlagForCmd(&fakerootConfigEnableFlag, configFakerootCmd)
-	cmdManager.RegisterFlagForCmd(&fakerootConfigDisableFlag, configFakerootCmd)
+	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		cmdManager.RegisterFlagForCmd(&fakerootConfigAddFlag, configFakerootCmd)
+		cmdManager.RegisterFlagForCmd(&fakerootConfigRemoveFlag, configFakerootCmd)
+		cmdManager.RegisterFlagForCmd(&fakerootConfigEnableFlag, configFakerootCmd)
+		cmdManager.RegisterFlagForCmd(&fakerootConfigDisableFlag, configFakerootCmd)
+	})
 }
