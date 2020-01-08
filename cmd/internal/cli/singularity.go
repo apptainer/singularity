@@ -303,7 +303,8 @@ func persistentPreRun(*cobra.Command, []string) {
 	handleRemoteConf(syfs.RemoteConf())
 }
 
-func initCommands(loadPlugins bool) {
+// Init initializes and registers all singularity commands.
+func Init(loadPlugins bool) {
 	cmdManager := cmdline.NewCommandManager(singularityCmd)
 
 	singularityCmd.Flags().SetInterspersed(false)
@@ -386,7 +387,7 @@ func RootCmd() *cobra.Command {
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
-	initCommands(true)
+	Init(true)
 
 	if cmd, err := singularityCmd.ExecuteC(); err != nil {
 		name := cmd.Name()
@@ -409,7 +410,7 @@ func ExecuteSingularity() {
 
 // GenBashCompletionFile
 func GenBashCompletion(w io.Writer) error {
-	initCommands(false)
+	Init(false)
 	return singularityCmd.GenBashCompletion(w)
 }
 

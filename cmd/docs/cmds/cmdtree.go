@@ -229,6 +229,9 @@ func createCmdsFiles() (string, string, error) {
 		return "", "", fmt.Errorf("failed to create command text file: %s", err)
 	}
 	defer textFile.Close()
+
+	// iniatialize singularity CLI by registering all commands without plugins
+	cli.Init(false)
 	cli.RootCmd().InitDefaultHelpCmd()
 	cli.RootCmd().InitDefaultVersionFlag()
 
