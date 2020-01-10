@@ -1057,12 +1057,17 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
 
 		if err := overlay.CheckLower(img.Path); overlay.IsIncompatible(err) {
-			e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
+			layer := singularityConfig.UnderlayLayer
+			if !e.EngineConfig.File.EnableUnderlay {
+				sylog.Debugf("Could not fallback to underlay, disabled by configuration ('enable underlay = no')")
+				layer = singularityConfig.DefaultLayer
+			}
+			e.EngineConfig.SetSessionLayer(layer)
 
 			// show a warning message if --writable-tmpfs or overlay images
 			// are requested otherwise make it verbose to not annoy users
 			if e.EngineConfig.GetWritableTmpfs() || len(e.EngineConfig.GetOverlayImage()) > 0 {
-				sylog.Warningf("Fallback to underlay layer: %s", err)
+				sylog.Warningf("Fallback to %s layer: %s", layer, err)
 
 				if e.EngineConfig.GetWritableTmpfs() {
 					e.EngineConfig.SetWritableTmpfs(false)
@@ -1073,7 +1078,7 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 					sylog.Warningf("overlay image(s) not loaded due to sandbox filesystem incompatibility with overlay")
 				}
 			} else {
-				sylog.Verbosef("Fallback to underlay layer: %s", err)
+				sylog.Verbosef("Fallback to %s layer: %s", layer, err)
 			}
 
 			e.EngineConfig.SetImageList(images)
