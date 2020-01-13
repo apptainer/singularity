@@ -31,7 +31,7 @@ $(starter): $(BUILDDIR)/.clean-starter $(singularity_build_config) $(starter_dep
 starter_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter
 $(starter_INSTALL): $(starter)
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install -m 0755 $(starter) $@
 
 CLEANFILES += $(starter)
@@ -43,7 +43,7 @@ ALL += $(starter)
 sessiondir_INSTALL := $(DESTDIR)$(LOCALSTATEDIR)/singularity/mnt/session
 $(sessiondir_INSTALL):
 	@echo " INSTALL" $@
-	$(V)install -d $@
+	$(V)umask 0022 && mkdir -p $@
 
 INSTALLFILES += $(sessiondir_INSTALL)
 
@@ -54,7 +54,7 @@ run_singularity := $(SOURCEDIR)/scripts/run-singularity
 run_singularity_INSTALL := $(DESTDIR)$(BINDIR)/run-singularity
 $(run_singularity_INSTALL): $(run_singularity)
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install -m 0755 $< $@
 
 INSTALLFILES += $(run_singularity_INSTALL)
@@ -64,7 +64,7 @@ INSTALLFILES += $(run_singularity_INSTALL)
 capability_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/capability.json
 $(capability_config_INSTALL):
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)touch $@
 
 INSTALLFILES += $(capability_config_INSTALL)
@@ -76,7 +76,7 @@ syecl_config := $(SOURCEDIR)/internal/pkg/syecl/syecl.toml.example
 syecl_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/ecl.toml
 $(syecl_config_INSTALL): $(syecl_config)
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install -m 0644 $< $@
 
 INSTALLFILES += $(syecl_config_INSTALL)
@@ -89,7 +89,7 @@ action_scripts := $(SOURCEDIR)/etc/actions/exec $(SOURCEDIR)/etc/actions/run $(S
 action_scripts_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/actions
 $(action_scripts_INSTALL): $(action_scripts)
 	@echo " INSTALL" $@
-	$(V)install -d $@
+	$(V)umask 0022 && mkdir -p $@
 	$(V)install -m 0755 $? $@
 
 INSTALLFILES += $(action_scripts_INSTALL)
@@ -101,7 +101,7 @@ seccomp_profile := $(SOURCEDIR)/etc/seccomp-profiles/default.json
 seccomp_profile_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/seccomp-profiles/default.json
 $(seccomp_profile_INSTALL): $(seccomp_profile)
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install -m 0644 $< $@
 
 INSTALLFILES += $(seccomp_profile_INSTALL)
@@ -113,7 +113,7 @@ nvidia_liblist := $(SOURCEDIR)/etc/nvliblist.conf
 nvidia_liblist_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/nvliblist.conf
 $(nvidia_liblist_INSTALL): $(nvidia_liblist)
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install -m 0644 $< $@
 
 INSTALLFILES += $(nvidia_liblist_INSTALL)
@@ -125,7 +125,7 @@ rocm_liblist := $(SOURCEDIR)/etc/rocmliblist.conf
  rocm_liblist_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/rocmliblist.conf
 $(rocm_liblist_INSTALL): $(rocm_liblist)
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install -m 0644 $< $@
 
 INSTALLFILES += $(rocm_liblist_INSTALL)
@@ -137,7 +137,7 @@ cgroups_config := $(SOURCEDIR)/internal/pkg/cgroups/example/cgroups.toml
 cgroups_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/cgroups/cgroups.toml
 $(cgroups_config_INSTALL): $(cgroups_config)
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install -m 0644 $< $@
 
 INSTALLFILES += $(cgroups_config_INSTALL)
