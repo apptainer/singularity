@@ -88,12 +88,15 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 	img.Type = EXT3
 	img.Partitions = []Section{
 		{
-			Offset: offset,
-			Size:   uint64(fileinfo.Size()) - offset,
-			Type:   EXT3,
-			Name:   RootFs,
+			Offset:       offset,
+			Size:         uint64(fileinfo.Size()) - offset,
+			ID:           1,
+			Type:         EXT3,
+			Name:         RootFs,
+			AllowedUsage: RootFsUsage | OverlayUsage | DataUsage,
 		},
 	}
+
 	return nil
 }
 
@@ -102,4 +105,11 @@ func (f *ext3Format) openMode(writable bool) int {
 		return os.O_RDWR
 	}
 	return os.O_RDONLY
+}
+
+func (f *ext3Format) lock(img *Image) error {
+	if err := lockSection(img, img.Partitions[0]); err != nil {
+		return fmt.Errorf("while locking ext3 partition from %s: %s", img.Path, err)
+	}
+	return nil
 }

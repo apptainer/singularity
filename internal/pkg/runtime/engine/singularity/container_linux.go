@@ -35,6 +35,7 @@ import (
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/network"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/loop"
@@ -82,6 +83,10 @@ type container struct {
 
 func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	var err error
+
+	if len(engine.EngineConfig.GetImageList()) == 0 {
+		return fmt.Errorf("no root filesystem image provided")
+	}
 
 	engine.EngineConfig.File, err = singularityconf.Parse(buildcfg.SINGULARITY_CONF_FILE)
 	if err != nil {
@@ -158,6 +163,9 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 	}
 
 	if err := c.addRootfsMount(system); err != nil {
+		return err
+	}
+	if err := c.addImageBindMount(system); err != nil {
 		return err
 	}
 	if err := c.addKernelMount(system); err != nil {
@@ -656,51 +664,14 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	return nil
 }
 
-func (c *container) loadImage(path string, rootfs bool) (*image.Image, error) {
-	list := c.engine.EngineConfig.GetImageList()
-
-	if len(list) == 0 {
-		return nil, fmt.Errorf("no root filesystem found in %s", path)
-	}
-
-	if rootfs {
-		img := list[0]
-		if img.File == nil {
-			return &img, nil
-		}
-		img.File = os.NewFile(img.Fd, img.Path)
-		if img.File == nil {
-			return nil, fmt.Errorf("can't find image %s", path)
-		}
-		return &img, nil
-	}
-	for _, img := range list[1:] {
-		p, err := image.ResolvePath(path)
-		if err != nil {
-			return nil, err
-		}
-		if p == img.Path {
-			if img.File == nil {
-				return &img, nil
-			}
-			img.File = os.NewFile(img.Fd, img.Path)
-			if img.File == nil {
-				return nil, fmt.Errorf("can't find image %s", path)
-			}
-			return &img, nil
-		}
-	}
-
-	return nil, fmt.Errorf("no image found with path %s", path)
-}
-
 func (c *container) addRootfsMount(system *mount.System) error {
 	flags := uintptr(c.suidFlag | syscall.MS_NODEV)
 	rootfs := c.engine.EngineConfig.GetImage()
 
-	imageObject, err := c.loadImage(rootfs, true)
+	imageObject := c.engine.EngineConfig.GetImageList()[0]
+	part, err := imageObject.GetRootFsPartition()
 	if err != nil {
-		return err
+		return fmt.Errorf("while getting root filesystem: %s", err)
 	}
 
 	if !imageObject.Writable {
@@ -711,13 +682,11 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	}
 
 	mountType := ""
-	offset := imageObject.Partitions[0].Offset
-	size := imageObject.Partitions[0].Size
 	var key []byte
 
-	sylog.Debugf("Image type is %v", imageObject.Partitions[0].Type)
+	sylog.Debugf("Image type is %v", part.Type)
 
-	switch imageObject.Partitions[0].Type {
+	switch part.Type {
 	case image.SQUASHFS:
 		mountType = "squashfs"
 	case image.EXT3:
@@ -750,8 +719,8 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		c.session.RootFsPath(),
 		mountType,
 		flags,
-		offset,
-		size,
+		part.Offset,
+		part.Size,
 		key,
 	); err != nil {
 		return err
@@ -834,98 +803,97 @@ func (c *container) addOverlayMount(system *mount.System) error {
 		hasUpper = true
 	}
 
-	for _, img := range c.engine.EngineConfig.GetOverlayImage() {
-		splitted := strings.SplitN(img, ":", 2)
-
-		imageObject, err := c.loadImage(splitted[0], false)
+	for _, img := range c.engine.EngineConfig.GetImageList() {
+		overlays, err := img.GetOverlayPartitions()
 		if err != nil {
-			return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
+			return fmt.Errorf("while opening overlay image %s: %s", img.Path, err)
 		}
+		for _, overlay := range overlays {
+			sylog.Debugf("Using overlay partition in image %s", img.Path)
 
-		sessionDest := fmt.Sprintf("/overlay-images/%d", nb)
-		if err := c.session.AddDir(sessionDest); err != nil {
-			return fmt.Errorf("failed to create session directory for overlay: %s", err)
-		}
-		dst, _ := c.session.GetPath(sessionDest)
-		nb++
+			sessionDest := fmt.Sprintf("/overlay-images/%d", nb)
+			if err := c.session.AddDir(sessionDest); err != nil {
+				return fmt.Errorf("failed to create session directory for overlay: %s", err)
+			}
+			dst, _ := c.session.GetPath(sessionDest)
+			nb++
 
-		src := imageObject.Source
-		offset := imageObject.Partitions[0].Offset
-		size := imageObject.Partitions[0].Size
+			src := img.Source
+			offset := overlay.Offset
+			size := overlay.Size
 
-		switch imageObject.Type {
-		case image.EXT3:
-			flags := uintptr(c.suidFlag | syscall.MS_NODEV)
+			switch overlay.Type {
+			case image.EXT3:
+				flags := uintptr(c.suidFlag | syscall.MS_NODEV)
 
-			if !imageObject.Writable {
-				flags |= syscall.MS_RDONLY
-				ov.AddLowerDir(filepath.Join(dst, "upper"))
+				if !img.Writable {
+					flags |= syscall.MS_RDONLY
+					ov.AddLowerDir(filepath.Join(dst, "upper"))
+				}
+
+				err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, offset, size, nil)
+				if err != nil {
+					return fmt.Errorf("while adding ext3 image: %s", err)
+				}
+			case image.SQUASHFS:
+				flags := uintptr(c.suidFlag | syscall.MS_NODEV | syscall.MS_RDONLY)
+				err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, offset, size, nil)
+				if err != nil {
+					return err
+				}
+				ov.AddLowerDir(dst)
+			case image.SANDBOX:
+				if os.Geteuid() != 0 {
+					return fmt.Errorf("only root user can use sandbox as overlay")
+				}
+
+				flags := uintptr(c.suidFlag | syscall.MS_NODEV)
+				err = system.Points.AddBind(mount.PreLayerTag, img.Path, dst, flags)
+				if err != nil {
+					return fmt.Errorf("while adding sandbox image: %s", err)
+				}
+				system.Points.AddRemount(mount.PreLayerTag, dst, flags)
+
+				if !img.Writable {
+					// check if the sandbox directory is located on a compatible
+					// filesystem usable overlay lower directory
+					if err := fsoverlay.CheckLower(img.Path); err != nil {
+						return err
+					}
+					if fs.IsDir(filepath.Join(img.Path, "upper")) {
+						ov.AddLowerDir(filepath.Join(dst, "upper"))
+					} else {
+						ov.AddLowerDir(dst)
+					}
+				} else {
+					// check if the sandbox directory is located on a compatible
+					// filesystem usable with overlay upper directory
+					if err := fsoverlay.CheckUpper(img.Path); err != nil {
+						return err
+					}
+				}
+			default:
+				return fmt.Errorf("%s: overlay image with unknown format", img.Path)
 			}
 
-			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, offset, size, nil)
-			if err != nil {
-				return fmt.Errorf("while adding ext3 image: %s", err)
-			}
-		case image.SQUASHFS:
-			flags := uintptr(c.suidFlag | syscall.MS_NODEV | syscall.MS_RDONLY)
-			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, offset, size, nil)
+			err = system.Points.AddPropagation(mount.DevTag, dst, syscall.MS_UNBINDABLE)
 			if err != nil {
 				return err
 			}
-			ov.AddLowerDir(dst)
-		case image.SANDBOX:
-			if os.Geteuid() != 0 {
-				return fmt.Errorf("only root user can use sandbox as overlay")
-			}
 
-			flags := uintptr(c.suidFlag | syscall.MS_NODEV)
-			err = system.Points.AddBind(mount.PreLayerTag, imageObject.Path, dst, flags)
-			if err != nil {
-				return fmt.Errorf("while adding sandbox image: %s", err)
-			}
-			system.Points.AddRemount(mount.PreLayerTag, dst, flags)
+			if img.Writable && !hasUpper {
+				upper := filepath.Join(dst, "upper")
+				work := filepath.Join(dst, "work")
 
-			if !imageObject.Writable {
-				// check if the sandbox directory is located on a compatible
-				// filesystem usable overlay lower directory
-				if err := fsoverlay.CheckLower(imageObject.Path); err != nil {
-					return err
+				if err := ov.SetUpperDir(upper); err != nil {
+					return fmt.Errorf("failed to add overlay upper: %s", err)
 				}
-				if fs.IsDir(filepath.Join(imageObject.Path, "upper")) {
-					ov.AddLowerDir(filepath.Join(dst, "upper"))
-				} else {
-					ov.AddLowerDir(dst)
+				if err := ov.SetWorkDir(work); err != nil {
+					return fmt.Errorf("failed to add overlay upper: %s", err)
 				}
-			} else {
-				// check if the sandbox directory is located on a compatible
-				// filesystem usable with overlay upper directory
-				if err := fsoverlay.CheckUpper(imageObject.Path); err != nil {
-					return err
-				}
+
+				hasUpper = true
 			}
-		case image.SIF:
-			return fmt.Errorf("%s: SIF image not supported as overlay image", imageObject.Path)
-		default:
-			return fmt.Errorf("%s: overlay image with unknown format", imageObject.Path)
-		}
-
-		err = system.Points.AddPropagation(mount.DevTag, dst, syscall.MS_UNBINDABLE)
-		if err != nil {
-			return err
-		}
-
-		if imageObject.Writable && !hasUpper {
-			upper := filepath.Join(dst, "upper")
-			work := filepath.Join(dst, "work")
-
-			if err := ov.SetUpperDir(upper); err != nil {
-				return fmt.Errorf("failed to add overlay upper: %s", err)
-			}
-			if err := ov.SetWorkDir(work); err != nil {
-				return fmt.Errorf("failed to add overlay upper: %s", err)
-			}
-
-			hasUpper = true
 		}
 	}
 
@@ -936,6 +904,132 @@ func (c *container) addOverlayMount(system *mount.System) error {
 	}
 
 	return system.Points.AddPropagation(mount.DevTag, c.session.FinalPath(), syscall.MS_UNBINDABLE)
+}
+
+func (c *container) addImageBindMount(system *mount.System) error {
+	binds := make([]singularityConfig.BindPath, 0)
+	nb := 0
+	imageList := c.engine.EngineConfig.GetImageList()
+
+	for _, bind := range c.engine.EngineConfig.GetBindPath() {
+		if bind.ImageSrc() == "" && bind.ID() == "" {
+			binds = append(binds, bind)
+			continue
+		}
+
+		imagePath := bind.Source
+		destination := bind.Destination
+		id := 0
+		imageSource := "/"
+
+		if src := bind.ImageSrc(); src != "" {
+			imageSource = src
+		}
+
+		if idStr := bind.ID(); idStr != "" {
+			var err error
+
+			id, err = strconv.Atoi(idStr)
+			if err != nil {
+				return fmt.Errorf("while parsing id bind option: %s", err)
+			} else if id <= 0 {
+				return fmt.Errorf("id number must be greater than 0")
+			}
+		}
+
+		for _, img := range imageList {
+			// img.Source is formatted like /proc/self/fd/X and ensure
+			// we get the right path to the image with the associated
+			// file descriptor
+			if imagePath != img.Source {
+				continue
+			}
+
+			data := (*image.Section)(nil)
+
+			// id is only meaningful for SIF images
+			if img.Type == image.SIF && id > 0 {
+				partitions, err := img.GetAllPartitions()
+				if err != nil {
+					return fmt.Errorf("while getting partitions for %s: %s", img.Path, err)
+				}
+				for _, part := range partitions {
+					if part.ID == uint32(id) {
+						data = &part
+						break
+					}
+				}
+			} else {
+				// take the first data partition found
+				partitions, err := img.GetDataPartitions()
+				if err != nil {
+					return fmt.Errorf("while getting data partition for %s: %s", img.Path, err)
+				}
+				for _, part := range partitions {
+					data = &part
+					break
+				}
+			}
+
+			if data == nil {
+				return fmt.Errorf("no data partition found in %s", img.Path)
+			}
+
+			sessionDest := fmt.Sprintf("/data-images/%d", nb)
+			if err := c.session.AddDir(sessionDest); err != nil {
+				return fmt.Errorf("failed to create session directory for overlay: %s", err)
+			}
+			imgDest, _ := c.session.GetPath(sessionDest)
+			nb++
+
+			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
+			fstype := ""
+
+			switch data.Type {
+			case image.EXT3:
+				if !img.Writable {
+					flags |= syscall.MS_RDONLY
+				}
+				fstype = "ext3"
+			case image.SQUASHFS:
+				flags |= syscall.MS_RDONLY
+				fstype = "squashfs"
+			default:
+				return fmt.Errorf("could not use %s for image binding: not supported image format", img.Path)
+			}
+
+			err := system.Points.AddImage(
+				mount.PreLayerTag,
+				img.Source,
+				imgDest,
+				fstype,
+				flags,
+				data.Offset,
+				data.Size,
+				nil,
+			)
+			if err != nil {
+				return fmt.Errorf("while adding data %s partition from %s: %s", fstype, img.Path, err)
+			}
+
+			src := filepath.Join(imgDest, imageSource)
+
+			system.RunAfterTag(mount.PreLayerTag, func(*mount.System) error {
+				if err := unix.Access(src, unix.R_OK); os.IsNotExist(err) {
+					return fmt.Errorf("%s doesn't exist in image %s", imageSource, img.Path)
+				}
+				return nil
+			})
+
+			if err := system.Points.AddBind(mount.UserbindsTag, src, destination, syscall.MS_BIND); err != nil {
+				return fmt.Errorf("while adding data bind %s -> %s: %s", src, destination, err)
+			}
+		}
+	}
+
+	c.engine.EngineConfig.SetBindPath(binds)
+
+	return nil
 }
 
 func (c *container) addKernelMount(system *mount.System) error {
@@ -1460,23 +1554,16 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 
 	for _, b := range c.engine.EngineConfig.GetBindPath() {
 		flags := defaultFlags
-		splitted := strings.Split(b, ":")
+		source := b.Source
+		dst := b.Destination
 
-		src, err := filepath.Abs(splitted[0])
+		src, err := filepath.Abs(source)
 		if err != nil {
-			sylog.Warningf("Can't determine absolute path of %s bind point", splitted[0])
+			sylog.Warningf("Can't determine absolute path of %s bind point", source)
 			continue
 		}
-		dst := src
-		if len(splitted) > 1 {
-			dst = splitted[1]
-		}
-		if len(splitted) > 2 {
-			if splitted[2] == "ro" {
-				flags |= syscall.MS_RDONLY
-			} else if splitted[2] != "rw" {
-				sylog.Warningf("Not mounting requested %s bind point, invalid mount option %s", src, splitted[2])
-			}
+		if b.Readonly() {
+			flags |= syscall.MS_RDONLY
 		}
 
 		// special case for /dev mount to override default mount behavior

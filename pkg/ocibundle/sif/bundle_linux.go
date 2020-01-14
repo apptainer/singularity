@@ -102,14 +102,17 @@ func (s *sifBundle) Create(ociConfig *specs.Spec) error {
 	if img.Type != image.SIF {
 		return fmt.Errorf("%s is not a SIF image", s.image)
 	}
-	if !img.HasRootFs() {
-		return fmt.Errorf("no root filesystem found in SIF %s", s.image)
+
+	part, err := img.GetRootFsPartition()
+	if err != nil {
+		return fmt.Errorf("while getting root filesystem in SIF %s: %s", s.image, err)
 	}
-	if img.Partitions[0].Type != image.SQUASHFS {
-		return fmt.Errorf("unsupported image fs type: %v", img.Partitions[0].Type)
+
+	if part.Type != image.SQUASHFS {
+		return fmt.Errorf("unsupported image fs type: %v", part.Type)
 	}
-	offset := img.Partitions[0].Offset
-	size := img.Partitions[0].Size
+	offset := part.Offset
+	size := part.Size
 
 	// generate OCI bundle directory and config
 	g, err := tools.GenerateBundleConfig(s.bundlePath, ociConfig)
