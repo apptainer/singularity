@@ -235,7 +235,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
-	var libs, bins []string
+	var libs, bins, ipcs []string
 	var gpuConfFile, gpuPlatform string
 	userPath := os.Getenv("USER_PATH")
 
@@ -250,7 +250,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 
 		// bind persistenced socket if found
-		BindPaths = append(BindPaths, gpu.NvidiaIpcsPath(userPath)...)
+		ipcs = gpu.NvidiaIpcsPath(userPath)
 		libs, bins, err = gpu.NvidiaPaths(gpuConfFile, userPath)
 
 	} else if !NoRocm && (Rocm || engineConfig.File.AlwaysUseRocm) { // Mount rocm GPU
@@ -270,18 +270,22 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err != nil {
 			sylog.Warningf("Unable to capture %s bind points: %v", gpuPlatform, err)
 		} else {
-			if len(bins) == 0 {
-				sylog.Infof("Could not find any %s binaries on this host!", gpuPlatform)
+			files := make([]string, len(bins)+len(ipcs))
+
+			if len(files) == 0 {
+				sylog.Infof("Could not find any %s files on this host!", gpuPlatform)
 			} else {
 				if IsWritable {
-					sylog.Warningf("%s binaries may not be bound with --writable", gpuPlatform)
+					sylog.Warningf("%s files may not be bound with --writable", gpuPlatform)
 				}
-				binaries := make([]string, len(bins))
 				for i, binary := range bins {
 					usrBinBinary := filepath.Join("/usr/bin", filepath.Base(binary))
-					binaries[i] = strings.Join([]string{binary, usrBinBinary}, ":")
+					files[i] = strings.Join([]string{binary, usrBinBinary}, ":")
 				}
-				engineConfig.SetFilesPath(binaries)
+				for i, ipc := range ipcs {
+					files[i+len(bins)] = ipc
+				}
+				engineConfig.SetFilesPath(files)
 			}
 			if len(libs) == 0 {
 				sylog.Warningf("Could not find any %s libraries on this host!", gpuPlatform)
