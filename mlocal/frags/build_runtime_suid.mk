@@ -12,7 +12,7 @@ $(starter_suid): $(starter)
 
 $(starter_suid_INSTALL): $(starter_suid)
 	@echo " INSTALL SUID" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install $(starter_suid) $(starter_suid_INSTALL)
 	@if [ `id -u` -ne 0 ] ; then \
 		echo "$(starter_suid_INSTALL) -- installed with incorrect permissions"; \
