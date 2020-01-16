@@ -177,11 +177,15 @@ func (c *regressionsTests) issue4583(t *testing.T) {
 }
 
 func (c *regressionsTests) issue4943(t *testing.T) {
+	const (
+		image = "docker://gitlab-registry.cern.ch/linuxsupport/cc7-base:20191107"
+	)
+
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("exec"),
-		e2e.WithArgs("docker://gitlab-registry.cern.ch/linuxsupport/cc7-base:20191107", "echo", "test"),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "/dev/null", image),
 		e2e.ExpectExit(0),
 	)
 
