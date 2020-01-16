@@ -342,7 +342,7 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 
 	// checks for no flags/envvars being set
 	if !(PEMFlag.Changed || pemPathEnvOK || passphraseFlag.Changed || passphraseEnvOK) {
-		sylog.Fatalf("Unable to use container encryption. Must supply encryption material through enironment variables or flags.")
+		sylog.Fatalf("Unable to use container encryption. Must supply encryption material through environment variables or flags.")
 	}
 
 	// order of precidence:
