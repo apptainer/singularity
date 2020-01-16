@@ -181,7 +181,8 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 	if err := c.addHostnameMount(system); err != nil {
 		return err
 	}
-	if err := c.addFuseMount(system); err != nil {
+	usernsFd, err := c.addFuseMount(system)
+	if err != nil {
 		return err
 	}
 	if err := c.addCwdMount(system); err != nil {
@@ -232,6 +233,10 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 	err = syscall.Chdir("/")
 	if err != nil {
 		return fmt.Errorf("change directory failed: %s", err)
+	}
+
+	if err := engine.runFuseDrivers(false, usernsFd); err != nil {
+		return fmt.Errorf("while running FUSE drivers: %s", err)
 	}
 
 	return nil
@@ -2069,17 +2074,83 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 
 // addFuseMount transforms the plugin configuration into a series of
 // mount requests for FUSE filesystems
-func (c *container) addFuseMount(system *mount.System) error {
-	for i, name := range c.engine.EngineConfig.GetPluginFuseMounts() {
-		var cfg struct {
-			Fuse singularity.FuseInfo
+func (c *container) addFuseMount(system *mount.System) (int, error) {
+	fakeroot := c.engine.EngineConfig.GetFakeroot()
+	fakerootHybrid := fakeroot && os.Geteuid() != 0
+
+	uid := os.Getuid()
+	gid := os.Getgid()
+
+	// as fakeroot can change UID/GID, we allow others users
+	// to access FUSE mount point
+	allowOther := ""
+	if fakeroot {
+		allowOther = ",allow_other"
+	}
+	if fakerootHybrid {
+		uid = 0
+		gid = 0
+	}
+
+	fds := make([]int, 0)
+	usernsFd := -1
+
+	fuseMounts := c.engine.EngineConfig.GetFuseMount()
+
+	for _, fuseMount := range fuseMounts {
+		if fuseMount.FromContainer || !c.userNS {
+			continue
+		}
+		fds = append(fds, fuseMount.Fd)
+	}
+
+	if len(fds) > 0 {
+		socketPair := c.engine.EngineConfig.GetUnixSocketPair()
+
+		if err := c.rpcOps.SendFd(socketPair[1], fds); err != nil {
+			return usernsFd, fmt.Errorf("while requesting file descriptors send: %s", err)
 		}
 
-		if err := c.engine.EngineConfig.GetPluginConfig(name, &cfg); err != nil {
-			sylog.Debugf("Failed getting plugin config: %+v\n", err)
-			return err
+		buf := make([]byte, unix.CmsgSpace(len(fds)*4))
+		_, _, _, _, err := unix.Recvmsg(socketPair[0], nil, buf, 0)
+		if err != nil {
+			return usernsFd, fmt.Errorf("while receiving file descriptors: %s", err)
 		}
 
+		msgs, err := unix.ParseSocketControlMessage(buf)
+		if err != nil {
+			return usernsFd, fmt.Errorf("while parsing socket control message: %s", err)
+		}
+
+		newfds := make([]int, 0, 1)
+
+		for _, msg := range msgs {
+			pfds, err := unix.ParseUnixRights(&msg)
+			if err != nil {
+				return usernsFd, fmt.Errorf("while getting file descriptor: %s", err)
+			}
+			newfds = append(newfds, pfds...)
+		}
+
+		// the additional file descriptor is for /proc/self/ns/user which is
+		// always passed by RPC server, this file descriptor is returned by
+		// this function
+		if len(newfds) != len(fds)+1 {
+			return usernsFd, fmt.Errorf("got %d file descriptors instead of %d", len(newfds), len(fds)+1)
+		}
+
+		usernsFd = newfds[len(newfds)-1]
+		newfds = newfds[0 : len(newfds)-1]
+
+		for i, fd := range newfds {
+			if err := unix.Dup3(fd, fds[i], unix.O_CLOEXEC); err != nil {
+				return usernsFd, fmt.Errorf("could not duplicate file descriptor: %s", err)
+			}
+			unix.Close(fd)
+		}
+	}
+
+	for i := range fuseMounts {
 		// we cannot check this because the mount point might
 		// not exist outside the container with the name that
 		// it's going to have _inside_ the container, so we
@@ -2094,39 +2165,59 @@ func (c *container) addFuseMount(system *mount.System) error {
 		// opening /dev/fuse before is valid in the RPC server,
 		// where the actual mount operation is going to be
 		// executed.
-		opts := fmt.Sprintf("fd=%d,rootmode=%o,user_id=%d,group_id=%d",
-			cfg.Fuse.DevFuseFd,
+		opts := fmt.Sprintf("fd=%d,rootmode=%o,user_id=%d,group_id=%d%s",
+			fuseMounts[i].Fd,
 			rootmode,
-			os.Getuid(),
-			os.Getgid())
+			uid,
+			gid,
+			allowOther,
+		)
 
 		// mount file system in three steps: first create a
 		// dedicated session directory for each FUSE filesystem
 		// and use that as the mount point.
 		fuseDir := fmt.Sprintf("/fuse/%d", i)
 		if err := c.session.AddDir(fuseDir); err != nil {
-			return err
+			return usernsFd, err
 		}
 		fuseDir, _ = c.session.GetPath(fuseDir)
-		sylog.Debugf("Add FUSE mount %s for %s with options %s", fuseDir, name, opts)
-		if err := system.Points.AddFS(
+
+		sylog.Debugf("Add FUSE mount for %s with options %s", fuseMounts[i].MountPoint, opts)
+		err := system.Points.AddFS(
 			mount.BindsTag,
 			fuseDir,
 			"fuse",
 			syscall.MS_NOSUID|syscall.MS_NODEV,
-			opts); err != nil {
+			opts,
+		)
+		if err != nil {
 			sylog.Debugf("Calling AddFS: %+v\n", err)
-			return err
+			return usernsFd, err
+		}
+
+		// with fakeroot and hybrid workflow we are not running
+		// in the container user namespace so we need to enter
+		// into it and executing FUSE program from there, otherwise
+		// the program could not communicate correctly through
+		// /dev/fuse file descriptor
+		if !fuseMounts[i].FromContainer && fakerootHybrid {
+			// all FUSE programs when executed have /dev/fuse file
+			// descriptor as /dev/fd/3 and /proc/<container_pid>/ns/user
+			// if provided as /dev/fd/4.
+			// /dev/fd/4 is used by nsenter to join container user namespace
+			// and execute FUSE program inside the container user namespace
+			nsenter := []string{"nsenter", "--user=/dev/fd/4", "-F", "--preserve-credentials"}
+			fuseMounts[i].Program = append(nsenter, fuseMounts[i].Program...)
 		}
 
 		// second, add a bind-mount the session directory into
 		// the destination mount point inside the container.
-		if err := system.Points.AddBind(mount.OtherTag, fuseDir, cfg.Fuse.MountPoint, 0); err != nil {
-			return err
+		if err := system.Points.AddBind(mount.OtherTag, fuseDir, fuseMounts[i].MountPoint, 0); err != nil {
+			return usernsFd, err
 		}
 	}
 
-	return nil
+	return usernsFd, nil
 }
 
 func (c *container) getBindFlags(source string, defaultFlags uintptr) (uintptr, error) {

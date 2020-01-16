@@ -12,6 +12,11 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
+const (
+	// DefaultPath defines default value for PATH environment variable.
+	DefaultPath = "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+)
+
 var alwaysPassKeys = map[string]struct{}{
 	"term":        {},
 	"http_proxy":  {},
@@ -56,7 +61,7 @@ func SetContainerEnv(g *generate.Generator, hostEnvs []string, cleanEnv bool, ho
 
 	sylog.Verbosef("HOME=%s", homeDest)
 	g.AddProcessEnv("HOME", homeDest)
-	g.AddProcessEnv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin")
+	g.AddProcessEnv("PATH", DefaultPath)
 
 	if cleanEnv {
 		g.AddProcessEnv("LANG", "C")

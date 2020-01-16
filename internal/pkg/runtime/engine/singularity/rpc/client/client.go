@@ -137,6 +137,17 @@ func (t *RPC) Stat(path string) (*syscall.Stat_t, error) {
 	return &reply.St, err
 }
 
+// SendFd calls the SendFd RPC using the supplied arguments.
+func (t *RPC) SendFd(socket int, fds []int) error {
+	arguments := &args.SendFdArgs{
+		Socket: socket,
+		Fds:    fds,
+	}
+	var reply int
+	err := t.Client.Call(t.Name+".SendFd", arguments, &reply)
+	return err
+}
+
 func init() {
 	var sysErrnoType syscall.Errno
 	// register syscall.Errno as a type we need to get back

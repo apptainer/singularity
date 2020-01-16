@@ -1,0 +1,41 @@
+bootstrap: docker
+from: alpine:3.11
+
+%post
+    apk update
+    apk add sshfs dropbear openssh-sftp-server
+    loader=`strings /bin/sh | head -n1`
+
+    mkdir /etc/dropbear
+    ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa
+    mkdir /root/.ssh
+    chmod 0600 /root/.ssh
+    cp /etc/ssh/ssh_host_rsa_key.pub /root/.ssh/authorized_keys
+
+    mkdir /wrapped
+
+    cat > /sshfs-wrapper <<EOF
+#!/bin/sh
+# get mount point directory
+dir="\${0%/*}"
+
+# export it for other command wrapper
+export ROOTDIR_WRAPPER="\$dir"
+
+export LD_LIBRARY_PATH="\$dir/usr/lib:\$dir/lib"
+export PATH="\$ROOTDIR_WRAPPER/wrapped:\$PATH"
+
+exec \$dir$loader \$dir/usr/bin/sshfs "\$@"
+EOF
+
+    # all commands required by FUSE server must be wrapped
+    # to start them with the loader of this image
+    cat > /wrapped/ssh <<EOF
+#!/bin/sh
+exec \$ROOTDIR_WRAPPER$loader \$ROOTDIR_WRAPPER/usr/bin/ssh "\$@"
+EOF
+
+    chmod +x /sshfs-wrapper /wrapped/*
+
+%startscript
+    exec dropbear -R -E -s -p 127.0.0.1:2022

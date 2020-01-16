@@ -76,3 +76,9 @@ type StatReply struct {
 type StatArgs struct {
 	Path string
 }
+
+// SendFdArgs defines the arguments to send file descriptor.
+type SendFdArgs struct {
+	Socket int
+	Fds    []int
+}

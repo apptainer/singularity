@@ -26,11 +26,12 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/machine"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/rlimit"
 	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/sys/unix"
 )
 
 const defaultShell = "/bin/sh"
@@ -47,7 +48,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals)
 
-	if err := preStartProcess(e); err != nil {
+	if err := e.runFuseDrivers(true, -1); err != nil {
 		return err
 	}
 
@@ -229,6 +230,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 					}
 
 					if wpid == cmd.Process.Pid {
+						e.stopFuseDrivers()
 						statusChan <- status
 					}
 				}
@@ -465,101 +467,123 @@ func (e *EngineOperations) checkExec() error {
 	return fmt.Errorf("no %s found inside container", args[0])
 }
 
-func (e *EngineOperations) runFuseDriver(name string, program []string, fd int) error {
-	sylog.Debugf("Running FUSE driver for %s as %v, fd %d", name, program, fd)
-
-	fh := os.NewFile(uintptr(fd), "fd-"+name)
-	if fh == nil {
-		// this should never happen
-		return errors.New("cannot map /dev/fuse file descriptor to a file handle")
-	}
-	// the master process does not need this file descriptor after
-	// running the program, make sure it gets closed; ignore any
-	// errors that happen here
-	defer fh.Close()
-
-	// The assumption is that the plugin prepared "Program" in such
-	// a way that it's missing the last parameter and that must
-	// correspond to /dev/fd/N. Instead of making assumptions as to
-	// how many and which file descriptors are open at this point,
-	// simply assume that it's possible to map the existing file
-	// descriptor to the name number in the new process.
-	//
-	// "newFd" should be the same as "fd", but do not assume that
-	// either.
-	newFd := fh.Fd()
-	fdDevice := fmt.Sprintf("/dev/fd/%d", newFd)
-	args := append(program, fdDevice)
-
+// runFuseDrivers execute FUSE drivers and returns the list of FUSE process ID.
+func (e *EngineOperations) runFuseDrivers(fromContainer bool, usernsFd int) error {
 	// set PATH for the command
 	oldpath := os.Getenv("PATH")
 	defer func() {
 		os.Setenv("PATH", oldpath)
 	}()
-	e.setPathEnv()
 
-	cmd := exec.Command(args[0], args[1:]...)
-
-	// Add the /dev/fuse file descriptor to the list of file
-	// descriptors to be passed to the new process.
-	//
-	// ExtraFiles is an array of *os.File, with the position of each
-	// entry determining the resulting file descriptor number. Since
-	// we are passing /dev/fd/N above, place our file handle at
-	// position N-3, so that it gets mapped to file descriptor N in
-	// the new process (the Go library will set things up so that
-	// stdin, stdout and stderr are 0, 1, and 2, so the first
-	// element of ExtraFiles gets 3).
-	cmd.ExtraFiles = make([]*os.File, newFd-3+1)
-	cmd.ExtraFiles[newFd-3] = fh
-	// The FUSE driver will get SIGQUIT if the parent dies.
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGQUIT,
+	if fromContainer {
+		e.setPathEnv()
+	} else {
+		os.Setenv("PATH", env.DefaultPath)
 	}
 
-	if err := cmd.Run(); err != nil {
-		sylog.Warningf("cannot run program %v: %v\n", args, err)
-		return err
+	for _, fd := range e.EngineConfig.GetUnixSocketPair() {
+		if fd >= 0 {
+			unix.Close(fd)
+		}
+	}
+
+	var usernsFh *os.File
+
+	if usernsFd >= 0 {
+		usernsFh = os.NewFile(uintptr(usernsFd), "/proc/self/ns/user")
+		if usernsFh == nil {
+			// this should never happen
+			return errors.New("cannot map /proc/self/ns/user file descriptor to a file handle")
+		}
+		defer usernsFh.Close()
+	}
+
+	fuseMounts := e.EngineConfig.GetFuseMount()
+	for i := range fuseMounts {
+		if fromContainer != fuseMounts[i].FromContainer {
+			syscall.Close(fuseMounts[i].Fd)
+			continue
+		}
+
+		mnt := fuseMounts[i].MountPoint
+		program := fuseMounts[i].Program
+		fd := fuseMounts[i].Fd
+
+		sylog.Debugf("Running FUSE driver for %s as %v, fd %d", mnt, program, fd)
+
+		fh := os.NewFile(uintptr(fd), "/dev/fuse")
+		if fh == nil {
+			// this should never happen
+			return errors.New("cannot map /dev/fuse file descriptor to a file handle")
+		}
+		// the master process does not need this file descriptor after
+		// running the program, make sure it gets closed; ignore any
+		// errors that happen here
+		defer fh.Close()
+
+		// as we pass file handle as first element in ExtraFiles
+		// the fuse file descriptor becomes 3 for the FUSE program
+		args := append(program, "/dev/fd/3")
+
+		// add -f to run FUSE in foreground mode
+		if !fuseMounts[i].Daemon {
+			args = append(args, "-f")
+		}
+
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
+
+		// Add the /dev/fuse file descriptor to the list of file
+		// descriptors to be passed to the new process.
+		// The Go library will set things up so that stdin, stdout
+		// and stderr are 0, 1, and 2, so the first element of
+		// ExtraFiles gets 3
+		cmd.ExtraFiles = make([]*os.File, 1)
+		cmd.ExtraFiles[0] = fh
+
+		// Add /proc/<container_pid>/ns/user file descriptor for nsenter
+		// so it could join the container user namespace by using /dev/fd/4
+		if usernsFh != nil {
+			cmd.ExtraFiles = append(cmd.ExtraFiles, usernsFh)
+		}
+
+		if fuseMounts[i].Daemon {
+			if err := cmd.Run(); err != nil {
+				cmdline := strings.Join(args, " ")
+				return fmt.Errorf("could not start program %s: %s", cmdline, err)
+			}
+		} else {
+			if err := cmd.Start(); err != nil {
+				cmdline := strings.Join(args, " ")
+				return fmt.Errorf("could not start program %s: %s", cmdline, err)
+			}
+			fuseMounts[i].Cmd = cmd
+		}
 	}
 
 	return nil
 }
 
-// setupFuseDrivers runs the operations required by FUSE
-// drivers before the user process starts.
-func setupFuseDrivers(e *EngineOperations) error {
-	// close file descriptors open for FUSE mount
-	for _, name := range e.EngineConfig.GetPluginFuseMounts() {
-		var cfg struct {
-			Fuse singularity.FuseInfo
+// stopFuseDrivers notifies FUSE drivers running in foreground mode
+// with a SIGTERM signal.
+func (e *EngineOperations) stopFuseDrivers() {
+	for _, fuseMount := range e.EngineConfig.GetFuseMount() {
+		if fuseMount.Cmd != nil {
+			cmd := fuseMount.Cmd
+			if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+				sylog.Warningf("Can not send SIGTERM to FUSE process: %s", err)
+				continue
+			}
+			mnt := fuseMount.MountPoint
+			_, err := cmd.Process.Wait()
+			if err != nil {
+				sylog.Warningf("FUSE process for mount point %s terminated with error: %s", mnt, err)
+			} else {
+				sylog.Debugf("FUSE process for mount point %s terminated", mnt)
+			}
 		}
-		if err := e.EngineConfig.GetPluginConfig(name, &cfg); err != nil {
-			return err
-		}
-
-		if err := e.runFuseDriver(name, cfg.Fuse.Program, cfg.Fuse.DevFuseFd); err != nil {
-			return err
-		}
-
-		syscall.Close(cfg.Fuse.DevFuseFd)
 	}
-
-	return nil
-}
-
-// preStartProcess does the final set up before starting the user's process.
-func preStartProcess(e *EngineOperations) error {
-	// TODO(mem): most of the StartProcess method should be here, as
-	// it's doing preparation for actually starting the user
-	// process.
-	//
-	// For now it's limited to doing the final set up for FUSE
-	// drivers
-	if err := setupFuseDrivers(e); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (e *EngineOperations) getIP() (string, error) {
