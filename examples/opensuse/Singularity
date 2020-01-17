@@ -9,4 +9,3 @@ Include: zypper
 
 %post
     echo "Hello from inside the container"
-    zypper -n install bc
