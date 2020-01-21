@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
@@ -416,18 +417,34 @@ func makeFiles(rootPath string) error {
 }
 
 func makeBaseEnv(rootPath string) (err error) {
+
+	var info os.FileInfo
+
+	// Ensure we can write into the root of rootPath
+	if info, err = os.Stat(rootPath); err != nil {
+		err = fmt.Errorf("build: failed to stat rootPath: %v", err)
+		return err
+	}
+	if info.Mode()&0200 == 0 {
+		sylog.Infof("Adding owner write permission to build path: %s\n", rootPath)
+		if err = os.Chmod(rootPath, info.Mode()|0200); err != nil {
+			err = fmt.Errorf("build: failed to make rootPath writable: %v", err)
+			return err
+		}
+	}
+
 	if err = makeDirs(rootPath); err != nil {
 		err = fmt.Errorf("build: failed to make environment dirs: %v", err)
-		return
+		return err
 	}
 	if err = makeSymlinks(rootPath); err != nil {
 		err = fmt.Errorf("build: failed to make environment symlinks: %v", err)
-		return
+		return err
 	}
 	if err = makeFiles(rootPath); err != nil {
 		err = fmt.Errorf("build: failed to make environment files: %v", err)
-		return
+		return err
 	}
 
-	return
+	return err
 }

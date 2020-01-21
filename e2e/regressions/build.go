@@ -176,6 +176,21 @@ func (c *regressionsTests) issue4583(t *testing.T) {
 	)
 }
 
+func (c *regressionsTests) issue4943(t *testing.T) {
+	const (
+		image = "docker://gitlab-registry.cern.ch/linuxsupport/cc7-base:20191107"
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "/dev/null", image),
+		e2e.ExpectExit(0),
+	)
+
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := regressionsTests{
@@ -187,5 +202,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"issue 4407": c.issue4407, // https://github.com/sylabs/singularity/issues/4407
 		"issue 4524": c.issue4524, // https://github.com/sylabs/singularity/issues/4524
 		"issue 4583": c.issue4583, // https://github.com/sylabs/singularity/issues/4583
+		"issue 4943": c.issue4943, // https://github.com/sylabs/singularity/issues/4943
 	}
 }
