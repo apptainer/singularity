@@ -221,8 +221,8 @@ github.com/mitchellh/go-homedir v1.1.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrk
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 h1:RWengNIwukTxcDr9M+97sNutRR1RKhG96O6jWumTTnw=
 github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826/go.mod h1:TaXosZuwdSHYgviHp1DAtfrULt5eUgsSMsZf+YrPgl8=
-github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c h1:xa+eQWKuJ9MbB9FBL/eoNvDFvveAkz2LQoz8PzX7Q/4=
-github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c/go.mod h1:GhAqVMEWnTcW2dxoD/SO3n2enrgWl3y6Dnx4m59GvcA=
+github.com/mtrmac/gpgme v0.1.1 h1:a5ISnvahzTzBH0m/klhehN68N+9+/jLwhpPFtH3oPAQ=
+github.com/mtrmac/gpgme v0.1.1/go.mod h1:GYYHnGSuS7HK3zVS2n3y73y0okK/BeKzwnn5jgiVFNI=
 github.com/onsi/ginkgo v0.0.0-20151202141238-7f8ab55aaf3b/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.8.0 h1:VkHVNpR4iVnU8XQR6DBm8BqYjN7CRzw+xKUbVVbbW9w=

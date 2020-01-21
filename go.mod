@@ -53,7 +53,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.2 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
-	github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c // indirect
+	github.com/mtrmac/gpgme v0.1.1 // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/openSUSE/umoci v0.4.2
 	github.com/opencontainers/go-digest v1.0.0-rc1
