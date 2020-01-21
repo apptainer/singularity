@@ -1946,9 +1946,8 @@ func (c *container) addHostnameMount(system *mount.System) error {
 }
 
 func (c *container) addActionsMount(system *mount.System) error {
-	hostDir := filepath.Join(buildcfg.SYSCONFDIR, "/singularity/actions")
+	actionSessionDir := "/actions"
 	containerDir := "/.singularity.d/actions"
-	flags := uintptr(syscall.MS_BIND | syscall.MS_RDONLY | syscall.MS_NOSUID | syscall.MS_NODEV)
 
 	actionsDir := filepath.Join(c.session.RootFsPath(), containerDir)
 	if !fs.IsDir(actionsDir) {
@@ -1956,7 +1955,33 @@ func (c *container) addActionsMount(system *mount.System) error {
 		return nil
 	}
 
-	err := system.Points.AddBind(mount.BindsTag, hostDir, containerDir, flags)
+	scripts := map[string]string{
+		"exec":  files.ExecScript,
+		"shell": files.ShellScript,
+		"run":   files.RunScript,
+		"test":  files.TestScript,
+		"start": files.StartScript,
+	}
+
+	for name, script := range scripts {
+		path := filepath.Join(actionSessionDir, name)
+		if err := c.session.AddFile(path, []byte(script)); err != nil {
+			return fmt.Errorf("while adding action script %s: %s", path, err)
+		}
+		if err := c.session.Chmod(path, 0755); err != nil {
+			return fmt.Errorf("while changing permission for %s: %s", path, err)
+		}
+	}
+
+	if err := c.session.Update(); err != nil {
+		return fmt.Errorf("while updating session layer: %s", err)
+	}
+
+	dir, _ := c.session.GetPath(actionSessionDir)
+
+	flags := uintptr(syscall.MS_BIND | syscall.MS_RDONLY | syscall.MS_NOSUID | syscall.MS_NODEV)
+
+	err := system.Points.AddBind(mount.BindsTag, dir, containerDir, flags)
 	if err != nil {
 		return fmt.Errorf("unable to add %s to mount list: %s", containerDir, err)
 	}
