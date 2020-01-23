@@ -879,20 +879,41 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 // openDevFuse is a helper function that opens /dev/fuse once for each
 // plugin that wants to mount a FUSE filesystem.
 func openDevFuse(e *EngineOperations, starterConfig *starter.Config) error {
-	for _, name := range e.EngineConfig.GetPluginFuseMounts() {
+	if !e.EngineConfig.File.EnableFusemount {
+		return fmt.Errorf("fusemount disabled by configuration 'enable fusemount = no'")
+	}
+
+	// do we require to send file descriptor
+	sendFd := false
+
+	// we won't copy slice while iterating fuse mounts
+	mounts := e.EngineConfig.GetFuseMount()
+
+	for i := range mounts {
+		sylog.Debugf("Opening /dev/fuse for FUSE mount point %s\n", mounts[i].MountPoint)
 		fd, err := syscall.Open("/dev/fuse", syscall.O_RDWR, 0)
 		if err != nil {
-			sylog.Debugf("Calling open: %+v\n", err)
 			return err
 		}
 
-		err = e.EngineConfig.SetPluginFuseFd(name, fd)
-		if err != nil {
-			sylog.Debugf("Unable to setup plugin %s fd: %+v\n", name, err)
-			return err
-		}
-
+		mounts[i].Fd = fd
 		starterConfig.KeepFileDescriptor(fd)
+
+		if (!starterConfig.GetIsSUID() || e.EngineConfig.GetFakeroot()) && !mounts[i].FromContainer {
+			sendFd = true
+		}
+	}
+
+	if sendFd {
+		fds, err := unix.Socketpair(unix.AF_UNIX, unix.SOCK_STREAM|unix.SOCK_CLOEXEC, 0)
+		if err != nil {
+			return fmt.Errorf("failed to create socketpair to pass FUSE file descriptor: %s", err)
+		}
+		e.EngineConfig.SetUnixSocketPair(fds)
+		starterConfig.KeepFileDescriptor(fds[0])
+		starterConfig.KeepFileDescriptor(fds[1])
+	} else {
+		e.EngineConfig.SetUnixSocketPair([2]int{-1, -1})
 	}
 
 	return nil

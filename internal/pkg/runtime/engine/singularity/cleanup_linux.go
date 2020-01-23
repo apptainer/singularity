@@ -35,6 +35,8 @@ import (
 // https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle.
 // CleanupContainer is performing step 8/9 here.
 func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, status syscall.WaitStatus) error {
+	defer e.stopFuseDrivers()
+
 	if e.EngineConfig.GetDeleteImage() {
 		image := e.EngineConfig.GetImage()
 		sylog.Verbosef("Removing image %s", image)

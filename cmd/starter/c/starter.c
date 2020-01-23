@@ -36,6 +36,7 @@
 #include <sys/syscall.h>
 #include <net/if.h>
 #include <sys/eventfd.h>
+#include <sys/sysmacros.h>
 #include <linux/magic.h>
 
 #ifdef SINGULARITY_SECUREBITS
@@ -852,6 +853,29 @@ static void fix_streams(void) {
     }
 }
 
+/* fix_userns_devfuse_fd reopens /dev/fuse file descriptors in a user namespace */
+static void fix_userns_devfuse_fd(struct starter *starter) {
+    struct stat st;
+    int i, newfd, oldfd;
+
+    for ( i = 0; i < starter->numfds; i++ ) {
+        oldfd = starter->fds[i];
+        if ( fstat(oldfd, &st) < 0 ) {
+            fatalf("Failed to get file information for file descriptor %d: %s\n", oldfd, strerror(errno));
+        }
+        if ( major(st.st_rdev) == 10 && minor(st.st_rdev) == 229 ) {
+            newfd = open("/dev/fuse", O_RDWR);
+            if ( newfd < 0 ) {
+                fatalf("Failed to open /dev/fuse: %s\n", strerror(errno));
+            }
+            if ( dup3(newfd, oldfd, O_CLOEXEC) < 0 ) {
+                fatalf("Failed to duplicate file descriptor: %s\n", strerror(errno));
+            }
+            close(newfd);
+        }
+    }
+}
+
 static void wait_child(const char *name, pid_t child_pid, bool noreturn) {
     int status;
     int exit_status = 0;
@@ -1171,19 +1195,22 @@ __attribute__((constructor)) static void init(void) {
 
     process = fork_ns(clone_flags);
     if ( process == 0 ) {
+        /* close master end of the communication socket */
+        close(master_socket[0]);
+
         /* in the user namespace without any privileges */
         if ( userns == CREATE_NAMESPACE ) {
+            /* re-open /dev/fuse file descriptors if any in the new user namespace */
+            fix_userns_devfuse_fd(&sconfig->starter);
+
             /* wait parent write user namespace mappings */
             if ( wait_event(master_socket[1]) < 0 ) {
-                fatalf("Error while waiting event for user namespace mappings\n");
+                fatalf("Error while waiting event for user namespace mappings: %s\n", strerror(errno));
             }
         }
 
         /* at this stage we are PID 1 if PID namespace requested */
         set_parent_death_signal(SIGKILL);
-
-        /* close master end of the communication socket */
-        close(master_socket[0]);
 
         /* initialize remaining namespaces */
         network_namespace_init(&sconfig->container.namespace);
@@ -1257,6 +1284,9 @@ __attribute__((constructor)) static void init(void) {
         verbosef("Spawn master process\n");
         sconfig->container.pid = process;
 
+        /* close container end of the communication socket */
+        close(master_socket[1]);
+
         /*
          * case where we joined a PID namespace already,
          * but a new mount namespace was requested (e.g. kubernetes POD).
@@ -1267,9 +1297,6 @@ __attribute__((constructor)) static void init(void) {
                 fatalf("Failed to enter in pid namespace: %s\n", strerror(errno));
             }
         }
-
-        /* close container end of the communication socket */
-        close(master_socket[1]);
 
         /*
          * go to /proc/<pid> to open mount namespace and set user mappings with relative paths,

@@ -6,6 +6,10 @@
 package singularity
 
 import (
+	"fmt"
+	"os/exec"
+	"strings"
+
 	"github.com/sylabs/singularity/pkg/image"
 )
 
@@ -21,6 +25,18 @@ const (
 	UnderlayLayer = "underlay"
 )
 
+// FuseMount stores the FUSE-related information required or provided by
+// plugins implementing options to add FUSE filesystems in the
+// container.
+type FuseMount struct {
+	Program       []string  `json:"program,omitempty"`       // the FUSE driver program and all required arguments
+	MountPoint    string    `json:"mountPoint,omitempty"`    // the mount point for the FUSE filesystem
+	Fd            int       `json:"fd,omitempty"`            // /dev/fuse file descriptor
+	FromContainer bool      `json:"fromContainer,omitempty"` // is FUSE driver program is run from container or from host
+	Daemon        bool      `json:"daemon,omitempty"`        // is FUSE driver program is run in daemon/background mode
+	Cmd           *exec.Cmd `json:"-"`                       // holds the process exec command when FUSE driver run in foreground mode
+}
+
 // JSONConfig stores engine specific confguration that is allowed to be set by the user.
 type JSONConfig struct {
 	ScratchDir        []string      `json:"scratchdir,omitempty"`
@@ -30,7 +46,9 @@ type JSONConfig struct {
 	Security          []string      `json:"security,omitempty"`
 	FilesPath         []string      `json:"filesPath,omitempty"`
 	LibrariesPath     []string      `json:"librariesPath,omitempty"`
+	FuseMount         []FuseMount   `json:"fuseMount,omitempty"`
 	ImageList         []image.Image `json:"imageList,omitempty"`
+	UnixSocketPair    [2]int        `json:"unixSocketPair,omitempty"`
 	OpenFd            []int         `json:"openFd,omitempty"`
 	TargetGID         []int         `json:"targetGID,omitempty"`
 	Image             string        `json:"image"`
@@ -527,4 +545,64 @@ func (e *EngineConfig) GetSessionLayer() string {
 // container mount points.
 func (e *EngineConfig) SetSessionLayer(sessionLayer string) {
 	e.JSON.SessionLayer = sessionLayer
+}
+
+// SetFuseMount takes a list of fuse mount options and sets
+// fuse mount configuration accordingly.
+func (e *EngineConfig) SetFuseMount(mount []string) error {
+	e.JSON.FuseMount = make([]FuseMount, len(mount))
+
+	for i, mountspec := range mount {
+		words := strings.Fields(mountspec)
+
+		if len(words) == 0 {
+			continue
+		} else if len(words) == 1 {
+			return fmt.Errorf("no whitespace separators found in command %q", words[0])
+		}
+
+		prefix := strings.SplitN(words[0], ":", 2)[0]
+
+		words[0] = strings.Replace(words[0], prefix+":", "", 1)
+
+		e.JSON.FuseMount[i].Fd = -1
+		e.JSON.FuseMount[i].MountPoint = words[len(words)-1]
+		e.JSON.FuseMount[i].Program = words[0 : len(words)-1]
+
+		switch prefix {
+		case "container":
+			e.JSON.FuseMount[i].FromContainer = true
+		case "container-daemon":
+			e.JSON.FuseMount[i].FromContainer = true
+			e.JSON.FuseMount[i].Daemon = true
+		case "host":
+			e.JSON.FuseMount[i].FromContainer = false
+		case "host-daemon":
+			e.JSON.FuseMount[i].FromContainer = false
+			e.JSON.FuseMount[i].Daemon = true
+		default:
+			return fmt.Errorf("fusemount spec begin with an unknown prefix %s", prefix)
+		}
+	}
+
+	return nil
+}
+
+// GetFuseMount returns the list of fuse mount after processing
+// by SetFuseMount.
+func (e *EngineConfig) GetFuseMount() []FuseMount {
+	return e.JSON.FuseMount
+}
+
+// SetUnixSocketPair sets a unix socketpair used to pass file
+// descriptors between RPC and master process, actually used
+// to pass /dev/fuse file descriptors.
+func (e *EngineConfig) SetUnixSocketPair(fds [2]int) {
+	e.JSON.UnixSocketPair = fds
+}
+
+// GetUnixSocketPair returns the unix socketpair previously set
+// in stage one by the engine.
+func (e *EngineConfig) GetUnixSocketPair() [2]int {
+	return e.JSON.UnixSocketPair
 }

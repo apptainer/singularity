@@ -336,7 +336,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	if len(FuseMount) > 0 {
 		/* If --fusemount is given, imply --pid */
 		PidNamespace = true
-		engineConfig.SetFuseMount(FuseMount)
+		if err := engineConfig.SetFuseMount(FuseMount); err != nil {
+			sylog.Fatalf("while setting fuse mount: %s", err)
+		}
 	}
 	engineConfig.SetNetwork(Network)
 	engineConfig.SetDNS(DNS)

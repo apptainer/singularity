@@ -13,6 +13,8 @@ import (
 	"strings"
 	"syscall"
 
+	"golang.org/x/sys/unix"
+
 	args "github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
@@ -218,4 +220,16 @@ func (t *Methods) Stat(arguments *args.StatArgs, reply *args.StatReply) error {
 	var err error
 	reply.Err = syscall.Stat(arguments.Path, &reply.St)
 	return err
+}
+
+// SendFd send file descriptor over unix socket.
+func (t *Methods) SendFd(arguments *args.SendFdArgs, reply *int) error {
+	usernsFd, err := unix.Open("/proc/self/ns/user", unix.O_RDONLY|unix.O_CLOEXEC, 0)
+	if err != nil {
+		return fmt.Errorf("while opening /proc/self/ns/user: %s", err)
+	}
+	defer unix.Close(usernsFd)
+
+	rights := unix.UnixRights(append(arguments.Fds, usernsFd)...)
+	return unix.Sendmsg(arguments.Socket, nil, rights, nil, 0)
 }

@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
@@ -1525,6 +1526,197 @@ func (c actionTests) exitSignals(t *testing.T) {
 	}
 }
 
+func (c actionTests) fuseMount(t *testing.T) {
+	require.Filesystem(t, "fuse")
+
+	u := e2e.UserProfile.HostUser(t)
+
+	instanceName := uuid.NewV4().String()
+	imageDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "sshfs-", "")
+	defer e2e.Privileged(cleanup)
+
+	sshfsWrapper := filepath.Join(imageDir, "sshfs-wrapper")
+	rootPrivKey := filepath.Join(imageDir, "/etc/ssh/ssh_host_rsa_key")
+	userPrivKey := filepath.Join(imageDir, "user.key")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", imageDir, "testdata/sshfs.def"),
+		e2e.PostRun(func(t *testing.T) {
+			if t.Failed() {
+				return
+			}
+			content, err := ioutil.ReadFile(rootPrivKey)
+			if err != nil {
+				t.Errorf("could not read ssh private key: %s", err)
+				return
+			}
+			if err := ioutil.WriteFile(userPrivKey, content, 0600); err != nil {
+				t.Errorf("could not write ssh user private key: %s", err)
+				return
+			}
+			if err := os.Chown(userPrivKey, int(u.UID), int(u.GID)); err != nil {
+				t.Errorf("could not change ssh user private key owner: %s", err)
+				return
+			}
+		}),
+		e2e.ExpectExit(0),
+	)
+
+	var umountFn func(*testing.T)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("instance start"),
+		e2e.PreRun(func(t *testing.T) {
+			umountFn = e2e.ShadowInstanceDirectory(t, c.env)
+		}),
+		e2e.PostRun(func(t *testing.T) {
+			umountFn(t)
+		}),
+		e2e.WithArgs("--writable", "--no-home", imageDir, instanceName),
+		e2e.ExpectExit(0),
+	)
+
+	basicTests := []struct {
+		name    string
+		spec    string
+		key     string
+		profile e2e.Profile
+	}{
+		{
+			name:    "HostDaemonAsRoot",
+			spec:    "host-daemon",
+			key:     rootPrivKey,
+			profile: e2e.RootProfile,
+		},
+		{
+			name:    "HostAsRoot",
+			spec:    "host",
+			key:     rootPrivKey,
+			profile: e2e.RootProfile,
+		},
+		{
+			name:    "ContainerDaemonAsRoot",
+			spec:    "container-daemon",
+			key:     rootPrivKey,
+			profile: e2e.RootProfile,
+		},
+		{
+			name:    "ContainerAsRoot",
+			spec:    "container",
+			key:     rootPrivKey,
+			profile: e2e.RootProfile,
+		},
+		{
+			name:    "HostDaemonAsUser",
+			spec:    "host-daemon",
+			key:     userPrivKey,
+			profile: e2e.UserProfile,
+		},
+		{
+			name:    "HostAsUser",
+			spec:    "host",
+			key:     userPrivKey,
+			profile: e2e.UserProfile,
+		},
+		{
+			name:    "ContainerDaemonAsUser",
+			spec:    "container-daemon",
+			key:     userPrivKey,
+			profile: e2e.UserProfile,
+		},
+		{
+			name:    "ContainerAsUser",
+			spec:    "container",
+			key:     userPrivKey,
+			profile: e2e.UserProfile,
+		},
+		{
+			name:    "HostDaemonAsUserNamespace",
+			spec:    "host-daemon",
+			key:     userPrivKey,
+			profile: e2e.UserNamespaceProfile,
+		},
+		{
+			name:    "HostAsUserNamespace",
+			spec:    "host",
+			key:     userPrivKey,
+			profile: e2e.UserNamespaceProfile,
+		},
+		{
+			name:    "ContainerDaemonAsUserNamespace",
+			spec:    "container-daemon",
+			key:     userPrivKey,
+			profile: e2e.UserNamespaceProfile,
+		},
+		{
+			name:    "ContainerAsUserNamespace",
+			spec:    "container",
+			key:     userPrivKey,
+			profile: e2e.UserNamespaceProfile,
+		},
+		{
+			name:    "HostDaemonAsFakeroot",
+			spec:    "host-daemon",
+			key:     userPrivKey,
+			profile: e2e.FakerootProfile,
+		},
+		{
+			name:    "HostAsFakeroot",
+			spec:    "host",
+			key:     userPrivKey,
+			profile: e2e.FakerootProfile,
+		},
+		{
+			name:    "ContainerDaemonAsFakeroot",
+			spec:    "container-daemon",
+			key:     userPrivKey,
+			profile: e2e.FakerootProfile,
+		},
+		{
+			name:    "ContainerAsFakeroot",
+			spec:    "container",
+			key:     userPrivKey,
+			profile: e2e.FakerootProfile,
+		},
+	}
+
+	optionFmt := "%s:%s root@127.0.0.1:/ -p 2022 -o IdentityFile=%s -o StrictHostKeyChecking=no %s"
+
+	for _, tt := range basicTests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs([]string{
+				"--fusemount", fmt.Sprintf(optionFmt, tt.spec, sshfsWrapper, tt.key, "/mnt"),
+				imageDir,
+				"test", "-d", "/mnt/etc",
+			}...),
+			e2e.ExpectExit(0),
+		)
+	}
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("instance stop"),
+		e2e.PreRun(func(t *testing.T) {
+			umountFn = e2e.ShadowInstanceDirectory(t, c.env)
+		}),
+		e2e.PostRun(func(t *testing.T) {
+			umountFn(t)
+		}),
+		e2e.WithArgs("--force", instanceName),
+		e2e.ExpectExit(0),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := actionTests{
@@ -1549,5 +1741,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"network":               c.actionNetwork,       // test basic networking
 		"binds":                 c.actionBinds,         // test various binds
 		"exit and signals":      c.exitSignals,         // test exit and signals propagation
+		"fuse mount":            c.fuseMount,           // test fusemount option
 	}
 }
