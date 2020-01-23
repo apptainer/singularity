@@ -35,7 +35,7 @@ func init() {
 //
 // singularity plugin install <path> [-n name]
 var PluginInstallCmd = &cobra.Command{
-	PreRun: EnsureRootPriv,
+	PreRun: CheckRootOrUnpriv,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := singularity.InstallPlugin(args[0], pluginName)
 		if err != nil {

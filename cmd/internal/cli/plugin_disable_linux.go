@@ -19,7 +19,7 @@ import (
 //
 // singularity plugin disable <name>
 var PluginDisableCmd = &cobra.Command{
-	PreRun: EnsureRootPriv,
+	PreRun: CheckRootOrUnpriv,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := singularity.DisablePlugin(args[0], buildcfg.LIBEXECDIR)
 		if err != nil {

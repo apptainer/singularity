@@ -40,13 +40,6 @@ import (
 	"github.com/sylabs/singularity/pkg/util/rlimit"
 )
 
-// EnsureRootPriv ensures that a command is executed with root privileges.
-func EnsureRootPriv(cmd *cobra.Command, args []string) {
-	if os.Geteuid() != 0 {
-		sylog.Fatalf("%q command requires root privileges", cmd.CommandPath())
-	}
-}
-
 func convertImage(filename string, unsquashfsPath string) (string, error) {
 	img, err := imgutil.Init(filename, false)
 	if err != nil {
