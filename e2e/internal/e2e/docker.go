@@ -53,7 +53,7 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 			WithCommand("instance start"),
 			WithArgs("-w", dockerImage, dockerInstanceName),
 			PreRun(func(t *testing.T) {
-				umountFn = ShadowInstanceDirectory(t, env)
+				umountFn = shadowInstanceDirectory(t, env)
 			}),
 			PostRun(func(t *testing.T) {
 				if umountFn != nil {
@@ -109,7 +109,7 @@ func KillRegistry(t *testing.T, env TestEnv) {
 		WithCommand("instance stop"),
 		WithArgs("-s", "KILL", dockerInstanceName),
 		PreRun(func(t *testing.T) {
-			umountFn = ShadowInstanceDirectory(t, env)
+			umountFn = shadowInstanceDirectory(t, env)
 		}),
 		PostRun(func(t *testing.T) {
 			if umountFn != nil {

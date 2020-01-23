@@ -64,6 +64,8 @@ func (c *ctx) stopInstance(t *testing.T, instance string, stopArgs ...string) (s
 		e2e.ExpectExit(0, e2e.GetStreams(&stdout, &stderr)),
 	)
 
+	c.expectInstance(t, instance, 0)
+
 	return
 }
 
@@ -85,29 +87,24 @@ func (c *ctx) execInstance(t *testing.T, instance string, execArgs ...string) (s
 	return
 }
 
-// Return the number of currently running instances.
-func (c *ctx) expectedNumberOfInstances(t *testing.T, n int) {
-	nbInstances := -1
-
+// Check if there is the number of expected instances with the provided name.
+func (c *ctx) expectInstance(t *testing.T, name string, nb int) {
 	listInstancesFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 		var instances instanceList
 
 		if err := json.Unmarshal([]byte(r.Stdout), &instances); err != nil {
 			t.Errorf("Error while decoding JSON from 'instance list': %v", err)
 		}
-		nbInstances = len(instances.Instances)
+		if nb != len(instances.Instances) {
+			t.Errorf("%d instance %q found, expected %d", len(instances.Instances), name, nb)
+		}
 	}
 
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(c.profile),
 		e2e.WithCommand("instance list"),
-		e2e.WithArgs([]string{"--json"}...),
-		e2e.PostRun(func(t *testing.T) {
-			if !t.Failed() && n != nbInstances {
-				t.Errorf("%d instance(s) are running, was expecting %d", nbInstances, n)
-			}
-		}),
+		e2e.WithArgs([]string{"--json", name}...),
 		e2e.ExpectExit(0, listInstancesFn),
 	)
 }

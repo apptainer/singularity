@@ -143,10 +143,10 @@ func SetupHomeDirectories(t *testing.T) {
 	})(t)
 }
 
-// ShadowInstanceDirectory creates a temporary instances directory which
+// shadowInstanceDirectory creates a temporary instances directory which
 // will be bound on top of current user home directory in order to execute
 // a "shadow" instance (eg: docker registry).
-func ShadowInstanceDirectory(t *testing.T, env TestEnv) func(t *testing.T) {
+func shadowInstanceDirectory(t *testing.T, env TestEnv) func(t *testing.T) {
 	u := CurrentUser(t)
 
 	// $TESTDIR/.singularity directory

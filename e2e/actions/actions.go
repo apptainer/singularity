@@ -8,14 +8,16 @@ package actions
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
@@ -1531,7 +1533,6 @@ func (c actionTests) fuseMount(t *testing.T) {
 
 	u := e2e.UserProfile.HostUser(t)
 
-	instanceName := uuid.NewV4().String()
 	imageDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "sshfs-", "")
 	defer e2e.Privileged(cleanup)
 
@@ -1565,21 +1566,42 @@ func (c actionTests) fuseMount(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 
-	var umountFn func(*testing.T)
+	stdinReader, stdinWriter := io.Pipe()
 
-	c.env.RunSingularity(
-		t,
-		e2e.WithProfile(e2e.RootProfile),
-		e2e.WithCommand("instance start"),
-		e2e.PreRun(func(t *testing.T) {
-			umountFn = e2e.ShadowInstanceDirectory(t, c.env)
-		}),
-		e2e.PostRun(func(t *testing.T) {
-			umountFn(t)
-		}),
-		e2e.WithArgs("--writable", "--no-home", imageDir, instanceName),
-		e2e.ExpectExit(0),
-	)
+	// we don't use an instance as it could conflict with
+	// instance tests running in parallel
+	go func() {
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithStdin(stdinReader),
+			e2e.WithCommand("run"),
+			e2e.WithArgs("--writable", "--no-home", imageDir),
+			e2e.PostRun(func(t *testing.T) {
+				stdinReader.Close()
+				stdinWriter.Close()
+			}),
+			e2e.ExpectExit(0),
+		)
+	}()
+
+	// terminate ssh server once done
+	defer stdinWriter.Write([]byte("bye"))
+
+	// wait until ssh server is up and running
+	retry := 0
+	for {
+		conn, err := net.Dial("tcp", "127.0.0.1:2022")
+		if err == nil {
+			conn.Close()
+			break
+		}
+		time.Sleep(1 * time.Second)
+		retry++
+		if retry == 5 {
+			t.Fatalf("ssh server unreachable after 5 seconds: %+v", err)
+		}
+	}
 
 	basicTests := []struct {
 		name    string
@@ -1701,20 +1723,6 @@ func (c actionTests) fuseMount(t *testing.T) {
 			e2e.ExpectExit(0),
 		)
 	}
-
-	c.env.RunSingularity(
-		t,
-		e2e.WithProfile(e2e.RootProfile),
-		e2e.WithCommand("instance stop"),
-		e2e.PreRun(func(t *testing.T) {
-			umountFn = e2e.ShadowInstanceDirectory(t, c.env)
-		}),
-		e2e.PostRun(func(t *testing.T) {
-			umountFn(t)
-		}),
-		e2e.WithArgs("--force", instanceName),
-		e2e.ExpectExit(0),
-	)
 }
 
 // E2ETests is the main func to trigger the test suite
