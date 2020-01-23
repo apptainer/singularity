@@ -31,11 +31,6 @@ type ctx struct {
 	profile e2e.Profile
 }
 
-// Test that no instances are running.
-func (c *ctx) testNoInstances(t *testing.T) {
-	c.expectedNumberOfInstances(t, 0)
-}
-
 // Test that a basic echo server instance can be started, communicated with,
 // and stopped.
 func (c *ctx) testBasicEchoServer(t *testing.T) {
@@ -80,10 +75,9 @@ func (c *ctx) testCreateManyInstances(t *testing.T) {
 			}),
 			e2e.ExpectExit(0),
 		)
-	}
 
-	// Verify all instances started.
-	c.expectedNumberOfInstances(t, n)
+		c.expectInstance(t, instanceName, 1)
+	}
 }
 
 // Test stopping all running instances.
@@ -353,14 +347,12 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 				name     string
 				function func(*testing.T)
 			}{
-				{"InitialNoInstances", c.testNoInstances},
 				{"BasicEchoServer", c.testBasicEchoServer},
 				{"BasicOptions", c.testBasicOptions},
 				{"Contain", c.testContain},
 				{"InstanceFromURI", c.testInstanceFromURI},
 				{"CreateManyInstances", c.testCreateManyInstances},
 				{"StopAll", c.testStopAll},
-				{"FinalNoInstances", c.testNoInstances},
 				{"GhostInstance", c.testGhostInstance},
 				{"ApplyCgroupsInstance", c.applyCgroupsInstance},
 			}

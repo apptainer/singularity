@@ -37,5 +37,7 @@ EOF
 
     chmod +x /sshfs-wrapper /wrapped/*
 
-%startscript
-    exec dropbear -R -E -s -p 127.0.0.1:2022
+%runscript
+    dropbear -R -E -s -p 127.0.0.1:2022
+    # wait until we receive something on stdin
+    cat > /dev/null
