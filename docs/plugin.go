@@ -28,8 +28,7 @@ const (
 	PluginCompileLong  string = `
   The 'plugin compile' command allows a developer to compile a Singularity 
   plugin in the expected environment. The provided host directory is the 
-  location of the plugin's source code which must be located under a Singularity
-  source code directory. A compiled plugin is packed into a SIF file.`
+  location of the plugin's source code. A compiled plugin is packed into a SIF file.`
 	PluginCompileExample string = `
   $ singularity plugin compile $HOME/singularity/test-plugin`
 
@@ -102,4 +101,20 @@ const (
   Description: A test Singularity plugin.
   Author: Sylabs
   Version: 0.1.0`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// plugin create command
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PluginCreateUse   string = `create <host_path> <name>`
+	PluginCreateShort string = `Create a plugin skeleton directory`
+	PluginCreateLong  string = `
+  The 'plugin create' command allows a user to creates a plugin skeleton directory
+  structure to start development of a new plugin.`
+	PluginCreateExample string = `
+  $ singularity plugin create ~/myplugin github.com/username/myplugin
+  $ ls -1 ~/myplugin
+  go.mod
+  main.go
+  singularity_source
+  `
 )

@@ -101,6 +101,14 @@ func SetupHomeDirectories(t *testing.T) {
 				err = errors.Wrapf(err, "bind mounting source directory from %q to %q", sourceDir, sessionSourceDir)
 				t.Fatalf("failed to bind mount source directory: %+v", err)
 			}
+			// fix go directory permission for unprivileged user
+			goDir := filepath.Join(unprivSessionHome, "go")
+			if _, err := os.Stat(goDir); err == nil {
+				if err := os.Chown(goDir, int(unprivUser.UID), int(unprivUser.GID)); err != nil {
+					err = errors.Wrapf(err, "changing temporary home go directory ownership at %s", goDir)
+					t.Fatalf("failed to set owner: %+v", err)
+				}
+			}
 		}
 
 		// finally bind temporary homes on top of real ones

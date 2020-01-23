@@ -23,6 +23,7 @@ func init() {
 		cmdManager.RegisterSubCmd(PluginCmd, PluginDisableCmd)
 		cmdManager.RegisterSubCmd(PluginCmd, PluginCompileCmd)
 		cmdManager.RegisterSubCmd(PluginCmd, PluginInspectCmd)
+		cmdManager.RegisterSubCmd(PluginCmd, PluginCreateCmd)
 	})
 }
 

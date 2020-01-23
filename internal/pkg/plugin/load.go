@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,31 +10,45 @@ import (
 	"fmt"
 	"plugin"
 	"strings"
+	"sync"
 
+	callback "github.com/sylabs/singularity/internal/pkg/plugin/callback"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
 
-// InitializeAll loads all plugins into memory and stores their symbols.
-// A call to InitializeAll MUST be made only only once.
-func InitializeAll(libexecdir string) error {
-	metas, err := List(libexecdir)
-	if err != nil {
-		return err
+type loadedPlugins struct {
+	metas   []*Meta
+	plugins map[string]struct{}
+	sync.Mutex
+}
+
+var lp loadedPlugins
+
+// LoadCallbacks loads plugins registered for the hook instance passed in parameter.
+func LoadCallbacks(cb pluginapi.Callback) ([]pluginapi.Callback, error) {
+	callbackName := callback.Name(cb)
+
+	if err := initMetaPlugin(); err != nil {
+		return nil, err
 	}
 
 	var errs []error
 
-	for _, meta := range metas {
+	for _, meta := range lp.metas {
 		if !meta.Enabled {
 			continue
 		}
 
-		if _, err := Initialize(meta.binaryName()); err != nil {
-			// This might be destroying information by
-			// grabbing only the textual description of the
-			// error
-			wrappedErr := fmt.Errorf("while initializin plugin %q: %s", meta.Name, err)
-			errs = append(errs, wrappedErr)
+		for _, name := range meta.Callbacks {
+			if name == callbackName {
+				if err := loadCallbacks(meta.binaryName()); err != nil {
+					// This might be destroying information by
+					// grabbing only the textual description of the
+					// error
+					wrappedErr := fmt.Errorf("while initializing plugin %q: %s", meta.Name, err)
+					errs = append(errs, wrappedErr)
+				}
+			}
 		}
 	}
 
@@ -62,27 +76,61 @@ func InitializeAll(libexecdir string) error {
 			}
 			b.WriteString(err.Error())
 		}
-		return errors.New(b.String())
+		return nil, errors.New(b.String())
+	}
+
+	return callback.Loaded(cb)
+}
+
+// initMetaPlugin reads plugin metadata files and stores data
+// in the loaded plugin instance.
+func initMetaPlugin() error {
+	var err error
+
+	lp.Lock()
+	defer lp.Unlock()
+
+	if lp.metas != nil {
+		return nil
+	}
+	if lp.plugins == nil {
+		lp.plugins = make(map[string]struct{})
+	}
+
+	lp.metas, err = List()
+	if err != nil {
+		return fmt.Errorf("while getting plugin's metadata: %s", err)
 	}
 
 	return nil
 }
 
-// Initialize loads the plugin located at path and returns it.
-func Initialize(path string) (*pluginapi.Plugin, error) {
-	pl, err := open(path)
-	if err != nil {
-		return nil, err
+// loadCallbacks loads the plugin and the plugin callbacks.
+func loadCallbacks(path string) error {
+	lp.Lock()
+	defer lp.Unlock()
+
+	if _, ok := lp.plugins[path]; ok {
+		return nil
 	}
 
-	reg := registrar{pl.Name}
-	if err := pl.Initialize(reg); err != nil {
-		return nil, fmt.Errorf("could not initialize plugin: %v", err)
+	pl, err := LoadObject(path)
+	if err != nil {
+		return err
 	}
-	return pl, nil
+
+	lp.plugins[path] = struct{}{}
+
+	for _, c := range pl.Callbacks {
+		callback.Load(c)
+	}
+
+	return nil
 }
 
-func open(path string) (*pluginapi.Plugin, error) {
+// LoadObject loads a plugin object in memory and returns
+// the Plugin object set within the plugin.
+func LoadObject(path string) (*pluginapi.Plugin, error) {
 	pluginPointer, err := plugin.Open(path)
 	if err != nil {
 		return nil, err

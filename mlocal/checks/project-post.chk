@@ -44,6 +44,7 @@ config_add_def ECL_FILE SINGULARITY_CONFDIR \"/ecl.toml\"
 config_add_def NVIDIALIBS_FILE SINGULARITY_CONFDIR \"/nvliblist.conf\"
 config_add_def SESSIONDIR LOCALSTATEDIR \"/singularity/mnt/session\"
 config_add_def SINGULARITY_SUID_INSTALL $with_suid
+config_add_def PLUGIN_ROOTDIR LIBEXECDIR \"/singularity/plugin\"
 
 build_runtime=0
 if [ "$host" = "unix" ]; then

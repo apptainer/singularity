@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,12 +16,14 @@ import (
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	fakerootutil "github.com/sylabs/singularity/internal/pkg/fakeroot"
+	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	fakerootcallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/fakeroot"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
@@ -97,8 +99,21 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
 
+	getIDRange := fakerootutil.GetIDRange
+
+	callbackType := (fakerootcallback.UserMapping)(nil)
+	callbacks, err := plugin.LoadCallbacks(callbackType)
+	if err != nil {
+		return fmt.Errorf("while loading plugins callbacks '%T': %s", callbackType, err)
+	}
+	if len(callbacks) > 1 {
+		return fmt.Errorf("multiple plugins have registered hook callback for fakeroot")
+	} else if len(callbacks) == 1 {
+		getIDRange = callbacks[0].(fakerootcallback.UserMapping)
+	}
+
 	g.AddLinuxUIDMapping(uid, 0, 1)
-	idRange, err := fakerootutil.GetIDRange(fakerootutil.SubUIDFile, uid)
+	idRange, err := getIDRange(fakerootutil.SubUIDFile, uid)
 	if err != nil {
 		return fmt.Errorf("could not use fakeroot: %s", err)
 	}
@@ -106,7 +121,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	starterConfig.AddUIDMappings(g.Config.Linux.UIDMappings)
 
 	g.AddLinuxGIDMapping(gid, 0, 1)
-	idRange, err = fakerootutil.GetIDRange(fakerootutil.SubGIDFile, uid)
+	idRange, err = getIDRange(fakerootutil.SubGIDFile, uid)
 	if err != nil {
 		return fmt.Errorf("could not use fakeroot: %s", err)
 	}

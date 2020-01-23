@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -24,11 +24,13 @@ import (
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/instance"
+	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/machine"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	singularitycallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/engine/singularity"
 	"github.com/sylabs/singularity/pkg/util/rlimit"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sys/unix"
@@ -295,6 +297,17 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 // Here, however, singularity engine does not escalate privileges.
 func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error {
 	sylog.Debugf("Post start process")
+
+	callbackType := (singularitycallback.PostStartProcess)(nil)
+	callbacks, err := plugin.LoadCallbacks(callbackType)
+	if err != nil {
+		return fmt.Errorf("while loading plugins callbacks '%T': %s", callbackType, err)
+	}
+	for _, cb := range callbacks {
+		if err := cb.(singularitycallback.PostStartProcess)(e.CommonConfig, pid); err != nil {
+			return err
+		}
+	}
 
 	if e.EngineConfig.GetInstance() {
 		name := e.CommonConfig.ContainerID

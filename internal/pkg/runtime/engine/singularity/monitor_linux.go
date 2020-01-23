@@ -9,6 +9,9 @@ import (
 	"fmt"
 	"os"
 	"syscall"
+
+	"github.com/sylabs/singularity/internal/pkg/plugin"
+	singularitycallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/engine/singularity"
 )
 
 // MonitorContainer is called from master once the container has
@@ -23,6 +26,17 @@ import (
 // not need them for wait4 and kill syscalls.
 func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (syscall.WaitStatus, error) {
 	var status syscall.WaitStatus
+
+	callbackType := (singularitycallback.MonitorContainer)(nil)
+	callbacks, err := plugin.LoadCallbacks(callbackType)
+	if err != nil {
+		return status, fmt.Errorf("while loading plugins callbacks '%T': %s", callbackType, err)
+	}
+	if len(callbacks) > 1 {
+		return status, fmt.Errorf("multiple plugins have registered callback for '%T'", callbackType)
+	} else if len(callbacks) == 1 {
+		return callbacks[0].(singularitycallback.MonitorContainer)(e.CommonConfig, pid, signals)
+	}
 
 	for {
 		s := <-signals
