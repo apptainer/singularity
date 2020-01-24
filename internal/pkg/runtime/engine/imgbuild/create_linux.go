@@ -302,8 +302,30 @@ func (e *EngineOperations) runScriptSection(name string, s types.Script, setEnv 
 
 	args := []string{"-ex"}
 	// trim potential trailing comment from args and append to args list
-	args = append(args, strings.Fields(strings.Split(s.Args, "#")[0])...)
-	args = append(args, script)
+	sectionParams := strings.Fields(strings.Split(s.Args, "#")[0])
+
+	commandOption := false
+
+	// look for -c option, we assume that everything after is part of -c
+	// arguments and we just inject script path as the last arguments of -c
+	for i, param := range sectionParams {
+		if param == "-c" {
+			if len(sectionParams)-1 < i+1 {
+				sylog.Fatalf("bad %s section '-c' parameter: missing arguments", name)
+			}
+			// replace shell "[args...]" arguments list by single
+			// argument "shell [args...] script"
+			shellArgs := strings.Join(sectionParams[i+1:], " ")
+			sectionParams = append(sectionParams[0:i+1], shellArgs+" "+script)
+			commandOption = true
+			break
+		}
+	}
+
+	args = append(args, sectionParams...)
+	if !commandOption {
+		args = append(args, script)
+	}
 
 	cmd := exec.Command("/bin/sh", args...)
 	if setEnv {
