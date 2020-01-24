@@ -593,3 +593,18 @@ func singularityExec(image string, args []string) (string, error) {
 
 	return stdout.String(), nil
 }
+
+// CheckRoot ensures that a command is executed with root privileges.
+func CheckRoot(cmd *cobra.Command, args []string) {
+	if os.Geteuid() != 0 {
+		sylog.Fatalf("%q command requires root privileges", cmd.CommandPath())
+	}
+}
+
+// CheckRootOrUnpriv ensures that a command is executed with root
+// privileges or that Singularity is installed unprivileged.
+func CheckRootOrUnpriv(cmd *cobra.Command, args []string) {
+	if os.Geteuid() != 0 && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
+		sylog.Fatalf("%q command requires root privileges or an unprivileged installation", cmd.CommandPath())
+	}
+}

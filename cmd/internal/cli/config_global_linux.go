@@ -74,7 +74,7 @@ var globalConfigDryRunFlag = cmdline.Flag{
 var configGlobalCmd = &cobra.Command{
 	Args:                  cobra.RangeArgs(1, 2),
 	DisableFlagsInUseLine: true,
-	PreRun:                EnsureRootPriv,
+	PreRun:                CheckRootOrUnpriv,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var op singularity.GlobalConfigOp
 

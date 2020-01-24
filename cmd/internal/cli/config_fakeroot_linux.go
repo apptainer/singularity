@@ -63,7 +63,7 @@ var fakerootConfigDisableFlag = cmdline.Flag{
 var configFakerootCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                EnsureRootPriv,
+	PreRun:                CheckRoot,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		username := args[0]
 		var op singularity.FakerootConfigOp

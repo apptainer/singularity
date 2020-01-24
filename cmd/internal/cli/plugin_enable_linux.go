@@ -18,7 +18,7 @@ import (
 //
 // singularity plugin enable <name>
 var PluginEnableCmd = &cobra.Command{
-	PreRun: EnsureRootPriv,
+	PreRun: CheckRootOrUnpriv,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := singularity.EnablePlugin(args[0])
 		if err != nil {

@@ -1008,7 +1008,7 @@ Enterprise Performance Computing (EPC)`
   $ singularity config fakeroot --enable vagrant`
 
 	ConfigGlobalUse   string = `global <option> <directive> [value,...]`
-	ConfigGlobalShort string = `Edit singularity.conf from command line (root user only)`
+	ConfigGlobalShort string = `Edit singularity.conf from command line (root user only or unprivileged installation)`
 	ConfigGlobalLong  string = `
   The config global command allow administrators to set/unset/get/reset configuration
   directives of singularity.conf from command line.`
