@@ -79,13 +79,23 @@ func (c *ctx) singularityKeySearch(t *testing.T) {
 			stdout: "^Search for keys on a key server",
 		},
 		{
-			name:   "key search <key id>",
+			name:   "key search 0x<key id>",
 			args:   []string{"search", "0x8BD91BEE"},
 			stdout: "^Showing 1 results",
 		},
 		{
-			name:   "key search <key fingerprint>",
+			name:   "key search <key id>",
+			args:   []string{"search", "8BD91BEE"},
+			stdout: "^Showing 1 results",
+		},
+		{
+			name:   "key search 0x<key fingerprint>",
 			args:   []string{"search", "0x7605BC2716168DF057D6C600ACEEC62C8BD91BEE"},
+			stdout: "^Showing 1 results",
+		},
+		{
+			name:   "key search <key fingerprint>",
+			args:   []string{"search", "7605BC2716168DF057D6C600ACEEC62C8BD91BEE"},
 			stdout: "^Showing 1 results",
 		},
 		{
