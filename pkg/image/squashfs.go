@@ -155,7 +155,14 @@ func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	}
 
 	if img.Writable {
-		return fmt.Errorf("could not set image writable: squashfs is a read-only filesystem")
+		// we set Writable to appropriate value to match the
+		// image open mode as some code may want to ignore this
+		// error by using IsReadOnlyFilesytem check
+		img.Writable = false
+
+		return &readOnlyFilesystemError{
+			"could not set " + img.Path + " image writable: squashfs is a read-only filesystem",
+		}
 	}
 
 	return nil

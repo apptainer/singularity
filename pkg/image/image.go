@@ -52,6 +52,27 @@ func debugErrorf(format string, a ...interface{}) error {
 	return debugError(e)
 }
 
+// readOnlyFilesystemError represents an error returned by
+// read-only filesystem image when attempted to be opened
+// as writable.
+type readOnlyFilesystemError struct {
+	s string
+}
+
+func (e *readOnlyFilesystemError) Error() string {
+	return e.s
+}
+
+// IsReadOnlyFilesytem returns if the corresponding error
+// is a read-only filesystem error or not.
+func IsReadOnlyFilesytem(err error) bool {
+	if err == nil {
+		return false
+	}
+	_, ok := err.(*readOnlyFilesystemError)
+	return ok
+}
+
 // ErrUnknownFormat represents an unknown image format error.
 var ErrUnknownFormat = errors.New("image format not recognized")
 
@@ -255,14 +276,18 @@ func Init(path string, writable bool) (*Image, error) {
 			return nil, err
 		}
 
-		err = rf.format.initializer(img, fileinfo)
-		if _, ok := err.(debugError); ok {
-			sylog.Debugf("%s format initializer returned: %v", rf.name, err)
+		// readOnlyFilesystemError is allowed here and passed back
+		// to the caller because there is basically no error with
+		// the image format just a mismatch with writable parameter,
+		// so the decision is delegated to the caller
+		initErr := rf.format.initializer(img, fileinfo)
+		if _, ok := initErr.(debugError); ok {
+			sylog.Debugf("%s format initializer returned: %v", rf.name, initErr)
 			_ = img.File.Close()
 			continue
-		} else if err != nil {
+		} else if initErr != nil && !IsReadOnlyFilesytem(initErr) {
 			_ = img.File.Close()
-			return nil, err
+			return nil, initErr
 		}
 
 		sylog.Debugf("%s image format detected", rf.name)
@@ -274,7 +299,8 @@ func Init(path string, writable bool) (*Image, error) {
 		img.Source = fmt.Sprintf("/proc/self/fd/%d", img.File.Fd())
 		img.Fd = img.File.Fd()
 
-		return img, nil
+		return img, initErr
 	}
+
 	return nil, ErrUnknownFormat
 }
