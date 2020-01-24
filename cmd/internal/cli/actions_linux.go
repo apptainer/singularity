@@ -33,11 +33,13 @@ import (
 	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
+	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/rlimit"
+	"golang.org/x/sys/unix"
 )
 
 func convertImage(filename string, unsquashfsPath string) (string, error) {
@@ -209,23 +211,42 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetImage(abspath)
 	}
 
+	// privileged installation by default
 	useSuid := true
 
 	// singularity was compiled with '--without-suid' option
 	if buildcfg.SINGULARITY_SUID_INSTALL == 0 {
 		useSuid = false
+
+		if !UserNamespace && uid != 0 {
+			sylog.Verbosef("Unprivileged installation: using user namespace")
+			UserNamespace = true
+		}
 	}
 
 	// use non privileged starter binary:
-	// - if we are the root user
-	// - if we are already running inside a user namespace
+	// - if running as root
+	// - if already running inside a user namespace
 	// - if user namespace is requested
-	// - if 'allow setuid = no' is set in singularity.conf
+	// - if running as user and 'allow setuid = no' is set in singularity.conf
 	if uid == 0 || insideUserNs || UserNamespace || !engineConfig.File.AllowSetuid {
 		useSuid = false
-		if buildcfg.SINGULARITY_SUID_INSTALL == 1 && !engineConfig.File.AllowSetuid {
+
+		// fallback to user namespace:
+		// - for non root user with setuid installation and 'allow setuid = no'
+		// - for root user without effective capability CAP_SYS_ADMIN
+		if uid != 0 && buildcfg.SINGULARITY_SUID_INSTALL == 1 && !engineConfig.File.AllowSetuid {
 			sylog.Verbosef("'allow setuid' set to 'no' by configuration, fallback to user namespace")
 			UserNamespace = true
+		} else if uid == 0 && !UserNamespace {
+			caps, err := capabilities.GetProcessEffective()
+			if err != nil {
+				sylog.Fatalf("Could not get process effective capabilities: %s", err)
+			}
+			if caps&uint64(1<<unix.CAP_SYS_ADMIN) == 0 {
+				sylog.Verbosef("Effective capability CAP_SYS_ADMIN is missing, fallback to user namespace")
+				UserNamespace = true
+			}
 		}
 	}
 
@@ -505,12 +526,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	if IpcNamespace {
 		generator.AddOrReplaceLinuxNamespace("ipc", "")
 	}
-	if !UserNamespace && uid != 0 && buildcfg.SINGULARITY_SUID_INSTALL == 0 {
-		sylog.Verbosef("Unprivileged installation: using user namespace")
-		UserNamespace = true
-		useSuid = false
-	}
-
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
 
