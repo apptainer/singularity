@@ -24,6 +24,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
+	"golang.org/x/sys/unix"
 )
 
 // CreateContainer is called from master process to prepare container
@@ -153,28 +154,36 @@ func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn
 		return fmt.Errorf("mount /dev failed: %s", err)
 	}
 
-	// copy /etc/resolv.conf to tmpfs and bind copy into container
-	sessionResolv, err := stageFile("/etc/resolv.conf", sessionPath)
-	if err != nil {
-		return err
-	}
-
 	dest = filepath.Join(sessionRootFs, "etc", "resolv.conf")
-	sylog.Debugf("Mounting %s at %s\n", sessionResolv, dest)
-	if err := rpcOps.Mount(sessionResolv, dest, "", syscall.MS_BIND, ""); err != nil {
-		return fmt.Errorf("mount %s failed: %s", sessionResolv, err)
-	}
+	if err := unix.Access(dest, unix.R_OK); err == nil {
+		// copy /etc/resolv.conf to tmpfs and bind copy into container
+		sessionResolv, err := stageFile("/etc/resolv.conf", sessionPath)
+		if err != nil {
+			return err
+		}
 
-	// copy /etc/hosts to tmpfs and bind copy into container
-	sessionHosts, err := stageFile("/etc/hosts", sessionPath)
-	if err != nil {
-		return err
+		sylog.Debugf("Mounting %s at %s\n", sessionResolv, dest)
+		if err := rpcOps.Mount(sessionResolv, dest, "", syscall.MS_BIND, ""); err != nil {
+			return fmt.Errorf("mount %s failed: %s", sessionResolv, err)
+		}
+	} else {
+		sylog.Warningf("Name resolution could fail: while accessing to /etc/resolv.conf: %s", err)
 	}
 
 	dest = filepath.Join(sessionRootFs, "etc", "hosts")
-	sylog.Debugf("Mounting %s at %s\n", sessionHosts, dest)
-	if err := rpcOps.Mount(sessionHosts, dest, "", syscall.MS_BIND, ""); err != nil {
-		return fmt.Errorf("mount %s failed: %s", sessionHosts, err)
+	if err := unix.Access(dest, unix.R_OK); err == nil {
+		// copy /etc/hosts to tmpfs and bind copy into container
+		sessionHosts, err := stageFile("/etc/hosts", sessionPath)
+		if err != nil {
+			return err
+		}
+
+		sylog.Debugf("Mounting %s at %s\n", sessionHosts, dest)
+		if err := rpcOps.Mount(sessionHosts, dest, "", syscall.MS_BIND, ""); err != nil {
+			return fmt.Errorf("mount %s failed: %s", sessionHosts, err)
+		}
+	} else {
+		sylog.Warningf("Host resolution could fail: while accessing to /etc/hosts: %s", err)
 	}
 
 	sylog.Debugf("Chdir into %s\n", sessionRootFs)
