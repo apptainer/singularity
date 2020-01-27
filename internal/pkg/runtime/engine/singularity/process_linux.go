@@ -359,7 +359,7 @@ func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error 
 		for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
 			if ns.Type == specs.UserNamespace {
 				nspath := filepath.Join(path, "user")
-				e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, nspath)
+				e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(specs.UserNamespace), nspath)
 				file.UserNs = true
 				break
 			}
