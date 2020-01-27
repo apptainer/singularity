@@ -1181,7 +1181,12 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 
 		img, err := e.loadImage(splitted[0], writableOverlay)
 		if err != nil {
-			return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
+			if !image.IsReadOnlyFilesytem(err) {
+				return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
+			}
+			// let's proceed with readonly filesystem and set
+			// writableOverlay to appropriate value
+			writableOverlay = false
 		}
 
 		for _, part := range img.Partitions {
@@ -1223,7 +1228,9 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, error) {
 	imgObject, err := image.Init(path, writable)
 	if err != nil {
-		return nil, err
+		// pass imgObject for overlay and read-only filesystem error.
+		// Do not replace it by nil
+		return imgObject, err
 	}
 
 	link, err := mainthread.Readlink(imgObject.Source)

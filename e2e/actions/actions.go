@@ -828,9 +828,9 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 			profile: e2e.RootProfile,
 		},
 		{
-			name:    "overlay_squashFS_find_fail_without_ro",
-			argv:    []string{"--overlay", squashfsImage, c.env.ImagePath, "true"},
-			exit:    255,
+			name:    "overlay_squashFS_find_without_ro",
+			argv:    []string{"--overlay", squashfsImage, c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", squashMarkerFile)},
+			exit:    0,
 			profile: e2e.RootProfile,
 		},
 		{
