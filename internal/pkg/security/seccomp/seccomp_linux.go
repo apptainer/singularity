@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,13 +13,11 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/opencontainers/runtime-tools/generate"
-
-	"github.com/sylabs/singularity/internal/pkg/sylog"
-
-	cseccomp "github.com/kubernetes-sigs/cri-o/pkg/seccomp"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/opencontainers/runtime-tools/generate"
+	cseccomp "github.com/seccomp/containers-golang"
 	lseccomp "github.com/seccomp/libseccomp-golang"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 var scmpArchMap = map[specs.Arch]lseccomp.ScmpArch{
@@ -207,17 +205,18 @@ func LoadProfileFromFile(profile string, generator *generate.Generator) error {
 	if generator.Config.Linux == nil {
 		generator.Config.Linux = &specs.Linux{}
 	}
-	if generator.Config.Linux.Seccomp == nil {
-		generator.Config.Linux.Seccomp = &specs.LinuxSeccomp{}
-	}
 	if generator.Config.Process == nil {
 		generator.Config.Process = &specs.Process{}
 	}
 	if generator.Config.Process.Capabilities == nil {
 		generator.Config.Process.Capabilities = &specs.LinuxCapabilities{}
 	}
-	if err := cseccomp.LoadProfileFromBytes(data, generator); err != nil {
+
+	seccompConfig, err := cseccomp.LoadProfileFromBytes(data, generator.Config)
+	if err != nil {
 		return err
 	}
+	generator.Config.Linux.Seccomp = seccompConfig
+
 	return nil
 }

@@ -35,13 +35,11 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/websocket v1.4.1
-	github.com/hashicorp/go-multierror v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/klauspost/compress v1.9.8 // indirect
 	github.com/kr/pty v1.1.8
-	github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
 	github.com/mattn/go-runewidth v0.0.2 // indirect
 	github.com/mtrmac/gpgme v0.1.1 // indirect
 	github.com/openSUSE/umoci v0.4.5
@@ -56,7 +54,8 @@ require (
 	github.com/prometheus/client_golang v0.0.0-20180607123607-faf4ec335fe0 // indirect
 	github.com/prometheus/common v0.0.0-20180518154759-7600349dcfe1 // indirect
 	github.com/satori/go.uuid v1.2.0
-	github.com/seccomp/libseccomp-golang v0.9.0
+	github.com/seccomp/containers-golang v0.3.2
+	github.com/seccomp/libseccomp-golang v0.9.1
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.6.0

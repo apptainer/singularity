@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,12 +9,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-
 	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 )
 
 // RootFs is the default root path for OCI bundle
@@ -70,7 +69,7 @@ func GenerateBundleConfig(bundlePath string, config *specs.Spec) (*generate.Gene
 
 	if config == nil {
 		// generate and write config.json in bundle
-		g, err = generate.New(runtime.GOOS)
+		g, err = oci.DefaultConfig()
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate OCI config: %s", err)
 		}
