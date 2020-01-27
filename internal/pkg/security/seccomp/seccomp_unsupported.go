@@ -15,7 +15,7 @@ import (
 	"github.com/opencontainers/runtime-tools/generate"
 )
 
-// Enabled returns wether seccomp is enabled or not
+// Enabled returns whether seccomp is enabled or not
 func Enabled() bool {
 	return false
 }

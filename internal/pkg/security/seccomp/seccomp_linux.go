@@ -68,7 +68,7 @@ func hasConditionSupport() bool {
 	return (major > 2) || (major == 2 && minor >= 2) || (major == 2 && minor == 2 && micro >= 1)
 }
 
-// Enabled returns wether seccomp is enabled or not
+// Enabled returns whether seccomp is enabled or not
 func Enabled() bool {
 	return true
 }
