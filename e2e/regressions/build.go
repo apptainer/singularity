@@ -191,6 +191,25 @@ func (c *regressionsTests) issue4943(t *testing.T) {
 
 }
 
+// Test -c section parameter is correctly handled.
+func (c *regressionsTests) issue4967(t *testing.T) {
+	image := filepath.Join(c.env.TestDir, "issue_4967.sif")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(image, "testdata/regressions/issue_4967.def"),
+		e2e.PostRun(func(t *testing.T) {
+			os.Remove(image)
+		}),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ContainMatch, "function foo"),
+		),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := regressionsTests{
@@ -203,5 +222,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"issue 4524": c.issue4524, // https://github.com/sylabs/singularity/issues/4524
 		"issue 4583": c.issue4583, // https://github.com/sylabs/singularity/issues/4583
 		"issue 4943": c.issue4943, // https://github.com/sylabs/singularity/issues/4943
+		"issue 4967": c.issue4967, // https://github.com/sylabs/singularity/issues/4967
 	}
 }
