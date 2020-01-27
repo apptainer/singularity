@@ -20,7 +20,7 @@ import (
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes/docker"
-	ocitypes "github.com/containers/image/types"
+	ocitypes "github.com/containers/image/v5/types"
 	"github.com/deislabs/oras/pkg/content"
 	orasctx "github.com/deislabs/oras/pkg/context"
 	"github.com/deislabs/oras/pkg/oras"

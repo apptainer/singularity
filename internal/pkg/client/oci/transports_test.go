@@ -8,7 +8,7 @@ package oci
 import (
 	"testing"
 
-	"github.com/containers/image/transports"
+	"github.com/containers/image/v5/transports"
 )
 
 func TestIsSupported(t *testing.T) {

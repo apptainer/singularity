@@ -15,8 +15,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	oci "github.com/containers/image/oci/layout"
-	"github.com/containers/image/types"
+	oci "github.com/containers/image/v5/oci/layout"
+	"github.com/containers/image/v5/types"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	buildTypes "github.com/sylabs/singularity/pkg/build/types"

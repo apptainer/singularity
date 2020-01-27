@@ -3,9 +3,7 @@ module github.com/sylabs/singularity
 go 1.13
 
 require (
-	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
-	github.com/VividCortex/ewma v1.1.1 // indirect
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
 	github.com/apex/log v1.1.1
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
@@ -18,15 +16,12 @@ require (
 	github.com/containerd/continuity v0.0.0-20200107194136-26c1120b8d41 // indirect
 	github.com/containernetworking/cni v0.7.1
 	github.com/containernetworking/plugins v0.8.5
-	github.com/containers/image v3.0.2+incompatible
-	github.com/containers/storage v1.13.5 // indirect
+	github.com/containers/image/v5 v5.1.0
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/creack/pty v1.1.9 // indirect
 	github.com/deislabs/oras v0.8.0
 	github.com/docker/docker v0.7.3-0.20190826074503-38ab9da00309
-	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
-	github.com/etcd-io/bbolt v1.3.3 // indirect
 	github.com/fatih/color v1.9.0
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
@@ -35,7 +30,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/websocket v1.4.1
-	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/klauspost/compress v1.9.8 // indirect
@@ -64,14 +58,12 @@ require (
 	github.com/sylabs/scs-library-client v0.4.4
 	github.com/sylabs/sif v1.0.9
 	github.com/urfave/cli v1.22.2 // indirect
-	github.com/vbauerster/mpb v3.4.0+incompatible // indirect
 	github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
-	go.etcd.io/bbolt v1.3.3 // indirect
 	go.opencensus.io v0.22.2 // indirect
 	go4.org v0.0.0-20180417224846-9599cf28b011 // indirect
 	golang.org/x/crypto v0.0.0-20200117160349-530e935923ad

@@ -12,7 +12,7 @@ import (
 	"io"
 	"os"
 
-	ocitypes "github.com/containers/image/types"
+	ocitypes "github.com/containers/image/v5/types"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
