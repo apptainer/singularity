@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -356,6 +357,9 @@ func compareKeyEntity(e *openpgp.Entity, oldToken string) bool {
 }
 
 func findKeyByFingerprint(entities openpgp.EntityList, fingerprint string) *openpgp.Entity {
+	// Strip any `0x` prefix off the front of the fingerprint we are looking for
+	// to match with or without `0x` passed in
+	fingerprint = strings.TrimPrefix(fingerprint, "0x")
 	for _, e := range entities {
 		if compareKeyEntity(e, fingerprint) {
 			return e
@@ -387,6 +391,9 @@ func (keyring *Handle) CheckLocalPubKey(ckey string) (bool, error) {
 // was not found. The elements of the new list are the _same_ pointers
 // found in the original list.
 func removeKey(list openpgp.EntityList, fingerprint string) openpgp.EntityList {
+	// Strip any `0x` prefix off the front of the fingerprint we are looking for
+	// to match with or without `0x` passed in
+	fingerprint = strings.TrimPrefix(fingerprint, "0x")
 	for idx, e := range list {
 		if compareKeyEntity(e, fingerprint) {
 			newList := make(openpgp.EntityList, len(list)-1)
@@ -568,6 +575,13 @@ func formatMROutput(mrString string) (int, []byte, error) {
 
 // SearchPubkey connects to a key server and searches for a specific key
 func SearchPubkey(ctx context.Context, httpClient *http.Client, search, keyserverURI, authToken string, longOutput bool) error {
+	// If the search term is 8+ hex chars then it's a fingerprint, and
+	// we need to prefix with 0x for the search.
+	var IsFingerprint = regexp.MustCompile(`^[0-9A-F]{8,}$`).MatchString
+	if IsFingerprint(search) {
+		search = "0x" + search
+	}
+
 	// Get a Key Service client.
 	c, err := client.NewClient(&client.Config{
 		BaseURL:    keyserverURI,
