@@ -92,8 +92,8 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		}
 	}
 
-	g.AddOrReplaceLinuxNamespace(specs.UserNamespace, "")
-	g.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
+	g.AddOrReplaceLinuxNamespace(string(specs.UserNamespace), "")
+	g.AddOrReplaceLinuxNamespace(string(specs.MountNamespace), "")
 	g.AddOrReplaceLinuxNamespace(string(specs.PIDNamespace), "")
 
 	uid := uint32(os.Getuid())
