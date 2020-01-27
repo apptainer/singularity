@@ -6,7 +6,7 @@
 package oci
 
 import (
-	"github.com/containers/image/transports"
+	"github.com/containers/image/v5/transports"
 )
 
 // IsSupported returns whether or not the transport given is supported. To fit within a switch/case

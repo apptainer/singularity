@@ -12,7 +12,7 @@ package sources
 import (
 	"context"
 
-	"github.com/containers/image/types"
+	"github.com/containers/image/v5/types"
 	imagetools "github.com/opencontainers/image-tools/image"
 	sytypes "github.com/sylabs/singularity/pkg/build/types"
 )

@@ -10,7 +10,7 @@ import (
 	"os"
 	"runtime"
 
-	ocitypes "github.com/containers/image/types"
+	ocitypes "github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"

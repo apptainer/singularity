@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/containers/image/types"
+	"github.com/containers/image/v5/types"
 	"github.com/openSUSE/umoci"
 	umocilayer "github.com/openSUSE/umoci/oci/layer"
 	"github.com/openSUSE/umoci/pkg/idtools"

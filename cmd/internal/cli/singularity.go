@@ -17,7 +17,7 @@ import (
 	"strings"
 	"text/template"
 
-	ocitypes "github.com/containers/image/types"
+	ocitypes "github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"

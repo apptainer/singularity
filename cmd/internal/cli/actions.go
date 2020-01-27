@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	ocitypes "github.com/containers/image/types"
+	ocitypes "github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
 	library "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
