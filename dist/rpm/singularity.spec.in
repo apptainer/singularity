@@ -51,8 +51,6 @@ BuildRequires: golang
 BuildRequires: git
 BuildRequires: gcc
 BuildRequires: make
-BuildRequires: libuuid-devel
-BuildRequires: openssl-devel
 %if ! 0%{?el6}
 %if "%{sles_version}" != "11"
 BuildRequires: libseccomp-devel

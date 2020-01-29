@@ -20,10 +20,6 @@ addons:
     packages:
       - flawfinder
       - squashfs-tools
-      - uuid-dev
-      - libuuid1
-      - libssl-dev
-      - libssl1.0.0
       - libseccomp-dev
       - cryptsetup
 
