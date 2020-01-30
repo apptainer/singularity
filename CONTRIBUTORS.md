@@ -36,6 +36,7 @@
     - Geoffroy Vallee <geoffroy@sylabs.io>, <geoffroy.vallee@gmail.com>
     - George Hartzell <hartzell@alerce.com>
     - Gert Hulselmans <gert.hulselmans@kuleuven.vib.be>
+    - Götz Waschk <goetz.waschk@desy.de>
     - Hakon Enger <hakonenger@github.com>
     - Hugo Meiland <hugo.meiland@microsoft.com>
     - Ian Kaneshiro <ian@sylabs.io>, <iankane@umich.edu>
