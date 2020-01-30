@@ -83,7 +83,7 @@ doc() {
 
 examples() {
 	arch="noarch"
-        # Put the examples into a seperate package
+        # Put the examples into a separate package
         cd "$builddir"
         mkdir -p "$subpkgdir"/usr/share/doc/"$pkgname"/examples || return 1
         mv examples/* "$subpkgdir"/usr/share/doc/"$pkgname"/examples || return 1
