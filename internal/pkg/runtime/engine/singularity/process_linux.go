@@ -354,12 +354,12 @@ func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error 
 		}
 		for _, n := range namespaces {
 			nspath := filepath.Join(path, n.nstype)
-			e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
+			e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(n.ns, nspath)
 		}
 		for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
 			if ns.Type == specs.UserNamespace {
 				nspath := filepath.Join(path, "user")
-				e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(specs.UserNamespace), nspath)
+				e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, nspath)
 				file.UserNs = true
 				break
 			}

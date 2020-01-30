@@ -10,8 +10,8 @@ import (
 	"fmt"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/opencontainers/runtime-tools/generate"
 	cseccomp "github.com/seccomp/containers-golang"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 )
 
@@ -31,13 +31,13 @@ func (c *Config) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &c.Spec); err != nil {
 		return err
 	}
-	c.Generator = generate.Generator{Config: &c.Spec}
+	c.Generator = *generate.New(&c.Spec)
 	return nil
 }
 
 // DefaultConfig returns an OCI config generator with a
 // default OCI configuration.
-func DefaultConfig() (generate.Generator, error) {
+func DefaultConfig() (*generate.Generator, error) {
 	var err error
 
 	config := specs.Spec{
@@ -221,9 +221,9 @@ func DefaultConfig() (generate.Generator, error) {
 	if seccomp.Enabled() {
 		config.Linux.Seccomp, err = cseccomp.GetDefaultProfile(&config)
 		if err != nil {
-			return generate.Generator{}, fmt.Errorf("failed to get seccomp default profile: %s", err)
+			return nil, fmt.Errorf("failed to get seccomp default profile: %s", err)
 		}
 	}
 
-	return generate.NewFromSpec(&config), nil
+	return &generate.Generator{Config: &config}, nil
 }

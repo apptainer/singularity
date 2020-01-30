@@ -485,7 +485,7 @@ func (e *EngineOperations) prepareAutofs(starterConfig *starter.Config) error {
 // user supplied configuration for container creation.
 func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config) error {
 	// always set mount namespace
-	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(specs.MountNamespace), "")
+	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
 
 	// if PID namespace is not allowed remove it from namespaces
 	if !e.EngineConfig.File.AllowPidNs && e.EngineConfig.OciConfig.Linux != nil {
@@ -564,7 +564,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 
 		e.EngineConfig.OciConfig.SetupPrivileged(true)
 
-		e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(specs.UserNamespace), "")
+		e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, "")
 
 		starterConfig.SetHybridWorkflow(true)
 		starterConfig.SetAllowSetgroups(true)

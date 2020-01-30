@@ -16,12 +16,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
@@ -151,7 +151,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	ociConfig := &oci.Config{}
-	generator := generate.Generator{Config: &ociConfig.Spec}
+	generator := generate.New(&ociConfig.Spec)
 
 	engineConfig.OciConfig = ociConfig
 
@@ -540,7 +540,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	environment := os.Environ()
 
 	// Clean environment
-	env.SetContainerEnv(&generator, environment, IsCleanEnv, engineConfig.GetHomeDest())
+	env.SetContainerEnv(generator, environment, IsCleanEnv, engineConfig.GetHomeDest())
 
 	if pwd, err := os.Getwd(); err == nil {
 		engineConfig.SetCwd(pwd)

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,7 +13,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 )
 
@@ -88,7 +88,7 @@ func (e *EngineOperations) PostStartProcess(context.Context, int) error {
 }
 
 func (e *EngineOperations) cleanEnv() {
-	generator := generate.Generator{Config: &e.EngineConfig.OciConfig.Spec}
+	generator := generate.New(&e.EngineConfig.OciConfig.Spec)
 
 	// copy and cache environment
 	environment := e.EngineConfig.OciConfig.Spec.Process.Env
@@ -104,7 +104,7 @@ func (e *EngineOperations) cleanEnv() {
 	homeDest := "/root"
 
 	// add relevant environment variables back
-	env.SetContainerEnv(&generator, environment, true, homeDest)
+	env.SetContainerEnv(generator, environment, true, homeDest)
 
 	// expose build specific environment variables for scripts
 	for _, envVar := range environment {

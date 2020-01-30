@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,17 +10,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"testing"
 
-	"github.com/sylabs/singularity/pkg/ocibundle/tools"
-
-	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 )
 
 func TestFromSif(t *testing.T) {
@@ -93,7 +91,7 @@ func TestFromSif(t *testing.T) {
 				t.Fatal(err)
 			}
 			// generate a default configuration
-			g, err := generate.New(runtime.GOOS)
+			g, err := oci.DefaultConfig()
 			if err != nil {
 				t.Fatal(err)
 			}

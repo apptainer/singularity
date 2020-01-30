@@ -13,11 +13,11 @@ import (
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	fakerootutil "github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
@@ -63,7 +63,7 @@ func (e *EngineOperations) Config() config.EngineConfig {
 // No additional privileges can be gained as any of them are already
 // dropped by the time PrepareConfig is called.
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
-	g := generate.Generator{Config: &specs.Spec{}}
+	g := generate.New(nil)
 
 	configurationFile := buildcfg.SINGULARITY_CONF_FILE
 
@@ -93,9 +93,9 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		}
 	}
 
-	g.AddOrReplaceLinuxNamespace(string(specs.UserNamespace), "")
-	g.AddOrReplaceLinuxNamespace(string(specs.MountNamespace), "")
-	g.AddOrReplaceLinuxNamespace(string(specs.PIDNamespace), "")
+	g.AddOrReplaceLinuxNamespace(specs.UserNamespace, "")
+	g.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
+	g.AddOrReplaceLinuxNamespace(specs.PIDNamespace, "")
 
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())

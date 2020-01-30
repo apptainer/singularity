@@ -12,8 +12,8 @@ import (
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 )
 
 // RootFs is the default root path for OCI bundle
@@ -48,7 +48,7 @@ const RunScript = "/.singularity.d/actions/run"
 // if there is no configuration
 func GenerateBundleConfig(bundlePath string, config *specs.Spec) (*generate.Generator, error) {
 	var err error
-	var g generate.Generator
+	var g *generate.Generator
 
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
@@ -75,20 +75,16 @@ func GenerateBundleConfig(bundlePath string, config *specs.Spec) (*generate.Gene
 		}
 		g.SetProcessArgs([]string{RunScript})
 	} else {
-		g = generate.Generator{
-			Config:       config,
-			HostSpecific: true,
-		}
+		g = generate.New(config)
 	}
 	g.SetRootPath(rootFsDir)
-	return &g, nil
+	return g, nil
 }
 
 // SaveBundleConfig creates config.json in OCI bundle directory and
 // saves OCI configuration
 func SaveBundleConfig(bundlePath string, g *generate.Generator) error {
-	options := generate.ExportOptions{}
-	return g.SaveToFile(Config(bundlePath).Path(), options)
+	return g.SaveToFile(Config(bundlePath).Path())
 }
 
 // DeleteBundle deletes bundle directory
