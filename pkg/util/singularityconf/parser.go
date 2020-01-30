@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package config
+package singularityconf
 
 import (
 	"fmt"
@@ -56,8 +56,8 @@ func HasDirective(directive string) bool {
 		return false
 	}
 
-	config := new(FileConfig)
-	elem := reflect.ValueOf(config).Elem()
+	file := new(File)
+	elem := reflect.ValueOf(file).Elem()
 
 	for i := 0; i < elem.NumField(); i++ {
 		typeField := elem.Type().Field(i)
@@ -72,10 +72,10 @@ func HasDirective(directive string) bool {
 
 // GetConfig sets the corresponding interface fields associated
 // with directives.
-func GetConfig(directives Directives) (*FileConfig, error) {
-	config := new(FileConfig)
+func GetConfig(directives Directives) (*File, error) {
+	file := new(File)
 
-	elem := reflect.ValueOf(config).Elem()
+	elem := reflect.ValueOf(file).Elem()
 
 	// Iterate over the fields of f and handle each type
 	for i := 0; i < elem.NumField(); i++ {
@@ -164,11 +164,11 @@ func GetConfig(directives Directives) (*FileConfig, error) {
 		}
 	}
 
-	return config, nil
+	return file, nil
 }
 
-// ParseFile parses configuration file with the specified path.
-func ParseFile(filepath string) (*FileConfig, error) {
+// Parse parses configuration file with the specified path.
+func Parse(filepath string) (*File, error) {
 	if filepath == "" {
 		// grab the default configuration
 		return GetConfig(nil)
@@ -188,10 +188,10 @@ func ParseFile(filepath string) (*FileConfig, error) {
 	return GetConfig(directives)
 }
 
-// Generate executes the default template asset on FileConfig object if
+// Generate executes the default template asset on File object if
 // no custom template path is provided otherwise it uses the template
 // found in the path.
-func Generate(out io.Writer, tmplPath string, config *FileConfig) error {
+func Generate(out io.Writer, tmplPath string, config *File) error {
 	var err error
 	var t *template.Template
 

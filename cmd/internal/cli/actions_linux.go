@@ -39,6 +39,7 @@ import (
 	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/rlimit"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	"golang.org/x/sys/unix"
 )
 
@@ -144,7 +145,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	engineConfig := singularityConfig.NewConfig()
 
-	engineConfig.File, err = config.ParseFile(buildcfg.SINGULARITY_CONF_FILE)
+	engineConfig.File, err = singularityconf.Parse(buildcfg.SINGULARITY_CONF_FILE)
 	if err != nil {
 		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
 	}

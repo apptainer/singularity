@@ -10,12 +10,12 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	"golang.org/x/sys/unix"
 )
 
 func SetupDefaultConfig(t *testing.T, path string) {
-	c, err := config.ParseFile("")
+	c, err := singularityconf.Parse("")
 	if err != nil {
 		t.Fatalf("while generating singularity configuration: %s", err)
 	}
@@ -26,7 +26,7 @@ func SetupDefaultConfig(t *testing.T, path string) {
 			t.Fatalf("while creating singularity configuration: %s", err)
 		}
 
-		if err := config.Generate(f, "", c); err != nil {
+		if err := singularityconf.Generate(f, "", c); err != nil {
 			t.Fatalf("while generating singularity configuration: %s", err)
 		}
 

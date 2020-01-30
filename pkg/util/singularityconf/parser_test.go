@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package config
+package singularityconf
 
 import (
 	"fmt"
@@ -44,11 +44,11 @@ func TestParser(t *testing.T) {
 
 	f.Close()
 
-	if _, err = ParseFile("test_samples/no.conf"); err == nil {
+	if _, err = Parse("test_samples/no.conf"); err == nil {
 		t.Errorf("unexpected success while opening non existent configuration file")
 	}
 
-	config, err := ParseFile(configFile)
+	config, err := Parse(configFile)
 	if err != nil {
 		t.Errorf("unexpected error while parsing %s: %s", configFile, err)
 	}
@@ -57,7 +57,7 @@ func TestParser(t *testing.T) {
 		t.Errorf("config != defaultConfig")
 	}
 
-	config, err = ParseFile("")
+	config, err = Parse("")
 	if err != nil {
 		t.Errorf("unexpected error while parsing %s: %s", configFile, err)
 	}

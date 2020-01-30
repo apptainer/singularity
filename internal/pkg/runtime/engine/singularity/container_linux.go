@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -40,6 +42,14 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sys/unix"
 )
+
+// global variables used by master process only at various steps:
+// - setup
+// - cleanup
+// - post start process
+var cryptDev string
+var networkSetup *network.Setup
+var cgroupManager *cgroups.Manager
 
 // defaultCNIConfPath is the default directory to CNI network configuration files.
 var defaultCNIConfPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", "network")
@@ -73,6 +83,11 @@ type container struct {
 func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	var err error
 
+	engine.EngineConfig.File, err = singularityconf.Parse(buildcfg.SINGULARITY_CONF_FILE)
+	if err != nil {
+		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
+	}
+
 	c := &container{
 		engine:        engine,
 		rpcOps:        rpcOps,
@@ -105,7 +120,7 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 	}
 
 	if os.Geteuid() != 0 {
-		c.sessionSize = int(engine.EngineConfig.File.SessiondirMaxSize)
+		c.sessionSize = int(c.engine.EngineConfig.File.SessiondirMaxSize)
 	} else if engine.EngineConfig.GetAllowSUID() && !c.userNS {
 		c.suidFlag = 0
 	}
@@ -221,11 +236,10 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		path := engine.EngineConfig.GetCgroupsPath()
 		if path != "" {
 			cgroupPath := filepath.Join("/singularity", strconv.Itoa(pid))
-			manager := &cgroups.Manager{Pid: pid, Path: cgroupPath}
-			if err := manager.ApplyFromFile(path); err != nil {
+			cgroupManager = &cgroups.Manager{Pid: pid, Path: cgroupPath}
+			if err := cgroupManager.ApplyFromFile(path); err != nil {
 				return fmt.Errorf("failed to apply cgroups resources restriction: %s", err)
 			}
-			engine.EngineConfig.Cgroups = manager
 		}
 	}
 
@@ -609,16 +623,13 @@ func (c *container) mountImage(mnt *mount.Point) error {
 			masterPid = os.Getpid()
 		}
 
-		cryptDev, err := c.rpcOps.Decrypt(offset, path, key, masterPid)
+		cryptDev, err = c.rpcOps.Decrypt(offset, path, key, masterPid)
 
 		if err != nil {
 			return fmt.Errorf("unable to decrypt the file system: %s", err)
 		}
 
 		path = cryptDev
-
-		// Save this device to cleanup later
-		c.engine.EngineConfig.CryptDev = cryptDev
 
 		// Currently we only support encrypted squashfs file system
 		mountType = "squashfs"
@@ -1045,7 +1056,7 @@ func (c *container) addDevMount(system *mount.System) error {
 		}
 		devshmPath, _ := c.session.GetPath("/dev/shm")
 		flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
-		err := system.Points.AddFS(mount.DevTag, devshmPath, c.engine.EngineConfig.File.MemoryFSType, flags, "mode=1777")
+		err := system.Points.AddFS(mount.DevTag, devshmPath, c.sessionFsType, flags, "mode=1777")
 		if err != nil {
 			return fmt.Errorf("failed to add /dev/shm temporary filesystem: %s", err)
 		}
@@ -2045,15 +2056,17 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 	if err != nil {
 		return nil, fmt.Errorf("network setup failed: %s", err)
 	}
+	networkSetup = setup
+
 	netargs := c.engine.EngineConfig.GetNetworkArgs()
-	if err := setup.SetArgs(netargs); err != nil {
+	if err := networkSetup.SetArgs(netargs); err != nil {
 		return nil, fmt.Errorf("error while setting network arguments: %s", err)
 	}
 
 	return func(ctx context.Context) error {
 		if fakeroot {
 			// prevent port hijacking between user processes
-			if err := setup.SetPortProtection(fakerootNet, 0); err != nil {
+			if err := networkSetup.SetPortProtection(fakerootNet, 0); err != nil {
 				return err
 			}
 			if euid != 0 {
@@ -2062,12 +2075,11 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 			}
 		}
 
-		setup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
+		networkSetup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
 
-		if err := setup.AddNetworks(ctx); err != nil {
+		if err := networkSetup.AddNetworks(ctx); err != nil {
 			return fmt.Errorf("%s", err)
 		}
-		c.engine.EngineConfig.Network = setup
 		return nil
 	}, nil
 }

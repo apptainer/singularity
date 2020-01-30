@@ -37,6 +37,7 @@ import (
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	"golang.org/x/sys/unix"
 )
 
@@ -69,7 +70,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	}
 
 	configurationFile := buildcfg.SINGULARITY_CONF_FILE
-	e.EngineConfig.File, err = config.ParseFile(configurationFile)
+	e.EngineConfig.File, err = singularityconf.Parse(configurationFile)
 	if err != nil {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}

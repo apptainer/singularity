@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,9 +11,7 @@ import (
 	"net"
 	"net/rpc"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc/client"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 )
 
@@ -30,19 +28,12 @@ import (
 // of the setup (e.g. mount operations) where privileges may be required is performed
 // by calling RPC server methods (see internal/app/starter/rpc_linux.go for details).
 func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn net.Conn) error {
-	var err error
-
 	if e.CommonConfig.EngineName != singularityConfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
 	if e.EngineConfig.GetInstanceJoin() {
 		return nil
-	}
-
-	e.EngineConfig.File, err = config.ParseFile(buildcfg.SINGULARITY_CONF_FILE)
-	if err != nil {
-		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 
 	rpcOps := &client.RPC{

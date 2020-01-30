@@ -600,19 +600,19 @@ func (e *EngineOperations) stopFuseDrivers() {
 }
 
 func (e *EngineOperations) getIP() (string, error) {
-	if e.EngineConfig.Network == nil {
+	if networkSetup == nil {
 		return "", nil
 	}
 
 	net := strings.Split(e.EngineConfig.GetNetwork(), ",")
 
-	ip, err := e.EngineConfig.Network.GetNetworkIP(net[0], "4")
+	ip, err := networkSetup.GetNetworkIP(net[0], "4")
 	if err == nil {
 		return ip.String(), nil
 	}
 	sylog.Warningf("Could not get ipv4 %s", err)
 
-	ip, err = e.EngineConfig.Network.GetNetworkIP(net[0], "6")
+	ip, err = networkSetup.GetNetworkIP(net[0], "6")
 	if err == nil {
 		return ip.String(), nil
 	}
