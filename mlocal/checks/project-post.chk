@@ -306,42 +306,6 @@ else
 fi
 
 ########################
-# libssl dev
-########################
-printf " checking: libssl+headers... "
-if ! printf "#include <openssl/sha.h>\nint main() { }" | \
-   $tgtcc $user_cflags $ldflags -x c -o /dev/null - -lcrypto >/dev/null 2>&1; then
-	tgtstatic=0
-	echo "no"
-	if [ "$build_runtime" -eq 1 ]; then
-		echo
-		echo "Unable to find the libssl, need package openssl-devel (libssl-dev on Debian/Ubuntu)"
-		echo
-		exit 2
-	fi
-else
-	echo "yes"
-fi
-
-########################
-# libuuid dev
-########################
-printf " checking: libuuid+headers... "
-if ! printf "#include <uuid/uuid.h>\nint main() { }" | \
-   $tgtcc $user_cflags $ldflags -x c -o /dev/null - -luuid >/dev/null 2>&1; then
-	tgtstatic=0
-	echo "no"
-	if [ "$build_runtime" -eq 1 ]; then
-		echo
-		echo "unable to find the libuuid, need package libuuid-devel (uuid-dev on Debian/Ubuntu)"
-		echo
-		exit 2
-	fi
-else
-	echo "yes"
-fi
-
-########################
 # libseccomp dev
 ########################
 printf " checking: libseccomp+headers... "

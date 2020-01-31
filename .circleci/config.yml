@@ -43,7 +43,7 @@ x-run:
       # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
       sudo killall -9 apt-get || true && \
       sudo apt-get update -y && \
-      sudo apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools libseccomp-dev cryptsetup
+      sudo apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup
 
   build_singularity: &build_singularity
     name: Build Singularity
