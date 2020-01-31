@@ -270,10 +270,10 @@ func checkBuildTarget(path string) error {
 
 			isDefFile, _ := parser.IsValidDefinition(path)
 			if isDefFile {
-				question = "Build target is a valid definition file that will be overwritten. Do you still want to overwrite? [N/y]"
+				question = "Build target '" + f.Name() + "' is a definition file that will be overwritten. Do you still want to overwrite? [N/y]"
 			} else {
 
-				question = "Build target already exists. Do you want to overwrite? [N/y] "
+				question = "Build target '" + f.Name() + "' already exists. Do you want to overwrite? [N/y]"
 			}
 
 			input, err := interactive.AskYNQuestion("n", question)
