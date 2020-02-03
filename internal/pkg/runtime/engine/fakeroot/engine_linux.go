@@ -27,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // EngineOperations is a Singularity fakeroot runtime engine that implements engine.Operations.
@@ -71,7 +72,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("%s must be owned by root", configurationFile)
 	}
 
-	fileConfig, err := config.ParseFile(configurationFile)
+	fileConfig, err := singularityconf.Parse(configurationFile)
 	if err != nil {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}

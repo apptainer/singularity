@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -59,11 +59,11 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 		}
 	}
 
-	if e.EngineConfig.Network != nil {
+	if networkSetup != nil {
 		if e.EngineConfig.GetFakeroot() {
 			priv.Escalate()
 		}
-		if err := e.EngineConfig.Network.DelNetworks(ctx); err != nil {
+		if err := networkSetup.DelNetworks(ctx); err != nil {
 			sylog.Errorf("could not delete networks: %v", err)
 		}
 		if e.EngineConfig.GetFakeroot() {
@@ -71,14 +71,14 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 		}
 	}
 
-	if e.EngineConfig.Cgroups != nil {
-		if err := e.EngineConfig.Cgroups.Remove(); err != nil {
+	if cgroupManager != nil {
+		if err := cgroupManager.Remove(); err != nil {
 			sylog.Errorf("could not remove cgroups: %v", err)
 		}
 	}
 
-	if e.EngineConfig.CryptDev != "" {
-		if err := cleanupCrypt(e.EngineConfig.CryptDev); err != nil {
+	if cryptDev != "" {
+		if err := cleanupCrypt(cryptDev); err != nil {
 			sylog.Errorf("could not cleanup crypt: %v", err)
 		}
 	}

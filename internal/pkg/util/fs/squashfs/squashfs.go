@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // GetPath figures out where the mksquashfs binary is
@@ -20,7 +20,7 @@ import (
 func GetPath() (string, error) {
 	// Parse singularity configuration file
 	configFile := buildcfg.SINGULARITY_CONF_FILE
-	c, err := config.ParseFile(configFile)
+	c, err := singularityconf.Parse(configFile)
 	if err != nil {
 		return "", fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}

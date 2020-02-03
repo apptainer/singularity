@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,7 +10,9 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // Name is the name of the runtime.
@@ -24,6 +26,26 @@ const (
 	// UnderlayLayer is the string representation for the underlay layer.
 	UnderlayLayer = "underlay"
 )
+
+// EngineConfig stores the JSONConfig, the OciConfig and the File configuration.
+type EngineConfig struct {
+	JSON      *JSONConfig `json:"jsonConfig"`
+	OciConfig *oci.Config `json:"ociConfig"`
+
+	// File is not passed across stage but stay here for
+	// convenient use by runtime code and plugins.
+	File *singularityconf.File `json:"-"`
+}
+
+// NewConfig returns singularity.EngineConfig.
+func NewConfig() *EngineConfig {
+	ret := &EngineConfig{
+		JSON:      new(JSONConfig),
+		OciConfig: new(oci.Config),
+		File:      new(singularityconf.File),
+	}
+	return ret
+}
 
 // FuseMount stores the FUSE-related information required or provided by
 // plugins implementing options to add FUSE filesystems in the
