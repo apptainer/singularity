@@ -36,3 +36,27 @@ func GetPath() (string, error) {
 	// exec.LookPath functions on absolute paths (ignoring $PATH) as well
 	return exec.LookPath(p)
 }
+
+func GetProcs() (string, error) {
+	configFile := buildcfg.SINGULARITY_CONF_FILE
+	c, err := singularityconf.Parse(configFile)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse singularity.conf file: %s", err)
+	}
+	// proc is either "" or the string value in the conf file
+	proc := c.MksquashfsProcs
+
+	return proc, err
+}
+
+func GetMem() (string, error) {
+	configFile := buildcfg.SINGULARITY_CONF_FILE
+	c, err := singularityconf.Parse(configFile)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse singularity.conf file: %s", err)
+	}
+	// mem is either "" or the string value in the conf file
+	mem := c.MksquashfsMem
+
+	return mem, err
+}

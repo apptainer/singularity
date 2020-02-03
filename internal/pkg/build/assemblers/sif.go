@@ -26,8 +26,10 @@ import (
 
 // SIFAssembler doesn't store anything.
 type SIFAssembler struct {
-	GzipFlag       bool
-	MksquashfsPath string
+	GzipFlag        bool
+	MksquashfsProcs string
+	MksquashfsMem   string
+	MksquashfsPath  string
 }
 
 type encryptionOptions struct {
@@ -177,7 +179,12 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	if a.GzipFlag {
 		flags = append(flags, "-comp", "gzip")
 	}
-
+	if a.MksquashfsMem != "" {
+		flags = append(flags, "-mem", a.MksquashfsMem)
+	}
+	if a.MksquashfsProcs != "" {
+		flags = append(flags, "-processors", a.MksquashfsProcs)
+	}
 	arch := machine.ArchFromContainer(b.RootfsPath)
 	if arch == "" {
 		sylog.Infof("Architecture not recognized, use native")
