@@ -10,22 +10,51 @@ import (
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 )
 
 type buildcfgTests struct {
 	env e2e.TestEnv
 }
 
-func (c buildcfgTests) buildcfgTests(t *testing.T) {
+func (c buildcfgTests) buildcfgBasic(t *testing.T) {
 	tests := []struct {
-		name           string
-		cmdArgs        []string
-		expectedOutput string
+		name    string
+		cmdArgs []string
+		exit    int
+		op      e2e.SingularityCmdResultOp
 	}{
 		{
-			name:           "help",
-			cmdArgs:        []string{"--help"},
-			expectedOutput: "Output the currently set compile-time parameters",
+			name:    "help",
+			cmdArgs: []string{"--help"},
+			exit:    0,
+			op: e2e.ExpectOutput(
+				e2e.RegexMatch,
+				"^Output the currently set compile-time parameters",
+			),
+		},
+		{
+			name:    "sessiondir",
+			cmdArgs: []string{"SESSIONDIR"},
+			exit:    0,
+			op: e2e.ExpectOutput(
+				e2e.ExactMatch,
+				buildcfg.SESSIONDIR,
+			),
+		},
+		{
+			name:    "unknown",
+			cmdArgs: []string{"UNKNOWN"},
+			exit:    1,
+		},
+		{
+			name:    "all",
+			cmdArgs: []string{},
+			exit:    0,
+			op: e2e.ExpectOutput(
+				e2e.ContainMatch,
+				"SESSIONDIR="+buildcfg.SESSIONDIR,
+			),
 		},
 	}
 
@@ -37,8 +66,8 @@ func (c buildcfgTests) buildcfgTests(t *testing.T) {
 			e2e.WithCommand("buildcfg"),
 			e2e.WithArgs(tt.cmdArgs...),
 			e2e.ExpectExit(
-				0,
-				e2e.ExpectOutput(e2e.RegexMatch, `^`+tt.expectedOutput),
+				tt.exit,
+				tt.op,
 			),
 		)
 	}
@@ -51,6 +80,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	}
 
 	return testhelper.Tests{
-		"buildcfgHelp": c.buildcfgTests,
+		"basic": c.buildcfgBasic,
 	}
 }
