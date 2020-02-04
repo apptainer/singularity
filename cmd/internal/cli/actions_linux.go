@@ -36,7 +36,6 @@ import (
 	"github.com/sylabs/singularity/pkg/util/crypt"
 	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
-	"github.com/sylabs/singularity/pkg/util/rlimit"
 	"golang.org/x/sys/unix"
 )
 
