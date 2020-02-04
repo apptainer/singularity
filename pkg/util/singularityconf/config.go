@@ -42,7 +42,7 @@ type File struct {
 	CniConfPath             string   `directive:"cni configuration path"`
 	CniPluginPath           string   `directive:"cni plugin path"`
 	MksquashfsPath          string   `directive:"mksquashfs path"`
-	MksquashfsProcs         string   `directive:"mksquashfs procs"`
+	MksquashfsProcs         uint     `directive:"mksquashfs procs"`
 	MksquashfsMem           string   `directive:"mksquashfs mem"`
 	CryptsetupPath          string   `directive:"cryptsetup path"`
 }
@@ -297,7 +297,7 @@ memory fs type = {{ .MemoryFSType }}
 # This allows the administrator to specify the number of CPUs for mksquashfs 
 # to use when building an image.  The fewer processors the longer it takes.
 # mksquashfs procs =
-{{ if ne .MksquashfsProcs "" }}mksquashfs procs = {{ .MksquashfsProcs }}{{ end }}
+{{ if gt .MksquashfsProcs 0 }}mksquashfs procs = {{ .MksquashfsProcs }}{{ end }}
 
 # MKSQUASHFS MEM: [STRING]
 # DEFAULT: Unlimited

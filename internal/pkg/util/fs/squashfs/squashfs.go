@@ -37,11 +37,11 @@ func GetPath() (string, error) {
 	return exec.LookPath(p)
 }
 
-func GetProcs() (string, error) {
+func GetProcs() (uint, error) {
 	configFile := buildcfg.SINGULARITY_CONF_FILE
 	c, err := singularityconf.Parse(configFile)
 	if err != nil {
-		return "", fmt.Errorf("unable to parse singularity.conf file: %s", err)
+		return 0, fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 	// proc is either "" or the string value in the conf file
 	proc := c.MksquashfsProcs
