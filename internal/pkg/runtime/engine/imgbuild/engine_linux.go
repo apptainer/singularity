@@ -68,7 +68,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 
 	e.EngineConfig.OciConfig.SetupPrivileged(true)
 
-	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(specs.MountNamespace), "")
+	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
 
 	if e.EngineConfig.OciConfig.Linux != nil {
 		starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)

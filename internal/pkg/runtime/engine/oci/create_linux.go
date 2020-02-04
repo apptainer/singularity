@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -324,7 +324,7 @@ func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn
 			}
 			if has || enabled {
 				nspath := filepath.Join(path, n.nstype)
-				e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
+				e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(n.ns, nspath)
 			}
 		} else if err != nil {
 			return fmt.Errorf("failed to check %s root and container namespace: %s", n.ns, err)

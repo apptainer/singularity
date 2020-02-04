@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -188,9 +188,9 @@ func TestSetContainerEnv(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			ociConfig := &oci.Config{}
-			generator := generate.Generator{Config: &ociConfig.Spec}
+			generator := generate.New(&ociConfig.Spec)
 
-			SetContainerEnv(&generator, tc.env, tc.cleanEnv, tc.homeDest)
+			SetContainerEnv(generator, tc.env, tc.cleanEnv, tc.homeDest)
 			if !equal(t, ociConfig.Process.Env, tc.resultEnv) {
 				t.Fatalf("unexpected envs:\n want: %v\ngot: %v", tc.resultEnv, ociConfig.Process.Env)
 			}

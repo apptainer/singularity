@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,7 +12,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
 	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
@@ -37,7 +37,7 @@ func OciCreate(containerID string, args *OciArgs) error {
 	}
 
 	engineConfig := oci.NewConfig()
-	generator := generate.Generator{Config: &engineConfig.OciConfig.Spec}
+	generator := generate.New(&engineConfig.OciConfig.Spec)
 	engineConfig.SetBundlePath(absBundle)
 	engineConfig.SetLogPath(args.LogPath)
 	engineConfig.SetLogFormat(args.LogFormat)

@@ -12,7 +12,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -76,7 +75,7 @@ func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 			}
 			g.SetProcessTerminal(true)
 
-			err = g.SaveToFile(ociConfig, generate.ExportOptions{})
+			err = g.SaveToFile(ociConfig)
 			if err != nil {
 				err = errors.Wrapf(err, "saving OCI config at %q", ociConfig)
 				t.Fatalf("failed to save OCI config: %+v", err)
