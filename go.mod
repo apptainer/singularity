@@ -16,7 +16,7 @@ require (
 	github.com/containerd/continuity v0.0.0-20200107194136-26c1120b8d41 // indirect
 	github.com/containernetworking/cni v0.7.1
 	github.com/containernetworking/plugins v0.8.5
-	github.com/containers/image/v5 v5.1.0
+	github.com/containers/image/v5 v5.2.0
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/creack/pty v1.1.9 // indirect
 	github.com/deislabs/oras v0.8.0
@@ -32,10 +32,8 @@ require (
 	github.com/gorilla/websocket v1.4.1
 	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
-	github.com/klauspost/compress v1.9.8 // indirect
 	github.com/kr/pty v1.1.8
 	github.com/mattn/go-runewidth v0.0.2 // indirect
-	github.com/mtrmac/gpgme v0.1.1 // indirect
 	github.com/openSUSE/umoci v0.4.5
 	github.com/opencontainers/go-digest v1.0.0-rc1
 	github.com/opencontainers/image-spec v1.0.2-0.20191218002246-9ea04d1f37d7
