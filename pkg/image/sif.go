@@ -38,6 +38,8 @@ func checkPartitionType(img *Image, fstype sif.Fstype, offset int64) (uint32, er
 		return EXT3, nil
 	case sif.FsEncryptedSquashfs:
 		return ENCRYPTSQUASHFS, nil
+	case sif.FsRaw:
+		return RAW, nil
 	}
 
 	return 0, fmt.Errorf("unknown filesystem type %v", fstype)
@@ -103,10 +105,12 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 
 		img.Partitions = []Section{
 			{
-				Offset: uint64(desc.Fileoff),
-				Size:   uint64(desc.Filelen),
-				Name:   RootFs,
-				Type:   htype,
+				Offset:       uint64(desc.Fileoff),
+				Size:         uint64(desc.Filelen),
+				ID:           desc.ID,
+				Name:         RootFs,
+				Type:         htype,
+				AllowedUsage: RootFsUsage,
 			},
 		}
 
@@ -123,9 +127,8 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 			if ptype != sif.PartData && ptype != sif.PartOverlay {
 				continue
 			}
-			// ignore overlay partitions not associated to root
-			// filesystem group ID
-			if ptype == sif.PartOverlay && groupID != int(desc.Groupid) {
+			// ignore overlay partitions not associated to root filesystem group ID if any
+			if ptype == sif.PartOverlay && groupID > 0 && groupID != int(desc.Groupid) {
 				continue
 			}
 			fstype, err := desc.GetFsType()
@@ -142,19 +145,32 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 				return fmt.Errorf("while checking data partition header: %s", err)
 			}
 
+			var usage Usage
+
+			if ptype == sif.PartOverlay {
+				usage = OverlayUsage
+			} else {
+				usage = DataUsage
+			}
+
 			partition := Section{
-				Offset: uint64(desc.Fileoff),
-				Size:   uint64(desc.Filelen),
-				Name:   desc.GetName(),
-				Type:   htype,
+				Offset:       uint64(desc.Fileoff),
+				Size:         uint64(desc.Filelen),
+				ID:           desc.ID,
+				Name:         desc.GetName(),
+				Type:         htype,
+				AllowedUsage: usage,
 			}
 			img.Partitions = append(img.Partitions, partition)
+			img.Usage |= usage
 		} else if desc.Datatype != 0 {
 			data := Section{
-				Offset: uint64(desc.Fileoff),
-				Size:   uint64(desc.Filelen),
-				Type:   uint32(desc.Datatype),
-				Name:   desc.GetName(),
+				Offset:       uint64(desc.Fileoff),
+				Size:         uint64(desc.Filelen),
+				ID:           desc.ID,
+				Type:         uint32(desc.Datatype),
+				Name:         desc.GetName(),
+				AllowedUsage: DataUsage,
 			}
 			img.Sections = append(img.Sections, data)
 		}
@@ -178,4 +194,16 @@ func (f *sifFormat) openMode(writable bool) int {
 		return os.O_RDWR
 	}
 	return os.O_RDONLY
+}
+
+func (f *sifFormat) lock(img *Image) error {
+	for _, part := range img.Partitions {
+		if part.Type != EXT3 {
+			continue
+		}
+		if err := lockSection(img, part); err != nil {
+			return fmt.Errorf("while locking ext3 partition from %s: %s", img.Path, err)
+		}
+	}
+	return nil
 }

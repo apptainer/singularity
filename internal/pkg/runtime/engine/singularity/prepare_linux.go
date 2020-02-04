@@ -419,11 +419,9 @@ func (e *EngineOperations) prepareAutofs(starterConfig *starter.Config) error {
 
 	if e.EngineConfig.File.UserBindControl {
 		for _, b := range e.EngineConfig.GetBindPath() {
-			splitted := strings.Split(b, ":")
-
-			fd, err := keepAutofsMount(splitted[0], autoFsPoints)
+			fd, err := keepAutofsMount(b.Source, autoFsPoints)
 			if err != nil {
-				sylog.Debugf("Could not keep file descriptor for user bind path %s: %s", splitted[0], err)
+				sylog.Debugf("Could not keep file descriptor for user bind path %s: %s", b.Source, err)
 				continue
 			}
 			fds = append(fds, fd)
@@ -1061,8 +1059,9 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		return err
 	}
 
-	if !img.HasRootFs() {
-		return fmt.Errorf("no root filesystem partition found in image %s", e.EngineConfig.GetImage())
+	rootFs, err := img.GetRootFsPartition()
+	if err != nil {
+		return fmt.Errorf("while getting root filesystem partition in %s: %s", e.EngineConfig.GetImage(), err)
 	}
 
 	if writable && !img.Writable {
@@ -1073,12 +1072,9 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		return err
 	}
 
-	sessionLayer := e.EngineConfig.GetSessionLayer()
-
 	// first image is always the root filesystem
 	images = append(images, *img)
 	writableOverlayPath := ""
-	overlayPartitions := []string{}
 
 	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
 		return err
@@ -1117,9 +1113,6 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 			} else {
 				sylog.Verbosef("Fallback to %s layer: %s", layer, err)
 			}
-
-			e.EngineConfig.SetImageList(images)
-			return nil
 		} else if err != nil {
 			return fmt.Errorf("while checking image compatibility with overlay: %s", err)
 		}
@@ -1135,41 +1128,51 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 				return err
 			}
 		}
-		// load overlay partition if we use overlay layer
-		if sessionLayer == singularityConfig.OverlayLayer {
-			// look for potential overlay partition in SIF image
-			// and inject them into the overlay list
-			for _, p := range img.Partitions[1:] {
-				if p.Type == image.EXT3 || p.Type == image.SQUASHFS {
-					imgCopy := *img
-					imgCopy.Type = int(p.Type)
-					imgCopy.Partitions = []image.Section{p}
-					images = append(images, imgCopy)
-					overlayPartitions = append(overlayPartitions, imgCopy.Path)
-					if img.Writable && p.Type == image.EXT3 {
-						writableOverlayPath = img.Path
-					}
+
+		// look for potential overlay partition in SIF image
+		if e.EngineConfig.GetSessionLayer() == singularityConfig.OverlayLayer {
+			overlays, err := img.GetOverlayPartitions()
+			if err != nil {
+				return fmt.Errorf("while getting overlay partitions in %s: %s", img.Path, err)
+			}
+			for _, p := range overlays {
+				if img.Writable && p.Type == image.EXT3 {
+					writableOverlayPath = img.Path
 				}
 			}
 		}
+
 		// SIF image open for writing without writable
 		// overlay partition, assuming that the root
 		// filesystem is squashfs or encrypted squashfs
-		if img.Writable && img.Partitions[0].Type != image.EXT3 && writableOverlayPath == "" {
+		if img.Writable && rootFs.Type != image.EXT3 && writableOverlayPath == "" {
 			return fmt.Errorf("no SIF writable overlay partition found in %s", img.Path)
 		}
 	}
 
-	// lock all ext3 partitions if any to prevent concurrent writes
-	for _, part := range img.Partitions {
-		if part.Type == image.EXT3 {
-			if err := img.LockSection(part); err != nil {
-				return fmt.Errorf("error while locking ext3 partition from %s: %s", img.Path, err)
-			}
+	if e.EngineConfig.GetSessionLayer() == singularityConfig.OverlayLayer {
+		overlayImages, err := e.loadOverlayImages(starterConfig, writableOverlayPath)
+		if err != nil {
+			return fmt.Errorf("while loading overlay images: %s", err)
 		}
+		images = append(images, overlayImages...)
 	}
 
-	// load overlay images
+	bindImages, err := e.loadBindImages(starterConfig)
+	if err != nil {
+		return fmt.Errorf("while loading data bind images: %s", err)
+	}
+	images = append(images, bindImages...)
+
+	e.EngineConfig.SetImageList(images)
+
+	return nil
+}
+
+// loadOverlayImages loads overlay images.
+func (e *EngineOperations) loadOverlayImages(starterConfig *starter.Config, writableOverlayPath string) ([]image.Image, error) {
+	images := make([]image.Image, 0)
+
 	for _, overlayImg := range e.EngineConfig.GetOverlayImage() {
 		writableOverlay := true
 
@@ -1183,47 +1186,67 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		img, err := e.loadImage(splitted[0], writableOverlay)
 		if err != nil {
 			if !image.IsReadOnlyFilesytem(err) {
-				return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
+				return nil, fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
 			}
 			// let's proceed with readonly filesystem and set
 			// writableOverlay to appropriate value
 			writableOverlay = false
 		}
+		img.Usage = image.OverlayUsage
 
-		for _, part := range img.Partitions {
-			// lock all ext3 partitions if any to prevent concurrent writes
-			if part.Type == image.EXT3 {
-				if err := img.LockSection(part); err != nil {
-					return fmt.Errorf("error while locking ext3 overlay partition from %s: %s", img.Path, err)
-				}
+		if writableOverlay && img.Writable {
+			if writableOverlayPath != "" {
+				return nil, fmt.Errorf(
+					"you can't specify more than one writable overlay, "+
+						"%s contains a writable overlay, requires to use '--overlay %s:ro'",
+					writableOverlayPath, img.Path,
+				)
 			}
-
-			if writableOverlay && img.Writable {
-				if writableOverlayPath != "" {
-					return fmt.Errorf(
-						"you can't specify more than one writable overlay, "+
-							"%s contains a writable overlay, requires to use '--overlay %s:ro'",
-						writableOverlayPath, img.Path,
-					)
-				}
-				writableOverlayPath = img.Path
-			}
+			writableOverlayPath = img.Path
 		}
 
 		if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
-			return err
+			return nil, err
 		}
 		images = append(images, *img)
 	}
 
 	if e.EngineConfig.GetWritableTmpfs() && writableOverlayPath != "" {
-		return fmt.Errorf("you can't specify --writable-tmpfs with another writable overlay image (%s)", writableOverlayPath)
+		return nil, fmt.Errorf("you can't specify --writable-tmpfs with another writable overlay image (%s)", writableOverlayPath)
 	}
 
-	e.EngineConfig.SetOverlayImage(append(e.EngineConfig.GetOverlayImage(), overlayPartitions...))
-	e.EngineConfig.SetImageList(images)
+	return images, nil
+}
 
-	return nil
+// loadBindImages load data bind images.
+func (e *EngineOperations) loadBindImages(starterConfig *starter.Config) ([]image.Image, error) {
+	images := make([]image.Image, 0)
+
+	binds := e.EngineConfig.GetBindPath()
+
+	for i := range binds {
+		if binds[i].ImageSrc() == "" && binds[i].ID() == "" {
+			continue
+		}
+
+		imagePath := binds[i].Source
+
+		sylog.Debugf("Loading data image %s", imagePath)
+
+		img, err := e.loadImage(imagePath, !binds[i].Readonly())
+		if err != nil && !image.IsReadOnlyFilesytem(err) {
+			return nil, fmt.Errorf("failed to load data image %s: %s", imagePath, err)
+		}
+		img.Usage = image.DataUsage
+
+		if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
+			return nil, err
+		}
+		images = append(images, *img)
+		binds[i].Source = img.Source
+	}
+
+	return images, nil
 }
 
 func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, error) {

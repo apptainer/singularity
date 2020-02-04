@@ -8,6 +8,7 @@ package singularity
 import (
 	"fmt"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
@@ -59,17 +60,57 @@ type FuseMount struct {
 	Cmd           *exec.Cmd `json:"-"`                       // holds the process exec command when FUSE driver run in foreground mode
 }
 
+// BindOption represents a bind option with its associated
+// value if any.
+type BindOption struct {
+	Value string `json:"value,omitempty"`
+}
+
+// BindPath stores bind path.
+type BindPath struct {
+	Source      string                 `json:"source"`
+	Destination string                 `json:"destination"`
+	Options     map[string]*BindOption `json:"options"`
+}
+
+// ImageSrc returns the value of option image-src or an empty
+// string if the option wasn't set.
+func (b *BindPath) ImageSrc() string {
+	if b.Options != nil && b.Options["image-src"] != nil {
+		src := b.Options["image-src"].Value
+		if src == "" {
+			return "/"
+		}
+		return src
+	}
+	return ""
+}
+
+// ImageSrc returns the value of option id or an empty
+// string if the option wasn't set.
+func (b *BindPath) ID() string {
+	if b.Options != nil && b.Options["id"] != nil {
+		return b.Options["id"].Value
+	}
+	return ""
+}
+
+// Readonly returns the option ro was set or not.
+func (b *BindPath) Readonly() bool {
+	return b.Options != nil && b.Options["ro"] != nil
+}
+
 // JSONConfig stores engine specific confguration that is allowed to be set by the user.
 type JSONConfig struct {
 	ScratchDir        []string      `json:"scratchdir,omitempty"`
 	OverlayImage      []string      `json:"overlayImage,omitempty"`
-	BindPath          []string      `json:"bindpath,omitempty"`
 	NetworkArgs       []string      `json:"networkArgs,omitempty"`
 	Security          []string      `json:"security,omitempty"`
 	FilesPath         []string      `json:"filesPath,omitempty"`
 	LibrariesPath     []string      `json:"librariesPath,omitempty"`
 	FuseMount         []FuseMount   `json:"fuseMount,omitempty"`
 	ImageList         []image.Image `json:"imageList,omitempty"`
+	BindPath          []BindPath    `json:"bindpath,omitempty"`
 	UnixSocketPair    [2]int        `json:"unixSocketPair,omitempty"`
 	OpenFd            []int         `json:"openFd,omitempty"`
 	TargetGID         []int         `json:"targetGID,omitempty"`
@@ -230,13 +271,147 @@ func (e *EngineConfig) GetCustomHome() bool {
 	return e.JSON.CustomHome
 }
 
-// SetBindPath sets paths to bind into containee.JSON.
-func (e *EngineConfig) SetBindPath(bindpath []string) {
+// ParseBindPath parses a string and returns all encountered
+// bind paths as array.
+func ParseBindPath(bindpaths string) ([]BindPath, error) {
+	var bind string
+	var binds []BindPath
+	var elem int
+
+	var validOptions = map[string]bool{
+		"ro":        true,
+		"image-src": false,
+		"id":        false,
+	}
+
+	// there is a better regular expression to handle
+	// that directly without all the logic below ...
+	// we need to parse various syntax:
+	// source1
+	// source1:destination1
+	// source1:destination1:option1
+	// source1:destination1:option1,option2
+	// source1,source2
+	// source1:destination1:option1,source2
+	re := regexp.MustCompile(`([^,^:]+:?)`)
+
+	// with the regex above we get string array:
+	// - source1 -> [source1]
+	// - source1:destination1 -> [source1:, destination1]
+	// - source1:destination1:option1 -> [source1:, destination1:, option1]
+	// - source1:destination1:option1,option2 -> [source1:, destination1:, option1, option2]
+	for _, m := range re.FindAllString(bindpaths, -1) {
+		s := strings.TrimSpace(m)
+		isColon := bind != "" && bind[len(bind)-1] == ':'
+
+		// options are taken only if the bind has a source
+		// and a destination
+		if elem == 2 {
+			isOption := false
+
+			for option, flag := range validOptions {
+				if flag {
+					if s == option {
+						isOption = true
+						break
+					}
+				} else {
+					if strings.HasPrefix(s, option+"=") {
+						isOption = true
+						break
+					}
+				}
+			}
+			if isOption {
+				if !isColon {
+					bind += ","
+				}
+				bind += s
+				continue
+			}
+		} else if elem > 2 {
+			return nil, fmt.Errorf("wrong bind syntax: %s", bind)
+		}
+
+		elem++
+
+		if bind != "" {
+			if isColon {
+				bind += s
+				continue
+			}
+			bp, err := newBindPath(bind, validOptions)
+			if err != nil {
+				return nil, fmt.Errorf("while getting bind path: %s", err)
+			}
+			binds = append(binds, bp)
+			elem = 1
+		}
+		// new bind path
+		bind = s
+	}
+
+	if bind != "" {
+		bp, err := newBindPath(bind, validOptions)
+		if err != nil {
+			return nil, fmt.Errorf("while getting bind path: %s", err)
+		}
+		binds = append(binds, bp)
+	}
+
+	return binds, nil
+}
+
+// newBindPath returns BindPath record based on the provided bind
+// string argument and ensures that the options are valid.
+func newBindPath(bind string, validOptions map[string]bool) (BindPath, error) {
+	var bp BindPath
+
+	splitted := strings.SplitN(bind, ":", 3)
+
+	bp.Source = splitted[0]
+	if bp.Source == "" {
+		return bp, fmt.Errorf("empty bind source for bind path %q", bind)
+	}
+
+	bp.Destination = bp.Source
+
+	if len(splitted) > 1 {
+		bp.Destination = splitted[1]
+	}
+
+	if len(splitted) > 2 {
+		bp.Options = make(map[string]*BindOption)
+
+		for _, value := range strings.Split(splitted[2], ",") {
+			valid := false
+			for optName, optFlag := range validOptions {
+				if optFlag && optName == value {
+					bp.Options[optName] = &BindOption{}
+					valid = true
+					break
+				} else if strings.HasPrefix(value, optName+"=") {
+					bp.Options[optName] = &BindOption{Value: value[len(optName+"="):]}
+					valid = true
+					break
+				}
+			}
+			if !valid {
+				return bp, fmt.Errorf("%s is not a valid bind option", value)
+			}
+		}
+	}
+
+	return bp, nil
+}
+
+// SetBindPath sets the paths to bind into container.
+func (e *EngineConfig) SetBindPath(bindpath []BindPath) {
 	e.JSON.BindPath = bindpath
 }
 
-// GetBindPath retrieves bind paths.
-func (e *EngineConfig) GetBindPath() []string {
+// GetBindPath retrieves the bind paths.
+func (e *EngineConfig) GetBindPath() []BindPath {
 	return e.JSON.BindPath
 }
 

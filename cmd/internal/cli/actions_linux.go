@@ -50,12 +50,13 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 	}
 	defer img.File.Close()
 
-	if !img.HasRootFs() {
-		return "", fmt.Errorf("no root filesystem found in %s", filename)
+	part, err := img.GetRootFsPartition()
+	if err != nil {
+		return "", fmt.Errorf("while getting root filesystem in %s: %s", filename, err)
 	}
 
 	// squashfs only
-	if img.Partitions[0].Type != imgutil.SQUASHFS {
+	if part.Type != imgutil.SQUASHFS {
 		return "", fmt.Errorf("not a squashfs root filesystem")
 	}
 
@@ -321,12 +322,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Fatalf("could not open image %s: %s", engineConfig.GetImage(), err)
 		}
 
-		if !img.HasRootFs() {
-			sylog.Fatalf("no root filesystem found in %s", engineConfig.GetImage())
+		part, err := img.GetRootFsPartition()
+		if err != nil {
+			sylog.Fatalf("while getting root filesystem in %s: %s", engineConfig.GetImage(), err)
 		}
 
 		// ensure we have decryption material
-		if img.Partitions[0].Type == imgutil.ENCRYPTSQUASHFS {
+		if part.Type == imgutil.ENCRYPTSQUASHFS {
 			sylog.Debugf("Encrypted container filesystem detected")
 
 			keyInfo, err := getEncryptionMaterial(cobraCmd)
@@ -348,7 +350,12 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		img.File.Close()
 	}
 
-	engineConfig.SetBindPath(BindPaths)
+	binds, err := singularityConfig.ParseBindPath(strings.Join(BindPaths, ","))
+	if err != nil {
+		sylog.Fatalf("while parsing bind path: %s", err)
+	}
+	engineConfig.SetBindPath(binds)
+
 	if len(FuseMount) > 0 {
 		/* If --fusemount is given, imply --pid */
 		PidNamespace = true

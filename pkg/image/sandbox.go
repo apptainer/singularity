@@ -19,8 +19,10 @@ func (f *sandboxFormat) initializer(img *Image, fi os.FileInfo) error {
 	}
 	img.Partitions = []Section{
 		{
-			Type: SANDBOX,
-			Name: RootFs,
+			Type:         SANDBOX,
+			ID:           1,
+			Name:         RootFs,
+			AllowedUsage: RootFsUsage | OverlayUsage | DataUsage,
 		},
 	}
 	return nil
@@ -28,4 +30,8 @@ func (f *sandboxFormat) initializer(img *Image, fi os.FileInfo) error {
 
 func (f *sandboxFormat) openMode(writable bool) int {
 	return os.O_RDONLY
+}
+
+func (f *sandboxFormat) lock(img *Image) error {
+	return nil
 }

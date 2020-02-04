@@ -147,10 +147,12 @@ func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	img.Type = SQUASHFS
 	img.Partitions = []Section{
 		{
-			Offset: offset,
-			Size:   uint64(fileinfo.Size()) - offset,
-			Type:   SQUASHFS,
-			Name:   RootFs,
+			Offset:       offset,
+			Size:         uint64(fileinfo.Size()) - offset,
+			ID:           1,
+			Type:         SQUASHFS,
+			Name:         RootFs,
+			AllowedUsage: RootFsUsage | OverlayUsage | DataUsage,
 		},
 	}
 
@@ -170,4 +172,8 @@ func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 
 func (f *squashfsFormat) openMode(writable bool) int {
 	return os.O_RDONLY
+}
+
+func (f *squashfsFormat) lock(img *Image) error {
+	return nil
 }

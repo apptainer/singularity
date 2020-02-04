@@ -1725,6 +1725,311 @@ func (c actionTests) fuseMount(t *testing.T) {
 	}
 }
 
+func (c actionTests) bindImage(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	require.Command(t, "mkfs.ext3")
+	require.Command(t, "mksquashfs")
+	require.Command(t, "dd")
+
+	testdir, err := ioutil.TempDir(c.env.TestDir, "bind-image-")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cleanup := func(t *testing.T) {
+		if t.Failed() {
+			t.Logf("Not removing directory %s for test %s", testdir, t.Name())
+			return
+		}
+		err := os.RemoveAll(testdir)
+		if err != nil {
+			t.Logf("Error while removing directory %s for test %s: %#v", testdir, t.Name(), err)
+		}
+	}
+	defer cleanup(t)
+
+	sifSquashImage := filepath.Join(testdir, "data_squash.sif")
+	sifExt3Image := filepath.Join(testdir, "data_ext3.sif")
+	squashfsImage := filepath.Join(testdir, "squashfs.simg")
+	ext3Img := filepath.Join(testdir, "ext3_fs.img")
+
+	// create root directory for squashfs image
+	squashDir, err := ioutil.TempDir(testdir, "root-squash-dir-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(squashDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	squashMarkerFile := "squash_marker"
+	if err := fs.Touch(filepath.Join(squashDir, squashMarkerFile)); err != nil {
+		t.Fatal(err)
+	}
+
+	// create the squashfs overlay image
+	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
+	if res := cmd.Run(t); res.Error != nil {
+		t.Fatalf("Unexpected error while running command.\n%s", res)
+	}
+
+	// create the overlay ext3 image
+	cmd = exec.Command("dd", "if=/dev/zero", "of="+ext3Img, "bs=1M", "count=64", "status=none")
+	if res := cmd.Run(t); res.Error != nil {
+		t.Fatalf("Unexpected error while running command.\n%s", res)
+	}
+
+	cmd = exec.Command("mkfs.ext3", "-q", "-F", ext3Img)
+	if res := cmd.Run(t); res.Error != nil {
+		t.Fatalf("Unexpected error while running command.\n%s", res)
+	}
+
+	// create new SIF images
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("sif"),
+		e2e.WithArgs([]string{"new", sifSquashImage}...),
+		e2e.ExpectExit(0),
+	)
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("sif"),
+		e2e.WithArgs([]string{"new", sifExt3Image}...),
+		e2e.ExpectExit(0),
+	)
+
+	// arch partition doesn't matter for data partition so
+	// take amd64 by default
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("sif"),
+		e2e.WithArgs([]string{
+			"add",
+			"--datatype", "4", "--partarch", "2",
+			"--partfs", "1", "--parttype", "3",
+			sifSquashImage, squashfsImage,
+		}...),
+		e2e.ExpectExit(0),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("sif"),
+		e2e.WithArgs([]string{
+			"add",
+			"--datatype", "4", "--partarch", "2",
+			"--partfs", "2", "--parttype", "3",
+			sifExt3Image, ext3Img,
+		}...),
+		e2e.ExpectExit(0),
+	)
+
+	tests := []struct {
+		name    string
+		profile e2e.Profile
+		args    []string
+		exit    int
+	}{
+		{
+			name:    "NoBindOption",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", squashfsImage + ":/bind",
+				c.env.ImagePath,
+				"test", "-f", filepath.Join("/bind", squashMarkerFile),
+			},
+			exit: 1,
+		},
+		{
+			name:    "BadIDValue",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", squashfsImage + ":/bind:id=0",
+				c.env.ImagePath,
+				"true",
+			},
+			exit: 255,
+		},
+		{
+			name:    "BadBindOption",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", squashfsImage + ":/bind:fake_option=fake",
+				c.env.ImagePath,
+				"true",
+			},
+			exit: 255,
+		},
+		{
+			name:    "SandboxKO",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", squashDir + ":/bind:image-src=/",
+				c.env.ImagePath,
+				"true",
+			},
+			exit: 255,
+		},
+		{
+			name:    "Squashfs",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", squashfsImage + ":/bind:image-src=/",
+				c.env.ImagePath,
+				"test", "-f", filepath.Join("/bind", squashMarkerFile),
+			},
+			exit: 0,
+		},
+		{
+			name:    "SquashfsDouble",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", squashfsImage + ":/bind1:image-src=/",
+				"--bind", squashfsImage + ":/bind2:image-src=/",
+				c.env.ImagePath,
+				"test", "-f", filepath.Join("/bind1", squashMarkerFile), "-a", "-f", filepath.Join("/bind2", squashMarkerFile),
+			},
+			exit: 0,
+		},
+		{
+			name:    "SquashfsBadSource",
+			profile: e2e.UserProfile,
+			args:    []string{"--bind", squashfsImage + ":/bind:image-src=/ko", c.env.ImagePath, "true"},
+			exit:    255,
+		},
+		{
+			name:    "SquashfsMixedBind",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", squashfsImage + ":/bind1:image-src=/",
+				"--bind", squashDir + ":/bind2",
+				c.env.ImagePath,
+				"test", "-f", filepath.Join("/bind1", squashMarkerFile), "-a", "-f", filepath.Join("/bind2", squashMarkerFile),
+			},
+			exit: 0,
+		},
+		{
+			name:    "Ext3Write",
+			profile: e2e.RootProfile,
+			args: []string{
+				"--bind", ext3Img + ":/bind:image-src=/",
+				c.env.ImagePath,
+				"touch", "/bind/ext3_marker",
+			},
+			exit: 0,
+		},
+		{
+			name:    "Ext3WriteKO",
+			profile: e2e.RootProfile,
+			args: []string{
+				"--bind", ext3Img + ":/bind:image-src=/,ro",
+				c.env.ImagePath,
+				"touch", "/bind/ext3_marker",
+			},
+			exit: 1,
+		},
+		{
+			name:    "Ext3Read",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", ext3Img + ":/bind:image-src=/",
+				c.env.ImagePath,
+				"test", "-f", "/bind/ext3_marker",
+			},
+			exit: 0,
+		},
+		{
+			name:    "Ext3Double",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", ext3Img + ":/bind1:image-src=/",
+				"--bind", ext3Img + ":/bind2:image-src=/",
+				c.env.ImagePath,
+				"true",
+			},
+			exit: 255,
+		},
+		{
+			name:    "SifDataSquash",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", sifSquashImage + ":/bind:image-src=/",
+				c.env.ImagePath,
+				"test", "-f", filepath.Join("/bind", squashMarkerFile),
+			},
+			exit: 0,
+		},
+		{
+			name:    "SifDataExt3Write",
+			profile: e2e.RootProfile,
+			args: []string{
+				"--bind", sifExt3Image + ":/bind:image-src=/",
+				c.env.ImagePath,
+				"touch", "/bind/ext3_marker",
+			},
+			exit: 0,
+		},
+		{
+			name:    "SifDataExt3Read",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", sifExt3Image + ":/bind:image-src=/",
+				c.env.ImagePath,
+				"test", "-f", "/bind/ext3_marker",
+			},
+			exit: 0,
+		},
+		{
+			name:    "SifDataExt3AndSquash",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", sifExt3Image + ":/ext3:image-src=/",
+				"--bind", sifSquashImage + ":/squash:image-src=/",
+				c.env.ImagePath,
+				"test", "-f", filepath.Join("/squash", squashMarkerFile), "-a", "-f", "/ext3/ext3_marker",
+			},
+			exit: 0,
+		},
+		{
+			name:    "SifDataExt3Double",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", sifExt3Image + ":/bind1:image-src=/",
+				"--bind", sifExt3Image + ":/bind2:image-src=/",
+				c.env.ImagePath,
+				"true",
+			},
+			exit: 255,
+		},
+		{
+			name:    "SifWithID",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", c.env.ImagePath + ":/rootfs:id=2",
+				c.env.ImagePath,
+				"test", "-d", "/rootfs/etc",
+			},
+			exit: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(tt.exit),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := actionTests{
@@ -1750,5 +2055,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"binds":                 c.actionBinds,         // test various binds
 		"exit and signals":      c.exitSignals,         // test exit and signals propagation
 		"fuse mount":            c.fuseMount,           // test fusemount option
+		"bind image":            c.bindImage,           // test bind image
 	}
 }

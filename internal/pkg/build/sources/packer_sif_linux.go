@@ -31,11 +31,12 @@ func (p *SIFPacker) Pack(context.Context) (*types.Bundle, error) {
 // in the sandbox. First pass just assumes a single system partition,
 // later passes will handle more complex sif files.
 func unpackSIF(b *types.Bundle, img *image.Image) (err error) {
-	if !img.HasRootFs() {
-		return fmt.Errorf("no root filesystem found in %s", img.Name)
+	part, err := img.GetRootFsPartition()
+	if err != nil {
+		return fmt.Errorf("while getting root filesystem in %s: %s", img.Name, err)
 	}
 
-	switch img.Partitions[0].Type {
+	switch part.Type {
 	case image.SQUASHFS:
 		// create a reader for rootfs partition
 		reader, err := image.NewPartitionReader(img, "", 0)
