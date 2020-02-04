@@ -4,10 +4,7 @@ sudo: required
 dist: xenial
 
 go:
-  - "1.13"
-
-# Make sure user forks of singularity build correctly
-go_import_path: github.com/sylabs/singularity
+  - 1.13.x
 
 addons:
   apt:
@@ -35,8 +32,8 @@ services:
 before_install:
   - .travis/before_install
 
-install:
-  - # override the default go install target
+# disable default travis go install dependencies
+install: true
 
 script:
   - .travis/script
