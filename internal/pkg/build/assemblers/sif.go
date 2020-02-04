@@ -27,7 +27,7 @@ import (
 // SIFAssembler doesn't store anything.
 type SIFAssembler struct {
 	GzipFlag        bool
-	MksquashfsProcs string
+	MksquashfsProcs uint
 	MksquashfsMem   string
 	MksquashfsPath  string
 }
@@ -182,8 +182,8 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	if a.MksquashfsMem != "" {
 		flags = append(flags, "-mem", a.MksquashfsMem)
 	}
-	if a.MksquashfsProcs != "" {
-		flags = append(flags, "-processors", a.MksquashfsProcs)
+	if a.MksquashfsProcs != 0 {
+		flags = append(flags, "-processors", fmt.Sprint(a.MksquashfsProcs))
 	}
 	arch := machine.ArchFromContainer(b.RootfsPath)
 	if arch == "" {

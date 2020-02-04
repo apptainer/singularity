@@ -208,7 +208,7 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		}
 		b.stages[lastStageIndex].a = &assemblers.SIFAssembler{
 			GzipFlag:        flag,
-			MksquashfsProcs: fmt.Sprint(mksquashfsProcs),
+			MksquashfsProcs: mksquashfsProcs,
 			MksquashfsMem:   mksquashfsMem,
 			MksquashfsPath:  mksquashfsPath,
 		}

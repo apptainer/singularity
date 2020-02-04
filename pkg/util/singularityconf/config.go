@@ -293,11 +293,12 @@ memory fs type = {{ .MemoryFSType }}
 {{ if ne .MksquashfsPath "" }}mksquashfs path = {{ .MksquashfsPath }}{{ end }}
 
 # MKSQUASHFS PROCS: [UINT]
-# DEFAULT: All CPUs
+# DEFAULT: 0 for all All CPUs
 # This allows the administrator to specify the number of CPUs for mksquashfs 
 # to use when building an image.  The fewer processors the longer it takes.
-# mksquashfs procs =
-{{ if gt .MksquashfsProcs 0 }}mksquashfs procs = {{ .MksquashfsProcs }}{{ end }}
+# To enable it to use all available CPU's set this to 0.
+# mksquashfs procs = 0
+mksquashfs procs = {{ .MksquashfsProcs }}
 
 # MKSQUASHFS MEM: [STRING]
 # DEFAULT: Unlimited
