@@ -69,7 +69,7 @@ require (
 	google.golang.org/genproto v0.0.0-20200122232147-0452cf42e150 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
 	gopkg.in/yaml.v2 v2.2.8
-	gotest.tools/v3 v3.0.0
+	gotest.tools/v3 v3.0.1
 	k8s.io/client-go v0.0.0-20181010045704-56e7a63b5e38 // indirect
 )
 
