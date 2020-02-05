@@ -265,7 +265,13 @@ func checkBuildTarget(path string) error {
 			return fmt.Errorf("only sandbox update is supported: %s is not a directory", path)
 		}
 		if !buildArgs.update && !forceOverwrite {
-			question := "Build target already exists. Do you want to overwrite? [N/y] "
+
+			question := fmt.Sprintf("Build target '%s' already exists. Do you want to overwrite? [N/y]", f.Name())
+
+			if isDefFile, _ := parser.IsValidDefinition(path); isDefFile {
+				question = fmt.Sprintf("Build target '%s' is a definition file that will be overwritten. Do you still want to overwrite? [N/y]", f.Name())
+			}
+
 			input, err := interactive.AskYNQuestion("n", question)
 			if err != nil {
 				return fmt.Errorf("while reading the input: %s", err)
