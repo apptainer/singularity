@@ -266,14 +266,10 @@ func checkBuildTarget(path string) error {
 		}
 		if !buildArgs.update && !forceOverwrite {
 
-			var question string
+			question := fmt.Sprintf("Build target '%s' already exists. Do you want to overwrite? [N/y]", f.Name())
 
-			isDefFile, _ := parser.IsValidDefinition(path)
-			if isDefFile {
-				question = "Build target '" + f.Name() + "' is a definition file that will be overwritten. Do you still want to overwrite? [N/y]"
-			} else {
-
-				question = "Build target '" + f.Name() + "' already exists. Do you want to overwrite? [N/y]"
+			if isDefFile, _ := parser.IsValidDefinition(path); isDefFile {
+				question = fmt.Sprintf("Build target '%s' is a definition file that will be overwritten. Do you still want to overwrite? [N/y]", f.Name())
 			}
 
 			input, err := interactive.AskYNQuestion("n", question)
