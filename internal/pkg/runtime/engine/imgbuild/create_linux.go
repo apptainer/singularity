@@ -24,6 +24,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
+	"golang.org/x/sys/unix"
 )
 
 // CreateContainer is called from master process to prepare container
@@ -153,28 +154,36 @@ func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn
 		return fmt.Errorf("mount /dev failed: %s", err)
 	}
 
-	// copy /etc/resolv.conf to tmpfs and bind copy into container
-	sessionResolv, err := stageFile("/etc/resolv.conf", sessionPath)
-	if err != nil {
-		return err
-	}
-
 	dest = filepath.Join(sessionRootFs, "etc", "resolv.conf")
-	sylog.Debugf("Mounting %s at %s\n", sessionResolv, dest)
-	if err := rpcOps.Mount(sessionResolv, dest, "", syscall.MS_BIND, ""); err != nil {
-		return fmt.Errorf("mount %s failed: %s", sessionResolv, err)
-	}
+	if err := unix.Access(dest, unix.R_OK); err == nil {
+		// copy /etc/resolv.conf to tmpfs and bind copy into container
+		sessionResolv, err := stageFile("/etc/resolv.conf", sessionPath)
+		if err != nil {
+			return err
+		}
 
-	// copy /etc/hosts to tmpfs and bind copy into container
-	sessionHosts, err := stageFile("/etc/hosts", sessionPath)
-	if err != nil {
-		return err
+		sylog.Debugf("Mounting %s at %s\n", sessionResolv, dest)
+		if err := rpcOps.Mount(sessionResolv, dest, "", syscall.MS_BIND, ""); err != nil {
+			return fmt.Errorf("mount %s failed: %s", sessionResolv, err)
+		}
+	} else {
+		sylog.Warningf("Name resolution could fail: while accessing to /etc/resolv.conf: %s", err)
 	}
 
 	dest = filepath.Join(sessionRootFs, "etc", "hosts")
-	sylog.Debugf("Mounting %s at %s\n", sessionHosts, dest)
-	if err := rpcOps.Mount(sessionHosts, dest, "", syscall.MS_BIND, ""); err != nil {
-		return fmt.Errorf("mount %s failed: %s", sessionHosts, err)
+	if err := unix.Access(dest, unix.R_OK); err == nil {
+		// copy /etc/hosts to tmpfs and bind copy into container
+		sessionHosts, err := stageFile("/etc/hosts", sessionPath)
+		if err != nil {
+			return err
+		}
+
+		sylog.Debugf("Mounting %s at %s\n", sessionHosts, dest)
+		if err := rpcOps.Mount(sessionHosts, dest, "", syscall.MS_BIND, ""); err != nil {
+			return fmt.Errorf("mount %s failed: %s", sessionHosts, err)
+		}
+	} else {
+		sylog.Warningf("Host resolution could fail: while accessing to /etc/hosts: %s", err)
 	}
 
 	sylog.Debugf("Chdir into %s\n", sessionRootFs)
@@ -248,9 +257,10 @@ func (e *EngineOperations) copyFiles() error {
 			transfer.Dst = transfer.Src
 		}
 		// copy each file into bundle rootfs
+		// copying from host to container should follow symlinks
 		transfer.Dst = files.AddPrefix(e.EngineConfig.RootfsPath, transfer.Dst)
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
-		if err := files.Copy(transfer.Src, transfer.Dst); err != nil {
+		if err := files.Copy(transfer.Src, transfer.Dst, true); err != nil {
 			return err
 		}
 	}
@@ -301,8 +311,30 @@ func (e *EngineOperations) runScriptSection(name string, s types.Script, setEnv 
 
 	args := []string{"-ex"}
 	// trim potential trailing comment from args and append to args list
-	args = append(args, strings.Fields(strings.Split(s.Args, "#")[0])...)
-	args = append(args, script)
+	sectionParams := strings.Fields(strings.Split(s.Args, "#")[0])
+
+	commandOption := false
+
+	// look for -c option, we assume that everything after is part of -c
+	// arguments and we just inject script path as the last arguments of -c
+	for i, param := range sectionParams {
+		if param == "-c" {
+			if len(sectionParams)-1 < i+1 {
+				sylog.Fatalf("bad %s section '-c' parameter: missing arguments", name)
+			}
+			// replace shell "[args...]" arguments list by single
+			// argument "shell [args...] script"
+			shellArgs := strings.Join(sectionParams[i+1:], " ")
+			sectionParams = append(sectionParams[0:i+1], shellArgs+" "+script)
+			commandOption = true
+			break
+		}
+	}
+
+	args = append(args, sectionParams...)
+	if !commandOption {
+		args = append(args, script)
+	}
 
 	cmd := exec.Command("/bin/sh", args...)
 	if setEnv {

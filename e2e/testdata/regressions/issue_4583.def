@@ -1,0 +1,16 @@
+bootstrap: library
+from: alpine
+stage: one
+
+%post
+    mkdir /copy /original
+    touch /original/a_file
+    ln -s /original/a_file /copy/a_file
+
+bootstrap: library
+from: alpine
+stage: two
+
+%files from one
+    /original
+    /copy

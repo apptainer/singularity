@@ -157,6 +157,79 @@ func (c *regressionsTests) issue4524(t *testing.T) {
 	)
 }
 
+func (c *regressionsTests) issue4583(t *testing.T) {
+	image := filepath.Join(c.env.TestDir, "issue_4583.sif")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(image, "testdata/regressions/issue_4583.def"),
+		e2e.PostRun(func(t *testing.T) {
+			defer os.Remove(image)
+
+			if t.Failed() {
+				return
+			}
+		}),
+		e2e.ExpectExit(0),
+	)
+}
+
+func (c *regressionsTests) issue4943(t *testing.T) {
+	const (
+		image = "docker://gitlab-registry.cern.ch/linuxsupport/cc7-base:20191107"
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "/dev/null", image),
+		e2e.ExpectExit(0),
+	)
+
+}
+
+// Test -c section parameter is correctly handled.
+func (c *regressionsTests) issue4967(t *testing.T) {
+	image := filepath.Join(c.env.TestDir, "issue_4967.sif")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(image, "testdata/regressions/issue_4967.def"),
+		e2e.PostRun(func(t *testing.T) {
+			os.Remove(image)
+		}),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ContainMatch, "function foo"),
+		),
+	)
+}
+
+// The image contains symlinks /etc/resolv.conf and /etc/hosts
+// pointing to nowhere, build should pass but with warnings.
+func (c *regressionsTests) issue4969(t *testing.T) {
+	image := filepath.Join(c.env.TestDir, "issue_4969.sif")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(image, "testdata/regressions/issue_4969.def"),
+		e2e.PostRun(func(t *testing.T) {
+			os.Remove(image)
+		}),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ExactMatch, "TEST OK"),
+		),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := regressionsTests{
@@ -167,5 +240,9 @@ func E2ETests(env e2e.TestEnv) func(*testing.T) {
 		"issue 4203": c.issue4203, // https://github.com/sylabs/singularity/issues/4203
 		"issue 4407": c.issue4407, // https://github.com/sylabs/singularity/issues/4407
 		"issue 4524": c.issue4524, // https://github.com/sylabs/singularity/issues/4524
+		"issue 4583": c.issue4583, // https://github.com/sylabs/singularity/issues/4583
+		"issue 4943": c.issue4943, // https://github.com/sylabs/singularity/issues/4943
+		"issue 4967": c.issue4967, // https://github.com/sylabs/singularity/issues/4967
+		"issue 4969": c.issue4969, // https://github.com/sylabs/singularity/issues/4969
 	})
 }

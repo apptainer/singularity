@@ -1,0 +1,9 @@
+bootstrap: docker
+from: alpine:3.10
+
+%post
+    apk add --update-cache bash
+
+%test -c /bin/bash
+    function foo { echo "function foo"; }
+    foo

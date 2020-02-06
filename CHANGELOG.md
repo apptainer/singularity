@@ -11,6 +11,12 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.5.2
 
+## Changed defaults / behaviours
+
+  - `%files from ...` will no longer follow symlinks when copying between
+    stages. Copying from the host will still maintain previous behavior of
+    following links.
+
 # v3.5.2 - [2019.12.17]
 
 ## [Security related fix](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2019-19724)
