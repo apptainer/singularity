@@ -15,76 +15,100 @@ import (
 const (
 	// DefaultPath defines default value for PATH environment variable.
 	DefaultPath = "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+	// SingularityPrefix defines the environment variable prefix SINGULARITY_.
+	SingularityPrefix = "SINGULARITY_"
+	// SingularityEnvPrefix defines the environment variable prefix SINGULARITYENV_.
+	SingularityEnvPrefix = "SINGULARITYENV_"
 )
 
 var alwaysPassKeys = map[string]struct{}{
-	"term":        {},
+	"TERM":        {},
 	"http_proxy":  {},
+	"HTTP_PROXY":  {},
 	"https_proxy": {},
+	"HTTPS_PROXY": {},
 	"no_proxy":    {},
+	"NO_PROXY":    {},
 	"all_proxy":   {},
+	"ALL_PROXY":   {},
 	"ftp_proxy":   {},
+	"FTP_PROXY":   {},
 }
 
-var alwaysOmitKeys = map[string]struct{}{
-	"path":            {},
-	"ld_library_path": {},
+// boolean value defines if the variable could be overridden
+// with the SINGULARITYENV_ variant.
+var alwaysOmitKeys = map[string]bool{
+	"HOME":            false,
+	"PATH":            false,
+	"LD_LIBRARY_PATH": true,
 }
 
 // SetContainerEnv cleans environment variables before running the container.
 func SetContainerEnv(g *generate.Generator, hostEnvs []string, cleanEnv bool, homeDest string) {
+	singEnvKeys := make(map[string]string)
+
+	// allow override with SINGULARITYENV_LANG
+	if cleanEnv {
+		g.AddProcessEnv("LANG", "C")
+	}
+
 	for _, env := range hostEnvs {
 		e := strings.SplitN(env, "=", 2)
 		if len(e) != 2 {
 			sylog.Verbosef("Can't process environment variable %s", env)
 			continue
 		}
-		if strings.HasPrefix(e[0], "SINGULARITY_") {
-			sylog.Verbosef("Not forwarding %s from user to container environment", e[0])
+		if strings.HasPrefix(e[0], SingularityPrefix) {
+			sylog.Verbosef("Not forwarding %s environment variable", e[0])
 			continue
-		}
-
-		switch e[0] {
-		case "SINGULARITYENV_PREPEND_PATH":
-			g.AddProcessEnv("SING_USER_DEFINED_PREPEND_PATH", e[1])
-		case "SINGULARITYENV_APPEND_PATH":
-			g.AddProcessEnv("SING_USER_DEFINED_APPEND_PATH", e[1])
-		case "SINGULARITYENV_PATH":
-			g.AddProcessEnv("SING_USER_DEFINED_PATH", e[1])
-		default:
-			// transpose host env variables into config
-			if key := keyToAdd(e[0], cleanEnv); key != "" {
+		} else if strings.HasPrefix(e[0], SingularityEnvPrefix) {
+			key := e[0][len(SingularityEnvPrefix):]
+			switch key {
+			case "PREPEND_PATH":
+				g.AddProcessEnv("SING_USER_DEFINED_PREPEND_PATH", e[1])
+			case "APPEND_PATH":
+				g.AddProcessEnv("SING_USER_DEFINED_APPEND_PATH", e[1])
+			case "PATH":
+				g.AddProcessEnv("SING_USER_DEFINED_PATH", e[1])
+			default:
+				if key == "" {
+					continue
+				}
+				if permitted, ok := alwaysOmitKeys[key]; ok && !permitted {
+					sylog.Warningf("Overriding %s environment variable with %s is not permitted", key, e[0])
+					continue
+				}
+				sylog.Verbosef("Forwarding %s as %s environment variable", e[0], key)
+				singEnvKeys[key] = e[1]
 				g.AddProcessEnv(key, e[1])
+			}
+		} else {
+			// SINGULARITYENV_ prefixed environment variables will take
+			// precedence over the non prefixed variables
+			if _, ok := singEnvKeys[e[0]]; ok {
+				sylog.Verbosef("Skipping %[1]s environment variable, overridden by %[2]s%[1]s", e[0], SingularityEnvPrefix)
+			} else if addHostEnv(e[0], cleanEnv) {
+				// transpose host env variables into config
+				sylog.Debugf("Forwarding %s environment variable", e[0])
+				g.AddProcessEnv(e[0], e[1])
 			}
 		}
 	}
 
-	sylog.Verbosef("HOME=%s", homeDest)
+	sylog.Verbosef("Setting HOME=%s", homeDest)
+	sylog.Verbosef("Setting PATH=%s", DefaultPath)
 	g.AddProcessEnv("HOME", homeDest)
 	g.AddProcessEnv("PATH", DefaultPath)
-
-	if cleanEnv {
-		g.AddProcessEnv("LANG", "C")
-	}
 }
 
-// keyToAdd processes given key and returns a new non-empty key
-// if the environment variable should be added to the container.
-func keyToAdd(key string, cleanEnv bool) string {
-	const envPrefix = "SINGULARITYENV_"
-
-	if strings.HasPrefix(key, envPrefix) {
-		return strings.TrimPrefix(key, envPrefix)
+// addHostEnv processes given key and returns if the environment
+// variable should be added to the container or not.
+func addHostEnv(key string, cleanEnv bool) bool {
+	if _, ok := alwaysPassKeys[key]; ok {
+		return true
 	}
-	keyLow := strings.ToLower(key)
-	if _, ok := alwaysPassKeys[keyLow]; ok {
-		return key
+	if _, ok := alwaysOmitKeys[key]; ok || cleanEnv {
+		return false
 	}
-	if cleanEnv {
-		return ""
-	}
-	if _, ok := alwaysOmitKeys[keyLow]; ok {
-		return ""
-	}
-	return key
+	return true
 }

@@ -43,13 +43,13 @@ func TestSetContainerEnv(t *testing.T) {
 				"SINGULARITY_NAME=lolcow.sif",
 			},
 			resultEnv: []string{
-				"HOME=/home/tester",
 				"PS1=test",
 				"TERM=xterm-256color",
 				"LANG=C",
 				"PWD=/tmp",
 				"LC_ALL=C",
-				"PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin",
+				"HOME=/home/tester",
+				"PATH=" + DefaultPath,
 			},
 		},
 		{
@@ -70,7 +70,6 @@ func TestSetContainerEnv(t *testing.T) {
 				"SINGULARITY_NAME=lolcow.sif",
 			},
 			resultEnv: []string{
-				"HOME=/home/tester",
 				"PS1=test",
 				"SOCIOPATH=VolanDeMort",
 				"TERM=xterm-256color",
@@ -78,7 +77,8 @@ func TestSetContainerEnv(t *testing.T) {
 				"LD_LIBRARY_PATH=/my/custom/libs",
 				"PWD=/tmp",
 				"LC_ALL=C",
-				"PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin",
+				"HOME=/home/tester",
+				"PATH=" + DefaultPath,
 			},
 		},
 		{
@@ -100,7 +100,6 @@ func TestSetContainerEnv(t *testing.T) {
 				"SINGULARITY_NAME=lolcow.sif",
 			},
 			resultEnv: []string{
-				"HOME=/home/tester",
 				"SING_USER_DEFINED_APPEND_PATH=/sylabs/container",
 				"PS1=test",
 				"TERM=xterm-256color",
@@ -109,7 +108,8 @@ func TestSetContainerEnv(t *testing.T) {
 				"PWD=/tmp",
 				"LC_ALL=C",
 				"SING_USER_DEFINED_PREPEND_PATH=/foo/bar",
-				"PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin",
+				"HOME=/home/tester",
+				"PATH=" + DefaultPath,
 			},
 		},
 		{
@@ -131,11 +131,11 @@ func TestSetContainerEnv(t *testing.T) {
 				"CLEANENV=TRUE",
 			},
 			resultEnv: []string{
+				"LANG=C",
 				"TERM=xterm-256color",
 				"FOO=VAR",
 				"HOME=/home/tester",
-				"PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin",
-				"LANG=C",
+				"PATH=" + DefaultPath,
 			},
 		},
 		{
@@ -167,6 +167,7 @@ func TestSetContainerEnv(t *testing.T) {
 				"CLEANENV=TRUE",
 			},
 			resultEnv: []string{
+				"LANG=C",
 				"TERM=xterm-256color",
 				"http_proxy=http_proxy",
 				"https_proxy=https_proxy",
@@ -180,8 +181,100 @@ func TestSetContainerEnv(t *testing.T) {
 				"FTP_PROXY=ftp_proxy",
 				"FOO=VAR",
 				"HOME=/home/tester",
-				"PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin",
+				"PATH=" + DefaultPath,
+			},
+		},
+		{
+			name:     "SINGULARITYENV_PATH",
+			cleanEnv: false,
+			homeDest: "/home/tester",
+			env: []string{
+				"SINGULARITYENV_PATH=/my/path",
+			},
+			resultEnv: []string{
+				"SING_USER_DEFINED_PATH=/my/path",
+				"HOME=/home/tester",
+				"PATH=" + DefaultPath,
+			},
+		},
+		{
+			name:     "SINGULARITYENV_LANG with cleanenv",
+			cleanEnv: true,
+			homeDest: "/home/tester",
+			env: []string{
+				"SINGULARITYENV_LANG=en",
+			},
+			resultEnv: []string{
+				"LANG=en",
+				"HOME=/home/tester",
+				"PATH=" + DefaultPath,
+			},
+		},
+		{
+			name:     "SINGULARITYENV_HOME",
+			cleanEnv: false,
+			homeDest: "/home/tester",
+			env: []string{
+				"SINGULARITYENV_HOME=/my/home",
+			},
+			resultEnv: []string{
+				"HOME=/home/tester",
+				"PATH=" + DefaultPath,
+			},
+		},
+		{
+			name:     "SINGULARITYENV_LD_LIBRARY_PATH",
+			cleanEnv: false,
+			homeDest: "/home/tester",
+			env: []string{
+				"SINGULARITYENV_LD_LIBRARY_PATH=/my/libs",
+			},
+			resultEnv: []string{
+				"LD_LIBRARY_PATH=/my/libs",
+				"HOME=/home/tester",
+				"PATH=" + DefaultPath,
+			},
+		},
+		{
+			name:     "SINGULARITYENV_LD_LIBRARY_PATH with cleanenv",
+			cleanEnv: true,
+			homeDest: "/home/tester",
+			env: []string{
+				"SINGULARITYENV_LD_LIBRARY_PATH=/my/libs",
+			},
+			resultEnv: []string{
 				"LANG=C",
+				"LD_LIBRARY_PATH=/my/libs",
+				"HOME=/home/tester",
+				"PATH=" + DefaultPath,
+			},
+		},
+		{
+			name:     "SINGULARITYENV_HOST after HOST",
+			cleanEnv: false,
+			homeDest: "/home/tester",
+			env: []string{
+				"HOST=myhost",
+				"SINGULARITYENV_HOST=myhostenv",
+			},
+			resultEnv: []string{
+				"HOST=myhostenv",
+				"HOME=/home/tester",
+				"PATH=" + DefaultPath,
+			},
+		},
+		{
+			name:     "SINGULARITYENV_HOST before HOST",
+			cleanEnv: false,
+			homeDest: "/home/tester",
+			env: []string{
+				"SINGULARITYENV_HOST=myhostenv",
+				"HOST=myhost",
+			},
+			resultEnv: []string{
+				"HOST=myhostenv",
+				"HOME=/home/tester",
+				"PATH=" + DefaultPath,
 			},
 		},
 	}

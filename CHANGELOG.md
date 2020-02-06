@@ -9,6 +9,13 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
+# Changes Since v3.5.3
+
+## Changed defaults / behaviours
+  - Environment variables prefixed with `SINGULARITYENV_` always take
+    precedence over variables without `SINGULARITYENV_` prefix.
+
+
 # Changes Since v3.5.2
 
 ## Changed defaults / behaviours
