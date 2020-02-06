@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
 // build base image for tests
@@ -345,6 +346,10 @@ func testRunFromURI(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			if tt.opts.userns {
+				require.UserNamespace(t)
+			}
+
 			_, stderr, exitCode, err := imageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
@@ -359,6 +364,7 @@ func testRunFromURI(t *testing.T) {
 
 // testPersistentOverlay test the --overlay function
 func testPersistentOverlay(t *testing.T) {
+	require.Filesystem(t, "overlay")
 	const squashfsImage = "squashfs.simg"
 	//  Create the overlay dir
 	cwd, err := os.Getwd()

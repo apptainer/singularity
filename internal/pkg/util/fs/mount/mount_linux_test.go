@@ -12,6 +12,7 @@ import (
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
 func TestImage(t *testing.T) {
@@ -540,6 +541,22 @@ func TestImport(t *testing.T) {
 	}
 	points.RemoveAll()
 
+	invalidSpecs := []specs.Mount{
+		{
+			Source:      "/image.simg",
+			Destination: "/tmp/image",
+			Type:        "squashfs",
+			Options:     []string{"nosuid", "nodev"},
+		},
+	}
+	if err := points.ImportFromSpec(invalidSpecs); err == nil {
+		t.Errorf("should have failed with non authorized filesystem type")
+	}
+	points.RemoveAll()
+
+	// The specs below require overlay, must skip on e.g. RHEL6
+	require.Filesystem(t, "overlay")
+
 	points = &Points{}
 
 	validSpecs := []specs.Mount{
@@ -574,6 +591,7 @@ func TestImport(t *testing.T) {
 			Options:     []string{"nosuid"},
 		},
 	}
+
 	if err := points.ImportFromSpec(validSpecs); err != nil {
 		t.Error(err)
 	}
@@ -583,19 +601,7 @@ func TestImport(t *testing.T) {
 	if len(points.GetByTag(UserbindsTag)) != 3 {
 		t.Errorf("returned a wrong number of mount kernel mount points %d instead of 3", len(points.GetByTag(UserbindsTag)))
 	}
-	points.RemoveAll()
 
-	invalidSpecs := []specs.Mount{
-		{
-			Source:      "/image.simg",
-			Destination: "/tmp/image",
-			Type:        "squashfs",
-			Options:     []string{"nosuid", "nodev"},
-		},
-	}
-	if err := points.ImportFromSpec(invalidSpecs); err == nil {
-		t.Errorf("should have failed with non authorized filesystem type")
-	}
 }
 
 func TestTag(t *testing.T) {
