@@ -74,19 +74,6 @@ $(syecl_config_INSTALL): $(syecl_config)
 INSTALLFILES += $(syecl_config_INSTALL)
 
 
-# action scripts
-action_scripts := $(SOURCEDIR)/etc/actions/exec $(SOURCEDIR)/etc/actions/run $(SOURCEDIR)/etc/actions/shell \
-	$(SOURCEDIR)/etc/actions/start $(SOURCEDIR)/etc/actions/test
-
-action_scripts_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/actions
-$(action_scripts_INSTALL): $(action_scripts)
-	@echo " INSTALL" $@
-	$(V)install -d $@
-	$(V)install -m 0755 $? $@
-
-INSTALLFILES += $(action_scripts_INSTALL)
-
-
 # seccomp profile
 seccomp_profile := $(SOURCEDIR)/etc/seccomp-profiles/default.json
 
