@@ -20,7 +20,7 @@ $(singularity): $(singularity_build_config) $(singularity_SOURCE)
 singularity_INSTALL := $(DESTDIR)$(BINDIR)/singularity
 $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 CLEANFILES += $(singularity)
@@ -40,7 +40,7 @@ $(bash_completion): $(singularity_build_config)
 bash_completion_INSTALL := $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/singularity
 $(bash_completion_INSTALL): $(bash_completion)
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install -m 0644 $< $@
 
 CLEANFILES += $(bash_completion)
@@ -61,7 +61,7 @@ $(config): $(singularity_build_config) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)
 
 $(config_INSTALL): $(config)
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install -m 0644 $< $@
 
 INSTALLFILES += $(config_INSTALL)
@@ -73,7 +73,7 @@ remote_config := $(SOURCEDIR)/etc/remote.yaml
 remote_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/remote.yaml
 $(remote_config_INSTALL): $(remote_config)
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install -m 0644 $< $@
 
 INSTALLFILES += $(remote_config_INSTALL)

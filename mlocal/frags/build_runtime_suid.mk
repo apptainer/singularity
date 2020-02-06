@@ -12,7 +12,7 @@ $(starter_suid): $(BUILDDIR)/.clean-starter $(singularity_build_config) $(starte
 
 $(starter_suid_INSTALL): $(starter_suid)
 	@echo " INSTALL SUID" $@
-	$(V)install -d $(@D)
+	$(V)umask 0022 && mkdir -p $(@D)
 	$(V)install $(starter_suid) $(starter_suid_INSTALL)
 	@if [ `id -u` -ne 0 ] ; then \
 		echo "$(starter_suid_INSTALL) -- installed with incorrect permissions"; \
