@@ -15,7 +15,7 @@ require (
 	github.com/containerd/containerd v1.3.2
 	github.com/containernetworking/cni v0.7.1
 	github.com/containernetworking/plugins v0.8.5
-	github.com/containers/image/v5 v5.2.0
+	github.com/containers/image/v5 v5.2.1
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/creack/pty v1.1.9 // indirect
 	github.com/deislabs/oras v0.8.1
