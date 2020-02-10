@@ -9,13 +9,46 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.5.2
+# v3.5.3 - [2020.02.18]
 
 ## Changed defaults / behaviours
 
+The following minor behaviour changes have been made in 3.5.3 to allow
+correct operation on CRAY CLE6, and correct an issue with multi-stage
+image builds that was blocking use by build systems such as Spack:
+
+  - Container action scripts are no longer bound in from `etc/actions.d` on the
+    host. They are created dynamically and inserted at container startup.
   - `%files from ...` will no longer follow symlinks when copying between
-    stages. Copying from the host will still maintain previous behavior of
-    following links.
+    stages in a multi stage build, as symlinks should be copied so that they
+    resolve identically in later stages. Copying `%files` from the host will
+    still maintain previous behavior of following links.
+
+## Bug Fixes
+
+  - Bind additional CUDA 10.2 libs when using the `--nv` option without
+    `nvidia-container-cli`.
+  - Fix an NVIDIA persistenced socket bind error with `--writable`.
+  - Add detection of ceph to allow workarounds that avoid issues with
+    sandboxes on ceph filesystems.
+  - Ensure setgid is inherited during make install.
+  - Ensure the root directory of a build has owner write permissions,
+    regardless of the permissions in the bootstrap source.
+  - Fix a regression in `%post` and `%test` to honor the `-c` option.
+  - Fix an issue running `%post` when a container doesn't have
+    `/etc/resolv.conf` or `/etc/hosts` files.
+  - Fix an issue with UID detection on RHEL6 when running instances.
+  - Fix a logic error when a sandbox image is in an overlay incompatible
+    location, and both overlay and underlay are disabled globally.
+  - Fix an issue causing user namespace to always be used when `allow-setuid=no`
+    was configured in a setuid installation.
+  - Always allow key IDs and fingerprints to be specified with or without a `0x`
+    prefix when using `singularity keys` 
+
+In addition, numerous improvements have been made to the test suites, allowing
+them to pass cleanly on a range of kernel versions and distributions that are
+not covered by the open-source CI runs.
+
 
 # v3.5.2 - [2019.12.17]
 
