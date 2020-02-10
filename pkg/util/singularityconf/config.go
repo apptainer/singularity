@@ -42,6 +42,8 @@ type File struct {
 	CniConfPath             string   `directive:"cni configuration path"`
 	CniPluginPath           string   `directive:"cni plugin path"`
 	MksquashfsPath          string   `directive:"mksquashfs path"`
+	MksquashfsProcs         uint     `default:"0" directive:"mksquashfs procs"`
+	MksquashfsMem           string   `directive:"mksquashfs mem"`
 	CryptsetupPath          string   `directive:"cryptsetup path"`
 }
 
@@ -289,6 +291,25 @@ memory fs type = {{ .MemoryFSType }}
 # installed in a standard system location
 # mksquashfs path =
 {{ if ne .MksquashfsPath "" }}mksquashfs path = {{ .MksquashfsPath }}{{ end }}
+
+# MKSQUASHFS PROCS: [UINT]
+# DEFAULT: 0 (All CPUs)
+# This allows the administrator to specify the number of CPUs for mksquashfs 
+# to use when building an image.  The fewer processors the longer it takes.
+# To enable it to use all available CPU's set this to 0.
+# mksquashfs procs = 0
+mksquashfs procs = {{ .MksquashfsProcs }}
+
+# MKSQUASHFS MEM: [STRING]
+# DEFAULT: Unlimited
+# This allows the administrator to set the maximum amount of memory for mkswapfs
+# to use when building an image.  e.g. 1G for 1gb or 500M for 500mb. Restricting memory
+# can have a major impact on the time it takes mksquashfs to create the image.
+# NOTE: This fuctionality did not exist in squashfs-tools prior to version 4.3
+# If using an earlier version you should not set this.
+# mksquashfs mem = 1G
+{{ if ne .MksquashfsMem "" }}mksquashfs mem = {{ .MksquashfsMem }}{{ end }}
+
 # CRYPTSETUP PATH: [STRING]
 # DEFAULT: Undefined
 # This allows the administrator to specify the location of cryptsetup if

@@ -198,9 +198,19 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		if err != nil {
 			return nil, fmt.Errorf("while ensuring correct compression algorithm: %v", err)
 		}
+		mksquashfsProcs, err := squashfs.GetProcs()
+		if err != nil {
+			return nil, fmt.Errorf("while searching for mksquashfs processr limits: %v", err)
+		}
+		mksquashfsMem, err := squashfs.GetMem()
+		if err != nil {
+			return nil, fmt.Errorf("while searching for mksquashfs mem limits: %v", err)
+		}
 		b.stages[lastStageIndex].a = &assemblers.SIFAssembler{
-			GzipFlag:       flag,
-			MksquashfsPath: mksquashfsPath,
+			GzipFlag:        flag,
+			MksquashfsProcs: mksquashfsProcs,
+			MksquashfsMem:   mksquashfsMem,
+			MksquashfsPath:  mksquashfsPath,
 		}
 	default:
 		return nil, fmt.Errorf("unrecognized output format %s", conf.Format)
