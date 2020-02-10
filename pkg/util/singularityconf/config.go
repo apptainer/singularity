@@ -305,6 +305,8 @@ mksquashfs procs = {{ .MksquashfsProcs }}
 # This allows the administrator to set the maximum amount of memory for mkswapfs
 # to use when building an image.  e.g. 1G for 1gb or 500M for 500mb. Restricting memory
 # can have a major impact on the time it takes mksquashfs to create the image.
+# NOTE: This fuctionality did not exist in squashfs-tools prior to version 4.3
+# If using an earlier version you should not set this.
 # mksquashfs mem = 1G
 {{ if ne .MksquashfsMem "" }}mksquashfs mem = {{ .MksquashfsMem }}{{ end }}
 
