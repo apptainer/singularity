@@ -23,8 +23,8 @@ from: alpine:3.7
     export TESTAPP
 
 %appinstall testapp
-    echo 'echo $TESTAPP' > $SINGULARITY_APPROOT/bin/testapp.sh
-    chmod 0755 $SINGULARITY_APPROOT/bin/testapp.sh
+    echo 'echo $TESTAPP' > $SCIF_APPROOT/bin/testapp.sh
+    chmod 0755 $SCIF_APPROOT/bin/testapp.sh
 
 %apprun testapp
     $TESTAPP.sh

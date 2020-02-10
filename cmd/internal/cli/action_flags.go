@@ -13,25 +13,27 @@ import (
 
 // actionflags.go contains flag variables for action-like commands to draw from
 var (
-	AppName         string
-	BindPaths       []string
-	HomePath        string
-	OverlayPath     []string
-	ScratchPath     []string
-	WorkdirPath     string
-	PwdPath         string
-	ShellPath       string
-	Hostname        string
-	Network         string
-	NetworkArgs     []string
-	DNS             string
-	Security        []string
-	CgroupsPath     string
-	VMRAM           string
-	VMCPU           string
-	VMIP            string
-	ContainLibsPath []string
-	FuseMount       []string
+	AppName            string
+	BindPaths          []string
+	HomePath           string
+	OverlayPath        []string
+	ScratchPath        []string
+	WorkdirPath        string
+	PwdPath            string
+	ShellPath          string
+	Hostname           string
+	Network            string
+	NetworkArgs        []string
+	DNS                string
+	Security           []string
+	CgroupsPath        string
+	VMRAM              string
+	VMCPU              string
+	VMIP               string
+	ContainLibsPath    []string
+	FuseMount          []string
+	SingularityEnv     []string
+	SingularityEnvFile string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -613,6 +615,27 @@ var actionAllowSetuidFlag = cmdline.Flag{
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
+// --env
+var actionEnvFlag = cmdline.Flag{
+	ID:           "actionEnvFlag",
+	Value:        &SingularityEnv,
+	DefaultValue: []string{},
+	Name:         "env",
+	Usage:        "pass environment variable to contained process",
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --env-file
+var actionEnvFileFlag = cmdline.Flag{
+	ID:           "actionEnvFileFlag",
+	Value:        &SingularityEnvFile,
+	DefaultValue: "",
+	Name:         "env-file",
+	Usage:        "pass environment variables from file to contained process",
+	EnvKeys:      []string{"ENV_FILE"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(ExecCmd)
@@ -686,5 +709,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&dockerLoginFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionEnvFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionEnvFileFlag, actionsInstanceCmd...)
 	})
 }

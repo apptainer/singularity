@@ -6,10 +6,14 @@
 package singularity
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -18,6 +22,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 	"unsafe"
@@ -28,12 +33,16 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 	"github.com/sylabs/singularity/internal/pkg/util/machine"
+	"github.com/sylabs/singularity/internal/pkg/util/shell/interpreter"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	singularitycallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/engine/singularity"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/rlimit"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sys/unix"
+	"mvdan.cc/sh/v3/interp"
 )
 
 const defaultShell = "/bin/sh"
@@ -62,10 +71,6 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 		if err := os.Chdir(e.EngineConfig.GetHomeDest()); err != nil {
 			os.Chdir("/")
 		}
-	}
-
-	if err := e.checkExec(); err != nil {
-		return err
 	}
 
 	if e.EngineConfig.File.MountDev == "minimal" || e.EngineConfig.GetContain() {
@@ -99,9 +104,6 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 			break
 		}
 	}
-
-	args := e.EngineConfig.OciConfig.Process.Args
-	env := e.EngineConfig.OciConfig.Process.Env
 
 	if e.EngineConfig.OciConfig.Linux != nil {
 		namespaces := e.EngineConfig.OciConfig.Linux.Namespaces
@@ -149,51 +151,57 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 
 	if (!isInstance && !shimProcess) || bootInstance || e.EngineConfig.GetInstanceJoin() {
-		err := syscall.Exec(args[0], args, env)
-		if err != nil {
-			// We know the shell exists at this point, so let's inspect its architecture
-			shell := e.EngineConfig.GetShell()
-			if shell == "" {
-				shell = defaultShell
-			}
-			elfArch, elfErr := machine.ArchFromElf(shell)
-			if elfErr != nil && elfErr != machine.ErrUnknownArch {
-				return fmt.Errorf("failed to open %s for inspection: %s", shell, elfErr)
-			} else if elfErr == machine.ErrUnknownArch {
-				elfArch = "unknown architecture"
-			}
-			if elfArch != runtime.GOARCH {
-				return fmt.Errorf("image targets '%s', cannot run on '%s'", elfArch, runtime.GOARCH)
-			}
-			// Assume a missing shared library on ENOENT
-			if err == syscall.ENOENT {
-				return fmt.Errorf("exec %s failed: a shared library is likely missing in the image", args[0])
-			}
-			// Return the raw error as a last resort
-			return fmt.Errorf("exec %s failed: %s", args[0], err)
-		}
-	}
+		args := e.EngineConfig.OciConfig.Process.Args
+		env := e.EngineConfig.OciConfig.Process.Env
 
-	// Spawn and wait container process, signal handler
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	cmd.Env = env
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: isInstance,
+		if !bootInstance {
+			var err error
+
+			args, env, err = runActionScript(e.EngineConfig)
+			if err != nil {
+				return err
+			} else if len(args) == 0 {
+				// nothing to execute and no error was reported
+				return nil
+			}
+		}
+
+		return e.execProcess(args, env)
 	}
 
 	errChan := make(chan error, 1)
 	statusChan := make(chan syscall.WaitStatus, 1)
+	cmdPid := -2
 
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("exec %s failed: %s", args[0], err)
+	args, env, err := runActionScript(e.EngineConfig)
+	if err != nil {
+		return err
+	} else if len(args) > 0 {
+	cmdexec:
+		// Spawn and wait container process, signal handler
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		cmd.Env = env
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+			Setpgid: isInstance,
+		}
+		if err := cmd.Start(); err != nil {
+			if e, ok := err.(*os.PathError); ok {
+				if e.Err.(syscall.Errno) == syscall.ENOEXEC && args[0] != defaultShell {
+					args = append([]string{defaultShell}, args...)
+					goto cmdexec
+				}
+			}
+			return fmt.Errorf("exec %s failed: %s", args[0], err)
+		}
+		cmdPid = cmd.Process.Pid
+
+		go func() {
+			errChan <- cmd.Wait()
+		}()
 	}
-
-	go func() {
-		errChan <- cmd.Wait()
-	}()
 
 	// Modify argv argument and program name shown in /proc/self/comm
 	name := "sinit"
@@ -231,7 +239,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 						break
 					}
 
-					if wpid == cmd.Process.Pid {
+					if wpid == cmdPid {
 						e.stopFuseDrivers()
 						statusChan <- status
 					}
@@ -243,13 +251,13 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 				// permissions to send signals to its childs and EINVAL would
 				// mean to update the Go runtime or the kernel to something more
 				// stable :)
-				if isInstance {
-					if err := syscall.Kill(-cmd.Process.Pid, signal); err == syscall.ESRCH {
+				if isInstance && cmdPid > 0 {
+					if err := syscall.Kill(-cmdPid, signal); err == syscall.ESRCH {
 						sylog.Debugf("No child process, exiting ...")
 						os.Exit(128 + int(signal))
 					}
-				} else if e.EngineConfig.GetSignalPropagation() {
-					if err := syscall.Kill(cmd.Process.Pid, signal); err == syscall.ESRCH {
+				} else if e.EngineConfig.GetSignalPropagation() && cmdPid > 0 {
+					if err := syscall.Kill(cmdPid, signal); err == syscall.ESRCH {
 						sylog.Debugf("No child process, exiting ...")
 						os.Exit(128 + int(signal))
 					}
@@ -396,90 +404,6 @@ func (e *EngineOperations) setPathEnv() {
 	}
 }
 
-func (e *EngineOperations) checkExec() error {
-	shell := e.EngineConfig.GetShell()
-
-	if shell == "" {
-		shell = defaultShell
-	}
-
-	// Make sure the shell exists
-	if _, err := os.Stat(shell); os.IsNotExist(err) {
-		return fmt.Errorf("shell %s doesn't exist in container", shell)
-	}
-
-	args := e.EngineConfig.OciConfig.Process.Args
-	env := e.EngineConfig.OciConfig.Process.Env
-
-	// match old behavior of searching path
-	oldPath := os.Getenv("PATH")
-	defer func() {
-		os.Setenv("PATH", oldPath)
-		e.EngineConfig.OciConfig.Process.Args = args
-		e.EngineConfig.OciConfig.Process.Env = env
-	}()
-
-	e.setPathEnv()
-
-	// If args[0] is an absolute path, exec.LookPath() looks for
-	// this file directly instead of within PATH
-	if _, err := exec.LookPath(args[0]); err == nil {
-		return nil
-	}
-
-	// If args[0] isn't executable (either via PATH or absolute path),
-	// look for alternative approaches to handling it
-	switch args[0] {
-	case "/.singularity.d/actions/exec":
-		if p, err := exec.LookPath("/.exec"); err == nil {
-			args[0] = p
-			return nil
-		}
-		if p, err := exec.LookPath(args[1]); err == nil {
-			sylog.Warningf("container does not have %s, calling %s directly", args[0], args[1])
-			args[1] = p
-			args = args[1:]
-			return nil
-		}
-		return fmt.Errorf("no executable %s found", args[1])
-	case "/.singularity.d/actions/shell":
-		if p, err := exec.LookPath("/.shell"); err == nil {
-			args[0] = p
-			return nil
-		}
-		if p, err := exec.LookPath(shell); err == nil {
-			sylog.Warningf("container does not have %s, calling %s directly", args[0], shell)
-			args[0] = p
-			return nil
-		}
-		return fmt.Errorf("no %s found inside container", shell)
-	case "/.singularity.d/actions/run":
-		if p, err := exec.LookPath("/.run"); err == nil {
-			args[0] = p
-			return nil
-		}
-		if p, err := exec.LookPath("/singularity"); err == nil {
-			args[0] = p
-			return nil
-		}
-		return fmt.Errorf("no run driver found inside container")
-	case "/.singularity.d/actions/start":
-		if _, err := exec.LookPath(shell); err != nil {
-			return fmt.Errorf("no %s found inside container, can't run instance", shell)
-		}
-		args = []string{shell, "-c", `echo "instance start script not found"`}
-		return nil
-	case "/.singularity.d/actions/test":
-		if p, err := exec.LookPath("/.test"); err == nil {
-			args[0] = p
-			return nil
-		}
-		return fmt.Errorf("no test driver found inside container")
-	}
-
-	return fmt.Errorf("no %s found inside container", args[0])
-}
-
 // runFuseDrivers execute FUSE drivers and returns the list of FUSE process ID.
 func (e *EngineOperations) runFuseDrivers(fromContainer bool, usernsFd int) error {
 	// set PATH for the command
@@ -619,4 +543,266 @@ func (e *EngineOperations) getIP() (string, error) {
 	sylog.Warningf("Could not get ipv6 %s", err)
 
 	return "", errors.New("could not get ip")
+}
+
+func getExecError(err error, args []string, shell string) error {
+	// We know the shell exists at this point, so let's inspect its architecture
+	if shell == "" {
+		shell = defaultShell
+	}
+	elfArch, elfErr := machine.ArchFromElf(shell)
+	if elfErr != nil && elfErr != machine.ErrUnknownArch {
+		return fmt.Errorf("failed to open %s for inspection: %s", shell, elfErr)
+	} else if elfErr == machine.ErrUnknownArch {
+		elfArch = "unknown architecture"
+	}
+	if elfArch != runtime.GOARCH {
+		return fmt.Errorf("image targets '%s', cannot run on '%s'", elfArch, runtime.GOARCH)
+	}
+	// Assume a missing shared library on ENOENT
+	if err == syscall.ENOENT {
+		return fmt.Errorf("exec %s failed: a shared library is likely missing in the image", args[0])
+	}
+	// Return the raw error as a last resort
+	return fmt.Errorf("exec %s failed: %s", args[0], err)
+}
+
+func (e *EngineOperations) execProcess(args, env []string) error {
+	err := syscall.Exec(args[0], args, env)
+	if err == nil {
+		return nil
+	}
+	if err == syscall.ENOEXEC && args[0] != defaultShell {
+		args = append([]string{defaultShell}, args...)
+		return e.execProcess(args, env)
+	}
+	return getExecError(err, args, e.EngineConfig.GetShell())
+}
+
+// bufferCloser wraps a bytes.Buffer with a Close method
+// required by the open handler of the shell interpreter.
+type bufferCloser struct {
+	bytes.Buffer
+}
+
+func (b *bufferCloser) Close() error {
+	b.Reset()
+	return nil
+}
+
+// Register a virtual file /.singularity.d/env/inject-singularity-env.sh sourced
+// either after sourcing /.singularity.d/env/10-docker2singularity.sh or before
+// sourcing /.singularity.d/env/90-environment.sh.
+// This handler turns all SINGUALRITYENV_KEY=VAL defined variables into their form:
+// export KEY=VAL. It can be sourced only once otherwise it returns an empty content.
+func injectEnvHandler(senv map[string]string) interpreter.OpenHandler {
+	var once sync.Once
+
+	return func(_ string, _ int, _ os.FileMode) (io.ReadWriteCloser, error) {
+		b := new(bufferCloser)
+
+		once.Do(func() {
+			defaultPathSnippet := `
+			if ! test -v PATH; then
+				export PATH=%q
+			fi
+			`
+			b.WriteString(fmt.Sprintf(defaultPathSnippet, env.DefaultPath))
+
+			snippet := `
+			if test -v %[1]s; then
+				sylog debug "Overriding %[1]s environment variable"
+			fi
+			export %[1]s=%[2]q
+			`
+			for key, value := range senv {
+				b.WriteString(fmt.Sprintf(snippet, key, value))
+			}
+		})
+
+		return b, nil
+	}
+}
+
+func runtimeVarsHandler(senv map[string]string) interpreter.OpenHandler {
+	var once sync.Once
+
+	return func(path string, _ int, _ os.FileMode) (io.ReadWriteCloser, error) {
+		b := new(bufferCloser)
+
+		once.Do(func() {
+			b.WriteString(files.RuntimeVars)
+		})
+
+		return b, nil
+	}
+}
+
+// sylogBuiltin allows to use sylog logger from shell script.
+func sylogBuiltin(ctx context.Context, argv []string) error {
+	if len(argv) < 2 {
+		return fmt.Errorf("sylog builtin requires two arguments")
+	}
+	switch argv[0] {
+	case "info":
+		sylog.Infof(argv[1])
+	case "error":
+		sylog.Errorf(argv[1])
+	case "verbose":
+		sylog.Verbosef(argv[1])
+	case "debug":
+		sylog.Debugf(argv[1])
+	case "warning":
+		sylog.Warningf(argv[1])
+	}
+	return nil
+}
+
+// getEnvKeyBuiltin returns the KEY part of an environment variable.
+func getEnvKeyBuiltin(ctx context.Context, argv []string) error {
+	if len(argv) < 1 {
+		return fmt.Errorf("getenvkey builtin requires one argument")
+	}
+	hc := interp.HandlerCtx(ctx)
+	fmt.Fprintf(hc.Stdout, "%s\n", strings.SplitN(argv[0], "=", 2)[0])
+	return nil
+}
+
+// getAllEnvBuiltin display all exported variables in the form KEY=VALUE.
+func getAllEnvBuiltin(shell *interpreter.Shell) interpreter.ShellBuiltin {
+	return func(ctx context.Context, argv []string) error {
+		hc := interp.HandlerCtx(ctx)
+
+		for _, env := range interpreter.GetEnv(hc) {
+			fmt.Fprintf(hc.Stdout, "%s\n", env)
+		}
+		return nil
+	}
+}
+
+// fixPathBuiltin takes the current path value to fix it by injecting
+// missing default path and returns value on shell interpreter output.
+func fixPathBuiltin(ctx context.Context, argv []string) error {
+	hc := interp.HandlerCtx(ctx)
+
+	currentPath := filepath.SplitList(hc.Env.Get("PATH").String())
+	finalPath := currentPath
+
+	for _, d := range filepath.SplitList(env.DefaultPath) {
+		found := false
+		for _, p := range currentPath {
+			if d == p {
+				found = true
+				continue
+			}
+		}
+		if !found {
+			finalPath = append(finalPath, d)
+		}
+	}
+
+	listSep := string(os.PathListSeparator)
+	fmt.Fprintf(hc.Stdout, "%s\n", strings.Join(finalPath, listSep))
+	return nil
+}
+
+// runActionScript interprets and executes the action script within
+// an embedded shell interpreter.
+func runActionScript(engineConfig *singularityConfig.EngineConfig) ([]string, []string, error) {
+	args := engineConfig.OciConfig.Process.Args
+	env := append(engineConfig.OciConfig.Process.Env, "SINGULARITY_COMMAND="+filepath.Base(args[0]))
+
+	b := bytes.NewBufferString(files.ActionScript)
+
+	shell, err := interpreter.New(b, args[0], args[1:], env)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	execBuiltin := func(ctx context.Context, argv []string) error {
+		cmd, err := shell.LookPath(ctx, argv[0])
+		if err != nil {
+			return err
+		}
+		env = interpreter.GetEnv(interp.HandlerCtx(ctx))
+		argv[0] = cmd
+		args = argv
+		return nil
+	}
+
+	// inject SINGULARITYENV_ defined variables
+	senv := engineConfig.GetSingularityEnv()
+	shell.RegisterOpenHandler("/.inject-singularity-env.sh", injectEnvHandler(senv))
+
+	shell.RegisterOpenHandler("/.singularity.d/env/99-runtimevars.sh", runtimeVarsHandler(senv))
+
+	// register few builtin
+	shell.RegisterShellBuiltin("getallenv", getAllEnvBuiltin(shell))
+	shell.RegisterShellBuiltin("getenvkey", getEnvKeyBuiltin)
+	shell.RegisterShellBuiltin("sylog", sylogBuiltin)
+	shell.RegisterShellBuiltin("fixpath", fixPathBuiltin)
+
+	// exec builtin won't execute the command but instead
+	// it returns arguments and environment variables and
+	// let the responsibility to the caller of this
+	// function to execute the command
+	shell.RegisterShellBuiltin("exec", execBuiltin)
+
+	err = shell.Run()
+	if err != nil {
+		if shell.Status() != 0 {
+			os.Exit(int(shell.Status()))
+		}
+		return nil, nil, err
+	}
+
+	if len(args) > 0 && args[0] == "/.singularity.d/runscript" {
+		b, err := getDockerRunscript(args[0])
+		if err != nil {
+			return nil, nil, err
+		} else if b != nil {
+			interp, err := interpreter.New(b, args[0], args[1:], env)
+			if err != nil {
+				return nil, nil, err
+			}
+			interp.RegisterShellBuiltin("exec", execBuiltin)
+			err = interp.Run()
+			if err != nil {
+				if interp.Status() != 0 {
+					os.Exit(int(interp.Status()))
+				}
+				return nil, nil, err
+			}
+		}
+	}
+
+	return args, env, nil
+}
+
+// getDockerRunscript returns the content as a reader of
+// the default runscript set for docker images if any.
+func getDockerRunscript(path string) (io.Reader, error) {
+	r, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("while reading %s: %s", path, err)
+	}
+	var b bytes.Buffer
+
+	if _, err := b.Write(r); err != nil {
+		return nil, err
+	}
+
+	scanner := bufio.NewScanner(&b)
+
+	for scanner.Scan() {
+		if scanner.Text() == "eval \"set ${SINGULARITY_OCI_RUN}\"" {
+			b.Reset()
+			if _, err := b.Write(r); err != nil {
+				return nil, err
+			}
+			return &b, nil
+		}
+	}
+
+	return nil, nil
 }

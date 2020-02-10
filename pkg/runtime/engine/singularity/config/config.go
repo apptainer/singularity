@@ -102,53 +102,54 @@ func (b *BindPath) Readonly() bool {
 
 // JSONConfig stores engine specific confguration that is allowed to be set by the user.
 type JSONConfig struct {
-	ScratchDir        []string      `json:"scratchdir,omitempty"`
-	OverlayImage      []string      `json:"overlayImage,omitempty"`
-	NetworkArgs       []string      `json:"networkArgs,omitempty"`
-	Security          []string      `json:"security,omitempty"`
-	FilesPath         []string      `json:"filesPath,omitempty"`
-	LibrariesPath     []string      `json:"librariesPath,omitempty"`
-	FuseMount         []FuseMount   `json:"fuseMount,omitempty"`
-	ImageList         []image.Image `json:"imageList,omitempty"`
-	BindPath          []BindPath    `json:"bindpath,omitempty"`
-	UnixSocketPair    [2]int        `json:"unixSocketPair,omitempty"`
-	OpenFd            []int         `json:"openFd,omitempty"`
-	TargetGID         []int         `json:"targetGID,omitempty"`
-	Image             string        `json:"image"`
-	Workdir           string        `json:"workdir,omitempty"`
-	CgroupsPath       string        `json:"cgroupsPath,omitempty"`
-	HomeSource        string        `json:"homedir,omitempty"`
-	HomeDest          string        `json:"homeDest,omitempty"`
-	Command           string        `json:"command,omitempty"`
-	Shell             string        `json:"shell,omitempty"`
-	TmpDir            string        `json:"tmpdir,omitempty"`
-	AddCaps           string        `json:"addCaps,omitempty"`
-	DropCaps          string        `json:"dropCaps,omitempty"`
-	Hostname          string        `json:"hostname,omitempty"`
-	Network           string        `json:"network,omitempty"`
-	DNS               string        `json:"dns,omitempty"`
-	Cwd               string        `json:"cwd,omitempty"`
-	SessionLayer      string        `json:"sessionLayer,omitempty"`
-	EncryptionKey     []byte        `json:"encryptionKey,omitempty"`
-	TargetUID         int           `json:"targetUID,omitempty"`
-	WritableImage     bool          `json:"writableImage,omitempty"`
-	WritableTmpfs     bool          `json:"writableTmpfs,omitempty"`
-	Contain           bool          `json:"container,omitempty"`
-	Nv                bool          `json:"nv,omitempty"`
-	Rocm              bool          `json:"rocm,omitempty"`
-	CustomHome        bool          `json:"customHome,omitempty"`
-	Instance          bool          `json:"instance,omitempty"`
-	InstanceJoin      bool          `json:"instanceJoin,omitempty"`
-	BootInstance      bool          `json:"bootInstance,omitempty"`
-	RunPrivileged     bool          `json:"runPrivileged,omitempty"`
-	AllowSUID         bool          `json:"allowSUID,omitempty"`
-	KeepPrivs         bool          `json:"keepPrivs,omitempty"`
-	NoPrivs           bool          `json:"noPrivs,omitempty"`
-	NoHome            bool          `json:"noHome,omitempty"`
-	NoInit            bool          `json:"noInit,omitempty"`
-	DeleteImage       bool          `json:"deleteImage,omitempty"`
-	Fakeroot          bool          `json:"fakeroot,omitempty"`
-	SignalPropagation bool          `json:"signalPropagation,omitempty"`
+	ScratchDir        []string          `json:"scratchdir,omitempty"`
+	OverlayImage      []string          `json:"overlayImage,omitempty"`
+	NetworkArgs       []string          `json:"networkArgs,omitempty"`
+	Security          []string          `json:"security,omitempty"`
+	FilesPath         []string          `json:"filesPath,omitempty"`
+	LibrariesPath     []string          `json:"librariesPath,omitempty"`
+	FuseMount         []FuseMount       `json:"fuseMount,omitempty"`
+	ImageList         []image.Image     `json:"imageList,omitempty"`
+	BindPath          []BindPath        `json:"bindpath,omitempty"`
+	SingularityEnv    map[string]string `json:"singularityEnv,omitempty"`
+	UnixSocketPair    [2]int            `json:"unixSocketPair,omitempty"`
+	OpenFd            []int             `json:"openFd,omitempty"`
+	TargetGID         []int             `json:"targetGID,omitempty"`
+	Image             string            `json:"image"`
+	Workdir           string            `json:"workdir,omitempty"`
+	CgroupsPath       string            `json:"cgroupsPath,omitempty"`
+	HomeSource        string            `json:"homedir,omitempty"`
+	HomeDest          string            `json:"homeDest,omitempty"`
+	Command           string            `json:"command,omitempty"`
+	Shell             string            `json:"shell,omitempty"`
+	TmpDir            string            `json:"tmpdir,omitempty"`
+	AddCaps           string            `json:"addCaps,omitempty"`
+	DropCaps          string            `json:"dropCaps,omitempty"`
+	Hostname          string            `json:"hostname,omitempty"`
+	Network           string            `json:"network,omitempty"`
+	DNS               string            `json:"dns,omitempty"`
+	Cwd               string            `json:"cwd,omitempty"`
+	SessionLayer      string            `json:"sessionLayer,omitempty"`
+	EncryptionKey     []byte            `json:"encryptionKey,omitempty"`
+	TargetUID         int               `json:"targetUID,omitempty"`
+	WritableImage     bool              `json:"writableImage,omitempty"`
+	WritableTmpfs     bool              `json:"writableTmpfs,omitempty"`
+	Contain           bool              `json:"container,omitempty"`
+	Nv                bool              `json:"nv,omitempty"`
+	Rocm              bool              `json:"rocm,omitempty"`
+	CustomHome        bool              `json:"customHome,omitempty"`
+	Instance          bool              `json:"instance,omitempty"`
+	InstanceJoin      bool              `json:"instanceJoin,omitempty"`
+	BootInstance      bool              `json:"bootInstance,omitempty"`
+	RunPrivileged     bool              `json:"runPrivileged,omitempty"`
+	AllowSUID         bool              `json:"allowSUID,omitempty"`
+	KeepPrivs         bool              `json:"keepPrivs,omitempty"`
+	NoPrivs           bool              `json:"noPrivs,omitempty"`
+	NoHome            bool              `json:"noHome,omitempty"`
+	NoInit            bool              `json:"noInit,omitempty"`
+	DeleteImage       bool              `json:"deleteImage,omitempty"`
+	Fakeroot          bool              `json:"fakeroot,omitempty"`
+	SignalPropagation bool              `json:"signalPropagation,omitempty"`
 }
 
 // SetImage sets the container image path to be used by EngineConfig.JSON.
@@ -802,4 +803,16 @@ func (e *EngineConfig) SetUnixSocketPair(fds [2]int) {
 // in stage one by the engine.
 func (e *EngineConfig) GetUnixSocketPair() [2]int {
 	return e.JSON.UnixSocketPair
+}
+
+// SetSingularityEnv sets singularity environment variables
+// as a key/value string map.
+func (e *EngineConfig) SetSingularityEnv(senv map[string]string) {
+	e.JSON.SingularityEnv = senv
+}
+
+// GetSingularityEnv returns singularity environment variables
+// as a key/value string map.
+func (e *EngineConfig) GetSingularityEnv() map[string]string {
+	return e.JSON.SingularityEnv
 }

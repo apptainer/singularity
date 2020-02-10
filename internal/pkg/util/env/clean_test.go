@@ -6,6 +6,7 @@
 package env
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -19,11 +20,12 @@ func TestSetContainerEnv(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	tt := []struct {
-		name      string
-		cleanEnv  bool
-		homeDest  string
-		env       []string
-		resultEnv []string
+		name           string
+		cleanEnv       bool
+		homeDest       string
+		env            []string
+		resultEnv      []string
+		singularityEnv map[string]string
 	}{
 		{
 			name:     "no SINGULARITYENV_",
@@ -80,6 +82,9 @@ func TestSetContainerEnv(t *testing.T) {
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
+			singularityEnv: map[string]string{
+				"LD_LIBRARY_PATH": "/my/custom/libs",
+			},
 		},
 		{
 			name:     "special PATH envs",
@@ -100,16 +105,18 @@ func TestSetContainerEnv(t *testing.T) {
 				"SINGULARITY_NAME=lolcow.sif",
 			},
 			resultEnv: []string{
-				"SING_USER_DEFINED_APPEND_PATH=/sylabs/container",
 				"PS1=test",
 				"TERM=xterm-256color",
-				"SING_USER_DEFINED_PATH=/my/path",
 				"LANG=C",
 				"PWD=/tmp",
 				"LC_ALL=C",
-				"SING_USER_DEFINED_PREPEND_PATH=/foo/bar",
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
+			},
+			singularityEnv: map[string]string{
+				"SING_USER_DEFINED_PREPEND_PATH": "/foo/bar",
+				"SING_USER_DEFINED_PATH":         "/my/path",
+				"SING_USER_DEFINED_APPEND_PATH":  "/sylabs/container",
 			},
 		},
 		{
@@ -136,6 +143,9 @@ func TestSetContainerEnv(t *testing.T) {
 				"FOO=VAR",
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
+			},
+			singularityEnv: map[string]string{
+				"FOO": "VAR",
 			},
 		},
 		{
@@ -183,6 +193,9 @@ func TestSetContainerEnv(t *testing.T) {
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
+			singularityEnv: map[string]string{
+				"FOO": "VAR",
+			},
 		},
 		{
 			name:     "SINGULARITYENV_PATH",
@@ -192,9 +205,11 @@ func TestSetContainerEnv(t *testing.T) {
 				"SINGULARITYENV_PATH=/my/path",
 			},
 			resultEnv: []string{
-				"SING_USER_DEFINED_PATH=/my/path",
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
+			},
+			singularityEnv: map[string]string{
+				"SING_USER_DEFINED_PATH": "/my/path",
 			},
 		},
 		{
@@ -209,6 +224,9 @@ func TestSetContainerEnv(t *testing.T) {
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
+			singularityEnv: map[string]string{
+				"LANG": "en",
+			},
 		},
 		{
 			name:     "SINGULARITYENV_HOME",
@@ -221,6 +239,7 @@ func TestSetContainerEnv(t *testing.T) {
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
+			singularityEnv: map[string]string{},
 		},
 		{
 			name:     "SINGULARITYENV_LD_LIBRARY_PATH",
@@ -233,6 +252,9 @@ func TestSetContainerEnv(t *testing.T) {
 				"LD_LIBRARY_PATH=/my/libs",
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
+			},
+			singularityEnv: map[string]string{
+				"LD_LIBRARY_PATH": "/my/libs",
 			},
 		},
 		{
@@ -248,6 +270,9 @@ func TestSetContainerEnv(t *testing.T) {
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
+			singularityEnv: map[string]string{
+				"LD_LIBRARY_PATH": "/my/libs",
+			},
 		},
 		{
 			name:     "SINGULARITYENV_HOST after HOST",
@@ -261,6 +286,9 @@ func TestSetContainerEnv(t *testing.T) {
 				"HOST=myhostenv",
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
+			},
+			singularityEnv: map[string]string{
+				"HOST": "myhostenv",
 			},
 		},
 		{
@@ -276,6 +304,9 @@ func TestSetContainerEnv(t *testing.T) {
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
+			singularityEnv: map[string]string{
+				"HOST": "myhostenv",
+			},
 		},
 	}
 	for _, tc := range tt {
@@ -283,9 +314,12 @@ func TestSetContainerEnv(t *testing.T) {
 			ociConfig := &oci.Config{}
 			generator := generate.New(&ociConfig.Spec)
 
-			SetContainerEnv(generator, tc.env, tc.cleanEnv, tc.homeDest)
+			senv := SetContainerEnv(generator, tc.env, tc.cleanEnv, tc.homeDest)
 			if !equal(t, ociConfig.Process.Env, tc.resultEnv) {
 				t.Fatalf("unexpected envs:\n want: %v\ngot: %v", tc.resultEnv, ociConfig.Process.Env)
+			}
+			if tc.singularityEnv != nil && !reflect.DeepEqual(senv, tc.singularityEnv) {
+				t.Fatalf("unexpected singularity env:\n want: %v\ngot: %v", tc.singularityEnv, senv)
 			}
 		})
 	}
