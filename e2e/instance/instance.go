@@ -372,5 +372,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 				})
 			}
 		},
+		"issue 5033": c.issue5033, // https://github.com/sylabs/singularity/issues/4836
 	}
 }

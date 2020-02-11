@@ -763,21 +763,21 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		if st.Uid != uint32(uid) || st.Gid != uint32(gid) {
 			return fmt.Errorf("parent instance process owned by %d:%d instead of %d:%d", st.Uid, st.Gid, uid, gid)
 		}
-	}
 
-	path, err = filepath.Abs("comm")
-	if err != nil {
-		return fmt.Errorf("failed to determine absolute path for comm: %s", err)
-	}
+		path, err = filepath.Abs("comm")
+		if err != nil {
+			return fmt.Errorf("failed to determine absolute path for comm: %s", err)
+		}
 
-	// we must read "sinit\n"
-	b, err := ioutil.ReadFile("comm")
-	if err != nil {
-		return fmt.Errorf("failed to read %s: %s", path, err)
-	}
-	// check that we are currently joining sinit process
-	if "sinit" != strings.Trim(string(b), "\n") {
-		return fmt.Errorf("sinit not found in %s, wrong instance process", path)
+		// we must read "sinit\n"
+		b, err := ioutil.ReadFile("comm")
+		if err != nil {
+			return fmt.Errorf("failed to read %s: %s", path, err)
+		}
+		// check that we are currently joining sinit process
+		if "sinit" != strings.Trim(string(b), "\n") {
+			return fmt.Errorf("sinit not found in %s, wrong instance process", path)
+		}
 	}
 
 	// tell starter that we are joining an instance
