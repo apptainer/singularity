@@ -60,6 +60,7 @@ image builds that was blocking use by build systems such as Spack:
     was configured in a setuid installation.
   - Always allow key IDs and fingerprints to be specified with or without a `0x`
     prefix when using `singularity keys` 
+  - Fix an issue preventing joining an instance started with `--boot`.
 
 In addition, numerous improvements have been made to the test suites, allowing
 them to pass cleanly on a range of kernel versions and distributions that are
