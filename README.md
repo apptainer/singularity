@@ -8,7 +8,7 @@
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
 - [Project License](LICENSE.md)
 - [Documentation](https://www.sylabs.io/docs/)
-- [Citation](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0177459)
+- [Citation](#citing-singularity)
 
 Singularity is an open source container platform designed to be simple, fast,
 and secure. Singularity is optimized for compute focused enterprise and HPC
@@ -49,7 +49,7 @@ Portal](https://www.sylabs.io/singularity/community/).
 For additional support, [contact us](https://www.sylabs.io/contact/) to receive
 more information.
 
-## Cite as:
+## Citing Singularity
 
 ```
 Kurtzer GM, Sochat V, Bauer MW (2017) Singularity: Scientific containers for mobility of compute. PLoS ONE 12(5): e0177459. https://doi.org/10.1371/journal.pone.0177459
@@ -58,11 +58,15 @@ Kurtzer GM, Sochat V, Bauer MW (2017) Singularity: Scientific containers for mob
 We also have a Zenodo citation:
 
 ```
-Kurtzer, Gregory M.. (2016). Singularity 2.1.2 - Linux application and environment
-containers for science. 10.5281/zenodo.60736
-
-https://doi.org/10.5281/zenodo.60736
+Kurtzer, Gregory M. et. al. Singularity - Linux application and environment
+containers for science. 10.5281/zenodo.1310023
 ```
+
+https://doi.org/10.5281/zenodo.1310023
+
+This is an 'all versions' DOI. Follow the link to Zenodo to obtain a DOI specific
+to a particular version of Singularity.
+
 
 ## License
 
