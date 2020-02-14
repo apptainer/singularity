@@ -79,7 +79,7 @@ require (
 	github.com/sylabs/json-resp v0.6.0
 	github.com/sylabs/scs-build-client v0.1.0
 	github.com/sylabs/scs-key-client v0.4.1
-	github.com/sylabs/scs-library-client v0.4.4
+	github.com/sylabs/scs-library-client v0.5.0
 	github.com/sylabs/sif v1.0.9
 	github.com/urfave/cli v1.21.0 // indirect
 	github.com/vbatts/go-mtree v0.4.4 // indirect
