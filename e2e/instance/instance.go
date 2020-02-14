@@ -334,12 +334,16 @@ func (c *ctx) applyCgroupsInstance(t *testing.T) {
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := &ctx{
-		env:     env,
-		profile: e2e.UserProfile,
+		env: env,
 	}
 
 	return testhelper.Tests{
 		"ordered": func(t *testing.T) {
+			c := &ctx{
+				env:     env,
+				profile: e2e.UserProfile,
+			}
+
 			e2e.EnsureImage(t, c.env)
 
 			// Define and loop through tests.
