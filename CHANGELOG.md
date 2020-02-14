@@ -61,6 +61,9 @@ image builds that was blocking use by build systems such as Spack:
   - Always allow key IDs and fingerprints to be specified with or without a `0x`
     prefix when using `singularity keys` 
   - Fix an issue preventing joining an instance started with `--boot`.
+  - Provide a useful error message if an invalid library:// path is provided.
+  - Bring in multi-part upload client functionality that will address large
+    image upload / proxied upload issues with a future update to Sylabs cloud.
 
 In addition, numerous improvements have been made to the test suites, allowing
 them to pass cleanly on a range of kernel versions and distributions that are
