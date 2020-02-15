@@ -1,5 +1,5 @@
 #!/bin/sh
-true + /; exec -a "$0" awk -f "$0" -- "$@"; / {}
+true + /; exec awk -f "$0" -- "$@"; / {}
 # awk script starts here
 
 # Copyright (c) 2015-2018, Yannick Cote <yhcote@gmail.com>. All rights reserved.
