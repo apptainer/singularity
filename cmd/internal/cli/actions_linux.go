@@ -334,12 +334,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 			keyInfo, err := getEncryptionMaterial(cobraCmd)
 			if err != nil {
-				sylog.Fatalf("While handling encryption material: %v", err)
+				sylog.Fatalf("Cannot load key for decryption: %v", err)
 			}
 
 			plaintextKey, err := crypt.PlaintextKey(keyInfo, engineConfig.GetImage())
 			if err != nil {
-				sylog.Fatalf("Cannot retrieve key from image %s: %+v", engineConfig.GetImage(), err)
+				sylog.Errorf("Cannot decrypt %s: %v", engineConfig.GetImage(), err)
+				sylog.Fatalf("Please check you are providing the correct key for decryption")
 			}
 
 			engineConfig.SetEncryptionKey(plaintextKey)

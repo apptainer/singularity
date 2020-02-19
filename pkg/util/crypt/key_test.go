@@ -128,7 +128,7 @@ func TestPlaintextKey(t *testing.T) {
 		{
 			name:          "invalid pem",
 			keyInfo:       KeyInfo{Format: PEM, Path: invalidPemPath},
-			expectedError: errors.Wrap(fmt.Errorf("open nothing: no such file or directory"), "loading private key for key decryption"),
+			expectedError: fmt.Errorf("could not load PEM private key: open nothing: no such file or directory"),
 		},
 	}
 
