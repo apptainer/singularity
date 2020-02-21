@@ -6,7 +6,6 @@ require (
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
 	github.com/apex/log v1.1.2
-	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
@@ -16,14 +15,12 @@ require (
 	github.com/containernetworking/cni v0.7.1
 	github.com/containernetworking/plugins v0.8.5
 	github.com/containers/image/v5 v5.2.1
-	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/creack/pty v1.1.9 // indirect
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.9.0
 	github.com/garyburd/redigo v1.6.0 // indirect
-	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
@@ -41,12 +38,10 @@ require (
 	github.com/opencontainers/selinux v1.3.2
 	github.com/pelletier/go-toml v1.6.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v0.0.0-20180607123607-faf4ec335fe0 // indirect
-	github.com/prometheus/common v0.0.0-20180518154759-7600349dcfe1 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/seccomp/containers-golang v0.3.2
 	github.com/seccomp/libseccomp-golang v0.9.1
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.6.0
 	github.com/sylabs/scs-build-client v0.1.0
@@ -65,7 +60,6 @@ require (
 	golang.org/x/crypto v0.0.0-20200128174031-69ecbb4d6d5d
 	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa // indirect
 	golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/genproto v0.0.0-20200122232147-0452cf42e150 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
 	gopkg.in/yaml.v2 v2.2.8
