@@ -19,10 +19,7 @@ type ctx struct {
 }
 
 func (c ctx) testPluginBasic(t *testing.T) {
-	const (
-		pluginName       = "github.com/sylabs/singularity/e2e-plugin"
-		pluginCustomName = "github.com/sylabs/singularity/e2e-custom-plugin"
-	)
+	pluginName := "github.com/sylabs/singularity/e2e-plugin"
 
 	// plugin code directory
 	pluginDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "plugin-dir-", "")
@@ -74,21 +71,6 @@ func (c ctx) testPluginBasic(t *testing.T) {
 			args:       []string{},
 			expectExit: 0,
 			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, pluginName),
-		},
-		{
-			name:       "InstallCustomName",
-			profile:    e2e.RootProfile,
-			command:    "plugin install",
-			args:       []string{"--name", pluginCustomName, sifFile},
-			expectExit: 0,
-		},
-		{
-			name:       "ListCustom",
-			profile:    e2e.UserProfile,
-			command:    "plugin list",
-			args:       []string{},
-			expectExit: 0,
-			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, pluginCustomName),
 		},
 		{
 			name:       "Disable",
@@ -146,13 +128,6 @@ func (c ctx) testPluginBasic(t *testing.T) {
 			args:       []string{pluginName},
 			expectExit: 0,
 		},
-		{
-			name:       "UninstallCustomName",
-			profile:    e2e.RootProfile,
-			command:    "plugin uninstall",
-			args:       []string{pluginCustomName},
-			expectExit: 0,
-		},
 	}
 
 	for _, tt := range tests {
@@ -169,7 +144,7 @@ func (c ctx) testPluginBasic(t *testing.T) {
 
 func (c ctx) testCLICallbacks(t *testing.T) {
 	pluginDir := "./plugin/testdata/cli"
-	pluginName := "e2e-cli/plugin"
+	pluginName := "github.com/sylabs/singularity/e2e-cli-plugin"
 
 	// plugin sif file
 	sifFile := filepath.Join(c.env.TestDir, "plugin.sif")
@@ -193,7 +168,7 @@ func (c ctx) testCLICallbacks(t *testing.T) {
 			name:       "Install",
 			profile:    e2e.RootProfile,
 			command:    "plugin install",
-			args:       []string{"--name", pluginName, sifFile},
+			args:       []string{sifFile},
 			expectExit: 0,
 		},
 		{
@@ -235,7 +210,7 @@ func (c ctx) testSingularityCallbacks(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	pluginDir := "./plugin/testdata/runtime_singularity"
-	pluginName := "e2e-runtime-singularity/plugin"
+	pluginName := "github.com/sylabs/singularity/e2e-runtime-plugin"
 
 	// plugin sif file
 	sifFile := filepath.Join(c.env.TestDir, "plugin.sif")
@@ -259,7 +234,7 @@ func (c ctx) testSingularityCallbacks(t *testing.T) {
 			name:       "Install",
 			profile:    e2e.RootProfile,
 			command:    "plugin install",
-			args:       []string{"--name", pluginName, sifFile},
+			args:       []string{sifFile},
 			expectExit: 0,
 		},
 		{
