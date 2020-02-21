@@ -32,7 +32,7 @@ type File struct {
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
 	SessiondirMaxSize       uint     `default:"16" directive:"sessiondir max size"`
 	MountDev                string   `default:"yes" authorized:"yes,no,minimal" directive:"mount dev"`
-	EnableOverlay           string   `default:"try" authorized:"yes,no,try" directive:"enable overlay"`
+	EnableOverlay           string   `default:"try" authorized:"yes,no,try,driver" directive:"enable overlay"`
 	BindPath                []string `default:"/etc/localtime,/etc/hosts" directive:"bind path"`
 	LimitContainerOwners    []string `directive:"limit container owners"`
 	LimitContainerGroups    []string `directive:"limit container groups"`
@@ -45,6 +45,7 @@ type File struct {
 	MksquashfsProcs         uint     `default:"0" directive:"mksquashfs procs"`
 	MksquashfsMem           string   `directive:"mksquashfs mem"`
 	CryptsetupPath          string   `directive:"cryptsetup path"`
+	ImageDriver             string   `directive:"image driver"`
 }
 
 const TemplateAsset = `# SINGULARITY.CONF
@@ -174,11 +175,12 @@ user bind control = {{ if eq .UserBindControl true }}yes{{ else }}no{{ end }}
 # command line option.
 enable fusemount = {{ if eq .EnableFusemount true }}yes{{ else }}no{{ end }}
 
-# ENABLE OVERLAY: [yes/no/try]
+# ENABLE OVERLAY: [yes/no/try/driver]
 # DEFAULT: try
 # Enabling this option will make it possible to specify bind paths to locations
 # that do not currently exist within the container.  If 'try' is chosen,
 # overlayfs will be tried but if it is unavailable it will be silently ignored.
+# If 'driver' is chosen, overlayfs is handled by the image driver.
 enable overlay = {{ .EnableOverlay }}
 
 # ENABLE UNDERLAY: [yes/no]
@@ -323,4 +325,14 @@ mksquashfs procs = {{ .MksquashfsProcs }}
 # Allow to share same images associated with loop devices to minimize loop
 # usage and optimize kernel cache (useful for MPI)
 shared loop devices = {{ if eq .SharedLoopDevices true }}yes{{ else }}no{{ end }}
+
+# IMAGE DRIVER: [STRING]
+# DEFAULT: Undefined
+# This option specifies the name of an image driver provided by a plugin that
+# will be used to handle image mounts. If the 'enable overlay' option is set
+# to 'driver' the driver name specified here will also be used to handle
+# overlay mounts.
+# If the driver name specified has not been registered via a plugin installation
+# the run-time will abort.
+image driver = {{ .ImageDriver }}
 `

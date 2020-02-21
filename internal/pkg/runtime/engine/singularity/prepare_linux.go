@@ -160,8 +160,21 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	// that the user running singularity has access to /dev/fuse
 	// (typically it's 0666, or 0660 belonging to a group that
 	// allows the user to read and write to it).
-	if err := openDevFuse(e, starterConfig); err != nil {
+	sendFd, err := openDevFuse(e, starterConfig)
+	if err != nil {
 		return err
+	}
+
+	if sendFd || e.EngineConfig.File.ImageDriver != "" {
+		fds, err := unix.Socketpair(unix.AF_UNIX, unix.SOCK_STREAM|unix.SOCK_CLOEXEC, 0)
+		if err != nil {
+			return fmt.Errorf("failed to create socketpair to pass file descriptor: %s", err)
+		}
+		e.EngineConfig.SetUnixSocketPair(fds)
+		starterConfig.KeepFileDescriptor(fds[0])
+		starterConfig.KeepFileDescriptor(fds[1])
+	} else {
+		e.EngineConfig.SetUnixSocketPair([2]int{-1, -1})
 	}
 
 	return nil
@@ -892,9 +905,9 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 
 // openDevFuse is a helper function that opens /dev/fuse once for each
 // plugin that wants to mount a FUSE filesystem.
-func openDevFuse(e *EngineOperations, starterConfig *starter.Config) error {
+func openDevFuse(e *EngineOperations, starterConfig *starter.Config) (bool, error) {
 	if !e.EngineConfig.File.EnableFusemount {
-		return fmt.Errorf("fusemount disabled by configuration 'enable fusemount = no'")
+		return false, fmt.Errorf("fusemount disabled by configuration 'enable fusemount = no'")
 	}
 
 	// do we require to send file descriptor
@@ -907,7 +920,7 @@ func openDevFuse(e *EngineOperations, starterConfig *starter.Config) error {
 		sylog.Debugf("Opening /dev/fuse for FUSE mount point %s\n", mounts[i].MountPoint)
 		fd, err := syscall.Open("/dev/fuse", syscall.O_RDWR, 0)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		mounts[i].Fd = fd
@@ -918,19 +931,7 @@ func openDevFuse(e *EngineOperations, starterConfig *starter.Config) error {
 		}
 	}
 
-	if sendFd {
-		fds, err := unix.Socketpair(unix.AF_UNIX, unix.SOCK_STREAM|unix.SOCK_CLOEXEC, 0)
-		if err != nil {
-			return fmt.Errorf("failed to create socketpair to pass FUSE file descriptor: %s", err)
-		}
-		e.EngineConfig.SetUnixSocketPair(fds)
-		starterConfig.KeepFileDescriptor(fds[0])
-		starterConfig.KeepFileDescriptor(fds[1])
-	} else {
-		e.EngineConfig.SetUnixSocketPair([2]int{-1, -1})
-	}
-
-	return nil
+	return sendFd, nil
 }
 
 func (e *EngineOperations) checkSignalPropagation() {
@@ -964,9 +965,23 @@ func (e *EngineOperations) setSessionLayer(img *image.Image) error {
 	writableTmpfs := e.EngineConfig.GetWritableTmpfs()
 	writableImage := e.EngineConfig.GetWritableImage()
 	hasOverlayImage := len(e.EngineConfig.GetOverlayImage()) > 0
+	overlayDriver := e.EngineConfig.File.EnableOverlay == "driver"
 
 	if writableImage && hasOverlayImage {
 		return fmt.Errorf("you could not use --overlay in conjunction with --writable")
+	}
+
+	// overlay is handled by the image driver
+	if overlayDriver {
+		if e.EngineConfig.File.ImageDriver == "" {
+			return fmt.Errorf("you need to specify an image driver with 'enable overlay = driver'")
+		}
+		if !writableImage {
+			e.EngineConfig.SetSessionLayer(singularityConfig.OverlayLayer)
+			return nil
+		}
+		sylog.Debugf("Not attempting to use overlay or underlay: writable flag requested")
+		return nil
 	}
 
 	// NEED FIX: on ubuntu until 4.15 kernel it was possible to mount overlay

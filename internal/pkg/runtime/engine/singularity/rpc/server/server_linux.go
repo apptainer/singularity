@@ -222,8 +222,8 @@ func (t *Methods) Stat(arguments *args.StatArgs, reply *args.StatReply) error {
 	return err
 }
 
-// SendFd send file descriptor over unix socket.
-func (t *Methods) SendFd(arguments *args.SendFdArgs, reply *int) error {
+// SendFuseFd send fuse file descriptor over unix socket.
+func (t *Methods) SendFuseFd(arguments *args.SendFuseFdArgs, reply *int) error {
 	usernsFd, err := unix.Open("/proc/self/ns/user", unix.O_RDONLY|unix.O_CLOEXEC, 0)
 	if err != nil {
 		return fmt.Errorf("while opening /proc/self/ns/user: %s", err)
@@ -231,5 +231,18 @@ func (t *Methods) SendFd(arguments *args.SendFdArgs, reply *int) error {
 	defer unix.Close(usernsFd)
 
 	rights := unix.UnixRights(append(arguments.Fds, usernsFd)...)
+	return unix.Sendmsg(arguments.Socket, nil, rights, nil, 0)
+}
+
+// OpenSendFuseFd open a new /dev/fuse file descriptor and send it
+// over unix socket.
+func (t *Methods) OpenSendFuseFd(arguments *args.OpenSendFuseFdArgs, reply *int) error {
+	fd, err := unix.Open("/dev/fuse", unix.O_RDWR, 0)
+	if err != nil {
+		return fmt.Errorf("while opening /dev/fuse: %s", err)
+	}
+	*reply = fd
+
+	rights := unix.UnixRights(fd)
 	return unix.Sendmsg(arguments.Socket, nil, rights, nil, 0)
 }

@@ -35,7 +35,16 @@ import (
 // https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle.
 // CleanupContainer is performing step 8/9 here.
 func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, status syscall.WaitStatus) error {
-	defer e.stopFuseDrivers()
+	// firstly stop all fuse drivers before any image removal
+	// by image driver interruption or image cleanup for hybrid
+	// fakeroot workflow
+	e.stopFuseDrivers()
+
+	if imageDriver != nil {
+		if err := imageDriver.Stop(); err != nil {
+			sylog.Errorf("could not stop driver: %s", err)
+		}
+	}
 
 	if e.EngineConfig.GetDeleteImage() {
 		image := e.EngineConfig.GetImage()
@@ -77,7 +86,7 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 		}
 	}
 
-	if cryptDev != "" {
+	if cryptDev != "" && imageDriver == nil {
 		if err := cleanupCrypt(cryptDev); err != nil {
 			sylog.Errorf("could not cleanup crypt: %v", err)
 		}

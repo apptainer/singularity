@@ -26,3 +26,9 @@ type MonitorContainer func(config *config.Common, pid int, signals chan os.Signa
 // This callback is called in:
 // - internal/pkg/runtime/engine/singularity/process_linux.go
 type PostStartProcess func(config *config.Common, pid int) error
+
+// RegisterImageDriver callback is called before the container
+// creation setup to register an image driver.
+// This callback is called in:
+// - internal/pkg/runtime/engine/singularity/container_linux.go
+type RegisterImageDriver func(unprivileged bool) error

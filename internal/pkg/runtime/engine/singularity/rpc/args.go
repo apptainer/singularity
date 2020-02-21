@@ -77,8 +77,13 @@ type StatArgs struct {
 	Path string
 }
 
-// SendFdArgs defines the arguments to send file descriptor.
-type SendFdArgs struct {
+// SendFuseFdArgs defines the arguments to send fuse file descriptor.
+type SendFuseFdArgs struct {
 	Socket int
 	Fds    []int
+}
+
+// OpenFuseFdArgs defines the arguments to open and send a fuse file descriptor.
+type OpenSendFuseFdArgs struct {
+	Socket int
 }
