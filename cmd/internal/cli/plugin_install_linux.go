@@ -10,34 +10,16 @@ import (
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/cmdline"
 )
-
-// -n|--name
-var pluginName string
-var pluginInstallNameFlag = cmdline.Flag{
-	ID:           "pluginInstallNameFlag",
-	Value:        &pluginName,
-	DefaultValue: "",
-	Name:         "name",
-	ShortHand:    "n",
-	Usage:        "name to install the plugin as, defaults to the value in the manifest",
-}
-
-func init() {
-	addCmdInit(func(cmdManager *cmdline.CommandManager) {
-		cmdManager.RegisterFlagForCmd(&pluginInstallNameFlag, PluginInstallCmd)
-	})
-}
 
 // PluginInstallCmd takes a compiled plugin.sif file and installs it
 // in the appropriate location.
 //
-// singularity plugin install <path> [-n name]
+// singularity plugin install <path>
 var PluginInstallCmd = &cobra.Command{
 	PreRun: CheckRootOrUnpriv,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := singularity.InstallPlugin(args[0], pluginName)
+		err := singularity.InstallPlugin(args[0])
 		if err != nil {
 			sylog.Fatalf("Failed to install plugin %q: %s.", args[0], err)
 		}

@@ -5,6 +5,12 @@
 
 package plugin
 
+// PluginRootDirSymbol is the name of a variable of type string which
+// a plugin may define if it want to obtain the plugin root directory.
+// Concatenated with the manifest name it allows to retrieve the path
+// where the plugin is currently installed.
+const PluginRootDirSymbol = "PluginRootDir"
+
 // PluginSymbol is the name of a variable of type plugin.Plugin which all
 // plugin implementations MUST define.
 const PluginSymbol = "Plugin"

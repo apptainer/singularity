@@ -18,12 +18,12 @@ import (
 
 // Install installs a plugin from a SIF image under rootDir. It will:
 //     1. Check that the SIF is a valid plugin
-//     2. Use name (or retrieve one from Manifest) and calculate the installation path
+//     2. Use name from Manifest and calculate the installation path
 //     3. Copy the SIF into the plugin path
 //     4. Extract the binary object into the path
 //     5. Generate a default config file in the path
 //     6. Write the Meta struct onto disk in dirRoot
-func Install(sifPath string, name string) error {
+func Install(sifPath string) error {
 	sylog.Debugf("Installing plugin from SIF to %q", rootDir)
 
 	sifFile, err := sif.LoadContainer(sifPath, true)
@@ -38,12 +38,23 @@ func Install(sifPath string, name string) error {
 	}
 	manifest := getManifest(sr)
 
-	if name == "" {
-		name = manifest.Name
+	if manifest.Name == "" {
+		return fmt.Errorf("empty plugin in manifest")
+	}
+
+	// as the name determine the path inside the plugin root
+	// directory, we first ensure that the name doesn't trick us
+	// with a path traversal
+	cleanName := filepath.Join("/", filepath.Clean(manifest.Name))
+	if manifest.Name[0] != '/' {
+		cleanName = cleanName[1:]
+	}
+	if cleanName != manifest.Name {
+		return fmt.Errorf("plugin manifest name %q contains path traversal", manifest.Name)
 	}
 
 	m := &Meta{
-		Name:    name,
+		Name:    manifest.Name,
 		Enabled: true,
 
 		sifFile: &sifFile,

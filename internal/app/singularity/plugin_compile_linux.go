@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -24,6 +24,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
 
 const version = "v0.0.0"
@@ -216,12 +217,15 @@ func CompilePlugin(sourceDir, destSif, buildTags string, disableMinorCheck bool)
 func buildPlugin(sourceDir string, bTool buildToolchain) (string, error) {
 	// assuming that sourceDir is within trimpath for now
 	out := pluginObjPath(sourceDir)
+	// set pluginRootDirVar variable if required by the plugin
+	pluginRootDirVar := fmt.Sprintf("-X main.%s=%s", pluginapi.PluginRootDirSymbol, buildcfg.PLUGIN_ROOTDIR)
 
 	args := []string{
 		"build",
 		"-a",
 		"-o", out,
 		"-mod=readonly",
+		"-ldflags", pluginRootDirVar,
 		"-trimpath",
 		"-buildmode=plugin",
 		"-tags", bTool.buildTags,
