@@ -15,11 +15,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
-
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
+	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -34,12 +33,14 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/network"
+	singularitycallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/engine/singularity"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sys/unix"
 )
@@ -51,6 +52,7 @@ import (
 var cryptDev string
 var networkSetup *network.Setup
 var cgroupManager *cgroups.Manager
+var imageDriver image.Driver
 
 // defaultCNIConfPath is the default directory to CNI network configuration files.
 var defaultCNIConfPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", "network")
@@ -138,10 +140,32 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		c.userNS, _ = namespaces.IsInsideUserNamespace(os.Getpid())
 	}
 
+	// load image driver plugins
+	callbackType := (singularitycallback.RegisterImageDriver)(nil)
+	callbacks, err := plugin.LoadCallbacks(callbackType)
+	if err != nil {
+		return fmt.Errorf("while loading plugins callbacks '%T': %s", callbackType, err)
+	}
+	for _, callback := range callbacks {
+		if err := callback.(singularitycallback.RegisterImageDriver)(c.userNS); err != nil {
+			return fmt.Errorf("while registering image driver: %s", err)
+		}
+	}
+
+	driverName := c.engine.EngineConfig.File.ImageDriver
+	imageDriver = image.GetDriver(driverName)
+	if driverName != "" && imageDriver == nil {
+		return fmt.Errorf("%q: no such image driver", driverName)
+	}
+
 	p := &mount.Points{}
 	system := &mount.System{Points: p, Mount: c.mount}
 
 	if err := c.setupSessionLayout(system); err != nil {
+		return err
+	}
+
+	if err := c.startImageDriver(system); err != nil {
 		return err
 	}
 
@@ -339,6 +363,87 @@ func (c *container) mount(point *mount.Point, system *mount.System) error {
 	return nil
 }
 
+// startImageDriver starts the image driver configured in singularity.conf.
+func (c *container) startImageDriver(system *mount.System) error {
+	if imageDriver == nil {
+		return nil
+	}
+
+	const sessionPath = "/driver"
+
+	fuseDriver := imageDriver.Features()&image.FuseFeature != 0
+
+	if err := c.session.AddDir(sessionPath); err != nil {
+		return fmt.Errorf("while creating session driver directory: %s", err)
+	}
+	sp, _ := c.session.GetPath(sessionPath)
+
+	params := &image.DriverParams{
+		SessionPath: sp,
+		UsernsFd:    -1,
+		FuseFd:      -1,
+		Config:      c.engine.CommonConfig,
+	}
+
+	if c.userNS {
+		fds, err := c.getFuseFdFromRPC(nil)
+		if err != nil {
+			return fmt.Errorf("while getting /proc/self/ns/user file descriptor: %s", err)
+		}
+		params.UsernsFd = fds[0]
+		defer unix.Close(params.UsernsFd)
+	}
+
+	if fuseDriver {
+		fuseFd, fuseRPCFd, err := c.openFuseFdFromRPC()
+		if err != nil {
+			return fmt.Errorf("while requesting /dev/fuse file descriptor from RPC: %s", err)
+		}
+		params.FuseFd = fuseFd
+		system.RunAfterTag(mount.SessionTag, func(system *mount.System) error {
+			fakeroot := c.engine.EngineConfig.GetFakeroot()
+			fakerootHybrid := fakeroot && os.Geteuid() != 0
+
+			uid := os.Getuid()
+			gid := os.Getgid()
+			rootmode := syscall.S_IFDIR & syscall.S_IFMT
+
+			// as fakeroot can change UID/GID, we allow others users
+			// to access FUSE mount point
+			allowOther := ""
+			if fakeroot {
+				allowOther = ",allow_other"
+			}
+			if fakerootHybrid {
+				uid = 0
+				gid = 0
+			}
+
+			opts := fmt.Sprintf("fd=%d,rootmode=%o,user_id=%d,group_id=%d%s",
+				fuseRPCFd,
+				rootmode,
+				uid,
+				gid,
+				allowOther,
+			)
+
+			sylog.Debugf("Add FUSE mount for image driver with options %s", opts)
+			err := c.rpcOps.Mount("fuse", sp, "fuse", syscall.MS_NOSUID|syscall.MS_NODEV, opts)
+			if err != nil {
+				return fmt.Errorf("while mounting fuse image driver: %s", err)
+			}
+			return nil
+		})
+	}
+
+	sylog.Debugf("Starting image driver %s", c.engine.EngineConfig.File.ImageDriver)
+	if err := imageDriver.Start(params); err != nil {
+		return fmt.Errorf("failed to start driver: %s", err)
+	}
+
+	return nil
+}
+
 // setPropagationMount will apply propagation flag set by
 // configuration directive, when applied master process
 // won't see mount done by RPC server anymore. Typically
@@ -505,6 +610,18 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 		// overlay requires root filesystem UID/GID since upper/work
 		// directories are owned by root
 		if tag == mount.LayerTag && mnt.Type == "overlay" {
+			if imageDriver != nil && c.engine.EngineConfig.File.EnableOverlay == "driver" {
+				if imageDriver.Features()&image.OverlayFeature != 0 {
+					params := &image.MountParams{
+						Source:     source,
+						Target:     dest,
+						Filesystem: mnt.Type,
+						Flags:      flags,
+						FSOptions:  opts,
+					}
+					return imageDriver.Mount(params, c.rpcOps.Mount)
+				}
+			}
 			c.rpcOps.SetFsID(0, 0)
 			defer c.rpcOps.SetFsID(os.Getuid(), os.Getgid())
 		}
@@ -536,7 +653,7 @@ mount:
 			return fmt.Errorf("destination %s doesn't exist in container", mnt.Destination)
 		}
 	} else if err != nil {
-		if !bindMount {
+		if !bindMount && !remount {
 			if mnt.Type == "devpts" {
 				sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY allocation functionality disabled")
 				return nil
@@ -574,6 +691,8 @@ mount:
 
 // mount image via loop
 func (c *container) mountImage(mnt *mount.Point) error {
+	var key []byte
+
 	maxDevices := int(c.engine.EngineConfig.File.MaxLoopDevices)
 	flags, opts := mount.ConvertOptions(mnt.Options)
 	optsString := strings.Join(opts, ",")
@@ -586,6 +705,29 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	sizelimit, err := mount.GetSizeLimit(mnt.InternalOptions)
 	if err != nil {
 		return err
+	}
+
+	mountType := mnt.Type
+
+	if mountType == "encryptfs" {
+		key, err = mount.GetKey(mnt.InternalOptions)
+		if err != nil {
+			return err
+		}
+	}
+
+	if imageDriver != nil && imageDriver.Features()&image.ImageFeature != 0 {
+		params := &image.MountParams{
+			Source:     mnt.Source,
+			Target:     mnt.Destination,
+			Filesystem: mountType,
+			Flags:      flags,
+			Offset:     offset,
+			Size:       sizelimit,
+			Key:        key,
+			FSOptions:  opts,
+		}
+		return imageDriver.Mount(params, c.rpcOps.Mount)
 	}
 
 	attachFlag := os.O_RDWR
@@ -612,14 +754,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 
 	sylog.Debugf("Mounting loop device %s to %s of type %s\n", path, mnt.Destination, mnt.Type)
 
-	mountType := mnt.Type
-
 	if mountType == "encryptfs" {
-		key, err := mount.GetKey(mnt.InternalOptions)
-		if err != nil {
-			return err
-		}
-
 		// pass the master processus ID only if a container IPC
 		// namespace was requested because cryptsetup requires
 		// to run in the host IPC namespace
@@ -639,6 +774,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		// Currently we only support encrypted squashfs file system
 		mountType = "squashfs"
 	}
+
 	err = c.rpcOps.Mount(path, mnt.Destination, mountType, flags, optsString)
 	switch err {
 	case syscall.EINVAL:
@@ -743,8 +879,10 @@ func (c *container) overlayUpperWork(system *mount.System) error {
 		return fmt.Errorf("symlink detected, work overlay %s must be a directory", w)
 	}
 
-	c.rpcOps.SetFsID(0, 0)
-	defer c.rpcOps.SetFsID(os.Getuid(), os.Getgid())
+	if c.engine.EngineConfig.File.EnableOverlay != "driver" {
+		c.rpcOps.SetFsID(0, 0)
+		defer c.rpcOps.SetFsID(os.Getuid(), os.Getgid())
+	}
 
 	if !fs.IsDir(u) {
 		if _, err := c.rpcOps.Mkdir(u, 0755); err != nil {
@@ -840,7 +978,15 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				}
 				ov.AddLowerDir(dst)
 			case image.SANDBOX:
-				if os.Geteuid() != 0 {
+				allowed := os.Geteuid() == 0
+
+				if c.engine.EngineConfig.File.EnableOverlay == "driver" {
+					if imageDriver != nil && imageDriver.Features()&image.OverlayFeature != 0 {
+						allowed = true
+					}
+				}
+
+				if !allowed {
 					return fmt.Errorf("only root user can use sandbox as overlay")
 				}
 
@@ -2124,6 +2270,85 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 	}, nil
 }
 
+// getFuseFdFromRPC returns fuse file descriptors from RPC server based on
+// the file descriptor list provided in argument, it also returns an
+// additional file descriptor corresponding to /proc/self/ns/user.
+// You can set an empty file descriptor list to just get /proc/self/ns/user
+// file descriptor.
+func (c *container) getFuseFdFromRPC(fds []int) ([]int, error) {
+	socketPair := c.engine.EngineConfig.GetUnixSocketPair()
+
+	if err := c.rpcOps.SendFuseFd(socketPair[1], fds); err != nil {
+		return nil, fmt.Errorf("while requesting file descriptors send: %s", err)
+	}
+
+	bufSpace := (len(fds) + 1) * 4
+	buf := make([]byte, unix.CmsgSpace(bufSpace))
+	_, _, _, _, err := unix.Recvmsg(socketPair[0], nil, buf, 0)
+	if err != nil {
+		return nil, fmt.Errorf("while receiving file descriptors: %s", err)
+	}
+
+	msgs, err := unix.ParseSocketControlMessage(buf)
+	if err != nil {
+		return nil, fmt.Errorf("while parsing socket control message: %s", err)
+	}
+
+	newfds := make([]int, 0, 1)
+
+	for _, msg := range msgs {
+		pfds, err := unix.ParseUnixRights(&msg)
+		if err != nil {
+			return nil, fmt.Errorf("while getting file descriptor: %s", err)
+		}
+		newfds = append(newfds, pfds...)
+	}
+
+	if len(newfds) != len(fds)+1 {
+		return nil, fmt.Errorf("got %d file descriptors instead of %d", len(newfds), len(fds)+1)
+	}
+
+	return newfds, nil
+}
+
+// openFuseFdFromRPC returns fuse file descriptor opened by RPC server,
+// the first returned argument corresponds to the file descriptor to use
+// by the caller while the second argument corresponds to the file
+// descriptor used by the RPC server.
+func (c *container) openFuseFdFromRPC() (int, int, error) {
+	socketPair := c.engine.EngineConfig.GetUnixSocketPair()
+
+	fuseRPCFd, err := c.rpcOps.OpenSendFuseFd(socketPair[1])
+	if err != nil {
+		return -1, -1, fmt.Errorf("while requesting a fuse file descriptor open/send: %s", err)
+	}
+
+	bufSpace := 4
+	buf := make([]byte, unix.CmsgSpace(bufSpace))
+	_, _, _, _, err = unix.Recvmsg(socketPair[0], nil, buf, 0)
+	if err != nil {
+		return -1, -1, fmt.Errorf("while receiving file descriptors: %s", err)
+	}
+
+	msgs, err := unix.ParseSocketControlMessage(buf)
+	if err != nil {
+		return -1, -1, fmt.Errorf("while parsing socket control message: %s", err)
+	}
+
+	fuseFd := -1
+
+	for _, msg := range msgs {
+		fds, err := unix.ParseUnixRights(&msg)
+		if err != nil {
+			return -1, -1, fmt.Errorf("while getting file descriptor: %s", err)
+		}
+		fuseFd = fds[0]
+		break
+	}
+
+	return fuseFd, fuseRPCFd, nil
+}
+
 // addFuseMount transforms the plugin configuration into a series of
 // mount requests for FUSE filesystems
 func (c *container) addFuseMount(system *mount.System) (int, error) {
@@ -2157,40 +2382,14 @@ func (c *container) addFuseMount(system *mount.System) (int, error) {
 	}
 
 	if len(fds) > 0 {
-		socketPair := c.engine.EngineConfig.GetUnixSocketPair()
-
-		if err := c.rpcOps.SendFd(socketPair[1], fds); err != nil {
-			return usernsFd, fmt.Errorf("while requesting file descriptors send: %s", err)
-		}
-
-		buf := make([]byte, unix.CmsgSpace(len(fds)*4))
-		_, _, _, _, err := unix.Recvmsg(socketPair[0], nil, buf, 0)
+		newfds, err := c.getFuseFdFromRPC(fds)
 		if err != nil {
-			return usernsFd, fmt.Errorf("while receiving file descriptors: %s", err)
-		}
-
-		msgs, err := unix.ParseSocketControlMessage(buf)
-		if err != nil {
-			return usernsFd, fmt.Errorf("while parsing socket control message: %s", err)
-		}
-
-		newfds := make([]int, 0, 1)
-
-		for _, msg := range msgs {
-			pfds, err := unix.ParseUnixRights(&msg)
-			if err != nil {
-				return usernsFd, fmt.Errorf("while getting file descriptor: %s", err)
-			}
-			newfds = append(newfds, pfds...)
+			return usernsFd, err
 		}
 
 		// the additional file descriptor is for /proc/self/ns/user which is
 		// always passed by RPC server, this file descriptor is returned by
 		// this function
-		if len(newfds) != len(fds)+1 {
-			return usernsFd, fmt.Errorf("got %d file descriptors instead of %d", len(newfds), len(fds)+1)
-		}
-
 		usernsFd = newfds[len(newfds)-1]
 		newfds = newfds[0 : len(newfds)-1]
 

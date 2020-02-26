@@ -137,15 +137,25 @@ func (t *RPC) Stat(path string) (*syscall.Stat_t, error) {
 	return &reply.St, err
 }
 
-// SendFd calls the SendFd RPC using the supplied arguments.
-func (t *RPC) SendFd(socket int, fds []int) error {
-	arguments := &args.SendFdArgs{
+// SendFuseFd calls the SendFuseFd RPC using the supplied arguments.
+func (t *RPC) SendFuseFd(socket int, fds []int) error {
+	arguments := &args.SendFuseFdArgs{
 		Socket: socket,
 		Fds:    fds,
 	}
 	var reply int
-	err := t.Client.Call(t.Name+".SendFd", arguments, &reply)
+	err := t.Client.Call(t.Name+".SendFuseFd", arguments, &reply)
 	return err
+}
+
+// OpenSendFuseFd calls the OpenSendFuseFd RPC using the supplied arguments.
+func (t *RPC) OpenSendFuseFd(socket int) (int, error) {
+	arguments := &args.OpenSendFuseFdArgs{
+		Socket: socket,
+	}
+	var reply int
+	err := t.Client.Call(t.Name+".OpenSendFuseFd", arguments, &reply)
+	return reply, err
 }
 
 func init() {
