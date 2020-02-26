@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -40,8 +40,12 @@ func makeParentDir(path string, numSrcPaths int) error {
 }
 
 // Copy calls cp with src and dst as its arguments
-// checks dst and creates parent directories if they do not exist
-// before calling cp
+// Checks dst and creates parent directories if they do not exist
+// before calling cp.
+// If followLinks is true, the -L flag to cp will follow all symlinks
+// If followLinks is false, the -H flag to cp will only follow links for specified
+// files or files that resolve directly from a glob pattern. It will not follow
+// links found during directory traversal.
 func Copy(src, dst string, followLinks bool) error {
 	// resolve any bash globbing in filepath
 	paths, err := expandPath(src)
@@ -54,7 +58,7 @@ func Copy(src, dst string, followLinks bool) error {
 	}
 
 	// set flags for cp
-	args := []string{"-fr"}
+	args := []string{"-fHr"}
 	if followLinks {
 		args = []string{"-fLr"}
 	}
