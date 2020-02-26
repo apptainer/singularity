@@ -29,7 +29,7 @@ type Device struct{}
 var (
 	// ErrUnsupportedCryptsetupVersion is the error raised when the available version
 	// of cryptsetup is not compatible with the Singularity encryption mechanism.
-	ErrUnsupportedCryptsetupVersion = errors.New("available cryptsetup is not supported")
+	ErrUnsupportedCryptsetupVersion = errors.New("installed version of cryptsetup is not supported, >=2.0.0 required")
 
 	// ErrInvalidPassphrase raised when the passed key is not valid to open requested
 	// encrypted device.
