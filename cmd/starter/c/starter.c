@@ -1160,7 +1160,7 @@ __attribute__((constructor)) static void init(void) {
         if ( sconfig->starter.isSuid ) {
             priv_escalate(true);
         } else if ( uid != 0 ) {
-            fatalf("No setuid installation found, for unprivileged installation use: ./mconfig --without-suid");
+            fatalf("No setuid installation found, for unprivileged installation use: ./mconfig --without-suid\n");
         }
         break;
     case ENTER_NAMESPACE:
