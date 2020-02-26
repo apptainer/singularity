@@ -14,7 +14,7 @@ import (
 
 const (
 	// DefaultPath defines default value for PATH environment variable.
-	DefaultPath = "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+	DefaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 	// SingularityPrefix defines the environment variable prefix SINGULARITY_.
 	SingularityPrefix = "SINGULARITY_"
 	// SingularityEnvPrefix defines the environment variable prefix SINGULARITYENV_.
@@ -38,13 +38,15 @@ var alwaysPassKeys = map[string]struct{}{
 // boolean value defines if the variable could be overridden
 // with the SINGULARITYENV_ variant.
 var alwaysOmitKeys = map[string]bool{
-	"HOME":            false,
-	"PATH":            false,
-	"LD_LIBRARY_PATH": true,
+	"HOME":                false,
+	"PATH":                false,
+	"SINGULARITY_SHELL":   false,
+	"SINGULARITY_APPNAME": false,
+	"LD_LIBRARY_PATH":     true,
 }
 
 // SetContainerEnv cleans environment variables before running the container.
-func SetContainerEnv(g *generate.Generator, hostEnvs []string, cleanEnv bool, homeDest string) {
+func SetContainerEnv(g *generate.Generator, hostEnvs []string, cleanEnv bool, homeDest string) map[string]string {
 	singEnvKeys := make(map[string]string)
 
 	// allow override with SINGULARITYENV_LANG
@@ -65,11 +67,11 @@ func SetContainerEnv(g *generate.Generator, hostEnvs []string, cleanEnv bool, ho
 			key := e[0][len(SingularityEnvPrefix):]
 			switch key {
 			case "PREPEND_PATH":
-				g.AddProcessEnv("SING_USER_DEFINED_PREPEND_PATH", e[1])
+				singEnvKeys["SING_USER_DEFINED_PREPEND_PATH"] = e[1]
 			case "APPEND_PATH":
-				g.AddProcessEnv("SING_USER_DEFINED_APPEND_PATH", e[1])
+				singEnvKeys["SING_USER_DEFINED_APPEND_PATH"] = e[1]
 			case "PATH":
-				g.AddProcessEnv("SING_USER_DEFINED_PATH", e[1])
+				singEnvKeys["SING_USER_DEFINED_PATH"] = e[1]
 			default:
 				if key == "" {
 					continue
@@ -99,6 +101,8 @@ func SetContainerEnv(g *generate.Generator, hostEnvs []string, cleanEnv bool, ho
 	sylog.Verbosef("Setting PATH=%s", DefaultPath)
 	g.AddProcessEnv("HOME", homeDest)
 	g.AddProcessEnv("PATH", DefaultPath)
+
+	return singEnvKeys
 }
 
 // addHostEnv processes given key and returns if the environment

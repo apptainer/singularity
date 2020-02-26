@@ -26,6 +26,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/shell/interpreter"
 	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	imgutil "github.com/sylabs/singularity/pkg/image"
@@ -543,11 +544,45 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
+	if SingularityEnvFile != "" {
+		currentEnv := append(
+			os.Environ(),
+			"SINGULARITY_IMAGE="+engineConfig.GetImage(),
+			"PATH="+os.Getenv("USER_PATH"),
+		)
+
+		content, err := ioutil.ReadFile(SingularityEnvFile)
+		if err != nil {
+			sylog.Fatalf("Could not read %q environment file: %s", SingularityEnvFile, err)
+		}
+
+		env, err := interpreter.EvaluateEnv(content, args, currentEnv)
+		if err != nil {
+			sylog.Fatalf("While processing %s: %s", SingularityEnvFile, err)
+		}
+		// --env variables will take precedence over variables
+		// defined by the environment file
+		sylog.Debugf("Setting environment variables from file %s", SingularityEnvFile)
+		SingularityEnv = append(env, SingularityEnv...)
+	}
+
+	// process --env and --env-file variables for injection
+	// into the environment by prefixing them with SINGULARITYENV_
+	for _, env := range SingularityEnv {
+		e := strings.SplitN(env, "=", 2)
+		if len(e) != 2 {
+			sylog.Warningf("Ignore environment variable %q: '=' is missing", env)
+			continue
+		}
+		os.Setenv("SINGULARITYENV_"+e[0], e[1])
+	}
+
 	// Copy and cache environment
 	environment := os.Environ()
 
 	// Clean environment
-	env.SetContainerEnv(generator, environment, IsCleanEnv, engineConfig.GetHomeDest())
+	singularityEnv := env.SetContainerEnv(generator, environment, IsCleanEnv, engineConfig.GetHomeDest())
+	engineConfig.SetSingularityEnv(singularityEnv)
 
 	if pwd, err := os.Getwd(); err == nil {
 		engineConfig.SetCwd(pwd)

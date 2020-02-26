@@ -500,6 +500,13 @@ func (c actionTests) RunFromURI(t *testing.T) {
 			profile: e2e.UserProfile,
 		},
 		{
+			name:    "RunFromDockerWithoutShellOK",
+			command: "run",
+			argv:    []string{"docker://hello-world"},
+			exit:    0,
+			profile: e2e.UserProfile,
+		},
+		{
 			name:    "RunFromLibraryOK",
 			command: "run",
 			argv:    []string{"--bind", bind, "library://busybox:latest", size},
