@@ -14,6 +14,10 @@ _The old changelog can be found in the `release-2.6` branch_
 ## Changed defaults / behaviours
   - Environment variables prefixed with `SINGULARITYENV_` always take
     precedence over variables without `SINGULARITYENV_` prefix.
+  - `%files from ...` will now follow symlinks for sources that are directly
+    specified, or directly resolved from a glob pattern. It will not follow
+    symlinks found through directory traversal. This mirrors Docker multi-stage
+    COPY behaviour.
 
 
 # Changes Since v3.5.2

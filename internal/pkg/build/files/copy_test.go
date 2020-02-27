@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 var sourceFileContent = "Source File Content\n"
@@ -59,7 +61,7 @@ func TestMakeParentDir(t *testing.T) {
 		},
 	}
 
-	// while running tetss, make sure to remove everything past the tmp dir created so tests to accidentially collide
+	// while running tests, make sure to remove everything past the tmp dir created so tests to accidentially collide
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// create tmpdir for each test
@@ -221,6 +223,81 @@ func TestCopyDir(t *testing.T) {
 			}
 			if string(content) != sourceFileContent {
 				t.Errorf("failure reading file %s test: %s", t.Name(), err)
+			}
+		})
+	}
+}
+
+func TestCopySymlink(t *testing.T) {
+	// create tmpdir
+	dir, err := ioutil.TempDir("", "copy-test-src-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	// prep src dir to copy
+	srcDir := filepath.Join(dir, "sourceDir")
+	if err := os.Mkdir(srcDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// prep src file
+	srcFile := filepath.Join(srcDir, "sourceFile")
+	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// prep src symlink
+	srcLink := filepath.Join(srcDir, "sourceLink")
+	if err := os.Symlink(srcFile, srcLink); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name         string
+		src          string
+		dst          string
+		finalpath    string
+		shouldFollow bool
+	}{
+		// When copied via traversal the symlink should not be followed
+		{"DirectoryNoFollow", srcDir, "destDir/", "destDir/sourceDir/sourceLink", false},
+		// When copied as a specified source, the link should be followed
+		{"LinkFollow", srcLink, "destDir/", "destDir/sourceLink", true},
+		// When copied via a glob pattern that resolves to the link directly the link should be followed
+		{"GlobFollow", srcLink, "destDir/", "destDir/sourceLink", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// create tmpdir
+			dstDir, err := ioutil.TempDir("", "copy-test-dst-")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.RemoveAll(dstDir)
+
+			// manually concatenating because I don't want a Join function to clean the trailing slash
+			dst := dstDir + "/" + tt.dst
+			if err := Copy(tt.src, dst, false); err != nil {
+				t.Errorf("unexpected failure running %s test: %s", t.Name(), err)
+			}
+
+			dstFinal := filepath.Join(dstDir, tt.finalpath)
+			// verify file was copied
+			_, err = os.Stat(dstFinal)
+			if os.IsNotExist(err) {
+				t.Errorf("failure to copy link %s test: %s", t.Name(), err)
+			}
+
+			// check if we have a correctly followed/non-followed link
+			if !tt.shouldFollow && !fs.IsLink(dstFinal) {
+				t.Errorf("%s should be a symlink", dstFinal)
+			}
+
+			if tt.shouldFollow && fs.IsLink(dstFinal) {
+				t.Errorf("%s should not be a symlink", dstFinal)
 			}
 		})
 	}
