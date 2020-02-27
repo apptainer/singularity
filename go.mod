@@ -28,7 +28,6 @@ require (
 	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/pty v1.1.8
-	github.com/mattn/go-runewidth v0.0.2 // indirect
 	github.com/openSUSE/umoci v0.4.5
 	github.com/opencontainers/go-digest v1.0.0-rc1
 	github.com/opencontainers/image-spec v1.0.2-0.20191218002246-9ea04d1f37d7
@@ -48,6 +47,7 @@ require (
 	github.com/sylabs/scs-library-client v0.5.0
 	github.com/sylabs/sif v1.0.9
 	github.com/urfave/cli v1.22.2 // indirect
+	github.com/vbauerster/mpb/v4 v4.11.2
 	github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
@@ -60,7 +60,6 @@ require (
 	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa // indirect
 	golang.org/x/sys v0.0.0-20200217220822-9197077df867
 	google.golang.org/genproto v0.0.0-20200122232147-0452cf42e150 // indirect
-	gopkg.in/cheggaaa/pb.v1 v1.0.28
 	gopkg.in/yaml.v2 v2.2.8
 	gotest.tools/v3 v3.0.2
 	k8s.io/client-go v0.0.0-20181010045704-56e7a63b5e38 // indirect

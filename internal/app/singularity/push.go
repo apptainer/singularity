@@ -16,7 +16,8 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/signing"
-	pb "gopkg.in/cheggaaa/pb.v1"
+	"github.com/vbauerster/mpb/v4"
+	"github.com/vbauerster/mpb/v4/decor"
 )
 
 var (
@@ -26,18 +27,24 @@ var (
 )
 
 type progressCallback struct {
-	bar *pb.ProgressBar
+	bar *mpb.Bar
 	r   io.Reader
 }
 
 func (c *progressCallback) InitUpload(totalSize int64, r io.Reader) {
-	// create and start bar
-	c.bar = pb.New64(totalSize).SetUnits(pb.U_BYTES)
-	c.bar.ShowTimeLeft = true
-	c.bar.ShowSpeed = true
-
-	c.bar.Start()
-	c.r = c.bar.NewProxyReader(r)
+	// create bar
+	p := mpb.New()
+	c.bar = p.AddBar(totalSize,
+		mpb.PrependDecorators(
+			decor.Counters(decor.UnitKiB, "%.1f / %.1f"),
+		),
+		mpb.AppendDecorators(
+			decor.Percentage(),
+			decor.AverageSpeed(decor.UnitKiB, " % .1f "),
+			decor.AverageETA(decor.ET_STYLE_GO),
+		),
+	)
+	c.r = c.bar.ProxyReader(r)
 }
 
 func (c *progressCallback) GetReader() io.Reader {
@@ -45,7 +52,6 @@ func (c *progressCallback) GetReader() io.Reader {
 }
 
 func (c *progressCallback) Finish() {
-	c.bar.Finish()
 }
 
 // LibraryPush will upload the image specified by file to the library specified by libraryURI.

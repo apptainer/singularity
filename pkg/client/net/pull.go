@@ -17,7 +17,8 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
-	"gopkg.in/cheggaaa/pb.v1"
+	"github.com/vbauerster/mpb/v4"
+	"github.com/vbauerster/mpb/v4/decor"
 )
 
 // Timeout for an image pull in seconds - could be a large download...
@@ -25,25 +26,25 @@ const pullTimeout = 1800
 
 // IsNetPullRef returns true if the provided string is a valid url
 // reference for a pull operation.
-func IsNetPullRef(libraryRef string) bool {
-	match, _ := regexp.MatchString("^http(s)?://", libraryRef)
+func IsNetPullRef(netRef string) bool {
+	match, _ := regexp.MatchString("^http(s)?://", netRef)
 	return match
 }
 
-// DownloadImage will retrieve an image from the Container Library,
+// DownloadImage will retrieve an image from an http(s) URI,
 // saving it into the specified file
-func DownloadImage(filePath string, libraryURL string) error {
+func DownloadImage(filePath string, netURL string) error {
 
-	if !IsNetPullRef(libraryURL) {
-		return fmt.Errorf("not a valid url reference: %s", libraryURL)
+	if !IsNetPullRef(netURL) {
+		return fmt.Errorf("not a valid url reference: %s", netURL)
 	}
 	if filePath == "" {
-		refParts := strings.Split(libraryURL, "/")
+		refParts := strings.Split(netURL, "/")
 		filePath = refParts[len(refParts)-1]
 		sylog.Infof("Download filename not provided. Downloading to: %s\n", filePath)
 	}
 
-	url := libraryURL
+	url := netURL
 	sylog.Debugf("Pulling from URL: %s\n", url)
 
 	client := &http.Client{
@@ -64,7 +65,7 @@ func DownloadImage(filePath string, libraryURL string) error {
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("the requested image was not found in the library")
+		return fmt.Errorf("the requested image was not found")
 	}
 
 	if res.StatusCode != http.StatusOK {
@@ -87,24 +88,26 @@ func DownloadImage(filePath string, libraryURL string) error {
 	sylog.Debugf("Created output file: %s\n", filePath)
 
 	bodySize := res.ContentLength
-	bar := pb.New(int(bodySize)).SetUnits(pb.U_BYTES)
-	if sylog.GetLevel() < 0 {
-		bar.NotPrint = true
-	}
-	bar.ShowTimeLeft = true
-	bar.ShowSpeed = true
-	bar.Start()
+	p := mpb.New()
+	bar := p.AddBar(bodySize,
+		mpb.PrependDecorators(
+			decor.Counters(decor.UnitKiB, "%.1f / %.1f"),
+		),
+		mpb.AppendDecorators(
+			decor.Percentage(),
+			decor.AverageSpeed(decor.UnitKiB, " % .1f "),
+			decor.AverageETA(decor.ET_STYLE_GO),
+		),
+	)
 
 	// create proxy reader
-	bodyProgress := bar.NewProxyReader(res.Body)
+	bodyProgress := bar.ProxyReader(res.Body)
 
 	// Write the body to file
 	_, err = io.Copy(out, bodyProgress)
 	if err != nil {
 		return err
 	}
-
-	bar.Finish()
 
 	sylog.Debugf("Download complete\n")
 

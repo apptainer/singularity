@@ -21,7 +21,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	shub "github.com/sylabs/singularity/pkg/client/shub"
-	"gopkg.in/cheggaaa/pb.v1"
+	"github.com/vbauerster/mpb/v4"
+	"github.com/vbauerster/mpb/v4/decor"
 )
 
 var (
@@ -92,22 +93,26 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, noHTTPS b
 
 // printProgress is called to display progress bar while downloading image from library.
 func printProgress(totalSize int64, r io.Reader, w io.Writer) error {
-	bar := pb.New64(totalSize).SetUnits(pb.U_BYTES)
-	bar.ShowTimeLeft = true
-	bar.ShowSpeed = true
+	p := mpb.New()
+	bar := p.AddBar(totalSize,
+		mpb.PrependDecorators(
+			decor.Counters(decor.UnitKiB, "%.1f / %.1f"),
+		),
+		mpb.AppendDecorators(
+			decor.Percentage(),
+			decor.AverageSpeed(decor.UnitKiB, " % .1f "),
+			decor.AverageETA(decor.ET_STYLE_GO),
+		),
+	)
 
 	// create proxy reader
-	bodyProgress := bar.NewProxyReader(r)
-
-	bar.Start()
+	bodyProgress := bar.ProxyReader(r)
 
 	// Write the body to file
 	_, err := io.Copy(w, bodyProgress)
 	if err != nil {
 		return err
 	}
-
-	bar.Finish()
 
 	return nil
 }
