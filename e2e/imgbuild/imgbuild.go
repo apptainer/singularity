@@ -907,7 +907,7 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	err := e2e.CheckCryptsetupVersion()
 	if err != nil {
 		expectedExitCode = 255
-		expectedStderr = ": available cryptsetup is not supported"
+		expectedStderr = ": installed version of cryptsetup is not supported, >=2.0.0 required"
 	}
 
 	// First with the command line argument, only using --passphrase
