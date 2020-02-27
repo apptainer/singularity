@@ -13,10 +13,11 @@ import (
 	"crypto/x509"
 	"encoding/asn1"
 	"encoding/pem"
+	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 
-	"github.com/pkg/errors"
 	"github.com/sylabs/sif/pkg/sif"
 )
 
@@ -72,18 +73,18 @@ func EncryptKey(k KeyInfo, plaintext []byte) ([]byte, error) {
 	case PEM:
 		pubKey, err := loadPEMPublicKey(k.Path)
 		if err != nil {
-			return nil, errors.Wrap(err, "loading public key for key encryption")
+			return nil, fmt.Errorf("loading public key for key encryption: %v", err)
 		}
 
 		ciphertext, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pubKey, plaintext, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "encrypting key")
+			return nil, fmt.Errorf("encrypting key: %v", err)
 		}
 
 		var buf bytes.Buffer
 
 		if err := savePEMMessage(&buf, ciphertext); err != nil {
-			return nil, errors.Wrap(err, "serializing encrypted key")
+			return nil, fmt.Errorf("serializing encrypted key: %v", err)
 		}
 
 		return buf.Bytes(), nil
@@ -101,24 +102,24 @@ func PlaintextKey(k KeyInfo, image string) ([]byte, error) {
 	case PEM:
 		privateKey, err := loadPEMPrivateKey(k.Path)
 		if err != nil {
-			return nil, errors.Wrap(err, "loading private key for key decryption")
+			return nil, fmt.Errorf("could not load PEM private key: %v", err)
 		}
 
 		pemKey, err := getEncryptionKeyFromImage(image)
 		if err != nil {
-			return nil, errors.Wrapf(err, "loading encrypted key SIF image %s", image)
+			return nil, fmt.Errorf("could not get encryption information from SIF: %v", err)
 		}
 
 		pemBuf := bytes.NewReader(pemKey)
 
 		encKey, err := loadPEMMessage(pemBuf)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unpacking PEM message from SIF image %s", image)
+			return nil, fmt.Errorf("could not unpack LUKS PEM from SIF: %v", err)
 		}
 
 		plaintext, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, encKey, nil)
 		if err != nil {
-			return nil, errors.Wrapf(err, "decrypting key from image %s", image)
+			return nil, fmt.Errorf("could not decrypt LUKS key: %v", err)
 		}
 
 		return plaintext, nil
@@ -139,7 +140,7 @@ func loadPEMPrivateKey(fn string) (*rsa.PrivateKey, error) {
 
 	block, _ := pem.Decode(b)
 	if block == nil {
-		return nil, errors.Wrapf(ErrNoPEMData, "reading %s", fn)
+		return nil, fmt.Errorf("could not read %s: %v", fn, ErrNoPEMData)
 	}
 
 	return x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -153,7 +154,7 @@ func loadPEMPublicKey(fn string) (*rsa.PublicKey, error) {
 
 	block, _ := pem.Decode(b)
 	if block == nil {
-		return nil, errors.Wrapf(ErrNoPEMData, "reading %s", fn)
+		return nil, fmt.Errorf("could not read %s: %v", fn, ErrNoPEMData)
 	}
 
 	return x509.ParsePKCS1PublicKey(block.Bytes)
@@ -167,12 +168,12 @@ func loadPEMMessage(r io.Reader) ([]byte, error) {
 
 	block, _ := pem.Decode(b)
 	if block == nil {
-		return nil, errors.Wrapf(ErrNoPEMData, "reading PEM block")
+		return nil, fmt.Errorf("could not load decode PEM key %s: %v", r, ErrNoPEMData)
 	}
 
 	var buf []byte
 	if _, err := asn1.Unmarshal(block.Bytes, &buf); err != nil {
-		return nil, errors.Wrapf(err, "unmarshalling ASN.1 data")
+		return nil, fmt.Errorf("could not unmarshal key asn1 data: %v", err)
 	}
 
 	return buf, nil
@@ -195,29 +196,29 @@ func savePEMMessage(w io.Writer, msg []byte) error {
 func getEncryptionKeyFromImage(fn string) ([]byte, error) {
 	img, err := sif.LoadContainer(fn, true)
 	if err != nil {
-		return nil, errors.Wrapf(err, "loading container image from %s", fn)
+		return nil, fmt.Errorf("could not load container: %v", err)
 	}
 	defer img.UnloadContainer()
 
 	primDescr, _, err := img.GetPartPrimSys()
 	if err != nil {
-		return nil, errors.Wrapf(err, "retrieving primary system partition from %s", fn)
+		return nil, fmt.Errorf("could not retrieve primary system partition from '%s'", fn)
 	}
 
 	descr, _, err := img.GetLinkedDescrsByType(primDescr.ID, sif.DataCryptoMessage)
 	if err != nil {
-		return nil, errors.Wrapf(err, "retrieving linked descriptors for primary system partition from %s", fn)
+		return nil, fmt.Errorf("could not retrieve linked descriptors for primary system partition from %s", fn)
 	}
 
 	for _, d := range descr {
 		format, err := d.GetFormatType()
 		if err != nil {
-			return nil, errors.Wrapf(err, "while retrieving cryptographic message format")
+			return nil, fmt.Errorf("could not get descriptor format type: %v", err)
 		}
 
 		message, err := d.GetMessageType()
 		if err != nil {
-			return nil, errors.Wrapf(err, "while retrieving cryptographic message type")
+			return nil, fmt.Errorf("could not get descriptor message type: %v", err)
 		}
 
 		// currently only support one type of message
@@ -230,7 +231,7 @@ func getEncryptionKeyFromImage(fn string) ([]byte, error) {
 		// case of multiple linked messages
 		data := d.GetData(&img)
 		if data == nil {
-			return nil, errors.Wrapf(ErrNoEncryptedKeyData, "retrieving encrypted key data from %s", fn)
+			return nil, fmt.Errorf("could not retrieve LUKS key data from %s: %v", fn, ErrNoEncryptedKeyData)
 		}
 
 		key := make([]byte, len(data))
@@ -239,5 +240,5 @@ func getEncryptionKeyFromImage(fn string) ([]byte, error) {
 		return key, nil
 	}
 
-	return nil, errors.Wrapf(ErrEncryptedKeyNotFound, "reading from %s", fn)
+	return nil, fmt.Errorf("could not read LUKS key from %s: %v", fn, ErrEncryptedKeyNotFound)
 }
