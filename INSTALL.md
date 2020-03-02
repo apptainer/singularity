@@ -4,7 +4,8 @@ Since you are reading this from the Singularity source code, it will be assumed
 that you are building/compiling.
 
 For full instructions on installation, check out our
-[installation guide](https://www.sylabs.io/guides/3.5/user-guide/installation.html).
+[installation
+guide](https://sylabs.io/guides/3.5/admin-guide/installation.html).
 
 ## Install system dependencies
 
