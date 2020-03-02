@@ -165,7 +165,7 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		return err
 	}
 
-	if err := c.startImageDriver(system); err != nil {
+	if err := c.setupImageDriver(system); err != nil {
 		return err
 	}
 
@@ -363,8 +363,9 @@ func (c *container) mount(point *mount.Point, system *mount.System) error {
 	return nil
 }
 
-// startImageDriver starts the image driver configured in singularity.conf.
-func (c *container) startImageDriver(system *mount.System) error {
+// setupImageDriver prepare the image driver configured in singularity.conf
+// to start it after the session setup.
+func (c *container) setupImageDriver(system *mount.System) error {
 	if imageDriver == nil {
 		return nil
 	}
@@ -391,7 +392,6 @@ func (c *container) startImageDriver(system *mount.System) error {
 			return fmt.Errorf("while getting /proc/self/ns/user file descriptor: %s", err)
 		}
 		params.UsernsFd = fds[0]
-		defer unix.Close(params.UsernsFd)
 	}
 
 	if fuseDriver {
@@ -401,6 +401,8 @@ func (c *container) startImageDriver(system *mount.System) error {
 		}
 		params.FuseFd = fuseFd
 		system.RunAfterTag(mount.SessionTag, func(system *mount.System) error {
+			defer unix.Close(params.FuseFd)
+
 			fakeroot := c.engine.EngineConfig.GetFakeroot()
 			fakerootHybrid := fakeroot && os.Geteuid() != 0
 
@@ -417,6 +419,27 @@ func (c *container) startImageDriver(system *mount.System) error {
 			if fakerootHybrid {
 				uid = 0
 				gid = 0
+
+				// FIXME: with hybrid workflow this process is actually
+				// running as the user but outside of the fakeroot user namespace,
+				// it means that the FUSE kernel code prevent us from accessing
+				// the mount point where images (rootfs, overlay ...) resides
+				// if we are not in the user namespace and as a consequence we
+				// can't create the layer for overlay/underlay because we get
+				// permission denied error. By removing allow_other option
+				// the FUSE kernel code doesn't check if the current process
+				// resides in the user namespace but we couldn't change UID/GID
+				// within the container.
+				allowOther = ""
+
+				if params.UsernsFd != -1 {
+					defer unix.Close(params.UsernsFd)
+				}
+			} else {
+				if params.UsernsFd != -1 {
+					unix.Close(params.UsernsFd)
+					params.UsernsFd = -1
+				}
 			}
 
 			opts := fmt.Sprintf("fd=%d,rootmode=%o,user_id=%d,group_id=%d%s",
@@ -432,14 +455,27 @@ func (c *container) startImageDriver(system *mount.System) error {
 			if err != nil {
 				return fmt.Errorf("while mounting fuse image driver: %s", err)
 			}
+
+			sylog.Debugf("Starting image driver %s", c.engine.EngineConfig.File.ImageDriver)
+			if err := imageDriver.Start(params); err != nil {
+				return fmt.Errorf("failed to start driver: %s", err)
+			}
+
 			return nil
 		})
+		return nil
 	}
 
-	sylog.Debugf("Starting image driver %s", c.engine.EngineConfig.File.ImageDriver)
-	if err := imageDriver.Start(params); err != nil {
-		return fmt.Errorf("failed to start driver: %s", err)
-	}
+	system.RunAfterTag(mount.SessionTag, func(system *mount.System) error {
+		if params.UsernsFd != -1 {
+			defer unix.Close(params.UsernsFd)
+		}
+		sylog.Debugf("Starting image driver %s", c.engine.EngineConfig.File.ImageDriver)
+		if err := imageDriver.Start(params); err != nil {
+			return fmt.Errorf("failed to start driver: %s", err)
+		}
+		return nil
+	})
 
 	return nil
 }

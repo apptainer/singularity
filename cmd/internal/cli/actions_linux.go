@@ -611,7 +611,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	// convert image file to sandbox if we are using user
 	// namespace or if we are currently running inside a
 	// user namespace
-	if (UserNamespace || insideUserNs) && fs.IsFile(image) {
+	if (UserNamespace || insideUserNs) && fs.IsFile(image) && engineConfig.File.ImageDriver == "" {
 		unsquashfsPath := ""
 		if engineConfig.File.MksquashfsPath != "" {
 			d := filepath.Dir(engineConfig.File.MksquashfsPath)

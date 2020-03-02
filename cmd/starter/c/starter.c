@@ -56,6 +56,8 @@
 #define SELF_MNT_NS     "/proc/self/ns/mnt"
 #define SELF_CGROUP_NS  "/proc/self/ns/cgroup"
 
+#define capflag(x)  (1ULL << x)
+
 /* current starter configuration */
 struct starterConfig *sconfig;
 
@@ -187,11 +189,22 @@ static bool is_namespace_enter(const char *nspath, const char *selfns) {
     return nspath[0] != 0;
 }
 
-static int apply_container_privileges(struct privileges *privileges) {
+static int get_last_cap(void) {
+    int last_cap;
+    for ( last_cap = CAPSET_MAX; ; last_cap-- ) {
+        if ( prctl(PR_CAPBSET_READ, last_cap) > 0 || last_cap == 0 ) {
+            break;
+        }
+    }
+    return last_cap;
+}
+
+static void apply_privileges(struct privileges *privileges) {
     uid_t currentUID = getuid();
     uid_t targetUID = currentUID;
     struct __user_cap_header_struct header;
     struct __user_cap_data_struct data[2];
+    int last_cap = get_last_cap();
 
     header.version = LINUX_CAPABILITY_VERSION;
     header.pid = 0;
@@ -207,16 +220,9 @@ static int apply_container_privileges(struct privileges *privileges) {
     data[1].effective = (__u32)(privileges->capabilities.effective >> 32);
     data[0].effective = (__u32)(privileges->capabilities.effective & 0xFFFFFFFF);
 
-    int last_cap;
-    for ( last_cap = CAPSET_MAX; ; last_cap-- ) {
-        if ( prctl(PR_CAPBSET_READ, last_cap) > 0 || last_cap == 0 ) {
-            break;
-        }
-    }
-
     int caps_index;
     for ( caps_index = 0; caps_index <= last_cap; caps_index++ ) {
-        if ( !(privileges->capabilities.bounding & (1ULL << caps_index)) ) {
+        if ( !(privileges->capabilities.bounding & capflag(caps_index)) ) {
             if ( prctl(PR_CAPBSET_DROP, caps_index) < 0 ) {
                 fatalf("Failed to drop bounding capabilities set: %s\n", strerror(errno));
             }
@@ -259,8 +265,6 @@ static int apply_container_privileges(struct privileges *privileges) {
         fatalf("Failed to set all user ID to %d: %s\n", targetUID, strerror(errno));
     }
 
-    set_parent_death_signal(SIGKILL);
-
     if ( privileges->noNewPrivs ) {
         if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 ) {
             fatalf("Failed to set no new privs flag: %s\n", strerror(errno));
@@ -277,13 +281,60 @@ static int apply_container_privileges(struct privileges *privileges) {
 #ifdef USER_CAPABILITIES
     // set ambient capabilities if supported
     for ( caps_index = 0; caps_index <= last_cap; caps_index++ ) {
-        if ( (privileges->capabilities.ambient & (1ULL << caps_index)) ) {
+        if ( (privileges->capabilities.ambient & capflag(caps_index)) ) {
             if ( prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, caps_index, 0, 0) < 0 ) {
                 fatalf("Failed to set ambient capability: %s\n", strerror(errno));
             }
         }
     }
 #endif
+}
+
+static void set_rpc_privileges(void) {
+    struct privileges *priv = (struct privileges *)malloc(sizeof(struct privileges));
+
+    if ( priv == NULL ) {
+        fatalf("could not allocate memory\n");
+    }
+
+    memset(priv, 0, sizeof(struct privileges));
+
+    priv->capabilities.effective |= capflag(CAP_MKNOD);
+    priv->capabilities.effective |= capflag(CAP_SETGID);
+    priv->capabilities.effective |= capflag(CAP_SETUID);
+    priv->capabilities.effective |= capflag(CAP_SYS_ADMIN);
+    priv->capabilities.effective |= capflag(CAP_SYS_CHROOT);
+
+    priv->capabilities.permitted = priv->capabilities.effective;
+    priv->capabilities.bounding = priv->capabilities.effective;
+
+    debugf("Set RPC privileges\n");
+    apply_privileges(priv);
+    set_parent_death_signal(SIGKILL);
+
+    free(priv);
+}
+
+static void set_master_privileges(void) {
+    struct privileges *priv = (struct privileges *)malloc(sizeof(struct privileges));
+
+    if ( priv == NULL ) {
+        fatalf("could not allocate memory\n");
+    }
+
+    memset(priv, 0, sizeof(struct privileges));
+
+    priv->capabilities.effective |= capflag(CAP_SETGID);
+    priv->capabilities.effective |= capflag(CAP_SETUID);
+
+    priv->capabilities.permitted = 0xffffffffff;
+    priv->capabilities.bounding = 0xffffffffff;
+    priv->capabilities.inheritable = 0xffffffffff;
+
+    debugf("Set master privileges\n");
+    apply_privileges(priv);
+
+    free(priv);
 }
 
 static int create_namespace(int nstype) {
@@ -1248,7 +1299,9 @@ __attribute__((constructor)) static void init(void) {
              */
             process = fork_ns(CLONE_FS);
             if ( process == 0 ) {
-                set_parent_death_signal(SIGKILL);
+                if ( sconfig->starter.isSuid && geteuid() == 0 ) {
+                    set_rpc_privileges();
+                }
                 verbosef("Spawn RPC server\n");
                 goexecute = RPC_SERVER;
                 /* continue execution with Go runtime in main_linux.go */
@@ -1274,7 +1327,9 @@ __attribute__((constructor)) static void init(void) {
             verbosef("Don't execute RPC server, joining instance\n");
         }
 
-        apply_container_privileges(&sconfig->container.privileges);
+        apply_privileges(&sconfig->container.privileges);
+        set_parent_death_signal(SIGKILL);
+
         goexecute = STAGE2;
         /* continue execution with Go runtime in main_linux.go */
         return;
@@ -1413,12 +1468,12 @@ __attribute__((constructor)) static void init(void) {
             close(rpc_socket[1]);
 
             /*
-             * container creation, keep saved uid to allow further privileges
-             * escalation from master process, because container network requires
-             * privileges
+             * container creation, just keep setuid/setgid capabilities for
+             * further privileges escalation and set UID/GID to the original
+             * user when using setuid workflow
              */
-            if ( sconfig->starter.isSuid  ) {
-                priv_drop(false);
+            if ( sconfig->starter.isSuid && geteuid() == 0 ) {
+                set_master_privileges();
             }
 
             goexecute = MASTER;
