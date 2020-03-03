@@ -53,6 +53,7 @@ var cryptDev string
 var networkSetup *network.Setup
 var cgroupManager *cgroups.Manager
 var imageDriver image.Driver
+var umountPoints []string
 
 // defaultCNIConfPath is the default directory to CNI network configuration files.
 var defaultCNIConfPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", "network")
@@ -167,6 +168,12 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 
 	if err := c.setupImageDriver(system); err != nil {
 		return err
+	}
+
+	umountPoints = append(umountPoints, c.session.RootFsPath())
+
+	if c.session.FinalPath() != c.session.RootFsPath() {
+		umountPoints = append(umountPoints, c.session.FinalPath())
 	}
 
 	if err := system.RunAfterTag(mount.SessionTag, c.addMountInfo); err != nil {
@@ -455,6 +462,8 @@ func (c *container) setupImageDriver(system *mount.System) error {
 			if err != nil {
 				return fmt.Errorf("while mounting fuse image driver: %s", err)
 			}
+
+			umountPoints = append(umountPoints, sp)
 
 			sylog.Debugf("Starting image driver %s", c.engine.EngineConfig.File.ImageDriver)
 			if err := imageDriver.Start(params); err != nil {

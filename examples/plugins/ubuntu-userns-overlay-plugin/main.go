@@ -85,5 +85,9 @@ func setConfiguration(_ string) error {
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("could not set 'enable overlay = driver' in singularity.conf")
 	}
+	cmd = exec.Command("/proc/self/exe", "config", "global", "--set", "image driver support", "overlay")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("could not set 'image driver support = overlay' in singularity.conf")
+	}
 	return nil
 }

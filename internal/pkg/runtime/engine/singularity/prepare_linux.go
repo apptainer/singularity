@@ -971,12 +971,30 @@ func (e *EngineOperations) setSessionLayer(img *image.Image) error {
 		return fmt.Errorf("you could not use --overlay in conjunction with --writable")
 	}
 
+	// a SIF image may contain one or more overlay partition
+	// check there is at least one ext3 overlay partition
+	// to validate overlay with writable flag
+	hasSIFOverlay := false
+
+	if img.Type == image.SIF {
+		overlays, err := img.GetOverlayPartitions()
+		if err != nil {
+			return fmt.Errorf("while getting overlay partition in SIF image %s: %s", img.Path, err)
+		}
+		for _, o := range overlays {
+			if o.Type == image.EXT3 {
+				hasSIFOverlay = true
+				break
+			}
+		}
+	}
+
 	// overlay is handled by the image driver
 	if overlayDriver {
 		if e.EngineConfig.File.ImageDriver == "" {
 			return fmt.Errorf("you need to specify an image driver with 'enable overlay = driver'")
 		}
-		if !writableImage {
+		if !writableImage || hasSIFOverlay {
 			e.EngineConfig.SetSessionLayer(singularityConfig.OverlayLayer)
 			return nil
 		}
@@ -1009,20 +1027,6 @@ func (e *EngineOperations) setSessionLayer(img *image.Image) error {
 		switch e.EngineConfig.File.EnableOverlay {
 		case "yes", "try":
 			e.EngineConfig.SetSessionLayer(singularityConfig.OverlayLayer)
-
-			// a SIF image may contain one or more overlay partition
-			// check there is at least one ext3 overlay partition
-			// to validate overlay with writable flag
-			hasSIFOverlay := false
-
-			if img.Type == image.SIF {
-				for _, p := range img.Partitions[1:] {
-					if p.Type == image.EXT3 {
-						hasSIFOverlay = true
-						break
-					}
-				}
-			}
 
 			if !writableImage || hasSIFOverlay {
 				sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", e.EngineConfig.File.EnableOverlay)

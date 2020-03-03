@@ -13,7 +13,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -41,6 +40,9 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 	e.stopFuseDrivers()
 
 	if imageDriver != nil {
+		if err := umount(true); err != nil {
+			sylog.Errorf("%s", err)
+		}
 		if err := imageDriver.Stop(); err != nil {
 			sylog.Errorf("could not stop driver: %s", err)
 		}
@@ -103,26 +105,37 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 	return nil
 }
 
+func umount(escalate bool) error {
+	if escalate {
+		// elevate the privilege to unmount
+		priv.Escalate()
+		defer priv.Drop()
+	}
+
+	for i := len(umountPoints) - 1; i >= 0; i-- {
+		p := umountPoints[i]
+		err := syscall.Unmount(p, 0)
+		// ignore EINVAL meaning it's not a mount point
+		if err != nil && err.(syscall.Errno) != syscall.EINVAL {
+			return fmt.Errorf("while unmounting %s directory: %s", p, err)
+		}
+	}
+
+	return nil
+}
+
 func cleanupCrypt(path string) error {
-	// elevate the privilege to unmount and delete the crypt device
 	priv.Escalate()
 	defer priv.Drop()
 
-	err := syscall.Unmount(filepath.Join(buildcfg.SESSIONDIR, "final"), syscall.MNT_DETACH)
-	if err != nil {
-		return fmt.Errorf("failed while unmounting final session directory: %s", err)
-	}
-
-	err = syscall.Unmount(filepath.Join(buildcfg.SESSIONDIR, "rootfs"), syscall.MNT_DETACH)
-	if err != nil {
-		return fmt.Errorf("error while unmounting rootfs session directory: %s", err)
+	if err := umount(false); err != nil {
+		return err
 	}
 
 	devName := filepath.Base(path)
 
 	cryptDev := &crypt.Device{}
-	err = cryptDev.CloseCryptDevice(devName)
-	if err != nil {
+	if err := cryptDev.CloseCryptDevice(devName); err != nil {
 		return fmt.Errorf("unable to delete crypt device: %s", devName)
 	}
 

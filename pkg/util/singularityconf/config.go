@@ -46,6 +46,7 @@ type File struct {
 	MksquashfsMem           string   `directive:"mksquashfs mem"`
 	CryptsetupPath          string   `directive:"cryptsetup path"`
 	ImageDriver             string   `directive:"image driver"`
+	ImageDriverSupport      string   `default:"all" authorized:"all,image,overlay" directive:"image driver support"`
 }
 
 const TemplateAsset = `# SINGULARITY.CONF
@@ -335,4 +336,9 @@ shared loop devices = {{ if eq .SharedLoopDevices true }}yes{{ else }}no{{ end }
 # If the driver name specified has not been registered via a plugin installation
 # the run-time will abort.
 image driver = {{ .ImageDriver }}
+
+# IMAGE DRIVER SUPPORT: [all/image/overlay]
+# DEFAULT: all
+# This option specifies if the image driver can handle image, overlay or both.
+image driver support = {{ .ImageDriverSupport }}
 `
