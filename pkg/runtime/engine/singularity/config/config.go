@@ -147,6 +147,7 @@ type JSONConfig struct {
 	KeepPrivs         bool              `json:"keepPrivs,omitempty"`
 	NoPrivs           bool              `json:"noPrivs,omitempty"`
 	NoHome            bool              `json:"noHome,omitempty"`
+	NoHostfs          bool              `json:"noHostfs,omitempty"`
 	NoInit            bool              `json:"noInit,omitempty"`
 	DeleteImage       bool              `json:"deleteImage,omitempty"`
 	Fakeroot          bool              `json:"fakeroot,omitempty"`
@@ -545,6 +546,16 @@ func (e *EngineConfig) SetNoHome(val bool) {
 // GetNoHome returns if no-home flag is set or not.
 func (e *EngineConfig) GetNoHome() bool {
 	return e.JSON.NoHome
+}
+
+// SetNoHostfs sets no-hostfs flag to not mount host filesystems
+func (e *EngineConfig) SetNoHostfs(val bool) {
+	e.JSON.NoHostfs = val
+}
+
+// GetNoHostfs returns if no-hostfs flag is set or not.
+func (e *EngineConfig) GetNoHostfs() bool {
+	return e.JSON.NoHostfs
 }
 
 // SetNoInit set noinit flag to not start shim init process.

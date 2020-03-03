@@ -45,6 +45,7 @@ var (
 	Nvidia          bool
 	Rocm            bool
 	NoHome          bool
+	NoHostfs        bool
 	NoInit          bool
 	NoNvidia        bool
 	NoRocm          bool
@@ -437,6 +438,17 @@ var actionNoHomeFlag = cmdline.Flag{
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
+// --no-hostfs
+var actionNoHostfsFlag = cmdline.Flag{
+	ID:           "actionNoHostfsFlag",
+	Value:        &NoHostfs,
+	DefaultValue: false,
+	Name:         "no-hostfs",
+	Usage:        "do NOT mount host filesystems even if hostfs true in singularity.conf",
+	EnvKeys:      []string{"NO_HOSTFS"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
 // --no-init
 var actionNoInitFlag = cmdline.Flag{
 	ID:           "actionNoInitFlag",
@@ -678,6 +690,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionNetworkArgsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNetworkFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoHomeFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionNoHostfsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoInitFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNONETFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoNvidiaFlag, actionsInstanceCmd...)

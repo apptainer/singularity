@@ -249,6 +249,12 @@ func (c actionTests) actionExec(t *testing.T) {
 			argv: []string{"--no-home", c.env.ImagePath, "ls", "-ld", user.Dir},
 			exit: 1,
 		},
+		// --no-hostfs should be a no-op with default config that does not set hostfs true
+		{
+			name: "NoHostfs",
+			argv: []string{"--no-hostfs", c.env.ImagePath, "true"},
+			exit: 0,
+		},
 	}
 
 	for _, tt := range tests {

@@ -372,6 +372,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetOverlayImage(OverlayPath)
 	engineConfig.SetWritableImage(IsWritable)
 	engineConfig.SetNoHome(NoHome)
+	engineConfig.SetNoHostfs(NoHostfs)
 	engineConfig.SetNv(Nvidia)
 	engineConfig.SetRocm(Rocm)
 	engineConfig.SetAddCaps(AddCaps)
