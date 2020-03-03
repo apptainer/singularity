@@ -21,7 +21,7 @@ import (
 // holding directives mapped to their respective values.
 type Directives map[string][]string
 
-var parserReg = regexp.MustCompile(`(?m)^\s*([a-zA-Z _]+)\s*=\s*(.*)$`)
+var parserReg = regexp.MustCompile(`(?m)^\s*([a-zA-Z _]+)[[:blank:]]*=[[:blank:]]*(.*)$`)
 
 // GetDirectives parses configuration directives from reader
 // and returns a directive map with associated values.
