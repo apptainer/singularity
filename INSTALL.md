@@ -15,7 +15,7 @@ On Debian-based systems:
 ```
 $ sudo apt-get update && \
   sudo apt-get install -y build-essential \
-  libseccomp-dev pkg-config squashfs-tools cryptsetup
+  libseccomp-dev libssl-dev pkg-config squashfs-tools cryptsetup 
 ```
 
 On CentOS/RHEL:
