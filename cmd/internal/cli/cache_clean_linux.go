@@ -79,7 +79,7 @@ var (
 		DisableFlagsInUseLine: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := cleanCache(); err != nil {
-				sylog.Fatalf("Cache clean failed: %v", err)
+				sylog.Fatalf("Handle clean failed: %v", err)
 			}
 		},
 
@@ -100,14 +100,14 @@ func cleanCache() error {
 			return fmt.Errorf("could not prompt user: %v", err)
 		}
 		if !ok {
-			sylog.Infof("Cache cleanup canceled")
+			sylog.Infof("Handle cleanup canceled")
 			return nil
 		}
 	}
 
 	// create a handle to access the current image cache
 	imgCache := getCacheHandle(cache.Config{})
-	err := singularity.CleanSingularityCache(imgCache, !cacheCleanDry, cacheCleanTypes, cacheCleanNames)
+	err := singularity.CleanSingularityCache(imgCache, cacheCleanDry, cacheCleanTypes, cacheCleanNames)
 	if err != nil {
 		return fmt.Errorf("could not clean cache: %v", err)
 	}

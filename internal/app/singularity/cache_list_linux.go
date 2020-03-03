@@ -109,10 +109,6 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 		return errInvalidCacheHandle
 	}
 
-	cacheTypes, err := normalizeCacheList(cacheListTypes)
-	if err != nil {
-		return err
-	}
 
 	var (
 		containerCount, blobCount             int
@@ -126,12 +122,12 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 	containersShown := false
 	blobsShown := false
 
-	for _, cacheType := range cacheTypes {
+	for _, cacheType := range cache.FileCacheTypes {
 		if cacheType == "blob" {
 			// the type blob is special: 1. there's a
 			// separate counter for it; 2. the cache entries
 			// are actually one level deeper
-			cacheDir, _ := cacheTypeToDir(imgCache, cacheType)
+			cacheDir := imgCache.GetCacheTypeDir(cacheType)
 			cacheDir = filepath.Join(cacheDir, "blobs")
 			blobsCount, blobsSize, err := listTypeCache(cacheListVerbose, cacheType, cacheDir)
 			if err != nil {
@@ -143,7 +139,7 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 			totalSpace += blobsSize
 			blobsShown = true
 		} else {
-			cacheDir, _ := cacheTypeToDir(imgCache, cacheType)
+			cacheDir := imgCache.GetCacheTypeDir(cacheType)
 			count, size, err := listTypeCache(cacheListVerbose, cacheType, cacheDir)
 			if err != nil {
 				fmt.Print(err)

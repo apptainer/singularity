@@ -43,7 +43,7 @@ func ConvertReference(ctx context.Context, imgCache *cache.Handle, src types.Ima
 		return nil, err
 	}
 
-	c, err := layout.ParseReference(imgCache.OciBlob + ":" + cacheTag)
+	c, err := layout.ParseReference(imgCache.GetOciCacheDir(cache.OciBlobCacheType) + ":" + cacheTag)
 	if err != nil {
 		return nil, err
 	}

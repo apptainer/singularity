@@ -39,9 +39,9 @@ const (
 )
 
 func getCacheHandle(cfg cache.Config) *cache.Handle {
-	h, err := cache.NewHandle(cache.Config{
-		BaseDir: os.Getenv(cache.DirEnv),
-		Disable: cfg.Disable,
+	h, err := cache.New(cache.Config{
+		ParentDir: os.Getenv(cache.DirEnv),
+		Disable:   cfg.Disable,
 	})
 	if err != nil {
 		sylog.Fatalf("Failed to create an image cache handle: %s", err)
@@ -81,13 +81,12 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 		DockerAuthConfig:            authConf,
 	}
 
-	imgabs := ""
-	name := uri.GetName(u)
+	imagePath := ""
 
 	if disableCache {
 		sylog.Infof("Converting OCI blobs to SIF format")
 		var err error
-		imgabs, err = ioutil.TempDir(tmpDir, "sbuild-tmp-cache-")
+		imagePath, err = ioutil.TempDir(tmpDir, "sbuild-tmp-cache-")
 		if err != nil {
 			return "", fmt.Errorf("unable to create tmp file: %v", err)
 		}
@@ -95,7 +94,7 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 		b, err := build.NewBuild(
 			u,
 			build.Config{
-				Dest:   imgabs,
+				Dest:   imagePath,
 				Format: "sif",
 				Opts: types.Options{
 					ImgCache:         imgCache,
@@ -116,22 +115,22 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 		}
 
 	} else {
-		sum, err := ociclient.ImageSHA(ctx, u, sysCtx)
+		hash, err := ociclient.ImageSHA(ctx, u, sysCtx)
 		if err != nil {
 			return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
 		}
-		imgabs = imgCache.OciTempImage(sum, name)
 
-		exists, err := imgCache.OciTempExists(sum, name)
+		cacheEntry, err := imgCache.GetEntry(cache.OciTempCacheType, hash)
 		if err != nil {
-			return "", fmt.Errorf("unable to check if %s exists: %s", name, err)
+			return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
 		}
-		if !exists {
+
+		if !cacheEntry.Exists {
 			sylog.Infof("Converting OCI blobs to SIF format")
 			b, err := build.NewBuild(
 				u,
 				build.Config{
-					Dest:   imgabs,
+					Dest:   cacheEntry.TmpPath,
 					Format: "sif",
 					Opts: types.Options{
 						TmpDir:           tmpDir,
@@ -149,11 +148,21 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 				return "", fmt.Errorf("unable to build: %v", err)
 			}
 
-			sylog.Verbosef("Image cached as SIF at %s", imgabs)
+			err = cacheEntry.Finalize()
+			if err != nil {
+				return "", err
+			}
+
+			sylog.Verbosef("Image cached as SIF at %s", cacheEntry.Path)
+
+		} else {
+			sylog.Infof("Using cached image")
 		}
+
+		imagePath = cacheEntry.Path
 	}
 
-	return imgabs, nil
+	return imagePath, nil
 }
 
 func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, u string) (string, error) {
@@ -163,30 +172,39 @@ func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command,
 	}
 
 	_, ref := uri.Split(u)
-	sum, err := oras.ImageSHA(ctx, ref, ociAuth)
+	hash, err := oras.ImageSHA(ctx, ref, ociAuth)
 	if err != nil {
 		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
 	}
 
-	imageName := uri.GetName(u)
-	cacheImagePath := imgCache.OrasImage(sum, imageName)
-	if exists, err := imgCache.OrasImageExists(sum, imageName); err != nil {
-		return "", fmt.Errorf("unable to check if %v exists: %v", cacheImagePath, err)
-	} else if !exists {
-		sylog.Infof("Downloading image with ORAS")
+	cacheEntry, err := imgCache.GetEntry(cache.OrasCacheType, hash)
+	if err != nil {
+		return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
+	}
+	if !cacheEntry.Exists {
+		sylog.Infof("Downloading oras image")
 
-		if err := oras.DownloadImage(cacheImagePath, ref, ociAuth); err != nil {
+		if err := oras.DownloadImage(cacheEntry.TmpPath, ref, ociAuth); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
-
-		if cacheFileHash, err := oras.ImageHash(cacheImagePath); err != nil {
+		if cacheFileHash, err := oras.ImageHash(cacheEntry.TmpPath); err != nil {
 			return "", fmt.Errorf("error getting ImageHash: %v", err)
-		} else if cacheFileHash != sum {
-			return "", fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, sum)
+		} else if cacheFileHash != hash {
+			_ = cacheEntry.Abort()
+			return "", fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, hash)
 		}
+
+		err = cacheEntry.Finalize()
+		if err != nil {
+			return "", err
+		}
+
+	} else {
+		sylog.Infof("Using cached image")
+
 	}
 
-	return cacheImagePath, nil
+	return cacheEntry.Path, nil
 }
 
 func handleLibrary(ctx context.Context, imgCache *cache.Handle, u, libraryURL string) (string, error) {
@@ -222,24 +240,32 @@ func handleLibrary(ctx context.Context, imgCache *cache.Handle, u, libraryURL st
 		}
 
 	} else {
-		imageName := uri.GetName("library://" + imageRef)
-		imagePath = imgCache.LibraryImage(libraryImage.Hash, imageName)
-
-		if exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
-			return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-		} else if !exists {
+		cacheEntry, err :=imgCache.GetEntry(cache.LibraryCacheType, libraryImage.Hash)
+		if err != nil {
+			return "", fmt.Errorf("unable to check if %v exists in cache: %v", libraryImage.Hash, err)
+		}
+		if !cacheEntry.Exists {
 			sylog.Infof("Downloading library image")
 
-			if err := libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, runtime.GOARCH, imageRef); err != nil {
+			if err := libraryhelper.DownloadImageNoProgress(ctx, c, cacheEntry.TmpPath, runtime.GOARCH, imageRef); err != nil {
 				return "", fmt.Errorf("unable to download image: %v", err)
 			}
 
-			if cacheFileHash, err := library.ImageHash(imagePath); err != nil {
+			if cacheFileHash, err := library.ImageHash(cacheEntry.TmpPath); err != nil {
 				return "", fmt.Errorf("error getting image hash: %v", err)
 			} else if cacheFileHash != libraryImage.Hash {
 				return "", fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, libraryImage.Hash)
 			}
+
+			err = cacheEntry.Finalize()
+			if err != nil {
+				return "", err
+			}
+
+		} else {
+			sylog.Infof("Using cached image")
 		}
+		imagePath = cacheEntry.Path
 	}
 
 	return imagePath, nil
@@ -272,26 +298,32 @@ func handleShub(imgCache *cache.Handle, u string) (string, error) {
 			sylog.Fatalf("%v\n", err)
 		}
 	} else {
-		imageName := uri.GetName(u)
-		imagePath = imgCache.ShubImage(manifest.Commit, imageName)
-
-		exists, err := imgCache.ShubImageExists(manifest.Commit, imageName)
+		cacheEntry, err := imgCache.GetEntry(cache.ShubCacheType, manifest.Commit)
 		if err != nil {
-			return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+			return "", fmt.Errorf("unable to check if %v exists in cache: %v", manifest.Commit, err)
 		}
-		if !exists {
+		if !cacheEntry.Exists {
 			sylog.Infof("Downloading shub image")
-			err := shub.DownloadImage(manifest, imagePath, u, true, noHTTPS)
+
+			err := shub.DownloadImage(manifest, cacheEntry.TmpPath, u, true, noHTTPS)
 			if err != nil {
-				sylog.Fatalf("%v\n", err)
+				return "", err
 			}
+
+			err = cacheEntry.Finalize()
+			if err != nil {
+				return "", err
+			}
+
 		} else {
-			sylog.Verbosef("Use image from cache")
+			sylog.Infof("Use image from cache")
 		}
+		imagePath = cacheEntry.Path
 	}
 
 	return imagePath, nil
 }
+
 
 func handleNet(imgCache *cache.Handle, u string) (string, error) {
 	// We will cache using a sha256 over the URL and the date of the file that
@@ -317,26 +349,31 @@ func handleNet(imgCache *cache.Handle, u string) (string, error) {
 
 	h := sha256.New()
 	h.Write([]byte(u + imageDate))
-	imageHash := hex.EncodeToString(h.Sum(nil))
-	sylog.Debugf("Image hash for cache is: %s", imageHash)
+	hash := hex.EncodeToString(h.Sum(nil))
+	sylog.Debugf("Image hash for cache is: %s", hash)
 
-	imagePath := imgCache.NetImage("hash", imageHash)
-
-	exists, err := imgCache.NetImageExists("hash", imageHash)
+	cacheEntry, err  := imgCache.GetEntry(cache.NetCacheType, hash)
 	if err != nil {
-		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+		return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
 	}
-	if !exists {
+
+	if !cacheEntry.Exists {
 		sylog.Infof("Downloading network image")
-		err := net.DownloadImage(imagePath, u)
+		err := net.DownloadImage(cacheEntry.TmpPath, u)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
+
+		err = cacheEntry.Finalize()
+		if err != nil {
+			return "", err
+		}
+
 	} else {
 		sylog.Verbosef("Using image from cache")
 	}
 
-	return imagePath, nil
+	return cacheEntry.Path, nil
 }
 
 func replaceURIWithImage(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, args []string) {

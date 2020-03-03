@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,67 +15,18 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-// cleanCacheDir cleans the cache named name in the directory dir.
-func cleanCacheDir(name, dir string, op func(string) error) error {
-	sylog.Debugf("Removing: %v", dir)
+var (
+	errInvalidCacheHandle = errors.New("invalid cache handle")
+)
 
-	err := op(dir)
-	if err != nil {
-		// wrap the error in a user-friendly message
-		err = fmt.Errorf("unable to clean %s cache: %v", name, err)
-	}
-
-	return err
-}
-
-func cleanLibraryCache(imgCache *cache.Handle, op func(string) error) error {
-	return cleanCacheDir("library", imgCache.Library, op)
-}
-
-func cleanOciCache(imgCache *cache.Handle, op func(string) error) error {
-	return cleanCacheDir("oci-tmp", imgCache.OciTemp, op)
-}
-
-func cleanBlobCache(imgCache *cache.Handle, op func(string) error) error {
-	return cleanCacheDir("oci-blob", imgCache.OciBlob, op)
-}
-
-func cleanShubCache(imgCache *cache.Handle, op func(string) error) error {
-	return cleanCacheDir("shub", imgCache.Shub, op)
-}
-
-func cleanNetCache(imgCache *cache.Handle, op func(string) error) error {
-	return cleanCacheDir("net", imgCache.Net, op)
-}
-
-func cleanOrasCache(imgCache *cache.Handle, op func(string) error) error {
-	return cleanCacheDir("oras", imgCache.Oras, op)
-}
 
 // cleanCache cleans the given type of cache cacheType. It will return a
 // error if one occurs.
-func cleanCache(imgCache *cache.Handle, cacheType string, op func(string) error) error {
+func cleanCache(imgCache *cache.Handle, cacheType string, dryRun bool) error {
 	if imgCache == nil {
 		return fmt.Errorf("invalid image cache handle")
 	}
-
-	switch cacheType {
-	case "library":
-		return cleanLibraryCache(imgCache, op)
-	case "oci":
-		return cleanOciCache(imgCache, op)
-	case "shub":
-		return cleanShubCache(imgCache, op)
-	case "blob", "blobs":
-		return cleanBlobCache(imgCache, op)
-	case "net":
-		return cleanNetCache(imgCache, op)
-	case "oras":
-		return cleanOrasCache(imgCache, op)
-	default:
-		// The caller checks the returned error and will exit as required
-		return fmt.Errorf("not a valid type: %s", cacheType)
-	}
+	return imgCache.CleanCache(cacheType, dryRun)
 }
 
 func removeCacheEntry(name, cacheType, cacheDir string, op func(string) error) (bool, error) {
@@ -112,26 +64,15 @@ func removeCacheEntry(name, cacheType, cacheDir string, op func(string) error) (
 // contains something, only clean that type. The special value "all" is
 // interpreted as "all types of entries". If cacheName contains
 // something, clean only cache entries matching that name.
-func CleanSingularityCache(imgCache *cache.Handle, force bool, cacheCleanTypes []string, cacheName []string) error {
+func CleanSingularityCache(imgCache *cache.Handle, dryRun bool, cacheCleanTypes []string, cacheName []string) error {
 	if imgCache == nil {
 		return errInvalidCacheHandle
 	}
 
-	cacheTypes, err := normalizeCacheList(cacheCleanTypes)
-	if err != nil {
-		return err
-	}
-
-	remove := func(_ string) error { return nil }
-	op := func(path string) error {
-		fmt.Printf("Removing %s\n", path)
-		return remove(path)
-	}
-
+	/*
 	if len(cacheName) > 0 {
-		if force {
-			remove = os.Remove
-		}
+
+
 		// a name was specified, only clean matching entries
 		for _, name := range cacheName {
 			matches := 0
@@ -154,15 +95,11 @@ func CleanSingularityCache(imgCache *cache.Handle, force bool, cacheCleanTypes [
 		return nil
 	}
 
-	// no name specified, clean everything in the specified
-	// cache types
-	if force {
-		remove = os.RemoveAll
-	}
+    */
 
-	for _, cacheType := range cacheTypes {
+	for _, cacheType := range cache.FileCacheTypes {
 		sylog.Debugf("Cleaning %s cache...", cacheType)
-		if err := cleanCache(imgCache, cacheType, op); err != nil {
+		if err := cleanCache(imgCache, cacheType, dryRun); err != nil {
 			return err
 		}
 	}

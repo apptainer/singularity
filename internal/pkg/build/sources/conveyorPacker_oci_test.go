@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 
 func setupCache(t *testing.T) (*cache.Handle, func()) {
 	dir := testCache.MakeDir(t, "")
-	h, err := cache.NewHandle(cache.Config{BaseDir: dir})
+	h, err := cache.New(cache.Config{ParentDir: dir})
 	if err != nil {
 		testCache.DeleteDir(t, dir)
 		t.Fatalf("failed to create an image cache handle: %s", err)

@@ -8,10 +8,9 @@ package sources
 import (
 	"context"
 	"fmt"
-
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/oras"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -30,27 +29,34 @@ func (cp *OrasConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 	// full uri for name determination and output
 	fullRef := "oras:" + ref
 
-	sum, err := oras.ImageSHA(ctx, ref, b.Opts.DockerAuthConfig)
+	hash, err := oras.ImageSHA(ctx, ref, b.Opts.DockerAuthConfig)
 	if err != nil {
 		return fmt.Errorf("failed to get SHA of %v: %v", fullRef, err)
 	}
 
-	imageName := uri.GetName(fullRef)
-	cacheImagePath := b.Opts.ImgCache.OrasImage(sum, imageName)
-	if exists, err := b.Opts.ImgCache.OrasImageExists(sum, imageName); err != nil {
-		return fmt.Errorf("unable to check if %v exists: %v", cacheImagePath, err)
-	} else if !exists {
+	cacheEntry, err := b.Opts.ImgCache.GetEntry(cache.OrasCacheType, hash)
+	if err != nil{
+		return fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
+	}
+
+	if !cacheEntry.Exists {
 		sylog.Infof("Downloading image with ORAS")
 
-		if err := oras.DownloadImage(cacheImagePath, ref, b.Opts.DockerAuthConfig); err != nil {
+		if err := oras.DownloadImage(cacheEntry.TmpPath, ref, b.Opts.DockerAuthConfig); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
 		}
 
-		if cacheFileHash, err := oras.ImageHash(cacheImagePath); err != nil {
+		if cacheFileHash, err := oras.ImageHash(cacheEntry.TmpPath); err != nil {
 			return fmt.Errorf("error getting ImageHash: %v", err)
-		} else if cacheFileHash != sum {
-			return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, sum)
+		} else if cacheFileHash != hash {
+			return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, hash)
 		}
+
+		err = cacheEntry.Finalize()
+		if err != nil {
+			return err
+		}
+
 	}
 
 	// insert base metadata before unpacking fs
@@ -58,6 +64,6 @@ func (cp *OrasConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
-	cp.LocalPacker, err = GetLocalPacker(cacheImagePath, b)
+	cp.LocalPacker, err = GetLocalPacker(cacheEntry.Path, b)
 	return err
 }

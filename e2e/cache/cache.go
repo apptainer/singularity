@@ -26,8 +26,8 @@ const (
 	imgURL  = "library://alpine:latest"
 )
 
-func prepTest(t *testing.T, testEnv e2e.TestEnv, testName string, h *cache.Handle, imagePath string) {
-	ensureCacheEmpty(t, testName, imagePath, h)
+func prepTest(t *testing.T, testEnv e2e.TestEnv, testName string, cacheParentDir string, imagePath string) {
+	ensureCacheEmpty(t, testName, imagePath, cacheParentDir)
 
 	testEnv.ImgCacheDir = h.GetBasedir()
 	testEnv.RunSingularity(
@@ -38,7 +38,7 @@ func prepTest(t *testing.T, testEnv e2e.TestEnv, testName string, h *cache.Handl
 		e2e.ExpectExit(0),
 	)
 
-	ensureCacheNotEmpty(t, testName, imagePath, h)
+	ensureCacheNotEmpty(t, testName, imagePath, cacheParentDir)
 }
 
 func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
@@ -99,7 +99,7 @@ func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 		// Each test get its own clean cache directory
 		cacheDir, cleanup := e2e.MakeCacheDir(t, "")
 		defer cleanup(t)
-		h, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
+		h, err := cache.New(cache.Config{ParentDir: cacheDir})
 		if err != nil {
 			t.Fatalf("Could not create image cache handle: %v", err)
 		}
@@ -204,7 +204,7 @@ func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
 		// Each test get its own clean cache directory
 		cacheDir, cleanup := e2e.MakeCacheDir(t, "")
 		defer cleanup(t)
-		h, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
+		h, err := cache.New(cache.Config{ParentDir: cacheDir})
 		if err != nil {
 			t.Fatalf("Could not create image cache handle: %v", err)
 		}
@@ -255,7 +255,7 @@ func ensureDirEmpty(t *testing.T, testName string, dir string) error {
 }
 
 // ensureCacheEmpty checks if the entry related to an image is in the cache or not.
-// Cache commands do not necessarily delete the same files/directories based on the options used.
+// Handle commands do not necessarily delete the same files/directories based on the options used.
 // The best option is to check whether there is an entry in the cache, i.e.,
 // <cache_root>/library/<shasum>/<imagename>
 func ensureCacheEmpty(t *testing.T, testName string, imagePath string, h *cache.Handle) {
@@ -280,7 +280,7 @@ func ensureCacheEmpty(t *testing.T, testName string, imagePath string, h *cache.
 }
 
 func ensureCacheNotEmpty(t *testing.T, testName string, imagePath string, h *cache.Handle) {
-	// Cache commands do not necessarily delete the same files/directories based on the options used.
+	// Handle commands do not necessarily delete the same files/directories based on the options used.
 	// The best option is to check whether there is an entry in the cache, i.e., <cache_root>/library/<shasum>/imagename
 	shasum, err := client.ImageHash(imagePath)
 	if err != nil {

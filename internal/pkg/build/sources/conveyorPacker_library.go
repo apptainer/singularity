@@ -8,13 +8,13 @@ package sources
 import (
 	"context"
 	"fmt"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"io/ioutil"
 	"runtime"
 
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -71,7 +71,6 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 	}
 
 	imagePath := ""
-	imageName := uri.GetName("library://" + imageRef)
 
 	if cp.b.Opts.NoCache {
 		file, err := ioutil.TempFile(cp.b.TmpDir, "sbuild-tmp-cache-")
@@ -87,22 +86,31 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 			return fmt.Errorf("unable to download image: %v", err)
 		}
 	} else {
-		imagePath = b.Opts.ImgCache.LibraryImage(libraryImage.Hash, imageName)
 
-		if exists, err := b.Opts.ImgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
-			return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-		} else if !exists {
+		cacheEntry, err := b.Opts.ImgCache.GetEntry(cache.LibraryCacheType, libraryImage.Hash)
+		if err != nil{
+			return fmt.Errorf("unable to check if %v exists in cache: %v", libraryImage.Hash, err)
+		}
+
+		if !cacheEntry.Exists {
 			sylog.Infof("Downloading library image")
 
-			if err := library.DownloadImageNoProgress(ctx, libraryClient, imagePath, runtime.GOARCH, imageRef); err != nil {
+			if err := library.DownloadImageNoProgress(ctx, libraryClient, cacheEntry.TmpPath, runtime.GOARCH, imageRef); err != nil {
 				return fmt.Errorf("unable to download image: %v", err)
 			}
 
-			if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
+			if cacheFileHash, err := client.ImageHash(cacheEntry.TmpPath); err != nil {
 				return fmt.Errorf("error getting image hash: %v", err)
 			} else if cacheFileHash != libraryImage.Hash {
 				return fmt.Errorf("cached file hash(%s) and expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
 			}
+
+			err = cacheEntry.Finalize()
+			if err != nil {
+				return err
+			}
+
+			imagePath = cacheEntry.Path
 		}
 	}
 

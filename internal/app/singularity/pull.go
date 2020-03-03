@@ -9,20 +9,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"os"
-
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/oras"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	shub "github.com/sylabs/singularity/pkg/client/shub"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
+	"io"
 )
 
 var (
@@ -44,48 +41,38 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, noHTTPS b
 		return fmt.Errorf("failed to get manifest for: %s: %s", shubRef, err)
 	}
 
-	imageName := uri.GetName(shubRef)
-	imagePath := imgCache.ShubImage(manifest.Commit, imageName)
-
 	if imgCache.IsDisabled() {
 		// Dont use cached image
 		if err := shub.DownloadImage(manifest, filePath, shubRef, true, noHTTPS); err != nil {
 			return err
 		}
 	} else {
-		exists, err := imgCache.ShubImageExists(manifest.Commit, imageName)
+		cacheEntry, err := imgCache.GetEntry(cache.ShubCacheType, manifest.Commit)
 		if err != nil {
-			return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+			return fmt.Errorf("unable to check if %v exists in cache: %v", manifest.Commit, err)
 		}
-		if !exists {
+		if !cacheEntry.Exists {
 			sylog.Infof("Downloading shub image")
-			go interruptCleanup(imagePath)
+			go interruptCleanup(func(){
+				_ = cacheEntry.Abort()
+			})
 
-			err := shub.DownloadImage(manifest, imagePath, shubRef, true, noHTTPS)
+			err := shub.DownloadImage(manifest, cacheEntry.TmpPath, shubRef, true, noHTTPS)
 			if err != nil {
 				return err
 			}
+
+			err = cacheEntry.Finalize()
+			if err != nil {
+				return err
+			}
+
 		} else {
 			sylog.Infof("Use image from cache")
 		}
 
-		dstFile, err := openOutputImage(filePath)
-		if err != nil {
-			return err
-		}
-		defer dstFile.Close()
+		cacheEntry.CopyTo(filePath)
 
-		srcFile, err := os.Open(imagePath)
-		if err != nil {
-			return fmt.Errorf("while opening cached image: %v", err)
-		}
-		defer srcFile.Close()
-
-		// Copy image from cache
-		_, err = io.Copy(dstFile, srcFile)
-		if err != nil {
-			return fmt.Errorf("while copying image from cache: %v", err)
-		}
 	}
 
 	return nil
@@ -120,58 +107,49 @@ func printProgress(totalSize int64, r io.Reader, w io.Writer) error {
 // OrasPull will download the image specified by the provided oci reference and store
 // it at the location specified by file, it will use credentials if supplied
 func OrasPull(ctx context.Context, imgCache *cache.Handle, name, ref string, force bool, ociAuth *ocitypes.DockerAuthConfig) error {
-	sum, err := oras.ImageSHA(ctx, ref, ociAuth)
+	hash, err := oras.ImageSHA(ctx, ref, ociAuth)
 	if err != nil {
 		return fmt.Errorf("failed to get checksum for %s: %s", ref, err)
 	}
 
-	imageName := uri.GetName("oras:" + ref)
-
-	cacheImagePath := imgCache.OrasImage(sum, imageName)
-	exists, err := imgCache.OrasImageExists(sum, imageName)
-	if err == cache.ErrBadChecksum {
-		sylog.Warningf("Removing cached image: %s: cache could be corrupted", cacheImagePath)
-		err := os.Remove(cacheImagePath)
-		if err != nil {
-			return fmt.Errorf("unable to remove corrupted cache: %v", err)
-		}
-	} else if err != nil {
-		return fmt.Errorf("unable to check if %s exists: %v", cacheImagePath, err)
-	}
-
-	if !exists {
-		sylog.Infof("Downloading image with ORAS")
-		go interruptCleanup(cacheImagePath)
-
-		if err := oras.DownloadImage(cacheImagePath, ref, ociAuth); err != nil {
+	if imgCache.IsDisabled() {
+		// Dont use cached image
+		if err := oras.DownloadImage(name, ref, ociAuth); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
 		}
-
-		if cacheFileHash, err := oras.ImageHash(cacheImagePath); err != nil {
-			return fmt.Errorf("error getting ImageHash: %v", err)
-		} else if cacheFileHash != sum {
-			return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, sum)
-		}
 	} else {
-		sylog.Infof("Using cached image")
-	}
+		cacheEntry, err := imgCache.GetEntry(cache.OrasCacheType, hash)
+		if err != nil {
+			return fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
+		}
+		if !cacheEntry.Exists {
+			sylog.Infof("Downloading oras image")
+			go interruptCleanup(func() {
+				_ = cacheEntry.Abort()
+			})
 
-	dstFile, err := openOutputImage(name)
-	if err != nil {
-		return err
-	}
-	defer dstFile.Close()
+			if err := oras.DownloadImage(cacheEntry.TmpPath, ref, ociAuth); err != nil {
+				return fmt.Errorf("unable to Download Image: %v", err)
+			}
+			if cacheFileHash, err := oras.ImageHash(cacheEntry.TmpPath); err != nil {
+				return fmt.Errorf("error getting ImageHash: %v", err)
+			} else if cacheFileHash != hash {
+				_ = cacheEntry.Abort()
+				return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, hash)
+			}
 
-	srcFile, err := os.Open(cacheImagePath)
-	if err != nil {
-		return fmt.Errorf("while opening cached image: %v", err)
-	}
-	defer srcFile.Close()
+			err = cacheEntry.Finalize()
+			if err != nil {
+				return err
+			}
 
-	// Copy SIF from cache
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
-		return fmt.Errorf("while copying image from cache: %v", err)
+		} else {
+			sylog.Infof("Using cached image")
+
+		}
+
+		cacheEntry.CopyTo(name)
+
 	}
 
 	sylog.Infof("Pull complete: %s\n", name)
@@ -187,7 +165,7 @@ func OciPull(ctx context.Context, imgCache *cache.Handle, name, imageURI, tmpDir
 		DockerAuthConfig:            ociAuth,
 	}
 
-	sum, err := ociclient.ImageSHA(ctx, imageURI, sysCtx)
+	hash, err := ociclient.ImageSHA(ctx, imageURI, sysCtx)
 	if err != nil {
 		return fmt.Errorf("failed to get checksum for %s: %s", imageURI, err)
 	}
@@ -197,40 +175,32 @@ func OciPull(ctx context.Context, imgCache *cache.Handle, name, imageURI, tmpDir
 			return fmt.Errorf("while building SIF from layers: %v", err)
 		}
 	} else {
-		imgName := uri.GetName(imageURI)
-		cachedImgPath := imgCache.OciTempImage(sum, imgName)
 
-		exists, err := imgCache.OciTempExists(sum, imgName)
+		cacheEntry, err := imgCache.GetEntry(cache.OciTempCacheType, hash)
 		if err != nil {
-			return fmt.Errorf("unable to check if %s exists: %s", imgName, err)
+			return fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
 		}
-		if !exists {
+		if !cacheEntry.Exists {
 			sylog.Infof("Converting OCI blobs to SIF format")
-			go interruptCleanup(imgName)
+			go interruptCleanup(func(){
+				_ = cacheEntry.Abort()
+			})
 
-			if err := convertDockerToSIF(ctx, imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, noCleanUp, ociAuth); err != nil {
+			if err := convertDockerToSIF(ctx, imgCache, imageURI, cacheEntry.TmpPath, tmpDir, noHTTPS, noCleanUp, ociAuth); err != nil {
 				return fmt.Errorf("while building SIF from layers: %v", err)
 			}
-			sylog.Infof("Build complete: %s", name)
+
+			err = cacheEntry.Finalize()
+			if err != nil {
+				return err
+			}
+
+		} else {
+			sylog.Infof("Use image from cache")
 		}
 
-		dstFile, err := openOutputImage(name)
-		if err != nil {
-			return err
-		}
-		defer dstFile.Close()
+		cacheEntry.CopyTo(name)
 
-		srcFile, err := os.Open(cachedImgPath)
-		if err != nil {
-			return fmt.Errorf("unable to open file for reading: %s: %v", name, err)
-		}
-		defer srcFile.Close()
-
-		// Copy SIF from cache
-		_, err = io.Copy(dstFile, srcFile)
-		if err != nil {
-			return fmt.Errorf("failed while copying files: %v", err)
-		}
 	}
 
 	return nil
@@ -264,13 +234,3 @@ func convertDockerToSIF(ctx context.Context, imgCache *cache.Handle, image, cach
 	return b.Full(ctx)
 }
 
-func openOutputImage(path string) (*os.File, error) {
-	// Perms are 755 *prior* to umask in order to allow image to be
-	// executed with its leading shebang like a script
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0755)
-	if err != nil {
-		return nil, fmt.Errorf("while opening destination file: %s", err)
-	}
-
-	return file, nil
-}
