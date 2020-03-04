@@ -25,8 +25,8 @@ const (
 	URINotSupported string = "Only the default Singularity Hub registry is suported for now"
 )
 
-// ShubURI stores the various components of a singularityhub URI
-type ShubURI struct {
+// URI stores the various components of a singularityhub URI
+type URI struct {
 	registry  string
 	user      string
 	container string
@@ -34,12 +34,12 @@ type ShubURI struct {
 	digest    string
 }
 
-func (s *ShubURI) String() string {
+func (s *URI) String() string {
 	return s.registry + s.user + "/" + s.container + s.tag + s.digest
 }
 
-// ShubAPIResponse holds the information returned from the Shub API
-type ShubAPIResponse struct {
+// APIResponse holds the information returned from the Shub API
+type APIResponse struct {
 	Image   string `json:"image"`
 	Name    string `json:"name"`
 	Tag     string `json:"tag"`
@@ -49,7 +49,7 @@ type ShubAPIResponse struct {
 
 // GetManifest will return the image manifest for a container uri
 // from Singularity Hub.
-func GetManifest(uri ShubURI, noHTTPS bool) (ShubAPIResponse, error) {
+func GetManifest(uri URI, noHTTPS bool) (APIResponse, error) {
 	// Create a new http Hub client
 	httpc := http.Client{
 		Timeout: 30 * time.Second,
@@ -62,7 +62,7 @@ func GetManifest(uri ShubURI, noHTTPS bool) (ShubAPIResponse, error) {
 	// Create the request, add headers context
 	url, err := url.Parse(uri.registry + uri.user + "/" + uri.container + uri.tag + uri.digest)
 	if err != nil {
-		return ShubAPIResponse{}, err
+		return APIResponse{}, err
 	}
 
 	if noHTTPS {
@@ -71,7 +71,7 @@ func GetManifest(uri ShubURI, noHTTPS bool) (ShubAPIResponse, error) {
 
 	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return ShubAPIResponse{}, err
+		return APIResponse{}, err
 	}
 	req.Header.Set("User-Agent", useragent.Value())
 
@@ -80,29 +80,29 @@ func GetManifest(uri ShubURI, noHTTPS bool) (ShubAPIResponse, error) {
 	// Do the request, if status isn't success, return error
 	res, err := httpc.Do(req)
 	if res == nil {
-		return ShubAPIResponse{}, fmt.Errorf("no response received from singularity hub")
+		return APIResponse{}, fmt.Errorf("no response received from singularity hub")
 	}
 	if res.StatusCode == http.StatusNotFound {
-		return ShubAPIResponse{}, fmt.Errorf("the requested manifest was not found in singularity hub")
+		return APIResponse{}, fmt.Errorf("the requested manifest was not found in singularity hub")
 	}
 	sylog.Debugf("%s response received, beginning manifest download\n", res.Status)
 
 	if err != nil {
-		return ShubAPIResponse{}, err
+		return APIResponse{}, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		err = errors.New(res.Status)
-		return ShubAPIResponse{}, err
+		return APIResponse{}, err
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return ShubAPIResponse{}, err
+		return APIResponse{}, err
 	}
 
-	var manifest ShubAPIResponse
+	var manifest APIResponse
 
 	err = json.Unmarshal(body, &manifest)
 	sylog.Debugf("manifest image name: %v\n", manifest.Name)

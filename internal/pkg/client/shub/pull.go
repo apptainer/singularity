@@ -25,7 +25,7 @@ const pullTimeout = 7200
 
 // DownloadImage image will download a shub image to a path. This will not try
 // to cache it, or use cache.
-func DownloadImage(manifest ShubAPIResponse, filePath, shubRef string, force, noHTTPS bool) error {
+func DownloadImage(manifest APIResponse, filePath, shubRef string, force, noHTTPS bool) error {
 	sylog.Debugf("Downloading container from Shub")
 	if !force {
 		if _, err := os.Stat(filePath); err == nil {
@@ -38,7 +38,7 @@ func DownloadImage(manifest ShubAPIResponse, filePath, shubRef string, force, no
 		sylog.Fatalf("Invalid shub URI")
 	}
 
-	shubURI, err := ShubParseReference(shubRef)
+	shubURI, err := ParseReference(shubRef)
 	if err != nil {
 		return fmt.Errorf("failed to parse shub uri: %v", err)
 	}
@@ -120,7 +120,7 @@ func DownloadImage(manifest ShubAPIResponse, filePath, shubRef string, force, no
 
 // pull will pull an oras image into the cache if directTo="", or a specific file if directTo is set.
 func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, noHTTPS bool) (imagePath string, err error) {
-	shubURI, err := ShubParseReference(pullFrom)
+	shubURI, err := ParseReference(pullFrom)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse shub uri: %s", err)
 	}

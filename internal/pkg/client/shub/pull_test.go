@@ -29,7 +29,7 @@ func TestDownloadImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	shubURI, err := ShubParseReference(shubImageURI)
+	shubURI, err := ParseReference(shubImageURI)
 	if err != nil {
 		t.Fatalf("failed to parse shub uri: %v", err)
 	}

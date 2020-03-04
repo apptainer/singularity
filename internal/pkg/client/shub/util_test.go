@@ -81,7 +81,7 @@ func TestShubParser(t *testing.T) {
 	for _, uri := range validShubURIs {
 		t.Run(fmt.Sprintf("Valid URI: %v", uri),
 			func(t *testing.T) {
-				sURI, err := ShubParseReference(uri)
+				sURI, err := ParseReference(uri)
 				if err != nil {
 					t.Fatalf("failed to parse valid URI: %v", uri)
 				}
