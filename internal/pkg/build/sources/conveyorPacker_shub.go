@@ -8,7 +8,6 @@ package sources
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 
 	shub "github.com/sylabs/singularity/internal/pkg/client/shub"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -30,27 +29,9 @@ func (cp *ShubConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 
 	src := `shub://` + b.Recipe.Header["from"]
 
-	// create file for image download
-	f, err := ioutil.TempFile(cp.b.TmpDir, "shub-img")
+	imagePath, err := shub.Pull(b.Opts.ImgCache, src, b.Opts.TmpDir, b.Opts.NoHTTPS)
 	if err != nil {
-		return
-	}
-	defer f.Close()
-
-	shubURIRef, err := shub.ShubParseReference(src)
-	if err != nil {
-		return fmt.Errorf("failed to parse shub uri: %s", err)
-	}
-
-	// Get the image manifest
-	manifest, err := shub.GetManifest(shubURIRef, cp.b.Opts.NoHTTPS)
-	if err != nil {
-		return fmt.Errorf("failed to get manifest for: %s: %s", src, err)
-	}
-
-	// get image from singularity hub
-	if err := shub.DownloadImage(manifest, f.Name(), src, true, cp.b.Opts.NoHTTPS); err != nil {
-		return fmt.Errorf("unable to get image from: %s: %v", src, err)
+		return fmt.Errorf("while fetching library image: %v", err)
 	}
 
 	// insert base metadata before unpacking fs
@@ -58,7 +39,7 @@ func (cp *ShubConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
-	cp.LocalPacker, err = GetLocalPacker(f.Name(), cp.b)
+	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)
 
 	return err
 }

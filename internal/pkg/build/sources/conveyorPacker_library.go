@@ -8,10 +8,7 @@ package sources
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"runtime"
-
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/client/library"
@@ -53,66 +50,15 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 	sylog.Debugf("LibraryURL: %v", libraryURL)
 	sylog.Debugf("LibraryRef: %v", b.Recipe.Header["from"])
 
-	libraryClient, err := client.NewClient(&client.Config{
+	imageRef := library.NormalizeLibraryRef(b.Recipe.Header["from"])
+	libraryConfig := &client.Config{
 		BaseURL:   libraryURL,
 		AuthToken: authToken,
-	})
+	}
+
+	imagePath, err := library.Pull(ctx, b.Opts.ImgCache, imageRef, runtime.GOARCH, cp.b.TmpDir, libraryConfig, "")
 	if err != nil {
-		return err
-	}
-
-	imageRef := library.NormalizeLibraryRef(b.Recipe.Header["from"])
-
-	libraryImage, err := libraryClient.GetImage(ctx, runtime.GOARCH, imageRef)
-	if err == client.ErrNotFound {
-		return fmt.Errorf("image does not exist in the library: %s (%s)", imageRef, runtime.GOARCH)
-	}
-	if err != nil {
-		return fmt.Errorf("while getting image info: %v", err)
-	}
-
-	imagePath := ""
-
-	if cp.b.Opts.NoCache {
-		file, err := ioutil.TempFile(cp.b.TmpDir, "sbuild-tmp-cache-")
-		if err != nil {
-			return fmt.Errorf("unable to create tmp file: %v", err)
-		}
-
-		imagePath = file.Name()
-
-		sylog.Infof("Downloading library image to tmp cache: %s", imagePath)
-
-		if err = library.DownloadImageNoProgress(ctx, libraryClient, imagePath, runtime.GOARCH, imageRef); err != nil {
-			return fmt.Errorf("unable to download image: %v", err)
-		}
-	} else {
-
-		cacheEntry, err := b.Opts.ImgCache.GetEntry(cache.LibraryCacheType, libraryImage.Hash)
-		if err != nil {
-			return fmt.Errorf("unable to check if %v exists in cache: %v", libraryImage.Hash, err)
-		}
-
-		if !cacheEntry.Exists {
-			sylog.Infof("Downloading library image")
-
-			if err := library.DownloadImageNoProgress(ctx, libraryClient, cacheEntry.TmpPath, runtime.GOARCH, imageRef); err != nil {
-				return fmt.Errorf("unable to download image: %v", err)
-			}
-
-			if cacheFileHash, err := client.ImageHash(cacheEntry.TmpPath); err != nil {
-				return fmt.Errorf("error getting image hash: %v", err)
-			} else if cacheFileHash != libraryImage.Hash {
-				return fmt.Errorf("cached file hash(%s) and expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
-			}
-
-			err = cacheEntry.Finalize()
-			if err != nil {
-				return err
-			}
-
-			imagePath = cacheEntry.Path
-		}
+		return fmt.Errorf("while fetching library image: %v", err)
 	}
 
 	// insert base metadata before unpacking fs
