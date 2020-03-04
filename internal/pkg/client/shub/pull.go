@@ -8,20 +8,16 @@ package shub
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/cache"
-
 	jsonresp "github.com/sylabs/json-resp"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
-	"github.com/vbauerster/mpb/v4"
-	"github.com/vbauerster/mpb/v4/decor"
 )
 
 // Timeout for an image pull in seconds (2 hours)
@@ -97,33 +93,24 @@ func DownloadImage(manifest ShubAPIResponse, filePath, shubRef string, force, no
 
 	sylog.Debugf("Created output file: %s\n", filePath)
 
-	bodySize := resp.ContentLength
-	p := mpb.New()
-	bar := p.AddBar(bodySize,
-		mpb.PrependDecorators(
-			decor.Counters(decor.UnitKiB, "%.1f / %.1f"),
-		),
-		mpb.AppendDecorators(
-			decor.Percentage(),
-			decor.AverageSpeed(decor.UnitKiB, " % .1f "),
-			decor.AverageETA(decor.ET_STYLE_GO),
-		),
-	)
-
-	// create proxy reader
-	bodyProgress := bar.ProxyReader(resp.Body)
-
 	// Write the body to file
-	bytesWritten, err := io.Copy(out, bodyProgress)
+	pb := sylog.ProgressBarCallback()
+	err = pb(resp.ContentLength, resp.Body, out)
 	if err != nil {
 		return err
+	}
+	out.Close()
+
+	st, err := os.Stat(out.Name())
+	if err != nil {
+		return fmt.Errorf("error checking output file %s: %v", out.Name(), err)
 	}
 
 	// Simple check to make sure image received is the correct size
 	if resp.ContentLength == -1 {
 		sylog.Warningf("unknown image length")
-	} else if bytesWritten != resp.ContentLength {
-		return fmt.Errorf("image received is not the right size. supposed to be: %v actually: %v", resp.ContentLength, bytesWritten)
+	} else if st.Size() != resp.ContentLength {
+		return fmt.Errorf("image received is not the right size. supposed to be: %v actually: %v", resp.ContentLength, st.Size())
 	}
 
 	sylog.Debugf("Download complete: %s\n", filePath)

@@ -8,16 +8,14 @@ package library
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
 	"github.com/sylabs/scs-library-client/client"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 const defaultTag = "latest"
-
-type progressCallback func(int64, io.Reader, io.Writer) error
 
 // NormalizeLibraryRef strips off leading "library://" prefix, if any, and
 // appends the default tag (latest) if none specified.
@@ -30,7 +28,7 @@ func NormalizeLibraryRef(libraryRef string) string {
 }
 
 // DownloadImage is a helper function to wrap library image download operation
-func DownloadImage(ctx context.Context, c *client.Client, imagePath, arch, libraryRef string, callback progressCallback) error {
+func DownloadImage(ctx context.Context, c *client.Client, imagePath, arch, libraryRef string, callback sylog.ProgressCallback) error {
 	// reassemble "stripped" library ref for scs-library-client
 	validLibraryRef := "library:///" + libraryRef
 

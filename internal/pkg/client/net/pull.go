@@ -11,7 +11,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -24,8 +23,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
-	"github.com/vbauerster/mpb/v4"
-	"github.com/vbauerster/mpb/v4/decor"
 )
 
 // Timeout for an image pull in seconds - could be a large download...
@@ -92,26 +89,9 @@ func DownloadImage(filePath string, netURL string) error {
 	}
 	defer out.Close()
 
-	sylog.Debugf("Created output file: %s\n", filePath)
+	pb := sylog.ProgressBarCallback()
 
-	bodySize := res.ContentLength
-	p := mpb.New()
-	bar := p.AddBar(bodySize,
-		mpb.PrependDecorators(
-			decor.Counters(decor.UnitKiB, "%.1f / %.1f"),
-		),
-		mpb.AppendDecorators(
-			decor.Percentage(),
-			decor.AverageSpeed(decor.UnitKiB, " % .1f "),
-			decor.AverageETA(decor.ET_STYLE_GO),
-		),
-	)
-
-	// create proxy reader
-	bodyProgress := bar.ProxyReader(res.Body)
-
-	// Write the body to file
-	_, err = io.Copy(out, bodyProgress)
+	err = pb(res.ContentLength, res.Body, out)
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"runtime"
 
@@ -17,8 +16,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/vbauerster/mpb/v4"
-	"github.com/vbauerster/mpb/v4/decor"
 )
 
 var (
@@ -26,35 +23,11 @@ var (
 	ErrLibraryPullUnsigned = errors.New("failed to verify container")
 )
 
-// printProgress is called to display progress bar while downloading image from library.
-func printProgress(totalSize int64, r io.Reader, w io.Writer) error {
-	p := mpb.New()
-	bar := p.AddBar(totalSize,
-		mpb.PrependDecorators(
-			decor.Counters(decor.UnitKiB, "%.1f / %.1f"),
-		),
-		mpb.AppendDecorators(
-			decor.Percentage(),
-			decor.AverageSpeed(decor.UnitKiB, " % .1f "),
-			decor.AverageETA(decor.ET_STYLE_GO),
-		),
-	)
-
-	// create proxy reader
-	bodyProgress := bar.ProxyReader(r)
-
-	// Write the body to file
-	_, err := io.Copy(w, bodyProgress)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // pull will pull a library image into the cache if directTo="", or a specific file if directTo is set.
 func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, arch string, scsConfig *scs.Config, keystoreURI string) (imagePath string, err error) {
 	imageRef := NormalizeLibraryRef(pullFrom)
+
+	sylog.GetLevel()
 
 	c, err := scs.NewClient(scsConfig)
 	if err != nil {
@@ -71,7 +44,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 	if directTo != "" {
 		sylog.Infof("Downloading library image")
-		if err = DownloadImageNoProgress(ctx, c, directTo, arch, imageRef); err != nil {
+		if err = DownloadImage(ctx, c, directTo, arch, imageRef, sylog.ProgressBarCallback()); err != nil {
 			return "", fmt.Errorf("unable to download image: %v", err)
 		}
 		imagePath = directTo
@@ -84,7 +57,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 		if !cacheEntry.Exists {
 			sylog.Infof("Downloading library image")
 
-			if err := DownloadImageNoProgress(ctx, c, cacheEntry.TmpPath, runtime.GOARCH, imageRef); err != nil {
+			if err := DownloadImage(ctx, c, cacheEntry.TmpPath, runtime.GOARCH, imageRef, sylog.ProgressBarCallback()); err != nil {
 				return "", fmt.Errorf("unable to download image: %v", err)
 			}
 
