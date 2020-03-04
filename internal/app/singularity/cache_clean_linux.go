@@ -8,8 +8,6 @@ package singularity
 import (
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -28,6 +26,7 @@ func cleanCache(imgCache *cache.Handle, cacheType string, dryRun bool) error {
 	return imgCache.CleanCache(cacheType, dryRun)
 }
 
+/*
 func removeCacheEntry(name, cacheType, cacheDir string, op func(string) error) (bool, error) {
 	foundMatch := false
 	done := fmt.Errorf("done")
@@ -56,6 +55,7 @@ func removeCacheEntry(name, cacheType, cacheDir string, op func(string) error) (
 	}
 	return foundMatch, err
 }
+*/
 
 // CleanSingularityCache is the main function that drives all these
 // other functions. If force is true, remove the entries, otherwise only

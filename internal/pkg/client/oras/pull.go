@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/sylabs/singularity/internal/pkg/cache"
@@ -94,6 +95,10 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, t
 	}
 
 	if directTo == "" {
+		err = os.Remove(pullTo)
+		if err != nil && !os.IsNotExist(err) {
+			return "", fmt.Errorf("error removing existing image: %s, %v", pullTo, err)
+		}
 		sylog.Debugf("Copying cache file '%s' to '%s'", src, pullTo)
 		err = fs.CopyFile(src, pullTo, 0755)
 		if err != nil {

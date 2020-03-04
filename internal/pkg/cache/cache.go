@@ -9,6 +9,7 @@ package cache
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -127,12 +128,32 @@ func (h *Handle) GetEntry(cacheType string, hash string) (e *Entry, err error) {
 	return e, nil
 }
 
-func (h *Handle) CleanCache(cacheType string, dryRun bool) error {
+func (h *Handle) CleanCache(cacheType string, dryRun bool) (err error) {
 	dir := h.GetCacheTypeDir(cacheType)
-	if err := os.RemoveAll(dir); err != nil {
-		return fmt.Errorf("unable to clean %s cache, directory %s: %v", cacheType, dir, err)
+
+	files, err := ioutil.ReadDir(dir)
+	if (err != nil && os.IsNotExist(err)) || len(files) == 0 {
+		sylog.Infof("No cached files to remove at %s", dir)
+		return nil
 	}
-	return nil
+
+	errCount := 0
+	for _, f := range files {
+		sylog.Infof("Removing cacheType cache entry: %s", f.Name())
+		if !dryRun {
+			err := os.Remove(path.Join(dir, f.Name()))
+			if err != nil {
+				sylog.Errorf("Could not remove cache entry '%s': %v", f.Name(), err)
+				errCount = errCount + 1
+			}
+		}
+	}
+
+	if errCount > 0 {
+		return fmt.Errorf("failed to remove %d cache entries", errCount)
+	}
+
+	return err
 }
 
 // New initializes a cache within the directory specified in Config.ParentDir
@@ -225,36 +246,6 @@ func getCacheParentDir() string {
 // IsDisabled returns true if the cache is disabled
 func (h *Handle) IsDisabled() bool {
 	return h.disabled
-}
-
-// updateCacheSubdir update/create a sub-cache (directory) within the cache,
-// for example, the 'shub' cache.
-func updateCacheSubdir(h *Handle, subdir string) (string, error) {
-	// This function may act on an cache object that is not fully initialized
-	// so it is not a method on a Handle but rather an independent
-	// function.
-	// Because the cache object may not be initialized, we do NOT check its validity
-	if h == nil {
-		return "", fmt.Errorf("invalid cache handle")
-	}
-
-	// If the subdir is empty, it will lead to new collision since it would
-	// succeed but point at the cache's root
-	if subdir == "" {
-		return "", fmt.Errorf("invalid parameter")
-	}
-
-	absdir, err := filepath.Abs(filepath.Join(h.rootDir, subdir))
-	if err != nil {
-		sylog.Fatalf("Unable to get abs filepath: %v", err)
-	}
-
-	if err := initCacheDir(absdir); err != nil {
-		sylog.Fatalf("Unable to initialize caching directory: %v", err)
-	}
-
-	sylog.Debugf("Caching directory set to %s", absdir)
-	return absdir, nil
 }
 
 // Return the directory for a specific CacheType

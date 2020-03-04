@@ -197,6 +197,10 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, t
 	}
 
 	if directTo == "" {
+		err = os.Remove(pullTo)
+		if err != nil && !os.IsNotExist(err) {
+			return "", fmt.Errorf("error removing existing image: %s, %v", pullTo, err)
+		}
 		err = fs.CopyFile(src, pullTo, 0755)
 		if err != nil {
 			return "", fmt.Errorf("error fetching image to cache: %v", err)

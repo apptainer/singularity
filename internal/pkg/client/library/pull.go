@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"runtime"
 
 	scs "github.com/sylabs/scs-library-client/client"
@@ -112,6 +113,10 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, a
 	}
 
 	if directTo == "" {
+		err = os.Remove(pullTo)
+		if err != nil && !os.IsNotExist(err) {
+			return "", fmt.Errorf("error removing existing image: %s, %v", pullTo, err)
+		}
 		sylog.Debugf("Copying cache file '%s' to '%s'", src, pullTo)
 		err = fs.CopyFile(src, pullTo, 0755)
 		if err != nil {
