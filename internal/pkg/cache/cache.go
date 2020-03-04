@@ -87,11 +87,21 @@ type Handle struct {
 	disabled bool
 }
 
-func (h *Handle) GetOciCacheDir(cacheType string) string {
-	return h.GetCacheTypeDir(cacheType)
+func (h *Handle) GetFileCacheDir(cacheType string) (cacheDir string, err error) {
+	if !stringInSlice(cacheType, FileCacheTypes) {
+		return "", ErrInvalidCacheType
+	}
+	return h.getCacheTypeDir(cacheType), nil
 }
 
-// LibraryImage creates a directory inside cache with the name of the hash of the image.
+func (h *Handle) GetOciCacheDir(cacheType string) (cacheDir string, err error) {
+	if !stringInSlice(cacheType, OciCacheTypes) {
+		return "", ErrInvalidCacheType
+	}
+	return h.getCacheTypeDir(cacheType), nil
+}
+
+// GetEntry returns a cache Entry for a specified file cache type and hash
 func (h *Handle) GetEntry(cacheType string, hash string) (e *Entry, err error) {
 	if h.disabled {
 		return nil, nil
@@ -99,7 +109,11 @@ func (h *Handle) GetEntry(cacheType string, hash string) (e *Entry, err error) {
 
 	e = &Entry{}
 
-	cacheDir := h.GetCacheTypeDir(cacheType)
+	cacheDir, err := h.GetFileCacheDir(cacheType)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get cache entry: %v", err)
+	}
+
 	e.Path = filepath.Join(cacheDir, hash)
 
 	_, err = os.Stat(e.Path)
@@ -129,7 +143,7 @@ func (h *Handle) GetEntry(cacheType string, hash string) (e *Entry, err error) {
 }
 
 func (h *Handle) CleanCache(cacheType string, dryRun bool) (err error) {
-	dir := h.GetCacheTypeDir(cacheType)
+	dir := h.getCacheTypeDir(cacheType)
 
 	files, err := ioutil.ReadDir(dir)
 	if (err != nil && os.IsNotExist(err)) || len(files) == 0 {
@@ -156,6 +170,31 @@ func (h *Handle) CleanCache(cacheType string, dryRun bool) (err error) {
 	return err
 }
 
+// cleanAllCaches is an utility function that wipes all files in the
+// cache directory, will return a error if one occurs
+func (h *Handle) cleanAllCaches() {
+	if h.disabled {
+		return
+	}
+
+	for _, ct := range FileCacheTypes {
+		dir := h.getCacheTypeDir(ct)
+		if err := os.RemoveAll(dir); err != nil {
+			sylog.Verbosef("unable to clean %s cache, directory %s: %v", ct, dir, err)
+		}
+	}
+}
+
+// IsDisabled returns true if the cache is disabled
+func (h *Handle) IsDisabled() bool {
+	return h.disabled
+}
+
+// Return the directory for a specific CacheType
+func (h *Handle) getCacheTypeDir(cacheType string) string {
+	return path.Join(h.rootDir, cacheType)
+}
+
 // New initializes a cache within the directory specified in Config.ParentDir
 func New(cfg Config) (h *Handle, err error) {
 	h = new(Handle)
@@ -174,7 +213,7 @@ func New(cfg Config) (h *Handle, err error) {
 	}
 	// If the cache is not already disabled, we check if the configuration that was passed in
 	// request the cache to be disabled
-	if !cacheDisabled && cfg.Disable {
+	if cacheDisabled || cfg.Disable {
 		h.disabled = true
 	}
 	// If the cache is disabled, we stop here. Basically we return a valid handle that is not fully initialized
@@ -210,7 +249,7 @@ func New(cfg Config) (h *Handle, err error) {
 	}
 	// Initialize the subdirectories of the cache
 	for _, ct := range FileCacheTypes {
-		dir := h.GetCacheTypeDir(ct)
+		dir := h.getCacheTypeDir(ct)
 		if err = initCacheDir(dir); err != nil {
 			return nil, fmt.Errorf("failed initializing caching directory: %s", err)
 		}
@@ -243,31 +282,6 @@ func getCacheParentDir() string {
 	return parentDir
 }
 
-// IsDisabled returns true if the cache is disabled
-func (h *Handle) IsDisabled() bool {
-	return h.disabled
-}
-
-// Return the directory for a specific CacheType
-func (h *Handle) GetCacheTypeDir(cacheType string) string {
-	return path.Join(h.rootDir, cacheType)
-}
-
-// cleanAllCaches is an utility function that wipes all files in the
-// cache directory, will return a error if one occurs
-func (h *Handle) cleanAllCaches() {
-	if h.disabled {
-		return
-	}
-
-	for _, ct := range FileCacheTypes {
-		dir := h.GetCacheTypeDir(ct)
-		if err := os.RemoveAll(dir); err != nil {
-			sylog.Verbosef("unable to clean %s cache, directory %s: %v", ct, dir, err)
-		}
-	}
-}
-
 func initCacheDir(dir string) error {
 	if fi, err := os.Stat(dir); os.IsNotExist(err) {
 		sylog.Debugf("Creating cache directory: %s", dir)
@@ -285,4 +299,13 @@ func initCacheDir(dir string) error {
 	}
 
 	return nil
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
