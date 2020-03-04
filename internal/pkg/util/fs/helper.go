@@ -335,6 +335,43 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 	return nil
 }
 
+// CopyFileAtomic copies file to a temporary file in the same destination directory
+// and the renames to the final name. This is useful to avoid races where concurrent copies
+// could happen to the same destination
+func CopyFileAtomic(from, to string, mode os.FileMode) (err error) {
+	parentDir := filepath.Dir(to)
+
+	tmpFile, err := MakeTmpFile(parentDir, "tmp-copy-", mode)
+	if err != nil {
+		return fmt.Errorf("could not open temporary file for copy: %v", err)
+	}
+
+	defer func() {
+		tmpFile.Close()
+		os.Remove(tmpFile.Name())
+	}()
+
+	srcFile, err := os.Open(from)
+	if err != nil {
+		return fmt.Errorf("could not open file to copy: %v", err)
+	}
+	defer srcFile.Close()
+
+	_, err = io.Copy(tmpFile, srcFile)
+	if err != nil {
+		return fmt.Errorf("could not copy file: %v", err)
+	}
+	srcFile.Close()
+	tmpFile.Close()
+
+	err = os.Rename(tmpFile.Name(), to)
+	if err != nil {
+		return fmt.Errorf("could not rename temporary file in copy: %v", err)
+	}
+
+	return nil
+}
+
 // IsWritable returns true of the file that is passed in
 // is writable by the user (note: uid is checked, not euid).
 func IsWritable(path string) bool {
