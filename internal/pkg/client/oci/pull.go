@@ -35,10 +35,12 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, 
 	sylog.Infof("Converting OCI blobs to SIF format")
 
 	if imgCache.IsDisabled() {
-		imagePath, err := ioutil.TempDir(tmpDir, "sbuild-tmp-cache-")
+		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
 		if err != nil {
 			return "", fmt.Errorf("unable to create tmp file: %v", err)
 		}
+		imagePath = file.Name()
+		sylog.Infof("Creating image in tmp cache: %s", imagePath)
 		if err := build.ConvertOciToSIF(ctx, imgCache, pullFrom, imagePath, tmpDir, noHTTPS, noCleanUp, ociAuth); err != nil {
 			return "", fmt.Errorf("while building SIF from layers: %v", err)
 		}

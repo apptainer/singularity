@@ -145,10 +145,12 @@ func Pull(imgCache *cache.Handle, pullFrom string, tmpDir string, noHTTPS bool) 
 	}
 
 	if imgCache.IsDisabled() {
-		imagePath, err = ioutil.TempDir(tmpDir, "sbuild-tmp-cache-")
+		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
 		if err != nil {
 			return "", fmt.Errorf("unable to create tmp file: %v", err)
 		}
+		imagePath = file.Name()
+		sylog.Infof("Downloading shub image to tmp cache: %s", imagePath)
 		// Dont use cached image
 		if err := DownloadImage(manifest, imagePath, pullFrom, true, noHTTPS); err != nil {
 			return "", err
