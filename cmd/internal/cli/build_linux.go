@@ -18,7 +18,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"

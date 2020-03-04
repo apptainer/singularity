@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )

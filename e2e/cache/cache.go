@@ -14,7 +14,7 @@ import (
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 )
 
 type cacheTests struct {

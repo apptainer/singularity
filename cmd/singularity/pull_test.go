@@ -17,7 +17,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 )

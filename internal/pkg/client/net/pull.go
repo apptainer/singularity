@@ -7,6 +7,7 @@ package net
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -18,13 +19,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
-	"github.com/vbauerster/mpb/v4/decor"
 	"github.com/vbauerster/mpb/v4"
+	"github.com/vbauerster/mpb/v4/decor"
 )
 
 // Timeout for an image pull in seconds - could be a large download...
@@ -121,7 +122,8 @@ func DownloadImage(filePath string, netURL string) error {
 
 }
 
-func Pull(imgCache *cache.Handle, pullFrom string, tmpDir string) (imagePath string, err error) {
+// pull will pull a http(s) image into the cache if directTo="", or a specific file if directTo is set.
+func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string) (imagePath string, err error) {
 	// We will cache using a sha256 over the URL and the date of the file that
 	// is to be fetched, as returned by an HTTP HEAD call and the Last-Modified
 	// header. If no date is available, use the current date-time, which will
@@ -148,20 +150,14 @@ func Pull(imgCache *cache.Handle, pullFrom string, tmpDir string) (imagePath str
 	hash := hex.EncodeToString(h.Sum(nil))
 	sylog.Debugf("Image hash for cache is: %s", hash)
 
-	if imgCache.IsDisabled() {
-		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
-		if err != nil {
-			return "", fmt.Errorf("unable to create tmp file: %v", err)
-		}
-		imagePath = file.Name()
-		sylog.Infof("Downloading image to tmp cache: %s", imagePath)
-
-		// Dont use cached image
+	if directTo != "" {
+		sylog.Infof("Downloading network image")
 		if err := DownloadImage(imagePath, pullFrom); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
-	} else {
+		imagePath = directTo
 
+	} else {
 		cacheEntry, err := imgCache.GetEntry(cache.NetCacheType, hash)
 		if err != nil {
 			return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
@@ -189,17 +185,42 @@ func Pull(imgCache *cache.Handle, pullFrom string, tmpDir string) (imagePath str
 	return imagePath, nil
 }
 
-// PullToFile will fetch an image from the specified URI and place it at the specified dest
-func PullToFile(imgCache *cache.Handle, pullTo, pullFrom, tmpDir string) (sifFile string, err error) {
+// Pull will pull a http(s) image to the cache or direct to a temporary file if cache is disabled
+func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, tmpDir string) (imagePath string, err error) {
 
-	src, err := Pull(imgCache, pullFrom, tmpDir)
+	directTo := ""
+
+	if imgCache.IsDisabled() {
+		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
+		if err != nil {
+			return "", fmt.Errorf("unable to create tmp file: %v", err)
+		}
+		directTo = file.Name()
+		sylog.Infof("Downloading library image to tmp cache: %s", directTo)
+	}
+
+	return pull(ctx, imgCache, directTo, pullFrom)
+}
+
+// PullToFile will pull an http(s) image to the specified location, through the cache, or directly if cache is disabled
+func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, tmpDir string) (imagePath string, err error) {
+
+	directTo := ""
+	if imgCache.IsDisabled() {
+		directTo = pullTo
+		sylog.Debugf("Cache disabled, pulling directly to: %s", directTo)
+	}
+
+	src, err := pull(ctx, imgCache, directTo, pullFrom)
 	if err != nil {
 		return "", fmt.Errorf("error fetching image to cache: %v", err)
 	}
 
-	err = fs.CopyFile(src, pullTo, 0755)
-	if err != nil {
-		return "", fmt.Errorf("error fetching image to cache: %v", err)
+	if directTo == "" {
+		err = fs.CopyFile(src, pullTo, 0755)
+		if err != nil {
+			return "", fmt.Errorf("error fetching image to cache: %v", err)
+		}
 	}
 
 	return pullTo, nil

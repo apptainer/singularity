@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	scslibrary "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/client/library"
 	net "github.com/sylabs/singularity/internal/pkg/client/net"
 	"github.com/sylabs/singularity/internal/pkg/client/oci"
@@ -85,12 +85,12 @@ func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom, librar
 	return library.Pull(ctx, imgCache, pullFrom, runtime.GOARCH, tmpDir, c, keyServerURL)
 }
 
-func handleShub(imgCache *cache.Handle, pullFrom string) (string, error) {
-	return shub.Pull(imgCache, pullFrom, tmpDir, noHTTPS)
+func handleShub(ctx context.Context, imgCache *cache.Handle, pullFrom string) (string, error) {
+	return shub.Pull(ctx, imgCache, pullFrom, tmpDir, noHTTPS)
 }
 
-func handleNet(imgCache *cache.Handle, pullFrom string) (string, error) {
-	return net.Pull(imgCache, pullFrom, tmpDir)
+func handleNet(ctx context.Context, imgCache *cache.Handle, pullFrom string) (string, error) {
+	return net.Pull(ctx, imgCache, pullFrom, tmpDir)
 }
 
 func replaceURIWithImage(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, args []string) {
@@ -111,13 +111,13 @@ func replaceURIWithImage(ctx context.Context, imgCache *cache.Handle, cmd *cobra
 	case uri.Oras:
 		image, err = handleOras(ctx, imgCache, cmd, args[0])
 	case uri.Shub:
-		image, err = handleShub(imgCache, args[0])
+		image, err = handleShub(ctx, imgCache, args[0])
 	case oci.IsSupported(t):
 		image, err = handleOCI(ctx, imgCache, cmd, args[0])
 	case uri.HTTP:
-		image, err = handleNet(imgCache, args[0])
+		image, err = handleNet(ctx, imgCache, args[0])
 	case uri.HTTPS:
-		image, err = handleNet(imgCache, args[0])
+		image, err = handleNet(ctx, imgCache, args[0])
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", t)
 	}

@@ -13,14 +13,13 @@ import (
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/oci"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
-// Pull will build a SIF image from the specified oci URI and place it in the cache
-// or at a temporary location within tmpDir if the cache is disabled.
-func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCleanUp bool) (imagePath string, err error) {
+// pull will build a SIF image into the cache if directTo="", or a specific file if directTo is set.
+func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCleanUp bool) (imagePath string, err error) {
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify:    noHTTPS,
 		DockerInsecureSkipTLSVerify: ocitypes.NewOptionalBool(noHTTPS),
@@ -32,18 +31,12 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, 
 		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
 	}
 
-	sylog.Infof("Converting OCI blobs to SIF format")
-
-	if imgCache.IsDisabled() {
-		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
-		if err != nil {
-			return "", fmt.Errorf("unable to create tmp file: %v", err)
-		}
-		imagePath = file.Name()
-		sylog.Infof("Creating image in tmp cache: %s", imagePath)
+	if directTo != "" {
+		sylog.Infof("Converting OCI blobs to SIF format")
 		if err := build.ConvertOciToSIF(ctx, imgCache, pullFrom, imagePath, tmpDir, noHTTPS, noCleanUp, ociAuth); err != nil {
 			return "", fmt.Errorf("while building SIF from layers: %v", err)
 		}
+		imagePath = directTo
 	} else {
 
 		cacheEntry, err := imgCache.GetEntry(cache.OciTempCacheType, hash)
@@ -71,17 +64,43 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, 
 	return imagePath, nil
 }
 
+// Pull will build a SIF image to the cache or direct to a temporary file if cache is disabled
+func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCleanUp bool) (imagePath string, err error) {
+
+	directTo := ""
+
+	if imgCache.IsDisabled() {
+		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
+		if err != nil {
+			return "", fmt.Errorf("unable to create tmp file: %v", err)
+		}
+		directTo = file.Name()
+		sylog.Infof("Downloading library image to tmp cache: %s", directTo)
+	}
+
+	return pull(ctx, imgCache, directTo, pullFrom, tmpDir, ociAuth, noHTTPS, noCleanUp)
+}
+
 // PullToFile will build a SIF image from the specified oci URI and place it at the specified dest
-func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCleanUp bool) (sifFile string, err error) {
+func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCleanUp bool) (imagePath string, err error) {
+
+	directTo := ""
+	if imgCache.IsDisabled() {
+		directTo = pullTo
+		sylog.Debugf("Cache disabled, pulling directly to: %s", directTo)
+	}
 
 	src, err := Pull(ctx, imgCache, pullFrom, tmpDir, ociAuth, noHTTPS, noCleanUp)
 	if err != nil {
 		return "", fmt.Errorf("error fetching image to cache: %v", err)
 	}
 
-	err = fs.CopyFile(src, pullTo, 0755)
-	if err != nil {
-		return "", fmt.Errorf("error fetching image to cache: %v", err)
+	if directTo == "" {
+		sylog.Debugf("Copying cache file '%s' to '%s'", src, pullTo)
+		err = fs.CopyFile(src, pullTo, 0755)
+		if err != nil {
+			return "", fmt.Errorf("error fetching image to cache: %v", err)
+		}
 	}
 
 	return pullTo, nil

@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/pkg/build/types"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"

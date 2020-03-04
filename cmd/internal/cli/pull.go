@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/client/library"
 	"github.com/sylabs/singularity/internal/pkg/client/net"
 	"github.com/sylabs/singularity/internal/pkg/client/oci"
@@ -222,7 +222,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Warningf("Skipping container verification")
 		}
 	case ShubProtocol:
-		_, err := shub.PullToFile(imgCache, pullTo, pullFrom, tmpDir, noHTTPS)
+		_, err := shub.PullToFile(ctx, imgCache, pullTo, pullFrom, tmpDir, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
@@ -237,7 +237,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}
 	case HTTPProtocol, HTTPSProtocol:
-		_, err := net.PullToFile(imgCache, pullTo, pullFrom, tmpDir)
+		_, err := net.PullToFile(ctx, imgCache, pullTo, pullFrom, tmpDir)
 		if err != nil {
 			sylog.Fatalf("While pulling from image from http(s): %v\n", err)
 		}

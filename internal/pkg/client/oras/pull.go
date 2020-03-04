@@ -11,30 +11,25 @@ import (
 	"io/ioutil"
 
 	ocitypes "github.com/containers/image/v5/types"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
-// Pull will download the image specified by the provided oci reference and store
-// it at the location specified by file, it will use credentials if supplied
-func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, tmpDir string, ociAuth *ocitypes.DockerAuthConfig) (imagePath string, err error) {
+// pull will pull an oras image into the cache if directTo="", or a specific file if directTo is set.
+func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, ociAuth *ocitypes.DockerAuthConfig) (imagePath string, err error) {
 	hash, err := ImageSHA(ctx, pullFrom, ociAuth)
 	if err != nil {
 		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
 	}
 
-	if imgCache.IsDisabled() {
-		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
-		if err != nil {
-			return "", fmt.Errorf("unable to create tmp file: %v", err)
-		}
-		imagePath = file.Name()
-		sylog.Infof("Downloading ORAS image to tmp cache: %s", imagePath)
-		// Dont use cached image
+	if directTo != "" {
+		sylog.Infof("Downloading oras image")
 		if err := DownloadImage(imagePath, pullFrom, ociAuth); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
+		imagePath = directTo
+
 	} else {
 		cacheEntry, err := imgCache.GetEntry(cache.OrasCacheType, hash)
 		if err != nil {
@@ -67,17 +62,43 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, tmpDir s
 	return imagePath, nil
 }
 
-// PullToFile will build a SIF image from the specified oci URI and place it at the specified dest
-func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, tmpDir string, ociAuth *ocitypes.DockerAuthConfig) (sifFile string, err error) {
+// Pull will pull an oras image to the cache or direct to a temporary file if cache is disabled
+func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, ociAuth *ocitypes.DockerAuthConfig) (imagePath string, err error) {
 
-	src, err := Pull(ctx, imgCache, pullFrom, tmpDir, ociAuth)
+	directTo := ""
+
+	if imgCache.IsDisabled() {
+		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
+		if err != nil {
+			return "", fmt.Errorf("unable to create tmp file: %v", err)
+		}
+		directTo = file.Name()
+		sylog.Infof("Downloading oras image to tmp cache: %s", directTo)
+	}
+
+	return pull(ctx, imgCache, directTo, pullFrom, ociAuth)
+}
+
+// PullToFile will pull an oras image to the specified location, through the cache, or directly if cache is disabled
+func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, tmpDir string, ociAuth *ocitypes.DockerAuthConfig) (imagePath string, err error) {
+
+	directTo := ""
+	if imgCache.IsDisabled() {
+		directTo = pullTo
+		sylog.Debugf("Cache disabled, pulling directly to: %s", directTo)
+	}
+
+	src, err := pull(ctx, imgCache, directTo, pullFrom, ociAuth)
 	if err != nil {
 		return "", fmt.Errorf("error fetching image to cache: %v", err)
 	}
 
-	err = fs.CopyFile(src, pullTo, 0755)
-	if err != nil {
-		return "", fmt.Errorf("error fetching image to cache: %v", err)
+	if directTo == "" {
+		sylog.Debugf("Copying cache file '%s' to '%s'", src, pullTo)
+		err = fs.CopyFile(src, pullTo, 0755)
+		if err != nil {
+			return "", fmt.Errorf("error fetching image to cache: %v", err)
+		}
 	}
 
 	return pullTo, nil

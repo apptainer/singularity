@@ -21,7 +21,7 @@ import (
 
 	expect "github.com/Netflix/go-expect"
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 )
 
 // SingularityCmdResultOp is a function type executed

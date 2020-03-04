@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 

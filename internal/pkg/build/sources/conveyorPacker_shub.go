@@ -29,7 +29,7 @@ func (cp *ShubConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 
 	src := `shub://` + b.Recipe.Header["from"]
 
-	imagePath, err := shub.Pull(b.Opts.ImgCache, src, b.Opts.TmpDir, b.Opts.NoHTTPS)
+	imagePath, err := shub.Pull(ctx, b.Opts.ImgCache, src, b.Opts.TmpDir, b.Opts.NoHTTPS)
 	if err != nil {
 		return fmt.Errorf("while fetching library image: %v", err)
 	}

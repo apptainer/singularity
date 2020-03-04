@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	ocitypes "github.com/containers/image/v5/types"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	buildtypes "github.com/sylabs/singularity/pkg/build/types"
 )
 
