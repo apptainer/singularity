@@ -99,10 +99,18 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 	containersShown := false
 	blobsShown := false
 
+	// If types requested includes "all" then we don't want to filter anything
+	if stringInSlice("all", cacheListTypes) {
+		cacheListTypes = []string{}
+	}
+
 	for _, cacheType := range cache.OciCacheTypes {
 		// the type blob is special: 1. there's a
 		// separate counter for it; 2. the cache entries
 		// are actually one level deeper
+		if len(cacheListTypes) > 0 && !stringInSlice(cacheType, cacheListTypes) {
+			continue
+		}
 		cacheDir, err := imgCache.GetOciCacheDir(cacheType)
 		if err != nil {
 			return err
@@ -119,6 +127,9 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 		blobsShown = true
 	}
 	for _, cacheType := range cache.FileCacheTypes {
+		if len(cacheListTypes) > 0 && !stringInSlice(cacheType, cacheListTypes) {
+			continue
+		}
 		cacheDir, err := imgCache.GetFileCacheDir(cacheType)
 		if err != nil {
 			return err
@@ -155,4 +166,13 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 	fmt.Printf("Total space used: %s\n", findSize(totalSpace))
 
 	return nil
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
