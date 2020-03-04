@@ -15,7 +15,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	oci "github.com/containers/image/v5/oci/layout"
+	"github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/types"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
@@ -215,7 +215,7 @@ func createValidSysCtx() *types.SystemContext {
 }
 
 func createValidImageRef(t *testing.T, ref string) types.ImageReference {
-	srcRef, err := oci.ParseReference(ref)
+	srcRef, err := layout.ParseReference(ref)
 	if err != nil {
 		t.Fatalf("cannot parser reference: %s\n", err)
 	}
@@ -223,7 +223,7 @@ func createValidImageRef(t *testing.T, ref string) types.ImageReference {
 }
 
 func createInvalidImageRef(t *testing.T, invalidRef string) types.ImageReference {
-	srcRef, err := oci.ParseReference(invalidRef)
+	srcRef, err := layout.ParseReference(invalidRef)
 	if err != nil {
 		t.Fatalf("cannot parser reference: %s\n", err)
 	}

@@ -19,7 +19,6 @@ var (
 	errInvalidCacheHandle = errors.New("invalid cache handle")
 )
 
-
 // cleanCache cleans the given type of cache cacheType. It will return a
 // error if one occurs.
 func cleanCache(imgCache *cache.Handle, cacheType string, dryRun bool) error {
@@ -70,32 +69,32 @@ func CleanSingularityCache(imgCache *cache.Handle, dryRun bool, cacheCleanTypes 
 	}
 
 	/*
-	if len(cacheName) > 0 {
+		if len(cacheName) > 0 {
 
 
-		// a name was specified, only clean matching entries
-		for _, name := range cacheName {
-			matches := 0
-			for _, cacheType := range cacheTypes {
-				cacheDir, _ := cacheTypeToDir(imgCache, cacheType)
-				sylog.Debugf("Removing cache type %q with name %q from directory %q ...", cacheType, name, cacheDir)
-				foundMatch, err := removeCacheEntry(name, cacheType, cacheDir, op)
-				if err != nil {
-					return err
+			// a name was specified, only clean matching entries
+			for _, name := range cacheName {
+				matches := 0
+				for _, cacheType := range cacheTypes {
+					cacheDir, _ := cacheTypeToDir(imgCache, cacheType)
+					sylog.Debugf("Removing cache type %q with name %q from directory %q ...", cacheType, name, cacheDir)
+					foundMatch, err := removeCacheEntry(name, cacheType, cacheDir, op)
+					if err != nil {
+						return err
+					}
+					if foundMatch {
+						matches++
+					}
 				}
-				if foundMatch {
-					matches++
+
+				if matches == 0 {
+					sylog.Warningf("No cache found with given name: %s", name)
 				}
 			}
-
-			if matches == 0 {
-				sylog.Warningf("No cache found with given name: %s", name)
-			}
+			return nil
 		}
-		return nil
-	}
 
-    */
+	*/
 
 	for _, cacheType := range cache.FileCacheTypes {
 		sylog.Debugf("Cleaning %s cache...", cacheType)

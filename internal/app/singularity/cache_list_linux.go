@@ -109,7 +109,6 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 		return errInvalidCacheHandle
 	}
 
-
 	var (
 		containerCount, blobCount             int
 		containerSpace, blobSpace, totalSpace int64

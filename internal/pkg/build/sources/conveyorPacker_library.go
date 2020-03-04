@@ -8,12 +8,13 @@ package sources
 import (
 	"context"
 	"fmt"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"io/ioutil"
 	"runtime"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
+
 	"github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/internal/pkg/library"
+	"github.com/sylabs/singularity/internal/pkg/client/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -88,7 +89,7 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 	} else {
 
 		cacheEntry, err := b.Opts.ImgCache.GetEntry(cache.LibraryCacheType, libraryImage.Hash)
-		if err != nil{
+		if err != nil {
 			return fmt.Errorf("unable to check if %v exists in cache: %v", libraryImage.Hash, err)
 		}
 

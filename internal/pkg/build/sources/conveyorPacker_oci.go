@@ -19,6 +19,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	oci2 "github.com/sylabs/singularity/internal/pkg/build/oci"
+
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/docker"
 	dockerarchive "github.com/containers/image/v5/docker/archive"
@@ -28,7 +30,6 @@ import (
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
 	buildTypes "github.com/sylabs/singularity/pkg/build/types"
@@ -122,7 +123,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 
 	if !cp.b.Opts.NoCache {
 		// Grab the modified source ref from the cache
-		cp.srcRef, err = ociclient.ConvertReference(ctx, b.Opts.ImgCache, cp.srcRef, cp.sysCtx)
+		cp.srcRef, err = oci2.ConvertReference(ctx, b.Opts.ImgCache, cp.srcRef, cp.sysCtx)
 		if err != nil {
 			return err
 		}

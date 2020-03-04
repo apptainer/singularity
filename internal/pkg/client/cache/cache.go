@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	ErrBadChecksum = errors.New("hash does not match")
-	ErrInvalidCacheType   = errors.New("invalid cache type")
+	ErrBadChecksum      = errors.New("hash does not match")
+	ErrInvalidCacheType = errors.New("invalid cache type")
 )
 
 const (
@@ -36,7 +36,7 @@ const (
 	// will not clash with any 2.x cache directory.
 	SubDirName = "cache"
 
-	// The Libary cache holds SIF images pulled from the library
+	// The Library cache holds SIF images pulled from the library
 	LibraryCacheType = "library"
 	// The OCITemp cache holds SIF images created from OCI sources
 	OciTempCacheType = "oci-tmp"
@@ -51,18 +51,17 @@ const (
 )
 
 var (
-	FileCacheTypes = []string {
+	FileCacheTypes = []string{
 		LibraryCacheType,
 		OciTempCacheType,
 		ShubCacheType,
 		OrasCacheType,
 		NetCacheType,
 	}
-	OciCacheTypes = [] string {
+	OciCacheTypes = []string{
 		OciBlobCacheType,
 	}
 )
-
 
 // Config describes the requested configuration requested when a new handle is created,
 // as defined by the user through command flags and environment variables.
@@ -86,7 +85,6 @@ type Handle struct {
 	// If the cache is disabled
 	disabled bool
 }
-
 
 func (h *Handle) GetOciCacheDir(cacheType string) string {
 	return h.GetCacheTypeDir(cacheType)
@@ -120,7 +118,7 @@ func (h *Handle) GetEntry(cacheType string, hash string) (e *Entry, err error) {
 		return e, nil
 	}
 	// Other error in Stat
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 
@@ -155,7 +153,7 @@ func New(cfg Config) (h *Handle, err error) {
 	}
 	// If the cache is not already disabled, we check if the configuration that was passed in
 	// request the cache to be disabled
-	if ! cacheDisabled && cfg.Disable {
+	if !cacheDisabled && cfg.Disable {
 		h.disabled = true
 	}
 	// If the cache is disabled, we stop here. Basically we return a valid handle that is not fully initialized
@@ -196,7 +194,6 @@ func New(cfg Config) (h *Handle, err error) {
 			return nil, fmt.Errorf("failed initializing caching directory: %s", err)
 		}
 	}
-
 
 	return h, nil
 }
@@ -298,5 +295,3 @@ func initCacheDir(dir string) error {
 
 	return nil
 }
-
-

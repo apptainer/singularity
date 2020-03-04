@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	shub "github.com/sylabs/singularity/internal/pkg/client/shub"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
-	shub "github.com/sylabs/singularity/pkg/client/shub"
 )
 
 // ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack.

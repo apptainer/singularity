@@ -8,8 +8,9 @@ package sources
 import (
 	"context"
 	"fmt"
+
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
-	"github.com/sylabs/singularity/internal/pkg/oras"
+	"github.com/sylabs/singularity/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -35,7 +36,7 @@ func (cp *OrasConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 	}
 
 	cacheEntry, err := b.Opts.ImgCache.GetEntry(cache.OrasCacheType, hash)
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
 	}
 

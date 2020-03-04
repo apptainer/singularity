@@ -8,24 +8,25 @@ package cache
 
 import (
 	"fmt"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"io"
 	"os"
+
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 // Entry is a structure representing an entry in the cache. An entry is itself a subdirectory under the
 // CacheType subdir within the Cache rootDir
 type Entry struct {
-// cacheType indicates which subcache / subdir the entry belongs to, e.g. 'library'
-CacheType string
-// exists is true if the entry exists in the cache at path
-Exists bool
-// path is the location of the entry if exists is true, or the location that a new entry
-// will take when it is finalized
-Path string
-// tmpPath is the temporary location that should be used for a new cache entry as it
-// is created
-TmpPath string
+	// cacheType indicates which subcache / subdir the entry belongs to, e.g. 'library'
+	CacheType string
+	// exists is true if the entry exists in the cache at path
+	Exists bool
+	// path is the location of the entry if exists is true, or the location that a new entry
+	// will take when it is finalized
+	Path string
+	// tmpPath is the temporary location that should be used for a new cache entry as it
+	// is created
+	TmpPath string
 }
 
 // Finalize an entry by renaming it's dir to its permanent path atomically
@@ -60,7 +61,7 @@ func (e *Entry) Abort() error {
 }
 
 func (e *Entry) CopyTo(dest string) error {
-	if ! e.Exists{
+	if !e.Exists {
 		return fmt.Errorf("Cannot copy a cache entry that does not exist / is not finalized")
 	}
 
@@ -87,5 +88,3 @@ func (e *Entry) CopyTo(dest string) error {
 	return nil
 
 }
-
-

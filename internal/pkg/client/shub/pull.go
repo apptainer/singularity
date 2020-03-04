@@ -3,17 +3,21 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package client
+package shub
 
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
+
 	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
@@ -124,4 +128,71 @@ func DownloadImage(manifest ShubAPIResponse, filePath, shubRef string, force, no
 	sylog.Debugf("Download complete: %s\n", filePath)
 
 	return nil
+}
+
+// Pull will download a image from shub, and cache it if caching is enabled. Next time
+// that container is downloaded this will just use that cached image.
+func Pull(imgCache *cache.Handle, pullFrom string, tmpDir string, noHTTPS bool) (imagePath string, err error) {
+	shubURI, err := ShubParseReference(pullFrom)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse shub uri: %s", err)
+	}
+
+	// Get the image manifest
+	manifest, err := GetManifest(shubURI, noHTTPS)
+	if err != nil {
+		return "", fmt.Errorf("failed to get manifest for: %s: %s", pullFrom, err)
+	}
+
+	if imgCache.IsDisabled() {
+		imagePath, err = ioutil.TempDir(tmpDir, "sbuild-tmp-cache-")
+		if err != nil {
+			return "", fmt.Errorf("unable to create tmp file: %v", err)
+		}
+		// Dont use cached image
+		if err := DownloadImage(manifest, imagePath, pullFrom, true, noHTTPS); err != nil {
+			return "", err
+		}
+	} else {
+		cacheEntry, err := imgCache.GetEntry(cache.ShubCacheType, manifest.Commit)
+		if err != nil {
+			return "", fmt.Errorf("unable to check if %v exists in cache: %v", manifest.Commit, err)
+		}
+		if !cacheEntry.Exists {
+			sylog.Infof("Downloading shub image")
+
+			err := DownloadImage(manifest, cacheEntry.TmpPath, pullFrom, true, noHTTPS)
+			if err != nil {
+				return "", err
+			}
+
+			err = cacheEntry.Finalize()
+			if err != nil {
+				return "", err
+			}
+			imagePath = cacheEntry.Path
+		} else {
+			sylog.Infof("Use cached image")
+			imagePath = cacheEntry.Path
+		}
+
+	}
+
+	return imagePath, nil
+}
+
+// PullToFile will build a SIF image from the specified oci URI and place it at the specified dest
+func PullToFile(imgCache *cache.Handle, pullTo, pullFrom, tmpDir string, noHTTPS bool) (imagePath string, err error) {
+
+	src, err := Pull(imgCache, pullFrom, tmpDir, noHTTPS)
+	if err != nil {
+		return "", fmt.Errorf("error fetching image to cache: %v", err)
+	}
+
+	err = fs.CopyFile(src, pullTo, 0755)
+	if err != nil {
+		return "", fmt.Errorf("error fetching image to cache: %v", err)
+	}
+
+	return pullTo, nil
 }

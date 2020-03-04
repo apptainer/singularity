@@ -14,13 +14,15 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
-	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
+	"github.com/sylabs/singularity/internal/pkg/client/library"
+	"github.com/sylabs/singularity/internal/pkg/client/net"
+	"github.com/sylabs/singularity/internal/pkg/client/oci"
+	"github.com/sylabs/singularity/internal/pkg/client/oras"
+	"github.com/sylabs/singularity/internal/pkg/client/shub"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
-	net "github.com/sylabs/singularity/pkg/client/net"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
@@ -211,20 +213,16 @@ func pullRun(cmd *cobra.Command, args []string) {
 			BaseURL:   pullLibraryURI,
 			AuthToken: authToken,
 		}
-		lib, err := singularity.NewLibrary(libraryConfig, imgCache, keyServerURL)
-		if err != nil {
-			sylog.Fatalf("Could not initialize library: %v", err)
-		}
 
-		err = lib.Pull(ctx, pullFrom, pullTo, pullArch)
-		if err != nil && err != singularity.ErrLibraryPullUnsigned {
+		_, err = library.PullToFile(ctx, imgCache, pullTo, pullFrom, pullArch, tmpDir, libraryConfig, keyServerURL)
+		if err != nil && err != library.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
-		if err == singularity.ErrLibraryPullUnsigned {
+		if err == library.ErrLibraryPullUnsigned {
 			sylog.Warningf("Skipping container verification")
 		}
 	case ShubProtocol:
-		err := singularity.PullShub(imgCache, pullTo, pullFrom, noHTTPS)
+		_, err := shub.PullToFile(imgCache, pullTo, pullFrom, tmpDir, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
@@ -234,22 +232,22 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 		}
 
-		err = singularity.OrasPull(ctx, imgCache, pullTo, ref, forceOverwrite, ociAuth)
+		_, err = oras.PullToFile(ctx, imgCache, pullTo, ref, tmpDir, ociAuth)
 		if err != nil {
 			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}
 	case HTTPProtocol, HTTPSProtocol:
-		err := net.DownloadImage(pullTo, pullFrom)
+		_, err := net.PullToFile(imgCache, pullTo, pullFrom, tmpDir)
 		if err != nil {
 			sylog.Fatalf("While pulling from image from http(s): %v\n", err)
 		}
-	case ociclient.IsSupported(transport):
+	case oci.IsSupported(transport):
 		ociAuth, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
-		err = singularity.OciPull(ctx, imgCache, pullTo, pullFrom, tmpDir, ociAuth, noHTTPS, buildArgs.noCleanUp)
+		_, err = oci.PullToFile(ctx, imgCache, pullTo, pullFrom, tmpDir, ociAuth, noHTTPS, buildArgs.noCleanUp)
 		if err != nil {
 			sylog.Fatalf("While making image from oci registry: %v", err)
 		}

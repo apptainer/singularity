@@ -7,31 +7,23 @@ package cli
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"runtime"
 	"strings"
-	"time"
 
-	ocitypes "github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
-	library "github.com/sylabs/scs-library-client/client"
+	scslibrary "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
-	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
-	libraryhelper "github.com/sylabs/singularity/internal/pkg/library"
-	"github.com/sylabs/singularity/internal/pkg/oras"
+	"github.com/sylabs/singularity/internal/pkg/client/library"
+	net "github.com/sylabs/singularity/internal/pkg/client/net"
+	"github.com/sylabs/singularity/internal/pkg/client/oci"
+	"github.com/sylabs/singularity/internal/pkg/client/oras"
+	shub "github.com/sylabs/singularity/internal/pkg/client/shub"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
-	"github.com/sylabs/singularity/pkg/build/types"
-	net "github.com/sylabs/singularity/pkg/client/net"
-	shub "github.com/sylabs/singularity/pkg/client/shub"
 )
 
 const (
@@ -69,311 +61,36 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	replaceURIWithImage(ctx, imgCache, cmd, args)
 }
 
-func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, u string) (string, error) {
-	authConf, err := makeDockerCredentials(cmd)
+func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, pullFrom string) (string, error) {
+	ociAuth, err := makeDockerCredentials(cmd)
 	if err != nil {
 		sylog.Fatalf("While creating Docker credentials: %v", err)
 	}
-
-	sysCtx := &ocitypes.SystemContext{
-		OCIInsecureSkipTLSVerify:    noHTTPS,
-		DockerInsecureSkipTLSVerify: ocitypes.NewOptionalBool(noHTTPS),
-		DockerAuthConfig:            authConf,
-	}
-
-	imagePath := ""
-
-	if disableCache {
-		sylog.Infof("Converting OCI blobs to SIF format")
-		var err error
-		imagePath, err = ioutil.TempDir(tmpDir, "sbuild-tmp-cache-")
-		if err != nil {
-			return "", fmt.Errorf("unable to create tmp file: %v", err)
-		}
-
-		b, err := build.NewBuild(
-			u,
-			build.Config{
-				Dest:   imagePath,
-				Format: "sif",
-				Opts: types.Options{
-					ImgCache:         imgCache,
-					TmpDir:           tmpDir,
-					NoCache:          true,
-					NoTest:           true,
-					NoHTTPS:          noHTTPS,
-					DockerAuthConfig: authConf,
-				},
-			})
-
-		if err != nil {
-			return "", fmt.Errorf("unable to create new build: %v", err)
-		}
-
-		if err := b.Full(ctx); err != nil {
-			return "", fmt.Errorf("unable to build: %v", err)
-		}
-
-	} else {
-		hash, err := ociclient.ImageSHA(ctx, u, sysCtx)
-		if err != nil {
-			return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
-		}
-
-		cacheEntry, err := imgCache.GetEntry(cache.OciTempCacheType, hash)
-		if err != nil {
-			return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
-		}
-
-		if !cacheEntry.Exists {
-			sylog.Infof("Converting OCI blobs to SIF format")
-			b, err := build.NewBuild(
-				u,
-				build.Config{
-					Dest:   cacheEntry.TmpPath,
-					Format: "sif",
-					Opts: types.Options{
-						TmpDir:           tmpDir,
-						NoTest:           true,
-						NoHTTPS:          noHTTPS,
-						DockerAuthConfig: authConf,
-						ImgCache:         imgCache,
-					},
-				})
-			if err != nil {
-				return "", fmt.Errorf("unable to create new build: %v", err)
-			}
-
-			if err := b.Full(ctx); err != nil {
-				return "", fmt.Errorf("unable to build: %v", err)
-			}
-
-			err = cacheEntry.Finalize()
-			if err != nil {
-				return "", err
-			}
-
-			sylog.Verbosef("Image cached as SIF at %s", cacheEntry.Path)
-
-		} else {
-			sylog.Infof("Using cached image")
-		}
-
-		imagePath = cacheEntry.Path
-	}
-
-	return imagePath, nil
+	return oci.Pull(ctx, imgCache, pullFrom, tmpDir, ociAuth, noHTTPS, false)
 }
 
-func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, u string) (string, error) {
+func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, pullFrom string) (string, error) {
 	ociAuth, err := makeDockerCredentials(cmd)
 	if err != nil {
 		return "", fmt.Errorf("while creating docker credentials: %v", err)
 	}
-
-	_, ref := uri.Split(u)
-	hash, err := oras.ImageSHA(ctx, ref, ociAuth)
-	if err != nil {
-		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
-	}
-
-	cacheEntry, err := imgCache.GetEntry(cache.OrasCacheType, hash)
-	if err != nil {
-		return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
-	}
-	if !cacheEntry.Exists {
-		sylog.Infof("Downloading oras image")
-
-		if err := oras.DownloadImage(cacheEntry.TmpPath, ref, ociAuth); err != nil {
-			return "", fmt.Errorf("unable to Download Image: %v", err)
-		}
-		if cacheFileHash, err := oras.ImageHash(cacheEntry.TmpPath); err != nil {
-			return "", fmt.Errorf("error getting ImageHash: %v", err)
-		} else if cacheFileHash != hash {
-			_ = cacheEntry.Abort()
-			return "", fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, hash)
-		}
-
-		err = cacheEntry.Finalize()
-		if err != nil {
-			return "", err
-		}
-
-	} else {
-		sylog.Infof("Using cached image")
-
-	}
-
-	return cacheEntry.Path, nil
+	return oras.Pull(ctx, imgCache, pullFrom, tmpDir, ociAuth)
 }
 
-func handleLibrary(ctx context.Context, imgCache *cache.Handle, u, libraryURL string) (string, error) {
-	c, err := library.NewClient(&library.Config{
+func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom, libraryURL string) (string, error) {
+	c := &scslibrary.Config{
 		AuthToken: authToken,
 		BaseURL:   libraryURL,
-	})
-	if err != nil {
-		return "", fmt.Errorf("unable to initialize client library: %v", err)
 	}
-
-	imageRef := libraryhelper.NormalizeLibraryRef(u)
-
-	libraryImage, err := c.GetImage(ctx, runtime.GOARCH, imageRef)
-	if err == library.ErrNotFound {
-		return "", fmt.Errorf("image does not exist in the library: %s (%s)", imageRef, runtime.GOARCH)
-	}
-	if err != nil {
-		return "", err
-	}
-
-	imagePath := ""
-	if imgCache.IsDisabled() {
-		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
-		if err != nil {
-			return "", fmt.Errorf("unable to create tmp file: %v", err)
-		}
-		imagePath = file.Name()
-		sylog.Infof("Downloading library image to tmp cache: %s", imagePath)
-
-		if err = libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, runtime.GOARCH, imageRef); err != nil {
-			return "", fmt.Errorf("unable to download image: %v", err)
-		}
-
-	} else {
-		cacheEntry, err :=imgCache.GetEntry(cache.LibraryCacheType, libraryImage.Hash)
-		if err != nil {
-			return "", fmt.Errorf("unable to check if %v exists in cache: %v", libraryImage.Hash, err)
-		}
-		if !cacheEntry.Exists {
-			sylog.Infof("Downloading library image")
-
-			if err := libraryhelper.DownloadImageNoProgress(ctx, c, cacheEntry.TmpPath, runtime.GOARCH, imageRef); err != nil {
-				return "", fmt.Errorf("unable to download image: %v", err)
-			}
-
-			if cacheFileHash, err := library.ImageHash(cacheEntry.TmpPath); err != nil {
-				return "", fmt.Errorf("error getting image hash: %v", err)
-			} else if cacheFileHash != libraryImage.Hash {
-				return "", fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, libraryImage.Hash)
-			}
-
-			err = cacheEntry.Finalize()
-			if err != nil {
-				return "", err
-			}
-
-		} else {
-			sylog.Infof("Using cached image")
-		}
-		imagePath = cacheEntry.Path
-	}
-
-	return imagePath, nil
+	return library.Pull(ctx, imgCache, pullFrom, runtime.GOARCH, tmpDir, c, keyServerURL)
 }
 
-func handleShub(imgCache *cache.Handle, u string) (string, error) {
-	imagePath := ""
-
-	shubURI, err := shub.ShubParseReference(u)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse shub uri: %s", err)
-	}
-
-	// Get the image manifest
-	manifest, err := shub.GetManifest(shubURI, noHTTPS)
-	if err != nil {
-		return "", fmt.Errorf("failed to get manifest for: %s: %s", u, err)
-	}
-
-	if disableCache {
-		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
-		if err != nil {
-			return "", fmt.Errorf("unable to create tmp file: %v", err)
-		}
-		imagePath = file.Name()
-
-		sylog.Infof("Downloading shub image")
-		err = shub.DownloadImage(manifest, imagePath, u, true, noHTTPS)
-		if err != nil {
-			sylog.Fatalf("%v\n", err)
-		}
-	} else {
-		cacheEntry, err := imgCache.GetEntry(cache.ShubCacheType, manifest.Commit)
-		if err != nil {
-			return "", fmt.Errorf("unable to check if %v exists in cache: %v", manifest.Commit, err)
-		}
-		if !cacheEntry.Exists {
-			sylog.Infof("Downloading shub image")
-
-			err := shub.DownloadImage(manifest, cacheEntry.TmpPath, u, true, noHTTPS)
-			if err != nil {
-				return "", err
-			}
-
-			err = cacheEntry.Finalize()
-			if err != nil {
-				return "", err
-			}
-
-		} else {
-			sylog.Infof("Use image from cache")
-		}
-		imagePath = cacheEntry.Path
-	}
-
-	return imagePath, nil
+func handleShub(imgCache *cache.Handle, pullFrom string) (string, error) {
+	return shub.Pull(imgCache, pullFrom, tmpDir, noHTTPS)
 }
 
-
-func handleNet(imgCache *cache.Handle, u string) (string, error) {
-	// We will cache using a sha256 over the URL and the date of the file that
-	// is to be fetched, as returned by an HTTP HEAD call and the Last-Modified
-	// header. If no date is available, use the current date-time, which will
-	// effectively result in no caching.
-	imageDate := time.Now().String()
-
-	req, err := http.NewRequest("HEAD", u, nil)
-	if err != nil {
-		sylog.Fatalf("Error constructing http request: %v\n", err)
-	}
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		sylog.Fatalf("Error making http request: %v\n", err)
-	}
-
-	headerDate := res.Header.Get("Last-Modified")
-	sylog.Debugf("HTTP Last-Modified header is: %s", headerDate)
-	if headerDate != "" {
-		imageDate = headerDate
-	}
-
-	h := sha256.New()
-	h.Write([]byte(u + imageDate))
-	hash := hex.EncodeToString(h.Sum(nil))
-	sylog.Debugf("Image hash for cache is: %s", hash)
-
-	cacheEntry, err  := imgCache.GetEntry(cache.NetCacheType, hash)
-	if err != nil {
-		return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
-	}
-
-	if !cacheEntry.Exists {
-		sylog.Infof("Downloading network image")
-		err := net.DownloadImage(cacheEntry.TmpPath, u)
-		if err != nil {
-			sylog.Fatalf("%v\n", err)
-		}
-
-		err = cacheEntry.Finalize()
-		if err != nil {
-			return "", err
-		}
-
-	} else {
-		sylog.Verbosef("Using image from cache")
-	}
-
-	return cacheEntry.Path, nil
+func handleNet(imgCache *cache.Handle, pullFrom string) (string, error) {
+	return net.Pull(imgCache, pullFrom, tmpDir)
 }
 
 func replaceURIWithImage(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, args []string) {
@@ -395,7 +112,7 @@ func replaceURIWithImage(ctx context.Context, imgCache *cache.Handle, cmd *cobra
 		image, err = handleOras(ctx, imgCache, cmd, args[0])
 	case uri.Shub:
 		image, err = handleShub(imgCache, args[0])
-	case ociclient.IsSupported(t):
+	case oci.IsSupported(t):
 		image, err = handleOCI(ctx, imgCache, cmd, args[0])
 	case uri.HTTP:
 		image, err = handleNet(imgCache, args[0])

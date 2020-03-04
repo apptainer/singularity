@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/library"
+	"github.com/sylabs/singularity/internal/pkg/client/library"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
