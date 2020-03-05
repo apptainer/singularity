@@ -68,7 +68,9 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 	defer store.Close()
 
 	store.AllowPathTraversalOnWrite = true
-	store.DisableOverwrite = true
+	// With image caching via download to tmpfile + rename we are now overwriting the temporary file that is created
+	// so we have to allow an overwrite here.
+	store.DisableOverwrite = false
 
 	allowedMediaTypes := oras.WithAllowedMediaTypes([]string{SifLayerMediaType})
 	handlerFunc := func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
@@ -79,6 +81,7 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 				return nil, fmt.Errorf("descriptor is of a bundled directory, not a SIF image")
 			}
 			nameOld, _ := content.ResolveName(desc)
+			sylog.Debugf("Will pull oras image %s to %s", nameOld, imagePath)
 			_ = store.MapPath(nameOld, imagePath)
 		}
 		return nil, nil
