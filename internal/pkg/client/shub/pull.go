@@ -133,7 +133,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 	if directTo != "" {
 		sylog.Infof("Downloading shub image")
-		if err := DownloadImage(manifest, imagePath, pullFrom, true, noHTTPS); err != nil {
+		if err := DownloadImage(manifest, directTo, pullFrom, true, noHTTPS); err != nil {
 			return "", err
 		}
 		imagePath = directTo

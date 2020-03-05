@@ -33,7 +33,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom, tmpDi
 
 	if directTo != "" {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		if err := build.ConvertOciToSIF(ctx, imgCache, pullFrom, imagePath, tmpDir, noHTTPS, noCleanUp, ociAuth); err != nil {
+		if err := build.ConvertOciToSIF(ctx, imgCache, pullFrom, directTo, tmpDir, noHTTPS, noCleanUp, ociAuth); err != nil {
 			return "", fmt.Errorf("while building SIF from layers: %v", err)
 		}
 		imagePath = directTo

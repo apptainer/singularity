@@ -25,7 +25,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 	if directTo != "" {
 		sylog.Infof("Downloading oras image")
-		if err := DownloadImage(imagePath, pullFrom, ociAuth); err != nil {
+		if err := DownloadImage(directTo, pullFrom, ociAuth); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 		imagePath = directTo
