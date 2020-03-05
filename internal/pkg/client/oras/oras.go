@@ -43,6 +43,7 @@ const (
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
 func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
+	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
 	spec, err := reference.Parse(ref)
@@ -112,6 +113,7 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 		return err
 	}
 
+	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
 	spec, err := reference.Parse(ref)
@@ -181,7 +183,8 @@ func ensureSIF(filepath string) error {
 // encountering such digests.
 // https://github.com/opencontainers/image-spec/blob/master/descriptor.md#registered-algorithms
 func ImageSHA(ctx context.Context, uri string, ociAuth *ocitypes.DockerAuthConfig) (string, error) {
-	ref := strings.TrimPrefix(uri, "//")
+	ref := strings.TrimPrefix(uri, "oras://")
+	ref = strings.TrimPrefix(ref, "//")
 
 	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: genCredfn(ociAuth)})
 
