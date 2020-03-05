@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
+
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
@@ -26,7 +28,12 @@ const (
 )
 
 func prepTest(t *testing.T, testEnv e2e.TestEnv, testName string, cacheParentDir string, imagePath string) {
-	ensureNotCached(t, testName, imagePath, cacheParentDir)
+	// If the test imageFile is already present check it's not also in the cache
+	// at the start of our test - we expect to pull it again and then see it
+	// appear in the cache.
+	if fs.IsFile(imagePath) {
+		ensureNotCached(t, testName, imagePath, cacheParentDir)
+	}
 
 	testEnv.ImgCacheDir = cacheParentDir
 	testEnv.RunSingularity(
@@ -103,7 +110,6 @@ func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 		}
 
 		if tt.needImage {
-			c.env.ImgCacheDir = cacheDir
 			prepTest(t, c.env, tt.name, cacheDir, imagePath)
 		}
 
@@ -118,7 +124,7 @@ func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 		)
 
 		if tt.needImage && tt.expectedEmptyCache {
-			ensureNotCached(t, tt.name, c.env.ImagePath, cacheDir)
+			ensureNotCached(t, tt.name, imagePath, cacheDir)
 		}
 	}
 }
@@ -226,9 +232,9 @@ func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
 
 		// Check the content of the cache
 		if tc.expectedEmptyCache {
-			ensureNotCached(t, tc.name, c.env.ImagePath, cacheDir)
+			ensureNotCached(t, tc.name, imagePath, cacheDir)
 		} else {
-			ensureCached(t, tc.name, c.env.ImagePath, cacheDir)
+			ensureCached(t, tc.name, imagePath, cacheDir)
 		}
 	}
 }
