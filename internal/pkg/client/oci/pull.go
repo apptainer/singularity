@@ -40,6 +40,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom, tmpDi
 	} else {
 
 		cacheEntry, err := imgCache.GetEntry(cache.OciTempCacheType, hash)
+		defer cacheEntry.CleanTmp()
 		if err != nil {
 			return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
 		}

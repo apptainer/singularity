@@ -32,6 +32,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 	} else {
 		cacheEntry, err := imgCache.GetEntry(cache.OrasCacheType, hash)
+		defer cacheEntry.CleanTmp()
 		if err != nil {
 			return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
 		}
@@ -44,7 +45,6 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 			if cacheFileHash, err := ImageHash(cacheEntry.TmpPath); err != nil {
 				return "", fmt.Errorf("error getting ImageHash: %v", err)
 			} else if cacheFileHash != hash {
-				_ = cacheEntry.Abort()
 				return "", fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, hash)
 			}
 
