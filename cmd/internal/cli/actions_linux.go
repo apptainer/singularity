@@ -611,28 +611,36 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	// convert image file to sandbox if we are using user
 	// namespace or if we are currently running inside a
 	// user namespace
-	if (UserNamespace || insideUserNs) && fs.IsFile(image) && engineConfig.File.ImageDriver == "" {
-		unsquashfsPath := ""
-		if engineConfig.File.MksquashfsPath != "" {
-			d := filepath.Dir(engineConfig.File.MksquashfsPath)
-			unsquashfsPath = filepath.Join(d, "unsquashfs")
+	if (UserNamespace || insideUserNs) && fs.IsFile(image) {
+		convert := true
+		// the image driver indicates support for all or image so
+		// let's proceed with the image driver without conversion
+		if engineConfig.File.ImageDriver != "" && engineConfig.File.ImageDriverSupport != "overlay" {
+			convert = false
 		}
-		sylog.Verbosef("User namespace requested, convert image %s to sandbox", image)
-		sylog.Infof("Convert SIF file to sandbox...")
-		dir, err := convertImage(image, unsquashfsPath)
-		if err != nil {
-			sylog.Fatalf("while extracting %s: %s", image, err)
-		}
-		engineConfig.SetImage(dir)
-		engineConfig.SetDeleteImage(true)
-		generator.AddProcessEnv("SINGULARITY_CONTAINER", dir)
-
-		// if '--disable-cache' flag, then remove original SIF after converting to sandbox
-		if disableCache {
-			sylog.Debugf("Removing tmp image: %s", image)
-			err := os.Remove(image)
+		if convert {
+			unsquashfsPath := ""
+			if engineConfig.File.MksquashfsPath != "" {
+				d := filepath.Dir(engineConfig.File.MksquashfsPath)
+				unsquashfsPath = filepath.Join(d, "unsquashfs")
+			}
+			sylog.Verbosef("User namespace requested, convert image %s to sandbox", image)
+			sylog.Infof("Convert SIF file to sandbox...")
+			dir, err := convertImage(image, unsquashfsPath)
 			if err != nil {
-				sylog.Errorf("unable to remove tmp image: %s: %v", image, err)
+				sylog.Fatalf("while extracting %s: %s", image, err)
+			}
+			engineConfig.SetImage(dir)
+			engineConfig.SetDeleteImage(true)
+			generator.AddProcessEnv("SINGULARITY_CONTAINER", dir)
+
+			// if '--disable-cache' flag, then remove original SIF after converting to sandbox
+			if disableCache {
+				sylog.Debugf("Removing tmp image: %s", image)
+				err := os.Remove(image)
+				if err != nil {
+					sylog.Errorf("unable to remove tmp image: %s: %v", image, err)
+				}
 			}
 		}
 	}
