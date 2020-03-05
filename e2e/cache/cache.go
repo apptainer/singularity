@@ -7,6 +7,7 @@ package cache
 
 import (
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/scs-library-client/client"
@@ -87,6 +88,10 @@ func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 			exit:               0,
 		},
 	}
+	// A directory where we store the image and used by separate commands
+	tempDir, imgStoreCleanup := e2e.MakeTempDir(t, "", "", "image store")
+	defer imgStoreCleanup(t)
+	imagePath := filepath.Join(tempDir, imgName)
 
 	for _, tt := range tests {
 		// Each test get its own clean cache directory
@@ -99,8 +104,7 @@ func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 
 		if tt.needImage {
 			c.env.ImgCacheDir = cacheDir
-			e2e.EnsureImage(t, c.env)
-			prepTest(t, c.env, tt.name, cacheDir, c.env.ImagePath)
+			prepTest(t, c.env, tt.name, cacheDir, imagePath)
 		}
 
 		c.env.ImgCacheDir = cacheDir
@@ -190,6 +194,11 @@ func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
 		},
 	}
 
+	// A directory where we store the image and used by separate commands
+	tempDir, imgStoreCleanup := e2e.MakeTempDir(t, "", "", "image store")
+	defer imgStoreCleanup(t)
+	imagePath := filepath.Join(tempDir, imgName)
+
 	for _, tc := range tt {
 		// Each test get its own clean cache directory
 		cacheDir, cleanup := e2e.MakeCacheDir(t, "")
@@ -200,8 +209,7 @@ func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
 		}
 
 		c.env.ImgCacheDir = cacheDir
-		e2e.EnsureImage(t, c.env)
-		prepTest(t, c.env, tc.name, cacheDir, c.env.ImagePath)
+		prepTest(t, c.env, tc.name, cacheDir, imagePath)
 
 		c.env.RunSingularity(
 			t,
