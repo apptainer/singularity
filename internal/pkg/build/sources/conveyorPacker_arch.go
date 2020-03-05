@@ -6,8 +6,6 @@
 package sources
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -27,35 +25,12 @@ const (
 	pacmanConfURL = "https://git.archlinux.org/svntogit/packages.git/plain/trunk/pacman.conf?h=packages/pacman"
 )
 
-// `pacstrap' installs the whole "base" package group, unless told otherwise.
-// baseToSkip are "base" packages that won't be normally needed on a
-// container system. $BASE_TO_INST are "base" packages not present in
-// baseToSkip. The list of packages included in "base" group may (it surely
-// will, one day) change in future, so baseToSkip will need an update from
-// time to time. Here I'm referring to `base' group contents as of 30.08.2016.
-var baseToSkip = map[string]bool{
-	"cryptsetup":         true,
-	"device-mapper":      true,
-	"dhcpcd":             true,
-	"iproute2":           true,
-	"jfsutils":           true,
-	"linux":              true,
-	"lvm2":               true,
-	"man-db":             true,
-	"man-pages":          true,
-	"mdadm":              true,
-	"nano":               true,
-	"netctl":             true,
-	"openresolv":         true,
-	"pciutils":           true,
-	"pcmciautils":        true,
-	"reiserfsprogs":      true,
-	"s-nail":             true,
-	"systemd-sysvcompat": true,
-	"usbutils":           true,
-	"vi":                 true,
-	"xfsprogs":           true,
-}
+var (
+	// Default list of packages to install when bootstrapping arch
+	// As of 2019-10-06 there is a base metapackage instead of a base group
+	// https://www.archlinux.org/news/base-group-replaced-by-mandatory-base-package-manual-intervention-required/
+	instList = []string{"base"}
+)
 
 // ArchConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ArchConveyorPacker struct {
@@ -75,11 +50,6 @@ func (cp *ArchConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 	//make sure architecture is supported
 	if arch := runtime.GOARCH; arch != `amd64` {
 		return fmt.Errorf("%v architecture is not supported", arch)
-	}
-
-	instList, err := getPacmanBaseList()
-	if err != nil {
-		return fmt.Errorf("while generating the installation list: %v", err)
 	}
 
 	pacConf, err := cp.getPacConf(pacmanConfURL)
@@ -142,28 +112,6 @@ func (cp *ArchConveyorPacker) Pack(context.Context) (b *types.Bundle, err error)
 	}
 
 	return cp.b, nil
-}
-
-func getPacmanBaseList() (instList []string, err error) {
-	var output, stderr bytes.Buffer
-	cmd := exec.Command("pacman", "-Sgq", "base")
-	cmd.Stdout = &output
-	cmd.Stderr = &stderr
-	if err = cmd.Run(); err != nil {
-		return nil, fmt.Errorf("%v: %v", err, stderr.String())
-	}
-
-	var toInstall []string
-	scanner := bufio.NewScanner(&output)
-	scanner.Split(bufio.ScanWords)
-
-	for scanner.Scan() {
-		if !baseToSkip[scanner.Text()] {
-			toInstall = append(toInstall, scanner.Text())
-		}
-	}
-
-	return toInstall, nil
 }
 
 func (cp *ArchConveyorPacker) getPacConf(pacmanConfURL string) (pacConf string, err error) {
