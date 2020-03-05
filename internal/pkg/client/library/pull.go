@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/pkg/signing"
 )
 
 var (
@@ -118,6 +119,12 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, a
 		if err != nil {
 			return "", fmt.Errorf("error copying image out of cache: %v", err)
 		}
+	}
+
+	_, err = signing.IsSigned(ctx, pullTo, keystoreURI, scsConfig.AuthToken)
+	if err != nil {
+		sylog.Warningf("%v", err)
+		return pullTo, ErrLibraryPullUnsigned
 	}
 
 	return pullTo, nil
