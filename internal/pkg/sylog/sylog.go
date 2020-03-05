@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -129,30 +129,30 @@ func Fatalf(format string, a ...interface{}) {
 	os.Exit(255)
 }
 
-// Errorf writes an ERROR level message to the lvlLog but does not exit. This
+// Errorf writes an ERROR level message to the log but does not exit. This
 // should be called when an lvlError is being returned to the calling thread
 func Errorf(format string, a ...interface{}) {
 	writef(os.Stderr, lvlError, format, a...)
 }
 
-// Warningf writes a WARNING level message to the lvlLog.
+// Warningf writes a WARNING level message to the log.
 func Warningf(format string, a ...interface{}) {
 	writef(os.Stderr, lvlWarn, format, a...)
 }
 
-// Infof writes an INFO level message to the lvlLog. By default, INFO level messages
+// Infof writes an INFO level message to the log. By default, INFO level messages
 // will always be output (unless running in silent)
 func Infof(format string, a ...interface{}) {
 	writef(os.Stderr, lvlInfo, format, a...)
 }
 
-// Verbosef writes a VERBOSE level message to the lvlLog. This should probably be
+// Verbosef writes a VERBOSE level message to the log. This should probably be
 // deprecated since the granularity is often too fine to be useful.
 func Verbosef(format string, a ...interface{}) {
 	writef(os.Stderr, lvlVerbose, format, a...)
 }
 
-// Debugf writes a DEBUG level message to the lvlLog.
+// Debugf writes a DEBUG level message to the log.
 func Debugf(format string, a ...interface{}) {
 	writef(os.Stderr, lvlDebug, format, a...)
 }
@@ -160,7 +160,7 @@ func Debugf(format string, a ...interface{}) {
 // SetLevel explicitly sets the loggerLevel
 func SetLevel(l int) {
 	loggerLevel = messageLevel(l)
-	// set the apex lvlLog level, for umoci
+	// set the apex log level, for umoci
 	if loggerLevel <= lvlError {
 		// silent option
 		apexlog.SetLevel(apexlog.ErrorLevel)
@@ -168,10 +168,10 @@ func SetLevel(l int) {
 		// quiet option
 		apexlog.SetLevel(apexlog.WarnLevel)
 	} else if loggerLevel < lvlDebug {
-		// lvlVerbose option(s) or default
+		// Verbose option(s) or default
 		apexlog.SetLevel(apexlog.InfoLevel)
 	} else {
-		// lvlDebug option
+		// Debug option
 		apexlog.SetLevel(apexlog.DebugLevel)
 	}
 }
@@ -187,7 +187,7 @@ func DisableColor() {
 	colorReset = ""
 }
 
-// GetLevel returns the current lvlLog level as integer
+// GetLevel returns the current log level as integer
 func GetLevel() int {
 	return int(loggerLevel)
 }
