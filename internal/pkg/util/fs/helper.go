@@ -337,8 +337,17 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 
 // CopyFileAtomic copies file to a temporary file in the same destination directory
 // and the renames to the final name. This is useful to avoid races where concurrent copies
-// could happen to the same destination
+// could happen to the same destination. It makes sure the resulting
+// file has permission bits set to the mode prior to umask. To honor umask
+// correctly the resulting file must not exist.
 func CopyFileAtomic(from, to string, mode os.FileMode) (err error) {
+
+	// MakeTmpFile forces mode with chmod, so manually apply umask to mode so we
+	// act like other file copy functions that respect umask
+	oldmask := syscall.Umask(0)
+	syscall.Umask(oldmask)
+	mode = mode &^ os.FileMode(oldmask)
+
 	parentDir := filepath.Dir(to)
 
 	tmpFile, err := MakeTmpFile(parentDir, "tmp-copy-", mode)
