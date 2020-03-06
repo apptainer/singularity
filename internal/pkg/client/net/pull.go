@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/cache"
-
+	"github.com/sylabs/singularity/internal/pkg/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -51,7 +51,7 @@ func DownloadImage(filePath string, netURL string) error {
 	url := netURL
 	sylog.Debugf("Pulling from URL: %s\n", url)
 
-	client := &http.Client{
+	httpClient := &http.Client{
 		Timeout: pullTimeout * time.Second,
 	}
 
@@ -62,7 +62,7 @@ func DownloadImage(filePath string, netURL string) error {
 
 	req.Header.Set("User-Agent", useragent.Value())
 
-	res, err := client.Do(req)
+	res, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func DownloadImage(filePath string, netURL string) error {
 	}
 	defer out.Close()
 
-	pb := sylog.ProgressBarCallback()
+	pb := client.ProgressBarCallback()
 
 	err = pb(res.ContentLength, res.Body, out)
 	if err != nil {

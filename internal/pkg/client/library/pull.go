@@ -14,6 +14,7 @@ import (
 
 	scs "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/signing"
@@ -45,7 +46,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 	if directTo != "" {
 		sylog.Infof("Downloading library image")
-		if err = DownloadImage(ctx, c, directTo, arch, imageRef, sylog.ProgressBarCallback()); err != nil {
+		if err = DownloadImage(ctx, c, directTo, arch, imageRef, client.ProgressBarCallback()); err != nil {
 			return "", fmt.Errorf("unable to download image: %v", err)
 		}
 		imagePath = directTo
@@ -59,7 +60,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 		if !cacheEntry.Exists {
 			sylog.Infof("Downloading library image")
 
-			if err := DownloadImage(ctx, c, cacheEntry.TmpPath, runtime.GOARCH, imageRef, sylog.ProgressBarCallback()); err != nil {
+			if err := DownloadImage(ctx, c, cacheEntry.TmpPath, runtime.GOARCH, imageRef, client.ProgressBarCallback()); err != nil {
 				return "", fmt.Errorf("unable to download image: %v", err)
 			}
 

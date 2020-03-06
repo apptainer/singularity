@@ -11,8 +11,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
+	scslibrary "github.com/sylabs/scs-library-client/client"
+	"github.com/sylabs/singularity/internal/pkg/client"
 )
 
 const defaultTag = "latest"
@@ -28,12 +28,12 @@ func NormalizeLibraryRef(libraryRef string) string {
 }
 
 // DownloadImage is a helper function to wrap library image download operation
-func DownloadImage(ctx context.Context, c *client.Client, imagePath, arch, libraryRef string, callback sylog.ProgressCallback) error {
+func DownloadImage(ctx context.Context, c *scslibrary.Client, imagePath, arch, libraryRef string, callback client.ProgressCallback) error {
 	// reassemble "stripped" library ref for scs-library-client
 	validLibraryRef := "library:///" + libraryRef
 
 	// parse library ref
-	r, err := client.Parse(validLibraryRef)
+	r, err := scslibrary.Parse(validLibraryRef)
 	if err != nil {
 		return fmt.Errorf("error parsing library ref: %v", err)
 	}
@@ -64,12 +64,12 @@ func DownloadImage(ctx context.Context, c *client.Client, imagePath, arch, libra
 
 // DownloadImageNoProgress downloads an image from the library without
 // displaying a progress bar while doing so
-func DownloadImageNoProgress(ctx context.Context, c *client.Client, imagePath, arch, libraryRef string) error {
+func DownloadImageNoProgress(ctx context.Context, c *scslibrary.Client, imagePath, arch, libraryRef string) error {
 	return DownloadImage(ctx, c, imagePath, arch, libraryRef, nil)
 }
 
 // SearchLibrary searches the library and outputs results to stdout
-func SearchLibrary(ctx context.Context, c *client.Client, value string) error {
+func SearchLibrary(ctx context.Context, c *scslibrary.Client, value string) error {
 	if len(value) < 3 {
 		return fmt.Errorf("bad query '%s'. You must search for at least 3 characters", value)
 	}

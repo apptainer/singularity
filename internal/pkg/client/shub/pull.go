@@ -13,6 +13,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/sylabs/singularity/internal/pkg/client"
+
 	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -94,7 +96,7 @@ func DownloadImage(manifest APIResponse, filePath, shubRef string, force, noHTTP
 	sylog.Debugf("Created output file: %s\n", filePath)
 
 	// Write the body to file
-	pb := sylog.ProgressBarCallback()
+	pb := client.ProgressBarCallback()
 	err = pb(resp.ContentLength, resp.Body, out)
 	if err != nil {
 		return err
