@@ -10,12 +10,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 type cacheTests struct {
@@ -282,5 +281,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	return testhelper.Tests{
 		"interactive commands":     np(c.testInteractiveCacheCmds),
 		"non-interactive commands": np(c.testNoninteractiveCacheCmds),
+		"issue5097":                np(c.issue5097),
 	}
 }
