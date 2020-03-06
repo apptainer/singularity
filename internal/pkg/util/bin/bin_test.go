@@ -64,8 +64,6 @@ func TestCryptsetup(t *testing.T) {
 
 			path, err := cryptsetup(f.Name())
 
-			t.Log(path, err)
-
 			switch {
 			case tc.expectSuccess && err == nil:
 				// expect success, no error, check path
@@ -83,11 +81,6 @@ func TestCryptsetup(t *testing.T) {
 				// expect failure, got no error
 				t.Errorf("unexpected result calling cryptsetup with config = %q, got path = %s",
 					cfg, path)
-
-			case !tc.expectSuccess && err != nil:
-				// expect failure, got error
-				t.Logf("got expected failure calling cryptsetup with config = %q, err = %+v",
-					cfg, err)
 			}
 		})
 	}
