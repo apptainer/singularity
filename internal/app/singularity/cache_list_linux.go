@@ -59,19 +59,15 @@ func listTypeCache(printList bool, name, cachePath string) (int, int64, error) {
 	)
 
 	for _, entry := range cacheEntries {
-		fileInfo, err := os.Stat(filepath.Join(cachePath, entry.Name()))
-		if err != nil {
-			return 0, 0, fmt.Errorf("unable to get stat for: %s: %v", cachePath, err)
-		}
 
 		if printList {
 			fmt.Printf("%-24.22s %-22s %-16s %s\n",
 				entry.Name(),
-				fileInfo.ModTime().Format("2006-01-02 15:04:05"),
-				findSize(fileInfo.Size()),
+				entry.ModTime().Format("2006-01-02 15:04:05"),
+				findSize(entry.Size()),
 				name)
 		}
-		totalSize += fileInfo.Size()
+		totalSize += entry.Size()
 	}
 
 	return len(cacheEntries), totalSize, nil
