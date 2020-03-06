@@ -111,15 +111,30 @@ func (h *Handle) GetEntry(cacheType string, hash string) (e *Entry, err error) {
 
 	cacheDir, err := h.GetFileCacheDir(cacheType)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get cache entry: %v", err)
+		return nil, fmt.Errorf("cannot get '%s' cache directory: %v", cacheType, err)
 	}
 
 	e.Path = filepath.Join(cacheDir, hash)
 
-	_, err = os.Stat(e.Path)
-	// If there is no existing dir return an entry with a TmpPath for the caller
+	// If there is a directory it's from an older version of Singularity
+	// We need to remove it as we work with single files per hash only now
+	if fs.IsDir(e.Path) {
+		sylog.Debugf("Removing old cache directory: %s", e.Path)
+		err := os.RemoveAll(e.Path)
+		// Allow IsNotExist in case a concurrent process already removed it
+		if err != nil && !os.IsNotExist(err) {
+			return nil, fmt.Errorf("could not remove old cache directory '%s': %v", e.Path, err)
+		}
+	}
+
+	// If there is no existing file return an entry with a TmpPath for the caller
 	// to use and then Finalize
-	if err != nil && os.IsNotExist(err) {
+	pathExists, err := fs.PathExists(e.Path)
+	if err != nil {
+		return nil, fmt.Errorf("could not check for cache entry '%s': %v", e.Path, err)
+	}
+
+	if !pathExists {
 		e.Exists = false
 		f, err := fs.MakeTmpFile(cacheDir, "tmp_", 0700)
 		if err != nil {
@@ -132,12 +147,13 @@ func (h *Handle) GetEntry(cacheType string, hash string) (e *Entry, err error) {
 		e.TmpPath = f.Name()
 		return e, nil
 	}
-	// Other error in Stat
-	if err != nil {
-		return nil, err
+
+	// Double check that there isn't something else weird there
+	if !fs.IsFile(e.Path) {
+		return nil, fmt.Errorf("path '%s' exists but is not a file", e.Path)
 	}
 
-	// It exists. Caller can use the Path directly
+	// It exists in the cache and it's a file. Caller can use the Path directly
 	e.Exists = true
 	return e, nil
 }

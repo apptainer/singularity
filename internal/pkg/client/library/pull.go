@@ -53,10 +53,10 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 	} else {
 		cacheEntry, err := imgCache.GetEntry(cache.LibraryCacheType, libraryImage.Hash)
-		defer cacheEntry.CleanTmp()
 		if err != nil {
 			return "", fmt.Errorf("unable to check if %v exists in cache: %v", libraryImage.Hash, err)
 		}
+		defer cacheEntry.CleanTmp()
 		if !cacheEntry.Exists {
 			sylog.Infof("Downloading library image")
 
