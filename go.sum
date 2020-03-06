@@ -529,8 +529,8 @@ github.com/vbatts/tar-split v0.11.1 h1:0Odu65rhcZ3JZaPHxl7tCI3V/C/Q9Zf82UFravl02
 github.com/vbatts/tar-split v0.11.1/go.mod h1:LEuURwDEiWjRjwu46yU3KVGuUdVv/dcnpcEPSzR8z6g=
 github.com/vbauerster/mpb/v4 v4.11.2 h1:ynkUoKzi65DZ1UsQPx7sgi/KN6G9f7br+Us2nKm35AM=
 github.com/vbauerster/mpb/v4 v4.11.2/go.mod h1:jIuIRCltGJUnm6DCyPVkwjlLUk4nHTH+m4eD14CdFF0=
-github.com/vbauerster/mpb/v4 v4.12.1 h1:THVHPgASDu9QnRkZaWaZyTgPotyHn9q9j2Mut6tliAw=
-github.com/vbauerster/mpb/v4 v4.12.1/go.mod h1:LVRGvMch8T4HQO3eg2pFPsACH9kO/O6fT/7vhGje3QE=
+github.com/vbauerster/mpb/v4 v4.12.2 h1:TsBs1nWRYF0m8cUH13pxNhOUqY6yKcOr2PeSYxp2L3I=
+github.com/vbauerster/mpb/v4 v4.12.2/go.mod h1:LVRGvMch8T4HQO3eg2pFPsACH9kO/O6fT/7vhGje3QE=
 github.com/vishvananda/netlink v0.0.0-20181108222139-023a6dafdcdf/go.mod h1:+SR5DhBJrl6ZM7CoCKvpw5BKroDKQ+PJqOg65H/2ktk=
 github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6 h1:YqlaLDyh/+jUHgh83iNy8KiCvD4LeqnSS5U5a9cgYqU=
 github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6/go.mod h1:+SR5DhBJrl6ZM7CoCKvpw5BKroDKQ+PJqOg65H/2ktk=
