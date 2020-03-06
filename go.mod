@@ -47,7 +47,7 @@ require (
 	github.com/sylabs/scs-library-client v0.5.1
 	github.com/sylabs/sif v1.0.9
 	github.com/urfave/cli v1.22.2 // indirect
-	github.com/vbauerster/mpb/v4 v4.12.1
+	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
