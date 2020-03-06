@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
@@ -79,7 +79,7 @@ var (
 		DisableFlagsInUseLine: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := cleanCache(); err != nil {
-				sylog.Fatalf("Cache clean failed: %v", err)
+				sylog.Fatalf("Handle clean failed: %v", err)
 			}
 		},
 
@@ -100,14 +100,14 @@ func cleanCache() error {
 			return fmt.Errorf("could not prompt user: %v", err)
 		}
 		if !ok {
-			sylog.Infof("Cache cleanup canceled")
+			sylog.Infof("Handle cleanup canceled")
 			return nil
 		}
 	}
 
 	// create a handle to access the current image cache
 	imgCache := getCacheHandle(cache.Config{})
-	err := singularity.CleanSingularityCache(imgCache, !cacheCleanDry, cacheCleanTypes, cacheCleanNames)
+	err := singularity.CleanSingularityCache(imgCache, cacheCleanDry, cacheCleanTypes, cacheCleanNames)
 	if err != nil {
 		return fmt.Errorf("could not clean cache: %v", err)
 	}

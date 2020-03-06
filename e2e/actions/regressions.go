@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
@@ -280,7 +280,7 @@ func (c actionTests) issue4823(t *testing.T) {
 	// Share a cache dir for all of the subtests
 	cacheDir, cleanup := e2e.MakeCacheDir(t, "")
 	defer cleanup(t)
-	h, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
+	_, err := cache.New(cache.Config{ParentDir: cacheDir})
 	if err != nil {
 		t.Fatalf("Could not create image cache handle: %v", err)
 	}
@@ -301,7 +301,7 @@ func (c actionTests) issue4823(t *testing.T) {
 			expected = e2e.ExpectError(e2e.ContainMatch, "Using image from cache")
 		}
 
-		c.env.ImgCacheDir = h.GetBasedir()
+		c.env.ImgCacheDir = cacheDir
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),

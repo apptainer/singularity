@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,15 +6,16 @@
 package cache
 
 import (
-	"io/ioutil"
-	"os"
+	"path"
 	"path/filepath"
 	"testing"
+
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 )
 
 type cacheTests struct {
@@ -26,10 +27,15 @@ const (
 	imgURL  = "library://alpine:latest"
 )
 
-func prepTest(t *testing.T, testEnv e2e.TestEnv, testName string, h *cache.Handle, imagePath string) {
-	ensureCacheEmpty(t, testName, imagePath, h)
+func prepTest(t *testing.T, testEnv e2e.TestEnv, testName string, cacheParentDir string, imagePath string) {
+	// If the test imageFile is already present check it's not also in the cache
+	// at the start of our test - we expect to pull it again and then see it
+	// appear in the cache.
+	if fs.IsFile(imagePath) {
+		ensureNotCached(t, testName, imagePath, cacheParentDir)
+	}
 
-	testEnv.ImgCacheDir = h.GetBasedir()
+	testEnv.ImgCacheDir = cacheParentDir
 	testEnv.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.UserProfile),
@@ -38,7 +44,7 @@ func prepTest(t *testing.T, testEnv e2e.TestEnv, testName string, h *cache.Handl
 		e2e.ExpectExit(0),
 	)
 
-	ensureCacheNotEmpty(t, testName, imagePath, h)
+	ensureCached(t, testName, imagePath, cacheParentDir)
 }
 
 func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
@@ -89,7 +95,6 @@ func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 			exit:               0,
 		},
 	}
-
 	// A directory where we store the image and used by separate commands
 	tempDir, imgStoreCleanup := e2e.MakeTempDir(t, "", "", "image store")
 	defer imgStoreCleanup(t)
@@ -99,13 +104,13 @@ func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 		// Each test get its own clean cache directory
 		cacheDir, cleanup := e2e.MakeCacheDir(t, "")
 		defer cleanup(t)
-		h, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
+		_, err := cache.New(cache.Config{ParentDir: cacheDir})
 		if err != nil {
 			t.Fatalf("Could not create image cache handle: %v", err)
 		}
 
 		if tt.needImage {
-			prepTest(t, c.env, tt.name, h, imagePath)
+			prepTest(t, c.env, tt.name, cacheDir, imagePath)
 		}
 
 		c.env.ImgCacheDir = cacheDir
@@ -119,7 +124,7 @@ func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 		)
 
 		if tt.needImage && tt.expectedEmptyCache {
-			ensureCacheEmpty(t, tt.name, imagePath, h)
+			ensureNotCached(t, tt.name, imagePath, cacheDir)
 		}
 	}
 }
@@ -204,14 +209,14 @@ func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
 		// Each test get its own clean cache directory
 		cacheDir, cleanup := e2e.MakeCacheDir(t, "")
 		defer cleanup(t)
-		h, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
+		_, err := cache.New(cache.Config{ParentDir: cacheDir})
 		if err != nil {
 			t.Fatalf("Could not create image cache handle: %v", err)
 		}
 
-		prepTest(t, c.env, tc.name, h, imagePath)
-
 		c.env.ImgCacheDir = cacheDir
+		prepTest(t, c.env, tc.name, cacheDir, imagePath)
+
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tc.name),
@@ -227,73 +232,42 @@ func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
 
 		// Check the content of the cache
 		if tc.expectedEmptyCache {
-			ensureCacheEmpty(t, tc.name, imagePath, h)
+			ensureNotCached(t, tc.name, imagePath, cacheDir)
 		} else {
-			ensureCacheNotEmpty(t, tc.name, imagePath, h)
+			ensureCached(t, tc.name, imagePath, cacheDir)
 		}
 	}
 }
 
-// ensureDirEmpty checks if a directory is empty. If it is not empty, the test fails;
-// if the directory does not exist, we return an error to give us a chance to test
-// for the expected parent directory (cache clean commands delete different directories
-// based on the user's input).
-func ensureDirEmpty(t *testing.T, testName string, dir string) error {
-	fi, err := ioutil.ReadDir(dir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return err
-		}
-		t.Fatalf("Could not read dir %q: %v", dir, err)
-	}
-
-	if len(fi) != 0 {
-		t.Fatalf("Dir %q is not empty", dir)
-	}
-
-	return nil
-}
-
-// ensureCacheEmpty checks if the entry related to an image is in the cache or not.
-// Cache commands do not necessarily delete the same files/directories based on the options used.
-// The best option is to check whether there is an entry in the cache, i.e.,
-// <cache_root>/library/<shasum>/<imagename>
-func ensureCacheEmpty(t *testing.T, testName string, imagePath string, h *cache.Handle) {
+// ensureNotCached checks the entry related to an image is not in the cache
+func ensureNotCached(t *testing.T, testName string, imagePath string, cacheParentDir string) {
 	shasum, err := client.ImageHash(imagePath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			// We may not have the image yet and in that case, we check if the library cache directory is empty
-			err := ensureDirEmpty(t, testName, h.Library)
-			if err != nil {
-				// The library directory of the cache is not there, checking the root (we want to make sure that the cache is still coherent)
-				ensureDirEmpty(t, testName, filepath.Join(h.GetBasedir(), "root"))
-			}
-		} else {
-			t.Fatalf("failed to compute shasum for %s: %s", imgName, err)
-		}
+		t.Fatalf("couldn't compute hash of image %s: %v", imagePath, err)
 	}
 
-	path := h.LibraryImage(shasum, imgName)
-	if e2e.PathExists(t, path) {
-		t.Fatalf("%s failed: %s is still in the cache (%s)", testName, imgName, path)
+	// Where the cached image should be
+	cacheImagePath := path.Join(cacheParentDir, "cache", "library", shasum)
+
+	// The image file shouldn't be present
+	if e2e.PathExists(t, cacheImagePath) {
+		t.Fatalf("%s failed: %s is still in the cache (%s)", testName, imgName, cacheImagePath)
 	}
 }
 
-func ensureCacheNotEmpty(t *testing.T, testName string, imagePath string, h *cache.Handle) {
-	// Cache commands do not necessarily delete the same files/directories based on the options used.
-	// The best option is to check whether there is an entry in the cache, i.e., <cache_root>/library/<shasum>/imagename
+// ensureCached checks the entry related to an image is really in the cache
+func ensureCached(t *testing.T, testName string, imagePath string, cacheParentDir string) {
 	shasum, err := client.ImageHash(imagePath)
 	if err != nil {
-		t.Fatalf("failed to compute shasum for %s: %s", imagePath, err)
+		t.Fatalf("couldn't compute hash of image %s: %v", imagePath, err)
 	}
 
-	exists, err := h.LibraryImageExists(shasum, imgName)
-	if err != nil {
-		t.Fatalf("failed to check if image exists: %s", err)
-	}
-	if !exists {
-		path := h.LibraryImage(shasum, imgName)
-		t.Fatalf("failed to pull image; %s does not exist (image is: %s, cache entry is: %s)", imgName, imagePath, path)
+	// Where the cached image should be
+	cacheImagePath := path.Join(cacheParentDir, "cache", "library", shasum)
+
+	// The image file shouldn't be present
+	if !e2e.PathExists(t, cacheImagePath) {
+		t.Fatalf("%s failed: %s is not in the cache (%s)", testName, imgName, cacheImagePath)
 	}
 }
 

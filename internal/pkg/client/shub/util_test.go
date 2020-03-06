@@ -1,9 +1,9 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package client
+package shub
 
 import (
 	"fmt"
@@ -81,7 +81,7 @@ func TestShubParser(t *testing.T) {
 	for _, uri := range validShubURIs {
 		t.Run(fmt.Sprintf("Valid URI: %v", uri),
 			func(t *testing.T) {
-				sURI, err := ShubParseReference(uri)
+				sURI, err := ParseReference(uri)
 				if err != nil {
 					t.Fatalf("failed to parse valid URI: %v", uri)
 				}

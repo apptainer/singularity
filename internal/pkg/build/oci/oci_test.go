@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,9 +15,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	oci "github.com/containers/image/v5/oci/layout"
+	"github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/types"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	buildTypes "github.com/sylabs/singularity/pkg/build/types"
 )
@@ -215,7 +215,7 @@ func createValidSysCtx() *types.SystemContext {
 }
 
 func createValidImageRef(t *testing.T, ref string) types.ImageReference {
-	srcRef, err := oci.ParseReference(ref)
+	srcRef, err := layout.ParseReference(ref)
 	if err != nil {
 		t.Fatalf("cannot parser reference: %s\n", err)
 	}
@@ -223,7 +223,7 @@ func createValidImageRef(t *testing.T, ref string) types.ImageReference {
 }
 
 func createInvalidImageRef(t *testing.T, invalidRef string) types.ImageReference {
-	srcRef, err := oci.ParseReference(invalidRef)
+	srcRef, err := layout.ParseReference(invalidRef)
 	if err != nil {
 		t.Fatalf("cannot parser reference: %s\n", err)
 	}
@@ -236,7 +236,7 @@ func TestConvertReference(t *testing.T) {
 
 	cacheDir, _, ref := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
-	imgCache, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
+	imgCache, err := cache.New(cache.Config{ParentDir: cacheDir})
 	if err != nil {
 		t.Fatalf("failed to create an image cache handle")
 	}
@@ -294,7 +294,7 @@ func TestImageNameAndImageSHA(t *testing.T) {
 	// We create a dummy OCI cache to run all our tests
 	cacheDir, _, _ := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
-	imgCache, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
+	imgCache, err := cache.New(cache.Config{ParentDir: cacheDir})
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
@@ -409,7 +409,7 @@ func TestNewImageSource(t *testing.T) {
 	// We create a minimalistic image reference that is valid enough for testing
 	cacheDir, _, ref := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
-	imgCache, err := cache.NewHandle(cache.Config{BaseDir: cacheDir})
+	imgCache, err := cache.New(cache.Config{ParentDir: cacheDir})
 	if err != nil {
 		t.Fatalf("failed to create an image cache handle: %s", err)
 	}

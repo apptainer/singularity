@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -483,7 +483,9 @@ func TestMakeTempFile(t *testing.T) {
 	}
 }
 
-func TestCopyFile(t *testing.T) {
+type copyFileFunc func(from, to string, mode os.FileMode) (err error)
+
+func testCopyFileFunc(t *testing.T, fn copyFileFunc) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
@@ -538,7 +540,7 @@ func TestCopyFile(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			err := CopyFile(tc.from, tc.to, tc.mode)
+			err := fn(tc.from, tc.to, tc.mode)
 			if tc.expectError == "" && err != nil {
 				t.Fatalf("expected no error, but got %v", err)
 			}
@@ -567,6 +569,14 @@ func TestCopyFile(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCopyFile(t *testing.T) {
+	testCopyFileFunc(t, CopyFile)
+}
+
+func TestCopyFileAtomic(t *testing.T) {
+	testCopyFileFunc(t, CopyFileAtomic)
 }
 
 func TestIsWritable(t *testing.T) {

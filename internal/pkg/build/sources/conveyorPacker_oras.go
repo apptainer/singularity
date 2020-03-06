@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,9 +9,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sylabs/singularity/internal/pkg/oras"
+	"github.com/sylabs/singularity/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -30,27 +29,9 @@ func (cp *OrasConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 	// full uri for name determination and output
 	fullRef := "oras:" + ref
 
-	sum, err := oras.ImageSHA(ctx, ref, b.Opts.DockerAuthConfig)
+	imagePath, err := oras.Pull(ctx, b.Opts.ImgCache, fullRef, b.Opts.TmpDir, b.Opts.DockerAuthConfig)
 	if err != nil {
-		return fmt.Errorf("failed to get SHA of %v: %v", fullRef, err)
-	}
-
-	imageName := uri.GetName(fullRef)
-	cacheImagePath := b.Opts.ImgCache.OrasImage(sum, imageName)
-	if exists, err := b.Opts.ImgCache.OrasImageExists(sum, imageName); err != nil {
-		return fmt.Errorf("unable to check if %v exists: %v", cacheImagePath, err)
-	} else if !exists {
-		sylog.Infof("Downloading image with ORAS")
-
-		if err := oras.DownloadImage(cacheImagePath, ref, b.Opts.DockerAuthConfig); err != nil {
-			return fmt.Errorf("unable to Download Image: %v", err)
-		}
-
-		if cacheFileHash, err := oras.ImageHash(cacheImagePath); err != nil {
-			return fmt.Errorf("error getting ImageHash: %v", err)
-		} else if cacheFileHash != sum {
-			return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, sum)
-		}
+		return fmt.Errorf("while fetching library image: %v", err)
 	}
 
 	// insert base metadata before unpacking fs
@@ -58,6 +39,6 @@ func (cp *OrasConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
-	cp.LocalPacker, err = GetLocalPacker(cacheImagePath, b)
+	cp.LocalPacker, err = GetLocalPacker(imagePath, b)
 	return err
 }

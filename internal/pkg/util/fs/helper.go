@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -330,6 +330,52 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
 		return fmt.Errorf("could not copy file: %v", err)
+	}
+
+	return nil
+}
+
+// CopyFileAtomic copies file to a temporary file in the same destination directory
+// and the renames to the final name. This is useful to avoid races where concurrent copies
+// could happen to the same destination. It makes sure the resulting
+// file has permission bits set to the mode prior to umask. To honor umask
+// correctly the resulting file must not exist.
+func CopyFileAtomic(from, to string, mode os.FileMode) (err error) {
+
+	// MakeTmpFile forces mode with chmod, so manually apply umask to mode so we
+	// act like other file copy functions that respect umask
+	oldmask := syscall.Umask(0)
+	syscall.Umask(oldmask)
+	mode = mode &^ os.FileMode(oldmask)
+
+	parentDir := filepath.Dir(to)
+
+	tmpFile, err := MakeTmpFile(parentDir, "tmp-copy-", mode)
+	if err != nil {
+		return fmt.Errorf("could not open temporary file for copy: %v", err)
+	}
+
+	defer func() {
+		tmpFile.Close()
+		os.Remove(tmpFile.Name())
+	}()
+
+	srcFile, err := os.Open(from)
+	if err != nil {
+		return fmt.Errorf("could not open file to copy: %v", err)
+	}
+	defer srcFile.Close()
+
+	_, err = io.Copy(tmpFile, srcFile)
+	if err != nil {
+		return fmt.Errorf("could not copy file: %v", err)
+	}
+	srcFile.Close()
+	tmpFile.Close()
+
+	err = os.Rename(tmpFile.Name(), to)
+	if err != nil {
+		return fmt.Errorf("could not rename temporary file in copy: %v", err)
 	}
 
 	return nil

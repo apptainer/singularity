@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -19,7 +19,7 @@ import (
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
@@ -43,7 +43,11 @@ func ConvertReference(ctx context.Context, imgCache *cache.Handle, src types.Ima
 		return nil, err
 	}
 
-	c, err := layout.ParseReference(imgCache.OciBlob + ":" + cacheTag)
+	cacheDir, err := imgCache.GetOciCacheDir(cache.OciBlobCacheType)
+	if err != nil {
+		return nil, err
+	}
+	c, err := layout.ParseReference(cacheDir + ":" + cacheTag)
 	if err != nil {
 		return nil, err
 	}

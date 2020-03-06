@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -43,6 +43,7 @@ const (
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
 func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
+	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
 	spec, err := reference.Parse(ref)
@@ -67,7 +68,9 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 	defer store.Close()
 
 	store.AllowPathTraversalOnWrite = true
-	store.DisableOverwrite = true
+	// With image caching via download to tmpfile + rename we are now overwriting the temporary file that is created
+	// so we have to allow an overwrite here.
+	store.DisableOverwrite = false
 
 	allowedMediaTypes := oras.WithAllowedMediaTypes([]string{SifLayerMediaType})
 	handlerFunc := func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
@@ -78,6 +81,7 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 				return nil, fmt.Errorf("descriptor is of a bundled directory, not a SIF image")
 			}
 			nameOld, _ := content.ResolveName(desc)
+			sylog.Debugf("Will pull oras image %s to %s", nameOld, imagePath)
 			_ = store.MapPath(nameOld, imagePath)
 		}
 		return nil, nil
@@ -112,6 +116,7 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 		return err
 	}
 
+	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
 	spec, err := reference.Parse(ref)
@@ -181,7 +186,8 @@ func ensureSIF(filepath string) error {
 // encountering such digests.
 // https://github.com/opencontainers/image-spec/blob/master/descriptor.md#registered-algorithms
 func ImageSHA(ctx context.Context, uri string, ociAuth *ocitypes.DockerAuthConfig) (string, error) {
-	ref := strings.TrimPrefix(uri, "//")
+	ref := strings.TrimPrefix(uri, "oras://")
+	ref = strings.TrimPrefix(ref, "//")
 
 	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: genCredfn(ociAuth)})
 

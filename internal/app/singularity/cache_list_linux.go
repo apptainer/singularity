@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,8 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 )
 
 // findSize takes a size in bytes and converts it to a human-readable string representation
@@ -50,53 +49,28 @@ func listTypeCache(printList bool, name, cachePath string) (int, int64, error) {
 		return 0, 0, fmt.Errorf("unable to open cache %s at directory %s: %v", name, cachePath, err)
 	}
 
-	cacheDirs, err := ioutil.ReadDir(cachePath)
+	cacheEntries, err := ioutil.ReadDir(cachePath)
 	if err != nil {
 		return 0, 0, fmt.Errorf("unable to open cache %s at directory %s: %v", name, cachePath, err)
 	}
 
 	var (
 		totalSize int64
-		count     int
 	)
 
-	for _, dir := range cacheDirs {
-		checkStat, err := os.Stat(filepath.Join(cachePath, dir.Name()))
-		if err != nil {
-			return 0, 0, fmt.Errorf("unable to open stat on: %v: %v", filepath.Join(cachePath, dir.Name()), err)
+	for _, entry := range cacheEntries {
+
+		if printList {
+			fmt.Printf("%-24.22s %-22s %-16s %s\n",
+				entry.Name(),
+				entry.ModTime().Format("2006-01-02 15:04:05"),
+				findSize(entry.Size()),
+				name)
 		}
-
-		if !checkStat.Mode().IsDir() {
-			// stray file in ~/.singularity/cache
-			sylog.Debugf("stray file in cache dir: %v", filepath.Join(cachePath, dir.Name()))
-			continue
-		}
-
-		cacheEntries, err := ioutil.ReadDir(filepath.Join(cachePath, dir.Name()))
-		if err != nil {
-			return 0, 0, fmt.Errorf("unable to look in: %s: %v", cachePath, err)
-		}
-
-		for _, entry := range cacheEntries {
-			fileInfo, err := os.Stat(filepath.Join(cachePath, dir.Name(), entry.Name()))
-			if err != nil {
-				return 0, 0, fmt.Errorf("unable to get stat for: %s: %v", cachePath, err)
-			}
-
-			if printList {
-				fmt.Printf("%-24.22s %-22s %-16s %s\n",
-					entry.Name(),
-					fileInfo.ModTime().Format("2006-01-02 15:04:05"),
-					findSize(fileInfo.Size()),
-					name)
-			}
-			totalSize += fileInfo.Size()
-		}
-
-		count += len(cacheEntries)
+		totalSize += entry.Size()
 	}
 
-	return count, totalSize, nil
+	return len(cacheEntries), totalSize, nil
 }
 
 // ListSingularityCache will list the local singularity cache for the
@@ -107,11 +81,6 @@ func listTypeCache(printList bool, name, cachePath string) (int, int64, error) {
 func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cacheListVerbose bool) error {
 	if imgCache == nil {
 		return errInvalidCacheHandle
-	}
-
-	cacheTypes, err := normalizeCacheList(cacheListTypes)
-	if err != nil {
-		return err
 	}
 
 	var (
@@ -126,34 +95,50 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 	containersShown := false
 	blobsShown := false
 
-	for _, cacheType := range cacheTypes {
-		if cacheType == "blob" {
-			// the type blob is special: 1. there's a
-			// separate counter for it; 2. the cache entries
-			// are actually one level deeper
-			cacheDir, _ := cacheTypeToDir(imgCache, cacheType)
-			cacheDir = filepath.Join(cacheDir, "blobs")
-			blobsCount, blobsSize, err := listTypeCache(cacheListVerbose, cacheType, cacheDir)
-			if err != nil {
-				fmt.Print(err)
-				return err
-			}
-			blobCount = blobsCount
-			blobSpace = blobsSize
-			totalSpace += blobsSize
-			blobsShown = true
-		} else {
-			cacheDir, _ := cacheTypeToDir(imgCache, cacheType)
-			count, size, err := listTypeCache(cacheListVerbose, cacheType, cacheDir)
-			if err != nil {
-				fmt.Print(err)
-				return err
-			}
-			containerCount += count
-			containerSpace += size
-			totalSpace += size
-			containersShown = true
+	// If types requested includes "all" then we don't want to filter anything
+	if stringInSlice("all", cacheListTypes) {
+		cacheListTypes = []string{}
+	}
+
+	for _, cacheType := range cache.OciCacheTypes {
+		// the type blob is special: 1. there's a
+		// separate counter for it; 2. the cache entries
+		// are actually one level deeper
+		if len(cacheListTypes) > 0 && !stringInSlice(cacheType, cacheListTypes) {
+			continue
 		}
+		cacheDir, err := imgCache.GetOciCacheDir(cacheType)
+		if err != nil {
+			return err
+		}
+		cacheDir = filepath.Join(cacheDir, "blobs", "sha256")
+		blobsCount, blobsSize, err := listTypeCache(cacheListVerbose, cacheType, cacheDir)
+		if err != nil {
+			fmt.Print(err)
+			return err
+		}
+		blobCount = blobsCount
+		blobSpace = blobsSize
+		totalSpace += blobsSize
+		blobsShown = true
+	}
+	for _, cacheType := range cache.FileCacheTypes {
+		if len(cacheListTypes) > 0 && !stringInSlice(cacheType, cacheListTypes) {
+			continue
+		}
+		cacheDir, err := imgCache.GetFileCacheDir(cacheType)
+		if err != nil {
+			return err
+		}
+		count, size, err := listTypeCache(cacheListVerbose, cacheType, cacheDir)
+		if err != nil {
+			fmt.Print(err)
+			return err
+		}
+		containerCount += count
+		containerSpace += size
+		totalSpace += size
+		containersShown = true
 	}
 
 	if cacheListVerbose {
@@ -177,4 +162,13 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 	fmt.Printf("Total space used: %s\n", findSize(totalSpace))
 
 	return nil
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }

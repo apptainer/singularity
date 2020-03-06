@@ -1,9 +1,9 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package client
+package shub
 
 import (
 	"os"
@@ -29,7 +29,7 @@ func TestDownloadImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	shubURI, err := ShubParseReference(shubImageURI)
+	shubURI, err := ParseReference(shubImageURI)
 	if err != nil {
 		t.Fatalf("failed to parse shub uri: %v", err)
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -24,11 +24,11 @@ import (
 	dockerarchive "github.com/containers/image/v5/docker/archive"
 	dockerdaemon "github.com/containers/image/v5/docker/daemon"
 	ociarchive "github.com/containers/image/v5/oci/archive"
-	oci "github.com/containers/image/v5/oci/layout"
+	ocilayout "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
+	"github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
 	buildTypes "github.com/sylabs/singularity/pkg/build/types"
@@ -82,7 +82,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 	case "docker-daemon":
 		cp.srcRef, err = dockerdaemon.ParseReference(ref)
 	case "oci":
-		cp.srcRef, err = oci.ParseReference(ref)
+		cp.srcRef, err = ocilayout.ParseReference(ref)
 	case "oci-archive":
 		if os.Geteuid() == 0 {
 			// As root, the direct oci-archive handling will work
@@ -102,9 +102,9 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 			}
 			// We may or may not have had a ':tag' in the source to handle
 			if len(refParts) == 2 {
-				cp.srcRef, err = oci.ParseReference(tmpDir + ":" + refParts[1])
+				cp.srcRef, err = ocilayout.ParseReference(tmpDir + ":" + refParts[1])
 			} else {
-				cp.srcRef, err = oci.ParseReference(tmpDir)
+				cp.srcRef, err = ocilayout.ParseReference(tmpDir)
 			}
 
 			if err != nil {
@@ -122,7 +122,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 
 	if !cp.b.Opts.NoCache {
 		// Grab the modified source ref from the cache
-		cp.srcRef, err = ociclient.ConvertReference(ctx, b.Opts.ImgCache, cp.srcRef, cp.sysCtx)
+		cp.srcRef, err = oci.ConvertReference(ctx, b.Opts.ImgCache, cp.srcRef, cp.sysCtx)
 		if err != nil {
 			return err
 		}
@@ -130,7 +130,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 
 	// To to do the RootFS extraction we also have to have a location that
 	// contains *only* this image
-	cp.tmpfsRef, err = oci.ParseReference(cp.b.TmpDir + ":" + "tmp")
+	cp.tmpfsRef, err = ocilayout.ParseReference(cp.b.TmpDir + ":" + "tmp")
 
 	err = cp.fetch(ctx)
 	if err != nil {
