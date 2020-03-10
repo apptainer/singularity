@@ -114,9 +114,20 @@ func umount(escalate bool) error {
 
 	for i := len(umountPoints) - 1; i >= 0; i-- {
 		p := umountPoints[i]
+		sylog.Debugf("Umount %s", p)
+		retries := 0
+	retry:
 		err := syscall.Unmount(p, 0)
 		// ignore EINVAL meaning it's not a mount point
 		if err != nil && err.(syscall.Errno) != syscall.EINVAL {
+			// when rootfs mount point is a sandbox, the unmount
+			// fail more often with EBUSY, but it's just a matter of
+			// time before resources are released by the kernel so we
+			// retry until the unmount operation succeed (retries 10 times)
+			if err.(syscall.Errno) == syscall.EBUSY && retries < 10 {
+				retries++
+				goto retry
+			}
 			return fmt.Errorf("while unmounting %s directory: %s", p, err)
 		}
 	}
