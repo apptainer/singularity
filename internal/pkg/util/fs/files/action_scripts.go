@@ -7,8 +7,8 @@ package files
 
 var ActionScript = `#!/bin/sh
 
-declare -r oldenv=$(getallenv)
-declare -r cmd=${SINGULARITY_COMMAND:-}
+declare -r __exported_env__=$(getallenv)
+declare -r __singularity_cmd__=${SINGULARITY_COMMAND:-}
 
 if test -n "${SINGULARITY_APPNAME:-}"; then
     readonly SINGULARITY_APPNAME
@@ -19,10 +19,10 @@ export PWD
 clear_env() {
     local IFS=$'\n'
 
-    for e in ${oldenv}; do
+    for e in ${__exported_env__}; do
         key=$(getenvkey "${e}")
         case "${key}" in
-        PWD|HOME|OPTIND|UID|SINGULARITY_APPNAME)
+        PWD|HOME|OPTIND|UID|SINGULARITY_APPNAME|SINGULARITY_SHELL)
             ;;
         *)
             unset "${key}"
@@ -37,7 +37,7 @@ restore_env() {
     # restore environment variables which haven't been
     # defined by docker or virtual file above, empty
     # variables are also unset
-    for e in ${oldenv}; do
+    for e in ${__exported_env__}; do
         key=$(getenvkey "${e}")
         if ! test -v "${key}"; then
             export "${e}"
@@ -50,22 +50,22 @@ restore_env() {
 clear_env
 
 if test -d "/.singularity.d/env"; then
-    for script in /.singularity.d/env/*.sh; do
-        if test -f "${script}"; then
-            sylog debug "Sourcing ${script}"
+    for __script__ in /.singularity.d/env/*.sh; do
+        if test -f "${__script__}"; then
+            sylog debug "Sourcing ${__script__}"
 
-            case "${script}" in
+            case "${__script__}" in
             /.singularity.d/env/90-environment.sh)
                 # docker files below may not be present depending of image source
                 # and build, so we also fix the PATH if not defined here
                 if ! test -v PATH; then
                     export PATH="$(fixpath)"
                 fi
-                source "${script}"
+                source "${__script__}"
                 ;;
             /.singularity.d/env/10-docker2singularity.sh| \
             /.singularity.d/env/10-docker.sh)
-                source "${script}"
+                source "${__script__}"
                 # append potential missing path from the default PATH
                 # used by Singularity
                 export PATH="$(fixpath)"
@@ -73,11 +73,11 @@ if test -d "/.singularity.d/env"; then
             /.singularity.d/env/99-base.sh)
                 # this file is the common denominator in image built since
                 # Singularity 2.3, inject forwarded variables right after
-                source "${script}"
+                source "${__script__}"
                 source "/.inject-singularity-env.sh"
                 ;;
             *)
-                source "${script}"
+                source "${__script__}"
                 ;;
             esac
         fi
@@ -110,9 +110,9 @@ else
     export PROMPT_COMMAND="${PROMPT_COMMAND:-}; PROMPT_COMMAND=\"\${PROMPT_COMMAND%%; PROMPT_COMMAND=*}\"; PS1=\"${PS1}\""
 fi
 
-sylog debug "Running action command ${cmd}"
+sylog debug "Running action command ${__singularity_cmd__}"
 
-case "${cmd}" in
+case "${__singularity_cmd__}" in
 exec)
     exec "$@" ;;
 shell)
@@ -167,7 +167,7 @@ start)
     sylog info "No instance start script found in container"
     exit 0 ;;
 *)
-    sylog error "Unknown action $cmd"
+    sylog error "Unknown action ${__singularity_cmd__}"
     exit 1 ;;
 esac
 `

@@ -706,6 +706,12 @@ func fixPathBuiltin(ctx context.Context, argv []string) error {
 	return nil
 }
 
+// hashBuiltin is a noop function for hash bash builtin, since we don't
+// store resolved path in a hash table, there is nothing to do.
+func hashBuiltin(ctx context.Context, argv []string) error {
+	return nil
+}
+
 // runActionScript interprets and executes the action script within
 // an embedded shell interpreter.
 func runActionScript(engineConfig *singularityConfig.EngineConfig) ([]string, []string, error) {
@@ -741,6 +747,7 @@ func runActionScript(engineConfig *singularityConfig.EngineConfig) ([]string, []
 	shell.RegisterShellBuiltin("getenvkey", getEnvKeyBuiltin)
 	shell.RegisterShellBuiltin("sylog", sylogBuiltin)
 	shell.RegisterShellBuiltin("fixpath", fixPathBuiltin)
+	shell.RegisterShellBuiltin("hash", hashBuiltin)
 
 	// exec builtin won't execute the command but instead
 	// it returns arguments and environment variables and
