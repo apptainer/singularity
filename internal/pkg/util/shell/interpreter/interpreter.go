@@ -141,7 +141,7 @@ func New(r io.Reader, name string, args []string, envs []string, runnerOptions .
 	return s, err
 }
 
-// internalOpenHandler returns an ExecHandlerFunc used by default.
+// internalExecHandler returns an ExecHandlerFunc used by default.
 func (s *Shell) internalExecHandler() interp.ExecHandlerFunc {
 	return func(ctx context.Context, args []string) error {
 		if s.runner.Exited() {
@@ -151,6 +151,23 @@ func (s *Shell) internalExecHandler() interp.ExecHandlerFunc {
 			}
 		} else if builtin, ok := s.shellBuiltins[args[0]]; ok {
 			return builtin(ctx, args[1:])
+		} else {
+			// declaration clause are normally handled by the interpreter
+			// but when a builtin prefixed with a backslash is encountered
+			// by example, the parser consider it as a call expression and
+			// we get there, so basically what we do is to create a new parser
+			// and evaluate it in the current shell interpreter
+			switch args[0] {
+			case "export", "local", "declare", "nameref", "readonly", "typeset":
+				var b bytes.Buffer
+
+				b.WriteString(strings.Join(args, " "))
+				node, err := syntax.NewParser().Parse(&b, s.name)
+				if err != nil {
+					return err
+				}
+				return s.runner.Run(ctx, node)
+			}
 		}
 		return defaultExecHandler(ctx, args)
 	}
