@@ -403,12 +403,12 @@ func (cp *OCIConveyorPacker) insertEnv() (err error) {
 		export := ""
 		envParts := strings.SplitN(element, "=", 2)
 		if len(envParts) == 1 {
-			export = fmt.Sprintf("export %s=${%s:-}\n", envParts[0], envParts[0])
+			export = fmt.Sprintf("export %s=\"${%s:-}\"\n", envParts[0], envParts[0])
 		} else {
 			if envParts[0] == "PATH" {
 				export = fmt.Sprintf("export %s=%q\n", envParts[0], shell.Escape(envParts[1]))
 			} else {
-				export = fmt.Sprintf("export %s=${%s:-%q}\n", envParts[0], envParts[0], shell.Escape(envParts[1]))
+				export = fmt.Sprintf("export %s=\"${%s:-%q}\"\n", envParts[0], envParts[0], shell.Escape(envParts[1]))
 			}
 		}
 		_, err = f.WriteString(export)
