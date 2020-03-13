@@ -6,8 +6,10 @@
 package rpc
 
 import (
+	"encoding/gob"
 	"os"
 	"syscall"
+	"time"
 
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
@@ -68,8 +70,7 @@ type ChdirArgs struct {
 
 // StatReply defines the reply for stat.
 type StatReply struct {
-	Err error
-	St  syscall.Stat_t
+	Fi os.FileInfo
 }
 
 // StatArgs defines the arguments to stat.
@@ -86,4 +87,103 @@ type SendFuseFdArgs struct {
 // OpenFuseFdArgs defines the arguments to open and send a fuse file descriptor.
 type OpenSendFuseFdArgs struct {
 	Socket int
+}
+
+// SymlinkArgs defines the arguments to symlink.
+type SymlinkArgs struct {
+	Old string
+	New string
+}
+
+// ReadDirArgs defines the arguments to readdir.
+type ReadDirArgs struct {
+	Dir string
+}
+
+// ReadDirReply defines the reply for readdir.
+type ReadDirReply struct {
+	Files []os.FileInfo
+}
+
+// ChownArgs defines the arguments to chown/lchown.
+type ChownArgs struct {
+	Name string
+	UID  int
+	GID  int
+}
+
+// EvalRelativeArgs defines the arguments to evalrelative.
+type EvalRelativeArgs struct {
+	Name string
+	Root string
+}
+
+// ReadlinkArgs defines the arguments to readlink.
+type ReadlinkArgs struct {
+	Name string
+}
+
+// UmaskArgs defines the arguments to umask.
+type UmaskArgs struct {
+	Mask int
+}
+
+// WriteFileArgs defines the arguments to writefile.
+type WriteFileArgs struct {
+	Filename string
+	Data     []byte
+	Perm     os.FileMode
+}
+
+// FileInfo returns FileInfo interface to be passed as RPC argument.
+func FileInfo(fi os.FileInfo) os.FileInfo {
+	return &fileInfo{
+		N:  fi.Name(),
+		S:  fi.Size(),
+		M:  fi.Mode(),
+		T:  fi.ModTime(),
+		Sy: fi.Sys(),
+	}
+}
+
+// fileInfo internal interface with exported fields.
+type fileInfo struct {
+	N  string
+	S  int64
+	M  os.FileMode
+	T  time.Time
+	Sy interface{}
+}
+
+func (fi fileInfo) Name() string {
+	return fi.N
+}
+
+func (fi fileInfo) Size() int64 {
+	return fi.S
+}
+
+func (fi fileInfo) Mode() os.FileMode {
+	return fi.M
+}
+
+func (fi fileInfo) ModTime() time.Time {
+	if fi.T.IsZero() {
+		return time.Now()
+	}
+	return fi.T
+}
+
+func (fi fileInfo) IsDir() bool {
+	return fi.M.IsDir()
+}
+
+func (fi fileInfo) Sys() interface{} {
+	return fi.Sy
+}
+
+func init() {
+	gob.Register(syscall.Errno(0))
+	gob.Register((*fileInfo)(nil))
+	gob.Register((*syscall.Stat_t)(nil))
 }

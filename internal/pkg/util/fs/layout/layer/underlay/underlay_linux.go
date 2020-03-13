@@ -7,7 +7,6 @@ package underlay
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -15,7 +14,6 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
 )
@@ -61,7 +59,6 @@ func (u *Underlay) createUnderlay(system *mount.System) error {
 
 // createLayer creates underlay layer based on content of root filesystem
 func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
-	st := new(syscall.Stat_t)
 	points := system.Points
 	createdPath := make([]pathLen, 0)
 	destinations := make(map[string]struct{})
@@ -80,7 +77,7 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 			// get rid of symlinks and resolve the path within the
 			// rootfs path to not have false positive while creating
 			// the layer with calls below
-			dst := fs.EvalRelative(point.Destination, rootFsPath)
+			dst := u.session.VFS.EvalRelative(point.Destination, rootFsPath)
 
 			// keep track of destination mount points to not duplicate
 			// directory uselessly
@@ -89,10 +86,12 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 			// now we are (almost) sure that we will get path information
 			// for a path in the rootfs path and we would create the right
 			// destination in the layer
-			if err := syscall.Stat(filepath.Join(rootFsPath, dst), st); err == nil {
+			_, err := u.session.VFS.Stat(filepath.Join(rootFsPath, dst))
+			if err == nil {
 				continue
 			}
-			if err := syscall.Stat(point.Source, st); err != nil {
+			fi, err := u.session.VFS.Stat(point.Source)
+			if err != nil {
 				sylog.Warningf("skipping mount of %s: %s", point.Source, err)
 				continue
 			}
@@ -100,12 +99,11 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 			if _, err := u.session.GetPath(underlayDst); err == nil {
 				continue
 			}
-			switch st.Mode & syscall.S_IFMT {
-			case syscall.S_IFDIR:
+			if fi.IsDir() {
 				if err := u.session.AddDir(underlayDst); err != nil {
 					return err
 				}
-			default:
+			} else {
 				if err := u.session.AddFile(underlayDst, nil); err != nil {
 					return err
 				}
@@ -172,7 +170,7 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 func (u *Underlay) duplicateDir(dir string, system *mount.System, existingPath string) error {
 	binds := 0
 	path := filepath.Join(u.session.RootFsPath(), dir)
-	files, err := ioutil.ReadDir(path)
+	files, err := u.session.VFS.ReadDir(path)
 	if err != nil {
 		// directory doesn't exists, nothing to duplicate
 		return nil
@@ -195,7 +193,7 @@ func (u *Underlay) duplicateDir(dir string, system *mount.System, existingPath s
 			}
 			binds++
 		} else if file.Mode()&os.ModeSymlink != 0 {
-			tgt, err := os.Readlink(src)
+			tgt, err := u.session.VFS.Readlink(src)
 			if err != nil {
 				return fmt.Errorf("can't read symlink information for %s: %s", src, err)
 			}

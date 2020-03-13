@@ -29,17 +29,6 @@ func (t *RPC) MkdirAll(path string, perm os.FileMode) (int, error) {
 	return reply, err
 }
 
-// Symlink calls the mkdir RPC using the supplied arguments.
-func (t *RPC) Symlink(old string, new string) (int, error) {
-	arguments := &ociargs.SymlinkArgs{
-		Old: old,
-		New: new,
-	}
-	var reply int
-	err := t.Client.Call(t.Name+".Symlink", arguments, &reply)
-	return reply, err
-}
-
 // Touch calls the touch RPC using the supplied arguments.
 func (t *RPC) Touch(path string) (int, error) {
 	arguments := &ociargs.TouchArgs{

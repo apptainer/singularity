@@ -7,6 +7,7 @@ package layout
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,8 +43,79 @@ type symlink struct {
 	target  string
 }
 
+type VFS interface {
+	Chown(string, int, int) error
+	EvalRelative(string, string) string
+	Lchown(string, int, int) error
+	Mkdir(string, os.FileMode) error
+	Readlink(string) (string, error)
+	ReadDir(string) ([]os.FileInfo, error)
+	Stat(string) (os.FileInfo, error)
+	Symlink(string, string) error
+	Umask(int) int
+	WriteFile(string, []byte, os.FileMode) error
+}
+
+type defaultVFS struct{}
+
+func (v *defaultVFS) Chown(name string, uid, gid int) error {
+	return os.Chown(name, uid, gid)
+}
+
+func (v *defaultVFS) EvalRelative(path, root string) string {
+	return fs.EvalRelative(path, root)
+}
+
+func (v *defaultVFS) Lchown(name string, uid, gid int) error {
+	return os.Lchown(name, uid, gid)
+}
+
+func (v *defaultVFS) Mkdir(name string, perm os.FileMode) error {
+	return os.Mkdir(name, perm)
+}
+
+func (v *defaultVFS) Readlink(name string) (string, error) {
+	return os.Readlink(name)
+}
+
+func (v *defaultVFS) ReadDir(dir string) ([]os.FileInfo, error) {
+	return ioutil.ReadDir(dir)
+}
+
+func (v *defaultVFS) Stat(name string) (os.FileInfo, error) {
+	return os.Stat(name)
+}
+
+func (v *defaultVFS) Symlink(oldname, newname string) error {
+	return os.Symlink(oldname, newname)
+}
+
+func (v *defaultVFS) Umask(mask int) int {
+	return syscall.Umask(mask)
+}
+
+func (v *defaultVFS) WriteFile(filename string, data []byte, perm os.FileMode) error {
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_EXCL, perm)
+	if err != nil {
+		if !os.IsExist(err) {
+			return fmt.Errorf("failed to create file %s: %s", filename, err)
+		}
+		return err
+	}
+	if len(data) > 0 {
+		_, err = f.Write(data)
+	}
+	if err1 := f.Close(); err == nil {
+		err = err1
+	}
+	return err
+}
+
+var DefaultVFS VFS = &defaultVFS{}
+
 // Manager manages a filesystem layout in a given path
 type Manager struct {
+	VFS      VFS
 	DirMode  os.FileMode
 	FileMode os.FileMode
 	rootPath string
@@ -249,8 +321,8 @@ func (m *Manager) sync() error {
 		return fmt.Errorf("root path is not set")
 	}
 
-	oldmask := syscall.Umask(0)
-	defer syscall.Umask(oldmask)
+	oldmask := m.VFS.Umask(0)
+	defer m.VFS.Umask(oldmask)
 
 	for _, d := range m.dirs[1:] {
 		if d.created {
@@ -261,8 +333,8 @@ func (m *Manager) sync() error {
 			if e == d {
 				path = m.rootPath + p
 				for _, ovDir := range m.ovDirs[p] {
-					if _, err := os.Stat(ovDir); err != nil {
-						if err := os.Mkdir(ovDir, m.DirMode); err != nil {
+					if _, err := m.VFS.Stat(ovDir); err != nil {
+						if err := m.VFS.Mkdir(ovDir, m.DirMode); err != nil {
 							return fmt.Errorf("failed to create %s directory: %s", ovDir, err)
 						}
 					}
@@ -274,7 +346,7 @@ func (m *Manager) sync() error {
 			continue
 		}
 		if d.mode != m.DirMode {
-			if err := os.Mkdir(path, d.mode); err != nil {
+			if err := m.VFS.Mkdir(path, d.mode); err != nil {
 				if !os.IsExist(err) {
 					return fmt.Errorf("failed to create %s directory: %s", path, err)
 				}
@@ -283,7 +355,7 @@ func (m *Manager) sync() error {
 				continue
 			}
 		} else {
-			if err := os.Mkdir(path, m.DirMode); err != nil {
+			if err := m.VFS.Mkdir(path, m.DirMode); err != nil {
 				if !os.IsExist(err) {
 					return fmt.Errorf("failed to create %s directory: %s", path, err)
 				}
@@ -293,7 +365,7 @@ func (m *Manager) sync() error {
 			}
 		}
 		if d.uid != uid || d.gid != gid {
-			if err := os.Chown(path, d.uid, d.gid); err != nil {
+			if err := m.VFS.Chown(path, d.uid, d.gid); err != nil {
 				return fmt.Errorf("failed to change owner of %s: %s", path, err)
 			}
 		}
@@ -310,8 +382,7 @@ func (m *Manager) sync() error {
 			if entry.created {
 				continue
 			}
-			f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, entry.mode)
-			if err != nil {
+			if err := m.VFS.WriteFile(path, entry.content, entry.mode); err != nil {
 				if !os.IsExist(err) {
 					return fmt.Errorf("failed to create file %s: %s", path, err)
 				}
@@ -319,17 +390,8 @@ func (m *Manager) sync() error {
 				entry.created = true
 				continue
 			}
-			l := len(entry.content)
-			if l > 0 {
-				if n, err := f.Write(entry.content); err != nil || n != l {
-					return fmt.Errorf("failed to write file %s content: %s", path, err)
-				}
-			}
-			if err := f.Close(); err != nil {
-				return fmt.Errorf("error while closing file: %s", err)
-			}
 			if entry.uid != uid || entry.gid != gid {
-				if err := os.Chown(path, entry.uid, entry.gid); err != nil {
+				if err := m.VFS.Chown(path, entry.uid, entry.gid); err != nil {
 					return fmt.Errorf("failed to change %s ownership: %s", path, err)
 				}
 			}
@@ -338,14 +400,14 @@ func (m *Manager) sync() error {
 			if entry.created {
 				continue
 			}
-			if err := os.Symlink(entry.target, path); err != nil {
+			if err := m.VFS.Symlink(entry.target, path); err != nil {
 				if !os.IsExist(err) {
 					return fmt.Errorf("failed to create symlink %s: %s", path, err)
 				}
 				// check that current symlink point to the right target if it's a symlink
 				// otherwise we consider the entry as already created no matter if it's a
 				// file, a directory or something else
-				target, err := os.Readlink(path)
+				target, err := m.VFS.Readlink(path)
 				if err == nil && target != entry.target {
 					return fmt.Errorf("symlink %s point to %s instead of %s", path, target, entry.target)
 				}
@@ -354,7 +416,7 @@ func (m *Manager) sync() error {
 				continue
 			}
 			if entry.uid != uid || entry.gid != gid {
-				if err := os.Lchown(path, entry.uid, entry.gid); err != nil {
+				if err := m.VFS.Lchown(path, entry.uid, entry.gid); err != nil {
 					return fmt.Errorf("failed to change %s ownership: %s", path, err)
 				}
 			}

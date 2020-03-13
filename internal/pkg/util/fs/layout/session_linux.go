@@ -31,7 +31,7 @@ type layer interface {
 
 // NewSession creates and returns a session directory layout manager
 func NewSession(path string, fstype string, size int, system *mount.System, layer layer) (*Session, error) {
-	manager := &Manager{}
+	manager := &Manager{VFS: DefaultVFS}
 	session := &Session{Manager: manager}
 
 	if err := manager.SetRootPath(path); err != nil {
@@ -95,8 +95,6 @@ func (s *Session) RootFsPath() string {
 }
 
 func (s *Session) createLayout(system *mount.System) error {
-	st := new(syscall.Stat_t)
-
 	// create directory for registered overrided directory
 	for _, tag := range mount.GetTagList() {
 		for _, point := range system.Points.GetByTag(tag) {
@@ -129,17 +127,17 @@ func (s *Session) createLayout(system *mount.System) error {
 			}
 
 			// check if the bind source exists
-			if err := syscall.Stat(point.Source, st); err != nil {
+			fi, err := s.VFS.Stat(point.Source)
+			if err != nil {
 				sylog.Warningf("skipping mount of: %s: %s", point.Source, err)
 				continue
 			}
 
-			switch st.Mode & syscall.S_IFMT {
-			case syscall.S_IFDIR:
+			if fi.IsDir() {
 				if err := s.AddDir(dest); err != nil {
 					return err
 				}
-			default:
+			} else {
 				if err := s.AddFile(dest, nil); err != nil {
 					return err
 				}
