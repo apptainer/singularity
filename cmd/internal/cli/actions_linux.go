@@ -32,6 +32,7 @@ import (
 	imgutil "github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
 	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
+	singularitycallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/engine/singularity"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
@@ -613,11 +614,28 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	// user namespace
 	if (UserNamespace || insideUserNs) && fs.IsFile(image) {
 		convert := true
-		// the image driver indicates support for all or image so
-		// let's proceed with the image driver without conversion
-		if engineConfig.File.ImageDriver != "" && engineConfig.File.ImageDriverSupport != "overlay" {
-			convert = false
+
+		if engineConfig.File.ImageDriver != "" {
+			// load image driver plugins
+			callbackType := (singularitycallback.RegisterImageDriver)(nil)
+			callbacks, err := plugin.LoadCallbacks(callbackType)
+			if err != nil {
+				sylog.Debugf("Loading plugins callbacks '%T' failed: %s", callbackType, err)
+			} else {
+				for _, callback := range callbacks {
+					if err := callback.(singularitycallback.RegisterImageDriver)(true); err != nil {
+						sylog.Debugf("While registering image driver: %s", err)
+					}
+				}
+			}
+			driver := imgutil.GetDriver(engineConfig.File.ImageDriver)
+			if driver != nil && driver.Features()&imgutil.ImageFeature != 0 {
+				// the image driver indicates support for image so let's
+				// proceed with the image driver without conversion
+				convert = false
+			}
 		}
+
 		if convert {
 			unsquashfsPath := ""
 			if engineConfig.File.MksquashfsPath != "" {

@@ -7,7 +7,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -43,20 +42,13 @@ func ubuntuOvlRegister(unprivileged bool) error {
 func (d *ubuntuOvlDriver) Features() image.DriverFeature {
 	// if we are running unprivileged we are handling the overlay mount
 	if d.unprivileged {
-		return image.OverlayFeature | image.ImageFeature
+		return image.OverlayFeature
 	}
 	// privileged run are handled as usual by the singularity runtime
 	return 0
 }
 
 func (d *ubuntuOvlDriver) Mount(params *image.MountParams, fn image.MountFunc) error {
-	if params.Filesystem != "overlay" {
-		target, err := os.Readlink(params.Source)
-		if err != nil {
-			target = params.Source
-		}
-		return fmt.Errorf("%s driver can not mount image %q, only sandbox format is supported", driverName, target)
-	}
 	return fn(
 		params.Source,
 		params.Target,
@@ -84,10 +76,6 @@ func setConfiguration(_ string) error {
 	cmd = exec.Command("/proc/self/exe", "config", "global", "--set", "enable overlay", "driver")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("could not set 'enable overlay = driver' in singularity.conf")
-	}
-	cmd = exec.Command("/proc/self/exe", "config", "global", "--set", "image driver support", "overlay")
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("could not set 'image driver support = overlay' in singularity.conf")
 	}
 	return nil
 }
