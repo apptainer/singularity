@@ -134,9 +134,9 @@ var authorizedTags = map[AuthorizedTag]struct {
 	HomeTag:      {false, 9},
 	TmpTag:       {true, 10},
 	ScratchTag:   {true, 11},
-	CwdTag:       {false, 12},
-	FilesTag:     {true, 13},
-	UserbindsTag: {true, 14},
+	FilesTag:     {true, 12},
+	UserbindsTag: {true, 13},
+	CwdTag:       {false, 14},
 	OtherTag:     {true, 15},
 	FinalTag:     {true, 16},
 }

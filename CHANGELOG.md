@@ -18,7 +18,9 @@ _The old changelog can be found in the `release-2.6` branch_
     specified, or directly resolved from a glob pattern. It will not follow
     symlinks found through directory traversal. This mirrors Docker multi-stage
     COPY behaviour.
-
+  - Restore the CWD mount behaviour of v2, implying that CWD path is not recreated
+    inside container and any symlinks in the CWD path are not resolved anymore to
+    determine the destination path inside container.
 
 # Changes Since v3.5.2
 
