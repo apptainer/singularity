@@ -35,7 +35,6 @@ import (
 	"github.com/sylabs/singularity/pkg/network"
 	singularitycallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/engine/singularity"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/loop"
@@ -1095,14 +1094,15 @@ func (c *container) addOverlayMount(system *mount.System) error {
 }
 
 func (c *container) addImageBindMount(system *mount.System) error {
-	binds := make([]singularityConfig.BindPath, 0)
 	nb := 0
 	imageList := c.engine.EngineConfig.GetImageList()
 
 	for _, bind := range c.engine.EngineConfig.GetBindPath() {
 		if bind.ImageSrc() == "" && bind.ID() == "" {
-			binds = append(binds, bind)
 			continue
+		} else if !c.engine.EngineConfig.File.UserBindControl {
+			sylog.Warningf("Ignoring image bind mount request: user bind control disabled by system administrator")
+			return nil
 		}
 
 		imagePath := bind.Source
@@ -1214,8 +1214,6 @@ func (c *container) addImageBindMount(system *mount.System) error {
 			}
 		}
 	}
-
-	c.engine.EngineConfig.SetBindPath(binds)
 
 	return nil
 }
@@ -1731,16 +1729,16 @@ func (c *container) addHomeMount(system *mount.System) error {
 }
 
 func (c *container) addUserbindsMount(system *mount.System) error {
-	devicesMounted := 0
 	devPrefix := "/dev"
 	userBindControl := c.engine.EngineConfig.File.UserBindControl
 	defaultFlags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
-	if len(c.engine.EngineConfig.GetBindPath()) == 0 {
-		return nil
-	}
-
 	for _, b := range c.engine.EngineConfig.GetBindPath() {
+		// ignore image bind
+		if b.ID() != "" || b.ImageSrc() != "" {
+			continue
+		}
+
 		flags := defaultFlags
 		source := b.Source
 		dst := b.Destination
@@ -1771,7 +1769,6 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 					}
 					sylog.Debugf("Adding device %s to mount list\n", src)
 				}
-				devicesMounted++
 			} else if c.engine.EngineConfig.File.MountDev == "yes" {
 				sylog.Warningf("Skipping %s bind mount: /dev is already mounted", src)
 			} else {
@@ -1779,6 +1776,7 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 			}
 			continue
 		} else if !userBindControl {
+			sylog.Warningf("Ignoring %s bind mount: user bind control disabled by system administrator", src)
 			continue
 		}
 
@@ -1795,11 +1793,6 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 			}
 			system.Points.AddRemount(mount.UserbindsTag, dst, flags)
 		}
-	}
-
-	sylog.Debugf("Checking for 'user bind control' in configuration file")
-	if !userBindControl && devicesMounted == 0 {
-		sylog.Warningf("Ignoring user bind request: user bind control disabled by system administrator")
 	}
 
 	return nil
