@@ -32,11 +32,6 @@ func (t *Methods) MkdirAll(arguments *args.MkdirArgs, reply *int) (err error) {
 	return err
 }
 
-// Symlink performs a symlink with the specified arguments.
-func (t *Methods) Symlink(arguments *ociargs.SymlinkArgs, reply *int) (err error) {
-	return os.Symlink(arguments.Old, arguments.New)
-}
-
 // Touch performs a touch with the specified arguments.
 func (t *Methods) Touch(arguments *ociargs.TouchArgs, reply *int) (err error) {
 	return fs.Touch(arguments.Path)

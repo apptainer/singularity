@@ -543,19 +543,19 @@ func (c *container) addCgroups(pid int, system *mount.System) error {
 		createSymlinks := func(*mount.System) error {
 			cgroupPath := filepath.Join(c.rpcRoot, c.rootfs, m.Destination)
 			if _, err := os.Stat(filepath.Join(cgroupPath, "cpu")); err != nil && os.IsNotExist(err) {
-				if _, err := c.rpcOps.Symlink("cpu,cpuacct", filepath.Join(c.rootfs, m.Destination, "cpu")); err != nil {
+				if err := c.rpcOps.Symlink("cpu,cpuacct", filepath.Join(c.rootfs, m.Destination, "cpu")); err != nil {
 					return err
 				}
-				if _, err := c.rpcOps.Symlink("cpu,cpuacct", filepath.Join(c.rootfs, m.Destination, "cpuacct")); err != nil {
+				if err := c.rpcOps.Symlink("cpu,cpuacct", filepath.Join(c.rootfs, m.Destination, "cpuacct")); err != nil {
 					return err
 				}
 			}
 
 			if _, err := os.Stat(filepath.Join(cgroupPath, "net_cls")); err != nil && os.IsNotExist(err) {
-				if _, err := c.rpcOps.Symlink("net_cls,net_prio", filepath.Join(c.rootfs, m.Destination, "net_cls")); err != nil {
+				if err := c.rpcOps.Symlink("net_cls,net_prio", filepath.Join(c.rootfs, m.Destination, "net_cls")); err != nil {
 					return err
 				}
-				if _, err := c.rpcOps.Symlink("net_cls,net_prio", filepath.Join(c.rootfs, m.Destination, "net_prio")); err != nil {
+				if err := c.rpcOps.Symlink("net_cls,net_prio", filepath.Join(c.rootfs, m.Destination, "net_prio")); err != nil {
 					return err
 				}
 			}
@@ -671,7 +671,7 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 		if _, err := os.Lstat(path); os.IsNotExist(err) {
 			if c.userNS {
 				path = filepath.Join(c.rootfs, symlink.new)
-				if _, err := c.rpcOps.Symlink(symlink.old, path); err != nil {
+				if err := c.rpcOps.Symlink(symlink.old, path); err != nil {
 					return err
 				}
 			} else {
@@ -912,7 +912,7 @@ func (c *container) mount(point *mount.Point, system *mount.System) error {
 				if _, err := os.Stat(dir); os.IsNotExist(err) {
 					sylog.Debugf("Creating parent %s", dir)
 					if c.userNS {
-						if _, err := c.rpcOps.Mkdir(filepath.Dir(dest), 0755); err != nil {
+						if err := c.rpcOps.Mkdir(filepath.Dir(dest), 0755); err != nil {
 							return err
 						}
 					} else {
@@ -930,7 +930,7 @@ func (c *container) mount(point *mount.Point, system *mount.System) error {
 				case syscall.S_IFDIR:
 					sylog.Debugf("Creating dir %s", filepath.Base(procDest))
 					if c.userNS {
-						if _, err := c.rpcOps.Mkdir(dest, 0755); err != nil {
+						if err := c.rpcOps.Mkdir(dest, 0755); err != nil {
 							return err
 						}
 					} else {

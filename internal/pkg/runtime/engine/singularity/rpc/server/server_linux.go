@@ -7,6 +7,7 @@ package server
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"strconv"
@@ -17,6 +18,7 @@ import (
 
 	args "github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/util/crypt"
@@ -217,8 +219,10 @@ func (t *Methods) Chdir(arguments *args.ChdirArgs, reply *int) error {
 
 // Stat gets file status.
 func (t *Methods) Stat(arguments *args.StatArgs, reply *args.StatReply) error {
-	var err error
-	reply.Err = syscall.Stat(arguments.Path, &reply.St)
+	fi, err := os.Stat(arguments.Path)
+	if fi != nil {
+		reply.Fi = args.FileInfo(fi)
+	}
 	return err
 }
 
@@ -245,4 +249,65 @@ func (t *Methods) OpenSendFuseFd(arguments *args.OpenSendFuseFdArgs, reply *int)
 
 	rights := unix.UnixRights(fd)
 	return unix.Sendmsg(arguments.Socket, nil, rights, nil, 0)
+}
+
+// Symlink performs a symlink with the specified arguments.
+func (t *Methods) Symlink(arguments *args.SymlinkArgs, reply *int) error {
+	return os.Symlink(arguments.Old, arguments.New)
+}
+
+// ReadDir performs a readdir with the specified arguments.
+func (t *Methods) ReadDir(arguments *args.ReadDirArgs, reply *args.ReadDirReply) error {
+	files, err := ioutil.ReadDir(arguments.Dir)
+	for i, file := range files {
+		files[i] = args.FileInfo(file)
+	}
+	reply.Files = files
+	return err
+}
+
+// Chown performs a chown with the specified arguments.
+func (t *Methods) Chown(arguments *args.ChownArgs, reply *int) error {
+	return os.Chown(arguments.Name, arguments.UID, arguments.GID)
+}
+
+// Lchown performs a lchown with the specified arguments.
+func (t *Methods) Lchown(arguments *args.ChownArgs, reply *int) error {
+	return os.Lchown(arguments.Name, arguments.UID, arguments.GID)
+}
+
+// EvalRelative calls EvalRelative with the specified arguments.
+func (t *Methods) EvalRelative(arguments *args.EvalRelativeArgs, reply *string) error {
+	*reply = fs.EvalRelative(arguments.Name, arguments.Root)
+	return nil
+}
+
+// Readlink performs a readlink with the specified arguments.
+func (t *Methods) Readlink(arguments *args.ReadlinkArgs, reply *string) (err error) {
+	*reply, err = os.Readlink(arguments.Name)
+	return err
+}
+
+// Umask performs a umask with the specified arguments.
+func (t *Methods) Umask(arguments *args.UmaskArgs, reply *int) (err error) {
+	*reply = syscall.Umask(arguments.Mask)
+	return nil
+}
+
+// WriteFile creates an empty file if it doesn't exist or a file with the provided data.
+func (t *Methods) WriteFile(arguments *args.WriteFileArgs, reply *int) error {
+	f, err := os.OpenFile(arguments.Filename, os.O_CREATE|os.O_WRONLY|os.O_EXCL, arguments.Perm)
+	if err != nil {
+		if !os.IsExist(err) {
+			return fmt.Errorf("failed to create file %s: %s", arguments.Filename, err)
+		}
+		return err
+	}
+	if len(arguments.Data) > 0 {
+		_, err = f.Write(arguments.Data)
+	}
+	if err1 := f.Close(); err == nil {
+		err = err1
+	}
+	return err
 }

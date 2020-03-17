@@ -425,17 +425,13 @@ func (c *container) setupImageDriver(system *mount.System) error {
 				uid = 0
 				gid = 0
 
-				// FIXME: with hybrid workflow this process is actually
-				// running as the user but outside of the fakeroot user namespace,
-				// it means that the FUSE kernel code prevent us from accessing
-				// the mount point where images (rootfs, overlay ...) resides
-				// if we are not in the user namespace and as a consequence we
-				// can't create the layer for overlay/underlay because we get
-				// permission denied error. By removing allow_other option
-				// the FUSE kernel code doesn't check if the current process
-				// resides in the user namespace but we couldn't change UID/GID
-				// within the container.
-				allowOther = ""
+				// with hybrid workflow this process is actually running as the
+				// user but outside of the fakeroot user namespace, it means that
+				// the FUSE kernel code prevent us from accessing the mount point
+				// where images (rootfs, overlay ...) resides if we are not in the
+				// user namespace, so we redirect session VFS calls via RPC in order
+				// to be in the user namespace when dealing with filesystem related calls.
+				c.session.VFS = c.rpcOps
 
 				if params.UsernsFd != -1 {
 					defer unix.Close(params.UsernsFd)
@@ -877,12 +873,12 @@ func (c *container) overlayUpperWork(system *mount.System) error {
 	}
 
 	if !fs.IsDir(u) {
-		if _, err := c.rpcOps.Mkdir(u, 0755); err != nil {
+		if err := c.rpcOps.Mkdir(u, 0755); err != nil {
 			return fmt.Errorf("failed to create %s directory: %s", u, err)
 		}
 	}
 	if !fs.IsDir(w) {
-		if _, err := c.rpcOps.Mkdir(w, 0755); err != nil {
+		if err := c.rpcOps.Mkdir(w, 0755); err != nil {
 			return fmt.Errorf("failed to create %s directory: %s", w, err)
 		}
 	}
@@ -1933,7 +1929,7 @@ func (c *container) addCwdMount(system *mount.System) error {
 	dest := fs.EvalRelative(cwd, c.session.FinalPath())
 	dest = filepath.Join(c.session.FinalPath(), dest)
 
-	st, err := c.rpcOps.Stat(dest)
+	fi, err := c.rpcOps.Stat(dest)
 	if err != nil {
 		if os.IsNotExist(err) {
 			sylog.Verbosef("Not mounting CWD, %s doesn't exist within container", cwd)
@@ -1941,12 +1937,14 @@ func (c *container) addCwdMount(system *mount.System) error {
 		sylog.Verbosef("Not mounting CWD, while getting %s information: %s", cwd, err)
 		return nil
 	}
+	cst := fi.Sys().(*syscall.Stat_t)
+
 	var hst syscall.Stat_t
 	if err := syscall.Stat(cwd, &hst); err != nil {
 		return err
 	}
 	// same ino/dev, the current working directory is available within the container
-	if hst.Dev == st.Dev && hst.Ino == st.Ino {
+	if hst.Dev == cst.Dev && hst.Ino == cst.Ino {
 		sylog.Verbosef("%s found within container", cwd)
 		return nil
 	} else if c.isMounted(dest) {

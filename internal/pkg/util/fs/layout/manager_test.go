@@ -21,7 +21,7 @@ func TestLayout(t *testing.T) {
 	uid := os.Getuid()
 	gid := os.Getgid()
 
-	session := &Manager{}
+	session := &Manager{VFS: DefaultVFS}
 
 	groups, err := os.Getgroups()
 	if err != nil {
