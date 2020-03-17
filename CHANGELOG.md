@@ -21,6 +21,8 @@ _The old changelog can be found in the `release-2.6` branch_
   - Restore the CWD mount behaviour of v2, implying that CWD path is not recreated
     inside container and any symlinks in the CWD path are not resolved anymore to
     determine the destination path inside container.
+  - `%test` build section is executed the same manner as `singularity test image`.
+  - `%post` build section inherit environment variables from the base image.
 
 # Changes Since v3.5.2
 
