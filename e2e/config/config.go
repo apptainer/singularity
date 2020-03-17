@@ -6,11 +6,14 @@
 package config
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
 
@@ -397,6 +400,66 @@ func (c configTests) configGlobal(t *testing.T) {
 	}
 }
 
+func (c configTests) configFile(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	tests := []struct {
+		name    string
+		argv    []string
+		profile e2e.Profile
+		conf    string
+		exit    int
+	}{
+		{
+			name:    "MaxLoopDevicesKO",
+			argv:    []string{c.env.ImagePath, "true"},
+			profile: e2e.RootProfile,
+			conf:    "max loop devices = 0\n",
+			exit:    255,
+		},
+		{
+			name:    "MaxLoopDevicesOK",
+			argv:    []string{c.env.ImagePath, "true"},
+			profile: e2e.RootProfile,
+			conf:    "max loop devices = 10\n",
+			exit:    0,
+		},
+		{
+			name:    "UserForbidden",
+			argv:    []string{c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			conf:    "max loop devices = 0\n",
+			exit:    255,
+		},
+	}
+
+	// Create a temp testfile
+	f, err := fs.MakeTmpFile(c.env.TestDir, "config-", 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	configFile := f.Name()
+	defer os.Remove(configFile)
+	f.Close()
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithGlobalOptions("--config", configFile),
+			e2e.WithProfile(tt.profile),
+			e2e.PreRun(func(t *testing.T) {
+				if err := ioutil.WriteFile(configFile, []byte(tt.conf), 0644); err != nil {
+					t.Errorf("could not write configuration file %s: %s", configFile, err)
+				}
+			}),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.argv...),
+			e2e.ExpectExit(tt.exit),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := configTests{
@@ -406,6 +469,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	np := testhelper.NoParallel
 
 	return testhelper.Tests{
+		"config file":   c.configFile,       // test --config file option
 		"config global": np(c.configGlobal), // test various global configuration
 	}
 }
