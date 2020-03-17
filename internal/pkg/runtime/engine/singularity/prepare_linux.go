@@ -1140,11 +1140,11 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
 		if err == nil {
 			if err = ecl.ValidateConfig(); err != nil {
-				return err
+				return fmt.Errorf("while validating ECL configuration: %s", err)
 			}
 			_, err := ecl.ShouldRunFp(img.File)
 			if err != nil {
-				return err
+				return fmt.Errorf("while checking container image with ECL: %s", err)
 			}
 		}
 
