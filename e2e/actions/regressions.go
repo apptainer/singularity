@@ -305,6 +305,7 @@ func (c actionTests) issue4823(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithGlobalOptions("--debug"),
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(srv.URL+tt.urlPath, "/bin/true"),
