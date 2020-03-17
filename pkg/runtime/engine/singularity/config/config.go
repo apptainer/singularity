@@ -130,6 +130,7 @@ type JSONConfig struct {
 	DNS               string            `json:"dns,omitempty"`
 	Cwd               string            `json:"cwd,omitempty"`
 	SessionLayer      string            `json:"sessionLayer,omitempty"`
+	ConfigurationFile string            `json:"configurationFile,omitempty"`
 	EncryptionKey     []byte            `json:"encryptionKey,omitempty"`
 	TargetUID         int               `json:"targetUID,omitempty"`
 	WritableImage     bool              `json:"writableImage,omitempty"`
@@ -815,4 +816,15 @@ func (e *EngineConfig) SetSingularityEnv(senv map[string]string) {
 // as a key/value string map.
 func (e *EngineConfig) GetSingularityEnv() map[string]string {
 	return e.JSON.SingularityEnv
+}
+
+// SetConfigurationFile sets the singularity configuration file to
+// use instead of the default one.
+func (e *EngineConfig) SetConfigurationFile(filename string) {
+	e.JSON.ConfigurationFile = filename
+}
+
+// GetConfigurationFile returns the singularity configuration file to use.
+func (e *EngineConfig) GetConfigurationFile() string {
+	return e.JSON.ConfigurationFile
 }

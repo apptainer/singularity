@@ -90,7 +90,7 @@ var configGlobalCmd = &cobra.Command{
 			return fmt.Errorf("you must specify an option (eg: --set/--unset)")
 		}
 
-		if err := singularity.GlobalConfig(args, globalConfigDryRun, op); err != nil {
+		if err := singularity.GlobalConfig(args, configurationFile, globalConfigDryRun, op); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 

@@ -54,12 +54,17 @@ func cryptsetup(cfgpath string) (string, error) {
 		return "", errCryptsetupNotFound
 	}
 
-	cfg, err := singularityconf.Parse(cfgpath)
-	if err != nil {
-		return "", errors.Wrap(err, "unable to parse singularity configuration file")
-	}
+	path := ""
 
-	path := cfg.CryptsetupPath
+	if cfg := singularityconf.GetCurrentConfig(); cfg != nil {
+		path = cfg.CryptsetupPath
+	} else {
+		cfg, err := singularityconf.Parse(cfgpath)
+		if err != nil {
+			return "", errors.Wrap(err, "unable to parse singularity configuration file")
+		}
+		path = cfg.CryptsetupPath
+	}
 
 	if path == "" {
 		if buildcfg.CRYPTSETUP_PATH == "" {

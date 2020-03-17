@@ -148,9 +148,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	engineConfig := singularityConfig.NewConfig()
 
-	engineConfig.File, err = singularityconf.Parse(buildcfg.SINGULARITY_CONF_FILE)
-	if err != nil {
-		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
+	engineConfig.File = singularityconf.GetCurrentConfig()
+	if engineConfig.File == nil {
+		sylog.Fatalf("Unable to get singularity configuration")
 	}
 
 	ociConfig := &oci.Config{}
@@ -376,6 +376,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetRocm(Rocm)
 	engineConfig.SetAddCaps(AddCaps)
 	engineConfig.SetDropCaps(DropCaps)
+	engineConfig.SetConfigurationFile(configurationFile)
 
 	checkPrivileges(AllowSUID, "--allow-setuid", func() {
 		engineConfig.SetAllowSUID(AllowSUID)
