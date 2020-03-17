@@ -178,7 +178,9 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 	if err := system.RunAfterTag(mount.SessionTag, c.addMountInfo); err != nil {
 		return err
 	}
-
+	if err := system.RunBeforeTag(mount.CwdTag, c.addCwdMount); err != nil {
+		return err
+	}
 	if err := system.RunAfterTag(mount.SharedTag, c.addIdentityMount); err != nil {
 		return err
 	}
@@ -233,9 +235,6 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 	}
 	usernsFd, err := c.addFuseMount(system)
 	if err != nil {
-		return err
-	}
-	if err := c.addCwdMount(system); err != nil {
 		return err
 	}
 
@@ -539,47 +538,6 @@ func (c *container) chdirFinal(system *mount.System) error {
 	return nil
 }
 
-func (c *container) sameInode(host string, container string) bool {
-	cst, err := c.rpcOps.Stat(container)
-	if err != nil {
-		sylog.Debugf("Could not get file status for %s: %s", container, err)
-		return false
-	}
-
-	var hst syscall.Stat_t
-	if err := syscall.Stat(host, &hst); err != nil {
-		sylog.Debugf("Could not get file status for %s: %s", host, err)
-		return false
-	}
-
-	if hst.Dev == cst.Dev && hst.Ino == cst.Ino {
-		return true
-	}
-
-	return false
-}
-
-func (c *container) isMounted(dest string) bool {
-	if !filepath.IsAbs(dest) {
-		sylog.Debugf("%s is not an absolute path", dest)
-		return false
-	}
-
-	entries, err := proc.GetMountInfoEntry(c.mountInfoPath)
-	if err != nil {
-		sylog.Debugf("Could not get %s entries: %s", c.mountInfoPath, err)
-		return false
-	}
-
-	for _, e := range entries {
-		if e.Point == dest {
-			return true
-		}
-	}
-
-	return false
-}
-
 // mount any generic mount (not loop dev)
 func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err error) {
 	flags, opts := mount.ConvertOptions(mnt.Options)
@@ -632,16 +590,6 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 		}
 		sylog.Debugf("Remounting %s\n", dest)
 	} else {
-		if tag == mount.CwdTag {
-			hostCwd := c.engine.EngineConfig.GetCwd()
-			containerCwd := filepath.Join(c.session.FinalPath(), mnt.Destination)
-
-			if c.sameInode(hostCwd, containerCwd) || c.isMounted(containerCwd) {
-				c.skippedMount = append(c.skippedMount, mnt.Destination)
-				sylog.Verbosef("Skipping mount %s, %s already mounted", hostCwd, containerCwd)
-				return nil
-			}
-		}
 		sylog.Debugf("Mounting %s to %s\n", source, dest)
 
 		// in stage 1 we changed current working directory to
@@ -1929,6 +1877,29 @@ func (c *container) addScratchMount(system *mount.System) error {
 	return nil
 }
 
+func (c *container) isMounted(dest string) bool {
+	sylog.Debugf("Checking if %s is already mounted", dest)
+
+	if !filepath.IsAbs(dest) {
+		sylog.Debugf("%s is not an absolute path", dest)
+		return false
+	}
+
+	entries, err := proc.GetMountInfoEntry(c.mountInfoPath)
+	if err != nil {
+		sylog.Debugf("Could not get %s entries: %s", c.mountInfoPath, err)
+		return false
+	}
+
+	for _, e := range entries {
+		if e.Point == dest {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (c *container) addCwdMount(system *mount.System) error {
 	if c.engine.EngineConfig.GetContain() {
 		sylog.Verbosef("Not mounting current directory: container was requested")
@@ -1958,50 +1929,36 @@ func (c *container) addCwdMount(system *mount.System) error {
 		sylog.Verbosef("Not mounting CWD within virtual directory: %s", current)
 		return nil
 	}
-	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
-	if err := system.Points.AddBind(mount.CwdTag, cwd, current, flags); err == nil {
-		system.Points.AddRemount(mount.CwdTag, current, flags)
-		sylog.Verbosef("Default mount: %v: to the container", current)
-	} else {
-		sylog.Warningf("Could not bind CWD to container %s: %s", current, err)
-	}
 
-	// welcome to the symlink madness ... instead of adding a
-	// superfluous bind mount, we will create a symlink for the
-	// last element of the path which doesn't necessarily reflect
-	// the real symlink(s) found in the path but does the same
-	// job as a bind mount would do. We can do that only when a
-	// layer is enabled, if it's not the case we display a warning
-	if cwd != current {
-		if c.isLayerEnabled() {
-			// symlink creation below may enter in a recursive
-			// situation where CWD contains a symlink element
-			// and a previous bind overlap an element of CWD path
-			for p := cwd; p != "/"; p = filepath.Dir(p) {
-				lp := filepath.Join(c.session.Layer.Dir(), p)
-				if b, err := c.session.GetOverridePath(lp); err == nil {
-					sylog.Warningf("Bind mount '%s => %s' overlaps container CWD %s, may not be available", b, p, cwd)
-					return nil
-				}
-			}
+	dest := fs.EvalRelative(cwd, c.session.FinalPath())
+	dest = filepath.Join(c.session.FinalPath(), dest)
 
-			linkPath := filepath.Join(c.session.Layer.Dir(), cwd)
-			// if the last element is a symlink, duplicate the target
-			target, err := os.Readlink(cwd)
-			if err != nil {
-				target = current
-			}
-			if err := c.session.AddSymlink(linkPath, target); err != nil {
-				return fmt.Errorf("can't create symlink %s: %s", linkPath, err)
-			}
-			return nil
+	st, err := c.rpcOps.Stat(dest)
+	if err != nil {
+		if os.IsNotExist(err) {
+			sylog.Verbosef("Not mounting CWD, %s doesn't exist within container", cwd)
 		}
-		sylog.Warningf(
-			"Your current working directory is a symlink and may not be available " +
-				"in container, you should use real path with --writable when possible")
+		sylog.Verbosef("Not mounting CWD, while getting %s information: %s", cwd, err)
+		return nil
+	}
+	var hst syscall.Stat_t
+	if err := syscall.Stat(cwd, &hst); err != nil {
+		return err
+	}
+	// same ino/dev, the current working directory is available within the container
+	if hst.Dev == st.Dev && hst.Ino == st.Ino {
+		sylog.Verbosef("%s found within container", cwd)
+		return nil
+	} else if c.isMounted(dest) {
+		sylog.Verbosef("Not mounting CWD (already mounted in container): %s", cwd)
+		return nil
 	}
 
-	return nil
+	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
+	if err := system.Points.AddBind(mount.CwdTag, cwd, cwd, flags); err != nil {
+		return fmt.Errorf("could not bind cwd directory %s into container: %s", cwd, err)
+	}
+	return system.Points.AddRemount(mount.CwdTag, cwd, flags)
 }
 
 func (c *container) addLibsMount(system *mount.System) error {
