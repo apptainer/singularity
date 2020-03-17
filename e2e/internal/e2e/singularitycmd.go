@@ -262,21 +262,22 @@ type SingularityCmdOp func(*singularityCmd)
 
 // singularityCmd defines a Singularity command execution test.
 type singularityCmd struct {
-	cmd         []string
-	args        []string
-	envs        []string
-	dir         string // Working directory to be used when executing the command
-	subtestName string
-	stdin       io.Reader
-	waitErr     error
-	preFn       func(*testing.T)
-	postFn      func(*testing.T)
-	consoleFn   SingularityCmdOp
-	console     *expect.Console
-	resultFn    SingularityCmdOp
-	result      *SingularityCmdResult
-	t           *testing.T
-	profile     Profile
+	globalOptions []string
+	cmd           []string
+	args          []string
+	envs          []string
+	dir           string // Working directory to be used when executing the command
+	subtestName   string
+	stdin         io.Reader
+	waitErr       error
+	preFn         func(*testing.T)
+	postFn        func(*testing.T)
+	consoleFn     SingularityCmdOp
+	console       *expect.Console
+	resultFn      SingularityCmdOp
+	result        *SingularityCmdResult
+	t             *testing.T
+	profile       Profile
 }
 
 // AsSubtest requests the command to be run as a subtest
@@ -338,6 +339,15 @@ func WithProfile(profile Profile) SingularityCmdOp {
 func WithStdin(r io.Reader) SingularityCmdOp {
 	return func(s *singularityCmd) {
 		s.stdin = r
+	}
+}
+
+// WithGlobalOptions sets global singularity option (eg: --debug, --silent).
+func WithGlobalOptions(options ...string) SingularityCmdOp {
+	return func(s *singularityCmd) {
+		if len(options) > 0 {
+			s.globalOptions = append(s.globalOptions, options...)
+		}
 	}
 }
 
@@ -478,7 +488,7 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 		t.Helper()
 
 		s.result = new(SingularityCmdResult)
-		pargs := append([]string{"--debug"}, s.cmd...)
+		pargs := append(s.globalOptions, s.cmd...)
 		pargs = append(pargs, s.profile.args(s.cmd)...)
 		s.args = append(pargs, s.args...)
 		s.result.FullCmd = fmt.Sprintf("%s %s", cmdPath, strings.Join(s.args, " "))
