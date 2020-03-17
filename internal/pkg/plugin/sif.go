@@ -7,9 +7,11 @@ package plugin
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/image"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
 
@@ -22,17 +24,7 @@ const (
 	pluginManifestName = "plugin.manifest"
 )
 
-// sifReader defines helper functions fimg *sif.FileImage.
-type sifReader interface {
-	Descriptors() int
-	IsUsed(name string) bool
-	GetDatatype(name string) sif.Datatype
-	GetFsType(name string) (sif.Fstype, error)
-	GetPartType(name string) (sif.Parttype, error)
-	GetData(name string) []byte
-}
-
-// isPluginFile checks if the sif.FileImage contains the sections which
+// isPluginFile checks if the image.Image contains the sections which
 // make up a valid plugin. A plugin sif file should have the following
 // format:
 //
@@ -42,36 +34,31 @@ type sifReader interface {
 //   - Parttype: sif.PartData
 // DESCR[1]: Sifmanifest
 //   - Datatype: sif.DataGenericJSON
-func isPluginFile(fimg sifReader) bool {
-	if fimg.Descriptors() < 2 {
+func isPluginFile(img *image.Image) bool {
+	if img.Type != image.SIF {
 		return false
 	}
 
-	if !fimg.IsUsed(pluginBinaryName) {
+	part, _ := img.GetAllPartitions()
+	if len(part) != 1 || len(img.Sections) != 1 {
 		return false
 	}
 
-	if fimg.GetDatatype(pluginBinaryName) != sif.DataPartition {
+	// check binary object
+	if part[0].Name != pluginBinaryName {
+		return false
+	} else if part[0].AllowedUsage&image.DataUsage == 0 {
+		return false
+	} else if part[0].Type != image.RAW {
 		return false
 	}
 
-	if fstype, err := fimg.GetFsType(pluginBinaryName); err != nil {
+	// check manifest
+	if img.Sections[0].Name != pluginManifestName {
 		return false
-	} else if fstype != sif.FsRaw {
+	} else if img.Sections[0].AllowedUsage&image.DataUsage == 0 {
 		return false
-	}
-
-	if partype, err := fimg.GetPartType(pluginBinaryName); err != nil {
-		return false
-	} else if partype != sif.PartData {
-		return false
-	}
-
-	if !fimg.IsUsed(pluginManifestName) {
-		return false
-	}
-
-	if fimg.GetDatatype(pluginManifestName) != sif.DataGenericJSON {
+	} else if img.Sections[0].Type != uint32(sif.DataGenericJSON) {
 		return false
 	}
 
@@ -79,72 +66,25 @@ func isPluginFile(fimg sifReader) bool {
 }
 
 // getManifest will extract the Manifest data from the input FileImage.
-func getManifest(fimg sifReader) pluginapi.Manifest {
-	if fimg.Descriptors() < 2 || !fimg.IsUsed(pluginManifestName) {
-		return pluginapi.Manifest{}
-	}
-
-	data := fimg.GetData(pluginManifestName)
-	if data == nil {
-		return pluginapi.Manifest{}
-	}
-
+func getManifest(img *image.Image) (pluginapi.Manifest, error) {
 	var manifest pluginapi.Manifest
-	if err := json.Unmarshal(data, &manifest); err != nil {
-		sylog.Errorf("Could not unmarshal manifest: %v", err)
-		return pluginapi.Manifest{}
+
+	r, err := getManifestReader(img)
+	if err != nil {
+		return manifest, err
 	}
 
-	return manifest
-}
-
-type sifFileImageReader struct {
-	fi          *sif.FileImage
-	descriptors map[string]int
-}
-
-func newSifFileImageReader(fi *sif.FileImage) *sifFileImageReader {
-	r := &sifFileImageReader{fi: fi, descriptors: make(map[string]int)}
-	for n, desc := range fi.DescrArr {
-		if !desc.Used {
-			continue
-		}
-		r.descriptors[fi.DescrArr[n].GetName()] = n
+	if err := json.NewDecoder(r).Decode(&manifest); err != nil {
+		return manifest, fmt.Errorf("while decoding JSON manifest: %s", err)
 	}
-	return r
+
+	return manifest, nil
 }
 
-func (r *sifFileImageReader) Descriptors() int {
-	return len(r.fi.DescrArr)
+func getBinaryReader(img *image.Image) (io.Reader, error) {
+	return image.NewPartitionReader(img, pluginBinaryName, -1)
 }
 
-func (r *sifFileImageReader) IsUsed(name string) bool {
-	n := r.descriptors[name]
-	return r.fi.DescrArr[n].Used
-}
-
-func (r *sifFileImageReader) GetDatatype(name string) sif.Datatype {
-	n := r.descriptors[name]
-	return r.fi.DescrArr[n].Datatype
-}
-
-func (r *sifFileImageReader) GetFsType(name string) (sif.Fstype, error) {
-	n := r.descriptors[name]
-	return r.fi.DescrArr[n].GetFsType()
-}
-
-func (r *sifFileImageReader) GetPartType(name string) (sif.Parttype, error) {
-	n := r.descriptors[name]
-	return r.fi.DescrArr[n].GetPartType()
-}
-
-func (r *sifFileImageReader) GetData(name string) []byte {
-	var (
-		n     = r.descriptors[name]
-		start = r.fi.DescrArr[n].Fileoff
-		end   = start + r.fi.DescrArr[n].Filelen
-		data  = r.fi.Filedata[start:end]
-	)
-
-	return data
+func getManifestReader(img *image.Image) (io.Reader, error) {
+	return image.NewSectionReader(img, pluginManifestName, -1)
 }

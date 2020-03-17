@@ -14,10 +14,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/plugin/callback"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/image"
 )
 
 const (
@@ -25,7 +25,7 @@ const (
 	// installation, typically located within LIBEXECDIR.
 	rootDir = buildcfg.PLUGIN_ROOTDIR
 	// nameImage is the name of the SIF image of the plugin
-	nameImage = "plugin.sif"
+	nameManifest = "object.manifest"
 	// nameBinary is the name of the plugin object
 	nameBinary = "object.so"
 )
@@ -41,9 +41,6 @@ type Meta struct {
 	Enabled bool
 	// Callbacks contains callbacks name registered by the plugin.
 	Callbacks []string
-
-	// sifFile is the SIF file handle containing plugin.
-	sifFile *sif.FileImage
 }
 
 // loadFromJSON loads a Meta type from an io.Reader containing
@@ -90,16 +87,15 @@ func metaPath(name string) string {
 
 // install installs the plugin represented by m into the plugin installation
 // directory. This should normally only be called in InstallFromSIF.
-func (m *Meta) install() error {
+func (m *Meta) install(img *image.Image) error {
 	if err := os.MkdirAll(m.path(), 0755); err != nil {
 		return err
 	}
 
-	if err := m.installImage(); err != nil {
+	if err := m.installBinary(img); err != nil {
 		return err
 	}
-
-	if err := m.installBinary(); err != nil {
+	if err := m.installManifest(img); err != nil {
 		return err
 	}
 
@@ -116,28 +112,35 @@ func (m *Meta) install() error {
 	return nil
 }
 
-func (m *Meta) installImage() error {
-	fh, err := os.Create(m.imageName())
-	if err != nil {
-		return err
-	}
-	defer fh.Close()
-
-	_, err = fh.Write(m.sifFile.Filedata)
-	return err
-}
-
-func (m *Meta) installBinary() error {
+func (m *Meta) installBinary(img *image.Image) error {
 	fh, err := os.Create(m.binaryName())
 	if err != nil {
 		return err
 	}
 	defer fh.Close()
 
-	start := m.sifFile.DescrArr[0].Fileoff
-	end := start + m.sifFile.DescrArr[0].Filelen
-	_, err = fh.Write(m.sifFile.Filedata[start:end])
+	r, err := getBinaryReader(img)
+	if err != nil {
+		return err
+	}
 
+	_, err = io.Copy(fh, r)
+	return err
+}
+
+func (m *Meta) installManifest(img *image.Image) error {
+	fh, err := os.Create(m.manifestName())
+	if err != nil {
+		return err
+	}
+	defer fh.Close()
+
+	r, err := getManifestReader(img)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(fh, r)
 	return err
 }
 
@@ -243,7 +246,7 @@ func (m *Meta) removeDir() error {
 	if _, err := os.Stat(m.binaryName()); err != nil {
 		return err
 	}
-	if _, err := os.Stat(m.imageName()); err != nil {
+	if _, err := os.Stat(m.manifestName()); err != nil {
 		return err
 	}
 	return os.RemoveAll(m.path())
@@ -267,8 +270,8 @@ func (m *Meta) disable() error {
 // Path name helper methods on (m *Meta)
 //
 
-func (m *Meta) imageName() string {
-	return filepath.Join(m.path(), nameImage)
+func (m *Meta) manifestName() string {
+	return filepath.Join(m.path(), nameManifest)
 }
 
 func (m *Meta) binaryName() string {

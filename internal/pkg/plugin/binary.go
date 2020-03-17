@@ -7,12 +7,14 @@ package plugin
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/image"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
 
@@ -26,19 +28,17 @@ import (
 func Install(sifPath string) error {
 	sylog.Debugf("Installing plugin from SIF to %q", rootDir)
 
-	sifFile, err := sif.LoadContainer(sifPath, true)
+	img, err := image.Init(sifPath, false)
 	if err != nil {
 		return fmt.Errorf("could not load plugin: %w", err)
+	} else if !isPluginFile(img) {
+		return fmt.Errorf("%s is not a valid plugin", sifPath)
 	}
-	defer sifFile.UnloadContainer()
 
-	sr := newSifFileImageReader(&sifFile)
-	if !isPluginFile(sr) {
-		return fmt.Errorf("not a valid plugin")
-	}
-	manifest := getManifest(sr)
-
-	if manifest.Name == "" {
+	manifest, err := getManifest(img)
+	if err != nil {
+		return fmt.Errorf("could not get manifest: %s", err)
+	} else if manifest.Name == "" {
 		return fmt.Errorf("empty plugin in manifest")
 	}
 
@@ -56,11 +56,9 @@ func Install(sifPath string) error {
 	m := &Meta{
 		Name:    manifest.Name,
 		Enabled: true,
-
-		sifFile: &sifFile,
 	}
 
-	err = m.install()
+	err = m.install(img)
 	if err != nil {
 		return fmt.Errorf("could not install plugin: %w", err)
 	}
@@ -164,43 +162,43 @@ func Inspect(name string) (pluginapi.Manifest, error) {
 	// to ask whether the error happens because the file does not
 	// exist or something else. Check for the file _before_ trying
 	// to load it as a container.
-	if _, err := os.Stat(name); err != nil {
-		if os.IsNotExist(err) {
-			// no file, try to find the installed plugin
-			meta, err := loadMetaByName(name)
-			if err != nil {
-				// Metafile not found, or we cannot read
-				// it. There's nothing we can do.
-				return manifest, err
-			}
-
-			// Replace the original name, which seems to be
-			// the name of a plugin, by the path to the
-			// installed SIF file for that plugin.
-			name = meta.imageName()
-		} else {
+	_, err := os.Stat(name)
+	if err != nil {
+		if !os.IsNotExist(err) {
 			// There seems to be a file here, but we cannot
 			// read it.
 			return manifest, err
 		}
+
+		// no file, try to find the installed plugin
+		meta, err := loadMetaByName(name)
+		if err != nil {
+			// Metafile not found, or we cannot read
+			// it. There's nothing we can do.
+			return manifest, err
+		}
+
+		// Replace the original name, which seems to be
+		// the name of a plugin, by the path to the
+		// installed manifest file for that plugin.
+		data, err := ioutil.ReadFile(meta.manifestName())
+		if err != nil {
+			return manifest, err
+		}
+		if err := json.Unmarshal(data, &manifest); err != nil {
+			return manifest, err
+		}
+	} else {
+		// at this point, either the file is there under the original
+		// name or we found one by looking at the metafile.
+		img, err := image.Init(name, false)
+		if err != nil {
+			return manifest, fmt.Errorf("could not load plugin: %w", err)
+		} else if !isPluginFile(img) {
+			return manifest, fmt.Errorf("%s is not a valid plugin", name)
+		}
+		return getManifest(img)
 	}
-
-	// at this point, either the file is there under the original
-	// name or we found one by looking at the metafile.
-	fimg, err := sif.LoadContainer(name, true)
-	if err != nil {
-		return manifest, err
-	}
-
-	defer fimg.UnloadContainer()
-
-	r := newSifFileImageReader(&fimg)
-
-	if !isPluginFile(r) {
-		return manifest, fmt.Errorf("not a valid plugin")
-	}
-
-	manifest = getManifest(r)
 
 	return manifest, nil
 }
