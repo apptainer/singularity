@@ -90,7 +90,15 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		return fmt.Errorf("no root filesystem image provided")
 	}
 
-	engine.EngineConfig.File, err = singularityconf.Parse(buildcfg.SINGULARITY_CONF_FILE)
+	configurationFile := buildcfg.SINGULARITY_CONF_FILE
+	if buildcfg.SINGULARITY_SUID_INSTALL == 0 || os.Geteuid() == 0 {
+		configFile := engine.EngineConfig.GetConfigurationFile()
+		if configFile != "" {
+			configurationFile = configFile
+		}
+	}
+
+	engine.EngineConfig.File, err = singularityconf.Parse(configurationFile)
 	if err != nil {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}

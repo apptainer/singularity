@@ -70,6 +70,13 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	}
 
 	configurationFile := buildcfg.SINGULARITY_CONF_FILE
+	if buildcfg.SINGULARITY_SUID_INSTALL == 0 || os.Geteuid() == 0 {
+		configFile := e.EngineConfig.GetConfigurationFile()
+		if configFile != "" {
+			configurationFile = configFile
+		}
+	}
+
 	e.EngineConfig.File, err = singularityconf.Parse(configurationFile)
 	if err != nil {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)

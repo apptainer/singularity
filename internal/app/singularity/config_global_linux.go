@@ -10,7 +10,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	"golang.org/x/sys/unix"
 )
@@ -67,7 +66,7 @@ func generateConfig(path string, directives singularityconf.Directives, dry bool
 
 // GlobalConfig allows to set/unset/reset a configuration directive value
 // in singularity.conf
-func GlobalConfig(args []string, dry bool, op GlobalConfigOp) error {
+func GlobalConfig(args []string, configFile string, dry bool, op GlobalConfigOp) error {
 	directive := args[0]
 	value := ""
 
@@ -81,8 +80,6 @@ func GlobalConfig(args []string, dry bool, op GlobalConfigOp) error {
 	if !singularityconf.HasDirective(directive) {
 		return fmt.Errorf("%q is not a valid configuration directive", directive)
 	}
-
-	configFile := buildcfg.SINGULARITY_CONF_FILE
 
 	f, err := os.OpenFile(configFile, os.O_RDONLY, 0644)
 	if err != nil {

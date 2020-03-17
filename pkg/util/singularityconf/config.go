@@ -5,6 +5,21 @@
 
 package singularityconf
 
+// currentConfig corresponds to the current configuration, may
+// be useful for packages requiring to share the same configuration.
+var currentConfig *File
+
+// SetCurrentConfig sets the provided configuration as the current
+// configuration.
+func SetCurrentConfig(config *File) {
+	currentConfig = config
+}
+
+// GetCurrentConfig returns the current configuration if any.
+func GetCurrentConfig() *File {
+	return currentConfig
+}
+
 // File describes the singularity.conf file options
 type File struct {
 	AllowSetuid             bool     `default:"yes" authorized:"yes,no" directive:"allow setuid"`

@@ -29,6 +29,7 @@ import (
 	"github.com/sylabs/singularity/pkg/cmdline"
 	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
 	"github.com/sylabs/singularity/pkg/syfs"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // cmdInits holds all the init function to be called
@@ -73,6 +74,8 @@ var (
 	silent  bool
 	verbose bool
 	quiet   bool
+
+	configurationFile string
 )
 
 // -d|--debug
@@ -216,6 +219,17 @@ var commonTmpDirFlag = cmdline.Flag{
 	EnvKeys:      []string{"TMPDIR"},
 }
 
+// -c|--config
+var singConfigFileFlag = cmdline.Flag{
+	ID:           "singConfigFileFlag",
+	Value:        &configurationFile,
+	DefaultValue: buildcfg.SINGULARITY_CONF_FILE,
+	Name:         "config",
+	ShortHand:    "c",
+	Usage:        "specify a configuration file (for root or unprivileged installation only)",
+	EnvKeys:      []string{"CONFIG_FILE"},
+}
+
 func getCurrentUser() *user.User {
 	usr, err := user.Current()
 	if err != nil {
@@ -299,6 +313,19 @@ func persistentPreRun(*cobra.Command, []string) {
 	setSylogColor()
 	sylog.Debugf("Singularity version: %s", buildcfg.PACKAGE_VERSION)
 
+	if os.Geteuid() != 0 && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
+		if configurationFile != singConfigFileFlag.DefaultValue {
+			sylog.Fatalf("--config requires to be root or an unprivileged installation")
+		}
+	}
+
+	sylog.Debugf("Parsing configuration file %s", configurationFile)
+	config, err := singularityconf.Parse(configurationFile)
+	if err != nil {
+		sylog.Fatalf("Couldn't not parse configuration file %s: %s", configurationFile, err)
+	}
+	singularityconf.SetCurrentConfig(config)
+
 	// Handle the config dir (~/.singularity),
 	// then check the remove conf file permission.
 	handleConfDir(syfs.ConfigDir())
@@ -335,6 +362,7 @@ func Init(loadPlugins bool) {
 	cmdManager.RegisterFlagForCmd(&singQuietFlag, singularityCmd)
 	cmdManager.RegisterFlagForCmd(&singVerboseFlag, singularityCmd)
 	cmdManager.RegisterFlagForCmd(&singTokenFileFlag, singularityCmd)
+	cmdManager.RegisterFlagForCmd(&singConfigFileFlag, singularityCmd)
 
 	cmdManager.RegisterCmd(VersionCmd)
 
