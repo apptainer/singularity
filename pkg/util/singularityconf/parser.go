@@ -97,6 +97,8 @@ func GetConfig(directives Directives) (*File, error) {
 			authorized = strings.Split(v, ",")
 		}
 
+		kind := typeField.Type.Kind()
+
 		value := []string{}
 		if len(directives[dir]) > 0 {
 			for _, dv := range directives[dir] {
@@ -105,12 +107,12 @@ func GetConfig(directives Directives) (*File, error) {
 				}
 			}
 		} else {
-			if defaultValue != "" {
+			if defaultValue != "" && (kind != reflect.Slice || directives == nil) {
 				value = append(value, strings.Split(defaultValue, ",")...)
 			}
 		}
 
-		switch typeField.Type.Kind() {
+		switch kind {
 		case reflect.Bool:
 			found := false
 			for _, a := range authorized {
