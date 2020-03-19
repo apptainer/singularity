@@ -13,6 +13,9 @@ E2E AWSOME
 hi "hello world"
 HI "HELLO WORLD"
 
+%post
+echo "export hello=\"world\"" >> $SINGULARITY_ENVIRONMENT
+
 %test
 ls /
 test -d /
@@ -25,8 +28,24 @@ export e2e="e2e testing"
 %runscript
 cat /.singularity.d/runscript.help
 
+%startscript
+exec "$@"
+
 %apprun hello
 echo "hello"
+
+%apphelp hello
+This is the help for hello!
+
+%applabels hello
+HELLOTHISIS hello
+
+%appenv hello
+HELLOTHISIS=hello
+export HELLOTHISIS
+
+%apptest hello
+echo "THIS IS A HELLO TEST"
 
 %apprun world
 echo "world"

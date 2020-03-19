@@ -6,15 +6,18 @@
 package inspect
 
 import (
+	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
+	"sort"
 	"testing"
 
-	"github.com/buger/jsonparser"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/inspect"
 )
 
 type ctx struct {
@@ -31,6 +34,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 
 	sifImage := filepath.Join(testDir, "image.sif")
 	squashImage := filepath.Join(testDir, "image.sqs")
+	sandboxImage := filepath.Join(testDir, "sandbox")
 
 	c.env.RunSingularity(
 		t,
@@ -58,108 +62,263 @@ func (c ctx) singularityInspect(t *testing.T) {
 			if _, err := io.Copy(f, r); err != nil {
 				t.Fatalf("failed to copy squash image %s: %s", squashImage, err)
 			}
+
+			c.env.RunSingularity(
+				t,
+				e2e.WithProfile(e2e.UserProfile),
+				e2e.WithCommand("build"),
+				e2e.WithArgs("--sandbox", sandboxImage, sifImage),
+				e2e.ExpectExit(0),
+			)
 		}),
 		e2e.ExpectExit(0),
 	)
 
+	compareLabel := func(label, out string, appName string) func(*testing.T, *inspect.Metadata) {
+		return func(t *testing.T, meta *inspect.Metadata) {
+			v := meta.Attributes.Labels[label]
+			if appName != "" && meta.Attributes.Apps[appName] != nil {
+				v = meta.Attributes.Apps[appName].Labels[label]
+			}
+			if v != out {
+				t.Errorf("unpexected %s label value, got %s instead of %s", label, out, v)
+			}
+		}
+	}
+
 	tests := []struct {
 		name      string
-		insType   string   // insType the type of 'inspect' flag, eg. '--deffile'
-		json      []string // json is the path to a value that we will test
-		expectOut string   // expectOut should be a string of expected output
+		insType   string                              // insType the type of 'inspect' flag, eg. '--deffile'
+		appName   string                              // appName append --app <name> to the inspect command
+		compareFn func(*testing.T, *inspect.Metadata) // json is the path to a value that we will test
 	}{
 		{
 			name:      "label maintainer",
 			insType:   "--labels",
-			json:      []string{"data", "attributes", "labels", "MAINTAINER"},
-			expectOut: "\"WestleyK \u003cwestley@sylabs.io\u003e\"",
+			compareFn: compareLabel("MAINTAINER", "\"WestleyK <westley@sylabs.io>\"", ""),
 		},
 		{
 			name:      "label_E2E",
 			insType:   "--labels",
-			json:      []string{"data", "attributes", "labels", "E2E"},
-			expectOut: "AWSOME",
+			compareFn: compareLabel("E2E", "AWSOME", ""),
 		},
 		{
 			name:      "label_HI",
 			insType:   "--labels",
-			json:      []string{"data", "attributes", "labels", "HI"},
-			expectOut: "\"HELLO WORLD\"",
+			compareFn: compareLabel("HI", "\"HELLO WORLD\"", ""),
 		},
 		{
 			name:      "label_e2e",
 			insType:   "--labels",
-			json:      []string{"data", "attributes", "labels", "e2e"},
-			expectOut: "awsome",
+			compareFn: compareLabel("e2e", "awsome", ""),
 		},
 		{
 			name:      "label_hi",
 			insType:   "--labels",
-			json:      []string{"data", "attributes", "labels", "hi"},
-			expectOut: "\"hello world\"",
+			compareFn: compareLabel("hi", "\"hello world\"", ""),
 		},
 		{
 			name:      "label_org.label-schema.usage",
 			insType:   "--labels",
-			json:      []string{"data", "attributes", "labels", "org.label-schema.usage"},
-			expectOut: "/.singularity.d/runscript.help",
+			compareFn: compareLabel("org.label-schema.usage", "/.singularity.d/runscript.help", ""),
 		},
 		{
 			name:      "label_org.label-schema.usage.singularity.deffile.bootstrap",
 			insType:   "--labels",
-			json:      []string{"data", "attributes", "labels", "org.label-schema.usage.singularity.deffile.bootstrap"},
-			expectOut: "library",
+			compareFn: compareLabel("org.label-schema.usage.singularity.deffile.bootstrap", "library", ""),
 		},
 		{
 			name:      "label_org.label-schema.usage.singularity.deffile.from",
 			insType:   "--labels",
-			json:      []string{"data", "attributes", "labels", "org.label-schema.usage.singularity.deffile.from"},
-			expectOut: "alpine:latest",
+			compareFn: compareLabel("org.label-schema.usage.singularity.deffile.from", "alpine:latest", ""),
 		},
 		{
 			name:      "label_org.label-schema.usage.singularity.runscript.help",
 			insType:   "--labels",
-			json:      []string{"data", "attributes", "labels", "org.label-schema.usage.singularity.runscript.help"},
-			expectOut: "/.singularity.d/runscript.help",
+			compareFn: compareLabel("org.label-schema.usage.singularity.runscript.help", "/.singularity.d/runscript.help", ""),
 		},
 		{
-			name:      "runscript",
-			insType:   "--runscript",
-			json:      []string{"data", "attributes", "runscript"},
-			expectOut: "#!/bin/sh\n\ncat /.singularity.d/runscript.help\n\n\n",
+			name:    "runscript",
+			insType: "--runscript",
+			compareFn: func(t *testing.T, meta *inspect.Metadata) {
+				out := "#!/bin/sh\n\ncat /.singularity.d/runscript.help"
+				v := meta.Attributes.Runscript
+				if v != out {
+					t.Errorf("unexpected runscript output, got %s instead of %s", v, out)
+				}
+			},
 		},
 		{
-			name:      "list apps",
-			insType:   "--list-apps",
-			json:      []string{"data", "attributes", "apps"},
-			expectOut: "hello\nworld\n",
+			name:    "startscript",
+			insType: "--startscript",
+			compareFn: func(t *testing.T, meta *inspect.Metadata) {
+				out := "#!/bin/sh\n\nexec \"$@\""
+				v := meta.Attributes.Startscript
+				if v != out {
+					t.Errorf("unexpected startscript output, got %s instead of %s", v, out)
+				}
+			},
 		},
 		{
-			name:      "test",
-			insType:   "--test",
-			json:      []string{"data", "attributes", "test"},
-			expectOut: "#!/bin/sh\n\nls /\ntest -d /\ntest -d /etc\n\n\n",
+			name:    "list apps",
+			insType: "--list-apps",
+			compareFn: func(t *testing.T, meta *inspect.Metadata) {
+				out := []string{"hello", "world"}
+				apps := make([]string, 0, len(meta.Attributes.Apps))
+				for app := range meta.Attributes.Apps {
+					apps = append(apps, app)
+				}
+				sort.Strings(apps)
+				if !reflect.DeepEqual(apps, out) {
+					t.Errorf("unexpected apps returned, got %v instead of %v", apps, out)
+				}
+			},
 		},
 		{
-			name:      "environment",
-			insType:   "--environment",
-			json:      []string{"data", "attributes", "environment"},
-			expectOut: "#!/bin/sh\n#Custom environment shell code should follow\n\n\nexport test=\"testing\"\nexport e2e=\"e2e testing\"\n\n\n",
+			name:    "test",
+			insType: "--test",
+			compareFn: func(t *testing.T, meta *inspect.Metadata) {
+				out := "#!/bin/sh\n\nls /\ntest -d /\ntest -d /etc"
+				v := meta.Attributes.Test
+				if v != out {
+					t.Errorf("unexpected testscript output, got %s instead of %s", v, out)
+				}
+			},
+		},
+		{
+			name:    "helpfile",
+			insType: "--helpfile",
+			compareFn: func(t *testing.T, meta *inspect.Metadata) {
+				helpFile := "/.singularity.d/runscript.help"
+				out := "This is a e2e test container used for testing the 'inspect'\ncommand. This container \"inspector_container.sif\" should be placed\nin the \"e2e/testdata\" directory of Singularity."
+				v := meta.Attributes.Helpfile
+				if v != out {
+					t.Errorf("unexpected %s output, got %s instead of %s", helpFile, v, out)
+				}
+			},
+		},
+		{
+			name:    "environment",
+			insType: "--environment",
+			compareFn: func(t *testing.T, meta *inspect.Metadata) {
+				envFile := "/.singularity.d/env/90-environment.sh"
+				out := "#!/bin/sh\n#Custom environment shell code should follow\n\n\nexport test=\"testing\"\nexport e2e=\"e2e testing\""
+				v := meta.Attributes.Environment[envFile]
+				if v != out {
+					t.Errorf("unexpected environment for %s, got %s instead of %s", envFile, v, out)
+				}
+
+				envFile = "/.singularity.d/env/91-environment.sh"
+				out = "export hello=\"world\""
+				v = meta.Attributes.Environment[envFile]
+				if v != out {
+					t.Errorf("unexpected environment for %s, got %s instead of %s", envFile, v, out)
+				}
+			},
+		},
+		{
+			name:      "label app hello",
+			insType:   "--labels",
+			appName:   "hello",
+			compareFn: compareLabel("HELLOTHISIS", "hello", "hello"),
+		},
+		{
+			name:    "help app hello",
+			insType: "--helpfile",
+			appName: "hello",
+			compareFn: func(t *testing.T, meta *inspect.Metadata) {
+				out := "This is the help for hello!"
+				if a, ok := meta.Attributes.Apps["hello"]; ok {
+					v := a.Helpfile
+					if v != out {
+						t.Errorf("unexpected testscript output, got %s instead of %s", v, out)
+					}
+				} else {
+					t.Errorf("hello app not found")
+				}
+			},
+		},
+		{
+			name:    "env app hello",
+			insType: "--environment",
+			appName: "hello",
+			compareFn: func(t *testing.T, meta *inspect.Metadata) {
+				envFile := "/scif/apps/hello/scif/env/90-environment.sh"
+				out := "HELLOTHISIS=hello\nexport HELLOTHISIS"
+				if a, ok := meta.Attributes.Apps["hello"]; ok {
+					v := a.Environment[envFile]
+					if v != out {
+						t.Errorf("unexpected environment for %s, got %s instead of %s", envFile, v, out)
+					}
+				} else {
+					t.Errorf("hello app not found")
+				}
+			},
+		},
+		{
+			name:    "runscript app hello",
+			insType: "--runscript",
+			appName: "hello",
+			compareFn: func(t *testing.T, meta *inspect.Metadata) {
+				out := "#!/bin/sh\n\necho \"hello\""
+				if a, ok := meta.Attributes.Apps["hello"]; ok {
+					v := a.Runscript
+					if v != out {
+						t.Errorf("unexpected runscript output, got %s instead of %s", v, out)
+					}
+				} else {
+					t.Errorf("hello app not found")
+				}
+			},
+		},
+		{
+			name:    "test app hello",
+			insType: "--test",
+			appName: "hello",
+			compareFn: func(t *testing.T, meta *inspect.Metadata) {
+				out := "#!/bin/sh\n\necho \"THIS IS A HELLO TEST\""
+				if a, ok := meta.Attributes.Apps["hello"]; ok {
+					v := a.Test
+					if v != out {
+						t.Errorf("unexpected testscript output, got %s instead of %s", v, out)
+					}
+				} else {
+					t.Errorf("hello app not found")
+				}
+			},
+		},
+		{
+			name:    "runscript app world",
+			insType: "--runscript",
+			appName: "world",
+			compareFn: func(t *testing.T, meta *inspect.Metadata) {
+				out := "#!/bin/sh\n\necho \"world\""
+				if a, ok := meta.Attributes.Apps["world"]; ok {
+					v := a.Runscript
+					if v != out {
+						t.Errorf("unexpected runscript output, got %s instead of %s", v, out)
+					}
+				} else {
+					t.Errorf("world app not found")
+				}
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		// Inspect the container, and get the output
 		compareOutput := func(t *testing.T, r *e2e.SingularityCmdResult) {
-			// Parse the output
-			v, err := jsonparser.GetString(r.Stdout, tt.json...)
-			if err != nil {
-				t.Fatalf("unable to get expected output from json: %v", err)
+			meta := new(inspect.Metadata)
+			if err := json.Unmarshal(r.Stdout, meta); err != nil {
+				t.Errorf("unable to parse json output: %s", err)
 			}
-			// Compare the output, with the expected output
-			if v != tt.expectOut {
-				t.Fatalf("unexpected failure: got: %s, expecting: %s", v, tt.expectOut)
-			}
+			tt.compareFn(t, meta)
+		}
+
+		args := []string{"--json", tt.insType}
+
+		if tt.appName != "" {
+			args = append(args, "--app", tt.appName)
 		}
 
 		c.env.RunSingularity(
@@ -167,7 +326,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 			e2e.AsSubtest("SIF/"+tt.name),
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("inspect"),
-			e2e.WithArgs("--json", tt.insType, sifImage),
+			e2e.WithArgs(append(args, sifImage)...),
 			e2e.ExpectExit(0, compareOutput),
 		)
 
@@ -176,10 +335,57 @@ func (c ctx) singularityInspect(t *testing.T) {
 			e2e.AsSubtest("Squash/"+tt.name),
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("inspect"),
-			e2e.WithArgs("--json", tt.insType, squashImage),
+			e2e.WithArgs(append(args, squashImage)...),
+			e2e.ExpectExit(0, compareOutput),
+		)
+
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest("Sandbox/"+tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("inspect"),
+			e2e.WithArgs(append(args, squashImage)...),
 			e2e.ExpectExit(0, compareOutput),
 		)
 	}
+
+	// test --all
+	compareAll := func(t *testing.T, r *e2e.SingularityCmdResult) {
+		meta := new(inspect.Metadata)
+		if err := json.Unmarshal(r.Stdout, meta); err != nil {
+			t.Errorf("unable to parse json output: %s", err)
+		}
+		for _, tt := range tests {
+			tt.compareFn(t, meta)
+		}
+	}
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("SIF/all"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("inspect"),
+		e2e.WithArgs("--all", sifImage),
+		e2e.ExpectExit(0, compareAll),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("Squash/all"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("inspect"),
+		e2e.WithArgs("--all", squashImage),
+		e2e.ExpectExit(0, compareAll),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("Sandbox/all"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("inspect"),
+		e2e.WithArgs("--all", squashImage),
+		e2e.ExpectExit(0, compareAll),
+	)
 }
 
 // E2ETests is the main func to trigger the test suite
