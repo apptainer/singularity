@@ -16,6 +16,8 @@ import (
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/inspect"
 )
@@ -62,17 +64,16 @@ func (c ctx) singularityInspect(t *testing.T) {
 			if _, err := io.Copy(f, r); err != nil {
 				t.Fatalf("failed to copy squash image %s: %s", squashImage, err)
 			}
-
-			c.env.RunSingularity(
-				t,
-				e2e.WithProfile(e2e.UserProfile),
-				e2e.WithCommand("build"),
-				e2e.WithArgs("--sandbox", sandboxImage, sifImage),
-				e2e.ExpectExit(0),
-			)
 		}),
 		e2e.ExpectExit(0),
 	)
+
+	require.Command(t, "unsquashfs")
+
+	cmd := exec.Command("unsquashfs", "-d", sandboxImage, squashImage)
+	if res := cmd.Run(t); res.Error != nil {
+		t.Fatalf("Unexpected error while running command.\n%s", res)
+	}
 
 	compareLabel := func(label, out string, appName string) func(*testing.T, *inspect.Metadata) {
 		return func(t *testing.T, meta *inspect.Metadata) {
@@ -344,7 +345,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 			e2e.AsSubtest("Sandbox/"+tt.name),
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("inspect"),
-			e2e.WithArgs(append(args, squashImage)...),
+			e2e.WithArgs(append(args, sandboxImage)...),
 			e2e.ExpectExit(0, compareOutput),
 		)
 	}
@@ -383,7 +384,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 		e2e.AsSubtest("Sandbox/all"),
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("inspect"),
-		e2e.WithArgs("--all", squashImage),
+		e2e.WithArgs("--all", sandboxImage),
 		e2e.ExpectExit(0, compareAll),
 	)
 }
