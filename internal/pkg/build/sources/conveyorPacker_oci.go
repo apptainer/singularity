@@ -31,8 +31,8 @@ import (
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
-	buildTypes "github.com/sylabs/singularity/pkg/build/types"
 	sytypes "github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -217,7 +217,7 @@ func (cp *OCIConveyorPacker) insertOCIConfig() error {
 		return err
 	}
 
-	cp.b.JSONObjects[buildTypes.OCIConfigJSON] = conf
+	cp.b.JSONObjects[image.SIFDescOCIConfigJSON] = conf
 	return nil
 }
 

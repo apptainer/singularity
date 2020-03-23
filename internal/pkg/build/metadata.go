@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -17,6 +18,8 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/inspect"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
@@ -54,6 +57,11 @@ func (s *stage) insertMetadata() error {
 	// insert test script
 	if err := insertTestScript(s.b); err != nil {
 		return fmt.Errorf("while inserting test script: %v", err)
+	}
+
+	// insert JSON inspect metadata (must be the last call)
+	if err := insertJSONInspectMetadata(s.b); err != nil {
+		return fmt.Errorf("while inserting JSON inspect metadata: %v", err)
 	}
 
 	return nil
@@ -237,6 +245,31 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 
 	err = ioutil.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/labels.json"), []byte(text), 0644)
 	return err
+}
+
+func insertJSONInspectMetadata(b *types.Bundle) error {
+	metadata := new(inspect.Metadata)
+
+	exe := filepath.Join(buildcfg.BINDIR, "singularity")
+	cmd := exec.Command(exe, "inspect", "--all", b.RootfsPath)
+	cmd.Stderr = os.Stderr
+
+	out, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("while executing inspect command: %s", err)
+	}
+
+	if err := json.Unmarshal(out, metadata); err != nil {
+		return fmt.Errorf("while decoding inspect metadata: %s", err)
+	}
+	data, err := json.Marshal(metadata)
+	if err != nil {
+		return fmt.Errorf("while encoding inspect metadata: %s", err)
+	}
+
+	b.JSONObjects[image.SIFDescInspectMetadataJSON] = data
+
+	return nil
 }
 
 func getExistingLabels(labels map[string]string, b *types.Bundle) error {

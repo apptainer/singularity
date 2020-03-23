@@ -61,9 +61,9 @@ func unpackSIF(b *types.Bundle, img *image.Image) (err error) {
 		return fmt.Errorf("unrecognized partition format")
 	}
 
-	ociReader, err := image.NewSectionReader(img, "oci-config.json", -1)
+	ociReader, err := image.NewSectionReader(img, image.SIFDescOCIConfigJSON, -1)
 	if err == image.ErrNoSection {
-		sylog.Debugf("No oci-config.json section found")
+		sylog.Debugf("No %s section found", image.SIFDescOCIConfigJSON)
 	} else if err != nil {
 		return fmt.Errorf("could not get OCI config section reader: %v", err)
 	} else {
@@ -71,7 +71,7 @@ func unpackSIF(b *types.Bundle, img *image.Image) (err error) {
 		if err != nil {
 			return fmt.Errorf("could not read OCI config: %v", err)
 		}
-		b.JSONObjects[types.OCIConfigJSON] = ociConfig
+		b.JSONObjects[image.SIFDescOCIConfigJSON] = ociConfig
 	}
 	return nil
 }
