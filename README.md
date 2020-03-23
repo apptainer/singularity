@@ -2,7 +2,6 @@
 
 [![Build Status](https://travis-ci.org/sylabs/singularity.svg?branch=master)](https://travis-ci.org/sylabs/singularity)
 [![CircleCI](https://circleci.com/gh/sylabs/singularity/tree/master.svg?style=svg)](https://circleci.com/gh/sylabs/singularity/tree/master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/sylabs/singularity)](https://goreportcard.com/report/github.com/sylabs/singularity)
 
 - [Guidelines for Contributing](CONTRIBUTING.md)
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
