@@ -71,7 +71,7 @@ func NewPlaintextKey(k KeyInfo) ([]byte, error) {
 func EncryptKey(k KeyInfo, plaintext []byte) ([]byte, error) {
 	switch k.Format {
 	case PEM:
-		pubKey, err := loadPEMPublicKey(k.Path)
+		pubKey, err := LoadPEMPublicKey(k.Path)
 		if err != nil {
 			return nil, fmt.Errorf("loading public key for key encryption: %v", err)
 		}
@@ -146,7 +146,7 @@ func loadPEMPrivateKey(fn string) (*rsa.PrivateKey, error) {
 	return x509.ParsePKCS1PrivateKey(block.Bytes)
 }
 
-func loadPEMPublicKey(fn string) (*rsa.PublicKey, error) {
+func LoadPEMPublicKey(fn string) (*rsa.PublicKey, error) {
 	b, err := ioutil.ReadFile(fn)
 	if err != nil {
 		return nil, err
