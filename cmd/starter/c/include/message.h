@@ -30,6 +30,7 @@
 #define VERBOSE2 3
 #define VERBOSE3 4
 #define DEBUG 5
+#define NO_COLOR 90
 
 #define ANSI_COLOR_RED          "\x1b[31m"
 #define ANSI_COLOR_GREEN        "\x1b[32m"

@@ -73,6 +73,5 @@ func TestNoOps(t *testing.T) {
 		})
 	}
 
-	SetLevel(0)
-	DisableColor()
+	SetLevel(0, false)
 }

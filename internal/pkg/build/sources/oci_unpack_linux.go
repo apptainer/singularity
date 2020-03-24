@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"os"
 
+	apexlog "github.com/apex/log"
 	"github.com/containers/image/v5/types"
 	"github.com/openSUSE/umoci"
 	umocilayer "github.com/openSUSE/umoci/oci/layer"
@@ -29,6 +30,23 @@ import (
 // unpackRootfs extracts all of the layers of the given image reference into the rootfs of the provided bundle
 func unpackRootfs(ctx context.Context, b *sytypes.Bundle, tmpfsRef types.ImageReference, sysCtx *types.SystemContext) (err error) {
 	var mapOptions umocilayer.MapOptions
+
+	loggerLevel := sylog.GetLevel()
+
+	// set the apex log level, for umoci
+	if loggerLevel <= int(sylog.ErrorLevel) {
+		// silent option
+		apexlog.SetLevel(apexlog.ErrorLevel)
+	} else if loggerLevel <= int(sylog.LogLevel) {
+		// quiet option
+		apexlog.SetLevel(apexlog.WarnLevel)
+	} else if loggerLevel < int(sylog.DebugLevel) {
+		// verbose option(s) or default
+		apexlog.SetLevel(apexlog.InfoLevel)
+	} else {
+		// debug option
+		apexlog.SetLevel(apexlog.DebugLevel)
+	}
 
 	// Allow unpacking as non-root
 	if os.Geteuid() != 0 {
