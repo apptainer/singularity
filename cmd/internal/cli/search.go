@@ -8,6 +8,7 @@ package cli
 import (
 	"context"
 
+	golog "github.com/go-log/log"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
@@ -53,6 +54,7 @@ var SearchCmd = &cobra.Command{
 		libraryClient, err := client.NewClient(&client.Config{
 			BaseURL:   SearchLibraryURI,
 			AuthToken: authToken,
+			Logger:    (golog.Logger)(sylog.DebugLogger{}),
 		})
 		if err != nil {
 			sylog.Fatalf("Error initializing library client: %v", err)

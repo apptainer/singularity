@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 
+	golog "github.com/go-log/log"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -91,6 +92,7 @@ func LibraryPush(ctx context.Context, file, dest, authToken, libraryURI, keyServ
 	libraryClient, err := client.NewClient(&client.Config{
 		BaseURL:   libraryURI,
 		AuthToken: authToken,
+		Logger:    (golog.Logger)(sylog.DebugLogger{}),
 	})
 	if err != nil {
 		return fmt.Errorf("error initializing library client: %v", err)

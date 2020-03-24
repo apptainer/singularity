@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strings"
 
+	golog "github.com/go-log/log"
 	"github.com/spf13/cobra"
 	scslibrary "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
@@ -81,6 +82,7 @@ func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom, librar
 	c := &scslibrary.Config{
 		AuthToken: authToken,
 		BaseURL:   libraryURL,
+		Logger:    (golog.Logger)(sylog.DebugLogger{}),
 	}
 	return library.Pull(ctx, imgCache, pullFrom, runtime.GOARCH, tmpDir, c, keyServerURL)
 }
