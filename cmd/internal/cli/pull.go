@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	golog "github.com/go-log/log"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
@@ -212,6 +213,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		libraryConfig := &client.Config{
 			BaseURL:   pullLibraryURI,
 			AuthToken: authToken,
+			Logger:    (golog.Logger)(sylog.DebugLogger{}),
 		}
 
 		_, err = library.PullToFile(ctx, imgCache, pullTo, pullFrom, pullArch, tmpDir, libraryConfig, keyServerURL)

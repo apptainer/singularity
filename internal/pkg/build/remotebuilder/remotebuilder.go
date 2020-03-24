@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	golog "github.com/go-log/log"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	buildclient "github.com/sylabs/scs-build-client/client"
@@ -142,6 +143,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 		c, err := client.NewClient(&client.Config{
 			BaseURL:   bi.LibraryURL,
 			AuthToken: rb.AuthToken,
+			Logger:    (golog.Logger)(sylog.DebugLogger{}),
 		})
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error initializing library client: %v", err))

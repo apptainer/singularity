@@ -8,7 +8,6 @@
 package sylog
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -49,10 +48,21 @@ func GetLevel() int {
 // GetEnvVar is a dummy function returning environment variable
 // with lowest message level.
 func GetEnvVar() string {
-	return fmt.Sprintf("SINGULARITY_MESSAGELEVEL=-1")
+	return "SINGULARITY_MESSAGELEVEL=-1"
 }
 
 // Writer is a dummy function returning ioutil.Discard writer.
 func Writer() io.Writer {
 	return ioutil.Discard
 }
+
+// DebugLogger is an implementation of the go-log/log Logger interface that will
+// output log messages via sylog.debug when required by external packages such
+// as the scs-library-client
+type DebugLogger struct {}
+
+// Dummy of a log message via sylog.Debugf
+func (t DebugLogger) Log(v ...interface{}) {}
+
+// Dummy of a formatted log message via sylog.Debugf
+func (t DebugLogger) Logf(format string, v ...interface{}) {}

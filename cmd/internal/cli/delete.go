@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	golog "github.com/go-log/log"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
@@ -78,6 +79,7 @@ var deleteImageCmd = &cobra.Command{
 		libraryConfig := &client.Config{
 			BaseURL:   deleteLibraryURI,
 			AuthToken: authToken,
+			Logger:    (golog.Logger)(sylog.DebugLogger{}),
 		}
 
 		y, err := interactive.AskYNQuestion("n", "Are you sure you want to delete %s arch[%s] [N/y] ", imageRef, deleteImageArch)
