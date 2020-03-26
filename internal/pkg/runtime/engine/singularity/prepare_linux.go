@@ -1276,20 +1276,30 @@ func (e *EngineOperations) loadBindImages(starterConfig *starter.Config) ([]imag
 }
 
 func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, error) {
-	imgObject, err := image.Init(path, writable)
-	if err != nil {
-		// pass imgObject for overlay and read-only filesystem error.
-		// Do not replace it by nil
-		return imgObject, err
+	const delSuffix = " (deleted)"
+
+	imgObject, imgErr := image.Init(path, writable)
+	// pass imgObject if not nil for overlay and read-only filesystem error.
+	// Do not remove this line
+	if imgErr != nil && imgObject == nil {
+		return nil, imgErr
 	}
 
-	link, err := mainthread.Readlink(imgObject.Source)
+	// get the real path from /proc/self/fd/X
+	imgTarget, err := mainthread.Readlink(imgObject.Source)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("while reading symlink %s: %s", imgObject.Source, err)
 	}
-
-	if link != imgObject.Path {
-		return nil, fmt.Errorf("resolved path %s doesn't match with opened path %s", imgObject.Path, link)
+	// imgObject.Path is the resolved path provided to image.Init and imgTarget point
+	// to the opened path, if they are not identical (for some obscure reasons) we use
+	// the resolved path from /proc/self/fd/X
+	if imgObject.Path != imgTarget {
+		// With some kernel/filesystem combination the symlink target of /proc/self/fd/X
+		// may return a path with the suffix " (deleted)" even if not deleted, we just
+		// remove it because it won't impact ACL path check
+		finalTarget := strings.TrimSuffix(imgTarget, delSuffix)
+		sylog.Debugf("Replacing image resolved path %s by %s", imgObject.Path, finalTarget)
+		imgObject.Path = finalTarget
 	}
 
 	if len(e.EngineConfig.File.LimitContainerPaths) != 0 {
@@ -1335,5 +1345,5 @@ func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, 
 		}
 	}
 
-	return imgObject, nil
+	return imgObject, imgErr
 }
