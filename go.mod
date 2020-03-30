@@ -40,7 +40,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/seccomp/containers-golang v0.3.2
 	github.com/seccomp/libseccomp-golang v0.9.1
-	github.com/spf13/cobra v0.0.6
+	github.com/spf13/cobra v0.0.7
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.6.0
 	github.com/sylabs/scs-build-client v0.1.1
