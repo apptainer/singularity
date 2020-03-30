@@ -14,7 +14,7 @@ require (
 	github.com/containerd/containerd v1.3.3
 	github.com/containernetworking/cni v0.7.1
 	github.com/containernetworking/plugins v0.8.5
-	github.com/containers/image/v5 v5.3.0
+	github.com/containers/image/v5 v5.3.1
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 	github.com/dsnet/compress v0.0.1 // indirect
