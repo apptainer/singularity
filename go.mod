@@ -14,7 +14,7 @@ require (
 	github.com/containerd/containerd v1.3.3
 	github.com/containernetworking/cni v0.7.1
 	github.com/containernetworking/plugins v0.8.5
-	github.com/containers/image/v5 v5.3.1
+	github.com/containers/image/v5 v5.4.0
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 	github.com/dsnet/compress v0.0.1 // indirect
@@ -51,20 +51,18 @@ require (
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
-	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go.opencensus.io v0.22.2 // indirect
 	go4.org v0.0.0-20180417224846-9599cf28b011 // indirect
-	golang.org/x/crypto v0.0.0-20200214034016-1d94cc7ab1c6
-	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa // indirect
-	golang.org/x/sys v0.0.0-20200217220822-9197077df867
+	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
+	golang.org/x/sys v0.0.0-20200327173247-9dae0f8f5775
 	google.golang.org/genproto v0.0.0-20200122232147-0452cf42e150 // indirect
 	gopkg.in/yaml.v2 v2.2.8
 	gotest.tools/v3 v3.0.2
-	k8s.io/client-go v0.0.0-20181010045704-56e7a63b5e38 // indirect
 	mvdan.cc/sh/v3 v3.0.1-0.20200218171337-23ddfbcf8b29
+	rsc.io/letsencrypt v0.0.3 // indirect
 )
 
 replace (
