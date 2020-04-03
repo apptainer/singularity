@@ -7,6 +7,7 @@ package cli
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"runtime"
 
@@ -264,9 +265,29 @@ func checkBuildTarget(path string) error {
 		if buildArgs.update && !f.IsDir() {
 			return fmt.Errorf("only sandbox update is supported: %s is not a directory", path)
 		}
+		// check if the sandbox image being overwritten looks like a Singularity
+		// image and inform users to check its content and use --force option if
+		// the sandbox image is not a Singularity image
+		if f.IsDir() && !forceOverwrite {
+			files, err := ioutil.ReadDir(path)
+			if err != nil {
+				return fmt.Errorf("could not read sandbox directory %s: %s", path, err)
+			} else if len(files) > 0 {
+				required := 0
+				for _, f := range files {
+					switch f.Name() {
+					case ".singularity.d", "dev", "proc", "sys":
+						required++
+					}
+				}
+				if required != 4 {
+					return fmt.Errorf("%s is not empty and is not a Singularity image, check its content first and use --force if you want to overwrite it", path)
+				}
+			}
+		}
 		if !buildArgs.update && !forceOverwrite {
 
-			question := fmt.Sprintf("Build target '%s' already exists. Do you want to overwrite? [N/y]", f.Name())
+			question := fmt.Sprintf("Build target '%s' already exists and will be deleted during the build process. Do you want to continue? [N/y]", f.Name())
 
 			if isDefFile, _ := parser.IsValidDefinition(path); isDefFile {
 				question = fmt.Sprintf("Build target '%s' is a definition file that will be overwritten. Do you still want to overwrite? [N/y]", f.Name())

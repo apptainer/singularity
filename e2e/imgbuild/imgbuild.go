@@ -14,8 +14,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	uuid "github.com/satori/go.uuid"
-
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -1044,30 +1042,6 @@ func (c imgBuildTests) buildUpdateSandbox(t *testing.T) {
 	}
 }
 
-func (c imgBuildTests) issue4837(t *testing.T) {
-	sandboxName := uuid.NewV4().String()
-	u := e2e.FakerootProfile.HostUser(t)
-
-	def, err := filepath.Abs("testdata/Singularity")
-	if err != nil {
-		t.Fatalf("failed to retrieve absolute path for testdata/Singularity: %s", err)
-	}
-
-	c.env.RunSingularity(
-		t,
-		e2e.WithProfile(e2e.FakerootProfile),
-		e2e.WithDir(u.Dir),
-		e2e.WithCommand("build"),
-		e2e.WithArgs("--sandbox", sandboxName, def),
-		e2e.PostRun(func(t *testing.T) {
-			if !t.Failed() {
-				os.RemoveAll(filepath.Join(u.Dir, sandboxName))
-			}
-		}),
-		e2e.ExpectExit(0),
-	)
-}
-
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := imgBuildTests{
@@ -1084,6 +1058,14 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"multistage":                      c.buildMultiStageDefinition, // multistage build from definition templates
 		"non-root build":                  c.nonRootBuild,              // build sifs from non-root
 		"build and update sandbox":        c.buildUpdateSandbox,        // build/update sandbox
+		"issue 4203":                      c.issue4203,                 // https://github.com/sylabs/singularity/issues/4203
+		"issue 4407":                      c.issue4407,                 // https://github.com/sylabs/singularity/issues/4407
+		"issue 4524":                      c.issue4524,                 // https://github.com/sylabs/singularity/issues/4524
+		"issue 4583":                      c.issue4583,                 // https://github.com/sylabs/singularity/issues/4583
 		"issue 4837":                      c.issue4837,                 // https://github.com/sylabs/singularity/issues/4837
+		"issue 4943":                      c.issue4943,                 // https://github.com/sylabs/singularity/issues/4943
+		"issue 4967":                      c.issue4967,                 // https://github.com/sylabs/singularity/issues/4967
+		"issue 4969":                      c.issue4969,                 // https://github.com/sylabs/singularity/issues/4969
+		"issue 5166":                      c.issue5166,                 // https://github.com/sylabs/singularity/issues/5166
 	}
 }
