@@ -865,33 +865,29 @@ func (c *container) addRootfsMount(system *mount.System) error {
 func (c *container) overlayUpperWork(system *mount.System) error {
 	ov := c.session.Layer.(*overlay.Overlay)
 
-	u := ov.GetUpperDir()
-	w := ov.GetWorkDir()
-
-	if fs.IsLink(u) {
-		return fmt.Errorf("symlink detected, upper overlay %s must be a directory", u)
-	}
-	if fs.IsLink(w) {
-		return fmt.Errorf("symlink detected, work overlay %s must be a directory", w)
-	}
-
 	if c.engine.EngineConfig.File.EnableOverlay != "driver" {
 		c.rpcOps.SetFsID(0, 0)
 		defer c.rpcOps.SetFsID(os.Getuid(), os.Getgid())
 	}
 
-	if !fs.IsDir(u) {
-		if err := c.rpcOps.Mkdir(u, 0755); err != nil {
-			return fmt.Errorf("failed to create %s directory: %s", u, err)
+	createUpperWork := func(path, label string) error {
+		fi, err := c.rpcOps.Lstat(path)
+		if os.IsNotExist(err) {
+			if err := c.rpcOps.Mkdir(path, 0755); err != nil {
+				return fmt.Errorf("failed to create %s directory: %s", path, err)
+			}
+		} else if err == nil && !fi.IsDir() {
+			return fmt.Errorf("%s overlay %s must be a directory", label, path)
+		} else if err != nil {
+			return fmt.Errorf("could not setup writable overlay: %s", err)
 		}
-	}
-	if !fs.IsDir(w) {
-		if err := c.rpcOps.Mkdir(w, 0755); err != nil {
-			return fmt.Errorf("failed to create %s directory: %s", w, err)
-		}
+		return nil
 	}
 
-	return nil
+	if err := createUpperWork(ov.GetUpperDir(), "upper"); err != nil {
+		return err
+	}
+	return createUpperWork(ov.GetWorkDir(), "workdir")
 }
 
 func (c *container) addOverlayMount(system *mount.System) error {

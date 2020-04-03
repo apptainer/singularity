@@ -219,11 +219,20 @@ func (t *Methods) Chdir(arguments *args.ChdirArgs, reply *int) error {
 
 // Stat gets file status.
 func (t *Methods) Stat(arguments *args.StatArgs, reply *args.StatReply) error {
-	fi, err := os.Stat(arguments.Path)
-	if fi != nil {
-		reply.Fi = args.FileInfo(fi)
+	reply.Fi, reply.Err = os.Stat(arguments.Path)
+	if reply.Fi != nil {
+		reply.Fi = args.FileInfo(reply.Fi)
 	}
-	return err
+	return nil
+}
+
+// Lstat gets file status.
+func (t *Methods) Lstat(arguments *args.StatArgs, reply *args.StatReply) error {
+	reply.Fi, reply.Err = os.Lstat(arguments.Path)
+	if reply.Fi != nil {
+		reply.Fi = args.FileInfo(reply.Fi)
+	}
+	return nil
 }
 
 // SendFuseFd send fuse file descriptor over unix socket.

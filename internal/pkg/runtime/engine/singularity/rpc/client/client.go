@@ -127,7 +127,23 @@ func (t *RPC) Stat(path string) (os.FileInfo, error) {
 	}
 	var reply args.StatReply
 	err := t.Client.Call(t.Name+".Stat", arguments, &reply)
-	return reply.Fi, err
+	if err != nil {
+		return nil, err
+	}
+	return reply.Fi, reply.Err
+}
+
+// Lstat calls the lstat RPC using the supplied arguments.
+func (t *RPC) Lstat(path string) (os.FileInfo, error) {
+	arguments := &args.StatArgs{
+		Path: path,
+	}
+	var reply args.StatReply
+	err := t.Client.Call(t.Name+".Lstat", arguments, &reply)
+	if err != nil {
+		return nil, err
+	}
+	return reply.Fi, reply.Err
 }
 
 // SendFuseFd calls the SendFuseFd RPC using the supplied arguments.

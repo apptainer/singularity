@@ -70,7 +70,8 @@ type ChdirArgs struct {
 
 // StatReply defines the reply for stat.
 type StatReply struct {
-	Fi os.FileInfo
+	Fi  os.FileInfo
+	Err error
 }
 
 // StatArgs defines the arguments to stat.
@@ -186,4 +187,7 @@ func init() {
 	gob.Register(syscall.Errno(0))
 	gob.Register((*fileInfo)(nil))
 	gob.Register((*syscall.Stat_t)(nil))
+	gob.Register((*os.PathError)(nil))
+	gob.Register((*os.SyscallError)(nil))
+	gob.Register((*os.LinkError)(nil))
 }
