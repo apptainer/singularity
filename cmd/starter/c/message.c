@@ -50,6 +50,8 @@ void _print(int level, const char *function, const char *file_in, char *format, 
     char message[512];
     char *prefix = NULL;
     char *color = NULL;
+    char *color_reset = NULL;
+    char has_color = 1;
     va_list args;
 
     if ( messagelevel == -99 ) {
@@ -60,6 +62,13 @@ void _print(int level, const char *function, const char *file_in, char *format, 
             singularity_message(DEBUG, MSGLVL_ENV " undefined, setting level 5 (debug)\n");
         } else {
             messagelevel = atoi(messagelevel_string);
+            if ( messagelevel >= NO_COLOR ) {
+                messagelevel -= NO_COLOR;
+                has_color = 0;
+            } else if ( messagelevel <= -NO_COLOR ) {
+                messagelevel += NO_COLOR;
+                has_color = 0;
+            }
             if ( messagelevel > 9 ) {
                 messagelevel = 9;
             }
@@ -87,31 +96,58 @@ void _print(int level, const char *function, const char *file_in, char *format, 
     switch (level) {
         case ABRT:
             prefix = "ABORT";
-            color = ANSI_COLOR_RED;
+            if ( has_color == 1 ) {
+                color = ANSI_COLOR_RED;
+                color_reset = ANSI_COLOR_RESET;
+            } else {
+                color = "";
+                color_reset = "";
+            }
             break;
         case ERROR:
             prefix = "ERROR";
-            color = ANSI_COLOR_LIGHTRED;
+            if ( has_color == 1 ) {
+                color = ANSI_COLOR_LIGHTRED;
+                color_reset = ANSI_COLOR_RESET;
+            } else {
+                color = "";
+                color_reset = "";
+            }
             break;
         case WARNING:
             prefix = "WARNING";
-            color = ANSI_COLOR_YELLOW;
+            if ( has_color == 1 ) {
+                color = ANSI_COLOR_YELLOW;
+                color_reset = ANSI_COLOR_RESET;
+            } else {
+                color = "";
+                color_reset = "";
+            }
             break;
         case LOG:
             prefix = "LOG";
-            color = ANSI_COLOR_BLUE;
+            if ( has_color == 1 ) {
+                color = ANSI_COLOR_BLUE;
+                color_reset = ANSI_COLOR_RESET;
+            } else {
+                color = "";
+                color_reset = "";
+            }
             break;
         case DEBUG:
             prefix = "DEBUG";
             color = "";
+            color_reset = "";
             break;
         case INFO:
             prefix = "INFO";
             color = "";
+            color_reset = "";
             break;
         default:
             prefix = "VERBOSE";
             color = "";
+            color_reset = "";
             break;
     }
 
@@ -143,11 +179,11 @@ void _print(int level, const char *function, const char *file_in, char *format, 
         }
 
         if ( level == INFO && messagelevel == INFO ) {
-            printf("%s" ANSI_COLOR_RESET, message);
+            printf("%s%s", message, color_reset);
         } else if ( level == INFO ) {
-            printf("%s%s" ANSI_COLOR_RESET, header_string, message);
+            printf("%s%s%s", header_string, message, color_reset);
         } else {
-            fprintf(stderr, "%s%s" ANSI_COLOR_RESET, header_string, message);
+            fprintf(stderr, "%s%s%s", header_string, message, color_reset);
         }
 
         fflush(stdout);

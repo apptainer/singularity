@@ -15,79 +15,42 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-
-	apexlog "github.com/apex/log"
 )
 
-type messageLevel int
-
-const (
-	fatal    messageLevel = iota - 4 // fatal    : -4
-	error                            // error    : -3
-	warn                             // warn     : -2
-	log                              // log      : -1
-	_                                // SKIP     : 0
-	info                             // info     : 1
-	verbose                          // verbose  : 2
-	verbose2                         // verbose2 : 3
-	verbose3                         // verbose3 : 4
-	debug                            // debug    : 5
-)
-
-func (l messageLevel) String() string {
-	str, ok := messageLabels[l]
-
-	if !ok {
-		str = "????"
-	}
-
-	return str
-}
-
-var messageLabels = map[messageLevel]string{
-	fatal:    "FATAL",
-	error:    "ERROR",
-	warn:     "WARNING",
-	log:      "LOG",
-	info:     "INFO",
-	verbose:  "VERBOSE",
-	verbose2: "VERBOSE",
-	verbose3: "VERBOSE",
-	debug:    "DEBUG",
-}
+const messageLevelEnv = "SINGULARITY_MESSAGELEVEL"
 
 var messageColors = map[messageLevel]string{
-	fatal: "\x1b[31m",
-	error: "\x1b[31m",
-	warn:  "\x1b[33m",
-	info:  "\x1b[34m",
+	FatalLevel: "\x1b[31m",
+	ErrorLevel: "\x1b[31m",
+	WarnLevel:  "\x1b[33m",
+	InfoLevel:  "\x1b[34m",
 }
 
-var colorReset = "\x1b[0m"
+var (
+	noColorLevel messageLevel = 90
+	loggerLevel  messageLevel = InfoLevel
+)
 
-var loggerLevel messageLevel
+var logWriter = (io.Writer)(os.Stderr)
 
 func init() {
-	_levelint := int(messageLevel(info))
-	_levelstr, ok := os.LookupEnv("SINGULARITY_MESSAGELEVEL")
-	if ok {
-		_leveli, err := strconv.Atoi(_levelstr)
-		if err == nil {
-			_levelint = _leveli
-		}
+	level, err := strconv.Atoi(os.Getenv(messageLevelEnv))
+	if err == nil {
+		loggerLevel = messageLevel(level)
 	}
-	SetLevel(_levelint)
 }
 
-func prefix(level messageLevel) string {
-	messageColor, ok := messageColors[level]
-	if !ok {
-		messageColor = "\x1b[0m"
+func prefix(logLevel, msgLevel messageLevel) string {
+	colorReset := "\x1b[0m"
+	messageColor, ok := messageColors[msgLevel]
+	if !ok || logLevel != loggerLevel {
+		colorReset = ""
+		messageColor = ""
 	}
 
 	// This section builds and returns the prefix for levels < debug
-	if loggerLevel < debug {
-		return fmt.Sprintf("%s%-8s%s ", messageColor, level.String()+":", colorReset)
+	if logLevel < DebugLevel {
+		return fmt.Sprintf("%s%-8s%s ", messageColor, msgLevel.String()+":", colorReset)
 	}
 
 	pc, _, _, ok := runtime.Caller(3)
@@ -95,8 +58,7 @@ func prefix(level messageLevel) string {
 
 	var funcName string
 	if ok && details == nil {
-		fmt.Printf("Unable to get details of calling function\n")
-		funcName = "UNKNOWN CALLING FUNC"
+		funcName = "????()"
 	} else {
 		funcNameSplit := strings.Split(details.Name(), ".")
 		funcName = funcNameSplit[len(funcNameSplit)-1] + "()"
@@ -106,104 +68,96 @@ func prefix(level messageLevel) string {
 	pid := os.Getpid()
 	uidStr := fmt.Sprintf("[U=%d,P=%d]", uid, pid)
 
-	return fmt.Sprintf("%s%-8s%s%-19s%-30s", messageColor, level, colorReset, uidStr, funcName)
+	return fmt.Sprintf("%s%-8s%s%-19s%-30s", messageColor, msgLevel, colorReset, uidStr, funcName)
 }
 
-func writef(w io.Writer, level messageLevel, format string, a ...interface{}) {
-	if loggerLevel < level {
+func writef(msgLevel messageLevel, format string, a ...interface{}) {
+	logLevel := getLoggerLevel()
+	if logLevel < msgLevel {
 		return
 	}
 
 	message := fmt.Sprintf(format, a...)
-	message = strings.TrimSuffix(message, "\n")
+	message = strings.TrimRight(message, "\n")
 
-	fmt.Fprintf(w, "%s%s\n", prefix(level), message)
+	fmt.Fprintf(logWriter, "%s%s\n", prefix(logLevel, msgLevel), message)
+}
+
+func getLoggerLevel() messageLevel {
+	if loggerLevel <= -noColorLevel {
+		return loggerLevel + noColorLevel
+	} else if loggerLevel >= noColorLevel {
+		return loggerLevel - noColorLevel
+	}
+	return loggerLevel
 }
 
 // Fatalf is equivalent to a call to Errorf followed by os.Exit(255). Code that
 // may be imported by other projects should NOT use Fatalf.
 func Fatalf(format string, a ...interface{}) {
-	writef(os.Stderr, fatal, format, a...)
+	writef(FatalLevel, format, a...)
 	os.Exit(255)
 }
 
 // Errorf writes an ERROR level message to the log but does not exit. This
 // should be called when an error is being returned to the calling thread
 func Errorf(format string, a ...interface{}) {
-	writef(os.Stderr, error, format, a...)
+	writef(ErrorLevel, format, a...)
 }
 
 // Warningf writes a WARNING level message to the log.
 func Warningf(format string, a ...interface{}) {
-	writef(os.Stderr, warn, format, a...)
+	writef(WarnLevel, format, a...)
 }
 
 // Infof writes an INFO level message to the log. By default, INFO level messages
 // will always be output (unless running in silent)
 func Infof(format string, a ...interface{}) {
-	writef(os.Stderr, info, format, a...)
+	writef(InfoLevel, format, a...)
 }
 
 // Verbosef writes a VERBOSE level message to the log. This should probably be
 // deprecated since the granularity is often too fine to be useful.
 func Verbosef(format string, a ...interface{}) {
-	writef(os.Stderr, verbose, format, a...)
+	writef(VerboseLevel, format, a...)
 }
 
 // Debugf writes a DEBUG level message to the log.
 func Debugf(format string, a ...interface{}) {
-	writef(os.Stderr, debug, format, a...)
+	writef(DebugLevel, format, a...)
 }
 
 // SetLevel explicitly sets the loggerLevel
-func SetLevel(l int) {
+func SetLevel(l int, color bool) {
 	loggerLevel = messageLevel(l)
-	// set the apex log level, for umoci
-	if loggerLevel <= error {
-		// silent option
-		apexlog.SetLevel(apexlog.ErrorLevel)
-	} else if loggerLevel <= log {
-		// quiet option
-		apexlog.SetLevel(apexlog.WarnLevel)
-	} else if loggerLevel < debug {
-		// verbose option(s) or default
-		apexlog.SetLevel(apexlog.InfoLevel)
-	} else {
-		// debug option
-		apexlog.SetLevel(apexlog.DebugLevel)
+	if !color {
+		if loggerLevel >= InfoLevel {
+			loggerLevel = loggerLevel + noColorLevel
+		} else if loggerLevel <= LogLevel {
+			loggerLevel = loggerLevel - noColorLevel
+		}
 	}
-}
-
-// DisableColor for the logger
-func DisableColor() {
-	messageColors = map[messageLevel]string{
-		fatal: "",
-		error: "",
-		warn:  "",
-		info:  "",
-	}
-	colorReset = ""
 }
 
 // GetLevel returns the current log level as integer
 func GetLevel() int {
-	return int(loggerLevel)
+	return int(getLoggerLevel())
 }
 
 // GetEnvVar returns a formatted environment variable string which
 // can later be interpreted by init() in a child proc
 func GetEnvVar() string {
-	return fmt.Sprintf("SINGULARITY_MESSAGELEVEL=%d", loggerLevel)
+	return fmt.Sprintf("%s=%d", messageLevelEnv, loggerLevel)
 }
 
 // Writer returns an io.Writer to pass to an external packages logging utility.
 // i.e when --quiet option is set, this function returns ioutil.Discard writer to ignore output
 func Writer() io.Writer {
-	if loggerLevel <= -1 {
+	if loggerLevel <= LogLevel {
 		return ioutil.Discard
 	}
 
-	return os.Stderr
+	return logWriter
 }
 
 // DebugLogger is an implementation of the go-log/log Logger interface that will
@@ -213,10 +167,10 @@ type DebugLogger struct{}
 
 // Output a log message via sylog.Debugf
 func (t DebugLogger) Log(v ...interface{}) {
-	writef(os.Stderr, debug, "%s", fmt.Sprint(v...))
+	writef(DebugLevel, "%s", fmt.Sprint(v...))
 }
 
 // Output a formatted log message via sylog.Debugf
 func (t DebugLogger) Logf(format string, v ...interface{}) {
-	writef(os.Stderr, debug, format, v...)
+	writef(DebugLevel, format, v...)
 }

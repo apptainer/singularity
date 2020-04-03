@@ -30,6 +30,7 @@ import (
 	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
 	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // cmdInits holds all the init function to be called
@@ -261,13 +262,12 @@ func setSylogMessageLevel() {
 		level = 1
 	}
 
-	sylog.SetLevel(level)
-}
-
-func setSylogColor() {
-	if nocolor {
-		sylog.DisableColor()
+	color := true
+	if nocolor || !terminal.IsTerminal(2) {
+		color = false
 	}
+
+	sylog.SetLevel(level, color)
 }
 
 // handleRemoteConf will make sure your 'remote.yaml' config file
@@ -310,7 +310,6 @@ func handleConfDir(confDir string) {
 
 func persistentPreRun(*cobra.Command, []string) {
 	setSylogMessageLevel()
-	setSylogColor()
 	sylog.Debugf("Singularity version: %s", buildcfg.PACKAGE_VERSION)
 
 	if os.Geteuid() != 0 && buildcfg.SINGULARITY_SUID_INSTALL == 1 {

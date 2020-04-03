@@ -35,7 +35,7 @@ func Verbosef(format string, a ...interface{}) {}
 func Debugf(format string, a ...interface{}) {}
 
 // SetLevel is a dummy function doing nothing.
-func SetLevel(l int) {}
+func SetLevel(l int, color bool) {}
 
 // DisableColor for the logger
 func DisableColor() {}
