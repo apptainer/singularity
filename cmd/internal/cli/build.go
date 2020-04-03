@@ -281,7 +281,7 @@ func checkBuildTarget(path string) error {
 					}
 				}
 				if required != 4 {
-					return fmt.Errorf("%s is not empty and is not a Singularity image, check its content first and use --force if you want to overwrite it", path)
+					return fmt.Errorf("%s is not empty and is not a Singularity sandbox, check its content first and use --force if you want to overwrite it", path)
 				}
 			}
 		}
