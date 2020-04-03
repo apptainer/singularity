@@ -856,7 +856,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	}
 
 	if imageObject.Writable {
-		return system.Points.AddPropagation(mount.DevTag, c.session.RootFsPath(), syscall.MS_UNBINDABLE)
+		return system.Points.AddPropagation(mount.SharedTag, c.session.RootFsPath(), syscall.MS_UNBINDABLE)
 	}
 
 	return nil
@@ -1015,7 +1015,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				return fmt.Errorf("%s: overlay image with unknown format", img.Path)
 			}
 
-			err = system.Points.AddPropagation(mount.DevTag, dst, syscall.MS_UNBINDABLE)
+			err = system.Points.AddPropagation(mount.SharedTag, dst, syscall.MS_UNBINDABLE)
 			if err != nil {
 				return err
 			}
@@ -1042,7 +1042,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 		}
 	}
 
-	return system.Points.AddPropagation(mount.DevTag, c.session.FinalPath(), syscall.MS_UNBINDABLE)
+	return system.Points.AddPropagation(mount.SharedTag, c.session.FinalPath(), syscall.MS_UNBINDABLE)
 }
 
 func (c *container) addImageBindMount(system *mount.System) error {
@@ -1681,8 +1681,7 @@ func (c *container) addHomeMount(system *mount.System) error {
 }
 
 func (c *container) addUserbindsMount(system *mount.System) error {
-	devPrefix := "/dev"
-	userBindControl := c.engine.EngineConfig.File.UserBindControl
+	const devPrefix = "/dev"
 	defaultFlags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
 	for _, b := range c.engine.EngineConfig.GetBindPath() {
@@ -1706,28 +1705,37 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 
 		// special case for /dev mount to override default mount behavior
 		// with --contain option or 'mount dev = minimal'
-		if strings.HasPrefix(src, devPrefix) {
-			if c.engine.EngineConfig.File.MountDev == "minimal" || c.engine.EngineConfig.GetContain() {
-				if strings.HasPrefix(src, "/dev/shm/") || strings.HasPrefix(src, "/dev/mqueue/") {
-					sylog.Warningf("Skipping %s bind mount: not allowed", src)
-				} else {
-					if src != devPrefix {
-						if err := c.addSessionDev(src, system); err != nil {
-							sylog.Warningf("Skipping %s bind mount: %s", src, err)
-						}
-					} else {
-						system.Points.RemoveByTag(mount.DevTag)
-						c.devSourcePath = devPrefix
-					}
-					sylog.Debugf("Adding device %s to mount list\n", src)
-				}
-			} else if c.engine.EngineConfig.File.MountDev == "yes" {
-				sylog.Warningf("Skipping %s bind mount: /dev is already mounted", src)
-			} else {
-				sylog.Warningf("Skipping %s bind mount: disallowed by configuration", src)
+		if strings.HasPrefix(dst, devPrefix) && strings.HasPrefix(src, devPrefix) {
+			if dst != src {
+				sylog.Warningf("Skipping %s bind mount: source and destination must be identical when binding to %s", src, devPrefix)
+				continue
 			}
-			continue
-		} else if !userBindControl {
+			if c.engine.EngineConfig.File.MountDev == "minimal" || c.engine.EngineConfig.GetContain() {
+				// "--bind /dev" bind case
+				if src == devPrefix {
+					system.Points.RemoveByTag(mount.DevTag)
+					c.devSourcePath = devPrefix
+					sylog.Debugf("Adding %[1]s host bind mount, resetting container mount list for %[1]s\n", devPrefix)
+					continue
+				}
+				_, err := c.session.GetPath(src)
+				if err == nil {
+					sylog.Warningf("Skipping %s bind mount: already mounted", src)
+					continue
+				}
+				if err := c.addSessionDev(src, system); err != nil {
+					sylog.Warningf("Skipping %s bind mount: %s", src, err)
+				}
+				sylog.Debugf("Adding device %s to mount list\n", src)
+				continue
+			} else if c.engine.EngineConfig.File.MountDev == "no" {
+				sylog.Warningf("Skipping %s bind mount: disallowed by configuration", src)
+				continue
+			}
+			// proceed with normal binds below if 'mount dev = yes'
+			// or '--contain' wasn't requested
+		}
+		if !c.engine.EngineConfig.File.UserBindControl {
 			sylog.Warningf("Ignoring %s bind mount: user bind control disabled by system administrator", src)
 			continue
 		}
