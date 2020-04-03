@@ -35,7 +35,6 @@ import (
 	"github.com/sylabs/singularity/e2e/plugin"
 	"github.com/sylabs/singularity/e2e/pull"
 	"github.com/sylabs/singularity/e2e/push"
-	"github.com/sylabs/singularity/e2e/regressions"
 	"github.com/sylabs/singularity/e2e/remote"
 	"github.com/sylabs/singularity/e2e/run"
 	"github.com/sylabs/singularity/e2e/runhelp"
@@ -169,7 +168,6 @@ func Run(t *testing.T) {
 	suite.AddGroup("PLUGIN", plugin.E2ETests)
 	suite.AddGroup("PULL", pull.E2ETests)
 	suite.AddGroup("PUSH", push.E2ETests)
-	suite.AddGroup("REGRESSIONS", regressions.E2ETests)
 	suite.AddGroup("REMOTE", remote.E2ETests)
 	suite.AddGroup("RUN", run.E2ETests)
 	suite.AddGroup("RUNHELP", runhelp.E2ETests)

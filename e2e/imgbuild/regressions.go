@@ -1,9 +1,9 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package regressions
+package imgbuild
 
 import (
 	"io/ioutil"
@@ -13,13 +13,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
-
-type regressionsTests struct {
-	env e2e.TestEnv
-}
 
 // This test will build an image from a multi-stage definition
 // file, the first stage compile a bad NSS library containing
@@ -30,7 +26,7 @@ type regressionsTests struct {
 // Most if not all NSS services point to the bad NSS library in
 // order to catch all the potential calls which could occur from
 // Go code inside the build engine, singularity engine is also tested.
-func (c regressionsTests) issue4203(t *testing.T) {
+func (c imgBuildTests) issue4203(t *testing.T) {
 	image := filepath.Join(c.env.TestDir, "issue_4203.sif")
 
 	c.env.RunSingularity(
@@ -62,7 +58,7 @@ func (c regressionsTests) issue4203(t *testing.T) {
 
 // issue4407 checks that it's possible to build a sandbox image when the
 // destination directory contains a trailing slash and when it doesn't.
-func (c *regressionsTests) issue4407(t *testing.T) {
+func (c *imgBuildTests) issue4407(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	sandboxDir := func() string {
@@ -116,7 +112,7 @@ func (c *regressionsTests) issue4407(t *testing.T) {
 // It will verify that with `--fix-perms` we force files to be accessible,
 // moveable, removable by the user. We check for `700` and `400` permissions on
 // the folder and file respectively.
-func (c *regressionsTests) issue4524(t *testing.T) {
+func (c *imgBuildTests) issue4524(t *testing.T) {
 	sandbox := filepath.Join(c.env.TestDir, "issue_4524")
 
 	c.env.RunSingularity(
@@ -157,7 +153,7 @@ func (c *regressionsTests) issue4524(t *testing.T) {
 	)
 }
 
-func (c *regressionsTests) issue4583(t *testing.T) {
+func (c *imgBuildTests) issue4583(t *testing.T) {
 	image := filepath.Join(c.env.TestDir, "issue_4583.sif")
 
 	c.env.RunSingularity(
@@ -176,7 +172,31 @@ func (c *regressionsTests) issue4583(t *testing.T) {
 	)
 }
 
-func (c *regressionsTests) issue4943(t *testing.T) {
+func (c imgBuildTests) issue4837(t *testing.T) {
+	sandboxName := uuid.NewV4().String()
+	u := e2e.FakerootProfile.HostUser(t)
+
+	def, err := filepath.Abs("testdata/Singularity")
+	if err != nil {
+		t.Fatalf("failed to retrieve absolute path for testdata/Singularity: %s", err)
+	}
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithDir(u.Dir),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--sandbox", sandboxName, def),
+		e2e.PostRun(func(t *testing.T) {
+			if !t.Failed() {
+				os.RemoveAll(filepath.Join(u.Dir, sandboxName))
+			}
+		}),
+		e2e.ExpectExit(0),
+	)
+}
+
+func (c *imgBuildTests) issue4943(t *testing.T) {
 	const (
 		image = "docker://gitlab-registry.cern.ch/linuxsupport/cc7-base:20191107"
 	)
@@ -192,7 +212,7 @@ func (c *regressionsTests) issue4943(t *testing.T) {
 }
 
 // Test -c section parameter is correctly handled.
-func (c *regressionsTests) issue4967(t *testing.T) {
+func (c *imgBuildTests) issue4967(t *testing.T) {
 	image := filepath.Join(c.env.TestDir, "issue_4967.sif")
 
 	c.env.RunSingularity(
@@ -212,7 +232,7 @@ func (c *regressionsTests) issue4967(t *testing.T) {
 
 // The image contains symlinks /etc/resolv.conf and /etc/hosts
 // pointing to nowhere, build should pass but with warnings.
-func (c *regressionsTests) issue4969(t *testing.T) {
+func (c *imgBuildTests) issue4969(t *testing.T) {
 	image := filepath.Join(c.env.TestDir, "issue_4969.sif")
 
 	c.env.RunSingularity(
@@ -230,19 +250,52 @@ func (c *regressionsTests) issue4969(t *testing.T) {
 	)
 }
 
-// E2ETests is the main func to trigger the test suite
-func E2ETests(env e2e.TestEnv) testhelper.Tests {
-	c := regressionsTests{
-		env: env,
+func (c *imgBuildTests) issue5166(t *testing.T) {
+	// create a directory that we don't to be overwritten by mistakes
+	sensibleDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "sensible-dir-", "")
+
+	secret := filepath.Join(sensibleDir, "secret")
+	if err := ioutil.WriteFile(secret, []byte("secret"), 0644); err != nil {
+		t.Fatalf("could not create %s: %s", secret, err)
 	}
 
-	return testhelper.Tests{
-		"issue 4203": c.issue4203, // https://github.com/sylabs/singularity/issues/4203
-		"issue 4407": c.issue4407, // https://github.com/sylabs/singularity/issues/4407
-		"issue 4524": c.issue4524, // https://github.com/sylabs/singularity/issues/4524
-		"issue 4583": c.issue4583, // https://github.com/sylabs/singularity/issues/4583
-		"issue 4943": c.issue4943, // https://github.com/sylabs/singularity/issues/4943
-		"issue 4967": c.issue4967, // https://github.com/sylabs/singularity/issues/4967
-		"issue 4969": c.issue4969, // https://github.com/sylabs/singularity/issues/4969
-	}
+	image := filepath.Join(c.env.TestDir, "issue_4969.sandbox")
+
+	e2e.EnsureImage(t, c.env)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--sandbox", image, c.env.ImagePath),
+		e2e.ExpectExit(0),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--sandbox", sensibleDir, c.env.ImagePath),
+		e2e.ExpectExit(
+			255,
+			e2e.ExpectError(
+				e2e.ContainMatch,
+				"use --force if you want to overwrite it",
+			),
+		),
+	)
+
+	// finally force overwrite
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", sensibleDir, c.env.ImagePath),
+		e2e.PostRun(func(t *testing.T) {
+			if !t.Failed() {
+				cleanup(t)
+			}
+		}),
+		e2e.ExpectExit(0),
+	)
 }
