@@ -36,7 +36,6 @@ type YumConveyor struct {
 	osversion string
 	include   string
 	gpg       string
-	httpProxy string
 }
 
 // YumConveyorPacker only needs to hold the conveyor to have the needed data to pack
@@ -163,7 +162,6 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 
 	// look for http_proxy and gpg environment vars
 	c.gpg = os.Getenv("GPG")
-	c.httpProxy = os.Getenv("http_proxy")
 
 	// get mirrorURL, updateURL, OSVerison, and Includes components to definition
 	c.mirrorurl, ok = c.b.Recipe.Header["mirrorurl"]
@@ -202,10 +200,6 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 
 func (c *YumConveyor) genYumConfig() (err error) {
 	fileContent := "[main]\n"
-	// http proxy
-	if c.httpProxy != "" {
-		fileContent += "proxy=" + c.httpProxy + "\n"
-	}
 	fileContent += "cachedir=/var/cache/yum-bootstrap\n"
 	fileContent += "keepcache=0\n"
 	fileContent += "debuglevel=2\n"
