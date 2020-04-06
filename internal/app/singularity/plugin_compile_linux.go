@@ -23,8 +23,8 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 const version = "v0.0.0"

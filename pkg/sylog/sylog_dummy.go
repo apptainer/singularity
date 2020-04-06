@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -59,7 +59,7 @@ func Writer() io.Writer {
 // DebugLogger is an implementation of the go-log/log Logger interface that will
 // output log messages via sylog.debug when required by external packages such
 // as the scs-library-client
-type DebugLogger struct {}
+type DebugLogger struct{}
 
 // Dummy of a log message via sylog.Debugf
 func (t DebugLogger) Log(v ...interface{}) {}

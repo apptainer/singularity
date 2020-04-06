@@ -21,11 +21,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/inspect"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 var errNoSIFMetadata = errors.New("no SIF metadata found")
