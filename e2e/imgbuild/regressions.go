@@ -6,6 +6,7 @@
 package imgbuild
 
 import (
+	"bytes"
 	"io/ioutil"
 	"log"
 	"os"
@@ -294,6 +295,56 @@ func (c *imgBuildTests) issue5166(t *testing.T) {
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
 				cleanup(t)
+			}
+		}),
+		e2e.ExpectExit(0),
+	)
+}
+
+func (c *imgBuildTests) issue5172(t *testing.T) {
+	e2e.PrepRegistry(t, c.env)
+
+	u := e2e.UserProfile.HostUser(t)
+
+	// create $HOME/.config/containers/registries.conf
+	regImage := "docker://localhost:5000/my-busybox"
+	regDir := filepath.Join(u.Dir, ".config", "containers")
+	regFile := filepath.Join(regDir, "registries.conf")
+	imagePath := filepath.Join(c.env.TestDir, "issue-5172")
+
+	if err := os.MkdirAll(regDir, 0755); err != nil {
+		t.Fatalf("can't create directory %s: %s", regDir, err)
+	}
+
+	// add our test registry as insecure and test build/pull
+	b := new(bytes.Buffer)
+	b.WriteString("[registries.insecure]\nregistries = ['localhost']")
+	if err := ioutil.WriteFile(regFile, b.Bytes(), 0644); err != nil {
+		t.Fatalf("can't create %s: %s", regFile, err)
+	}
+	defer os.RemoveAll(regDir)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--sandbox", imagePath, regImage),
+		e2e.PostRun(func(t *testing.T) {
+			if !t.Failed() {
+				os.RemoveAll(imagePath)
+			}
+		}),
+		e2e.ExpectExit(0),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("pull"),
+		e2e.WithArgs(imagePath, regImage),
+		e2e.PostRun(func(t *testing.T) {
+			if !t.Failed() {
+				os.RemoveAll(imagePath)
 			}
 		}),
 		e2e.ExpectExit(0),

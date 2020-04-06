@@ -56,11 +56,18 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 		return err
 	}
 
+	// DockerInsecureSkipTLSVerify is set only if --nohttps is specified to honor
+	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
+	// can have three possible values true/false and undefined, so we left it as undefined instead
+	// of forcing it to false in order to delegate decision to /etc/containers/registries.conf:
+	// https://github.com/sylabs/singularity/issues/5172
 	cp.sysCtx = &types.SystemContext{
-		OCIInsecureSkipTLSVerify:    cp.b.Opts.NoHTTPS,
-		DockerInsecureSkipTLSVerify: types.NewOptionalBool(cp.b.Opts.NoHTTPS),
-		DockerAuthConfig:            cp.b.Opts.DockerAuthConfig,
-		OSChoice:                    "linux",
+		OCIInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
+		DockerAuthConfig:         cp.b.Opts.DockerAuthConfig,
+		OSChoice:                 "linux",
+	}
+	if cp.b.Opts.NoHTTPS {
+		cp.sysCtx.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)
 	}
 
 	// add registry and namespace to reference if specified
