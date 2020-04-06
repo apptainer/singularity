@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/sylabs/singularity/internal/pkg/cache"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 var (

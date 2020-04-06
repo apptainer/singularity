@@ -7,7 +7,7 @@ package singularity
 
 import (
 	"github.com/sylabs/singularity/internal/pkg/plugin"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // CreatePlugin create the plugin directory skeleton.

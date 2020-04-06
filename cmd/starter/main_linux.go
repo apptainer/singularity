@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,9 +20,9 @@ import (
 	"github.com/sylabs/singularity/internal/app/starter"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
 	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	_ "github.com/sylabs/singularity/internal/pkg/util/goversion"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
+	"github.com/sylabs/singularity/pkg/sylog"
 
 	// register engines
 	_ "github.com/sylabs/singularity/cmd/starter/engines"

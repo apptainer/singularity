@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 const (

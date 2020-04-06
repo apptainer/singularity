@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -22,9 +22,9 @@ import (
 	umocilayer "github.com/openSUSE/umoci/oci/layer"
 	"github.com/openSUSE/umoci/pkg/idtools"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	sytypes "github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // unpackRootfs extracts all of the layers of the given image reference into the rootfs of the provided bundle

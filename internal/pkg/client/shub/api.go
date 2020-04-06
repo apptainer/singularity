@@ -14,7 +14,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/sylog"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 

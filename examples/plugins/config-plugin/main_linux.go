@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/sylog"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"

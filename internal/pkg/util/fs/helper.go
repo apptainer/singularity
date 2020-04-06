@@ -15,7 +15,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/sylog"
 	"golang.org/x/sys/unix"
 )
 

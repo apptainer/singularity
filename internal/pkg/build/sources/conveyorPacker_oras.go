@@ -10,8 +10,8 @@ import (
 	"fmt"
 
 	"github.com/sylabs/singularity/internal/pkg/client/oras"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OrasConveyorPacker only needs to hold a packer to pack the image it pulls
