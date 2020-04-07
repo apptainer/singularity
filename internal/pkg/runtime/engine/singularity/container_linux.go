@@ -1972,9 +1972,16 @@ func (c *container) addCwdMount(system *mount.System) error {
 }
 
 func (c *container) addLibsMount(system *mount.System) error {
+	libraries := c.engine.EngineConfig.GetLibrariesPath()
+
 	sylog.Debugf("Checking for 'user bind control' in configuration file")
 	if !c.engine.EngineConfig.File.UserBindControl {
-		sylog.Warningf("Ignoring libraries bind request: user bind control disabled by system administrator")
+		msg := "Ignoring libraries bind request: user bind control disabled by system administrator"
+		if len(libraries) > 0 {
+			sylog.Warningf(msg)
+		} else {
+			sylog.Verbosef(msg)
+		}
 		return nil
 	}
 
@@ -1986,8 +1993,6 @@ func (c *container) addLibsMount(system *mount.System) error {
 	if err := c.session.AddDir(sessionDir); err != nil {
 		return err
 	}
-
-	libraries := c.engine.EngineConfig.GetLibrariesPath()
 
 	for _, lib := range libraries {
 		sylog.Debugf("Add library %s to mount list", lib)
@@ -2023,15 +2028,20 @@ func (c *container) addLibsMount(system *mount.System) error {
 }
 
 func (c *container) addFilesMount(system *mount.System) error {
+	files := c.engine.EngineConfig.GetFilesPath()
+
 	sylog.Debugf("Checking for 'user bind control' in configuration file")
 	if !c.engine.EngineConfig.File.UserBindControl {
-		sylog.Warningf("Ignoring binaries bind request: user bind control disabled by system administrator")
+		msg := "Ignoring binaries bind request: user bind control disabled by system administrator"
+		if len(files) > 0 {
+			sylog.Warningf(msg)
+		} else {
+			sylog.Verbosef(msg)
+		}
 		return nil
 	}
 
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_RDONLY | syscall.MS_REC)
-
-	files := c.engine.EngineConfig.GetFilesPath()
 
 	for _, file := range files {
 		sylog.Debugf("Adding file %s to mount list", file)
