@@ -20,6 +20,10 @@ type Definition struct {
 	BuildData  Data              `json:"buildData"`
 	CustomData map[string]string `json:"customData"`
 	Raw        []byte            `json:"raw"`
+	// SCIF app sections must be processed in order from the definition file,
+	// so we need to record the order of the items as they are parsed from the
+	// file into unordered maps.
+	AppOrder []string `json:"appOrder"`
 }
 
 // ImageData contains any scripts, metadata, etc... that needs to be

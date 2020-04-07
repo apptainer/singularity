@@ -1,0 +1,10 @@
+Bootstrap: docker
+From: busybox:latest
+
+%appinstall hdf5
+echo "installing hdf5..."
+echo "hdf5 installed" > done.hdf5
+
+%appinstall med
+echo "installing med..."
+cp /scif/apps/hdf5/done.hdf5 done.med

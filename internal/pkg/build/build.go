@@ -378,7 +378,11 @@ func (b *Build) Full(ctx context.Context) error {
 		}
 
 		a.HandleBundle(stage.b)
-		stage.b.Recipe.BuildData.Post.Script += a.HandlePost()
+		appPost, err := a.HandlePost(stage.b)
+		if err != nil {
+			return fmt.Errorf("unable to get app post information: %v", err)
+		}
+		stage.b.Recipe.BuildData.Post.Script += appPost
 
 		// copy potential files from previous stage
 		if stage.b.RunSection("files") {
