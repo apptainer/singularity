@@ -337,6 +337,86 @@ static void set_master_privileges(void) {
     free(priv);
 }
 
+#define MSG_SIZE 1024
+
+static char *nserror(int err, int nstype) {
+    char *msg = (char *)malloc(MSG_SIZE);
+    char *path = (char *)malloc(MAX_PATH_SIZE);
+    char *ns = NULL;
+    char *name = NULL;
+
+    if ( msg == NULL || path == NULL ) {
+        fatalf("could not allocate memory\n");
+    }
+
+    memset(msg, 0, MSG_SIZE);
+    memset(path, 0, MAX_PATH_SIZE);
+
+    switch(nstype) {
+    case CLONE_NEWNET:
+        name = "network";
+        ns = "net";
+        break;
+    case CLONE_NEWIPC:
+        name = "ipc";
+        ns = name;
+        break;
+    case CLONE_NEWPID:
+        name = "pid";
+        ns = name;
+        break;
+    case CLONE_NEWNS:
+        name = "mount";
+        ns = "mnt";
+        break;
+    case CLONE_NEWUTS:
+        name = "uts";
+        ns = name;
+        break;
+    case CLONE_NEWUSER:
+        name = "user";
+        ns = name;
+        break;
+    case CLONE_NEWCGROUP:
+        name = "cgroup";
+        ns = name;
+        break;
+    }
+    if ( err == EINVAL ) {
+        snprintf(path, MAX_PATH_SIZE-1, "/proc/self/ns/%s", ns);
+        if ( access(path, 0) < 0 ) {
+            snprintf(msg, MSG_SIZE-1, "%s namespace not supported by your system", name);
+        } else {
+            snprintf(msg, MSG_SIZE-1, "%s namespace disabled", name);
+        }
+    } else if ( err == EUSERS ) {
+        snprintf(msg, MSG_SIZE-1, "limit on the nesting depth of %s namespaces was exceeded", name);
+    } else if ( err == ENOSPC ) {
+        snprintf(path, MAX_PATH_SIZE-1, "/proc/sys/user/max_%s_namespaces", ns);
+        if ( access(path, 0) == 0 ) {
+            snprintf(msg, MSG_SIZE-1, "maximum number of %s namespaces exceeded, check %s", name, path);
+        } else {
+            snprintf(msg, MSG_SIZE-1, "limit on the nesting depth of %s namespaces was exceeded", name);
+        }
+    } else if ( err == EPERM ) {
+        if ( nstype != CLONE_NEWUSER ) {
+            snprintf(msg, MSG_SIZE-1, "%s namespace requires privileges, check Singularity installation", name);
+        } else {
+            snprintf(path, MAX_PATH_SIZE-1, "/proc/sys/kernel/unprivileged_userns_clone");
+            if ( access(path, 0) == 0 ) {
+                snprintf(msg, MSG_SIZE-1, "user namespace requires to set %s to 1", path);
+            } else {
+                snprintf(msg, MSG_SIZE-1, "not allowed to create user namespace");
+            }
+        }
+    } else {
+        free(msg);
+        msg = strerror(err);
+    }
+    free(path);
+    return msg;
+}
+
 static int create_namespace(int nstype) {
     switch(nstype) {
     case CLONE_NEWNET:
@@ -555,7 +635,7 @@ static int network_namespace_init(struct namespace *nsconfig) {
         return ENTER_NAMESPACE;
     } else if ( is_namespace_create(nsconfig, CLONE_NEWNET) ) {
         if ( create_namespace(CLONE_NEWNET) < 0 ) {
-            fatalf("Failed to create network namespace: %s\n", strerror(errno));
+            fatalf("Failed to create network namespace: %s\n", nserror(errno, CLONE_NEWNET));
         }
         if ( nsconfig->bringLoopbackInterface ) {
             struct ifreq req;
@@ -589,7 +669,7 @@ static int uts_namespace_init(struct namespace *nsconfig) {
         return ENTER_NAMESPACE;
     } else if ( is_namespace_create(nsconfig, CLONE_NEWUTS) ) {
         if ( create_namespace(CLONE_NEWUTS) < 0 ) {
-            fatalf("Failed to create uts namespace: %s\n", strerror(errno));
+            fatalf("Failed to create uts namespace: %s\n", nserror(errno, CLONE_NEWUTS));
         }
         return CREATE_NAMESPACE;
     }
@@ -603,7 +683,7 @@ static int ipc_namespace_init(struct namespace *nsconfig) {
         return ENTER_NAMESPACE;
     } else if ( is_namespace_create(nsconfig, CLONE_NEWIPC) ) {
         if ( create_namespace(CLONE_NEWIPC) < 0 ) {
-            fatalf("Failed to create ipc namespace: %s\n", strerror(errno));
+            fatalf("Failed to create ipc namespace: %s\n", nserror(errno, CLONE_NEWIPC));
         }
         return CREATE_NAMESPACE;
     }
@@ -617,7 +697,7 @@ static int cgroup_namespace_init(struct namespace *nsconfig) {
         return ENTER_NAMESPACE;
     } else if ( is_namespace_create(nsconfig, CLONE_NEWCGROUP) ) {
         if ( create_namespace(CLONE_NEWCGROUP) < 0 ) {
-            fatalf("Failed to create cgroup namespace: %s\n", strerror(errno));
+            fatalf("Failed to create cgroup namespace: %s\n", nserror(errno, CLONE_NEWCGROUP));
         }
         return CREATE_NAMESPACE;
     }
@@ -637,7 +717,7 @@ static int mount_namespace_init(struct namespace *nsconfig, bool masterPropagate
                 fatalf("Failed to unshare root file system: %s\n", strerror(errno));
             }
             if ( create_namespace(CLONE_NEWNS) < 0 ) {
-                fatalf("Failed to create mount namespace: %s\n", strerror(errno));
+                fatalf("Failed to create mount namespace: %s\n", nserror(errno, CLONE_NEWNS));
             }
             if ( propagation && mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
                 fatalf("Failed to set mount propagation: %s\n", strerror(errno));
@@ -645,7 +725,7 @@ static int mount_namespace_init(struct namespace *nsconfig, bool masterPropagate
         } else {
             /* create a namespace for container process to separate master during pivot_root */
             if ( create_namespace(CLONE_NEWNS) < 0 ) {
-                fatalf("Failed to create mount namespace: %s\n", strerror(errno));
+                fatalf("Failed to create mount namespace: %s\n", nserror(errno, CLONE_NEWNS));
             }
 
             /* set shared propagation to propagate few mount points to master */
@@ -668,7 +748,7 @@ static int shared_mount_namespace_init(struct namespace *nsconfig) {
         fatalf("Failed to unshare root file system: %s\n", strerror(errno));
     }
     if ( create_namespace(CLONE_NEWNS) < 0 ) {
-        fatalf("Failed to create mount namespace: %s\n", strerror(errno));
+        fatalf("Failed to create mount namespace: %s\n", nserror(errno, CLONE_NEWNS));
     }
     if ( mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
         fatalf("Failed to set mount propagation: %s\n", strerror(errno));
@@ -1226,7 +1306,7 @@ __attribute__((constructor)) static void init(void) {
             }
             /* master and container processes lives in the same user namespace */
             if ( create_namespace(CLONE_NEWUSER) < 0 ) {
-                fatalf("Failed to create user namespace: %s\n", strerror(errno));
+                fatalf("Failed to create user namespace: %s\n", nserror(errno, CLONE_NEWUSER));
             }
         } else {
             /*
@@ -1481,5 +1561,10 @@ __attribute__((constructor)) static void init(void) {
             return;
         }
     }
-    fatalf("Failed to create container namespaces\n");
+    if ( clone_flags & CLONE_NEWPID != 0 && clone_flags & CLONE_NEWUSER == 0 ) {
+        fatalf("Failed to create container namespace: %s\n", nserror(errno, CLONE_NEWPID));
+    } else if ( clone_flags & CLONE_NEWUSER != 0 ) {
+        fatalf("Failed to create container namespace: %s\n", nserror(errno, CLONE_NEWUSER));
+    }
+    fatalf("Failed to create container process: %s\n", strerror(errno));
 }
