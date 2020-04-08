@@ -24,6 +24,9 @@ clear_env() {
         case "${key}" in
         PWD|HOME|OPTIND|UID|SINGULARITY_APPNAME|SINGULARITY_SHELL)
             ;;
+        SINGULARITY_NAME|SINGULARITY_CONTAINER)
+            readonly "${key}"
+            ;;
         *)
             unset "${key}"
             ;;
