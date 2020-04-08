@@ -110,6 +110,8 @@ else
     export PROMPT_COMMAND="${PROMPT_COMMAND:-}; PROMPT_COMMAND=\"\${PROMPT_COMMAND%%; PROMPT_COMMAND=*}\"; PS1=\"${PS1}\""
 fi
 
+export SINGULARITY_ENVIRONMENT="${SINGULARITY_ENVIRONMENT:-/.singularity.d/env/91-environment.sh}"
+
 sylog debug "Running action command ${__singularity_cmd__}"
 
 case "${__singularity_cmd__}" in
