@@ -350,3 +350,22 @@ func (c *imgBuildTests) issue5172(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 }
+
+// SCIF apps must build in order - build a recipe where the second app depends
+// on things created in the first apps's appinstall section
+func (c *imgBuildTests) issue4820(t *testing.T) {
+	image := filepath.Join(c.env.TestDir, "issue_4820.sif")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(image, "testdata/regressions/issue_4820.def"),
+		e2e.PostRun(func(t *testing.T) {
+			os.Remove(image)
+		}),
+		e2e.ExpectExit(
+			0,
+		),
+	)
+}

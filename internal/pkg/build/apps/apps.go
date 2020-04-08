@@ -206,7 +206,12 @@ func (pl *BuildApp) HandleBundle(b *types.Bundle) {
 func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 	globalEnv94 := ""
 
-	for name, app := range pl.Apps {
+	for _, name := range b.Recipe.AppOrder {
+		app, ok := pl.Apps[name]
+		if !ok {
+			return fmt.Errorf("No BuildApp record for app %s", name)
+		}
+
 		sylog.Debugf("Creating %s app in bundle", name)
 		if err := createAppRoot(b, app); err != nil {
 			return err
@@ -438,15 +443,21 @@ func copy(src, dst string) error {
 }
 
 // HandlePost returns a script that should run after %post
-func (pl *BuildApp) HandlePost() string {
+func (pl *BuildApp) HandlePost(b *types.Bundle) (string, error) {
 	post := ""
-	for name, app := range pl.Apps {
+	for _, name := range b.Recipe.AppOrder {
+		sylog.Debugf("Fetching app[%s] post script section", name)
+		app, ok := pl.Apps[name]
+		if !ok {
+			return "", fmt.Errorf("No BuildApp record for app %s", name)
+		}
+
 		sylog.Debugf("Building app[%s] post script section", name)
 
 		post += buildPost(app)
 	}
 
-	return post
+	return post, nil
 }
 
 func buildPost(a *App) string {
