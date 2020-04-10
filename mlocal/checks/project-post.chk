@@ -288,24 +288,6 @@ else
 fi
 
 ########################
-# function setns
-########################
-printf " checking: function setns... "
-symb=`nm -g \`$tgtcc --print-file-name=libc.a\` 2>/dev/null | awk '$2 == "T" && $3 == "setns" {print $3}'`
-if [ "X$symb" = "Xsetns" ]; then
-	echo "yes"
-else
-	echo "no"
-	config_add_def SINGULARITY_NO_SETNS 1
-	if ! test -d "/proc/self/ns"; then
-		echo "WARNING: instance feature is disabled due to lack of kernel support"
-		echo
-	else
-		config_add_def SINGULARITY_SETNS_SYSCALL 1
-	fi
-fi
-
-########################
 # libseccomp dev
 ########################
 printf " checking: libseccomp+headers... "

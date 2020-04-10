@@ -482,7 +482,7 @@ static int enter_namespace(char *nspath, int nstype) {
         return(-1);
     }
 
-    if ( setns(ns_fd, nstype) < 0 ) {
+    if ( xsetns(ns_fd, nstype) < 0 ) {
         int err = errno;
         close(ns_fd);
         errno = err;

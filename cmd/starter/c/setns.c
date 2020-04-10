@@ -19,26 +19,23 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/syscall.h>
-
+#include "include/setns.h"
 #include "include/message.h"
 
-#if defined (SINGULARITY_NO_SETNS) && defined (SINGULARITY_SETNS_SYSCALL)
+#ifdef __NR_setns
 
-#include "include/setns.h"
-
-int setns(int fd, int nstype) {
-    singularity_message(DEBUG, "Using syscall() wrapped __NR_setns\n");
+int xsetns(int fd, int nstype) {
     return syscall(__NR_setns, fd, nstype);
 }
 
-#elif defined (SINGULARITY_NO_SETNS) && !defined (SINGULARITY_SETNS_SYSCALL)
+#else
 
-int setns(int fd, int nstype) {
+int xsetns(int fd, int nstype) {
     (void)fd;
     (void)nstype;
-    singularity_message(VERBOSE, "setns() not supported at compile time by kernel at time of building\n");
+    singularity_message(WARNING, "setns() not supported at compile time by kernel at time of building\n");
     errno = ENOSYS;
     return -1;
 }
 
-#endif /* SINGULARITY_NO_SETNS && SINGULARITY_SETNS_SYSCALL */
+#endif /* __NR_setns */
