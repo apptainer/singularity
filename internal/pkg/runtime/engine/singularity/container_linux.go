@@ -460,7 +460,7 @@ func (c *container) setupImageDriver(system *mount.System) error {
 			)
 
 			sylog.Debugf("Add FUSE mount for image driver with options %s", opts)
-			err := c.rpcOps.Mount("fuse", sp, "fuse", syscall.MS_NOSUID|syscall.MS_NODEV, opts)
+			err := c.rpcOps.Mount("fuse", sp, "fuse", c.suidFlag|syscall.MS_NODEV, opts)
 			if err != nil {
 				return fmt.Errorf("while mounting fuse image driver: %s", err)
 			}
