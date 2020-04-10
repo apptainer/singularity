@@ -61,7 +61,7 @@ require (
 	google.golang.org/genproto v0.0.0-20200122232147-0452cf42e150 // indirect
 	gopkg.in/yaml.v2 v2.2.8
 	gotest.tools/v3 v3.0.2
-	mvdan.cc/sh/v3 v3.0.1-0.20200218171337-23ddfbcf8b29
+	mvdan.cc/sh/v3 v3.1.0
 	rsc.io/letsencrypt v0.0.3 // indirect
 )
 
