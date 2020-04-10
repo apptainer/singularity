@@ -80,8 +80,14 @@ containers that can be used across host environments.
 export RPM_BUILD_ROOT="%{buildroot}"
 %endif
 
+if [ -d %{name}-%{version} ]; then
+    # Clean up old build root
+    # First clean go's modcache because directories are unwritable
+    GOPATH=$PWD/%{name}-%{version}/gopath go clean -modcache
+    rm -rf %{name}-%{version}
+fi
+
 # Create our build root
-rm -rf %{name}-%{version}
 mkdir %{name}-%{version}
 
 %build
