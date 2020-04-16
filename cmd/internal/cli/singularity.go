@@ -7,10 +7,12 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"path"
 	"path/filepath"
@@ -429,21 +431,39 @@ func ExecuteSingularity() {
 
 	Init(loadPlugins)
 
-	if cmd, err := singularityCmd.ExecuteC(); err != nil {
-		name := cmd.Name()
+	// Setup a cancellable context that will trap Ctrl-C / SIGINT
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	defer func() {
+		signal.Stop(c)
+		cancel()
+	}()
+	go func() {
+		select {
+		case <-c:
+			sylog.Debugf("User requested cancellation with interrupt")
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+
+	if err := singularityCmd.ExecuteContext(ctx); err != nil {
+		name := singularityCmd.Name()
 		switch err.(type) {
 		case cmdline.FlagError:
-			usage := cmd.Flags().FlagUsagesWrapped(getColumns())
+			usage := singularityCmd.Flags().FlagUsagesWrapped(getColumns())
 			singularityCmd.Printf("Error for command %q: %s\n\n", name, err)
 			singularityCmd.Printf("Options for %s command:\n\n%s\n", name, usage)
 		case cmdline.CommandError:
-			singularityCmd.Println(cmd.UsageString())
+			singularityCmd.Println(singularityCmd.UsageString())
 		default:
 			singularityCmd.Printf("Error for command %q: %s\n\n", name, err)
-			singularityCmd.Println(cmd.UsageString())
+			singularityCmd.Println(singularityCmd.UsageString())
 		}
 		singularityCmd.Printf("Run '%s --help' for more detailed usage information.\n",
-			cmd.CommandPath())
+			singularityCmd.CommandPath())
 		os.Exit(1)
 	}
 }

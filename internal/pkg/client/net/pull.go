@@ -37,7 +37,7 @@ func IsNetPullRef(netRef string) bool {
 
 // DownloadImage will retrieve an image from an http(s) URI,
 // saving it into the specified file
-func DownloadImage(filePath string, netURL string) error {
+func DownloadImage(ctx context.Context, filePath string, netURL string) error {
 
 	if !IsNetPullRef(netURL) {
 		return fmt.Errorf("not a valid url reference: %s", netURL)
@@ -55,7 +55,7 @@ func DownloadImage(filePath string, netURL string) error {
 		Timeout: pullTimeout * time.Second,
 	}
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
@@ -89,17 +89,25 @@ func DownloadImage(filePath string, netURL string) error {
 	}
 	defer out.Close()
 
-	pb := client.ProgressBarCallback()
+	pb := client.ProgressBarCallback(ctx)
 
 	err = pb(res.ContentLength, res.Body, out)
+
 	if err != nil {
+		// Delete incomplete image file in the event of failure
+		// we get here e.g. if the context is canceled by Ctrl-C
+		res.Body.Close()
+		out.Close()
+		sylog.Infof("Cleaning up incomplete download: %s", filePath)
+		if err := os.Remove(filePath); err != nil {
+			sylog.Errorf("Error while removing incomplete download: %v", err)
+		}
 		return err
 	}
 
 	sylog.Debugf("Download complete\n")
 
 	return nil
-
 }
 
 // pull will pull a http(s) image into the cache if directTo="", or a specific file if directTo is set.
@@ -132,7 +140,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 	if directTo != "" {
 		sylog.Infof("Downloading network image")
-		if err := DownloadImage(directTo, pullFrom); err != nil {
+		if err := DownloadImage(ctx, directTo, pullFrom); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 		imagePath = directTo
@@ -146,7 +154,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 		if !cacheEntry.Exists {
 			sylog.Infof("Downloading network image")
-			err := DownloadImage(cacheEntry.TmpPath, pullFrom)
+			err := DownloadImage(ctx, cacheEntry.TmpPath, pullFrom)
 			if err != nil {
 				sylog.Fatalf("%v\n", err)
 			}

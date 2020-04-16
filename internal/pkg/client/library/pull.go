@@ -46,7 +46,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 	if directTo != "" {
 		sylog.Infof("Downloading library image")
-		if err = DownloadImage(ctx, c, directTo, arch, imageRef, client.ProgressBarCallback()); err != nil {
+		if err = DownloadImage(ctx, c, directTo, arch, imageRef, client.ProgressBarCallback(ctx)); err != nil {
 			return "", fmt.Errorf("unable to download image: %v", err)
 		}
 		imagePath = directTo
@@ -60,7 +60,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 		if !cacheEntry.Exists {
 			sylog.Infof("Downloading library image")
 
-			if err := DownloadImage(ctx, c, cacheEntry.TmpPath, runtime.GOARCH, imageRef, client.ProgressBarCallback()); err != nil {
+			if err := DownloadImage(ctx, c, cacheEntry.TmpPath, runtime.GOARCH, imageRef, client.ProgressBarCallback(ctx)); err != nil {
 				return "", fmt.Errorf("unable to download image: %v", err)
 			}
 

@@ -27,7 +27,7 @@ const pullTimeout = 7200
 
 // DownloadImage image will download a shub image to a path. This will not try
 // to cache it, or use cache.
-func DownloadImage(manifest APIResponse, filePath, shubRef string, force, noHTTPS bool) error {
+func DownloadImage(ctx context.Context, manifest APIResponse, filePath, shubRef string, force, noHTTPS bool) error {
 	sylog.Debugf("Downloading container from Shub")
 	if !force {
 		if _, err := os.Stat(filePath); err == nil {
@@ -96,9 +96,17 @@ func DownloadImage(manifest APIResponse, filePath, shubRef string, force, noHTTP
 	sylog.Debugf("Created output file: %s\n", filePath)
 
 	// Write the body to file
-	pb := client.ProgressBarCallback()
+	pb := client.ProgressBarCallback(ctx)
 	err = pb(resp.ContentLength, resp.Body, out)
 	if err != nil {
+		// Delete incomplete image file in the event of failure
+		// we get here e.g. if the context is canceled by Ctrl-C
+		resp.Body.Close()
+		out.Close()
+		sylog.Infof("Cleaning up incomplete download: %s", filePath)
+		if err := os.Remove(filePath); err != nil {
+			sylog.Errorf("Error while removing incomplete download: %v", err)
+		}
 		return err
 	}
 	out.Close()
@@ -135,7 +143,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 	if directTo != "" {
 		sylog.Infof("Downloading shub image")
-		if err := DownloadImage(manifest, directTo, pullFrom, true, noHTTPS); err != nil {
+		if err := DownloadImage(ctx, manifest, directTo, pullFrom, true, noHTTPS); err != nil {
 			return "", err
 		}
 		imagePath = directTo
@@ -148,7 +156,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 		if !cacheEntry.Exists {
 			sylog.Infof("Downloading shub image")
 
-			err := DownloadImage(manifest, cacheEntry.TmpPath, pullFrom, true, noHTTPS)
+			err := DownloadImage(ctx, manifest, cacheEntry.TmpPath, pullFrom, true, noHTTPS)
 			if err != nil {
 				return "", err
 			}
