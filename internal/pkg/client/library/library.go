@@ -11,6 +11,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/sylabs/singularity/pkg/sylog"
+
 	scslibrary "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/client"
 )
@@ -53,8 +55,12 @@ func DownloadImage(ctx context.Context, c *scslibrary.Client, imagePath, arch, l
 	// call library client to download image
 	err = c.DownloadImage(ctx, f, arch, r.Path, tag, callback)
 	if err != nil {
-		// delete incomplete image file in the event of failure
-		os.Remove(imagePath)
+		// Delete incomplete image file in the event of failure
+		// we get here e.g. if the context is canceled by Ctrl-C
+		sylog.Debugf("Cleaning up incomplete download: %s", imagePath)
+		if err := os.Remove(imagePath); err != nil {
+			sylog.Errorf("Error while removing incomplete download: %v", err)
+		}
 
 		return fmt.Errorf("error downloading image: %v", err)
 	}

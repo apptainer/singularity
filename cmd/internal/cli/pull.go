@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -169,7 +168,7 @@ var PullCmd = &cobra.Command{
 }
 
 func pullRun(cmd *cobra.Command, args []string) {
-	ctx := context.TODO()
+	ctx := cmd.Context()
 
 	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 	if imgCache == nil {

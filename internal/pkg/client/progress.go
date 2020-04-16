@@ -6,6 +6,7 @@
 package client
 
 import (
+	"context"
 	"io"
 
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -13,11 +14,16 @@ import (
 	"github.com/vbauerster/mpb/v4/decor"
 )
 
+// See: https://ixday.github.io/post/golang-cancel-copy/
+type readerFunc func(p []byte) (n int, err error)
+
+func (rf readerFunc) Read(p []byte) (n int, err error) { return rf(p) }
+
 // ProgressCallback is a function that provides progress information copying from a Reader to a Writer
 type ProgressCallback func(int64, io.Reader, io.Writer) error
 
 // ProgressBarCallback returns a progress bar callback unless e.g. --quiet or lower loglevel is set
-func ProgressBarCallback() ProgressCallback {
+func ProgressBarCallback(ctx context.Context) ProgressCallback {
 
 	if sylog.GetLevel() <= -1 {
 		return nil
@@ -38,13 +44,34 @@ func ProgressBarCallback() ProgressCallback {
 
 		// create proxy reader
 		bodyProgress := bar.ProxyReader(r)
+		defer bodyProgress.Close()
 
-		// Write the body to file
-		_, err := io.Copy(w, bodyProgress)
+		err := CopyWithContext(ctx, w, bodyProgress)
 		if err != nil {
+			bar.Abort(true)
 			return err
 		}
 
 		return nil
 	}
+}
+
+func CopyWithContext(ctx context.Context, dst io.Writer, src io.Reader) error {
+	// Copy will call the Reader and Writer interface multiple time, in order
+	// to copy by chunk (avoiding loading the whole file in memory).
+	// I insert the ability to cancel before read time as it is the earliest
+	// possible in the call process.
+	_, err := io.Copy(dst, readerFunc(func(p []byte) (int, error) {
+		// golang non-blocking channel: https://gobyexample.com/non-blocking-channel-operations
+		select {
+		// if context has been canceled
+		case <-ctx.Done():
+			// stop process and propagate "context canceled" error
+			return 0, ctx.Err()
+		default:
+			// otherwise just run default io.Reader implementation
+			return src.Read(p)
+		}
+	}))
+	return err
 }
