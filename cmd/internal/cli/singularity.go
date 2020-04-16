@@ -450,17 +450,26 @@ func ExecuteSingularity() {
 	}()
 
 	if err := singularityCmd.ExecuteContext(ctx); err != nil {
-		name := singularityCmd.Name()
+		// Find the subcommand to display more useful help, and the correct
+		// subcommand name in messages - i.e. 'run' not 'singularity'
+		// This is required because we previously used ExecuteC that returns the
+		// subcommand... but there is no ExecuteC that variant accepts a context.
+		subCmd, _, subCmdErr := singularityCmd.Find(args[1:])
+		if subCmdErr != nil {
+			singularityCmd.Printf("Error: %v\n\n", subCmdErr)
+		}
+
+		name := subCmd.Name()
 		switch err.(type) {
 		case cmdline.FlagError:
-			usage := singularityCmd.Flags().FlagUsagesWrapped(getColumns())
+			usage := subCmd.Flags().FlagUsagesWrapped(getColumns())
 			singularityCmd.Printf("Error for command %q: %s\n\n", name, err)
 			singularityCmd.Printf("Options for %s command:\n\n%s\n", name, usage)
 		case cmdline.CommandError:
-			singularityCmd.Println(singularityCmd.UsageString())
+			singularityCmd.Println(subCmd.UsageString())
 		default:
 			singularityCmd.Printf("Error for command %q: %s\n\n", name, err)
-			singularityCmd.Println(singularityCmd.UsageString())
+			singularityCmd.Println(subCmd.UsageString())
 		}
 		singularityCmd.Printf("Run '%s --help' for more detailed usage information.\n",
 			singularityCmd.CommandPath())
