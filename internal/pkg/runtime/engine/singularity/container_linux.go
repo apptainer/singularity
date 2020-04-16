@@ -1739,7 +1739,7 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 		sylog.Debugf("Adding %s to mount list\n", src)
 
 		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err == mount.ErrMountExists {
-			sylog.Warningf("destination %s already in mount list: %s", src, err)
+			sylog.Warningf("While bind mounting '%s:%s': %s", src, dst, err)
 		} else if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
 		} else {
