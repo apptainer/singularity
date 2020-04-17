@@ -363,9 +363,16 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 
 		sylog.Verbosef("Using pem path flag for encrypted container")
 
-		// Check it's a valid PEM we can load, before starting the build (#4173)
-		if _, err := crypt.LoadPEMPublicKey(encryptionPEMPath); err != nil {
-			sylog.Fatalf("Invalid encryption key: %v", err)
+		// Check it's a valid PEM public key we can load, before starting the build (#4173)
+		if cmd.Name() == "build" {
+			if _, err := crypt.LoadPEMPublicKey(encryptionPEMPath); err != nil {
+				sylog.Fatalf("Invalid encryption public key: %v", err)
+			}
+			// or a valid private key before launching the engine for actions on a container (#5221)
+		} else {
+			if _, err := crypt.LoadPEMPrivateKey(encryptionPEMPath); err != nil {
+				sylog.Fatalf("Invalid encryption private key: %v", err)
+			}
 		}
 
 		return crypt.KeyInfo{Format: crypt.PEM, Path: encryptionPEMPath}, nil

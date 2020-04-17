@@ -100,7 +100,7 @@ func EncryptKey(k KeyInfo, plaintext []byte) ([]byte, error) {
 func PlaintextKey(k KeyInfo, image string) ([]byte, error) {
 	switch k.Format {
 	case PEM:
-		privateKey, err := loadPEMPrivateKey(k.Path)
+		privateKey, err := LoadPEMPrivateKey(k.Path)
 		if err != nil {
 			return nil, fmt.Errorf("could not load PEM private key: %v", err)
 		}
@@ -132,7 +132,7 @@ func PlaintextKey(k KeyInfo, image string) ([]byte, error) {
 	}
 }
 
-func loadPEMPrivateKey(fn string) (*rsa.PrivateKey, error) {
+func LoadPEMPrivateKey(fn string) (*rsa.PrivateKey, error) {
 	b, err := ioutil.ReadFile(fn)
 	if err != nil {
 		return nil, err
