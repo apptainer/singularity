@@ -410,11 +410,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	homeFlag := cobraCmd.Flag("home")
 	engineConfig.SetCustomHome(homeFlag.Changed)
 
-	if !homeFlag.Changed && IsFakeroot {
-		engineConfig.SetCustomHome(true)
-		HomePath = fmt.Sprintf("%s:/root", HomePath)
-	}
-
 	// set home directory for the targeted UID if it exists on host system
 	if !homeFlag.Changed && targetUID != 0 {
 		if targetUID > 500 {
