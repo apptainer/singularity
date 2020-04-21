@@ -316,3 +316,22 @@ func (c actionTests) issue4823(t *testing.T) {
 		)
 	}
 }
+
+// Check that we can run a container when the home mount is '/' as it is for 'nobody'
+// We should just not do that mount which would clobber the whole container fs
+func (c actionTests) issue5228(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	u := e2e.UserProfile.HostUser(t)
+
+	// We don't actually switch user to one with `/` - we put this mount in using `--home`
+	// which has the same effect.
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithDir(u.Dir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--home", "/", c.env.ImagePath, "/bin/true"),
+		e2e.ExpectExit(0),
+	)
+}

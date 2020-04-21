@@ -1663,6 +1663,12 @@ func (c *container) addHomeMount(system *mount.System) error {
 		return fmt.Errorf("unable to get home source/destination: %v", err)
 	}
 
+	// issue #5228 - don't attempt to mount a '/' home dir like 'nobody' has
+	if dest == "/" {
+		sylog.Warningf("Skipping impossible home directory mount to '/'")
+		return nil
+	}
+
 	stagingDir, err := c.addHomeStagingDir(system, source, dest)
 	if err != nil {
 		return err
