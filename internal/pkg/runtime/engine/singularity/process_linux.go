@@ -56,7 +56,9 @@ const defaultShell = "/bin/sh"
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	// Manage all signals.
 	// Queue them until they're ready to be handled below.
-	signals := make(chan os.Signal, 1)
+	// Use a channel size of two here, since we may receive SIGURG, which is
+	// used for non-cooperative goroutine preemption starting with Go 1.14.
+	signals := make(chan os.Signal, 2)
 	signal.Notify(signals)
 
 	if err := e.runFuseDrivers(true, -1); err != nil {
@@ -244,6 +246,11 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 						statusChan <- status
 					}
 				}
+			case syscall.SIGURG:
+				// Ignore SIGURG, which is used for non-cooperative goroutine
+				// preemption starting with Go 1.14. For more information, see
+				// https://github.com/golang/go/issues/24543.
+				break
 			default:
 				signal := s.(syscall.Signal)
 				// EPERM and EINVAL are deliberately ignored because they can't be
