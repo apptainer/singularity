@@ -11,18 +11,57 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.5.3
 
+## New features / functionalities
+  - Singularity now supports the execution of minimal Docker/OCI
+    containers that do not contain `/bin/sh`, e.g. `docker://hello-world`.
+  - A new cache structure is used that is concurrency safe on a filesystem that
+    supports atomic rename. *If you downgrade to Singularity 3.5 or older after
+    using 3.6 you will need to run `singularity cache clean`.*
+  - A plugin system rework adds new hook points that will allow the
+    development of plugins that modify behavior of the runtime. An image driver
+    concept is introduced for plugins to support new ways of handling image and
+    overlay mounts. *Plugins built for <=3.5 are not compatible with 3.6*.
+  - The `--bind` flag can now bind directories from a SIF or ext3 image into a
+    container.
+  - The `--fusemount` feature to mount filesystems to a container via FUSE
+    drivers is now a supported feature (previously an experimental hidden flag).
+    This permits users to mount e.g. `sshfs` and `cvmfs` filesystems to the
+    container at runtime.
+  - A new `-c/--config` flag allows an alternative `singularity.conf` to be
+    specified by the `root` user, or all users in an unprivileged installation.
+  - A new `--env` flag allows container environment variables to be set via the
+    Singularity command line.
+  - A new `--env-file` flag allows container environment variables to be set from
+    a specified file.
+
 ## Changed defaults / behaviours
   - Environment variables prefixed with `SINGULARITYENV_` always take
     precedence over variables without `SINGULARITYENV_` prefix.
+  - The `%post` build section inherits environment variables from the base image.
   - `%files from ...` will now follow symlinks for sources that are directly
     specified, or directly resolved from a glob pattern. It will not follow
     symlinks found through directory traversal. This mirrors Docker multi-stage
     COPY behaviour.
-  - Restore the CWD mount behaviour of v2, implying that CWD path is not recreated
+  - Restored the CWD mount behaviour of v2, implying that CWD path is not recreated
     inside container and any symlinks in the CWD path are not resolved anymore to
     determine the destination path inside container.
-  - `%test` build section is executed the same manner as `singularity test image`.
-  - `%post` build section inherit environment variables from the base image.
+  - The `%test` build section is executed the same manner as `singularity test image`.
+  - `--fusemount` with the `container:` default directive will foreground the FUSE
+     process. Use `container-daemon:` for previous behavior.
+
+## Bug Fixes
+  - Don't try to mount `$HOME` when it is `/` (e.g. `nobody` user).
+  - Process `%appinstall` sections in order when building from a definition file.
+  - Ensure `SINGULARITY_CONTAINER`, `SINGULARITY_ENVIRONMENT` and the custom
+    shell prompt are set inside a container.
+  - Honor insecure registry settings from `/etc/containers/registries.conf`.
+  - Fix `http_proxy` env var handling in `yum` bootstrap builds.
+  - Disable log colorization when output location is not a terminal.
+  - Check encryption keys are usable before beginning an encrypted build.
+  - Allow app names with non-alphanumeric characters.
+  - Use the `base` metapackage for arch bootstrap builds - arch no longer has a
+    `base` group.
+  - Ensure library client messages are logged with `--debug`.
 
 
 # v3.5.3 - [2020.02.18]
