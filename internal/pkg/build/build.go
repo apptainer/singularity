@@ -307,7 +307,7 @@ func (b *Build) Full(ctx context.Context) error {
 	sylog.Infof("Starting build...")
 
 	// monitor build for termination signal and clean up
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
