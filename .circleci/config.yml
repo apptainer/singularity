@@ -97,21 +97,10 @@ aliases:
         - ~/go/pkg
 
 jobs:
-  get_source:
-    <<: *defaults
-    docker:
-      - image: sylabsio/golang:1.13.1-stretch
-    steps:
-      - checkout
-      - persist_to_workspace:
-          root: ~/go
-          paths:
-            - singularity
-
   cache_go_mod:
     <<: *vm_defaults
     steps:
-      - *attach_workspace
+      - checkout
       - *restore_cache
       - run:
           <<: *setup_environment
@@ -127,7 +116,7 @@ jobs:
     docker:
       - image: sylabsio/golang:1.13.1-stretch
     steps:
-      - *attach_workspace
+      - checkout
       - run:
           <<: *build_singularity
       - run:
@@ -138,7 +127,7 @@ jobs:
     docker:
       - image: sylabsio/golang:1.13.1-alpine
     steps:
-      - *attach_workspace
+      - checkout
       - run:
           <<: *build_singularity
       - run:
@@ -177,7 +166,7 @@ jobs:
   build_check_and_install:
     <<: *vm_defaults
     steps:
-      - *attach_workspace
+      - checkout
       - *restore_cache
       - run:
           <<: *setup_environment
@@ -260,17 +249,10 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - get_source
-      - go113-stretch:
-          requires:
-            - get_source
-      - go113-alpine:
-          requires:
-            - get_source
+      - go113-stretch
+      - go113-alpine
       - go113-macos
-      - cache_go_mod:
-          requires:
-            - get_source
+      - cache_go_mod
       - build_check_and_install:
           requires:
             - cache_go_mod
