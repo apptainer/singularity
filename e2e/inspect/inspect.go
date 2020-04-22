@@ -202,7 +202,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 			insType: "--environment",
 			compareFn: func(t *testing.T, meta *inspect.Metadata) {
 				envFile := "/.singularity.d/env/90-environment.sh"
-				out := "#!/bin/sh\n#Custom environment shell code should follow\n\n\nexport test=\"testing\"\nexport e2e=\"e2e testing\""
+				out := "#!/bin/sh\n# Custom environment shell code should follow\n\n\nexport test=\"testing\"\nexport e2e=\"e2e testing\""
 				v := meta.Attributes.Environment[envFile]
 				if v != out {
 					t.Errorf("unexpected environment for %s, got %s instead of %s", envFile, v, out)
