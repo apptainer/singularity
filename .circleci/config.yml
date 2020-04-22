@@ -86,22 +86,12 @@ aliases:
   - &attach_workspace
     attach_workspace:
       at: ~/go
-  - &restore_cache
-    restore_cache:
-      keys:
-        - go-vm-mod-{{ checksum "go.sum" }}
-  - &save_cache
-    save_cache:
-      key: go-vm-mod-{{ checksum "go.sum" }}
-      paths:
-        - ~/go/pkg
 
 jobs:
-  cache_go_mod:
+  check_go_mod:
     <<: *vm_defaults
     steps:
       - checkout
-      - *restore_cache
       - run:
           <<: *setup_environment
       - run:
@@ -109,7 +99,6 @@ jobs:
       - run:
           name: Check go.mod
           command: scripts/check-go.mod
-      - *save_cache
 
   go113-stretch:
     <<: *defaults
@@ -167,7 +156,6 @@ jobs:
     <<: *vm_defaults
     steps:
       - checkout
-      - *restore_cache
       - run:
           <<: *setup_environment
       - run:
@@ -181,13 +169,13 @@ jobs:
       - persist_to_workspace:
           root: ~/go
           paths:
+            - pkg/mod
             - singularity
 
   unit_tests:
     <<: *vm_defaults
     steps:
       - *attach_workspace
-      - *restore_cache
       - run:
           <<: *setup_environment
       - run:
@@ -205,7 +193,6 @@ jobs:
     <<: *vm_defaults
     steps:
       - *attach_workspace
-      - *restore_cache
       - run:
           <<: *setup_environment
       - run:
@@ -226,7 +213,6 @@ jobs:
     <<: *vm_defaults
     steps:
       - *attach_workspace
-      - *restore_cache
       - run:
           <<: *setup_environment
       - run:
@@ -252,10 +238,8 @@ workflows:
       - go113-stretch
       - go113-alpine
       - go113-macos
-      - cache_go_mod
-      - build_check_and_install:
-          requires:
-            - cache_go_mod
+      - check_go_mod
+      - build_check_and_install
       - unit_tests:
           requires:
             - build_check_and_install
