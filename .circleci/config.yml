@@ -89,13 +89,10 @@ aliases:
 
 jobs:
   check_go_mod:
-    <<: *vm_defaults
+    docker:
+      - image: golang:1.13
     steps:
       - checkout
-      - run:
-          <<: *setup_environment
-      - run:
-          <<: *update_go
       - run:
           name: Check go.mod
           command: scripts/check-go.mod
