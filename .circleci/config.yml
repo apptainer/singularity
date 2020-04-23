@@ -82,11 +82,6 @@ x-run:
           ;;
       esac
 
-aliases:
-  - &attach_workspace
-    attach_workspace:
-      at: ~/go
-
 jobs:
   check_go_mod:
     docker:
@@ -149,7 +144,7 @@ jobs:
           command: |-
             make -C ./builddir check
 
-  build_check_and_install:
+  unit_tests:
     <<: *vm_defaults
     steps:
       - checkout
@@ -162,24 +157,6 @@ jobs:
       - run:
           <<: *build_singularity
       - run:
-          <<: *check_singularity
-      - persist_to_workspace:
-          root: ~/go
-          paths:
-            - pkg/mod
-            - singularity
-
-  unit_tests:
-    <<: *vm_defaults
-    steps:
-      - *attach_workspace
-      - run:
-          <<: *setup_environment
-      - run:
-          <<: *update_go
-      - run:
-          <<: *fetch_deb_deps
-      - run:
           <<: *install_singularity
       - run:
           name: Run unit tests
@@ -189,7 +166,7 @@ jobs:
   short_integration_tests:
     <<: *vm_defaults
     steps:
-      - *attach_workspace
+      - checkout
       - run:
           <<: *setup_environment
       - run:
@@ -198,6 +175,8 @@ jobs:
           <<: *update_go
       - run:
           <<: *fetch_deb_deps
+      - run:
+          <<: *build_singularity
       - run:
           <<: *install_singularity
       - run:
@@ -209,7 +188,7 @@ jobs:
   e2e_tests:
     <<: *vm_defaults
     steps:
-      - *attach_workspace
+      - checkout
       - run:
           <<: *setup_environment
       - run:
@@ -218,6 +197,8 @@ jobs:
           <<: *update_go
       - run:
           <<: *fetch_deb_deps
+      - run:
+          <<: *build_singularity
       - run:
           <<: *install_singularity
       - run:
@@ -236,13 +217,6 @@ workflows:
       - go113-alpine
       - go113-macos
       - check_go_mod
-      - build_check_and_install
-      - unit_tests:
-          requires:
-            - build_check_and_install
-      - short_integration_tests:
-          requires:
-            - build_check_and_install
-      - e2e_tests:
-          requires:
-            - build_check_and_install
+      - unit_tests
+      - short_integration_tests
+      - e2e_tests
