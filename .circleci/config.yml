@@ -9,13 +9,6 @@ vm_defaults: &vm_defaults
     image: ubuntu-1604:201903-01
 
 x-run:
-  debug_env: &debug_env
-    name: Debug environment
-    command: |-
-      set -x
-      env | sed -e 's,^,ENV: ,' | sort
-      test -n "$BASH_ENV" -a -e "$BASH_ENV" && sed -e 's,^,BASH_ENV: ,' < $BASH_ENV || echo "$BASH_ENV not found"
-
   setup_environment: &setup_environment
     name: Setup environment
     command: |-
