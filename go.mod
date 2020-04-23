@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
-	github.com/apex/log v1.1.2
+	github.com/apex/log v1.1.4
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
