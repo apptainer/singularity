@@ -1,10 +1,7 @@
 version: 2.1
 
-defaults: &defaults
-  working_directory: ~/go/singularity
-
 vm_defaults: &vm_defaults
-  <<: *defaults
+  working_directory: ~/go/singularity
   machine:
     image: ubuntu-1604:201903-01
 
@@ -86,22 +83,32 @@ jobs:
           command: scripts/check-go.mod
 
   go113-stretch:
-    <<: *defaults
     docker:
-      - image: sylabsio/golang:1.13.1-stretch
+      - image: golang:1.13-stretch
     steps:
       - checkout
+      - run:
+          name: Install golangci-lint
+          command: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
+      - run:
+          name: Fetch deps
+          command: apt-get -q update && apt-get -q install -y build-essential libssl-dev uuid-dev squashfs-tools cryptsetup-bin
       - run:
           <<: *build_singularity
       - run:
           <<: *check_singularity
 
   go113-alpine:
-    <<: *defaults
     docker:
-      - image: sylabsio/golang:1.13.1-alpine
+      - image: golang:1.13-alpine
     steps:
       - checkout
+      - run:
+          name: Install golangci-lint
+          command: wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
+      - run:
+          name: Fetch deps
+          command: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
       - run:
           <<: *build_singularity
       - run:
