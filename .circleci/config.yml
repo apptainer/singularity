@@ -1,21 +1,11 @@
 version: 2.1
 
-defaults: &defaults
-  working_directory: ~/go/singularity
-
 vm_defaults: &vm_defaults
-  <<: *defaults
+  working_directory: ~/go/singularity
   machine:
     image: ubuntu-1604:201903-01
 
 x-run:
-  debug_env: &debug_env
-    name: Debug environment
-    command: |-
-      set -x
-      env | sed -e 's,^,ENV: ,' | sort
-      test -n "$BASH_ENV" -a -e "$BASH_ENV" && sed -e 's,^,BASH_ENV: ,' < $BASH_ENV || echo "$BASH_ENV not found"
-
   setup_environment: &setup_environment
     name: Setup environment
     command: |-
@@ -82,63 +72,43 @@ x-run:
           ;;
       esac
 
-aliases:
-  - &attach_workspace
-    attach_workspace:
-      at: ~/go
-  - &restore_cache
-    restore_cache:
-      keys:
-        - go-vm-mod-{{ checksum "go.sum" }}
-  - &save_cache
-    save_cache:
-      key: go-vm-mod-{{ checksum "go.sum" }}
-      paths:
-        - ~/go/pkg
-
 jobs:
-  get_source:
-    <<: *defaults
+  check_go_mod:
     docker:
-      - image: sylabsio/golang:1.13.1-stretch
+      - image: golang:1.13
     steps:
       - checkout
-      - persist_to_workspace:
-          root: ~/go
-          paths:
-            - singularity
-
-  cache_go_mod:
-    <<: *vm_defaults
-    steps:
-      - *attach_workspace
-      - *restore_cache
-      - run:
-          <<: *setup_environment
-      - run:
-          <<: *update_go
       - run:
           name: Check go.mod
           command: scripts/check-go.mod
-      - *save_cache
 
   go113-stretch:
-    <<: *defaults
     docker:
-      - image: sylabsio/golang:1.13.1-stretch
+      - image: golang:1.13-stretch
     steps:
-      - *attach_workspace
+      - checkout
+      - run:
+          name: Install golangci-lint
+          command: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
+      - run:
+          name: Fetch deps
+          command: apt-get -q update && apt-get -q install -y build-essential libssl-dev uuid-dev squashfs-tools cryptsetup-bin
       - run:
           <<: *build_singularity
       - run:
           <<: *check_singularity
 
   go113-alpine:
-    <<: *defaults
     docker:
-      - image: sylabsio/golang:1.13.1-alpine
+      - image: golang:1.13-alpine
     steps:
-      - *attach_workspace
+      - checkout
+      - run:
+          name: Install golangci-lint
+          command: wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
+      - run:
+          name: Fetch deps
+          command: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
       - run:
           <<: *build_singularity
       - run:
@@ -174,11 +144,10 @@ jobs:
           command: |-
             make -C ./builddir check
 
-  build_check_and_install:
+  unit_tests:
     <<: *vm_defaults
     steps:
-      - *attach_workspace
-      - *restore_cache
+      - checkout
       - run:
           <<: *setup_environment
       - run:
@@ -187,24 +156,6 @@ jobs:
           <<: *fetch_deb_deps
       - run:
           <<: *build_singularity
-      - run:
-          <<: *check_singularity
-      - persist_to_workspace:
-          root: ~/go
-          paths:
-            - singularity
-
-  unit_tests:
-    <<: *vm_defaults
-    steps:
-      - *attach_workspace
-      - *restore_cache
-      - run:
-          <<: *setup_environment
-      - run:
-          <<: *update_go
-      - run:
-          <<: *fetch_deb_deps
       - run:
           <<: *install_singularity
       - run:
@@ -215,8 +166,7 @@ jobs:
   short_integration_tests:
     <<: *vm_defaults
     steps:
-      - *attach_workspace
-      - *restore_cache
+      - checkout
       - run:
           <<: *setup_environment
       - run:
@@ -225,6 +175,8 @@ jobs:
           <<: *update_go
       - run:
           <<: *fetch_deb_deps
+      - run:
+          <<: *build_singularity
       - run:
           <<: *install_singularity
       - run:
@@ -236,8 +188,7 @@ jobs:
   e2e_tests:
     <<: *vm_defaults
     steps:
-      - *attach_workspace
-      - *restore_cache
+      - checkout
       - run:
           <<: *setup_environment
       - run:
@@ -246,6 +197,8 @@ jobs:
           <<: *update_go
       - run:
           <<: *fetch_deb_deps
+      - run:
+          <<: *build_singularity
       - run:
           <<: *install_singularity
       - run:
@@ -260,26 +213,10 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - get_source
-      - go113-stretch:
-          requires:
-            - get_source
-      - go113-alpine:
-          requires:
-            - get_source
+      - go113-stretch
+      - go113-alpine
       - go113-macos
-      - cache_go_mod:
-          requires:
-            - get_source
-      - build_check_and_install:
-          requires:
-            - cache_go_mod
-      - unit_tests:
-          requires:
-            - build_check_and_install
-      - short_integration_tests:
-          requires:
-            - build_check_and_install
-      - e2e_tests:
-          requires:
-            - build_check_and_install
+      - check_go_mod
+      - unit_tests
+      - short_integration_tests
+      - e2e_tests
