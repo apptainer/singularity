@@ -48,6 +48,11 @@ func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (sy
 				continue
 			}
 			return status, nil
+		case syscall.SIGURG:
+			// Ignore SIGURG, which is used for non-cooperative goroutine
+			// preemption starting with Go 1.14. For more information, see
+			// https://github.com/golang/go/issues/24543.
+			break
 		default:
 			if e.EngineConfig.GetSignalPropagation() {
 				if err := syscall.Kill(pid, s.(syscall.Signal)); err != nil {

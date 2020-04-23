@@ -123,7 +123,9 @@ func Master(rpcSocket, masterSocket int, containerPid int, e *engine.Engine) {
 	// we could receive signal from child with CreateContainer call so we
 	// set the signal handler earlier to queue signals until MonitorContainer
 	// is called to handle them
-	signals := make(chan os.Signal, 1)
+	// Use a channel size of two here, since we may receive SIGURG, which is
+	// used for non-cooperative goroutine preemption starting with Go 1.14.
+	signals := make(chan os.Signal, 2)
 	signal.Notify(signals)
 
 	ctx := context.TODO()
