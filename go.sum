@@ -517,6 +517,8 @@ github.com/sylabs/scs-key-client v0.5.0 h1:EU/acjsiq0PSKvbpHTOoeuFtrkn6IIJsxhga7
 github.com/sylabs/scs-key-client v0.5.0/go.mod h1:G5WwGCFcwAGLxBzBB/Jw5TiYM+2FZ2T48ItAGzc+t/s=
 github.com/sylabs/scs-library-client v0.5.2 h1:1525Cx8eUF78rILurqSgCE9YXTLsWuwcGqv2QH43Hco=
 github.com/sylabs/scs-library-client v0.5.2/go.mod h1:7YcpzK8v8eDzjbwycYDm4qEQElypeuIKfj+jrg0rcZ4=
+github.com/sylabs/scs-library-client v0.5.3 h1:RAVUxW232r/Lko8biSeNMVHXThGGWekhC3m7WOywrYo=
+github.com/sylabs/scs-library-client v0.5.3/go.mod h1:7YcpzK8v8eDzjbwycYDm4qEQElypeuIKfj+jrg0rcZ4=
 github.com/sylabs/sif v1.0.9 h1:AT1lIoFJUCHpAiV2qVWaDZZROAa9JsCP/y32NwwY+6I=
 github.com/sylabs/sif v1.0.9/go.mod h1:1g6W6iWoK6BAgkDvR+Tc3FpLAjkpT5Z+nPtRl9FFptk=
 github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
