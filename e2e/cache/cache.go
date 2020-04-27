@@ -68,7 +68,7 @@ func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 			options:            []string{"clean", "--force", "--days", "30"},
 			expectedOutput:     "",
 			needImage:          true,
-			expectedEmptyCache: true,
+			expectedEmptyCache: false,
 			exit:               0,
 		},
 		{
@@ -76,7 +76,7 @@ func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 			options:            []string{"clean", "--force", "--days", "0"},
 			expectedOutput:     "",
 			needImage:          true,
-			expectedEmptyCache: false,
+			expectedEmptyCache: true,
 			exit:               0,
 		},
 		{
@@ -178,22 +178,6 @@ func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
 		{
 			name:               "clean dry-run confirmed",
 			options:            []string{"clean", "--dry-run"},
-			expectedEmptyCache: false,
-			exit:               0,
-		},
-		{
-			name:               "clean name confirmed",
-			options:            []string{"clean", "--name", imgName},
-			expect:             "Do you want to continue? [N/y]",
-			send:               "y",
-			expectedEmptyCache: true,
-			exit:               0,
-		},
-		{
-			name:               "clean name not confirmed",
-			options:            []string{"clean", "--name", imgName},
-			expect:             "Do you want to continue? [N/y]",
-			send:               "n",
 			expectedEmptyCache: false,
 			exit:               0,
 		},
