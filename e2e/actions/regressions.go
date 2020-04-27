@@ -357,4 +357,18 @@ func (c actionTests) issue5211(t *testing.T) {
 		e2e.WithArgs("--fakeroot", "--contain", c.env.ImagePath, "test", "!", "-d", filepath.Join("/root", canaryBasename)),
 		e2e.ExpectExit(0),
 	)
+
+	// Check we preserve `$HOME` as /root even when we `--contain` with `--fakeroot`
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithDir(u.Dir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--fakeroot", "--contain", c.env.ImagePath, "sh", "-c", "echo $HOME"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ExactMatch, "/root"),
+		),
+	)
+
 }
