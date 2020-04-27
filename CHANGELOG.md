@@ -9,7 +9,7 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.5.3
+# v3.6.0-rc.1 - [2020-04-27] (pre-release)
 
 ## New features / functionalities
   - Singularity now supports the execution of minimal Docker/OCI
