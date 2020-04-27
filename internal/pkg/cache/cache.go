@@ -14,6 +14,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/syfs"
@@ -158,7 +159,7 @@ func (h *Handle) GetEntry(cacheType string, hash string) (e *Entry, err error) {
 	return e, nil
 }
 
-func (h *Handle) CleanCache(cacheType string, dryRun bool) (err error) {
+func (h *Handle) CleanCache(cacheType string, dryRun bool, days int) (err error) {
 	dir := h.getCacheTypeDir(cacheType)
 
 	files, err := ioutil.ReadDir(dir)
@@ -169,9 +170,18 @@ func (h *Handle) CleanCache(cacheType string, dryRun bool) (err error) {
 
 	errCount := 0
 	for _, f := range files {
-		sylog.Infof("Removing cacheType cache entry: %s", f.Name())
+
+		if days >= 0 {
+			if time.Now().Sub(f.ModTime()) < time.Duration(days*24)*time.Hour {
+				sylog.Debugf("Skipping %s: less that %d days old", f.Name(), days)
+				continue
+			}
+		}
+
+		sylog.Infof("Removing %s cache entry: %s", cacheType, f.Name())
 		if !dryRun {
-			err := os.Remove(path.Join(dir, f.Name()))
+			// We RemoveAll in case the entry is a directory from Singularity <3.6
+			err := os.RemoveAll(path.Join(dir, f.Name()))
 			if err != nil {
 				sylog.Errorf("Could not remove cache entry '%s': %v", f.Name(), err)
 				errCount = errCount + 1
@@ -193,12 +203,13 @@ func (h *Handle) cleanAllCaches() {
 		return
 	}
 
-	for _, ct := range FileCacheTypes {
+	for _, ct := range append(FileCacheTypes, OciCacheTypes...) {
 		dir := h.getCacheTypeDir(ct)
 		if err := os.RemoveAll(dir); err != nil {
 			sylog.Verbosef("unable to clean %s cache, directory %s: %v", ct, dir, err)
 		}
 	}
+
 }
 
 // IsDisabled returns true if the cache is disabled

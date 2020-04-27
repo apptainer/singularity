@@ -22,7 +22,7 @@ import (
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterFlagForCmd(&cacheCleanTypesFlag, cacheCleanCmd)
-		cmdManager.RegisterFlagForCmd(&cacheCleanNameFlag, cacheCleanCmd)
+		cmdManager.RegisterFlagForCmd(&cacheCleanDaysFlag, cacheCleanCmd)
 		cmdManager.RegisterFlagForCmd(&cacheCleanDryFlag, cacheCleanCmd)
 		cmdManager.RegisterFlagForCmd(&cacheCleanForceFlag, cacheCleanCmd)
 	})
@@ -30,7 +30,7 @@ func init() {
 
 var (
 	cacheCleanTypes []string
-	cacheCleanNames []string
+	cacheCleanDays  int
 	cacheCleanDry   bool
 	cacheCleanForce bool
 
@@ -44,14 +44,14 @@ var (
 		Usage:        "a list of cache types to clean (possible values: library, oci, shub, blob, net, oras, all)",
 	}
 
-	// -N|--name
-	cacheCleanNameFlag = cmdline.Flag{
-		ID:           "cacheCleanNameFlag",
-		Value:        &cacheCleanNames,
-		DefaultValue: []string{},
-		Name:         "name",
-		ShortHand:    "N",
-		Usage:        "specify a container cache to clean (will clear all cache with the same name)",
+	// -D|--days
+	cacheCleanDaysFlag = cmdline.Flag{
+		ID:           "cacheCleanDaysFlag",
+		Value:        &cacheCleanDays,
+		DefaultValue: 0,
+		Name:         "days",
+		ShortHand:    "D",
+		Usage:        "remove all cache entries older than specified number of days",
 	}
 
 	// -n|--dry-run
@@ -107,7 +107,7 @@ func cleanCache() error {
 
 	// create a handle to access the current image cache
 	imgCache := getCacheHandle(cache.Config{})
-	err := singularity.CleanSingularityCache(imgCache, cacheCleanDry, cacheCleanTypes, cacheCleanNames)
+	err := singularity.CleanSingularityCache(imgCache, cacheCleanDry, cacheCleanTypes, cacheCleanDays)
 	if err != nil {
 		return fmt.Errorf("could not clean cache: %v", err)
 	}

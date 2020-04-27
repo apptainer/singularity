@@ -19,43 +19,12 @@ var (
 
 // cleanCache cleans the given type of cache cacheType. It will return a
 // error if one occurs.
-func cleanCache(imgCache *cache.Handle, cacheType string, dryRun bool) error {
+func cleanCache(imgCache *cache.Handle, cacheType string, dryRun bool, days int) error {
 	if imgCache == nil {
 		return fmt.Errorf("invalid image cache handle")
 	}
-	return imgCache.CleanCache(cacheType, dryRun)
+	return imgCache.CleanCache(cacheType, dryRun, days)
 }
-
-/*
-func removeCacheEntry(name, cacheType, cacheDir string, op func(string) error) (bool, error) {
-	foundMatch := false
-	done := fmt.Errorf("done")
-	err := filepath.Walk(cacheDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			sylog.Debugf("Error while walking directory %s for cache %s at %s while looking for entry %s: %+v",
-				cacheDir,
-				cacheType,
-				path,
-				name,
-				err)
-			return err
-		}
-		if !info.IsDir() && info.Name() == name {
-			sylog.Debugf("Removing entry %s from cache %s at %s", name, cacheType, path)
-			if err := op(path); err != nil {
-				return fmt.Errorf("unable to remove entry %s from cache %s at path %s: %v", name, cacheType, path, err)
-			}
-			foundMatch = true
-			return done
-		}
-		return nil
-	})
-	if err == done {
-		err = nil
-	}
-	return foundMatch, err
-}
-*/
 
 // CleanSingularityCache is the main function that drives all these
 // other functions. If force is true, remove the entries, otherwise only
@@ -63,42 +32,23 @@ func removeCacheEntry(name, cacheType, cacheDir string, op func(string) error) (
 // contains something, only clean that type. The special value "all" is
 // interpreted as "all types of entries". If cacheName contains
 // something, clean only cache entries matching that name.
-func CleanSingularityCache(imgCache *cache.Handle, dryRun bool, cacheCleanTypes []string, cacheName []string) error {
+func CleanSingularityCache(imgCache *cache.Handle, dryRun bool, cacheCleanTypes []string, days int) error {
 	if imgCache == nil {
 		return errInvalidCacheHandle
 	}
 
-	/*
-		if len(cacheName) > 0 {
+	// Default is all caches
+	cachesToClean := append(cache.OciCacheTypes, cache.FileCacheTypes...)
 
+	// If specified caches, and we don't have 'all' specified then clean the specified
+	// ones only.
+	if len(cacheCleanTypes) > 0 && !stringInSlice("all", cacheCleanTypes) {
+		cachesToClean = cacheCleanTypes
+	}
 
-			// a name was specified, only clean matching entries
-			for _, name := range cacheName {
-				matches := 0
-				for _, cacheType := range cacheTypes {
-					cacheDir, _ := cacheTypeToDir(imgCache, cacheType)
-					sylog.Debugf("Removing cache type %q with name %q from directory %q ...", cacheType, name, cacheDir)
-					foundMatch, err := removeCacheEntry(name, cacheType, cacheDir, op)
-					if err != nil {
-						return err
-					}
-					if foundMatch {
-						matches++
-					}
-				}
-
-				if matches == 0 {
-					sylog.Warningf("No cache found with given name: %s", name)
-				}
-			}
-			return nil
-		}
-
-	*/
-
-	for _, cacheType := range cache.FileCacheTypes {
+	for _, cacheType := range cachesToClean {
 		sylog.Debugf("Cleaning %s cache...", cacheType)
-		if err := cleanCache(imgCache, cacheType, dryRun); err != nil {
+		if err := cleanCache(imgCache, cacheType, dryRun, days); err != nil {
 			return err
 		}
 	}

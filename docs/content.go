@@ -179,13 +179,13 @@ Enterprise Performance Computing (EPC)`
 	CacheCleanLong  string = `
   This will clean your local cache (stored at $HOME/.singularity/cache if
   SINGULARITY_CACHEDIR is not set). By default the entire cache is cleaned, use
-  --name or --type flags to override this behavior. Note: if you use Singularity
+  --days and --type flags to override this behavior. Note: if you use Singularity
   as root, cache will be stored in '/root/.singularity/.cache', to clean that
-  cache, you will need to run 'cache clean --all' as root, or with 'sudo'.`
+  cache, you will need to run 'cache clean' as root, or with 'sudo'.`
 	CacheCleanExample string = `
   All group commands have their own help output:
 
-  $ singularity help cache clean --name cache_name.sif
+  $ singularity help cache clean --days 30
   $ singularity help cache clean --type=library,oci
   $ singularity cache clean --help`
 
