@@ -172,7 +172,7 @@ func (h *Handle) CleanCache(cacheType string, dryRun bool, days int) (err error)
 	for _, f := range files {
 
 		if days >= 0 {
-			if time.Now().Sub(f.ModTime()) < time.Duration(days*24)*time.Hour {
+			if time.Since(f.ModTime()) < time.Duration(days*24)*time.Hour {
 				sylog.Debugf("Skipping %s: less that %d days old", f.Name(), days)
 				continue
 			}
