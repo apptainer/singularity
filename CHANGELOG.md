@@ -33,6 +33,9 @@ _The old changelog can be found in the `release-2.6` branch_
     Singularity command line.
   - A new `--env-file` flag allows container environment variables to be set from
     a specified file.
+  - A new `--days` flag for `cache clean` allows removal of items older than a
+    specified number of days. Replaces the `--name` flag which is not generally
+    useful as the cache entries are stored by hash, not a friendly name.
 
 ## Changed defaults / behaviours
   - Environment variables prefixed with `SINGULARITYENV_` always take
@@ -48,6 +51,9 @@ _The old changelog can be found in the `release-2.6` branch_
   - The `%test` build section is executed the same manner as `singularity test image`.
   - `--fusemount` with the `container:` default directive will foreground the FUSE
      process. Use `container-daemon:` for previous behavior.
+
+## Deprecated / removed commands
+  - Removed `--name` flag for `cache clean`; replaced with `--days`.
 
 ## Bug Fixes
   - Don't try to mount `$HOME` when it is `/` (e.g. `nobody` user).
