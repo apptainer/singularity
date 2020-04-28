@@ -265,6 +265,23 @@ func (c ctx) singularityEnvOption(t *testing.T) {
 			matchEnv: "FOO",
 			matchVal: "foo",
 		},
+		{
+			name:     "TestMultiLine",
+			image:    c.env.ImagePath,
+			hostEnv:  []string{"MULTI=Hello\nWorld"},
+			matchEnv: "MULTI",
+			matchVal: "Hello\nWorld",
+		},
+		{
+			name:  "TestInvalidKey",
+			image: c.env.ImagePath,
+			// We try to set an invalid env var... and make sure
+			// we have no error output from the interpreter as it
+			// should be ignored, not passed into the container.
+			hostEnv:  []string{"BASH_FUNC_ml%%=TEST"},
+			matchEnv: "BASH_FUNC_ml%%",
+			matchVal: "",
+		},
 	}
 
 	for _, tt := range tests {
@@ -272,7 +289,7 @@ func (c ctx) singularityEnvOption(t *testing.T) {
 		if tt.envOpt != nil {
 			args = append(args, "--env", strings.Join(tt.envOpt, ","))
 		}
-		args = append(args, tt.image, "/bin/sh", "-c", "echo $"+tt.matchEnv)
+		args = append(args, tt.image, "/bin/sh", "-c", "echo \"${"+tt.matchEnv+"}\"")
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
