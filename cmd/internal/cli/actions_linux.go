@@ -410,6 +410,16 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	homeFlag := cobraCmd.Flag("home")
 	engineConfig.SetCustomHome(homeFlag.Changed)
 
+	// If we have fakeroot & the home flag has not been used then we have the standard
+	// /root location for the root user $HOME in the container.
+	// This doesn't count as a SetCustomHome(true), as we are mounting from the real
+	// user's standard $HOME -> /root and we want to respect --contain not mounting
+	// the $HOME in this case.
+	// See https://github.com/sylabs/singularity/pull/5227
+	if !homeFlag.Changed && IsFakeroot {
+		HomePath = fmt.Sprintf("%s:/root", HomePath)
+	}
+
 	// set home directory for the targeted UID if it exists on host system
 	if !homeFlag.Changed && targetUID != 0 {
 		if targetUID > 500 {
