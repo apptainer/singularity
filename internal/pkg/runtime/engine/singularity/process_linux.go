@@ -20,6 +20,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -665,6 +666,17 @@ func sylogBuiltin(ctx context.Context, argv []string) error {
 	return nil
 }
 
+// unescapeBuiltin returns a string, unescaping \n to a newline
+// Used to return newlines when we export a var in the action script
+func unescapeBuiltin(ctx context.Context, argv []string) error {
+	if len(argv) < 1 {
+		return fmt.Errorf("unescape builtin requires one argument")
+	}
+	hc := interp.HandlerCtx(ctx)
+	fmt.Fprintf(hc.Stdout, "%s", strings.Replace(argv[0], "\\n", "\n", -1))
+	return nil
+}
+
 // getEnvKeyBuiltin returns the KEY part of an environment variable.
 func getEnvKeyBuiltin(ctx context.Context, argv []string) error {
 	if len(argv) < 1 {
@@ -680,7 +692,22 @@ func getAllEnvBuiltin(shell *interpreter.Shell) interpreter.ShellBuiltin {
 	return func(ctx context.Context, argv []string) error {
 		hc := interp.HandlerCtx(ctx)
 
+		keyRe := regexp.MustCompile(`^[a-zA-Z_]+[a-zA-Z0-9_]*$`)
+
 		for _, env := range interpreter.GetEnv(hc) {
+			// Exclude environment vars that contain invalid characters
+			// in their KEY - e.g. bash functions in the environment
+			// like "BASH_FUNC_module%%"
+			key := strings.SplitN(env, "=", 2)[0]
+			if !keyRe.MatchString(key) {
+				sylog.Debugf("Not exporting %q to container environment: invalid key", key)
+				continue
+			}
+
+			// Because we are using IFS=\n we need to escape newlines
+			// here and unescape them in the action script when we
+			// export the var again.
+			env := strings.Replace(env, "\n", "\\n", -1)
 			fmt.Fprintf(hc.Stdout, "%s\n", env)
 		}
 		return nil
@@ -755,6 +782,7 @@ func runActionScript(engineConfig *singularityConfig.EngineConfig) ([]string, []
 	shell.RegisterShellBuiltin("sylog", sylogBuiltin)
 	shell.RegisterShellBuiltin("fixpath", fixPathBuiltin)
 	shell.RegisterShellBuiltin("hash", hashBuiltin)
+	shell.RegisterShellBuiltin("unescape", unescapeBuiltin)
 
 	// exec builtin won't execute the command but instead
 	// it returns arguments and environment variables and

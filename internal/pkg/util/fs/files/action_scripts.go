@@ -43,7 +43,7 @@ restore_env() {
     for e in ${__exported_env__}; do
         key=$(getenvkey "${e}")
         if ! test -v "${key}"; then
-            export "${e}"
+            export "$(unescape ${e})"
         elif test -z "${!key}"; then
             unset "${key}"
         fi
