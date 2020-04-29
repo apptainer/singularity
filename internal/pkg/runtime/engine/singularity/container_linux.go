@@ -1558,10 +1558,14 @@ func (c *container) getHomePaths() (source string, dest string, err error) {
 		dest = filepath.Clean(c.engine.EngineConfig.GetHomeDest())
 		source, err = filepath.Abs(filepath.Clean(c.engine.EngineConfig.GetHomeSource()))
 	} else {
-		pw, err := user.Current()
+		pw, err := user.CurrentOriginal()
 		if err == nil {
-			dest = pw.Dir
 			source = pw.Dir
+			if c.engine.EngineConfig.GetFakeroot() {
+				dest = "/root"
+			} else {
+				dest = pw.Dir
+			}
 		}
 	}
 

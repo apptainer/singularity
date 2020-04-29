@@ -76,6 +76,7 @@
     - Richard Neuboeck <hawk@tbi.univie.ac.at>
     - Sasha Yakovtseva <sasha@sylabs.io>, <sashayakovtseva@gmail.com>
     - Satish Chebrolu  <satish@sylabs.io>
+    - Shane Loretz <sloretz@openrobotics.org>, <shane.loretz@gmail.com>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Tru Huynh <tru@pasteur.fr>

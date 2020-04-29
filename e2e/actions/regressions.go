@@ -335,3 +335,40 @@ func (c actionTests) issue5228(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 }
+
+// Check that home directory is not mounted under `/root` when --fakeroot and
+// --contain are both given.
+func (c actionTests) issue5211(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	u := e2e.UserProfile.HostUser(t)
+
+	// Make non-hidden file in host home to check if it was mounted in container
+	canaryDir, cleanup := e2e.MakeTempDir(t, u.Dir, "singularity-issue5211-dir-", "")
+	defer cleanup(t)
+
+	canaryBasename := filepath.Base(canaryDir)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithDir(u.Dir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--contain", c.env.ImagePath, "test", "!", "-d", filepath.Join("/root", canaryBasename)),
+		e2e.ExpectExit(0),
+	)
+
+	// Check we preserve `$HOME` as /root even when we `--contain` with `--fakeroot`
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithDir(u.Dir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--contain", c.env.ImagePath, "sh", "-c", "echo $HOME"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ExactMatch, "/root"),
+		),
+	)
+
+}
