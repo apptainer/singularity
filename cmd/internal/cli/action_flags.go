@@ -300,13 +300,13 @@ var actionContainLibsFlag = cmdline.Flag{
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
-// --fusemount, hidden for now while experimental
+// --fusemount
 var actionFuseMountFlag = cmdline.Flag{
 	ID:           "actionFuseMountFlag",
 	Value:        &FuseMount,
 	DefaultValue: []string{},
 	Name:         "fusemount",
-	Usage:        "a FUSE filesystem mount specification. Begins with the source of the FUSE driver followed by a colon; currently must be 'container:'.  After the colon is the command to run to implement a libfuse3- based filesystem. The last space- separated part of the string is a mountpoint that will be pre-mounted and replaced with a /dev/fd path to the FUSE file descriptor.  Implies --pid.",
+	Usage:        "A FUSE filesystem mount specification of the form '<type>:<fuse command> <mountpoint>' - where <type> is 'container' or 'host', specifying where the mount will be performed ('container-daemon' or 'host-daemon' will run the FUSE process detached). <fuse command> is the path to the FUSE executable, plus options for the mount. <mountpoint> is the location in the container to which the FUSE mount will be attached. E.g. 'container:sshfs 10.0.0.1:/ /sshfs'. Implies --pid.",
 	EnvKeys:      []string{"FUSESPEC"},
 	ExcludedOS:   []string{cmdline.Darwin},
 }
