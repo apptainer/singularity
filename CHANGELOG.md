@@ -9,7 +9,7 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# v3.6.0-rc.1 - [2020-04-27] (pre-release)
+# v3.6.0-rc.2 - [2020-04-29] (pre-release)
 
 ## New features / functionalities
   - Singularity now supports the execution of minimal Docker/OCI
@@ -68,6 +68,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Use the `base` metapackage for arch bootstrap builds - arch no longer has a
     `base` group.
   - Ensure library client messages are logged with `--debug`.
+  - Do not mount `$HOME` with `--fakeroot --contain`.
 
 
 # v3.5.3 - [2020.02.18]
