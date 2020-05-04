@@ -59,6 +59,13 @@ func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (sy
 					return status, fmt.Errorf("interrupted by signal %s", s.String())
 				}
 			}
+			// Handle CTRL-Z and send ourself a SIGSTOP to implicitly send SIGCHLD
+			// signal to parent process as this process is the direct child
+			if s == syscall.SIGTSTP {
+				if err := syscall.Kill(os.Getpid(), syscall.SIGSTOP); err != nil {
+					return status, fmt.Errorf("received SIGTSTP but was not able to stop")
+				}
+			}
 		}
 	}
 }
