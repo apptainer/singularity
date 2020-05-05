@@ -57,12 +57,6 @@ type HostnameArgs struct {
 	Hostname string
 }
 
-// SetFsIDArgs defines the arguments to setfsid.
-type SetFsIDArgs struct {
-	UID int
-	GID int
-}
-
 // ChdirArgs defines the arguments to chdir.
 type ChdirArgs struct {
 	Dir string

@@ -2060,6 +2060,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"issue 4836":            c.issue4836,           // https://github.com/sylabs/singularity/issues/4836
 		"issue 5211":            c.issue5211,           // https://github.com/sylabs/singularity/issues/5211
 		"issue 5228":            c.issue5228,           // https://github.com/sylabs/singularity/issues/5228
+		"issue 5271":            c.issue5271,           // https://github.com/sylabs/singularity/issues/5271
 		"network":               c.actionNetwork,       // test basic networking
 		"binds":                 c.actionBinds,         // test various binds
 		"exit and signals":      c.exitSignals,         // test exit and signals propagation

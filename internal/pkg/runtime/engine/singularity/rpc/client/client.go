@@ -99,17 +99,6 @@ func (t *RPC) SetHostname(hostname string) (int, error) {
 	return reply, err
 }
 
-// SetFsID calls the setfsid RPC using the supplied arguments.
-func (t *RPC) SetFsID(uid int, gid int) (int, error) {
-	arguments := &args.SetFsIDArgs{
-		UID: uid,
-		GID: gid,
-	}
-	var reply int
-	err := t.Client.Call(t.Name+".SetFsID", arguments, &reply)
-	return reply, err
-}
-
 // Chdir calls the chdir RPC using the supplied arguments.
 func (t *RPC) Chdir(dir string) (int, error) {
 	arguments := &args.ChdirArgs{
