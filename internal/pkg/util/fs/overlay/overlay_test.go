@@ -125,6 +125,24 @@ func TestCheckLowerUpper(t *testing.T) {
 			expectedSuccess:       false,
 			expectIncompatibleErr: true,
 		},
+		{
+			name:                  "GPFS mock lower",
+			path:                  "/",
+			fsName:                "GPFS",
+			dir:                   lowerDir,
+			fsType:                gpfs,
+			expectedSuccess:       false,
+			expectIncompatibleErr: true,
+		},
+		{
+			name:                  "GPFS mock upper",
+			path:                  "/",
+			fsName:                "GPFS",
+			dir:                   upperDir,
+			fsType:                gpfs,
+			expectedSuccess:       false,
+			expectIncompatibleErr: true,
+		},
 	}
 
 	if IsIncompatible(nil) {
