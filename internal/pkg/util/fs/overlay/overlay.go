@@ -33,6 +33,7 @@ const (
 	fuse         = 0x65735546
 	ecrypt       = 0xF15F
 	lustre       = 0x0BD00BD0
+	gpfs         = 0x47504653
 )
 
 var incompatibleFs = map[int64]fs{
@@ -54,6 +55,11 @@ var incompatibleFs = map[int64]fs{
 	// LUSTRE filesystem
 	lustre: {
 		name:       "LUSTRE",
+		overlayDir: lowerDir | upperDir,
+	},
+	// GPFS filesystem
+	gpfs: {
+		name:       "GPFS",
 		overlayDir: lowerDir | upperDir,
 	},
 }
