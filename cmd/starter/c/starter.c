@@ -189,6 +189,29 @@ static bool is_namespace_enter(const char *nspath, const char *selfns) {
     return nspath[0] != 0;
 }
 
+static struct capabilities *get_process_capabilities() {
+    struct __user_cap_header_struct header;
+    struct __user_cap_data_struct data[2];
+    struct capabilities *current = (struct capabilities *)malloc(sizeof(struct capabilities));
+
+    if ( current == NULL ) {
+        fatalf("Could not allocate memory");
+    }
+
+    header.version = LINUX_CAPABILITY_VERSION;
+    header.pid = 0;
+
+    if ( capget(&header, data) < 0 ) {
+        fatalf("Failed to get processus capabilities\n");
+    }
+
+    current->permitted = ((unsigned long long)data[1].permitted << 32) | data[0].permitted;
+    current->effective = ((unsigned long long)data[1].effective << 32) | data[0].effective;
+    current->inheritable = ((unsigned long long)data[1].inheritable << 32) | data[0].inheritable;
+
+    return current;
+}
+
 static int get_last_cap(void) {
     int last_cap;
     for ( last_cap = CAPSET_MAX; ; last_cap-- ) {
@@ -199,18 +222,28 @@ static int get_last_cap(void) {
     return last_cap;
 }
 
-static void apply_privileges(struct privileges *privileges) {
+static void apply_privileges(struct privileges *privileges, struct capabilities *current) {
     uid_t currentUID = getuid();
     uid_t targetUID = currentUID;
     struct __user_cap_header_struct header;
     struct __user_cap_data_struct data[2];
     int last_cap = get_last_cap();
 
-    header.version = LINUX_CAPABILITY_VERSION;
-    header.pid = 0;
+    debugf("Effective capabilities:   0x%016llx\n", privileges->capabilities.effective);
+    debugf("Permitted capabilities:   0x%016llx\n", privileges->capabilities.permitted);
+    debugf("Bounding capabilities:    0x%016llx\n", privileges->capabilities.bounding);
+    debugf("Inheritable capabilities: 0x%016llx\n", privileges->capabilities.inheritable);
+#ifdef USER_CAPABILITIES
+    debugf("Ambient capabilities:     0x%016llx\n", privileges->capabilities.ambient);
+#endif
 
-    if ( capget(&header, data) < 0 ) {
-        fatalf("Failed to get processus capabilities\n");
+    /* compare requested effective set with the current permitted set */
+    if ( (privileges->capabilities.effective & current->permitted) != privileges->capabilities.effective ) {
+        fatalf(
+            "Requesting capability set 0x%016llx while permitted capability set is 0x%016llx\n",
+            privileges->capabilities.effective,
+            current->permitted
+        );
     }
 
     data[1].inheritable = (__u32)(privileges->capabilities.inheritable >> 32);
@@ -274,6 +307,9 @@ static void apply_privileges(struct privileges *privileges) {
         }
     }
 
+    header.version = LINUX_CAPABILITY_VERSION;
+    header.pid = 0;
+
     if ( capset(&header, data) < 0 ) {
         fatalf("Failed to set process capabilities\n");
     }
@@ -292,9 +328,10 @@ static void apply_privileges(struct privileges *privileges) {
 
 static void set_rpc_privileges(void) {
     struct privileges *priv = (struct privileges *)malloc(sizeof(struct privileges));
+    struct capabilities *current = get_process_capabilities();
 
     if ( priv == NULL ) {
-        fatalf("could not allocate memory\n");
+        fatalf("Could not allocate memory\n");
     }
 
     memset(priv, 0, sizeof(struct privileges));
@@ -309,14 +346,16 @@ static void set_rpc_privileges(void) {
     priv->capabilities.bounding = priv->capabilities.effective;
 
     debugf("Set RPC privileges\n");
-    apply_privileges(priv);
+    apply_privileges(priv, current);
     set_parent_death_signal(SIGKILL);
 
     free(priv);
+    free(current);
 }
 
 static void set_master_privileges(void) {
     struct privileges *priv = (struct privileges *)malloc(sizeof(struct privileges));
+    struct capabilities *current = get_process_capabilities();
 
     if ( priv == NULL ) {
         fatalf("could not allocate memory\n");
@@ -327,14 +366,15 @@ static void set_master_privileges(void) {
     priv->capabilities.effective |= capflag(CAP_SETGID);
     priv->capabilities.effective |= capflag(CAP_SETUID);
 
-    priv->capabilities.permitted = 0xffffffffff;
-    priv->capabilities.bounding = 0xffffffffff;
-    priv->capabilities.inheritable = 0xffffffffff;
+    priv->capabilities.permitted = current->permitted;
+    priv->capabilities.bounding = current->permitted;
+    priv->capabilities.inheritable = current->permitted;
 
     debugf("Set master privileges\n");
-    apply_privileges(priv);
+    apply_privileges(priv, current);
 
     free(priv);
+    free(current);
 }
 
 #define MSG_SIZE 1024
@@ -1326,6 +1366,8 @@ __attribute__((constructor)) static void init(void) {
 
     process = fork_ns(clone_flags);
     if ( process == 0 ) {
+        struct capabilities *current = NULL;
+
         /* close master end of the communication socket */
         close(master_socket[0]);
 
@@ -1407,8 +1449,11 @@ __attribute__((constructor)) static void init(void) {
             verbosef("Don't execute RPC server, joining instance\n");
         }
 
-        apply_privileges(&sconfig->container.privileges);
+        debugf("Set container privileges\n");
+        current = get_process_capabilities();
+        apply_privileges(&sconfig->container.privileges, current);
         set_parent_death_signal(SIGKILL);
+        free(current);
 
         goexecute = STAGE2;
         /* continue execution with Go runtime in main_linux.go */

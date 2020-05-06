@@ -618,8 +618,6 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 					return imageDriver.Mount(params, c.rpcOps.Mount)
 				}
 			}
-			c.rpcOps.SetFsID(0, 0)
-			defer c.rpcOps.SetFsID(os.Getuid(), os.Getgid())
 		}
 	}
 
@@ -864,11 +862,6 @@ func (c *container) addRootfsMount(system *mount.System) error {
 
 func (c *container) overlayUpperWork(system *mount.System) error {
 	ov := c.session.Layer.(*overlay.Overlay)
-
-	if c.engine.EngineConfig.File.EnableOverlay != "driver" {
-		c.rpcOps.SetFsID(0, 0)
-		defer c.rpcOps.SetFsID(os.Getuid(), os.Getgid())
-	}
 
 	createUpperWork := func(path, label string) error {
 		fi, err := c.rpcOps.Lstat(path)

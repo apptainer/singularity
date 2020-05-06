@@ -203,15 +203,6 @@ func (t *Methods) SetHostname(arguments *args.HostnameArgs, reply *int) error {
 	return syscall.Sethostname([]byte(arguments.Hostname))
 }
 
-// SetFsID sets filesystem uid and gid.
-func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
-	mainthread.Execute(func() {
-		syscall.Setfsuid(arguments.UID)
-		syscall.Setfsgid(arguments.GID)
-	})
-	return nil
-}
-
 // Chdir changes current working directory to path.
 func (t *Methods) Chdir(arguments *args.ChdirArgs, reply *int) error {
 	return mainthread.Chdir(arguments.Dir)

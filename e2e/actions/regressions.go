@@ -16,6 +16,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
@@ -371,4 +372,19 @@ func (c actionTests) issue5211(t *testing.T) {
 		),
 	)
 
+}
+
+// Check that we can create a directory in container image with --writable-tmpfs.
+func (c actionTests) issue5271(t *testing.T) {
+	require.Filesystem(t, "overlay")
+
+	e2e.EnsureImage(t, c.env)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--writable-tmpfs", c.env.ImagePath, "mkdir", "/e2e-dir"),
+		e2e.ExpectExit(0),
+	)
 }
