@@ -59,7 +59,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
 	golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f
 	google.golang.org/genproto v0.0.0-20200122232147-0452cf42e150 // indirect
-	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 v2.3.0
 	gotest.tools/v3 v3.0.2
 	mvdan.cc/sh/v3 v3.1.1
 	rsc.io/letsencrypt v0.0.3 // indirect
