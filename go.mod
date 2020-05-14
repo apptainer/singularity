@@ -13,7 +13,7 @@ require (
 	github.com/containerd/cgroups v0.0.0-20200116170754-a8908713319d
 	github.com/containerd/containerd v1.3.4
 	github.com/containernetworking/cni v0.7.1
-	github.com/containernetworking/plugins v0.8.5
+	github.com/containernetworking/plugins v0.8.6
 	github.com/containers/image/v5 v5.4.4
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
@@ -26,7 +26,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/websocket v1.4.2
-	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/pty v1.1.8
 	github.com/openSUSE/umoci v0.4.6-0.20200128161609-c67e0747f162
