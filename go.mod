@@ -13,8 +13,8 @@ require (
 	github.com/containerd/cgroups v0.0.0-20200116170754-a8908713319d
 	github.com/containerd/containerd v1.3.4
 	github.com/containernetworking/cni v0.7.1
-	github.com/containernetworking/plugins v0.8.5
-	github.com/containers/image/v5 v5.4.3
+	github.com/containernetworking/plugins v0.8.6
+	github.com/containers/image/v5 v5.4.4
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 	github.com/dsnet/compress v0.0.1 // indirect
@@ -26,11 +26,10 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/websocket v1.4.2
-	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/pty v1.1.8
 	github.com/openSUSE/umoci v0.4.6-0.20200128161609-c67e0747f162
-	github.com/opencontainers/go-digest v1.0.0-rc1
+	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20191218002246-9ea04d1f37d7
 	github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74
 	github.com/opencontainers/runtime-spec v1.0.2-0.20191230192225-e09c7c488e29
@@ -56,12 +55,12 @@ require (
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go.opencensus.io v0.22.2 // indirect
 	go4.org v0.0.0-20180417224846-9599cf28b011 // indirect
-	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
-	golang.org/x/sys v0.0.0-20200327173247-9dae0f8f5775
+	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
+	golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f
 	google.golang.org/genproto v0.0.0-20200122232147-0452cf42e150 // indirect
-	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 v2.3.0
 	gotest.tools/v3 v3.0.2
-	mvdan.cc/sh/v3 v3.1.0
+	mvdan.cc/sh/v3 v3.1.1
 	rsc.io/letsencrypt v0.0.3 // indirect
 )
 
