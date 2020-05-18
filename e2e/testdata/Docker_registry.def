@@ -2,8 +2,14 @@ bootstrap: docker
 from: registry:2.7.1
 
 %post
-    apk add runc --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community \
-            img --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing
+    apk add runc --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+
+    # Install v0.5.7 of img (latest will not talk to http registries)
+    export IMG_SHA256="41aa98ab28be55ba3d383cb4e8f86dceac6d6e92102ee4410a6b43514f4da1fa"
+    # Download and check the sha256sum.
+    wget "https://github.com/genuinetools/img/releases/download/v0.5.7/img-linux-amd64" -O "/usr/local/bin/img" \
+	  && echo "${IMG_SHA256}  /usr/local/bin/img" | sha256sum -c - \
+	  && chmod a+x "/usr/local/bin/img"
 
 %startscript
     /.singularity.d/runscript &
