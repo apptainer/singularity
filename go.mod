@@ -34,7 +34,7 @@ require (
 	github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74
 	github.com/opencontainers/runtime-spec v1.0.2-0.20191230192225-e09c7c488e29
 	github.com/opencontainers/selinux v1.5.1
-	github.com/pelletier/go-toml v1.7.0
+	github.com/pelletier/go-toml v1.8.0
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/seccomp/containers-golang v0.3.2
