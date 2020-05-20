@@ -388,3 +388,19 @@ func (c actionTests) issue5271(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 }
+
+// Check that we get a warning when using --writable-tmpfs with underlay.
+func (c actionTests) issue5307(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserNamespaceProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--writable-tmpfs", c.env.ImagePath, "true"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectError(e2e.ContainMatch, "Disabling --writable-tmpfs"),
+		),
+	)
+}
