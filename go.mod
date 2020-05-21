@@ -32,12 +32,12 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20191218002246-9ea04d1f37d7
 	github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74
-	github.com/opencontainers/runtime-spec v1.0.2-0.20191230192225-e09c7c488e29
+	github.com/opencontainers/runtime-spec v1.0.3-0.20200520003142-237cc4f519e2
 	github.com/opencontainers/selinux v1.5.1
 	github.com/pelletier/go-toml v1.8.0
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
-	github.com/seccomp/containers-golang v0.3.2
+	github.com/seccomp/containers-golang v0.4.1
 	github.com/seccomp/libseccomp-golang v0.9.1
 	github.com/spf13/cobra v0.0.7
 	github.com/spf13/pflag v1.0.5
