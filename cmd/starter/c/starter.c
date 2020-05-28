@@ -214,12 +214,13 @@ static struct capabilities *get_process_capabilities() {
 
 static int get_last_cap(void) {
     int last_cap;
-    for ( last_cap = CAPSET_MAX; ; last_cap-- ) {
-        if ( prctl(PR_CAPBSET_READ, last_cap) > 0 || last_cap == 0 ) {
+    for ( last_cap = CAPSET_MIN; last_cap <= CAPSET_MAX; last_cap++ ) {
+        if ( prctl(PR_CAPBSET_READ, last_cap) < 0 ) {
+            /* an error means that capability is not valid, take the last valid */
             break;
         }
     }
-    return last_cap;
+    return --last_cap;
 }
 
 static void apply_privileges(struct privileges *privileges, struct capabilities *current) {
@@ -228,6 +229,16 @@ static void apply_privileges(struct privileges *privileges, struct capabilities 
     struct __user_cap_header_struct header;
     struct __user_cap_data_struct data[2];
     int last_cap = get_last_cap();
+    int caps_index;
+
+    /* adjust capabilities based on the lastest capability supported by the system */
+    for ( caps_index = last_cap + 1; caps_index <= CAPSET_MAX; caps_index++ ) {
+        privileges->capabilities.effective &= ~capflag(caps_index);
+        privileges->capabilities.permitted &= ~capflag(caps_index);
+        privileges->capabilities.bounding &= ~capflag(caps_index);
+        privileges->capabilities.inheritable &= ~capflag(caps_index);
+        privileges->capabilities.ambient &= ~capflag(caps_index);
+    }
 
     debugf("Effective capabilities:   0x%016llx\n", privileges->capabilities.effective);
     debugf("Permitted capabilities:   0x%016llx\n", privileges->capabilities.permitted);
@@ -253,11 +264,10 @@ static void apply_privileges(struct privileges *privileges, struct capabilities 
     data[1].effective = (__u32)(privileges->capabilities.effective >> 32);
     data[0].effective = (__u32)(privileges->capabilities.effective & 0xFFFFFFFF);
 
-    int caps_index;
     for ( caps_index = 0; caps_index <= last_cap; caps_index++ ) {
         if ( !(privileges->capabilities.bounding & capflag(caps_index)) ) {
             if ( prctl(PR_CAPBSET_DROP, caps_index) < 0 ) {
-                fatalf("Failed to drop bounding capabilities set: %s\n", strerror(errno));
+                fatalf("Failed to drop cap %d bounding capabilities set: %s\n", caps_index, strerror(errno));
             }
         }
     }

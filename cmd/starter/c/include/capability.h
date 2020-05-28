@@ -14,7 +14,10 @@
 
 #include <linux/capability.h>
 
-#define CAPSET_MAX  40
+/* 2.6.32 kernel is the minimal kernel version supported where latest cap is 33 */
+#define CAPSET_MIN  33
+/* 37 is the latest cap since many kernel versions */
+#define CAPSET_MAX  37
 
 /* Support only 64 bits sets, since kernel 2.6.25 */
 #ifdef _LINUX_CAPABILITY_VERSION_3
