@@ -505,6 +505,7 @@ github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJy
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.5.1 h1:nOGnQDM7FYENwehXlg/kFVnos3rEvtKTjRvOWSzb6H4=
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
+github.com/stretchr/testify v1.6.0 h1:jlIyCplCJFULU/01vCkhKuTyc3OorI3bJFuw6obfgho=
 github.com/stretchr/testify v1.6.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9 h1:OjtuUh4ZvQpHdwDHOgi8LM0skj8imSc2Hz6966oGxKY=
 github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9/go.mod h1:Qf7xZmhvuwq9Hq4LdNLS4xabRQkPJSvEP3Bh4UFG0v4=
@@ -516,8 +517,6 @@ github.com/sylabs/scs-build-client v0.1.3 h1:/JdbB3C8h9c8Mp/+mIEgcwiPdrWmh7Va40I
 github.com/sylabs/scs-build-client v0.1.3/go.mod h1:HxxopmlbGhWbHjaLBlTlcnV10NuMJnbf90Lj9yyW+YA=
 github.com/sylabs/scs-key-client v0.5.0 h1:EU/acjsiq0PSKvbpHTOoeuFtrkn6IIJsxhga7t6BBek=
 github.com/sylabs/scs-key-client v0.5.0/go.mod h1:G5WwGCFcwAGLxBzBB/Jw5TiYM+2FZ2T48ItAGzc+t/s=
-github.com/sylabs/scs-library-client v0.5.3 h1:RAVUxW232r/Lko8biSeNMVHXThGGWekhC3m7WOywrYo=
-github.com/sylabs/scs-library-client v0.5.3/go.mod h1:7YcpzK8v8eDzjbwycYDm4qEQElypeuIKfj+jrg0rcZ4=
 github.com/sylabs/scs-library-client v0.5.4 h1:ursj3sbLzB4h7ZKhzxvWcXhSPeqwVGmB47FXOOCnC9s=
 github.com/sylabs/scs-library-client v0.5.4/go.mod h1:ho+DNH/uJmlvW1JCnJkwuLF6TxxTaX2RklohAMFcuOw=
 github.com/sylabs/sif v1.0.9 h1:AT1lIoFJUCHpAiV2qVWaDZZROAa9JsCP/y32NwwY+6I=
@@ -729,6 +728,7 @@ gopkg.in/yaml.v2 v2.2.8 h1:obN1ZagJSUGI0Ek/LBmuj4SNLPfIny3KsKFopxRdj10=
 gopkg.in/yaml.v2 v2.2.8/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.3.0 h1:clyUAQHOM3G0M3f5vQj7LuJrETvjVot3Z5el9nffUtU=
 gopkg.in/yaml.v2 v2.3.0/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
+gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c h1:dUUwHk2QECo/6vqA44rthZ8ie2QXMNeKRTHCNY2nXvo=
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gotest.tools v2.2.0+incompatible h1:VsBPFP1AI068pPrMxtb/S8Zkgf9xEmTLJjfM+P5UIEo=
 gotest.tools v2.2.0+incompatible/go.mod h1:DsYFclhRJ6vuDpmuTbkuFWG+y2sxOXAzmJt81HFBacw=
