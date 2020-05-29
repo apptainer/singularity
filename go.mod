@@ -7,7 +7,7 @@ require (
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
 	github.com/apex/log v1.3.0
 	github.com/blang/semver/v4 v4.0.0
-	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
+	github.com/buger/jsonparser v1.0.0
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/cgroups v0.0.0-20200116170754-a8908713319d
