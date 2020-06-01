@@ -37,6 +37,7 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	"golang.org/x/sys/unix"
 )
@@ -1009,22 +1010,31 @@ func (e *EngineOperations) setSessionLayer(img *image.Image) error {
 		return nil
 	}
 
+	// Check for implicit user namespace, e.g when we run %test in a fakeroot build
+	// https://github.com/hpcng/singularity/issues/5315
+	userNS, _ := namespaces.IsInsideUserNamespace(os.Getpid())
+
 	// NEED FIX: on ubuntu until 4.15 kernel it was possible to mount overlay
 	// with the current workflow, since 4.18 we get an operation not permitted
 	for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
 		if ns.Type == specs.UserNamespace {
-			if !e.EngineConfig.File.EnableUnderlay {
-				sylog.Debugf("Not attempting to use underlay with user namespace: disabled by configuration ('enable underlay = no')")
-				return nil
-			}
-			if !writableImage {
-				sylog.Debugf("Using underlay layer: user namespace requested")
-				e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
-				return nil
-			}
-			sylog.Debugf("Not attempting to use overlay or underlay: writable flag requested")
+			userNS = true
+			break
+		}
+	}
+
+	if userNS {
+		if !e.EngineConfig.File.EnableUnderlay {
+			sylog.Debugf("Not attempting to use underlay with user namespace: disabled by configuration ('enable underlay = no')")
 			return nil
 		}
+		if !writableImage {
+			sylog.Debugf("Using underlay layer: user namespace requested")
+			e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
+			return nil
+		}
+		sylog.Debugf("Not attempting to use overlay or underlay: writable flag requested")
+		return nil
 	}
 
 	// starter was forced to load overlay module, now check if there
