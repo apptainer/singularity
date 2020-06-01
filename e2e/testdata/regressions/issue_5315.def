@@ -1,0 +1,5 @@
+Bootstrap: library
+From: alpine
+
+%test
+    echo "TEST OK"

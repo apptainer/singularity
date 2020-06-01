@@ -5,9 +5,9 @@ go 1.13
 require (
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
-	github.com/apex/log v1.1.4
-	github.com/blang/semver v3.5.1+incompatible
-	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e
+	github.com/apex/log v1.3.0
+	github.com/blang/semver/v4 v4.0.0
+	github.com/buger/jsonparser v1.0.0
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/cgroups v0.0.0-20200116170754-a8908713319d
@@ -32,19 +32,19 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20191218002246-9ea04d1f37d7
 	github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74
-	github.com/opencontainers/runtime-spec v1.0.2-0.20191230192225-e09c7c488e29
-	github.com/opencontainers/selinux v1.5.1
-	github.com/pelletier/go-toml v1.7.0
+	github.com/opencontainers/runtime-spec v1.0.3-0.20200520003142-237cc4f519e2
+	github.com/opencontainers/selinux v1.5.2
+	github.com/pelletier/go-toml v1.8.0
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
-	github.com/seccomp/containers-golang v0.3.2
+	github.com/seccomp/containers-golang v0.4.1
 	github.com/seccomp/libseccomp-golang v0.9.1
-	github.com/spf13/cobra v0.0.7
+	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.6.0
 	github.com/sylabs/scs-build-client v0.1.3
 	github.com/sylabs/scs-key-client v0.5.0
-	github.com/sylabs/scs-library-client v0.5.3
+	github.com/sylabs/scs-library-client v0.5.4
 	github.com/sylabs/sif v1.0.9
 	github.com/urfave/cli v1.22.2 // indirect
 	github.com/vbauerster/mpb/v4 v4.12.2

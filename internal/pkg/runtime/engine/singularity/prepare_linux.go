@@ -37,6 +37,7 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	"golang.org/x/sys/unix"
 )
@@ -1009,22 +1010,33 @@ func (e *EngineOperations) setSessionLayer(img *image.Image) error {
 		return nil
 	}
 
+	// Check for implicit user namespace, e.g when we run %test in a fakeroot build
+	// https://github.com/hpcng/singularity/issues/5315
+	userNS, _ := namespaces.IsInsideUserNamespace(os.Getpid())
+
 	// NEED FIX: on ubuntu until 4.15 kernel it was possible to mount overlay
 	// with the current workflow, since 4.18 we get an operation not permitted
-	for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
-		if ns.Type == specs.UserNamespace {
-			if !e.EngineConfig.File.EnableUnderlay {
-				sylog.Debugf("Not attempting to use underlay with user namespace: disabled by configuration ('enable underlay = no')")
-				return nil
+	if !userNS {
+		for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
+			if ns.Type == specs.UserNamespace {
+				userNS = true
+				break
 			}
-			if !writableImage {
-				sylog.Debugf("Using underlay layer: user namespace requested")
-				e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
-				return nil
-			}
-			sylog.Debugf("Not attempting to use overlay or underlay: writable flag requested")
+		}
+	}
+
+	if userNS {
+		if !e.EngineConfig.File.EnableUnderlay {
+			sylog.Debugf("Not attempting to use underlay with user namespace: disabled by configuration ('enable underlay = no')")
 			return nil
 		}
+		if !writableImage {
+			sylog.Debugf("Using underlay layer: user namespace requested")
+			e.EngineConfig.SetSessionLayer(singularityConfig.UnderlayLayer)
+			return nil
+		}
+		sylog.Debugf("Not attempting to use overlay or underlay: writable flag requested")
+		return nil
 	}
 
 	// starter was forced to load overlay module, now check if there
@@ -1115,32 +1127,34 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		// C starter code will position current working directory
 		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
 
-		if err := overlay.CheckLower(img.Path); overlay.IsIncompatible(err) {
-			layer := singularityConfig.UnderlayLayer
-			if !e.EngineConfig.File.EnableUnderlay {
-				sylog.Debugf("Could not fallback to underlay, disabled by configuration ('enable underlay = no')")
-				layer = singularityConfig.DefaultLayer
-			}
-			e.EngineConfig.SetSessionLayer(layer)
-
-			// show a warning message if --writable-tmpfs or overlay images
-			// are requested otherwise make it verbose to not annoy users
-			if e.EngineConfig.GetWritableTmpfs() || len(e.EngineConfig.GetOverlayImage()) > 0 {
-				sylog.Warningf("Fallback to %s layer: %s", layer, err)
-
-				if e.EngineConfig.GetWritableTmpfs() {
-					e.EngineConfig.SetWritableTmpfs(false)
-					sylog.Warningf("--writable-tmpfs disabled due to sandbox filesystem incompatibility with overlay")
+		if e.EngineConfig.GetSessionLayer() == singularityConfig.OverlayLayer {
+			if err := overlay.CheckLower(img.Path); overlay.IsIncompatible(err) {
+				layer := singularityConfig.UnderlayLayer
+				if !e.EngineConfig.File.EnableUnderlay {
+					sylog.Warningf("Could not fallback to underlay, disabled by configuration ('enable underlay = no')")
+					layer = singularityConfig.DefaultLayer
 				}
-				if len(e.EngineConfig.GetOverlayImage()) > 0 {
-					e.EngineConfig.SetOverlayImage(nil)
-					sylog.Warningf("overlay image(s) not loaded due to sandbox filesystem incompatibility with overlay")
+				e.EngineConfig.SetSessionLayer(layer)
+
+				// show a warning message if --writable-tmpfs or overlay images
+				// are requested otherwise make it verbose to not annoy users
+				if e.EngineConfig.GetWritableTmpfs() || len(e.EngineConfig.GetOverlayImage()) > 0 {
+					sylog.Warningf("Fallback to %s layer: %s", layer, err)
+
+					if e.EngineConfig.GetWritableTmpfs() {
+						e.EngineConfig.SetWritableTmpfs(false)
+						sylog.Warningf("--writable-tmpfs disabled due to sandbox filesystem incompatibility with overlay")
+					}
+					if len(e.EngineConfig.GetOverlayImage()) > 0 {
+						e.EngineConfig.SetOverlayImage(nil)
+						sylog.Warningf("overlay image(s) not loaded due to sandbox filesystem incompatibility with overlay")
+					}
+				} else {
+					sylog.Verbosef("Fallback to %s layer: %s", layer, err)
 				}
-			} else {
-				sylog.Verbosef("Fallback to %s layer: %s", layer, err)
+			} else if err != nil {
+				return fmt.Errorf("while checking image compatibility with overlay: %s", err)
 			}
-		} else if err != nil {
-			return fmt.Errorf("while checking image compatibility with overlay: %s", err)
 		}
 	} else if img.Type == image.SIF {
 		// query the ECL module, proceed if an ecl config file is found
@@ -1176,12 +1190,18 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		}
 	}
 
-	if e.EngineConfig.GetSessionLayer() == singularityConfig.OverlayLayer {
+	switch e.EngineConfig.GetSessionLayer() {
+	case singularityConfig.OverlayLayer:
 		overlayImages, err := e.loadOverlayImages(starterConfig, writableOverlayPath)
 		if err != nil {
 			return fmt.Errorf("while loading overlay images: %s", err)
 		}
 		images = append(images, overlayImages...)
+	case singularityConfig.UnderlayLayer:
+		if e.EngineConfig.GetWritableTmpfs() {
+			sylog.Warningf("Disabling --writable-tmpfs as it can't be used in conjunction with underlay")
+			e.EngineConfig.SetWritableTmpfs(false)
+		}
 	}
 
 	bindImages, err := e.loadBindImages(starterConfig)

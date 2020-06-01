@@ -446,6 +446,7 @@ This point release addresses the following issues:
   - Removed deprecated `singularity create` command
   - Removed deprecated `singularity bootstrap` command
   - Removed deprecated `singularity mount` command
+  - Removed deprecated `singularity check` command
 
 ## New Commands
   - Added `singularity run-help <image path>` command to output an image's `help` message
