@@ -1016,10 +1016,12 @@ func (e *EngineOperations) setSessionLayer(img *image.Image) error {
 
 	// NEED FIX: on ubuntu until 4.15 kernel it was possible to mount overlay
 	// with the current workflow, since 4.18 we get an operation not permitted
-	for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
-		if ns.Type == specs.UserNamespace {
-			userNS = true
-			break
+	if !userNS {
+		for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
+			if ns.Type == specs.UserNamespace {
+				userNS = true
+				break
+			}
 		}
 	}
 
