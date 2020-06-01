@@ -369,3 +369,23 @@ func (c *imgBuildTests) issue4820(t *testing.T) {
 		),
 	)
 }
+
+// When running a %test section under fakeroot we must recognize the engine
+// is running under a user namespace and avoid overlay.
+func (c *imgBuildTests) issue5315(t *testing.T) {
+	image := filepath.Join(c.env.TestDir, "issue_5315.sif")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(image, "testdata/regressions/issue_5315.def"),
+		e2e.PostRun(func(t *testing.T) {
+			os.Remove(image)
+		}),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ContainMatch, "TEST OK"),
+		),
+	)
+}
