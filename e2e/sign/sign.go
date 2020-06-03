@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -34,7 +34,7 @@ func (c ctx) singularitySignHelpOption(t *testing.T) {
 		e2e.WithArgs("--help"),
 		e2e.ExpectExit(
 			0,
-			e2e.ExpectOutput(e2e.ContainMatch, "Attach a cryptographic signature to an image"),
+			e2e.ExpectOutput(e2e.ContainMatch, "Attach digital signature(s) to an image"),
 		),
 	)
 }
@@ -76,7 +76,7 @@ func (c ctx) singularitySignIDOption(t *testing.T) {
 		{
 			name:       "sign non-exsistent ID",
 			args:       []string{"--sif-id", "5", imgPath},
-			expectOp:   e2e.ExpectError(e2e.ContainMatch, "no descriptor found for id 5"),
+			expectOp:   e2e.ExpectError(e2e.ContainMatch, "integrity: object not found"),
 			expectExit: 255,
 		},
 	}
@@ -156,7 +156,7 @@ func (c ctx) singularitySignGroupIDOption(t *testing.T) {
 		{
 			name:       "groupID 5",
 			args:       []string{"--group-id", "5", imgPath},
-			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, "no descriptors found for groupid 5"),
+			expectOp:   e2e.ExpectOutput(e2e.ContainMatch, "integrity: group not found"),
 			expectExit: 255,
 		},
 	}
