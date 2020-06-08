@@ -507,6 +507,7 @@ github.com/stretchr/testify v1.5.1 h1:nOGnQDM7FYENwehXlg/kFVnos3rEvtKTjRvOWSzb6H
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
 github.com/stretchr/testify v1.6.0 h1:jlIyCplCJFULU/01vCkhKuTyc3OorI3bJFuw6obfgho=
 github.com/stretchr/testify v1.6.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
+github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9 h1:OjtuUh4ZvQpHdwDHOgi8LM0skj8imSc2Hz6966oGxKY=
 github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9/go.mod h1:Qf7xZmhvuwq9Hq4LdNLS4xabRQkPJSvEP3Bh4UFG0v4=
 github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568 h1:Bv8RD7DVhhvYw31BJbw2vhUie1jqHmRHjcypRtroG6k=
@@ -519,6 +520,8 @@ github.com/sylabs/scs-key-client v0.5.0 h1:EU/acjsiq0PSKvbpHTOoeuFtrkn6IIJsxhga7
 github.com/sylabs/scs-key-client v0.5.0/go.mod h1:G5WwGCFcwAGLxBzBB/Jw5TiYM+2FZ2T48ItAGzc+t/s=
 github.com/sylabs/scs-library-client v0.5.4 h1:ursj3sbLzB4h7ZKhzxvWcXhSPeqwVGmB47FXOOCnC9s=
 github.com/sylabs/scs-library-client v0.5.4/go.mod h1:ho+DNH/uJmlvW1JCnJkwuLF6TxxTaX2RklohAMFcuOw=
+github.com/sylabs/scs-library-client v0.5.5 h1:sjCtA1VbkZfGjdbbZ0SHbrCVOlqDmFLvjTqz2/m2u7Y=
+github.com/sylabs/scs-library-client v0.5.5/go.mod h1:aGApgDIqM7Seuk0BHztl+vow4cY6NlDFS5jViCDu90U=
 github.com/sylabs/sif v1.0.9 h1:AT1lIoFJUCHpAiV2qVWaDZZROAa9JsCP/y32NwwY+6I=
 github.com/sylabs/sif v1.0.9/go.mod h1:1g6W6iWoK6BAgkDvR+Tc3FpLAjkpT5Z+nPtRl9FFptk=
 github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
