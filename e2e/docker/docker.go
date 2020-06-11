@@ -126,7 +126,7 @@ func (c ctx) testDockerAUFS(t *testing.T) {
 		t,
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-aufs-sanity"}...),
+		e2e.WithArgs([]string{imagePath, "docker://sylabsio/aufs-sanity"}...),
 		e2e.ExpectExit(0),
 	)
 
@@ -173,7 +173,7 @@ func (c ctx) testDockerPermissions(t *testing.T) {
 		t,
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-singularity-userperms"}...),
+		e2e.WithArgs([]string{imagePath, "docker://sylabsio/userperms"}...),
 		e2e.ExpectExit(0),
 	)
 
@@ -219,7 +219,7 @@ func (c ctx) testDockerWhiteoutSymlink(t *testing.T) {
 		t,
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-singularity-linkwh"}...),
+		e2e.WithArgs([]string{imagePath, "docker://sylabsio/linkwh"}...),
 		e2e.PostRun(func(t *testing.T) {
 			if t.Failed() {
 				return

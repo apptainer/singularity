@@ -36,7 +36,7 @@ func (c ctx) singularityEnv(t *testing.T) {
 	var defaultImage = "docker://alpine:3.8"
 
 	// This image sets a custom path.
-	var customImage = "docker://godlovedc/lolcow"
+	var customImage = "docker://sylabsio/lolcow"
 	var customPath = "/usr/games:" + defaultPath
 
 	// Append or prepend this path.
@@ -163,13 +163,13 @@ func (c ctx) singularityEnvOption(t *testing.T) {
 		},
 		{
 			name:     "DockerImage",
-			image:    "docker://godlovedc/lolcow",
+			image:    "docker://sylabsio/lolcow",
 			matchEnv: "LC_ALL",
 			matchVal: "C",
 		},
 		{
 			name:     "DockerImageOverride",
-			image:    "docker://godlovedc/lolcow",
+			image:    "docker://sylabsio/lolcow",
 			envOpt:   []string{"LC_ALL=foo"},
 			matchEnv: "LC_ALL",
 			matchVal: "foo",

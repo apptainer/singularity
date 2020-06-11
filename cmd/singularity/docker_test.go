@@ -67,7 +67,7 @@ func TestDockerAUFS(t *testing.T) {
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://dctrud/docker-aufs-sanity")
+	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://sylabsio/aufs-sanity")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
@@ -108,7 +108,7 @@ func TestDockerPermissions(t *testing.T) {
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://dctrud/docker-singularity-userperms")
+	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://sylabsio/userperms")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
@@ -148,7 +148,7 @@ func TestDockerWhiteoutSymlink(t *testing.T) {
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://dctrud/docker-singularity-linkwh")
+	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://sylabsio/linkwh")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
