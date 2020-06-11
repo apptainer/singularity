@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
 const dockerInstanceName = "e2e-docker-instance"
@@ -27,6 +28,11 @@ var registrySetup struct {
 // PrepRegistry run a docker registry and push a busybox
 // image and the test image with oras transport.
 func PrepRegistry(t *testing.T, env TestEnv) {
+	// The docker registry container is only available for amd64 and arm
+	// See: https://hub.docker.com/_/registry?tab=tags
+	// Skip on other architectures
+	require.ArchIn(t, []string{"amd64", "arm64"})
+
 	registrySetup.Lock()
 	defer registrySetup.Unlock()
 

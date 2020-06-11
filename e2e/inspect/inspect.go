@@ -130,7 +130,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 		{
 			name:      "label_org.label-schema.usage.singularity.deffile.from",
 			insType:   "--labels",
-			compareFn: compareLabel("org.label-schema.usage.singularity.deffile.from", "alpine:latest", ""),
+			compareFn: compareLabel("org.label-schema.usage.singularity.deffile.from", "alpine:3.11.5", ""),
 		},
 		{
 			name:      "label_org.label-schema.usage.singularity.runscript.help",

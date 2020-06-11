@@ -358,14 +358,14 @@ func (c actionTests) STDPipe(t *testing.T) {
 		{
 			name:    "TrueLibrary",
 			command: "shell",
-			argv:    []string{"library://busybox"},
+			argv:    []string{"library://busybox:1.31.1"},
 			input:   "true",
 			exit:    0,
 		},
 		{
 			name:    "FalseLibrary",
 			command: "shell",
-			argv:    []string{"library://busybox"},
+			argv:    []string{"library://busybox:1.31.1"},
 			input:   "false",
 			exit:    1,
 		},
@@ -509,7 +509,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "RunFromLibraryOK",
 			command: "run",
-			argv:    []string{"--bind", bind, "library://busybox:latest", size},
+			argv:    []string{"--bind", bind, "library://busybox:1.31.1", size},
 			exit:    0,
 			profile: e2e.UserProfile,
 		},
@@ -538,7 +538,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "RunFromLibraryKO",
 			command: "run",
-			argv:    []string{"--bind", bind, "library://busybox:latest", "0"},
+			argv:    []string{"--bind", bind, "library://busybox:1.31.1", "0"},
 			exit:    1,
 			profile: e2e.UserProfile,
 		},
@@ -569,7 +569,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "ExecTrueLibrary",
 			command: "exec",
-			argv:    []string{"library://busybox:latest", "true"},
+			argv:    []string{"library://busybox:1.31.1", "true"},
 			exit:    0,
 			profile: e2e.UserProfile,
 		},
@@ -598,7 +598,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "ExecFalseLibrary",
 			command: "exec",
-			argv:    []string{"library://busybox:latest", "false"},
+			argv:    []string{"library://busybox:1.31.1", "false"},
 			exit:    1,
 			profile: e2e.UserProfile,
 		},
@@ -629,7 +629,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "ExecTrueLibraryUserns",
 			command: "exec",
-			argv:    []string{"library://busybox:latest", "true"},
+			argv:    []string{"library://busybox:1.31.1", "true"},
 			exit:    0,
 			profile: e2e.UserNamespaceProfile,
 		},
@@ -658,7 +658,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "ExecFalseLibraryUserns",
 			command: "exec",
-			argv:    []string{"library://busybox:latest", "false"},
+			argv:    []string{"library://busybox:1.31.1", "false"},
 			exit:    1,
 			profile: e2e.UserNamespaceProfile,
 		},
@@ -2017,7 +2017,8 @@ func (c actionTests) bindImage(t *testing.T) {
 			name:    "SifWithID",
 			profile: e2e.UserProfile,
 			args: []string{
-				"--bind", c.env.ImagePath + ":/rootfs:id=2",
+				// rootfs ID is now '3'
+				"--bind", c.env.ImagePath + ":/rootfs:id=3",
 				c.env.ImagePath,
 				"test", "-d", "/rootfs/etc",
 			},

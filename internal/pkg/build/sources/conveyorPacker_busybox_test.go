@@ -13,6 +13,7 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
 )
@@ -24,6 +25,9 @@ func TestBusyBoxConveyor(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
+
+	// TODO - busybox example has arch hard coded
+	require.Arch(t, "amd64")
 
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -55,6 +59,9 @@ func TestBusyBoxConveyor(t *testing.T) {
 }
 
 func TestBusyBoxPacker(t *testing.T) {
+	// TODO - busybox example has arch hard coded
+	require.Arch(t, "amd64")
+
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 

@@ -139,6 +139,7 @@ __attribute__((constructor)) static void init(void) {
 
 	if ( getuid() != 0 ) {
 		fprintf(stderr, "tests must be executed as root user\n");
+		fprintf(stderr, "%d %d", uid, gid);
 		exit(1);
 	}
 	if ( getUnprivIDs(getppid(), &uid, &gid) < 0 ) {

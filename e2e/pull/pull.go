@@ -66,7 +66,7 @@ var tests = []testStruct{
 	// --force tests
 	{
 		desc:             "force existing file",
-		srcURI:           "library://alpine:3.8",
+		srcURI:           "library://alpine:3.11.5",
 		force:            true,
 		createDst:        true,
 		unauthenticated:  true,
@@ -74,7 +74,7 @@ var tests = []testStruct{
 	},
 	{
 		desc:             "force non-existing file",
-		srcURI:           "library://alpine:3.8",
+		srcURI:           "library://alpine:3.11.5",
 		force:            true,
 		createDst:        false,
 		unauthenticated:  true,
@@ -106,7 +106,7 @@ var tests = []testStruct{
 	// --dir tests
 	{
 		desc:             "dir no image path",
-		srcURI:           "library://alpine:3.9",
+		srcURI:           "library://alpine:3.11.5",
 		unauthenticated:  true,
 		setPullDir:       true,
 		setImagePath:     false,
@@ -121,7 +121,7 @@ var tests = []testStruct{
 		// the directory /tmp/a/b/c/tmp/a/b does not exist, it fails to create the file
 		// image.sif in there.
 		desc:             "dir image path",
-		srcURI:           "library://alpine:3.9",
+		srcURI:           "library://alpine:3.11.5",
 		unauthenticated:  true,
 		setPullDir:       true,
 		setImagePath:     true,
@@ -177,13 +177,13 @@ var tests = []testStruct{
 	// pulling with library URI argument
 	{
 		desc:             "bad library URI",
-		srcURI:           "library://busybox",
+		srcURI:           "library://busybox:1.31.1",
 		library:          "https://bad-library.sylabs.io",
 		expectedExitCode: 255,
 	},
 	{
 		desc:             "default library URI",
-		srcURI:           "library://busybox",
+		srcURI:           "library://busybox:1.31.1",
 		library:          "https://library.sylabs.io",
 		force:            true,
 		expectedExitCode: 0,

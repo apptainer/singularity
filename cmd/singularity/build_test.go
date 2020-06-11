@@ -26,6 +26,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
 var testFileContent = "Test file content\n"
@@ -151,19 +152,24 @@ func imageBuild(cacheDir string, opts buildOpts, imagePath, buildSpec string) ([
 
 func TestBuild(t *testing.T) {
 	tests := []struct {
-		name       string
-		dependency string
-		buildSpec  string
-		sandbox    bool
+		name        string
+		dependency  string
+		buildSpec   string
+		sandbox     bool
+		requireArch string
 	}{
 		{
 			name:      "BusyBox",
 			buildSpec: "../../examples/busybox/Singularity",
+			// TODO: example has arch hard coded in download URL
+			requireArch: "amd64",
 		},
 		{
 			name:      "BusyBoxSandbox",
 			buildSpec: "../../examples/busybox/Singularity",
 			sandbox:   true,
+			// TODO: example has arch hard coded in download URL
+			requireArch: "amd64",
 		},
 		{
 			name:       "Debootstrap",
@@ -191,6 +197,8 @@ func TestBuild(t *testing.T) {
 			dependency: "yum",
 			buildSpec:  "../../examples/centos/Singularity",
 			sandbox:    true,
+			// TODO: CentOS non-amd64 ports are on a different mirror location
+			requireArch: "amd64",
 		},
 		{
 			name:       "Zypper",
@@ -205,6 +213,8 @@ func TestBuild(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+			require.Arch(t, tt.requireArch)
+
 			if tt.dependency != "" {
 				if _, err := exec.LookPath(tt.dependency); err != nil {
 					t.Skipf("%v not found in path", tt.dependency)
@@ -265,20 +275,20 @@ func TestMultipleBuilds(t *testing.T) {
 		steps []testSpec
 	}{
 		{"SIFToSIF", []testSpec{
-			{"BusyBox", imagePath1, "../../examples/busybox/Singularity", false, false, false},
+			{"BusyBox", imagePath1, "library://busybox:1.31.1", false, false, false},
 			{"SIF", imagePath2, imagePath1, false, false, false},
 		}},
 		{"SandboxToSIF", []testSpec{
-			{"BusyBoxSandbox", imagePath1, "../../examples/busybox/Singularity", false, true, false},
+			{"BusyBoxSandbox", imagePath1, "library://busybox:1.31.1", false, true, false},
 			{"SIF", imagePath2, imagePath1, false, false, false},
 		}},
 		{"LocalImage", []testSpec{
-			{"BusyBox", imagePath1, "../../examples/busybox/Singularity", false, false, false},
+			{"BusyBox", imagePath1, "library://busybox:1.31.1", false, false, false},
 			{"LocalImage", imagePath2, liDefFile, false, false, false},
 			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, true},
 		}},
 		{"LocalImageSandbox", []testSpec{
-			{"BusyBoxSandbox", imagePath2, "../../examples/busybox/Singularity", true, true, false},
+			{"BusyBoxSandbox", imagePath2, "library://busybox:1.31.1", true, true, false},
 			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, true},
 		}},
 	}

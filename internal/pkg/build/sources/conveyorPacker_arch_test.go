@@ -14,6 +14,7 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
 )
@@ -25,6 +26,10 @@ func TestArchConveyor(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
+
+	// TODO: non amd64 Arch Linux ports are in completely separate repositories
+	// so we need logic to choose correct one (if exists) on non-amd64 machines
+	require.Arch(t, "amd64")
 
 	if _, err := exec.LookPath("pacstrap"); err != nil {
 		t.Skip("skipping test, pacstrap not installed")
@@ -60,6 +65,10 @@ func TestArchConveyor(t *testing.T) {
 }
 
 func TestArchPacker(t *testing.T) {
+	// TODO: non amd64 Arch Linux ports are in completely separate repositories
+	// so we need logic to choose correct one (if exists) on non-amd64 machines
+	require.Arch(t, "amd64")
+
 	if _, err := exec.LookPath("pacstrap"); err != nil {
 		t.Skip("skipping test, pacstrap not installed")
 	}

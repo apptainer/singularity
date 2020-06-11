@@ -20,6 +20,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
 func imagePull(t *testing.T, library, pullDir string, imagePath string, sourceSpec string, force, unauthenticated bool) ([]byte, error) {
@@ -30,6 +31,13 @@ func imagePull(t *testing.T, library, pullDir string, imagePath string, sourceSp
 
 	var argv []string
 	argv = append(argv, "pull")
+
+	// TODO: Always pulling `amd64` images at the moment, so that at least
+	// we are checking the image pull succeeds on other archs. See comment on
+	// TestPull. We need more logic to pull images for specific archs, or we
+	// need to verify the image pulled by content hash, not using inspect.
+	argv = append(argv, "--arch", "amd64")
+
 	if force {
 		argv = append(argv, "--force")
 	}
@@ -63,6 +71,12 @@ func makeTmpDir(t *testing.T) string {
 }
 
 func TestPull(t *testing.T) {
+	// TODO: These tests need to be rewritten
+	//  - The 'unauthenticated' flag is not relevant in 3.6 where pull does not
+	//    require -U
+	//  - Verification of the image is only run here on amd64, as we need to
+	//    have a way of pulling by hash per architecture, or else verify by
+	//    content hash instead of inspection.
 	test.DropPrivilege(t)
 
 	imagePath := "./test_pull.sif"
@@ -80,7 +94,7 @@ func TestPull(t *testing.T) {
 	}{
 		{
 			name:            "Pull_Library",
-			sourceSpec:      "library://alpine:3.8",
+			sourceSpec:      "library://alpine:3.11.5",
 			force:           false,
 			unauthenticated: true,
 			library:         "",
@@ -90,7 +104,7 @@ func TestPull(t *testing.T) {
 		},
 		{
 			name:            "ForceAuth",
-			sourceSpec:      "library://alpine:3.8",
+			sourceSpec:      "library://alpine:3.11.5",
 			force:           true,
 			unauthenticated: true,
 			library:         "",
@@ -100,7 +114,7 @@ func TestPull(t *testing.T) {
 		},
 		{
 			name:            "Force",
-			sourceSpec:      "library://alpine:3.8",
+			sourceSpec:      "library://alpine:3.11.5",
 			force:           true,
 			unauthenticated: false,
 			library:         "",
@@ -271,7 +285,7 @@ func TestPull(t *testing.T) {
 		},
 		{
 			name:            "Pull_Dir_name",
-			sourceSpec:      "library://alpine:3.9",
+			sourceSpec:      "library://alpine:3.11.5",
 			force:           true,
 			unauthenticated: true,
 			library:         "",
@@ -281,7 +295,7 @@ func TestPull(t *testing.T) {
 		},
 		{
 			name:            "PullDirNameFail",
-			sourceSpec:      "library://alpine:3.9",
+			sourceSpec:      "library://alpine:3.11.5",
 			force:           false,
 			unauthenticated: true,
 			library:         "",
@@ -291,7 +305,7 @@ func TestPull(t *testing.T) {
 		},
 		{
 			name:            "PullDirNameFail1",
-			sourceSpec:      "library://alpine:3.9",
+			sourceSpec:      "library://alpine:3.11.5",
 			force:           false,
 			unauthenticated: false,
 			library:         "",
@@ -309,7 +323,14 @@ func TestPull(t *testing.T) {
 					t.Log(string(b))
 					t.Fatalf("unexpected failure: %v", err)
 				}
-				imageVerify(t, filepath.Join(tt.pullDir, tt.imagePath), false)
+				// TODO: Only do our verification on amd64 for now, as it is is using
+				// singularity inspect which requires image to match runtime arch.
+				// We should probably check the downloaded image by content hash instead
+				// of inspect.
+				t.Run("imageVerify", func(t *testing.T) {
+					require.Arch(t, "amd64")
+					imageVerify(t, filepath.Join(tt.pullDir, tt.imagePath), false)
+				})
 			} else {
 				if err == nil {
 					t.Log(string(b))

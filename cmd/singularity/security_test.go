@@ -10,12 +10,16 @@ package main
 
 import (
 	"os"
+	"path"
 	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
+
+// Path for image used in these security tests
+var securityImagePath string
 
 // testSecurityUnpriv tests security flag fuctionality for singularity exec without elevated privileges
 func testSecurityUnpriv(t *testing.T) {
@@ -29,15 +33,15 @@ func testSecurityUnpriv(t *testing.T) {
 		expectSuccess bool
 	}{
 		// taget UID/GID
-		{"Set_uid", imagePath, "exec", []string{"id", "-u", "|", "grep", "99"}, opts{security: []string{"uid:99"}}, 1, false},
-		{"Set_gid", imagePath, "exec", []string{"id", "-g", "|", "grep", "99"}, opts{security: []string{"gid:99"}}, 1, false},
+		{"Set_uid", securityImagePath, "exec", []string{"id", "-u", "|", "grep", "99"}, opts{security: []string{"uid:99"}}, 1, false},
+		{"Set_gid", securityImagePath, "exec", []string{"id", "-g", "|", "grep", "99"}, opts{security: []string{"gid:99"}}, 1, false},
 		// seccomp from json file
-		{"SecComp_BlackList", imagePath, "exec", []string{"mkdir", "/tmp/foo"}, opts{security: []string{"seccomp:./testdata/seccomp-profile.json"}}, 1, false},
-		{"SecComp_true", imagePath, "exec", []string{"true"}, opts{security: []string{"seccomp:./testdata/seccomp-profile.json"}}, 0, true},
+		{"SecComp_BlackList", securityImagePath, "exec", []string{"mkdir", "/tmp/foo"}, opts{security: []string{"seccomp:./testdata/seccomp-profile.json"}}, 1, false},
+		{"SecComp_true", securityImagePath, "exec", []string{"true"}, opts{security: []string{"seccomp:./testdata/seccomp-profile.json"}}, 0, true},
 		// capabilities
-		{"capabilities_keep_true", imagePath, "exec", []string{"ping", "-c", "1", "8.8.8.8"}, opts{keepPrivs: true}, 1, false},
-		{"capabilities_keep-false", imagePath, "exec", []string{"ping", "-c", "1", "8.8.8.8"}, opts{keepPrivs: false}, 1, false},
-		{"capabilities_drop", imagePath, "exec", []string{"ping", "-c", "1", "8.8.8.8"}, opts{dropCaps: "CAP_NET_RAW"}, 1, false},
+		{"capabilities_keep_true", securityImagePath, "exec", []string{"ping", "-c", "1", "8.8.8.8"}, opts{keepPrivs: true}, 1, false},
+		{"capabilities_keep-false", securityImagePath, "exec", []string{"ping", "-c", "1", "8.8.8.8"}, opts{keepPrivs: false}, 1, false},
+		{"capabilities_drop", securityImagePath, "exec", []string{"ping", "-c", "1", "8.8.8.8"}, opts{dropCaps: "CAP_NET_RAW"}, 1, false},
 	}
 
 	for _, tt := range tests {
@@ -66,14 +70,14 @@ func testSecurityPriv(t *testing.T) {
 		expectSuccess bool
 	}{
 		// taget UID/GID
-		{"Set_uid", imagePath, "exec", []string{"id", "-u", "|", "grep", "99"}, opts{security: []string{"uid:99"}}, 1, false},
-		{"Set_gid", imagePath, "exec", []string{"id", "-g", "|", "grep", "99"}, opts{security: []string{"gid:99"}}, 1, false},
+		{"Set_uid", securityImagePath, "exec", []string{"id", "-u", "|", "grep", "99"}, opts{security: []string{"uid:99"}}, 1, false},
+		{"Set_gid", securityImagePath, "exec", []string{"id", "-g", "|", "grep", "99"}, opts{security: []string{"gid:99"}}, 1, false},
 		// seccomp from json file
-		{"SecComp_BlackList", imagePath, "exec", []string{"mkdir", "/tmp/foo"}, opts{security: []string{"seccomp:./testdata/seccomp-profile.json"}}, 1, false},
-		{"SecComp_true", imagePath, "exec", []string{"true"}, opts{security: []string{"seccomp:./testdata/seccomp-profile.json"}}, 0, true},
+		{"SecComp_BlackList", securityImagePath, "exec", []string{"mkdir", "/tmp/foo"}, opts{security: []string{"seccomp:./testdata/seccomp-profile.json"}}, 1, false},
+		{"SecComp_true", securityImagePath, "exec", []string{"true"}, opts{security: []string{"seccomp:./testdata/seccomp-profile.json"}}, 0, true},
 		// capabilities
-		{"capabilities_keep", imagePath, "exec", []string{"ping", "-c", "1", "8.8.8.8"}, opts{keepPrivs: true}, 0, true},
-		{"capabilities_drop", imagePath, "exec", []string{"ping", "-c", "1", "8.8.8.8"}, opts{dropCaps: "CAP_NET_RAW"}, 1, false},
+		{"capabilities_keep", securityImagePath, "exec", []string{"ping", "-c", "1", "8.8.8.8"}, opts{keepPrivs: true}, 0, true},
+		{"capabilities_drop", securityImagePath, "exec", []string{"ping", "-c", "1", "8.8.8.8"}, opts{dropCaps: "CAP_NET_RAW"}, 1, false},
 	}
 
 	for _, tt := range tests {
@@ -101,7 +105,7 @@ func testSecurityConfOwnership(t *testing.T) {
 
 	// try to run
 	t.Run("non_root_config", test.WithoutPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := imageExec(t, "exec", opts{}, imagePath, []string{"/bin/true"})
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{}, securityImagePath, []string{"/bin/true"})
 		if exitCode != 1 {
 			t.Log(stderr, err)
 			t.Fatalf("unexpected success running /bin/true")
@@ -126,15 +130,20 @@ func TestSecurity(t *testing.T) {
 	imgCache, cleanup := setupCache(t)
 	defer cleanup()
 
-	if b, err := imageBuild(imgCache, opts, imagePath, "../../examples/busybox/Singularity"); err != nil {
+	// Was previously using imagePath that got set in TestBuild. This resulted
+	// in a failure on systems with cores to run in parallel, and the CWD of
+	// this test being removed if this code ran before TestBuild set a path.
+	securityImagePath = path.Join(testDir, "security-container")
+	defer os.Remove(imagePath)
+
+	if b, err := imageBuild(imgCache, opts, securityImagePath, "library://busybox:1.31.1"); err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
 	}
-	defer os.Remove(imagePath)
 
 	// Security
-	t.Run("Security_unpriv", testSecurityPriv)
-	t.Run("Security_priv", testSecurityUnpriv)
+	t.Run("Security_priv", testSecurityPriv)
+	t.Run("Security_unpriv", testSecurityUnpriv)
 	t.Run("Security_config_ownerships", testSecurityConfOwnership)
 
 }
