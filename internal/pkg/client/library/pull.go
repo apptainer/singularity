@@ -11,12 +11,14 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	keyclient "github.com/sylabs/scs-key-client/client"
 	scs "github.com/sylabs/scs-library-client/client"
+	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/client"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/sylog"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 var (
@@ -121,8 +123,12 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, a
 		}
 	}
 
-	_, err = signing.IsSigned(ctx, pullTo, keystoreURI, scsConfig.AuthToken)
-	if err != nil {
+	c := keyclient.Config{
+		BaseURL:   keystoreURI,
+		AuthToken: scsConfig.AuthToken,
+		UserAgent: useragent.Value(),
+	}
+	if err := singularity.Verify(ctx, pullTo, singularity.OptVerifyUseKeyServer(&c)); err != nil {
 		sylog.Warningf("%v", err)
 		return pullTo, ErrLibraryPullUnsigned
 	}
