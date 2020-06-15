@@ -810,7 +810,7 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 }
 
 func (c *imgBuildTests) ensureImageIsEncrypted(t *testing.T, imgPath string) {
-	sifID := "2" // Which SIF descriptor slots contains encryption information
+	sifID := "3" // Which SIF descriptor slot contains the (encrypted) rootfs
 	cmdArgs := []string{"info", sifID, imgPath}
 	c.env.RunSingularity(
 		t,
