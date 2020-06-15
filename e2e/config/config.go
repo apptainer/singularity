@@ -421,7 +421,7 @@ func (c configTests) configFile(t *testing.T) {
 			name:    "MaxLoopDevicesOK",
 			argv:    []string{c.env.ImagePath, "true"},
 			profile: e2e.RootProfile,
-			conf:    "max loop devices = 10\n",
+			conf:    "max loop devices = 128\n",
 			exit:    0,
 		},
 		{
