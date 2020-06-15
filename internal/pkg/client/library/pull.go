@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"runtime"
 
 	scs "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/cache"
@@ -38,7 +37,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 	libraryImage, err := c.GetImage(ctx, arch, imageRef)
 	if err == scs.ErrNotFound {
-		return "", fmt.Errorf("image does not exist in the library: %s (%s)", imageRef, runtime.GOARCH)
+		return "", fmt.Errorf("image does not exist in the library: %s (%s)", imageRef, arch)
 	}
 	if err != nil {
 		return "", err
@@ -60,7 +59,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 		if !cacheEntry.Exists {
 			sylog.Infof("Downloading library image")
 
-			if err := DownloadImage(ctx, c, cacheEntry.TmpPath, runtime.GOARCH, imageRef, client.ProgressBarCallback(ctx)); err != nil {
+			if err := DownloadImage(ctx, c, cacheEntry.TmpPath, arch, imageRef, client.ProgressBarCallback(ctx)); err != nil {
 				return "", fmt.Errorf("unable to download image: %v", err)
 			}
 
