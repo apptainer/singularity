@@ -42,7 +42,7 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.6.0
-	github.com/sylabs/scs-build-client v0.1.3
+	github.com/sylabs/scs-build-client v0.1.4
 	github.com/sylabs/scs-key-client v0.5.0
 	github.com/sylabs/scs-library-client v0.5.5
 	github.com/sylabs/sif v1.0.10
