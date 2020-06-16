@@ -202,7 +202,7 @@ func (c *ctx) testInstanceFromURI(t *testing.T) {
 		},
 		{
 			name: "test_from_library",
-			uri:  "library://busybox",
+			uri:  "library://busybox:1.31.1",
 		},
 		// TODO(mem): reenable this; disabled while shub is down
 		// {
@@ -325,10 +325,14 @@ func (c *ctx) applyCgroupsInstance(t *testing.T) {
 		e2e.WithProfile(c.profile),
 		e2e.WithCommand("exec"),
 		e2e.WithArgs(joinName, "cat", "/dev/null"),
+		e2e.PostRun(func(t *testing.T) {
+			if t.Failed() {
+				return
+			}
+			c.stopInstance(t, instanceName)
+		}),
 		e2e.ExpectExit(1),
 	)
-
-	c.stopInstance(t, instanceName)
 }
 
 // E2ETests is the main func to trigger the test suite

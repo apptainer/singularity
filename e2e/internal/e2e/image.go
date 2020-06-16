@@ -7,6 +7,7 @@ package e2e
 
 import (
 	"os"
+	"runtime"
 	"sync"
 	"testing"
 )
@@ -45,9 +46,13 @@ func EnsureImage(t *testing.T, env TestEnv) {
 }
 
 // PullImage will pull a test image.
-func PullImage(t *testing.T, env TestEnv, imageURL string, path string) {
+func PullImage(t *testing.T, env TestEnv, imageURL string, arch string, path string) {
 	pullMutex.Lock()
 	defer pullMutex.Unlock()
+
+	if arch == "" {
+		arch = runtime.GOARCH
+	}
 
 	switch _, err := os.Stat(path); {
 	case err == nil:
@@ -66,7 +71,7 @@ func PullImage(t *testing.T, env TestEnv, imageURL string, path string) {
 		t,
 		WithProfile(UserProfile),
 		WithCommand("pull"),
-		WithArgs("--force", "--allow-unsigned", path, imageURL),
+		WithArgs("--force", "--allow-unsigned", "--arch", arch, path, imageURL),
 		ExpectExit(0),
 	)
 }

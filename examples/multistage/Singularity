@@ -35,7 +35,7 @@ EOF
 #
 # Install go application into image without golang installed
 Bootstrap: library
-From: alpine:3.9
+From: alpine:3.11.5
 Stage: two
 
 

@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
 )
@@ -20,6 +21,10 @@ import (
 const yumDef = "../../../../examples/centos/Singularity"
 
 func TestYumConveyor(t *testing.T) {
+	// TODO - Centos puts non-amd64 at a different mirror location
+	// need multiple def files to test on other archs
+	require.Arch(t, "amd64")
+
 	if testing.Short() {
 		t.SkipNow()
 	}
@@ -60,6 +65,10 @@ func TestYumConveyor(t *testing.T) {
 }
 
 func TestYumPacker(t *testing.T) {
+	// TODO - Centos puts non-amd64 at a different mirror location
+	// need multiple def files to test on other archs
+	require.Arch(t, "amd64")
+
 	if testing.Short() {
 		t.SkipNow()
 	}

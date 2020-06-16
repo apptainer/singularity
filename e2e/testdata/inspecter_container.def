@@ -1,5 +1,5 @@
 bootstrap: library
-from: alpine:latest
+from: alpine:3.11.5
 
 %help
 This is a e2e test container used for testing the 'inspect'

@@ -34,7 +34,7 @@ func (c ctx) testRun555Cache(t *testing.T) {
 	}
 	// Directory is deleted when tempDir is deleted
 
-	cmdArgs := []string{"library://godlovedc/funny/lolcow"}
+	cmdArgs := []string{"library://lolcow"}
 	// We explicitly pass the environment to the command, not through c.env.ImgCacheDir
 	// because c.env is shared between all the tests, something we do not want here.
 	cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, cacheDir)
@@ -65,8 +65,8 @@ func (c ctx) testRunPEMEncrypted(t *testing.T) {
 	tempDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
 	defer cleanup(t)
 
-	imgPath := filepath.Join(tempDir, "encrypted_cmdline_option.sif")
-	cmdArgs := []string{"--encrypt", "--pem-path", pemPubFile, imgPath, "library://alpine:latest"}
+	imgPath := filepath.Join(tempDir, "encrypted_cmdline_pem-path.sif")
+	cmdArgs := []string{"--encrypt", "--pem-path", pemPubFile, imgPath, "library://alpine:3.11.5"}
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.RootProfile),
@@ -108,27 +108,42 @@ func (c ctx) testRunPassphraseEncrypted(t *testing.T) {
 		t.Skip("cryptsetup is not compatible, skipping test")
 	}
 
-	passphraseEncryptedURL := "library://vallee/default/passphrase_encrypted_alpine"
-	passphraseEncryptedFingerprint := "sha256.e784d01b94e4b5a42d9e9b54bc2c0400630604bb896de1e65d8c77e25ca5b5e7"
+	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PASSPHRASE", e2e.Passphrase)
+
+	// We create a temporary directory to store the image, making sure tests
+	// will not pollute each other
+	tempDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
+	defer cleanup(t)
+
+	imgPath := filepath.Join(tempDir, "encrypted_cmdline_passphrase.sif")
+	cmdArgs := []string{"--encrypt", imgPath, "library://alpine:3.11.5"}
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
+		e2e.ExpectExit(0),
+	)
+
 	passphraseInput := []e2e.SingularityConsoleOp{
 		e2e.ConsoleSendLine(e2e.Passphrase),
 	}
 
 	// Interactive command
-	cmdArgs := []string{"--passphrase", passphraseEncryptedURL + ":" + passphraseEncryptedFingerprint}
+	cmdArgs = []string{"--passphrase", imgPath, "/bin/true"}
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("interactive passphrase"),
 		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("run"),
+		e2e.WithCommand("exec"),
 		e2e.WithArgs(cmdArgs...),
 		e2e.ConsoleRun(passphraseInput...),
 		e2e.ExpectExit(0),
 	)
 
 	// Using the environment variable to specify the passphrase
-	passphraseEnvVar := fmt.Sprintf("%s=%s", "SINGULARITY_ENCRYPTION_PASSPHRASE", e2e.Passphrase)
-	cmdArgs = []string{passphraseEncryptedURL + ":" + passphraseEncryptedFingerprint}
+	cmdArgs = []string{imgPath}
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("env var passphrase"),
@@ -140,7 +155,7 @@ func (c ctx) testRunPassphraseEncrypted(t *testing.T) {
 	)
 
 	// Specifying the passphrase on the command line should always fail
-	cmdArgs = []string{"--passphrase", e2e.Passphrase, passphraseEncryptedURL + ":" + passphraseEncryptedFingerprint}
+	cmdArgs = []string{"--passphrase", e2e.Passphrase, imgPath}
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("passphrase on cmdline"),

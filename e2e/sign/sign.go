@@ -46,7 +46,8 @@ func (c *ctx) prepareImage(t *testing.T) (string, func(*testing.T)) {
 		t.Fatalf("failed to create temporary directory: %s", err)
 	}
 	imgPath := filepath.Join(tempDir, imgName)
-	e2e.PullImage(t, c.env, imgURL, imgPath)
+	// We should be able to pull an image and sign it on other archs
+	e2e.PullImage(t, c.env, imgURL, "amd64", imgPath)
 
 	return filepath.Join(tempDir, "testImage.sif"), func(t *testing.T) {
 		err := os.RemoveAll(tempDir)
