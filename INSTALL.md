@@ -99,7 +99,7 @@ You can build Singularity using the following commands:
 ```
 $ cd ${GOPATH}/src/github.com/sylabs/singularity && \
   ./mconfig && \
-  cd ./builddir && \
+  cd ./buildtree && \
   make && \
   sudo make install
 ```
