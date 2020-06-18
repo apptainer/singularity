@@ -14,7 +14,7 @@ require (
 	github.com/containerd/containerd v1.3.4
 	github.com/containernetworking/cni v0.7.1
 	github.com/containernetworking/plugins v0.8.6
-	github.com/containers/image/v5 v5.4.4
+	github.com/containers/image/v5 v5.5.1
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 	github.com/dsnet/compress v0.0.1 // indirect
@@ -56,7 +56,7 @@ require (
 	go.opencensus.io v0.22.2 // indirect
 	go4.org v0.0.0-20180417224846-9599cf28b011 // indirect
 	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
-	golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f
+	golang.org/x/sys v0.0.0-20200519105757-fe76b779f299
 	google.golang.org/genproto v0.0.0-20200122232147-0452cf42e150 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 	gotest.tools/v3 v3.0.2
