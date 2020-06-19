@@ -128,7 +128,6 @@ rc=0
 	-count=1 \
 	-timeout=30m \
 	-tags "${GO_TAGS}" \
-	-failfast \
 	-cover \
 	-race \
 	${sudo_exec} \
