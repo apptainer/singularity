@@ -1,7 +1,8 @@
 activated = true
+legacyinsecure = true
 
 [[execgroup]]
   dirpath = "/var/data3"
-  keyfp = ["5994BE54C31CF1B5E1994F987C52CF6D055F072B"]
+  keyfp = ["12045c8c0b1004d058de4beda20c27ee7ff7ba84"]
   mode = "blacklist"
   tagname = "name"

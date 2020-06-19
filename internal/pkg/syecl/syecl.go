@@ -11,19 +11,29 @@ package syecl
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	toml "github.com/pelletier/go-toml"
-	"github.com/sylabs/singularity/pkg/signing"
+	"github.com/sylabs/sif/pkg/integrity"
+	"github.com/sylabs/sif/pkg/sif"
+	"golang.org/x/crypto/openpgp"
+)
+
+var (
+	errNotSignedByRequired = errors.New("image not signed by required entities")
+	errSignedByForbidden   = errors.New("image signed by a forbidden entity")
 )
 
 // EclConfig describes the structure of an execution control list configuration file
 type EclConfig struct {
-	Activated  bool        `toml:"activated"` // toggle the activation of the ECL rules
-	ExecGroups []execgroup `toml:"execgroup"` // Slice of all execution groups
+	Activated  bool        `toml:"activated"`      // toggle the activation of the ECL rules
+	Legacy     bool        `toml:"legacyinsecure"` // Legacy (insecure) signature mode
+	ExecGroups []execgroup `toml:"execgroup"`      // Slice of all execution groups
 }
 
 // execgroup describes an execution group, the main unit of configuration:
@@ -104,48 +114,51 @@ func (ecl *EclConfig) ValidateConfig() error {
 }
 
 // checkWhiteList evaluates authorization by requiring at least 1 entity
-func checkWhiteList(fp *os.File, egroup *execgroup) (ok bool, err error) {
-	// get all signing entities fingerprints on the primary partition
-	keyfps, err := signing.GetSignEntitiesFp(fp)
+func checkWhiteList(v *integrity.Verifier, egroup *execgroup) (ok bool, err error) {
+	// get signing entities fingerprints that have signed all selected objects
+	keyfps, err := v.AllSignedBy()
 	if err != nil {
 		return
 	}
-	// was the primary partition signed by an authorized entity?
+
+	// were the selected objects signed by an authorized entity?
 	for _, v := range egroup.KeyFPs {
 		for _, u := range keyfps {
-			if v == u {
+			if strings.EqualFold(v, hex.EncodeToString(u[:])) {
 				ok = true
 			}
 		}
 	}
+
 	if !ok {
-		return false, fmt.Errorf("%s is not signed by required entities", fp.Name())
+		return false, errNotSignedByRequired
 	}
 
 	return true, nil
 }
 
 // checkWhiteStrict evaluates authorization by requiring all entities
-func checkWhiteStrict(fp *os.File, egroup *execgroup) (ok bool, err error) {
-	// get all signing entities fingerprints on the primary partition
-	keyfps, err := signing.GetSignEntitiesFp(fp)
+func checkWhiteStrict(v *integrity.Verifier, egroup *execgroup) (ok bool, err error) {
+	// get signing entities fingerprints that have signed all selected objects
+	keyfps, err := v.AllSignedBy()
 	if err != nil {
 		return
 	}
 
-	// was the primary partition signed by all authorized entity?
+	// were all selected objects signed by all authorized entity?
 	m := map[string]bool{}
 	for _, v := range egroup.KeyFPs {
 		m[v] = false
 		for _, u := range keyfps {
-			if v == u {
+			if strings.EqualFold(v, hex.EncodeToString(u[:])) {
 				m[v] = true
 			}
 		}
 	}
+
 	for _, v := range m {
 		if !v {
-			return false, fmt.Errorf("%s is not signed by required entities", fp.Name())
+			return false, errNotSignedByRequired
 		}
 	}
 
@@ -153,17 +166,18 @@ func checkWhiteStrict(fp *os.File, egroup *execgroup) (ok bool, err error) {
 }
 
 // checkBlackList evaluates authorization by requiring all entities to be absent
-func checkBlackList(fp *os.File, egroup *execgroup) (ok bool, err error) {
-	// get all signing entities fingerprints on the primary partition
-	keyfps, err := signing.GetSignEntitiesFp(fp)
+func checkBlackList(v *integrity.Verifier, egroup *execgroup) (ok bool, err error) {
+	// get all signing entities fingerprints that have signed any selected object
+	keyfps, err := v.AnySignedBy()
 	if err != nil {
 		return
 	}
-	// was the primary partition signed by an authorized entity?
+
+	// was a selected object signed by a forbidden entity?
 	for _, v := range egroup.KeyFPs {
 		for _, u := range keyfps {
-			if v == u {
-				return false, fmt.Errorf("%s is signed by a forbidden entity", fp.Name())
+			if strings.EqualFold(v, hex.EncodeToString(u[:])) {
+				return false, errSignedByForbidden
 			}
 		}
 	}
@@ -171,7 +185,7 @@ func checkBlackList(fp *os.File, egroup *execgroup) (ok bool, err error) {
 	return true, nil
 }
 
-func shouldRun(ecl *EclConfig, fp *os.File) (ok bool, err error) {
+func shouldRun(ecl *EclConfig, fp *os.File, kr openpgp.KeyRing) (ok bool, err error) {
 	var egroup *execgroup
 
 	// look what execgroup a container is part of
@@ -195,20 +209,46 @@ func shouldRun(ecl *EclConfig, fp *os.File) (ok bool, err error) {
 		return false, fmt.Errorf("%s not part of any execgroup", fp.Name())
 	}
 
+	f, err := sif.LoadContainerFp(fp, true)
+	if err != nil {
+		return false, err
+	}
+
+	opts := []integrity.VerifierOpt{integrity.OptVerifyWithKeyRing(kr)}
+	if ecl.Legacy {
+		// Legacy behavior is to verify the primary partition only.
+		od, _, err := f.GetPartPrimSys()
+		if err != nil {
+			return false, fmt.Errorf("get primary system partition: %v", err)
+		}
+		opts = append(opts, integrity.OptVerifyLegacy(), integrity.OptVerifyObject(od.ID))
+	}
+
+	v, err := integrity.NewVerifier(&f, opts...)
+	if err != nil {
+		return false, err
+	}
+
+	// Validate signature.
+	if err := v.Verify(); err != nil {
+		return false, fmt.Errorf("image signature not valid: %v", err)
+	}
+
+	// Check fingerprints against policy.
 	switch egroup.ListMode {
 	case "whitelist":
-		return checkWhiteList(fp, egroup)
+		return checkWhiteList(v, egroup)
 	case "whitestrict":
-		return checkWhiteStrict(fp, egroup)
+		return checkWhiteStrict(v, egroup)
 	case "blacklist":
-		return checkBlackList(fp, egroup)
+		return checkBlackList(v, egroup)
 	}
 
 	return false, fmt.Errorf("ecl config file invalid")
 }
 
 // ShouldRun determines if a container should run according to its execgroup rules
-func (ecl *EclConfig) ShouldRun(cpath string) (ok bool, err error) {
+func (ecl *EclConfig) ShouldRun(cpath string, kr openpgp.KeyRing) (ok bool, err error) {
 	// look if ECL rules are activated
 	if !ecl.Activated {
 		return true, nil
@@ -220,15 +260,15 @@ func (ecl *EclConfig) ShouldRun(cpath string) (ok bool, err error) {
 	}
 	defer fp.Close()
 
-	return shouldRun(ecl, fp)
+	return shouldRun(ecl, fp, kr)
 }
 
 // ShouldRunFp determines if an already opened container should run according to its execgroup rules
-func (ecl *EclConfig) ShouldRunFp(fp *os.File) (ok bool, err error) {
+func (ecl *EclConfig) ShouldRunFp(fp *os.File, kr openpgp.KeyRing) (ok bool, err error) {
 	// look if ECL rules are activated
 	if !ecl.Activated {
 		return true, nil
 	}
 
-	return shouldRun(ecl, fp)
+	return shouldRun(ecl, fp, kr)
 }

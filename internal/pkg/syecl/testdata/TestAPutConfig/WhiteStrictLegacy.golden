@@ -1,5 +1,5 @@
 activated = true
-legacyinsecure = false
+legacyinsecure = true
 
 [[execgroup]]
   dirpath = "/var/data2"
