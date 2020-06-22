@@ -28,12 +28,12 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/pty v1.1.8
-	github.com/openSUSE/umoci v0.4.6-0.20200128161609-c67e0747f162
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20191218002246-9ea04d1f37d7
 	github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74
 	github.com/opencontainers/runtime-spec v1.0.3-0.20200520003142-237cc4f519e2
 	github.com/opencontainers/selinux v1.5.2
+	github.com/opencontainers/umoci v0.4.6-0.20200622135030-30d116059d97
 	github.com/pelletier/go-toml v1.8.0
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
@@ -46,7 +46,6 @@ require (
 	github.com/sylabs/scs-key-client v0.5.0
 	github.com/sylabs/scs-library-client v0.5.5
 	github.com/sylabs/sif v1.0.10
-	github.com/urfave/cli v1.22.2 // indirect
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -55,9 +54,8 @@ require (
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go.opencensus.io v0.22.2 // indirect
 	go4.org v0.0.0-20180417224846-9599cf28b011 // indirect
-	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
-	golang.org/x/sys v0.0.0-20200519105757-fe76b779f299
-	google.golang.org/genproto v0.0.0-20200122232147-0452cf42e150 // indirect
+	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9
+	golang.org/x/sys v0.0.0-20200615200032-f1bc736245b1
 	gopkg.in/yaml.v2 v2.3.0
 	gotest.tools/v3 v3.0.2
 	mvdan.cc/sh/v3 v3.1.1
