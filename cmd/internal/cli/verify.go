@@ -7,6 +7,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-key-client/client"
@@ -186,13 +187,33 @@ func doVerifyCmd(cmd *cobra.Command, cpath string) {
 		opts = append(opts, singularity.OptVerifyLegacy())
 	}
 
-	// TODO: verifyJSONFlag
+	// Set callback option.
+	if jsonVerify {
+		var kl keyList
 
-	fmt.Printf("Verifying image: %s\n", cpath)
-	if err := singularity.Verify(cmd.Context(), cpath, opts...); err != nil {
-		sylog.Fatalf("Failed to verify container: %s", err)
+		opts = append(opts, singularity.OptVerifyCallback(getJSONCallback(&kl)))
+
+		verifyErr := singularity.Verify(cmd.Context(), cpath, opts...)
+
+		// Always output JSON.
+		if err := outputJSON(os.Stdout, kl); err != nil {
+			sylog.Fatalf("Failed to output JSON: %v", err)
+		}
+
+		if verifyErr != nil {
+			sylog.Fatalf("Failed to verify container: %s", verifyErr)
+		}
+	} else {
+		opts = append(opts, singularity.OptVerifyCallback(outputVerify))
+
+		fmt.Printf("Verifying image: %s\n", cpath)
+
+		if err := singularity.Verify(cmd.Context(), cpath, opts...); err != nil {
+			sylog.Fatalf("Failed to verify container: %s", err)
+		}
+
+		fmt.Printf("Container verified: %s\n", cpath)
 	}
-	fmt.Printf("Container verified: %s\n", cpath)
 }
 
 func handleVerifyFlags(cmd *cobra.Command) {
