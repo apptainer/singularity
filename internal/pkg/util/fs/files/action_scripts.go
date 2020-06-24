@@ -19,6 +19,13 @@ export PWD
 clear_env() {
     local IFS=$'\n'
 
+    # disable globbing as __exported_env__ may contain
+    # wildcard evaluated by shell. It can cause serious
+    # performance issue when the current directory contains
+    # a lot of files/directories, see:
+    # https://github.com/hpcng/singularity/issues/5389
+    set -o noglob
+
     for e in ${__exported_env__}; do
         key=$(getenvkey "${e}")
         case "${key}" in
@@ -32,10 +39,19 @@ clear_env() {
             ;;
         esac
     done
+
+    set +o noglob
 }
 
 restore_env() {
     local IFS=$'\n'
+
+    # disable globbing as __exported_env__ and the export
+    # statement below may contain wildcard evaluated by shell.
+    # It can cause serious performance issue when the current
+    # directory contains a lot of files/directories, see:
+    # https://github.com/hpcng/singularity/issues/5389
+    set -o noglob
 
     # restore environment variables which haven't been
     # defined by docker or virtual file above, empty
@@ -48,6 +64,8 @@ restore_env() {
             unset "${key}"
         fi
     done
+
+    set +o noglob
 }
 
 clear_env
