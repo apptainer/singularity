@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/syfs"
 )
 
 var (
@@ -114,7 +115,7 @@ var LoginCmd = &cobra.Command{
 }
 
 func Login(username, password, hostname string, insecure bool) error {
-	cli, err := auth.NewClient()
+	cli, err := auth.NewClient(syfs.DockerConf())
 	if err != nil {
 		return err
 	}

@@ -14,7 +14,7 @@ const (
 	LoginShort string = `Login to Docker/OCI registries`
 	LoginLong  string = `
   The 'login' command allow you to manage Docker/OCI registry login credentials,
-  the configuration is stored in $HOME/.docker/config.json.`
+  the configuration is stored in $HOME/.singularity/docker-config.json.`
 	LoginExample string = `$ singularity login -u john -p secret docker.io`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

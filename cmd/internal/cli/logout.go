@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/syfs"
 )
 
 func init() {
@@ -41,7 +42,7 @@ var LogoutCmd = &cobra.Command{
 }
 
 func Logout(hostname string) error {
-	cli, err := auth.NewClient()
+	cli, err := auth.NewClient(syfs.DockerConf())
 	if err != nil {
 		return err
 	}
