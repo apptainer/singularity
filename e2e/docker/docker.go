@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"golang.org/x/sys/unix"
 )
@@ -126,7 +127,7 @@ func (c ctx) testDockerAUFS(t *testing.T) {
 		t,
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-aufs-sanity"}...),
+		e2e.WithArgs([]string{imagePath, "docker://sylabsio/aufs-sanity"}...),
 		e2e.ExpectExit(0),
 	)
 
@@ -173,7 +174,7 @@ func (c ctx) testDockerPermissions(t *testing.T) {
 		t,
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-singularity-userperms"}...),
+		e2e.WithArgs([]string{imagePath, "docker://sylabsio/userperms"}...),
 		e2e.ExpectExit(0),
 	)
 
@@ -219,7 +220,7 @@ func (c ctx) testDockerWhiteoutSymlink(t *testing.T) {
 		t,
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-singularity-linkwh"}...),
+		e2e.WithArgs([]string{imagePath, "docker://sylabsio/linkwh"}...),
 		e2e.PostRun(func(t *testing.T) {
 			if t.Failed() {
 				return
@@ -255,11 +256,14 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 	tests := []struct {
 		name                string
 		kernelMajorRequired int
+		archRequired        string
 		from                string
 	}{
+		// This only provides Arch for amd64
 		{
 			name:                "Arch",
 			kernelMajorRequired: 3,
+			archRequired:        "amd64",
 			from:                "dock0/arch:latest",
 		},
 		{
@@ -267,9 +271,11 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 			kernelMajorRequired: 0,
 			from:                "busybox:latest",
 		},
+		// CentOS6 is for amd64 (or i386) only
 		{
 			name:                "CentOS_6",
 			kernelMajorRequired: 0,
+			archRequired:        "amd64",
 			from:                "centos:6",
 		},
 		{
@@ -307,6 +313,7 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 			e2e.WithCommand("build"),
 			e2e.WithArgs([]string{imagePath, deffile}...),
 			e2e.PreRun(func(t *testing.T) {
+				require.Arch(t, tt.archRequired)
 				if getKernelMajor(t) < tt.kernelMajorRequired {
 					t.Skipf("kernel >=%v.x required", tt.kernelMajorRequired)
 				}

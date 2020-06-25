@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"golang.org/x/sys/unix"
 )
 
@@ -67,7 +68,7 @@ func TestDockerAUFS(t *testing.T) {
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://dctrud/docker-aufs-sanity")
+	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://sylabsio/aufs-sanity")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
@@ -108,7 +109,7 @@ func TestDockerPermissions(t *testing.T) {
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://dctrud/docker-singularity-userperms")
+	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://sylabsio/userperms")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
@@ -148,7 +149,7 @@ func TestDockerWhiteoutSymlink(t *testing.T) {
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://dctrud/docker-singularity-linkwh")
+	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://sylabsio/linkwh")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
@@ -172,19 +173,24 @@ func TestDockerDefFile(t *testing.T) {
 	tests := []struct {
 		name                string
 		kernelMajorRequired int
+		archRequired        string
 		from                string
 	}{
-		{"Arch", 3, "dock0/arch:latest"},
-		{"BusyBox", 0, "busybox:latest"},
-		{"CentOS_6", 0, "centos:6"},
-		{"CentOS_7", 0, "centos:7"},
-		{"CentOS_8", 3, "centos:8"},
-		{"Ubuntu_1604", 0, "ubuntu:16.04"},
-		{"Ubuntu_1804", 3, "ubuntu:18.04"},
+		// This Arch is only for amd64
+		{"Arch", 3, "amd64", "dock0/arch:latest"},
+		{"BusyBox", 0, "", "busybox:latest"},
+		// CentOS 6 only has amd64 (and i386)
+		{"CentOS_6", 0, "amd64", "centos:6"},
+		{"CentOS_7", 0, "", "centos:7"},
+		{"CentOS_8", 3, "", "centos:8"},
+		{"Ubuntu_1604", 0, "", "ubuntu:16.04"},
+		{"Ubuntu_1804", 3, "", "ubuntu:18.04"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+			require.Arch(t, tt.archRequired)
+
 			imgCache, cleanup := setupCache(t)
 			defer cleanup()
 

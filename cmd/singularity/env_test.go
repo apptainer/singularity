@@ -25,7 +25,7 @@ func TestSingularityEnv(t *testing.T) {
 	var defaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 	// This image sets a custom path.
-	var customImage = "docker://godlovedc/lolcow"
+	var customImage = "docker://sylabsio/lolcow"
 	var customPath = "/usr/games:" + defaultPath
 
 	// Append or prepend this path.

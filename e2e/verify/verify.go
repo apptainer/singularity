@@ -366,8 +366,9 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	return testhelper.Tests{
 		"ordered": func(t *testing.T) {
 			// We pull the two images required for the tests once
-			e2e.PullImage(t, c.env, successURL, c.successImage)
-			e2e.PullImage(t, c.env, corruptedURL, c.corruptedImage)
+			// We should be able to sign amd64 on other archs too!
+			e2e.PullImage(t, c.env, successURL, "amd64", c.successImage)
+			e2e.PullImage(t, c.env, corruptedURL, "amd64", c.corruptedImage)
 
 			t.Run("checkAllOption", c.checkAllOption)
 			t.Run("singularityVerifyAllKeyNum", c.singularityVerifyAllKeyNum)

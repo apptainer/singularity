@@ -1,5 +1,5 @@
-BootStrap: busybox
-MirrorURL: https://www.busybox.net/downloads/binaries/1.26.2-defconfig-multiarch/busybox-x86_64
+BootStrap: library
+From: busybox:1.31.1
 
 %startscript
     exec nc -ll -p $1 -e /bin/cat 2>/dev/null

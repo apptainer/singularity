@@ -1,5 +1,5 @@
 bootstrap: library
-from: alpine
+from: alpine:3.11.5
 stage: one
 
 %post
