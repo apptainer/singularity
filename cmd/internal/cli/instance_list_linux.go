@@ -19,6 +19,7 @@ func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterFlagForCmd(&instanceListUserFlag, instanceListCmd)
 		cmdManager.RegisterFlagForCmd(&instanceListJSONFlag, instanceListCmd)
+		cmdManager.RegisterFlagForCmd(&instanceListLogsFlag, instanceListCmd)
 	})
 }
 
@@ -47,6 +48,18 @@ var instanceListJSONFlag = cmdline.Flag{
 	EnvKeys:      []string{"JSON"},
 }
 
+// -l|--logs
+var instanceListLogs bool
+var instanceListLogsFlag = cmdline.Flag{
+	ID:           "instanceListLogsFlag",
+	Value:        &instanceListLogs,
+	DefaultValue: false,
+	Name:         "logs",
+	ShortHand:    "l",
+	Usage:        "print logErr and logOut paths of instances",
+	EnvKeys:      []string{"LOGS"},
+}
+
 // singularity instance list
 var instanceListCmd = &cobra.Command{
 	Args: cobra.RangeArgs(0, 1),
@@ -61,7 +74,7 @@ var instanceListCmd = &cobra.Command{
 			sylog.Fatalf("Only root user can list user's instances")
 		}
 
-		err := singularity.PrintInstanceList(os.Stdout, name, instanceListUser, instanceListJSON)
+		err := singularity.PrintInstanceList(os.Stdout, name, instanceListUser, instanceListJSON, instanceListLogs)
 		if err != nil {
 			sylog.Fatalf("Could not list instances: %v", err)
 		}

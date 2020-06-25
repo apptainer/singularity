@@ -47,6 +47,8 @@ type File struct {
 	Config []byte `json:"config"`
 	UserNs bool   `json:"userns"`
 	IP     string `json:"ip"`
+	LogErr string `json:"logErr"`
+	LogOut string `json:"logOut"`
 }
 
 // ProcName returns processus name based on instance name
@@ -76,7 +78,7 @@ func CheckName(name string) error {
 }
 
 // getPath returns the path where searching for instance files
-func getPath(username string, subDir string) (string, error) {
+func GetPath(username string, subDir string) (string, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return "", err
@@ -106,7 +108,7 @@ func GetDir(name string, subDir string) (string, error) {
 	if err := CheckName(name); err != nil {
 		return "", err
 	}
-	path, err := getPath("", subDir)
+	path, err := GetPath("", subDir)
 	if err != nil {
 		return "", err
 	}
@@ -139,7 +141,7 @@ func Add(name string, subDir string) (*File, error) {
 		return nil, fmt.Errorf("instance %s already exists", name)
 	}
 	i := &File{Name: name}
-	i.Path, err = getPath("", subDir)
+	i.Path, err = GetPath("", subDir)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +154,7 @@ func Add(name string, subDir string) (*File, error) {
 func List(username string, name string, subDir string) ([]*File, error) {
 	list := make([]*File, 0)
 
-	path, err := getPath(username, subDir)
+	path, err := GetPath(username, subDir)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +184,6 @@ func List(username string, name string, subDir string) ([]*File, error) {
 		}
 		list = append(list, f)
 	}
-
 	return list, nil
 }
 
@@ -257,7 +258,7 @@ func (i *File) Update() error {
 // SetLogFile replaces stdout/stderr streams and redirect content
 // to log file
 func SetLogFile(name string, uid int, subDir string) (*os.File, *os.File, error) {
-	path, err := getPath("", subDir)
+	path, err := GetPath("", subDir)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -341,10 +341,18 @@ func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error 
 		if err != nil {
 			return err
 		}
+
+		logPath, err := instance.GetPath("", instance.LogSubDir)
+		if err != nil {
+			return nil
+		}
+
 		file.User = pw.Name
 		file.Pid = pid
 		file.PPid = os.Getpid()
 		file.Image = e.EngineConfig.GetImage()
+		file.LogErr = filepath.Join(logPath, name+".err")
+		file.LogOut = filepath.Join(logPath, name+".out")
 
 		ip, err := e.getIP()
 		if err != nil {

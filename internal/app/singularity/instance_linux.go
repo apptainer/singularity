@@ -23,15 +23,36 @@ type instanceInfo struct {
 	Pid      int    `json:"pid"`
 	Image    string `json:"img"`
 	IP       string `json:"ip"`
+	LogErr   string `json:"logErr"`
+	LogOut   string `json:"logOut"`
 }
 
 // PrintInstanceList fetches instance list, applying name and
 // user filters, and prints it in a regular or a JSON format (if
-// formatJSON is true) to the passed writer.
-func PrintInstanceList(w io.Writer, name, user string, formatJSON bool) error {
+// formatJSON is true) to the passed writer. Additionally, fetches
+// log paths (if showLogs is true).
+func PrintInstanceList(w io.Writer, name, user string, formatJSON bool, showLogs bool) error {
+	if formatJSON && showLogs {
+		sylog.Fatalf("more than one flags have been set")
+	}
+
 	ii, err := instance.List(user, name, instance.SingSubDir)
 	if err != nil {
 		return fmt.Errorf("could not retrieve instance list: %v", err)
+	}
+
+	if showLogs {
+		_, err := fmt.Fprintf(w, "%-16s %-8s %s\n", "INSTANCE NAME", "PID", "LOGS")
+		if err != nil {
+			return fmt.Errorf("could not write list header: %v", err)
+		}
+		for _, i := range ii {
+			_, err := fmt.Fprintf(w, "%-16s %-8d %s\n%-16s %-8s %s\n", i.Name, i.Pid, i.LogErr, "", "", i.LogOut)
+			if err != nil {
+				return fmt.Errorf("could not write instance info: %v", err)
+			}
+		}
+		return nil
 	}
 
 	if !formatJSON {
@@ -54,6 +75,8 @@ func PrintInstanceList(w io.Writer, name, user string, formatJSON bool) error {
 		instances[i].Pid = ii[i].Pid
 		instances[i].Instance = ii[i].Name
 		instances[i].IP = ii[i].IP
+		instances[i].LogErr = ii[i].LogErr
+		instances[i].LogOut = ii[i].LogOut
 	}
 
 	enc := json.NewEncoder(w)
