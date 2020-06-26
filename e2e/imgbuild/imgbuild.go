@@ -16,6 +16,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
@@ -53,13 +54,16 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 	// `singularity build -s /tmp/sand/ docker://alpine` works,
 	// see https://github.com/sylabs/singularity/issues/4407
 	tt := []struct {
-		name       string
-		dependency string
-		buildSpec  string
+		name        string
+		dependency  string
+		buildSpec   string
+		requireArch string
 	}{
 		{
 			name:      "BusyBox",
 			buildSpec: "../examples/busybox/Singularity",
+			// TODO: example has arch hard coded in download URL
+			requireArch: "amd64",
 		},
 		{
 			name:       "Debootstrap",
@@ -96,6 +100,9 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 			name:       "Yum",
 			dependency: "yum",
 			buildSpec:  "../examples/centos/Singularity",
+			// TODO - Centos puts non-amd64 at a different mirror location
+			// need multiple def files to test on other archs
+			requireArch: "amd64",
 		},
 		{
 			name:       "Zypper",
@@ -126,6 +133,8 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 					e2e.WithCommand("build"),
 					e2e.WithArgs(args...),
 					e2e.PreRun(func(t *testing.T) {
+						require.Arch(t, tc.requireArch)
+
 						if tc.dependency == "" {
 							return
 						}
@@ -151,31 +160,32 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 
 func (c imgBuildTests) nonRootBuild(t *testing.T) {
 	tt := []struct {
-		name      string
-		buildSpec string
-		args      []string
+		name        string
+		buildSpec   string
+		args        []string
+		requireArch string
 	}{
+		// TODO: our sif in git repo is amd64 only - add other archs
 		{
-			name:      "local sif",
-			buildSpec: "testdata/busybox.sif",
+			name:        "local sif",
+			buildSpec:   "testdata/busybox.sif",
+			requireArch: "amd64",
 		},
+		// TODO: our sif in git repo is amd64 only - add other archs
 		{
-			name:      "local sif to sandbox",
-			buildSpec: "testdata/busybox.sif",
-			args:      []string{"--sandbox"},
+			name:        "local sif to sandbox",
+			buildSpec:   "testdata/busybox.sif",
+			args:        []string{"--sandbox"},
+			requireArch: "amd64",
 		},
 		{
 			name:      "library sif",
-			buildSpec: "library://sylabs/tests/busybox:1.0.0",
+			buildSpec: "library://busybox:1.31.1",
 		},
 		{
 			name:      "library sif sandbox",
-			buildSpec: "library://sylabs/tests/busybox:1.0.0",
+			buildSpec: "library://busybox:1.31.1",
 			args:      []string{"--sandbox"},
-		},
-		{
-			name:      "library sif sha",
-			buildSpec: "library://sylabs/tests/busybox:sha256.8b5478b0f2962eba3982be245986eb0ea54f5164d90a65c078af5b83147009ba",
 		},
 		// TODO: uncomment when shub is working
 		//{
@@ -202,6 +212,13 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
+			e2e.PreRun(func(t *testing.T) {
+				if tc.requireArch != "" {
+					require.Arch(t, tc.requireArch)
+
+				}
+			}),
+
 			e2e.PostRun(func(t *testing.T) {
 				c.env.ImageVerify(t, imagePath, e2e.UserProfile)
 			}),
@@ -810,7 +827,7 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 }
 
 func (c *imgBuildTests) ensureImageIsEncrypted(t *testing.T, imgPath string) {
-	sifID := "2" // Which SIF descriptor slots contains encryption information
+	sifID := "3" // Which SIF descriptor slot contains the (encrypted) rootfs
 	cmdArgs := []string{"info", sifID, imgPath}
 	c.env.RunSingularity(
 		t,

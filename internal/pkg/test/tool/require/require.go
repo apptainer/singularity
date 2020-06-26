@@ -7,6 +7,8 @@ package require
 
 import (
 	"os/exec"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/containerd/cgroups"
@@ -68,5 +70,28 @@ func Command(t *testing.T, command string) {
 func Seccomp(t *testing.T) {
 	if !seccomp.Enabled() {
 		t.Skipf("seccomp disabled, Singularity was compiled without the seccomp library")
+	}
+}
+
+// Arch checks the test machine has the specified architecture.
+// If not, the test is skipped with a message.
+func Arch(t *testing.T, arch string) {
+	if arch != "" && runtime.GOARCH != arch {
+		t.Skipf("test requires architecture %s", arch)
+	}
+
+}
+
+// ArchIn checks the test machine is one of the specified archs.
+// If not, the test is skipped with a message.
+func ArchIn(t *testing.T, archs []string) {
+	if len(archs) > 0 {
+		b := runtime.GOARCH
+		for _, a := range archs {
+			if b == a {
+				return
+			}
+		}
+		t.Skipf("test requires architecture %s", strings.Join(archs, "|"))
 	}
 }

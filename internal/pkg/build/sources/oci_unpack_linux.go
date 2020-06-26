@@ -18,10 +18,10 @@ import (
 
 	apexlog "github.com/apex/log"
 	"github.com/containers/image/v5/types"
-	"github.com/openSUSE/umoci"
-	umocilayer "github.com/openSUSE/umoci/oci/layer"
-	"github.com/openSUSE/umoci/pkg/idtools"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/opencontainers/umoci"
+	umocilayer "github.com/opencontainers/umoci/oci/layer"
+	"github.com/opencontainers/umoci/pkg/idtools"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	sytypes "github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -89,7 +89,7 @@ func unpackRootfs(ctx context.Context, b *sytypes.Bundle, tmpfsRef types.ImageRe
 	os.RemoveAll(b.RootfsPath)
 
 	// Unpack root filesystem
-	err = umocilayer.UnpackRootfs(ctx, engineExt, b.RootfsPath, manifest, &mapOptions)
+	err = umocilayer.UnpackRootfs(ctx, engineExt, b.RootfsPath, manifest, &mapOptions, nil, imgspecv1.Descriptor{})
 	if err != nil {
 		return fmt.Errorf("error unpacking rootfs: %s", err)
 	}

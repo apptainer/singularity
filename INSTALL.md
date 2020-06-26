@@ -112,7 +112,7 @@ $ singularity version
 To build in a different folder and to set the install prefix to a different path:
 
 ```
-$ ./mconfig -p /usr/local -b ./buildtree
+$ ./mconfig -b ./buildtree -p /usr/local
 ```
 
 ## Install from the RPM

@@ -351,6 +351,7 @@ static void set_rpc_privileges(void) {
     priv->capabilities.effective |= capflag(CAP_SETUID);
     priv->capabilities.effective |= capflag(CAP_SYS_ADMIN);
     priv->capabilities.effective |= capflag(CAP_SYS_CHROOT);
+    priv->capabilities.effective |= capflag(CAP_IPC_LOCK);
 
     priv->capabilities.permitted = priv->capabilities.effective;
     priv->capabilities.bounding = priv->capabilities.effective;
@@ -1105,7 +1106,7 @@ static void cleanenv(void) {
         fatalf("no environment variables set\n");
     }
 
-    /* 
+    /*
      * keep only SINGULARITY_MESSAGELEVEL for GO runtime, set others to empty
      * string and not NULL (see issue #3703 for why)
      */

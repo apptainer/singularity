@@ -16,6 +16,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
 // This test will build an image from a multi-stage definition
@@ -198,6 +199,9 @@ func (c imgBuildTests) issue4837(t *testing.T) {
 }
 
 func (c *imgBuildTests) issue4943(t *testing.T) {
+
+	require.Arch(t, "amd64")
+
 	const (
 		image = "docker://gitlab-registry.cern.ch/linuxsupport/cc7-base:20191107"
 	)
