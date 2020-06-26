@@ -342,7 +342,7 @@ func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error 
 			return err
 		}
 
-		logPath, err := instance.GetPath("", instance.LogSubDir)
+		logErrPath, logOutPath, err := instance.GetLogFilePaths(name, instance.LogSubDir)
 		if err != nil {
 			return nil
 		}
@@ -351,8 +351,8 @@ func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error 
 		file.Pid = pid
 		file.PPid = os.Getpid()
 		file.Image = e.EngineConfig.GetImage()
-		file.LogErr = filepath.Join(logPath, name+".err")
-		file.LogOut = filepath.Join(logPath, name+".out")
+		file.LogErr = logErrPath
+		file.LogOut = logOutPath
 
 		ip, err := e.getIP()
 		if err != nil {

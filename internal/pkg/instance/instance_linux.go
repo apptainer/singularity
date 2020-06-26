@@ -78,7 +78,7 @@ func CheckName(name string) error {
 }
 
 // getPath returns the path where searching for instance files
-func GetPath(username string, subDir string) (string, error) {
+func getPath(username string, subDir string) (string, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return "", err
@@ -108,7 +108,7 @@ func GetDir(name string, subDir string) (string, error) {
 	if err := CheckName(name); err != nil {
 		return "", err
 	}
-	path, err := GetPath("", subDir)
+	path, err := getPath("", subDir)
 	if err != nil {
 		return "", err
 	}
@@ -141,7 +141,7 @@ func Add(name string, subDir string) (*File, error) {
 		return nil, fmt.Errorf("instance %s already exists", name)
 	}
 	i := &File{Name: name}
-	i.Path, err = GetPath("", subDir)
+	i.Path, err = getPath("", subDir)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func Add(name string, subDir string) (*File, error) {
 func List(username string, name string, subDir string) ([]*File, error) {
 	list := make([]*File, 0)
 
-	path, err := GetPath(username, subDir)
+	path, err := getPath(username, subDir)
 	if err != nil {
 		return nil, err
 	}
@@ -255,10 +255,23 @@ func (i *File) Update() error {
 	return file.Sync()
 }
 
+// GetLogFilePaths returns the paths of log files containing
+// .err, .out streams, respectively
+func GetLogFilePaths(name string, subDir string) (string, string, error) {
+	path, err := getPath("", subDir)
+	if err != nil {
+		return "", "", err
+	}
+	logErrPath := filepath.Join(path, name+".err")
+	logOutPath := filepath.Join(path, name+".out")
+
+	return logErrPath, logOutPath, nil
+}
+
 // SetLogFile replaces stdout/stderr streams and redirect content
 // to log file
 func SetLogFile(name string, uid int, subDir string) (*os.File, *os.File, error) {
-	path, err := GetPath("", subDir)
+	path, err := getPath("", subDir)
 	if err != nil {
 		return nil, nil, err
 	}
