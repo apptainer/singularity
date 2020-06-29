@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"syscall"
+	"text/tabwriter"
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
@@ -36,36 +37,46 @@ func PrintInstanceList(w io.Writer, name, user string, formatJSON bool, showLogs
 		sylog.Fatalf("more than one flags have been set")
 	}
 
+	tabWriter := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
+
 	ii, err := instance.List(user, name, instance.SingSubDir)
 	if err != nil {
 		return fmt.Errorf("could not retrieve instance list: %v", err)
 	}
 
 	if showLogs {
-		_, err := fmt.Fprintf(w, "%-16s %-8s %s\n", "INSTANCE NAME", "PID", "LOGS")
+		_, err := fmt.Fprintln(tabWriter, "INSTANCE NAME\tPID\tLOGS")
 		if err != nil {
 			return fmt.Errorf("could not write list header: %v", err)
 		}
 		for _, i := range ii {
-			_, err := fmt.Fprintf(w, "%-16s %-8d %s\n%-16s %-8s %s\n", i.Name, i.Pid, i.LogErr, "", "", i.LogOut)
+			logErrPath, logOutPath, err := instance.GetLogFilePaths(i.Name, instance.LogSubDir)
+			if err != nil {
+				return nil
+			}
+			_, err = fmt.Fprintf(tabWriter, "%s\t%d\t%s\n\t\t%s\n", i.Name, i.Pid, logErrPath, logOutPath)
+
 			if err != nil {
 				return fmt.Errorf("could not write instance info: %v", err)
 			}
 		}
+		tabWriter.Flush()
 		return nil
 	}
 
 	if !formatJSON {
-		_, err := fmt.Fprintf(w, "%-16s %-8s %-15s %s\n", "INSTANCE NAME", "PID", "IP", "IMAGE")
+		_, err := fmt.Fprintln(tabWriter, "INSTANCE NAME\tPID\tIP\tIMAGE")
+
 		if err != nil {
 			return fmt.Errorf("could not write list header: %v", err)
 		}
 		for _, i := range ii {
-			_, err := fmt.Fprintf(w, "%-16s %-8d %-15s %s\n", i.Name, i.Pid, i.IP, i.Image)
+			_, err = fmt.Fprintf(tabWriter, "%s\t%d\t%s\t%s\n", i.Name, i.Pid, i.IP, i.Image)
 			if err != nil {
 				return fmt.Errorf("could not write instance info: %v", err)
 			}
 		}
+		tabWriter.Flush()
 		return nil
 	}
 

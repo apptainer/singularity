@@ -56,7 +56,7 @@ var instanceListLogsFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "logs",
 	ShortHand:    "l",
-	Usage:        "print logErr and logOut paths of instances",
+	Usage:        "display location of stdout and sterr log files for instances",
 	EnvKeys:      []string{"LOGS"},
 }
 
