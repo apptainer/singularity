@@ -58,7 +58,7 @@ require (
 	golang.org/x/sys v0.0.0-20200615200032-f1bc736245b1
 	gopkg.in/yaml.v2 v2.3.0
 	gotest.tools/v3 v3.0.2
-	mvdan.cc/sh/v3 v3.1.1
+	mvdan.cc/sh/v3 v3.1.2
 	rsc.io/letsencrypt v0.0.3 // indirect
 )
 
