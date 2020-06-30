@@ -18,12 +18,9 @@ import (
 	"golang.org/x/crypto/openpgp"
 )
 
-// defaultKeyring represents the default PGP keyring.
-var defaultKeyring = NewHandle("")
-
 // PublicKeyRing retrieves the Singularity public KeyRing.
 func PublicKeyRing() (openpgp.KeyRing, error) {
-	return defaultKeyring.LoadPubKeyring()
+	return NewHandle("").LoadPubKeyring()
 }
 
 // hybridKeyRing is keyring made up of a local keyring as well as a keyserver. The type satisfies

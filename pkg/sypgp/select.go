@@ -21,5 +21,5 @@ func (keyring *Handle) getPrivateEntity(f EntitySelector) (*openpgp.Entity, erro
 
 // GetPrivateEntity retrieves the entity selected by f from the Singularity private keyring.
 func GetPrivateEntity(f EntitySelector) (*openpgp.Entity, error) {
-	return defaultKeyring.getPrivateEntity(f)
+	return NewHandle("").getPrivateEntity(f)
 }
