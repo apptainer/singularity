@@ -63,7 +63,7 @@
     - Michael Moore <michael.moore@nuance.com>
     - Mike Frisch <michael.frisch@sylabs.io>
     - Mike Gray <mike@sylabs.io>
-    - Nathan Chou <nathan.chou@sylabs.io> <choun@berkeley.edu>
+    - Nathan Chou <nathan.chou@sylabs.io>, <choun@berkeley.edu>
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Oliver Breitwieser <obreitwi@kip.uni-heidelberg.de>, <oliver@breitwieser.eu>

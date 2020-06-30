@@ -37,7 +37,8 @@ func PrintInstanceList(w io.Writer, name, user string, formatJSON bool, showLogs
 		sylog.Fatalf("more than one flags have been set")
 	}
 
-	tabWriter := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
+	tabWriter := tabwriter.NewWriter(w, 0, 8, 4, ' ', 0)
+	defer tabWriter.Flush()
 
 	ii, err := instance.List(user, name, instance.SingSubDir)
 	if err != nil {
@@ -52,15 +53,13 @@ func PrintInstanceList(w io.Writer, name, user string, formatJSON bool, showLogs
 		for _, i := range ii {
 			logErrPath, logOutPath, err := instance.GetLogFilePaths(i.Name, instance.LogSubDir)
 			if err != nil {
-				return nil
+				return fmt.Errorf("could not find log paths: %v", err)
 			}
 			_, err = fmt.Fprintf(tabWriter, "%s\t%d\t%s\n\t\t%s\n", i.Name, i.Pid, logErrPath, logOutPath)
-
 			if err != nil {
 				return fmt.Errorf("could not write instance info: %v", err)
 			}
 		}
-		tabWriter.Flush()
 		return nil
 	}
 
@@ -76,7 +75,6 @@ func PrintInstanceList(w io.Writer, name, user string, formatJSON bool, showLogs
 				return fmt.Errorf("could not write instance info: %v", err)
 			}
 		}
-		tabWriter.Flush()
 		return nil
 	}
 
