@@ -20,12 +20,12 @@ import (
 )
 
 type instanceInfo struct {
-	Instance string `json:"instance"`
-	Pid      int    `json:"pid"`
-	Image    string `json:"img"`
-	IP       string `json:"ip"`
-	LogErr   string `json:"logErr"`
-	LogOut   string `json:"logOut"`
+	Instance   string `json:"instance"`
+	Pid        int    `json:"pid"`
+	Image      string `json:"img"`
+	IP         string `json:"ip"`
+	LogErrPath string `json:"logErrPath"`
+	LogOutPath string `json:"logOutPath"`
 }
 
 // PrintInstanceList fetches instance list, applying name and
@@ -50,12 +50,9 @@ func PrintInstanceList(w io.Writer, name, user string, formatJSON bool, showLogs
 		if err != nil {
 			return fmt.Errorf("could not write list header: %v", err)
 		}
+
 		for _, i := range ii {
-			logErrPath, logOutPath, err := instance.GetLogFilePaths(i.Name, instance.LogSubDir)
-			if err != nil {
-				return fmt.Errorf("could not find log paths: %v", err)
-			}
-			_, err = fmt.Fprintf(tabWriter, "%s\t%d\t%s\n\t\t%s\n", i.Name, i.Pid, logErrPath, logOutPath)
+			_, err = fmt.Fprintf(tabWriter, "%s\t%d\t%s\n\t\t%s\n", i.Name, i.Pid, i.LogErrPath, i.LogOutPath)
 			if err != nil {
 				return fmt.Errorf("could not write instance info: %v", err)
 			}
@@ -65,10 +62,10 @@ func PrintInstanceList(w io.Writer, name, user string, formatJSON bool, showLogs
 
 	if !formatJSON {
 		_, err := fmt.Fprintln(tabWriter, "INSTANCE NAME\tPID\tIP\tIMAGE")
-
 		if err != nil {
 			return fmt.Errorf("could not write list header: %v", err)
 		}
+
 		for _, i := range ii {
 			_, err = fmt.Fprintf(tabWriter, "%s\t%d\t%s\t%s\n", i.Name, i.Pid, i.IP, i.Image)
 			if err != nil {
@@ -84,8 +81,8 @@ func PrintInstanceList(w io.Writer, name, user string, formatJSON bool, showLogs
 		instances[i].Pid = ii[i].Pid
 		instances[i].Instance = ii[i].Name
 		instances[i].IP = ii[i].IP
-		instances[i].LogErr = ii[i].LogErr
-		instances[i].LogOut = ii[i].LogOut
+		instances[i].LogErrPath = ii[i].LogErrPath
+		instances[i].LogOutPath = ii[i].LogOutPath
 	}
 
 	enc := json.NewEncoder(w)

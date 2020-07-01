@@ -38,17 +38,17 @@ const (
 
 // File represents an instance file storing instance information
 type File struct {
-	Path   string `json:"-"`
-	Pid    int    `json:"pid"`
-	PPid   int    `json:"ppid"`
-	Name   string `json:"name"`
-	User   string `json:"user"`
-	Image  string `json:"image"`
-	Config []byte `json:"config"`
-	UserNs bool   `json:"userns"`
-	IP     string `json:"ip"`
-	LogErr string `json:"logErr"`
-	LogOut string `json:"logOut"`
+	Path       string `json:"-"`
+	Pid        int    `json:"pid"`
+	PPid       int    `json:"ppid"`
+	Name       string `json:"name"`
+	User       string `json:"user"`
+	Image      string `json:"image"`
+	Config     []byte `json:"config"`
+	UserNs     bool   `json:"userns"`
+	IP         string `json:"ip"`
+	LogErrPath string `json:"logErrPath"`
+	LogOutPath string `json:"logOutPath"`
 }
 
 // ProcName returns processus name based on instance name
