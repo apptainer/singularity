@@ -79,7 +79,7 @@ var signAllFlag = cmdline.Flag{
 	Name:         "all",
 	ShortHand:    "a",
 	Usage:        "sign all objects",
-	Deprecated:   "now the default behaviour",
+	Deprecated:   "now the default behavior",
 }
 
 func init() {

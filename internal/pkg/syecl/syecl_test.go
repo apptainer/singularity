@@ -396,6 +396,7 @@ func TestShouldRun(t *testing.T) {
 	signed := filepath.Join(dirPath, "one-group-signed.sif")
 	legacySigned := filepath.Join(dirPath, "one-group-legacy-signed.sif")
 
+	//nolint:maligned // the aligned form, with eg first, is not as easy to read
 	tests := []struct {
 		name      string
 		activated bool

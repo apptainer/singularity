@@ -54,6 +54,7 @@ func NewHybridKeyRing(ctx context.Context, cfg *client.Config) (openpgp.KeyRing,
 }
 
 // KeysById returns the set of keys that have the given key id.
+//nolint:golint  // golang/x/crypto uses Id instead of ID so we have to too
 func (kr *hybridKeyRing) KeysById(id uint64) []openpgp.Key {
 	if keys := kr.local.KeysById(id); len(keys) > 0 {
 		return keys
@@ -70,6 +71,7 @@ func (kr *hybridKeyRing) KeysById(id uint64) []openpgp.Key {
 
 // KeysByIdUsage returns the set of keys with the given id that also meet the key usage given by
 // requiredUsage. The requiredUsage is expressed as the bitwise-OR of packet.KeyFlag* values.
+//nolint:golint  // golang/x/crypto uses Id instead of ID so we have to too
 func (kr *hybridKeyRing) KeysByIdUsage(id uint64, requiredUsage byte) []openpgp.Key {
 	if keys := kr.local.KeysByIdUsage(id, requiredUsage); len(keys) > 0 {
 		return keys
