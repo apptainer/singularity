@@ -130,7 +130,7 @@ func isLocal(e *openpgp.Entity) bool {
 }
 
 // outputVerify outputs a textual representation of r to stdout.
-func outputVerify(f *sif.FileImage, r integrity.VerifyResult) {
+func outputVerify(f *sif.FileImage, r integrity.VerifyResult) bool {
 	e := r.Entity()
 
 	// Print signing entity info.
@@ -161,7 +161,7 @@ func outputVerify(f *sif.FileImage, r integrity.VerifyResult) {
 		od, _, err := f.GetFromDescrID(id)
 		if err != nil {
 			sylog.Errorf("failed to get descriptor: %v", err)
-			return
+			return false
 		}
 
 		group := "NONE"
@@ -184,6 +184,8 @@ func outputVerify(f *sif.FileImage, r integrity.VerifyResult) {
 	if err := r.Error(); err != nil {
 		fmt.Printf("\nError encountered during signature verification: %v\n", err)
 	}
+
+	return false
 }
 
 type key struct {
@@ -208,7 +210,7 @@ type keyList struct {
 
 // getJSONCallback returns a singularity.VerifyCallback that appends to kl.
 func getJSONCallback(kl *keyList) singularity.VerifyCallback {
-	return func(f *sif.FileImage, r integrity.VerifyResult) {
+	return func(f *sif.FileImage, r integrity.VerifyResult) bool {
 		name, fp := "unknown", ""
 		var keyLocal, keyCheck bool
 
@@ -249,7 +251,7 @@ func getJSONCallback(kl *keyList) singularity.VerifyCallback {
 			od, _, err := f.GetFromDescrID(integrityError.ID)
 			if err != nil {
 				sylog.Errorf("failed to get descriptor: %v", err)
-				return
+				return false
 			}
 
 			ke := keyEntity{
@@ -262,6 +264,8 @@ func getJSONCallback(kl *keyList) singularity.VerifyCallback {
 			}
 			kl.SignerKeys = append(kl.SignerKeys, &key{ke})
 		}
+
+		return false
 	}
 }
 

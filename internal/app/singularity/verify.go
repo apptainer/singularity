@@ -15,7 +15,7 @@ import (
 	"golang.org/x/crypto/openpgp"
 )
 
-type VerifyCallback func(*sif.FileImage, integrity.VerifyResult)
+type VerifyCallback func(*sif.FileImage, integrity.VerifyResult) bool
 
 type verifier struct {
 	c         *client.Config
@@ -144,11 +144,10 @@ func (v verifier) getOpts(ctx context.Context, f *sif.FileImage) ([]integrity.Ve
 
 	// Add callback, if applicable.
 	if v.cb != nil {
-		f := func(r integrity.VerifyResult) bool {
-			v.cb(f, r)
-			return false
+		fn := func(r integrity.VerifyResult) bool {
+			return v.cb(f, r)
 		}
-		iopts = append(iopts, integrity.OptVerifyCallback(f))
+		iopts = append(iopts, integrity.OptVerifyCallback(fn))
 	}
 
 	return iopts, nil

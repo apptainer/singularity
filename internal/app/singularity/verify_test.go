@@ -133,7 +133,7 @@ func Test_verifier_getOpts(t *testing.T) {
 	}
 	defer oneGroupImage.UnloadContainer()
 
-	cb := func(*sif.FileImage, integrity.VerifyResult) {}
+	cb := func(*sif.FileImage, integrity.VerifyResult) bool { return false }
 
 	tests := []struct {
 		name     string
@@ -337,7 +337,7 @@ func TestVerify(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			cb := func(f *sif.FileImage, r integrity.VerifyResult) {
+			cb := func(f *sif.FileImage, r integrity.VerifyResult) bool {
 				if len(tt.wantVerified) == 0 {
 					t.Fatalf("wantVerified consumed")
 				}
@@ -353,6 +353,8 @@ func TestVerify(t *testing.T) {
 				if got, want := r.Error(), tt.wantErr; !errors.Is(got, want) {
 					t.Errorf("got error %v, want %v", got, want)
 				}
+
+				return false
 			}
 			tt.opts = append(tt.opts, OptVerifyCallback(cb))
 
