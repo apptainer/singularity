@@ -12,7 +12,7 @@ require (
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/cgroups v0.0.0-20200116170754-a8908713319d
 	github.com/containerd/containerd v1.3.6
-	github.com/containernetworking/cni v0.7.1
+	github.com/containernetworking/cni v0.8.0
 	github.com/containernetworking/plugins v0.8.6
 	github.com/containers/image/v5 v5.5.1
 	github.com/deislabs/oras v0.8.1
