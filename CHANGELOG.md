@@ -51,6 +51,8 @@ _The old changelog can be found in the `release-2.6` branch_
   - The `%test` build section is executed the same manner as `singularity test image`.
   - `--fusemount` with the `container:` default directive will foreground the FUSE
      process. Use `container-daemon:` for previous behavior.
+  - Fixed spacing of `singularity instance list` to be dynamically changing based off of
+    input lengths instead of fixed number of spaces to account for long instance names. 
 
 ## Deprecated / removed commands
   - Removed `--name` flag for `cache clean`; replaced with `--days`.

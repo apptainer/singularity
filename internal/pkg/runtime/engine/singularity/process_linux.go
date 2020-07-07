@@ -341,10 +341,18 @@ func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error 
 		if err != nil {
 			return err
 		}
+
+		logErrPath, logOutPath, err := instance.GetLogFilePaths(name, instance.LogSubDir)
+		if err != nil {
+			return fmt.Errorf("could not find log paths: %s", err)
+		}
+
 		file.User = pw.Name
 		file.Pid = pid
 		file.PPid = os.Getpid()
 		file.Image = e.EngineConfig.GetImage()
+		file.LogErrPath = logErrPath
+		file.LogOutPath = logOutPath
 
 		ip, err := e.getIP()
 		if err != nil {
