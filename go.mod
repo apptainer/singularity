@@ -32,7 +32,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.2-0.20191218002246-9ea04d1f37d7
 	github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74
 	github.com/opencontainers/runtime-spec v1.0.3-0.20200520003142-237cc4f519e2
-	github.com/opencontainers/selinux v1.5.2
+	github.com/opencontainers/selinux v1.6.0
 	github.com/opencontainers/umoci v0.4.6-0.20200622135030-30d116059d97
 	github.com/pelletier/go-toml v1.8.0
 	github.com/pkg/errors v0.9.1
