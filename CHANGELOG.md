@@ -9,7 +9,38 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# v3.6.0-rc.4 - [2020-06-01] (pre-release)
+# v3.6.0 - [2020-07-14]
+
+## Security related fixes
+
+Singularity 3.6.0 introduces a new signature format for SIF images,
+and changes to the signing / verification code to address:
+
+  - [CVE-2020-13845](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2020-13845)
+    In Singularity 3.x versions below 3.6.0, issues allow the ECL to
+    be bypassed by a malicious user.
+  - [CVE-2020-13846](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2020-13846)
+    In Singularity 3.5 the `--all / -a` option to `singularity verify`
+    returns success even when some objects in a SIF container are not
+    signed, or cannot be verified.
+  - [CVE-2020-13847](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2020-13847)
+    In Singularity 3.x versions below 3.6.0, Singularity's sign and
+    verify commands do not sign metadata found in the global header or
+    data object descriptors of a SIF file, allowing an attacker to
+    cause unexpected behavior. A signed container may verify
+    successfully, even when it has been modified in ways that could be
+    exploited to cause malicious behavior.
+
+Please see the published security advisories at
+https://github.com/hpcng/singularity/security/advisories for full
+detail of these security issues.
+
+Note that the new signature format is necessarily incompatible with
+Singularity < 3.6.0 - e.g. Singularity 3.5.3 cannot verify containers
+signed by 3.6.0.
+
+We thank Tru Huynh for a report that led to the review of, and changes to,
+the signature implementation.
 
 ## New features / functionalities
   - Singularity now supports the execution of minimal Docker/OCI
@@ -36,8 +67,15 @@ _The old changelog can be found in the `release-2.6` branch_
   - A new `--days` flag for `cache clean` allows removal of items older than a
     specified number of days. Replaces the `--name` flag which is not generally
     useful as the cache entries are stored by hash, not a friendly name.
+  - A new '--legacy-insecure' flag to `verify` allows verification of SIF signatures
+    in the old, insecure format.
+  - A new '-l / --logs' flag for `instance list` that shows the paths
+    to instance STDERR / STDOUT log files.
+  - The `--json` output of `instance list` now include paths to STDERR
+    / STDOUT log files.
 
 ## Changed defaults / behaviours
+  - New signature format (see security fixes above).
   - Environment variables prefixed with `SINGULARITYENV_` always take
     precedence over variables without `SINGULARITYENV_` prefix.
   - The `%post` build section inherits environment variables from the base image.
@@ -54,6 +92,8 @@ _The old changelog can be found in the `release-2.6` branch_
 
 ## Deprecated / removed commands
   - Removed `--name` flag for `cache clean`; replaced with `--days`.
+  - Deprecate `-a / --all` option to `sign/verify` as new signature
+    behavior makes this the default.
 
 ## Bug Fixes
   - Don't try to mount `$HOME` when it is `/` (e.g. `nobody` user).
