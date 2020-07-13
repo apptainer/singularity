@@ -38,15 +38,17 @@ const (
 
 // File represents an instance file storing instance information
 type File struct {
-	Path   string `json:"-"`
-	Pid    int    `json:"pid"`
-	PPid   int    `json:"ppid"`
-	Name   string `json:"name"`
-	User   string `json:"user"`
-	Image  string `json:"image"`
-	Config []byte `json:"config"`
-	UserNs bool   `json:"userns"`
-	IP     string `json:"ip"`
+	Path       string `json:"-"`
+	Pid        int    `json:"pid"`
+	PPid       int    `json:"ppid"`
+	Name       string `json:"name"`
+	User       string `json:"user"`
+	Image      string `json:"image"`
+	Config     []byte `json:"config"`
+	UserNs     bool   `json:"userns"`
+	IP         string `json:"ip"`
+	LogErrPath string `json:"logErrPath"`
+	LogOutPath string `json:"logOutPath"`
 }
 
 // ProcName returns processus name based on instance name
@@ -182,7 +184,6 @@ func List(username string, name string, subDir string) ([]*File, error) {
 		}
 		list = append(list, f)
 	}
-
 	return list, nil
 }
 
@@ -252,6 +253,19 @@ func (i *File) Update() error {
 	}
 
 	return file.Sync()
+}
+
+// GetLogFilePaths returns the paths of log files containing
+// .err, .out streams, respectively
+func GetLogFilePaths(name string, subDir string) (string, string, error) {
+	path, err := getPath("", subDir)
+	if err != nil {
+		return "", "", err
+	}
+	logErrPath := filepath.Join(path, name+".err")
+	logOutPath := filepath.Join(path, name+".out")
+
+	return logErrPath, logOutPath, nil
 }
 
 // SetLogFile replaces stdout/stderr streams and redirect content

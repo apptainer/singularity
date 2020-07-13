@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"syscall"
+	"text/tabwriter"
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
@@ -19,28 +20,54 @@ import (
 )
 
 type instanceInfo struct {
-	Instance string `json:"instance"`
-	Pid      int    `json:"pid"`
-	Image    string `json:"img"`
-	IP       string `json:"ip"`
+	Instance   string `json:"instance"`
+	Pid        int    `json:"pid"`
+	Image      string `json:"img"`
+	IP         string `json:"ip"`
+	LogErrPath string `json:"logErrPath"`
+	LogOutPath string `json:"logOutPath"`
 }
 
 // PrintInstanceList fetches instance list, applying name and
 // user filters, and prints it in a regular or a JSON format (if
-// formatJSON is true) to the passed writer.
-func PrintInstanceList(w io.Writer, name, user string, formatJSON bool) error {
+// formatJSON is true) to the passed writer. Additionally, fetches
+// log paths (if showLogs is true).
+func PrintInstanceList(w io.Writer, name, user string, formatJSON bool, showLogs bool) error {
+	if formatJSON && showLogs {
+		sylog.Fatalf("more than one flags have been set")
+	}
+
+	tabWriter := tabwriter.NewWriter(w, 0, 8, 4, ' ', 0)
+	defer tabWriter.Flush()
+
 	ii, err := instance.List(user, name, instance.SingSubDir)
 	if err != nil {
 		return fmt.Errorf("could not retrieve instance list: %v", err)
 	}
 
-	if !formatJSON {
-		_, err := fmt.Fprintf(w, "%-16s %-8s %-15s %s\n", "INSTANCE NAME", "PID", "IP", "IMAGE")
+	if showLogs {
+		_, err := fmt.Fprintln(tabWriter, "INSTANCE NAME\tPID\tLOGS")
 		if err != nil {
 			return fmt.Errorf("could not write list header: %v", err)
 		}
+
 		for _, i := range ii {
-			_, err := fmt.Fprintf(w, "%-16s %-8d %-15s %s\n", i.Name, i.Pid, i.IP, i.Image)
+			_, err = fmt.Fprintf(tabWriter, "%s\t%d\t%s\n\t\t%s\n", i.Name, i.Pid, i.LogErrPath, i.LogOutPath)
+			if err != nil {
+				return fmt.Errorf("could not write instance info: %v", err)
+			}
+		}
+		return nil
+	}
+
+	if !formatJSON {
+		_, err := fmt.Fprintln(tabWriter, "INSTANCE NAME\tPID\tIP\tIMAGE")
+		if err != nil {
+			return fmt.Errorf("could not write list header: %v", err)
+		}
+
+		for _, i := range ii {
+			_, err = fmt.Fprintf(tabWriter, "%s\t%d\t%s\t%s\n", i.Name, i.Pid, i.IP, i.Image)
 			if err != nil {
 				return fmt.Errorf("could not write instance info: %v", err)
 			}
@@ -54,6 +81,8 @@ func PrintInstanceList(w io.Writer, name, user string, formatJSON bool) error {
 		instances[i].Pid = ii[i].Pid
 		instances[i].Instance = ii[i].Name
 		instances[i].IP = ii[i].IP
+		instances[i].LogErrPath = ii[i].LogErrPath
+		instances[i].LogOutPath = ii[i].LogOutPath
 	}
 
 	enc := json.NewEncoder(w)

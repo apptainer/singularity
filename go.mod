@@ -5,14 +5,14 @@ go 1.13
 require (
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
-	github.com/apex/log v1.4.0
+	github.com/apex/log v1.5.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/jsonparser v1.0.0
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/cgroups v0.0.0-20200116170754-a8908713319d
-	github.com/containerd/containerd v1.3.4
-	github.com/containernetworking/cni v0.7.1
+	github.com/containerd/containerd v1.3.6
+	github.com/containernetworking/cni v0.8.0
 	github.com/containernetworking/plugins v0.8.6
 	github.com/containers/image/v5 v5.5.1
 	github.com/deislabs/oras v0.8.1
@@ -32,7 +32,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.2-0.20191218002246-9ea04d1f37d7
 	github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74
 	github.com/opencontainers/runtime-spec v1.0.3-0.20200520003142-237cc4f519e2
-	github.com/opencontainers/selinux v1.5.2
+	github.com/opencontainers/selinux v1.6.0
 	github.com/opencontainers/umoci v0.4.6-0.20200622135030-30d116059d97
 	github.com/pelletier/go-toml v1.8.0
 	github.com/pkg/errors v0.9.1
@@ -58,7 +58,7 @@ require (
 	golang.org/x/sys v0.0.0-20200615200032-f1bc736245b1
 	gopkg.in/yaml.v2 v2.3.0
 	gotest.tools/v3 v3.0.2
-	mvdan.cc/sh/v3 v3.1.1
+	mvdan.cc/sh/v3 v3.1.2
 	rsc.io/letsencrypt v0.0.3 // indirect
 )
 

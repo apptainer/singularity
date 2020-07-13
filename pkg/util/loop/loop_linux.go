@@ -12,6 +12,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
 )
 
@@ -76,7 +77,8 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 			status, err := GetStatusFromFd(uintptr(loopFd))
 			if err != nil {
 				syscall.Close(loopFd)
-				return err
+				sylog.Debugf("Could not get loop device %d status: %s", device, err)
+				continue
 			}
 			// there is no associated image with loop device, save indice so second loop
 			// iteration will start from this device
@@ -91,6 +93,7 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 				// keep the reference to the loop device file descriptor to
 				// be sure that the loop device won't be released between this
 				// check and the mount of the filesystem
+				sylog.Debugf("Sharing loop device %d", device)
 				return nil
 			}
 			syscall.Close(loopFd)
