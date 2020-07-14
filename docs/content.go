@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -702,12 +702,11 @@ Enterprise Performance Computing (EPC)`
 	// sign
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	SignUse   string = `sign [sign options...] <image path>`
-	SignShort string = `Attach a cryptographic signature to an image`
+	SignShort string = `Attach digital signature(s) to an image`
 	SignLong  string = `
-  The sign command allows a user to create a cryptographic signature on either a 
-  single data object or a list of data objects within the same SIF group. By 
-  default without parameters, the command searches for the primary partition and 
-  creates a verification block that is then added to the SIF container file.
+  The sign command allows a user to add one or more digital signatures to a SIF
+  image. By default, one digital signature is added for each object group in
+  the file.
   
   To generate a keypair, see 'singularity help key newpair'`
 	SignExample string = `
