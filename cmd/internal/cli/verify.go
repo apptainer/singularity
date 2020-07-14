@@ -6,24 +6,26 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/app/singularity"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/sylog"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 var (
-	sifGroupID  uint32 // -g groupid specification
-	sifDescID   uint32 // -i id specification
-	localVerify bool   // -l flag
-	jsonVerify  bool   // -j flag
-	verifyAll   bool
+	sifGroupID   uint32 // -g groupid specification
+	sifDescID    uint32 // -i id specification
+	localVerify  bool   // -l flag
+	jsonVerify   bool   // -j flag
+	verifyAll    bool
+	verifyLegacy bool
 )
 
 // -u|--url
@@ -44,7 +46,7 @@ var verifySifGroupIDFlag = cmdline.Flag{
 	DefaultValue: uint32(0),
 	Name:         "group-id",
 	ShortHand:    "g",
-	Usage:        "verify all partitions in the specified group (default non)",
+	Usage:        "verify objects with the specified group ID",
 }
 
 // --groupid (deprecated)
@@ -53,7 +55,7 @@ var verifyOldSifGroupIDFlag = cmdline.Flag{
 	Value:        &sifGroupID,
 	DefaultValue: uint32(0),
 	Name:         "groupid",
-	Usage:        "group ID to be verified",
+	Usage:        "verify objects with the specified group ID",
 	Deprecated:   "use '--group-id'",
 }
 
@@ -64,7 +66,7 @@ var verifySifDescSifIDFlag = cmdline.Flag{
 	DefaultValue: uint32(0),
 	Name:         "sif-id",
 	ShortHand:    "i",
-	Usage:        "verify a single partition with the specified ID (default system-partition)",
+	Usage:        "verify object with the specified ID",
 }
 
 // --id (deprecated)
@@ -73,7 +75,7 @@ var verifySifDescIDFlag = cmdline.Flag{
 	Value:        &sifDescID,
 	DefaultValue: uint32(0),
 	Name:         "id",
-	Usage:        "descriptor ID to be verified",
+	Usage:        "verify object with the specified ID",
 	Deprecated:   "use '--sif-id'",
 }
 
@@ -105,7 +107,16 @@ var verifyAllFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "all",
 	ShortHand:    "a",
-	Usage:        "verify all non-signature partitions",
+	Usage:        "verify all objects",
+}
+
+// --legacy-insecure
+var verifyLegacyFlag = cmdline.Flag{
+	ID:           "verifyLegacyFlag",
+	Value:        &verifyLegacy,
+	DefaultValue: false,
+	Name:         "legacy-insecure",
+	Usage:        "enable verification of (insecure) legacy signatures",
 }
 
 func init() {
@@ -120,6 +131,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&verifyLocalFlag, VerifyCmd)
 		cmdManager.RegisterFlagForCmd(&verifyJSONFlag, VerifyCmd)
 		cmdManager.RegisterFlagForCmd(&verifyAllFlag, VerifyCmd)
+		cmdManager.RegisterFlagForCmd(&verifyLegacyFlag, VerifyCmd)
 	})
 }
 
@@ -130,16 +142,8 @@ var VerifyCmd = &cobra.Command{
 	PreRun:                sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.TODO()
-
-		if f, err := os.Stat(args[0]); os.IsNotExist(err) {
-			sylog.Fatalf("No such file or directory: %s", args[0])
-		} else if f.IsDir() {
-			sylog.Fatalf("File is a directory: %s", args[0])
-		}
-
 		// args[0] contains image path
-		doVerifyCmd(ctx, cmd, args[0], keyServerURI)
+		doVerifyCmd(cmd, args[0])
 	},
 
 	Use:     docs.VerifyUse,
@@ -148,70 +152,68 @@ var VerifyCmd = &cobra.Command{
 	Example: docs.VerifyExample,
 }
 
-func doVerifyCmd(ctx context.Context, cmd *cobra.Command, cpath, url string) {
-	id, isGroup, err := checkImageAndFlags(cmd, cpath, sifDescID, sifGroupID, verifyAll)
-	if err != nil {
-		sylog.Fatalf("%s", err)
-	}
+func doVerifyCmd(cmd *cobra.Command, cpath string) {
+	var opts []singularity.VerifyOpt
 
-	// Dont need to resolve remote endpoint.
+	// Set keyserver option, if applicable.
 	if !localVerify {
 		handleVerifyFlags(cmd)
+
+		c := client.Config{
+			BaseURL:   keyServerURI,
+			AuthToken: authToken,
+			UserAgent: useragent.Value(),
+		}
+		opts = append(opts, singularity.OptVerifyUseKeyServer(&c))
 	}
 
-	author, _, err := signing.Verify(ctx, cpath, url, id, isGroup, verifyAll, authToken, localVerify, jsonVerify)
-	fmt.Printf("%s", author)
-	if err == signing.ErrVerificationFail {
-		sylog.Fatalf("Failed to verify: %s", cpath)
-	} else if err != nil {
-		sylog.Fatalf("Failed to verify: %s: %s", cpath, err)
-	}
-	sylog.Infof("Container verified: %s", cpath)
-}
-
-// checkImageAndFlags verifies that the SIF image and SIF descriptor / group
-// ID flags provided are usable, and returns which SIF ID to sign or verify:
-//  - checks that a descrID and groupID are not being used together
-//  - checks that a descrID or groupID are not being used with a request to verify all
-//  - returns an error if flags are not usable
-//  - returns an ID to sign or verify, and true if it is a group ID / false if it is a descriptor ID
-func checkImageAndFlags(cmd *cobra.Command, cpath string, descrID, groupID uint32, all bool) (uint32, bool, error) {
-	// First ensure the image is there.
-	if finfo, err := os.Stat(cpath); os.IsNotExist(err) || finfo.IsDir() {
-		return 0, false, fmt.Errorf("Failed to open: %s: %s", cpath, err)
+	// Set group option, if applicable.
+	if cmd.Flag(verifySifGroupIDFlag.Name).Changed || cmd.Flag(verifyOldSifGroupIDFlag.Name).Changed {
+		opts = append(opts, singularity.OptVerifyGroup(sifGroupID))
 	}
 
-	// Group id should start at 1.
-	if cmd.Flag(verifySifGroupIDFlag.Name).Changed && groupID == 0 {
-		return 0, false, fmt.Errorf("invalid group id")
+	// Set object option, if applicable.
+	if cmd.Flag(verifySifDescSifIDFlag.Name).Changed || cmd.Flag(verifySifDescIDFlag.Name).Changed {
+		opts = append(opts, singularity.OptVerifyObject(sifDescID))
 	}
 
-	// Descriptor id should start at 1.
-	if cmd.Flag(verifySifDescSifIDFlag.Name).Changed && descrID == 0 {
-		return 0, false, fmt.Errorf("invalid descriptor id")
-	}
-	if cmd.Flag(verifySifDescIDFlag.Name).Changed && descrID == 0 {
-		sylog.Fatalf("invalid descriptor id")
+	// Set all option, if applicable.
+	if verifyAll {
+		opts = append(opts, singularity.OptVerifyAll())
 	}
 
-	if groupID != 0 && descrID != 0 {
-		return 0, false, fmt.Errorf("only one of -i or -g may be set")
+	// Set legacy option, if applicable.
+	if verifyLegacy {
+		opts = append(opts, singularity.OptVerifyLegacy())
 	}
 
-	var isGroup bool
-	var id uint32
-	if groupID != 0 {
-		isGroup = true
-		id = groupID
+	// Set callback option.
+	if jsonVerify {
+		var kl keyList
+
+		opts = append(opts, singularity.OptVerifyCallback(getJSONCallback(&kl)))
+
+		verifyErr := singularity.Verify(cmd.Context(), cpath, opts...)
+
+		// Always output JSON.
+		if err := outputJSON(os.Stdout, kl); err != nil {
+			sylog.Fatalf("Failed to output JSON: %v", err)
+		}
+
+		if verifyErr != nil {
+			sylog.Fatalf("Failed to verify container: %s", verifyErr)
+		}
 	} else {
-		id = descrID
-	}
+		opts = append(opts, singularity.OptVerifyCallback(outputVerify))
 
-	if (id != 0 || isGroup) && all {
-		return 0, false, fmt.Errorf("'--all' not compatible with '--sif-id' or '--group-id'")
-	}
+		fmt.Printf("Verifying image: %s\n", cpath)
 
-	return id, isGroup, nil
+		if err := singularity.Verify(cmd.Context(), cpath, opts...); err != nil {
+			sylog.Fatalf("Failed to verify container: %s", err)
+		}
+
+		fmt.Printf("Container verified: %s\n", cpath)
+	}
 }
 
 func handleVerifyFlags(cmd *cobra.Command) {

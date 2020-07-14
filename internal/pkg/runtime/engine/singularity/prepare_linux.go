@@ -8,6 +8,7 @@ package singularity
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -35,6 +36,7 @@ import (
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/sypgp"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
@@ -1163,9 +1165,16 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 			if err = ecl.ValidateConfig(); err != nil {
 				return fmt.Errorf("while validating ECL configuration: %s", err)
 			}
-			_, err := ecl.ShouldRunFp(img.File)
+
+			kr, err := sypgp.PublicKeyRing()
 			if err != nil {
+				return fmt.Errorf("while obtaining keyring for ECL: %s", err)
+			}
+
+			if ok, err := ecl.ShouldRunFp(img.File, kr); err != nil {
 				return fmt.Errorf("while checking container image with ECL: %s", err)
+			} else if !ok {
+				return errors.New("image prohibited by ECL")
 			}
 		}
 
