@@ -55,6 +55,9 @@ func TestRemoteRemove(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			test.DropPrivilege(t)
+			defer test.ResetPrivilege(t)
+
 			err := RemoteRemove(tt.cfgFile, tt.remoteName)
 			if tt.shallPass == true && err != nil {
 				t.Fatalf("valid case failed: %s\n", err)
