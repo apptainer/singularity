@@ -34,12 +34,9 @@ github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f h1:tbgFqBK8
 github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f/go.mod h1:CgnQgUtFrFz9mxFNtED3jI5tLDjKlOM+oUF/sTk6ps0=
 github.com/apex/log v1.4.0 h1:jYWeNt9kWJOf1ifht8UjsCQ00eiPnFrUzCBCiiJMw/g=
 github.com/apex/log v1.4.0/go.mod h1:UMNC4vQNC7hb5gyr47r18ylK1n34rV7GO+gb0wpXvcE=
-github.com/apex/log v1.5.0 h1:eOSyWoylstNP8a6yEeEMAxDjZCJxIdogtL6Vi/LRwDk=
-github.com/apex/log v1.5.0/go.mod h1:hmgUUnPXQH5Ktkmip4AKbmYJ07s7Gr4WTjZPzFseKdE=
 github.com/apex/log v1.6.0 h1:Y50wF1PBIIexIgTm0/7G6gcLitkO5jHK5Mb6wcMY0UI=
 github.com/apex/log v1.6.0/go.mod h1:x7s+P9VtvFBXge9Vbn+8TrqKmuzmD35TTkeBHul8UtY=
 github.com/apex/logs v0.0.7/go.mod h1:XzxuLZ5myVHDy9SAmYpamKKRNApGj54PfYLcFrXqDwo=
-github.com/apex/logs v0.9.5/go.mod h1:XzxuLZ5myVHDy9SAmYpamKKRNApGj54PfYLcFrXqDwo=
 github.com/apex/logs v1.0.0/go.mod h1:XzxuLZ5myVHDy9SAmYpamKKRNApGj54PfYLcFrXqDwo=
 github.com/aphistic/golf v0.0.0-20180712155816-02c07f170c5a/go.mod h1:3NqKYiepwy8kCu4PNA+aP7WUV72eXWJeP9/r3/K9aLE=
 github.com/aphistic/sweet v0.2.0/go.mod h1:fWDlIh/isSE9n6EPsRmC0det+whmX6dJid3stzu0Xys=
