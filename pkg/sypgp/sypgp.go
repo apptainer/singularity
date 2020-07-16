@@ -53,6 +53,15 @@ var (
 	ErrEmptyKeyring = errors.New("keyring is empty")
 )
 
+// ErrPushAccepted is an error type representing a pushed key requiring validation.
+type ErrPushAccepted struct {
+	err string
+}
+
+func (e *ErrPushAccepted) Error() string {
+	return e.err
+}
+
 // KeyExistsError is a type representing an error associated to a specific key.
 type KeyExistsError struct {
 	fingerprint [20]byte
@@ -1110,13 +1119,17 @@ func PushPubkey(ctx context.Context, httpClient *http.Client, e *openpgp.Entity,
 
 	// Push key to Key Service.
 	if err := c.PKSAdd(ctx, keyText); err != nil {
-		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
-			// The request failed with HTTP code unauthorized. Guide user to fix that.
-			sylog.Infof(helpAuth+helpPush, e.PrimaryKey.Fingerprint)
-			return fmt.Errorf("unauthorized or missing token")
+		if jerr, ok := err.(*jsonresp.Error); ok {
+			switch jerr.Code {
+			case http.StatusUnauthorized:
+				// The request failed with HTTP code unauthorized. Guide user to fix that.
+				sylog.Infof(helpAuth+helpPush, e.PrimaryKey.Fingerprint)
+				return fmt.Errorf("unauthorized or missing token")
+			case http.StatusAccepted:
+				return &ErrPushAccepted{jerr.Message}
+			}
 		}
 		return fmt.Errorf("key server did not accept PGP key: %v", err)
-
 	}
 	return nil
 }

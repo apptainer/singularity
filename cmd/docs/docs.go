@@ -66,6 +66,7 @@ func main() {
 			// We must Init() as loading commands etc. is deferred until this is called.
 			// Using true here will result in local docs including any content for installed
 			// plugins.
+			cli.UseDefaultConfig()
 			cli.Init(true)
 			rootCmd := cli.RootCmd()
 			switch args[0] {

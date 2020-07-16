@@ -190,6 +190,7 @@ func TestPushPubkey(t *testing.T) {
 		{"BadURL", ":", "", http.StatusOK, true},
 		{"TerribleURL", "terrible:", "", http.StatusOK, true},
 		{"Unauthorized", srv.URL, "", http.StatusUnauthorized, true},
+		{"Accepted", srv.URL, "", http.StatusAccepted, true},
 	}
 
 	for _, tt := range tests {

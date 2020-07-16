@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/sif/pkg/integrity"
@@ -18,7 +19,7 @@ import (
 type VerifyCallback func(*sif.FileImage, integrity.VerifyResult) bool
 
 type verifier struct {
-	c         *client.Config
+	c         []*client.Config
 	groupIDs  []uint32
 	objectIDs []uint32
 	all       bool
@@ -29,10 +30,13 @@ type verifier struct {
 // VerifyOpt are used to configure v.
 type VerifyOpt func(v *verifier) error
 
-// OptVerifyUseKeyServer specifies that the keyserver specified by c be used as a source of key
+// OptVerifyUseKeyServers specifies that the keyservers specified by c be used as a source of key
 // material, in addition to the local public keyring.
-func OptVerifyUseKeyServer(c *client.Config) VerifyOpt {
+func OptVerifyUseKeyServers(c []*client.Config) VerifyOpt {
 	return func(v *verifier) error {
+		if len(c) == 0 {
+			return fmt.Errorf("no keyserver specified")
+		}
 		v.c = c
 		return nil
 	}

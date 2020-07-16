@@ -9,11 +9,13 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	golog "github.com/go-log/log"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/client/library"
 	"github.com/sylabs/singularity/internal/pkg/client/net"
@@ -24,6 +26,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 const (
@@ -47,7 +50,7 @@ var (
 	// pullImageName holds the name to be given to the pulled image.
 	pullImageName string
 	// keyServerURL server URL.
-	keyServerURL = "https://keys.sylabs.io"
+	keyServerURL = defaultKeyServer
 	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it.
 	unauthenticatedPull bool
 	// pullDir is the path that the containers will be pulled to, if set.
@@ -215,7 +218,20 @@ func pullRun(cmd *cobra.Command, args []string) {
 			Logger:    (golog.Logger)(sylog.DebugLogger{}),
 		}
 
-		_, err = library.PullToFile(ctx, imgCache, pullTo, pullFrom, pullArch, tmpDir, libraryConfig, keyServerURL)
+		// set the default keyserver URL if any
+		config := singularityconf.GetCurrentConfig()
+
+		if config != nil && config.DefaultKeyserver != "" {
+			keyServerURL = strings.TrimSuffix(config.DefaultKeyserver, "/")
+		}
+
+		clients, err := getKeyServerClients(keyServerURL, false)
+		if err != nil {
+			sylog.Fatalf("%s", err)
+		}
+		vopt := singularity.OptVerifyUseKeyServers(clients)
+
+		_, err = library.PullToFile(ctx, imgCache, pullTo, pullFrom, pullArch, tmpDir, libraryConfig, vopt)
 		if err != nil && err != library.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
@@ -263,26 +279,18 @@ func handlePullFlags(cmd *cobra.Command) {
 	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to: %v", pullLibraryURI)
-		sylog.Debugf("Using default key server url: %v", keyServerURL)
 		return
 	}
 	if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 
-	authToken = endpoint.Token
 	if !cmd.Flags().Lookup("library").Changed {
 		libraryURI, err := endpoint.GetServiceURI("library")
 		if err != nil {
 			sylog.Fatalf("Unable to get library service URI: %v", err)
 		}
 		pullLibraryURI = libraryURI
+		authToken = endpoint.Token
 	}
-
-	keystoreURI, err := endpoint.GetServiceURI("keystore")
-	if err != nil {
-		sylog.Warningf("Unable to get library service URI: %v, defaulting to %s", err, keyServerURL)
-		return
-	}
-	keyServerURL = keystoreURI
 }

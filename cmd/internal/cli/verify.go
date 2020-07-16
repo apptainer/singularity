@@ -7,15 +7,18 @@ package cli
 
 import (
 	"fmt"
+	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
-	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
@@ -121,6 +124,13 @@ var verifyLegacyFlag = cmdline.Flag{
 
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		// set the default keyserver URL
+		config := singularityconf.GetCurrentConfig()
+
+		if config != nil && config.DefaultKeyserver != "" {
+			verifyServerURIFlag.DefaultValue = strings.TrimSuffix(config.DefaultKeyserver, "/")
+		}
+
 		cmdManager.RegisterCmd(VerifyCmd)
 
 		cmdManager.RegisterFlagForCmd(&verifyServerURIFlag, VerifyCmd)
@@ -157,14 +167,11 @@ func doVerifyCmd(cmd *cobra.Command, cpath string) {
 
 	// Set keyserver option, if applicable.
 	if !localVerify {
-		handleVerifyFlags(cmd)
-
-		c := client.Config{
-			BaseURL:   keyServerURI,
-			AuthToken: authToken,
-			UserAgent: useragent.Value(),
+		clients, err := getKeyServerClients(keyServerURI, cmd.Flags().Lookup("url").Changed)
+		if err != nil {
+			sylog.Fatalf("%s", err)
 		}
-		opts = append(opts, singularity.OptVerifyUseKeyServer(&c))
+		opts = append(opts, singularity.OptVerifyUseKeyServers(clients))
 	}
 
 	// Set group option, if applicable.
@@ -216,23 +223,74 @@ func doVerifyCmd(cmd *cobra.Command, cpath string) {
 	}
 }
 
-func handleVerifyFlags(cmd *cobra.Command) {
-	// if we can load config and if default endpoint is set, use that
-	// otherwise fall back on regular authtoken and URI behavior
-	endpoint, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
-		return
-	} else if err != nil {
-		sylog.Fatalf("Unable to load remote configuration: %v", err)
+func getKeyServerClients(keyserverURL string, customURL bool) ([]*client.Config, error) {
+	var clients []*client.Config
+
+	// the default http client doesn't have any timeout set,
+	// fix it to 5 seconds per keyserver
+	defaultHTTPClient := &http.Client{
+		Timeout: 5 * time.Second,
 	}
 
-	authToken = endpoint.Token
-	if !cmd.Flags().Lookup("url").Changed {
-		uri, err := endpoint.GetServiceURI("keystore")
-		if err != nil {
-			sylog.Fatalf("Unable to get library service URI: %v", err)
+	keyserverURL = strings.TrimSuffix(keyserverURL, "/")
+
+	hasKeyserverConfig := false
+	defaultKeyserverOnly := true
+
+	config := singularityconf.GetCurrentConfig()
+	if config != nil {
+		hasKeyserverConfig = config.DefaultKeyserver != ""
+		if hasKeyserverConfig {
+			defaultKeyserverOnly = config.KeyserverVerifyDefaultOnly
+			if config.DefaultKeyserver == defaultKeyServer {
+				hasKeyserverConfig = false
+				defaultKeyserverOnly = true
+			}
 		}
-		keyServerURI = uri
 	}
+
+	if customURL || hasKeyserverConfig {
+		c := client.Config{
+			BaseURL:    keyserverURL,
+			UserAgent:  useragent.Value(),
+			HTTPClient: defaultHTTPClient,
+		}
+		remoteURI, token, err := getRemoteKeyServer(false)
+		if err != nil {
+			return nil, err
+		}
+		// if the default keyserver or the custom url specified
+		// match the active remote endpoint, pass the auth token
+		if remoteURI == keyserverURL {
+			c.AuthToken = token
+		}
+		clients = append(clients, &c)
+
+		// additional client in case
+		if hasKeyserverConfig && !defaultKeyserverOnly {
+			if remoteURI != keyserverURL {
+				c := client.Config{
+					BaseURL:    remoteURI,
+					AuthToken:  token,
+					UserAgent:  useragent.Value(),
+					HTTPClient: defaultHTTPClient,
+				}
+				clients = append(clients, &c)
+			}
+		}
+	} else {
+		remoteURI, token, err := getRemoteKeyServer(true)
+		if err != nil {
+			return nil, err
+		}
+		c := client.Config{
+			BaseURL:    remoteURI,
+			AuthToken:  token,
+			UserAgent:  useragent.Value(),
+			HTTPClient: defaultHTTPClient,
+		}
+		clients = append(clients, &c)
+	}
+
+	return clients, nil
 }

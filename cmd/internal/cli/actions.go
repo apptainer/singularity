@@ -84,7 +84,7 @@ func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom, librar
 		BaseURL:   libraryURL,
 		Logger:    (golog.Logger)(sylog.DebugLogger{}),
 	}
-	return library.Pull(ctx, imgCache, pullFrom, runtime.GOARCH, tmpDir, c, keyServerURL)
+	return library.Pull(ctx, imgCache, pullFrom, runtime.GOARCH, tmpDir, c)
 }
 
 func handleShub(ctx context.Context, imgCache *cache.Handle, pullFrom string) (string, error) {

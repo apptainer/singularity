@@ -13,11 +13,9 @@ import (
 	"os"
 
 	golog "github.com/go-log/log"
-	keyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/pkg/sylog"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
 )
@@ -59,7 +57,7 @@ func (c *progressCallback) Finish() {
 // LibraryPush will upload the image specified by file to the library specified by libraryURI.
 // Before uploading, the image will be checked for a valid signature, unless specified not to by the
 // unauthenticated bool
-func LibraryPush(ctx context.Context, file, dest, authToken, libraryURI, keyServerURL, remoteWarning string, unauthenticated bool) error {
+func LibraryPush(ctx context.Context, file, dest, authToken, libraryURI, remoteWarning string, unauthenticated bool, verifyOpts ...VerifyOpt) error {
 	// Push to library requires a valid authToken
 	if authToken == "" {
 		return fmt.Errorf("couldn't push image to library: %v", remoteWarning)
@@ -75,13 +73,7 @@ func LibraryPush(ctx context.Context, file, dest, authToken, libraryURI, keyServ
 	}
 
 	if !unauthenticated {
-		// Check if the container has a valid signature.
-		c := keyclient.Config{
-			BaseURL:   keyServerURL,
-			AuthToken: authToken,
-			UserAgent: useragent.Value(),
-		}
-		if err := Verify(ctx, file, OptVerifyUseKeyServer(&c)); err != nil {
+		if err := Verify(ctx, file, verifyOpts...); err != nil {
 			sylog.Warningf("%v", err)
 			return ErrLibraryUnsigned
 		}

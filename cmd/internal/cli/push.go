@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
@@ -18,6 +19,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 var (
@@ -80,7 +82,20 @@ var PushCmd = &cobra.Command{
 		case LibraryProtocol, "": // Handle pushing to a library
 			handlePushFlags(cmd)
 
-			err := singularity.LibraryPush(ctx, file, dest, authToken, PushLibraryURI, keyServerURL, remoteWarning, unauthenticatedPush)
+			// set the default keyserver URL if any
+			config := singularityconf.GetCurrentConfig()
+
+			if config != nil && config.DefaultKeyserver != "" {
+				keyServerURL = strings.TrimSuffix(config.DefaultKeyserver, "/")
+			}
+
+			clients, err := getKeyServerClients(keyServerURL, false)
+			if err != nil {
+				sylog.Fatalf("%s", err)
+			}
+			vopt := singularity.OptVerifyUseKeyServers(clients)
+
+			err = singularity.LibraryPush(ctx, file, dest, authToken, PushLibraryURI, remoteWarning, unauthenticatedPush, vopt)
 			if err == singularity.ErrLibraryUnsigned {
 				fmt.Printf("TIP: You can push unsigned images with 'singularity push -U %s'.\n", file)
 				fmt.Printf("TIP: Learn how to sign your own containers by using 'singularity help sign'\n\n")
@@ -116,25 +131,17 @@ func handlePushFlags(cmd *cobra.Command) {
 	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to: %v", PushLibraryURI)
-		sylog.Debugf("using default key server url: %v", keyServerURL)
 		return
 	} else if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 
-	authToken = endpoint.Token
 	if !cmd.Flags().Lookup("library").Changed {
 		uri, err := endpoint.GetServiceURI("library")
 		if err != nil {
 			sylog.Fatalf("Unable to get library service URI: %v", err)
 		}
 		PushLibraryURI = uri
+		authToken = endpoint.Token
 	}
-
-	uri, err := endpoint.GetServiceURI("keystore")
-	if err != nil {
-		sylog.Warningf("Unable to get library service URI: %v, defaulting to %s.", err, keyServerURL)
-		return
-	}
-	keyServerURL = uri
 }

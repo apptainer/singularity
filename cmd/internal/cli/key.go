@@ -7,10 +7,15 @@ package cli
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 const (
@@ -56,6 +61,13 @@ var keyNewpairBitLengthFlag = cmdline.Flag{
 
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
+		// set the default keyserver URL
+		config := singularityconf.GetCurrentConfig()
+
+		if config != nil && config.DefaultKeyserver != "" {
+			keyServerURIFlag.DefaultValue = strings.TrimSuffix(config.DefaultKeyserver, "/")
+		}
+
 		cmdManager.RegisterCmd(KeyCmd)
 
 		cmdManager.RegisterSubCmd(KeyCmd, KeyNewPairCmd)
@@ -93,4 +105,55 @@ var KeyCmd = &cobra.Command{
 	Long:          docs.KeyLong,
 	Example:       docs.KeyExample,
 	SilenceErrors: true,
+}
+
+func getRemoteKeyServer(warn bool) (string, string, error) {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	endpoint, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		if warn {
+			sylog.Warningf("No default remote in use, falling back to: %v", defaultKeyServer)
+		}
+		return defaultKeyServer, "", nil
+	} else if err != nil {
+		return "", "", fmt.Errorf("unable to load remote configuration: %v", err)
+	}
+
+	// default remote endpoint, don't query the remote
+	// endpoint for keystore URI, it's the defaultKeyServer
+	if endpoint.URI == defaultRemote.URI {
+		return defaultKeyServer, endpoint.Token, nil
+	}
+
+	authToken = endpoint.Token
+	uri, err := endpoint.GetServiceURI("keystore")
+	if err != nil {
+		return "", "", fmt.Errorf("unable to get library service URI: %v", err)
+	}
+
+	return strings.TrimSuffix(uri, "/"), authToken, nil
+}
+
+func handleKeyFlags(cmd *cobra.Command) {
+	var err error
+
+	keyServerURI = strings.TrimSuffix(keyServerURI, "/")
+
+	if keyServerURI != defaultKeyServer {
+		uri, token, _ := getRemoteKeyServer(false)
+		// if the active remote endpoint match the keyserver set
+		// by user or defined by 'default keyserver' within the
+		// configuration file, set the associated token if any
+		if uri == keyServerURI {
+			authToken = token
+		}
+		sylog.Debugf("Using keyserver URL: %s", keyServerURI)
+		return
+	}
+
+	keyServerURI, authToken, err = getRemoteKeyServer(true)
+	if err != nil {
+		sylog.Fatalf("%s", err)
+	}
 }

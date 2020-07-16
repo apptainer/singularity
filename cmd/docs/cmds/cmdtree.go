@@ -231,6 +231,7 @@ func createCmdsFiles() (string, string, error) {
 	defer textFile.Close()
 
 	// iniatialize singularity CLI by registering all commands without plugins
+	cli.UseDefaultConfig()
 	cli.Init(false)
 	cli.RootCmd().InitDefaultHelpCmd()
 	cli.RootCmd().InitDefaultVersionFlag()

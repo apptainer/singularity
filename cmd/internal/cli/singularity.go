@@ -310,7 +310,7 @@ func handleConfDir(confDir string) {
 	}
 }
 
-func persistentPreRun(*cobra.Command, []string) {
+func setupConfig() {
 	setSylogMessageLevel()
 	sylog.Debugf("Singularity version: %s", buildcfg.PACKAGE_VERSION)
 
@@ -321,11 +321,17 @@ func persistentPreRun(*cobra.Command, []string) {
 	}
 
 	sylog.Debugf("Parsing configuration file %s", configurationFile)
-	config, err := singularityconf.Parse(configurationFile)
-	if err != nil {
-		sylog.Fatalf("Couldn't not parse configuration file %s: %s", configurationFile, err)
+	// when the current configuration is already set it means
+	// that we are generating the bash completion scripts and
+	// we are not parsing the configuration file at the expected
+	// location because it may not already exists at this stage
+	if singularityconf.GetCurrentConfig() == nil {
+		config, err := singularityconf.Parse(configurationFile)
+		if err != nil {
+			sylog.Fatalf("Couldn't not parse configuration file %s: %s", configurationFile, err)
+		}
+		singularityconf.SetCurrentConfig(config)
 	}
-	singularityconf.SetCurrentConfig(config)
 
 	// Handle the config dir (~/.singularity),
 	// then check the remove conf file permission.
@@ -353,7 +359,6 @@ func Init(loadPlugins bool) {
 
 	// set persistent pre run function here to avoid initialization loop error
 	singularityCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		persistentPreRun(cmd, args)
 		return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
 	}
 
@@ -366,6 +371,19 @@ func Init(loadPlugins bool) {
 	cmdManager.RegisterFlagForCmd(&singConfigFileFlag, singularityCmd)
 
 	cmdManager.RegisterCmd(VersionCmd)
+
+	// force command line parsing for --config flag used by
+	// setupConfig call, errors are ignored to fail later
+	// with the full set of commands. If the current configuration
+	// is already set it means that we are not running in a
+	// singularity CLI context and we can ignore arguments
+	args := os.Args[1:]
+	if singularityconf.GetCurrentConfig() != nil {
+		args = nil
+	}
+	if err := singularityCmd.ParseFlags(args); err == nil {
+		setupConfig()
+	}
 
 	// register all others commands/flags
 	for _, cmdInit := range cmdInits {
@@ -477,8 +495,21 @@ func ExecuteSingularity() {
 	}
 }
 
+// UseDefaultConfig set the current configuration to
+// the default configuration. Useful and called before
+// the creation of documentation, bash completion scripts
+// or e2e command usage report.
+func UseDefaultConfig() {
+	config, err := singularityconf.Parse("")
+	if err != nil {
+		sylog.Fatalf("Could not generate default configuration: %s", err)
+	}
+	singularityconf.SetCurrentConfig(config)
+}
+
 // GenBashCompletionFile
 func GenBashCompletion(w io.Writer) error {
+	UseDefaultConfig()
 	Init(false)
 	return singularityCmd.GenBashCompletion(w)
 }

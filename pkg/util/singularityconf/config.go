@@ -22,45 +22,47 @@ func GetCurrentConfig() *File {
 
 // File describes the singularity.conf file options
 type File struct {
-	AllowSetuid             bool     `default:"yes" authorized:"yes,no" directive:"allow setuid"`
-	AllowPidNs              bool     `default:"yes" authorized:"yes,no" directive:"allow pid ns"`
-	ConfigPasswd            bool     `default:"yes" authorized:"yes,no" directive:"config passwd"`
-	ConfigGroup             bool     `default:"yes" authorized:"yes,no" directive:"config group"`
-	ConfigResolvConf        bool     `default:"yes" authorized:"yes,no" directive:"config resolv_conf"`
-	MountProc               bool     `default:"yes" authorized:"yes,no" directive:"mount proc"`
-	MountSys                bool     `default:"yes" authorized:"yes,no" directive:"mount sys"`
-	MountDevPts             bool     `default:"yes" authorized:"yes,no" directive:"mount devpts"`
-	MountHome               bool     `default:"yes" authorized:"yes,no" directive:"mount home"`
-	MountTmp                bool     `default:"yes" authorized:"yes,no" directive:"mount tmp"`
-	MountHostfs             bool     `default:"no" authorized:"yes,no" directive:"mount hostfs"`
-	UserBindControl         bool     `default:"yes" authorized:"yes,no" directive:"user bind control"`
-	EnableFusemount         bool     `default:"yes" authorized:"yes,no" directive:"enable fusemount"`
-	EnableUnderlay          bool     `default:"yes" authorized:"yes,no" directive:"enable underlay"`
-	MountSlave              bool     `default:"yes" authorized:"yes,no" directive:"mount slave"`
-	AllowContainerSquashfs  bool     `default:"yes" authorized:"yes,no" directive:"allow container squashfs"`
-	AllowContainerExtfs     bool     `default:"yes" authorized:"yes,no" directive:"allow container extfs"`
-	AllowContainerDir       bool     `default:"yes" authorized:"yes,no" directive:"allow container dir"`
-	AllowContainerEncrypted bool     `default:"yes" authorized:"yes,no" directive:"allow container encrypted"`
-	AlwaysUseNv             bool     `default:"no" authorized:"yes,no" directive:"always use nv"`
-	AlwaysUseRocm           bool     `default:"no" authorized:"yes,no" directive:"always use rocm"`
-	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
-	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
-	SessiondirMaxSize       uint     `default:"16" directive:"sessiondir max size"`
-	MountDev                string   `default:"yes" authorized:"yes,no,minimal" directive:"mount dev"`
-	EnableOverlay           string   `default:"try" authorized:"yes,no,try,driver" directive:"enable overlay"`
-	BindPath                []string `default:"/etc/localtime,/etc/hosts" directive:"bind path"`
-	LimitContainerOwners    []string `directive:"limit container owners"`
-	LimitContainerGroups    []string `directive:"limit container groups"`
-	LimitContainerPaths     []string `directive:"limit container paths"`
-	RootDefaultCapabilities string   `default:"full" authorized:"full,file,no" directive:"root default capabilities"`
-	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
-	CniConfPath             string   `directive:"cni configuration path"`
-	CniPluginPath           string   `directive:"cni plugin path"`
-	MksquashfsPath          string   `directive:"mksquashfs path"`
-	MksquashfsProcs         uint     `default:"0" directive:"mksquashfs procs"`
-	MksquashfsMem           string   `directive:"mksquashfs mem"`
-	CryptsetupPath          string   `directive:"cryptsetup path"`
-	ImageDriver             string   `directive:"image driver"`
+	BindPath                   []string `default:"/etc/localtime,/etc/hosts" directive:"bind path"`
+	LimitContainerOwners       []string `directive:"limit container owners"`
+	LimitContainerGroups       []string `directive:"limit container groups"`
+	LimitContainerPaths        []string `directive:"limit container paths"`
+	MountDev                   string   `default:"yes" authorized:"yes,no,minimal" directive:"mount dev"`
+	EnableOverlay              string   `default:"try" authorized:"yes,no,try,driver" directive:"enable overlay"`
+	RootDefaultCapabilities    string   `default:"full" authorized:"full,file,no" directive:"root default capabilities"`
+	MemoryFSType               string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
+	CniConfPath                string   `directive:"cni configuration path"`
+	CniPluginPath              string   `directive:"cni plugin path"`
+	MksquashfsPath             string   `directive:"mksquashfs path"`
+	MksquashfsMem              string   `directive:"mksquashfs mem"`
+	CryptsetupPath             string   `directive:"cryptsetup path"`
+	ImageDriver                string   `directive:"image driver"`
+	DefaultKeyserver           string   `directive:"default keyserver"`
+	MaxLoopDevices             uint     `default:"256" directive:"max loop devices"`
+	SessiondirMaxSize          uint     `default:"16" directive:"sessiondir max size"`
+	MksquashfsProcs            uint     `default:"0" directive:"mksquashfs procs"`
+	AllowSetuid                bool     `default:"yes" authorized:"yes,no" directive:"allow setuid"`
+	AllowPidNs                 bool     `default:"yes" authorized:"yes,no" directive:"allow pid ns"`
+	ConfigPasswd               bool     `default:"yes" authorized:"yes,no" directive:"config passwd"`
+	ConfigGroup                bool     `default:"yes" authorized:"yes,no" directive:"config group"`
+	ConfigResolvConf           bool     `default:"yes" authorized:"yes,no" directive:"config resolv_conf"`
+	MountProc                  bool     `default:"yes" authorized:"yes,no" directive:"mount proc"`
+	MountSys                   bool     `default:"yes" authorized:"yes,no" directive:"mount sys"`
+	MountDevPts                bool     `default:"yes" authorized:"yes,no" directive:"mount devpts"`
+	MountHome                  bool     `default:"yes" authorized:"yes,no" directive:"mount home"`
+	MountTmp                   bool     `default:"yes" authorized:"yes,no" directive:"mount tmp"`
+	MountHostfs                bool     `default:"no" authorized:"yes,no" directive:"mount hostfs"`
+	UserBindControl            bool     `default:"yes" authorized:"yes,no" directive:"user bind control"`
+	EnableFusemount            bool     `default:"yes" authorized:"yes,no" directive:"enable fusemount"`
+	EnableUnderlay             bool     `default:"yes" authorized:"yes,no" directive:"enable underlay"`
+	MountSlave                 bool     `default:"yes" authorized:"yes,no" directive:"mount slave"`
+	AllowContainerSquashfs     bool     `default:"yes" authorized:"yes,no" directive:"allow container squashfs"`
+	AllowContainerExtfs        bool     `default:"yes" authorized:"yes,no" directive:"allow container extfs"`
+	AllowContainerDir          bool     `default:"yes" authorized:"yes,no" directive:"allow container dir"`
+	AllowContainerEncrypted    bool     `default:"yes" authorized:"yes,no" directive:"allow container encrypted"`
+	AlwaysUseNv                bool     `default:"no" authorized:"yes,no" directive:"always use nv"`
+	AlwaysUseRocm              bool     `default:"no" authorized:"yes,no" directive:"always use rocm"`
+	SharedLoopDevices          bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
+	KeyserverVerifyDefaultOnly bool     `default:"yes" authorized:"yes,no" directive:"keyserver verify default only"`
 }
 
 const TemplateAsset = `# SINGULARITY.CONF
@@ -350,4 +352,25 @@ shared loop devices = {{ if eq .SharedLoopDevices true }}yes{{ else }}no{{ end }
 # If the driver name specified has not been registered via a plugin installation
 # the run-time will abort.
 image driver = {{ .ImageDriver }}
+
+# DEFAULT KEYSERVER: [STRING]
+# DEFAULT: Undefined
+# This allows the administrator to set the keyserver used by default to pull, push
+# and search public keys, it's also used as the default keyserver to query during
+# signature verification. When this value is empty the default keyserver used is
+# https://keys.sylabs.io.
+# This option may be useful for environments with their own public key server.
+# NOTE: this value is ignored when user specify --url with the relevant commands.
+# default keyserver = https://keys.example.com
+{{ if ne .DefaultKeyserver "" }}default keyserver = {{ .DefaultKeyserver }}{{ end }}
+
+# KEYSERVER VERIFY DEFAULT ONLY: [BOOL]
+# DEFAULT: yes
+# This allows the administrator to control during the image verification whether the
+# 'default keyserver' is the only keyserver to used or not. When set to 'no' the verify
+# command will also reach the keyserver associated with the active remote endpoint of users
+# as the secondary keyserver to use if no key is found for the 'default keyserver'.
+# NOTE: this directive has no effect if the 'default keyserver' is empty or if --url
+# is specified by user.
+keyserver verify default only = {{ if eq .KeyserverVerifyDefaultOnly true }}yes{{ else }}no{{ end }}
 `
