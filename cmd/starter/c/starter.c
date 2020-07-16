@@ -78,14 +78,21 @@ typedef struct stack {
     char ptr[0];
 } fork_stack_t;
 
+/*
+ * fork_ns child stack living in BSS section, instead of
+ * allocating dynamically the stack during each call, a stack
+ * of 4096 bytes is set, on x86_64 around 80 bytes are used for
+ * the stack, 4096 should let enough room for Go runtime which
+ * should jump on its own stack
+ */
+static fork_stack_t child_stack = {0};
+
 /* child function called by clone to return directly to sigsetjmp in fork_ns */
 __attribute__((noinline)) static int clone_fn(void *arg) {
     siglongjmp(*(sigjmp_buf *)arg, 0);
 }
 
 __attribute__ ((returns_twice)) __attribute__((noinline)) static int fork_ns(unsigned int flags) {
-    /* setup the stack */
-    fork_stack_t stack;
     sigjmp_buf env;
 
     /*
@@ -99,7 +106,7 @@ __attribute__ ((returns_twice)) __attribute__((noinline)) static int fork_ns(uns
         return 0;
     }
     /* parent process */
-    return clone(clone_fn, stack.ptr, (SIGCHLD|flags), env);
+    return clone(clone_fn, child_stack.ptr, (SIGCHLD|flags), env);
 }
 
 static void priv_escalate(bool keep_fsuid) {
