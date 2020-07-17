@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
@@ -258,20 +259,25 @@ func preRun(cmd *cobra.Command, args []string) {
 // checkBuildTarget makes sure output target doesn't exist, or is ok to overwrite.
 // And checks that update flag will update an existing directory.
 func checkBuildTarget(path string) error {
+	abspath, err := fs.Abs(path)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path for %q: %v", path, err)
+	}
+
 	if !buildArgs.sandbox && buildArgs.update {
 		return fmt.Errorf("only sandbox update is supported: --sandbox flag is missing")
 	}
-	if f, err := os.Stat(path); err == nil {
+	if f, err := os.Stat(abspath); err == nil {
 		if buildArgs.update && !f.IsDir() {
-			return fmt.Errorf("only sandbox update is supported: %s is not a directory", path)
+			return fmt.Errorf("only sandbox update is supported: %s is not a directory", abspath)
 		}
 		// check if the sandbox image being overwritten looks like a Singularity
 		// image and inform users to check its content and use --force option if
 		// the sandbox image is not a Singularity image
 		if f.IsDir() && !forceOverwrite {
-			files, err := ioutil.ReadDir(path)
+			files, err := ioutil.ReadDir(abspath)
 			if err != nil {
-				return fmt.Errorf("could not read sandbox directory %s: %s", path, err)
+				return fmt.Errorf("could not read sandbox directory %s: %s", abspath, err)
 			} else if len(files) > 0 {
 				required := 0
 				for _, f := range files {
@@ -281,7 +287,7 @@ func checkBuildTarget(path string) error {
 					}
 				}
 				if required != 4 {
-					return fmt.Errorf("%s is not empty and is not a Singularity sandbox, check its content first and use --force if you want to overwrite it", path)
+					return fmt.Errorf("%s is not empty and is not a Singularity sandbox, check its content first and use --force if you want to overwrite it", abspath)
 				}
 			}
 		}
@@ -289,7 +295,7 @@ func checkBuildTarget(path string) error {
 
 			question := fmt.Sprintf("Build target '%s' already exists and will be deleted during the build process. Do you want to continue? [N/y]", f.Name())
 
-			if isDefFile, _ := parser.IsValidDefinition(path); isDefFile {
+			if isDefFile, _ := parser.IsValidDefinition(abspath); isDefFile {
 				question = fmt.Sprintf("Build target '%s' is a definition file that will be overwritten. Do you still want to overwrite? [N/y]", f.Name())
 			}
 
@@ -303,7 +309,7 @@ func checkBuildTarget(path string) error {
 			forceOverwrite = true
 		}
 	} else if os.IsNotExist(err) && buildArgs.update && buildArgs.sandbox {
-		return fmt.Errorf("could not update sandbox %s: doesn't exist", path)
+		return fmt.Errorf("could not update sandbox %s: doesn't exist", abspath)
 	}
 	return nil
 }

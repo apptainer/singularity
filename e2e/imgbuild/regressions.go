@@ -17,6 +17,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 // This test will build an image from a multi-stage definition
@@ -391,5 +392,40 @@ func (c *imgBuildTests) issue5315(t *testing.T) {
 			0,
 			e2e.ExpectOutput(e2e.ContainMatch, "TEST OK"),
 		),
+	)
+}
+
+// This test will attempt to build an image by passing an empty string as
+// the build destination. This should fail.
+func (c *imgBuildTests) issue5435(t *testing.T) {
+	// create a directory that we don't care about
+	cwd, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "throwaway-dir-", "")
+	defer func(t *testing.T) {
+		if !t.Failed() {
+			cleanup(t)
+		}
+	}(t)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("", ""),
+		e2e.WithDir(cwd),
+		e2e.PostRun(func(t *testing.T) {
+			exists, err := fs.PathExists(cwd)
+			if err != nil {
+				t.Fatalf("failed to check cwd: %v", err)
+			}
+
+			if !exists {
+				t.Fatalf("cwd no longer exists")
+			}
+
+			if !fs.IsDir(cwd) {
+				t.Fatalf("cwd overwritten")
+			}
+		}),
+		e2e.ExpectExit(255),
 	)
 }

@@ -97,7 +97,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 
 	// check if target collides with existing file
 	if err := checkBuildTarget(dest); err != nil {
-		sylog.Fatalf("%s", err)
+		sylog.Fatalf("While checking build target: %s", err)
 	}
 
 	if buildArgs.remote {
