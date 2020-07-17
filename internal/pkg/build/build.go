@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 
@@ -77,7 +78,7 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 	oldumask := syscall.Umask(0002)
 	defer syscall.Umask(oldumask)
 
-	dest, err := filepath.Abs(conf.Dest)
+	dest, err := fs.Abs(conf.Dest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine absolute path for %q: %v", conf.Dest, err)
 	}

@@ -356,7 +356,7 @@ func lockSection(i *Image, section Section) error {
 
 // ResolvePath returns a resolved absolute path.
 func ResolvePath(path string) (string, error) {
-	abspath, err := filepath.Abs(path)
+	abspath, err := fs.Abs(path)
 	if err != nil {
 		return "", fmt.Errorf("failed to get absolute path: %s", err)
 	}
