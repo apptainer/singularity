@@ -9,6 +9,15 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
+# Changes since v3.6.0
+
+## Bug Fixes
+
+  - Provide advisory message r.e. need for `upper` and `work` to
+    exist in overlay images.
+
+
+
 # v3.6.0 - [2020-07-14]
 
 ## Security related fixes
