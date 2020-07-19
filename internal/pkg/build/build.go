@@ -195,7 +195,7 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		}
 		mksquashfsProcs, err := squashfs.GetProcs()
 		if err != nil {
-			return nil, fmt.Errorf("while searching for mksquashfs processr limits: %v", err)
+			return nil, fmt.Errorf("while searching for mksquashfs processor limits: %v", err)
 		}
 		mksquashfsMem, err := squashfs.GetMem()
 		if err != nil {
@@ -260,6 +260,22 @@ func ensureGzipComp(tmpdir, mksquashfsPath string) (bool, error) {
 	}
 
 	flags = []string{"-noappend", "-comp", "gzip"}
+
+	mksquashfsProcs, err := squashfs.GetProcs()
+	if err != nil {
+		return false, fmt.Errorf("while searching for mksquashfs processor limits: %v", err)
+	}
+	mksquashfsMem, err := squashfs.GetMem()
+	if err != nil {
+		return false, fmt.Errorf("while searching for mksquashfs mem limits: %v", err)
+	}
+	if mksquashfsMem != "" {
+		flags = append(flags, "-mem", mksquashfsMem)
+	}
+	if mksquashfsProcs != 0 {
+		flags = append(flags, "-processors", fmt.Sprint(mksquashfsProcs))
+	}
+
 	if err := s.Create([]string{srcf.Name()}, f.Name(), flags); err != nil {
 		return false, fmt.Errorf("could not build squashfs with required gzip compression")
 	}
