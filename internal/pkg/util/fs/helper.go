@@ -19,6 +19,16 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// Abs resolves a path to an absolute path.
+// The supplied path can not be an empty string.
+func Abs(path string) (string, error) {
+	if path == "" {
+		return "", fmt.Errorf("path is empty")
+	}
+
+	return filepath.Abs(path)
+}
+
 // EnsureFileWithPermission takes a file path, and 1. Creates it with
 // the specified permission, or 2. ensures a file is the specified
 // permission.

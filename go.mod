@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
-	github.com/apex/log v1.5.0
+	github.com/apex/log v1.6.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/jsonparser v1.0.0
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
@@ -45,7 +45,7 @@ require (
 	github.com/sylabs/scs-build-client v0.1.4
 	github.com/sylabs/scs-key-client v0.5.0
 	github.com/sylabs/scs-library-client v0.5.5
-	github.com/sylabs/sif v1.2.0
+	github.com/sylabs/sif v1.2.1
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect

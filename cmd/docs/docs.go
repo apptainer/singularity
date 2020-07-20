@@ -63,6 +63,10 @@ func main() {
 		Use:       "makeDocs {markdown | man | rst}",
 		Short:     "Generates Singularity documentation",
 		Run: func(cmd *cobra.Command, args []string) {
+			// We must Init() as loading commands etc. is deferred until this is called.
+			// Using true here will result in local docs including any content for installed
+			// plugins.
+			cli.Init(true)
 			rootCmd := cli.RootCmd()
 			switch args[0] {
 			case "markdown":
