@@ -107,7 +107,6 @@ else
     # this is for old images built with Singularity version prior to 2.3
     if test -f "/environment"; then
         source "/environment"
-        unset PATH
         export PATH="$(fixpath)"
     fi
     source "/.inject-singularity-env.sh"
