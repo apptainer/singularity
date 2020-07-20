@@ -878,9 +878,15 @@ func (c *container) overlayUpperWork(system *mount.System) error {
 	}
 
 	if err := createUpperWork(ov.GetUpperDir(), "upper"); err != nil {
+		sylog.Errorf("Could not create overlay upper dir. If using an overlay image ensure it contains 'upper' and 'work' directories")
 		return err
 	}
-	return createUpperWork(ov.GetWorkDir(), "workdir")
+	if err := createUpperWork(ov.GetWorkDir(), "workdir"); err != nil {
+		sylog.Errorf("Could not create overlay work dir. If using an overlay image ensure it contains 'upper' and 'work' directories")
+		return err
+	}
+
+	return nil
 }
 
 func (c *container) addOverlayMount(system *mount.System) error {
