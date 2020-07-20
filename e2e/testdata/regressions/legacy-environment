@@ -1,0 +1,7 @@
+if test -z "$SINGULARITY_INIT"; then
+    PATH="/canary/path:$PATH"
+    PS1="$PS1"
+    SINGULARITY_INIT=1
+    export PATH PS1 SINGULARITY_INIT
+fi
+

@@ -417,5 +417,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"environment manipulation": c.singularityEnv,
 		"environment option":       c.singularityEnvOption,
 		"environment file":         c.singularityEnvFile,
+		"issue 5426":               c.issue5426, // https://github.com/sylabs/hpcng/issues/5426
+
 	}
 }
