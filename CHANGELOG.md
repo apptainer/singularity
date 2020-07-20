@@ -24,6 +24,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Use squashfs mem and processor limits in squashfs gzip check.
   - Ensure build destination path is not an empty string - do
     not overwrite CWD.
+  - Don't unset PATH when interpreting legacy /environment files.
 
 
 # v3.6.0 - [2020-07-14]
