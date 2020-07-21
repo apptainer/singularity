@@ -31,6 +31,7 @@ import (
 	"github.com/sylabs/singularity/e2e/inspect"
 	"github.com/sylabs/singularity/e2e/instance"
 	"github.com/sylabs/singularity/e2e/key"
+	"github.com/sylabs/singularity/e2e/login"
 	"github.com/sylabs/singularity/e2e/oci"
 	"github.com/sylabs/singularity/e2e/plugin"
 	"github.com/sylabs/singularity/e2e/pull"
@@ -164,6 +165,7 @@ func Run(t *testing.T) {
 	suite.AddGroup("INSPECT", inspect.E2ETests)
 	suite.AddGroup("INSTANCE", instance.E2ETests)
 	suite.AddGroup("KEY", key.E2ETests)
+	suite.AddGroup("LOGIN", login.E2ETests)
 	suite.AddGroup("OCI", oci.E2ETests)
 	suite.AddGroup("PLUGIN", plugin.E2ETests)
 	suite.AddGroup("PULL", pull.E2ETests)

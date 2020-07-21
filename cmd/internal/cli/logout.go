@@ -7,13 +7,13 @@ package cli
 
 import (
 	"context"
-	"errors"
 
 	auth "github.com/deislabs/oras/pkg/auth/docker"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/syfs"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 func init() {
@@ -25,12 +25,15 @@ func init() {
 // LogoutCmd is the 'logout' command that allows user to remove credential for a registry.
 var LogoutCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		hostname := args[0]
 		if hostname == "" {
-			return errors.New("a hostname must be specified")
+			sylog.Fatalf("A hostname must be specified")
 		}
-		return Logout(hostname)
+		if err := Logout(hostname); err != nil {
+			sylog.Fatalf("Logout failed: %s", err)
+		}
+		sylog.Infof("Logout succeeded")
 	},
 	DisableFlagsInUseLine: true,
 

@@ -30,6 +30,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
@@ -50,7 +51,7 @@ func getResolver(ociAuth *ocitypes.DockerAuthConfig) (remotes.Resolver, error) {
 		return docker.NewResolver(opts), nil
 	}
 
-	cli, err := auth.NewClient()
+	cli, err := auth.NewClient(syfs.DockerConf())
 	if err != nil {
 		sylog.Warningf("Couldn't load auth credential file: %s", err)
 		return docker.NewResolver(opts), nil

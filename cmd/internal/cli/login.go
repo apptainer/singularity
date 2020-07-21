@@ -17,6 +17,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/syfs"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 var (
@@ -82,7 +83,7 @@ func init() {
 // LoginCmd is the 'login' command that allows user to login to service.
 var LoginCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		hostname := args[0]
 		username := loginUsername
 		password := loginPassword
@@ -90,7 +91,7 @@ var LoginCmd = &cobra.Command{
 		if loginPasswordStdin {
 			p, err := ioutil.ReadAll(os.Stdin)
 			if err != nil {
-				return err
+				sylog.Fatalf("Failed to read password from stdin: %s", err)
 			}
 			password = strings.TrimSuffix(string(p), "\n")
 			password = strings.TrimSuffix(password, "\r")
@@ -99,11 +100,14 @@ var LoginCmd = &cobra.Command{
 
 			password, err = interactive.AskQuestionNoEcho("Password: ")
 			if err != nil {
-				return err
+				sylog.Fatalf("Failed to read password: %s", err)
 			}
 		}
 
-		return Login(username, password, hostname, loginInsecure)
+		if err := Login(username, password, hostname, loginInsecure); err != nil {
+			sylog.Fatalf("Login failed: %s", err)
+		}
+		sylog.Infof("Login succeeded")
 	},
 	DisableFlagsInUseLine: true,
 

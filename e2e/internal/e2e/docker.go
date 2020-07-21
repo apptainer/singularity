@@ -7,6 +7,7 @@ package e2e
 
 import (
 	"net"
+	"net/http"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
@@ -50,6 +51,16 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 			WithArgs("-s", dockerImage, dockerDefinition),
 			ExpectExit(0),
 		)
+
+		crt := filepath.Join(dockerImage, "certs/root.crt")
+		key := filepath.Join(dockerImage, "certs/root.key")
+
+		go func() {
+			// for simplicity let this be brutally stopped once test finished
+			if err := startAuthServer(crt, key); err != http.ErrServerClosed {
+				t.Errorf("docker auth server error: %s", err)
+			}
+		}()
 
 		var umountFn func(*testing.T)
 
