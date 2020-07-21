@@ -241,6 +241,22 @@ func ensureGzipComp(tmpdir, mksquashfsPath string) (bool, error) {
 	f.Close()
 
 	flags := []string{"-noappend"}
+
+	mksquashfsProcs, err := squashfs.GetProcs()
+	if err != nil {
+		return false, fmt.Errorf("while searching for mksquashfs processor limits: %v", err)
+	}
+	mksquashfsMem, err := squashfs.GetMem()
+	if err != nil {
+		return false, fmt.Errorf("while searching for mksquashfs mem limits: %v", err)
+	}
+	if mksquashfsMem != "" {
+		flags = append(flags, "-mem", mksquashfsMem)
+	}
+	if mksquashfsProcs != 0 {
+		flags = append(flags, "-processors", fmt.Sprint(mksquashfsProcs))
+	}
+
 	if err := s.Create([]string{srcf.Name()}, f.Name(), flags); err != nil {
 		return false, fmt.Errorf("while creating squashfs: %v", err)
 	}
@@ -260,22 +276,8 @@ func ensureGzipComp(tmpdir, mksquashfsPath string) (bool, error) {
 		return false, nil
 	}
 
-	flags = []string{"-noappend", "-comp", "gzip"}
-
-	mksquashfsProcs, err := squashfs.GetProcs()
-	if err != nil {
-		return false, fmt.Errorf("while searching for mksquashfs processor limits: %v", err)
-	}
-	mksquashfsMem, err := squashfs.GetMem()
-	if err != nil {
-		return false, fmt.Errorf("while searching for mksquashfs mem limits: %v", err)
-	}
-	if mksquashfsMem != "" {
-		flags = append(flags, "-mem", mksquashfsMem)
-	}
-	if mksquashfsProcs != 0 {
-		flags = append(flags, "-processors", fmt.Sprint(mksquashfsProcs))
-	}
+	// Now force add `-comp gzip` in addition to -noappend -mem -processors
+	flags = append(flags, "-comp", "gzip")
 
 	if err := s.Create([]string{srcf.Name()}, f.Name(), flags); err != nil {
 		return false, fmt.Errorf("could not build squashfs with required gzip compression")
