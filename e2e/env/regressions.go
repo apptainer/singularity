@@ -6,12 +6,15 @@
 package singularityenv
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/pkg/util/rlimit"
 )
 
 // Check that an old-style `/environment` file is interpreted
@@ -51,5 +54,48 @@ func (c ctx) issue5426(t *testing.T) {
 		e2e.ExpectExit(
 			0,
 			e2e.ExpectOutput(e2e.ContainMatch, "/canary/path")),
+	)
+}
+
+// Check that we hit engine configuation size limit with a rather big
+// configuration by passing some big environment variables.
+func (c ctx) issue5057(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	cur, _, err := rlimit.Get("RLIMIT_STACK")
+	if err != nil {
+		t.Fatalf("Could not determine stack size limit: %s", err)
+	}
+	if buildcfg.MAX_ENGINE_CONFIG_SIZE >= cur/4 {
+		t.Skipf("stack limit too low")
+	}
+
+	max := uint64(buildcfg.MAX_CHUNK_SIZE)
+
+	big := make([]byte, max)
+	for i := uint64(0); i < max; i++ {
+		big[i] = 'A'
+	}
+	bigEnv := make([]string, buildcfg.MAX_ENGINE_CONFIG_CHUNK)
+	for i := range bigEnv {
+		bigEnv[i] = fmt.Sprintf("B%d=%s", i, string(big))
+	}
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithEnv(bigEnv),
+		e2e.WithArgs(c.env.ImagePath, "true"),
+		e2e.ExpectExit(255),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithEnv(bigEnv[:buildcfg.MAX_ENGINE_CONFIG_CHUNK-1]),
+		e2e.WithArgs(c.env.ImagePath, "true"),
+		e2e.ExpectExit(0),
 	)
 }

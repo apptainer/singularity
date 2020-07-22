@@ -46,6 +46,19 @@ config_add_def SESSIONDIR LOCALSTATEDIR \"/singularity/mnt/session\"
 config_add_def SINGULARITY_SUID_INSTALL $with_suid
 config_add_def PLUGIN_ROOTDIR LIBEXECDIR \"/singularity/plugin\"
 
+# engine configuration constants
+engine_config_env="ENGINE_CONFIG"
+engine_config_chunks_env="ENGINE_CONFIG_CHUNKS"
+max_engine_config_chunk="8"
+
+config_add_def ENGINE_CONFIG_ENV \"$engine_config_env\"
+config_add_def ENGINE_CONFIG_CHUNK_ENV \"$engine_config_chunks_env\"
+# add two bytes for '=' and the null character
+config_add_def ENGINE_CONFIG_ENV_PADDING ${#engine_config_env}+${#max_engine_config_chunk}+2
+config_add_def MAX_CHUNK_SIZE 131072-ENGINE_CONFIG_ENV_PADDING
+config_add_def MAX_ENGINE_CONFIG_CHUNK $max_engine_config_chunk
+config_add_def MAX_ENGINE_CONFIG_SIZE MAX_ENGINE_CONFIG_CHUNK*MAX_CHUNK_SIZE
+
 build_runtime=0
 if [ "$host" = "unix" ]; then
 	build_runtime=1

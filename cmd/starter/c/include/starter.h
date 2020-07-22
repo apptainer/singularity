@@ -19,7 +19,6 @@
 #define warningf(b...)   singularity_message(WARNING, b)
 #define errorf(b...)     singularity_message(ERROR, b)
 
-#define MAX_JSON_SIZE       128*1024
 #define MAX_MAP_SIZE        4096
 #define MAX_PATH_SIZE       PATH_MAX
 #define MAX_GID             32
@@ -159,8 +158,9 @@ struct starter {
 
 /* engine configuration */
 struct engine {
-    char config[MAX_JSON_SIZE];
     size_t size;
+    size_t map_size;
+    char *config;
 };
 
 /* starter configuration */

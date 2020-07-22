@@ -11,8 +11,10 @@ import (
 	"fmt"
 )
 
-// sendData sets a socket communication channel between caller and starter
-// binary in order to pass engine JSON configuration data to starter.
-func sendData(data []byte) (int, error) {
-	return -1, fmt.Errorf("not supported on this platform")
+// copyConfigToEnv checks that the current stack size is big enough
+// to pass runtime configuration through environment variables.
+// On linux RLIMIT_STACK determines the amount of space used for the
+// process's command-line arguments and environment variables.
+func copyConfigToEnv(data []byte) ([]string, error) {
+	return nil, fmt.Errorf("not supported on this platform")
 }

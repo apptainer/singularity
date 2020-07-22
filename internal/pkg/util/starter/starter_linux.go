@@ -8,36 +8,82 @@ package starter
 import (
 	"fmt"
 
-	"github.com/sylabs/singularity/pkg/sylog"
-	"golang.org/x/sys/unix"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/pkg/util/rlimit"
 )
 
-// sendData sets a socket communication channel between caller and starter
-// binary in order to pass engine JSON configuration data to starter.
-func sendData(data []byte) (int, error) {
-	fd, err := unix.Socketpair(unix.AF_UNIX, unix.SOCK_STREAM|unix.SOCK_CLOEXEC, 0)
+// copyConfigToEnv checks that the current stack size is big enough
+// to pass runtime configuration through environment variables.
+// On linux RLIMIT_STACK determines the amount of space used for the
+// process's command-line arguments and environment variables.
+func copyConfigToEnv(data []byte) ([]string, error) {
+	var configEnv []string
+
+	const (
+		// space size for singularity argument and environment variables
+		// this is voluntary bigger than the real usage
+		singularityArgSize = 4096
+
+		// for kilobyte conversion
+		kbyte = 1024
+
+		// DO NOT MODIFY those format strings
+		envConfigFormat      = buildcfg.ENGINE_CONFIG_ENV + "%d=%s"
+		envConfigCountFormat = buildcfg.ENGINE_CONFIG_CHUNK_ENV + "=%d"
+	)
+
+	// get the current stack limit in kilobytes
+	cur, max, err := rlimit.Get("RLIMIT_STACK")
 	if err != nil {
-		return -1, fmt.Errorf("failed to create socket communication pipe: %s", err)
+		return nil, fmt.Errorf("failed to determine stack size: %s", err)
 	}
 
-	if curSize, err := unix.GetsockoptInt(fd[0], unix.SOL_SOCKET, unix.SO_SNDBUF); err == nil {
-		if curSize < 65536 {
-			sylog.Warningf("current buffer size is %d, you may encounter some issues", curSize)
-			sylog.Warningf("the minimum recommended value is 65536, you can adjust this value with:")
-			sylog.Warningf("\"echo 65536 > /proc/sys/net/core/wmem_default\"")
+	// stack size divided by four to determine the arguments+environments
+	// size limit
+	argSizeLimit := (cur / 4)
+
+	// config length to be passed via environment variables + some space
+	// for singularity first argument
+	configLength := uint64(len(data)) + singularityArgSize
+
+	// be sure everything fit with the current argument size limit
+	if configLength <= argSizeLimit {
+		i := 1
+		offset := uint64(0)
+		length := uint64(len(data))
+		for i <= buildcfg.MAX_ENGINE_CONFIG_CHUNK {
+			end := offset + buildcfg.MAX_CHUNK_SIZE
+			if end > length {
+				end = length
+			}
+			configEnv = append(configEnv, fmt.Sprintf(envConfigFormat, i, string(data[offset:end])))
+			if end == length {
+				break
+			}
+			offset = end
+			i++
 		}
-	} else {
-		return -1, fmt.Errorf("failed to determine current socket buffer size: %s", err)
+		if i > buildcfg.MAX_ENGINE_CONFIG_CHUNK {
+			return nil, fmt.Errorf("engine configuration too big > %d", buildcfg.MAX_ENGINE_CONFIG_SIZE)
+		}
+		configEnv = append(configEnv, fmt.Sprintf(envConfigCountFormat, i))
+		return configEnv, nil
 	}
 
-	pipeFd, err := unix.Dup(fd[1])
-	if err != nil {
-		return -1, fmt.Errorf("failed to duplicate socket file descriptor: %s", err)
+	roundLimitKB := 4 * ((configLength / kbyte) + 1)
+	hardLimitKB := max / kbyte
+	// the hard limit is reached, maybe user screw up himself by
+	// setting the hard limit with ulimit or this is a limit set
+	// by administrator, in this case returns some hints
+	if roundLimitKB > hardLimitKB {
+		hint := "check if you didn't set the stack size hard limit with ulimit or ask to your administrator"
+		return nil, fmt.Errorf("argument size hard limit reached (%d kbytes), could not pass configuration: %s", hardLimitKB, hint)
 	}
 
-	if n, err := unix.Write(fd[0], data); err != nil || n != len(data) {
-		return -1, fmt.Errorf("failed to write data to socket: %s", err)
-	}
+	hint := fmt.Sprintf("use 'ulimit -S -s %d' and run it again", roundLimitKB)
 
-	return pipeFd, nil
+	return nil, fmt.Errorf(
+		"argument size limit is too low (%d bytes) to pass configuration (%d bytes): %s",
+		argSizeLimit, configLength, hint,
+	)
 }

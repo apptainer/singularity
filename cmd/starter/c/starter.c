@@ -1135,30 +1135,6 @@ static void cleanenv(void) {
     }
 }
 
-/*
- * get_pipe_exec_fd returns the pipe file descriptor stored in
- * the PIPE_EXEC_FD environment variable. The returned pipe contains
- * JSON configuration for an engine to run a container.
- */
-static int get_pipe_exec_fd(void) {
-    int pipe_fd;
-    char *pipe_fd_env = getenv("PIPE_EXEC_FD");
-
-    if ( pipe_fd_env != NULL ) {
-        if ( sscanf(pipe_fd_env, "%d", &pipe_fd) != 1 ) {
-            fatalf("Failed to parse PIPE_EXEC_FD environment variable: %s\n", strerror(errno));
-        }
-        debugf("PIPE_EXEC_FD value: %d\n", pipe_fd);
-        if ( pipe_fd < 0 || pipe_fd >= sysconf(_SC_OPEN_MAX) ) {
-            fatalf("Bad PIPE_EXEC_FD file descriptor value\n");
-        }
-    } else {
-        fatalf("PIPE_EXEC_FD environment variable isn't set\n");
-    }
-
-    return pipe_fd;
-}
-
 /* "noop" mount operation to force kernel to load overlay module */
 void load_overlay_module(void) {
     if ( geteuid() == 0 && getenv("LOAD_OVERLAY_MODULE") != NULL ) {
@@ -1169,7 +1145,65 @@ void load_overlay_module(void) {
             } else {
                 debugf("Overlay seems not supported by the kernel\n");
             }
-        };
+        }
+    }
+}
+
+/* read engine configuration from environment variables */
+static void read_engine_config(struct engine *engine) {
+    char *engine_config[MAX_ENGINE_CONFIG_CHUNK];
+    char env_key[ENGINE_CONFIG_ENV_PADDING] = {0};
+    char *engine_chunk;
+    unsigned long int nchunk = 0;
+    off_t offset = 0;
+    size_t length;
+    int i;
+
+    debugf("Read engine configuration\n");
+
+    engine_chunk = getenv(ENGINE_CONFIG_CHUNK_ENV);
+    if ( engine_chunk == NULL ) {
+        fatalf("No engine config chunk provided\n");
+    }
+    nchunk = strtoul(engine_chunk, NULL, 10);
+    if ( nchunk == 0 || nchunk > MAX_ENGINE_CONFIG_CHUNK ) {
+        fatalf("Bad number of engine config chunk provided '%s': 0 or > %d\n", engine_chunk, MAX_ENGINE_CONFIG_CHUNK);
+    }
+
+    for ( i = 0; i < nchunk; i++ ) {
+        snprintf(env_key, sizeof(env_key)-1, ENGINE_CONFIG_ENV"%d", i+1);
+        engine_config[i] = getenv(env_key);
+        if ( engine_config[i] == NULL ) {
+            fatalf("No engine configuration found in %s\n", env_key);
+        }
+        engine->size += strnlen(engine_config[i], MAX_CHUNK_SIZE);
+    }
+
+    if ( engine->size >= MAX_ENGINE_CONFIG_SIZE ) {
+        fatalf("Engine configuration too big >= %d bytes\n", MAX_ENGINE_CONFIG_SIZE);
+    }
+
+    /* allocate additional space for stage1 */
+    engine->map_size = engine->size + MAX_CHUNK_SIZE;
+    engine->config = (char *)mmap(NULL, engine->map_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
+    if ( engine->config == MAP_FAILED ) {
+        fatalf("Memory allocation failed: %s\n", strerror(errno));
+    }
+
+    for ( i = 0; i < nchunk; i++ ) {
+        length = strnlen(engine_config[i], MAX_CHUNK_SIZE);
+        memcpy(&engine->config[offset], engine_config[i], length);
+        offset += length;
+    }
+}
+
+/* release previously mmap'ed memory */
+static void release_memory(struct starterConfig *sconfig) {
+    if ( munmap(sconfig->engine.config, sconfig->engine.map_size) < 0 ) {
+        fatalf("Engine configuration memory release failed: %s\n", strerror(errno));
+    }
+    if ( munmap(sconfig, sizeof(struct starterConfig)) < 0 ) {
+        fatalf("Starter configuration memory release failed: %s\n", strerror(errno));
     }
 }
 
@@ -1188,7 +1222,6 @@ __attribute__((constructor)) static void init(void) {
     uid_t uid = getuid();
     sigset_t mask;
     pid_t process;
-    int pipe_fd = -1;
     int clone_flags = 0;
     int userns = NO_NAMESPACE, pidns = NO_NAMESPACE;
     fdlist_t *master_fds;
@@ -1201,15 +1234,6 @@ __attribute__((constructor)) static void init(void) {
 
     /* force loading overlay kernel module if requested */
     load_overlay_module();
-
-    /*
-     * get pipe file descriptor from environment variable PIPE_EXEC_FD
-     * to read engine configuration
-     */
-    pipe_fd = get_pipe_exec_fd();
-
-    /* cleanup environment variables */
-    cleanenv();
 
     /* initialize starter configuration in shared memory to later share with child processes */
     sconfig = (struct starterConfig *)mmap(NULL, sizeof(struct starterConfig), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
@@ -1224,13 +1248,11 @@ __attribute__((constructor)) static void init(void) {
         priv_drop(false);
     }
 
-    debugf("Read engine configuration\n");
+    /* retrieve engine configuration from environment variables */
+    read_engine_config(&sconfig->engine);
 
-    /* read engine configuration from pipe */
-    if ( ( sconfig->engine.size = read(pipe_fd, sconfig->engine.config, MAX_JSON_SIZE - 1) ) <= 0 ) {
-        fatalf("Read engine configuration from pipe failed: %s\n", strerror(errno));
-    }
-    close(pipe_fd);
+    /* cleanup environment variables */
+    cleanenv();
 
     /* fix I/O streams to point to /dev/null if they are closed */
     fix_streams();
@@ -1616,7 +1638,8 @@ __attribute__((constructor)) static void init(void) {
                 priv_drop(true);
             }
             debugf("Wait stage 2 child process\n");
-            wait_child("stage 2", sconfig->container.pid, true);
+            release_memory(sconfig);
+            wait_child("stage 2", process, true);
         } else {
             /* close container end of rpc communication socket */
             close(rpc_socket[1]);

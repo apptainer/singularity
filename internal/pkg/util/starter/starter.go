@@ -132,13 +132,13 @@ func (c *Command) init(config *config.Common, ops ...CommandOp) error {
 		return fmt.Errorf("while marshaling config: %s", err)
 	}
 
-	pipeFd, err := sendData(data)
+	envConfig, err := copyConfigToEnv(data)
 	if err != nil {
-		return fmt.Errorf("while sending configuration data: %s", err)
+		return fmt.Errorf("while copying engine configuration: %s", err)
 	}
 
-	env := []string{sylog.GetEnvVar(), fmt.Sprintf("PIPE_EXEC_FD=%d", pipeFd)}
-	c.env = append(c.env, env...)
+	c.env = append(c.env, sylog.GetEnvVar())
+	c.env = append(c.env, envConfig...)
 
 	return nil
 }

@@ -182,7 +182,7 @@ func (c *Config) SetAllowSetgroups(allow bool) {
 // GetJSONConfig returns pointer to the engine's JSON configuration.
 // A copy of the original bytes allocated on C heap is returned.
 func (c *Config) GetJSONConfig() []byte {
-	return C.GoBytes(unsafe.Pointer(&c.config.engine.config[0]), C.int(c.config.engine.size))
+	return C.GoBytes(unsafe.Pointer(c.config.engine.config), C.int(c.config.engine.size))
 }
 
 // WriteConfig modifies starter config by fully updating engine json
@@ -195,14 +195,13 @@ func (c *Config) Write(payload interface{}) error {
 	}
 
 	size := len(jsonConf)
-	maxSize := C.MAX_JSON_SIZE - 1
-	if size >= maxSize {
-		return fmt.Errorf("json configuration too big %d > %d", size, maxSize)
+	c.config.engine.size = C.size_t(size)
+	if c.config.engine.size >= c.config.engine.map_size {
+		return fmt.Errorf("not enough space for json configuration")
 	}
 
-	c.config.engine.size = C.size_t(size)
 	engineConfig := C.CBytes(jsonConf)
-	C.memcpy(unsafe.Pointer(&c.config.engine.config[0]), engineConfig, c.config.engine.size)
+	C.memcpy(unsafe.Pointer(c.config.engine.config), engineConfig, c.config.engine.size)
 	C.free(engineConfig)
 
 	return nil
@@ -449,6 +448,9 @@ func (c *Config) SetTargetGID(gids []int) {
 // the underlying starter configuration. Attempt to modify the underlying config after
 // call to Release will result in a segmentation fault.
 func (c *Config) Release() error {
+	if C.munmap(unsafe.Pointer(c.config.engine.config), c.config.engine.map_size) != 0 {
+		return fmt.Errorf("failed to release engine config memory")
+	}
 	if C.munmap(unsafe.Pointer(c.config), C.sizeof_struct_starterConfig) != 0 {
 		return fmt.Errorf("failed to release starter memory")
 	}
