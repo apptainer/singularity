@@ -353,15 +353,26 @@ static void set_rpc_privileges(void) {
 
     memset(priv, 0, sizeof(struct privileges));
 
-    priv->capabilities.effective |= capflag(CAP_MKNOD);
-    priv->capabilities.effective |= capflag(CAP_SETGID);
-    priv->capabilities.effective |= capflag(CAP_SETUID);
-    priv->capabilities.effective |= capflag(CAP_SYS_ADMIN);
-    priv->capabilities.effective |= capflag(CAP_SYS_CHROOT);
-    priv->capabilities.effective |= capflag(CAP_IPC_LOCK);
-
-    priv->capabilities.permitted = priv->capabilities.effective;
-    priv->capabilities.bounding = priv->capabilities.effective;
+    priv->capabilities.effective = capflag(CAP_SYS_ADMIN);
+    /*
+     * for some operations like container decryption, overlay mount,
+     * chroot and creation of loop devices, the following capabilities
+     * must be in the permitted set:
+     * - CAP_MKNOD
+     * - CAP_SYS_CHROOT
+     * - CAP_SETGID
+     * - CAP_SETUID
+     * - CAP_FOWNER
+     * - CAP_DAC_OVERRIDE
+     * - CAP_DAC_READ_SEARCH
+     * - CAP_CHOWN
+     * - CAP_IPC_LOCK
+     * - CAP_SYS_PTRACE
+     */
+    priv->capabilities.permitted = current->permitted;
+    /* required by cryptsetup */
+    priv->capabilities.bounding = capflag(CAP_SYS_ADMIN);
+    priv->capabilities.bounding |= capflag(CAP_IPC_LOCK);
 
     debugf("Set RPC privileges\n");
     apply_privileges(priv, current);

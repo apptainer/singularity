@@ -404,3 +404,42 @@ func (c actionTests) issue5307(t *testing.T) {
 		),
 	)
 }
+
+// Check that we can create a directory in a root owned directory
+// with others write permissions in conjunction with --writable-tmpfs.
+func (c actionTests) issue5455(t *testing.T) {
+	require.Filesystem(t, "overlay")
+
+	e2e.EnsureImage(t, c.env)
+
+	dir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue5455-", "")
+	defer e2e.Privileged(cleanup)(t)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", dir, c.env.ImagePath),
+		e2e.PostRun(func(t *testing.T) {
+			if t.Failed() {
+				return
+			}
+			permDir := filepath.Join(dir, "perm")
+			if err := os.Mkdir(permDir, 0777); err != nil {
+				t.Errorf("while creating %s: %s", permDir, err)
+			}
+			if err := os.Chmod(permDir, 0777); err != nil {
+				t.Errorf("while setting permission on %s: %s", permDir, err)
+			}
+		}),
+		e2e.ExpectExit(0),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--writable-tmpfs", dir, "mkdir", "/perm/issue5455"),
+		e2e.ExpectExit(0),
+	)
+}

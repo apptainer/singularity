@@ -428,7 +428,7 @@ func (c configTests) configFile(t *testing.T) {
 			name:    "UserForbidden",
 			argv:    []string{c.env.ImagePath, "true"},
 			profile: e2e.UserProfile,
-			conf:    "max loop devices = 0\n",
+			conf:    "max loop devices = 128\n",
 			exit:    255,
 		},
 	}
