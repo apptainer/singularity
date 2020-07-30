@@ -98,10 +98,15 @@ var LoginCmd = &cobra.Command{
 		} else if password == "" {
 			var err error
 
-			password, err = interactive.AskQuestionNoEcho("Password: ")
+			question := "Password (or token if username is empty): "
+			password, err = interactive.AskQuestionNoEcho(question)
 			if err != nil {
 				sylog.Fatalf("Failed to read password: %s", err)
 			}
+		}
+
+		if password == "" {
+			sylog.Fatalf("Password required")
 		}
 
 		if err := Login(username, password, hostname, loginInsecure); err != nil {
