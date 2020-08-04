@@ -525,6 +525,8 @@ github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568 h1:Bv8RD7DVhhvY
 github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568/go.mod h1:1CO+05HLIlepCW8AZHGumlYfh/6mOa6puEIt1Yv0aUM=
 github.com/sylabs/json-resp v0.6.0 h1:W/yxwBu6WPMqiU9YBaelUsfWU1ZD+x4f4rxqmTr0LaI=
 github.com/sylabs/json-resp v0.6.0/go.mod h1:QYGGBTYDgiIH+c6zRQuVd4PIYfm//vFD2flnIdF1k7E=
+github.com/sylabs/json-resp v0.7.0 h1:h3jO5QZ+K8Zul4QtmTqEp5TTIUkmdcfz6CsdUceaSnw=
+github.com/sylabs/json-resp v0.7.0/go.mod h1:QYGGBTYDgiIH+c6zRQuVd4PIYfm//vFD2flnIdF1k7E=
 github.com/sylabs/scs-build-client v0.1.4 h1:qSmrjWJBz3/kQfTnfpq3L7aKZyJnUgJajbq/h0zUM4w=
 github.com/sylabs/scs-build-client v0.1.4/go.mod h1:HxxopmlbGhWbHjaLBlTlcnV10NuMJnbf90Lj9yyW+YA=
 github.com/sylabs/scs-key-client v0.5.0 h1:EU/acjsiq0PSKvbpHTOoeuFtrkn6IIJsxhga7t6BBek=
