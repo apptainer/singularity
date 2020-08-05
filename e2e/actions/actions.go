@@ -1714,7 +1714,8 @@ func (c actionTests) fuseMount(t *testing.T) {
 		},
 	}
 
-	optionFmt := "%s:%s root@127.0.0.1:/ -p 2022 -o IdentityFile=%s -o StrictHostKeyChecking=no %s"
+	optionFmt := "%s:%s root@127.0.0.1:/ -p 2022 -F %s -o IdentityFile=%s -o StrictHostKeyChecking=no %s"
+	sshConfig := filepath.Join(imageDir, "etc", "ssh", "ssh_config")
 
 	for _, tt := range basicTests {
 		c.env.RunSingularity(
@@ -1723,7 +1724,7 @@ func (c actionTests) fuseMount(t *testing.T) {
 			e2e.WithProfile(tt.profile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs([]string{
-				"--fusemount", fmt.Sprintf(optionFmt, tt.spec, sshfsWrapper, tt.key, "/mnt"),
+				"--fusemount", fmt.Sprintf(optionFmt, tt.spec, sshfsWrapper, sshConfig, tt.key, "/mnt"),
 				imageDir,
 				"test", "-d", "/mnt/etc",
 			}...),
