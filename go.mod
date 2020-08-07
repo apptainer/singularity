@@ -31,13 +31,13 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20191218002246-9ea04d1f37d7
 	github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74
-	github.com/opencontainers/runtime-spec v1.0.3-0.20200520003142-237cc4f519e2
+	github.com/opencontainers/runtime-spec v1.0.3-0.20200710190001-3e4195d92445
 	github.com/opencontainers/selinux v1.6.0
 	github.com/opencontainers/umoci v0.4.6-0.20200622135030-30d116059d97
 	github.com/pelletier/go-toml v1.8.0
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
-	github.com/seccomp/containers-golang v0.5.0
+	github.com/seccomp/containers-golang v0.6.0
 	github.com/seccomp/libseccomp-golang v0.9.1
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
@@ -55,7 +55,7 @@ require (
 	go.opencensus.io v0.22.2 // indirect
 	go4.org v0.0.0-20180417224846-9599cf28b011 // indirect
 	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9
-	golang.org/x/sys v0.0.0-20200615200032-f1bc736245b1
+	golang.org/x/sys v0.0.0-20200720211630-cb9d2d5c5666
 	gopkg.in/yaml.v2 v2.3.0
 	gotest.tools/v3 v3.0.2
 	mvdan.cc/sh/v3 v3.1.2
