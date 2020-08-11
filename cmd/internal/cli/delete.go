@@ -7,6 +7,7 @@ package cli
 
 import (
 	"context"
+	"runtime"
 	"strings"
 	"time"
 
@@ -34,10 +35,9 @@ var deleteImageArch string
 var deleteImageArchFlag = cmdline.Flag{
 	ID:           "deleteImageArchFlag",
 	Value:        &deleteImageArch,
-	DefaultValue: "",
+	DefaultValue: runtime.GOARCH,
 	Name:         "arch",
 	ShortHand:    "A",
-	Required:     true,
 	Usage:        "specify requested image arch",
 	EnvKeys:      []string{"ARCH"},
 }
@@ -73,6 +73,7 @@ var deleteImageCmd = &cobra.Command{
 	PreRun:  sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		handleDeleteFlags(cmd)
+		sylog.Debugf("Using library service URI: %s", deleteLibraryURI)
 
 		imageRef := strings.TrimPrefix(args[0], "library://")
 
@@ -103,13 +104,19 @@ var deleteImageCmd = &cobra.Command{
 
 func handleDeleteFlags(cmd *cobra.Command) {
 	endpoint, err := sylabsRemote(remoteConfig)
-	if err != nil {
-		if err == scs.ErrNoDefault {
-			sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
-			return
-		}
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to: %v", deleteLibraryURI)
+		return
+	} else if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 
 	authToken = endpoint.Token
+	if !cmd.Flags().Lookup("library").Changed {
+		uri, err := endpoint.GetServiceURI("library")
+		if err != nil {
+			sylog.Fatalf("Unable to get library service URI: %v", err)
+		}
+		deleteLibraryURI = uri
+	}
 }

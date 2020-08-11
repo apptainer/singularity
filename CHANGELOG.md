@@ -9,6 +9,16 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
+# Changes since v3.6.1
+
+## Change defaults / behaviours
+
+  - Default to current architecture for `singularity delete`.
+
+## Bug Fixes
+
+  - Respect current remote for `singularity delete` command.
+
 
 # v3.6.1 - [2020-07-21]
 
