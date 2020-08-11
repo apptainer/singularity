@@ -7,6 +7,7 @@ package cli
 
 import (
 	"context"
+	"runtime"
 	"strings"
 	"time"
 
@@ -24,20 +25,31 @@ import (
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(deleteImageCmd)
+		cmdManager.RegisterFlagForCmd(&deleteForceFlag, deleteImageCmd)
 		cmdManager.RegisterFlagForCmd(&deleteImageArchFlag, deleteImageCmd)
 		cmdManager.RegisterFlagForCmd(&deleteImageTimeoutFlag, deleteImageCmd)
 		cmdManager.RegisterFlagForCmd(&deleteLibraryURIFlag, deleteImageCmd)
 	})
 }
 
+var deleteForce bool
+var deleteForceFlag = cmdline.Flag{
+	ID:           "deleteForceFlag",
+	Value:        &deleteForce,
+	DefaultValue: false,
+	Name:         "force",
+	ShortHand:    "F",
+	Usage:        "delete image without confirmation",
+	EnvKeys:      []string{"FORCE"},
+}
+
 var deleteImageArch string
 var deleteImageArchFlag = cmdline.Flag{
 	ID:           "deleteImageArchFlag",
 	Value:        &deleteImageArch,
-	DefaultValue: "",
+	DefaultValue: runtime.GOARCH,
 	Name:         "arch",
 	ShortHand:    "A",
-	Required:     true,
 	Usage:        "specify requested image arch",
 	EnvKeys:      []string{"ARCH"},
 }
@@ -73,6 +85,7 @@ var deleteImageCmd = &cobra.Command{
 	PreRun:  sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		handleDeleteFlags(cmd)
+		sylog.Debugf("Using library service URI: %s", deleteLibraryURI)
 
 		imageRef := strings.TrimPrefix(args[0], "library://")
 
@@ -82,17 +95,19 @@ var deleteImageCmd = &cobra.Command{
 			Logger:    (golog.Logger)(sylog.DebugLogger{}),
 		}
 
-		y, err := interactive.AskYNQuestion("n", "Are you sure you want to delete %s arch[%s] [N/y] ", imageRef, deleteImageArch)
-		if err != nil {
-			sylog.Fatalf(err.Error())
-		}
-		if y == "n" {
-			return
+		if !deleteForce {
+			y, err := interactive.AskYNQuestion("n", "Are you sure you want to delete %s (%s) [N/y] ", imageRef, deleteImageArch)
+			if err != nil {
+				sylog.Fatalf(err.Error())
+			}
+			if y == "n" {
+				return
+			}
 		}
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(deleteImageTimeout)*time.Second)
 		defer cancel()
-		err = singularity.DeleteImage(ctx, libraryConfig, imageRef, deleteImageArch)
+		err := singularity.DeleteImage(ctx, libraryConfig, imageRef, deleteImageArch)
 		if err != nil {
 			sylog.Fatalf("Unable to delete image from library: %s\n", err)
 		}
@@ -103,13 +118,19 @@ var deleteImageCmd = &cobra.Command{
 
 func handleDeleteFlags(cmd *cobra.Command) {
 	endpoint, err := sylabsRemote(remoteConfig)
-	if err != nil {
-		if err == scs.ErrNoDefault {
-			sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
-			return
-		}
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to: %v", deleteLibraryURI)
+		return
+	} else if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 
 	authToken = endpoint.Token
+	if !cmd.Flags().Lookup("library").Changed {
+		uri, err := endpoint.GetServiceURI("library")
+		if err != nil {
+			sylog.Fatalf("Unable to get library service URI: %v", err)
+		}
+		deleteLibraryURI = uri
+	}
 }
