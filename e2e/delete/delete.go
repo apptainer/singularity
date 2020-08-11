@@ -49,6 +49,18 @@ func (c ctx) testDeleteCmd(t *testing.T) {
 			expectExit: 0,
 		},
 		{
+			name:       "delete unauthorized force arch",
+			args:       []string{"--force", "--arch=amd64", "library://test/default/test:v0.0.3"},
+			agree:      "",
+			expectExit: 255,
+		},
+		{
+			name:       "delete unauthorized force noarch",
+			args:       []string{"--force", "library://test/default/test:v0.0.3"},
+			agree:      "",
+			expectExit: 255,
+		},
+		{
 			name:       "delete unauthorized custom library",
 			args:       []string{"--library=https://cloud.staging.sylabs.io", "library://test/default/test:v0.0.3"},
 			agree:      "y",

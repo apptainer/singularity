@@ -25,10 +25,22 @@ import (
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(deleteImageCmd)
+		cmdManager.RegisterFlagForCmd(&deleteForceFlag, deleteImageCmd)
 		cmdManager.RegisterFlagForCmd(&deleteImageArchFlag, deleteImageCmd)
 		cmdManager.RegisterFlagForCmd(&deleteImageTimeoutFlag, deleteImageCmd)
 		cmdManager.RegisterFlagForCmd(&deleteLibraryURIFlag, deleteImageCmd)
 	})
+}
+
+var deleteForce bool
+var deleteForceFlag = cmdline.Flag{
+	ID:           "deleteForceFlag",
+	Value:        &deleteForce,
+	DefaultValue: false,
+	Name:         "force",
+	ShortHand:    "F",
+	Usage:        "delete image without confirmation",
+	EnvKeys:      []string{"FORCE"},
 }
 
 var deleteImageArch string
@@ -83,17 +95,19 @@ var deleteImageCmd = &cobra.Command{
 			Logger:    (golog.Logger)(sylog.DebugLogger{}),
 		}
 
-		y, err := interactive.AskYNQuestion("n", "Are you sure you want to delete %s arch[%s] [N/y] ", imageRef, deleteImageArch)
-		if err != nil {
-			sylog.Fatalf(err.Error())
-		}
-		if y == "n" {
-			return
+		if !deleteForce {
+			y, err := interactive.AskYNQuestion("n", "Are you sure you want to delete %s arch[%s] [N/y] ", imageRef, deleteImageArch)
+			if err != nil {
+				sylog.Fatalf(err.Error())
+			}
+			if y == "n" {
+				return
+			}
 		}
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(deleteImageTimeout)*time.Second)
 		defer cancel()
-		err = singularity.DeleteImage(ctx, libraryConfig, imageRef, deleteImageArch)
+		err := singularity.DeleteImage(ctx, libraryConfig, imageRef, deleteImageArch)
 		if err != nil {
 			sylog.Fatalf("Unable to delete image from library: %s\n", err)
 		}

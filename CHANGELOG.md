@@ -11,6 +11,11 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes since v3.6.1
 
+## New features / functionalities
+
+  - Add --force option to `singularity delete` for non-interactive
+    workflows.
+
 ## Change defaults / behaviours
 
   - Default to current architecture for `singularity delete`.
