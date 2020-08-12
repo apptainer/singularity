@@ -20,11 +20,11 @@
 
     BUILD
 
-    	sudo singularity build build-singularity.sif build-singularity.def
+	sudo singularity build build-singularity.sif build-singularity.def
 
 
     USAGE
 
         ./build-singularity.sif {version}
 
-    	./build-singularity.sif 3.6.1
+	./build-singularity.sif 3.6.1
