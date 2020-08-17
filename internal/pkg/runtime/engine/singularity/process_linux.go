@@ -607,8 +607,7 @@ func (b *bufferCloser) Close() error {
 }
 
 // Register a virtual file /.singularity.d/env/inject-singularity-env.sh sourced
-// either after sourcing /.singularity.d/env/10-docker2singularity.sh or before
-// sourcing /.singularity.d/env/90-environment.sh.
+// after /.singularity.d/env/99-base.sh or /environment.
 // This handler turns all SINGUALRITYENV_KEY=VAL defined variables into their form:
 // export KEY=VAL. It can be sourced only once otherwise it returns an empty content.
 func injectEnvHandler(senv map[string]string) interpreter.OpenHandler {
@@ -632,6 +631,10 @@ func injectEnvHandler(senv map[string]string) interpreter.OpenHandler {
 			export %[1]s=%[2]q
 			`
 			for key, value := range senv {
+				if key == "LD_LIBRARY_PATH" && value != "" {
+					b.WriteString(fmt.Sprintf(snippet, key, value+":/.singularity.d/libs"))
+					continue
+				}
 				b.WriteString(fmt.Sprintf(snippet, key, value))
 			}
 		})

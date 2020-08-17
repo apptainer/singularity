@@ -23,7 +23,8 @@ type ctx struct {
 }
 
 const (
-	defaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+	defaultPath     = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+	singularityLibs = "/.singularity.d/libs"
 )
 
 func (c ctx) singularityEnv(t *testing.T) {
@@ -282,6 +283,19 @@ func (c ctx) singularityEnvOption(t *testing.T) {
 			matchEnv: "BASH_FUNC_ml%%",
 			matchVal: "",
 		},
+		{
+			name:     "TestDefaultLdLibraryPath",
+			image:    c.env.ImagePath,
+			matchEnv: "LD_LIBRARY_PATH",
+			matchVal: singularityLibs,
+		},
+		{
+			name:     "TestCustomLdLibraryPath",
+			image:    c.env.ImagePath,
+			envOpt:   []string{"LD_LIBRARY_PATH=/foo"},
+			matchEnv: "LD_LIBRARY_PATH",
+			matchVal: "/foo:" + singularityLibs,
+		},
 	}
 
 	for _, tt := range tests {
@@ -378,6 +392,19 @@ func (c ctx) singularityEnvFile(t *testing.T) {
 			envFile:  "PREPEND_PATH=/",
 			matchEnv: "PATH",
 			matchVal: "/:" + imageDefaultPath,
+		},
+		{
+			name:     "DefaultLdLibraryPath",
+			image:    c.env.ImagePath,
+			matchEnv: "LD_LIBRARY_PATH",
+			matchVal: singularityLibs,
+		},
+		{
+			name:     "CustomLdLibraryPath",
+			image:    c.env.ImagePath,
+			envFile:  "LD_LIBRARY_PATH=/foo",
+			matchEnv: "LD_LIBRARY_PATH",
+			matchVal: "/foo:" + singularityLibs,
 		},
 	}
 
