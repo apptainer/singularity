@@ -91,7 +91,7 @@ var tests = []testStruct{
 	// test version specifications
 	{
 		desc:             "image with specific hash",
-		srcURI:           "library://sylabs/tests/signed:sha256.5c439fd262095766693dae95fb81334c3a02a7f0e4dc6291e0648ed4ddc61c6c",
+		srcURI:           "library://alpine:sha256.03883ca565b32e58fa0a496316d69de35741f2ef34b5b4658a6fec04ed8149a8",
 		unauthenticated:  true,
 		expectedExitCode: 0,
 	},
