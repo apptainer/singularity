@@ -82,7 +82,7 @@ func SetContainerEnv(g *generate.Generator, hostEnvs []string, cleanEnv bool, ho
 				}
 				sylog.Verbosef("Forwarding %s as %s environment variable", e[0], key)
 				singEnvKeys[key] = e[1]
-				g.AddProcessEnv(key, e[1])
+				g.RemoveProcessEnv(key)
 			}
 		} else {
 			// SINGULARITYENV_ prefixed environment variables will take

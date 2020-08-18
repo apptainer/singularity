@@ -107,6 +107,21 @@ func (g *Generator) AddProcessEnv(env, value string) {
 	g.Config.Process.Env = append(g.Config.Process.Env, kenv+value)
 }
 
+// RemoveProcessEnv removes a container process environment variable.
+func (g *Generator) RemoveProcessEnv(env string) {
+	g.initProcess()
+
+	kenv := fmt.Sprintf("%s=", env)
+	l := len(kenv)
+
+	for i, e := range g.Config.Process.Env {
+		if len(e) >= l && e[:l] == kenv {
+			g.Config.Process.Env = append(g.Config.Process.Env[:i], g.Config.Process.Env[i+1:]...)
+			return
+		}
+	}
+}
+
 // AddOrReplaceLinuxNamespace adds or updates a container process namespace.
 func (g *Generator) AddOrReplaceLinuxNamespace(ns specs.LinuxNamespaceType, path string) {
 	switch ns {
