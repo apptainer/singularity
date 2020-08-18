@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -287,18 +286,6 @@ func (c *ctx) setup(t *testing.T) {
 }
 
 func (c ctx) testPullCmd(t *testing.T) {
-	// XXX(mem): this should come from the environment
-	sylabsAdminFingerprint := "8883491F4268F173C6E5DC49EDECE4F3F38D871E"
-	argv := []string{"key", "pull", sylabsAdminFingerprint}
-	out, err := exec.Command(c.env.CmdPath, argv...).CombinedOutput()
-	if err != nil {
-		t.Fatalf("Cannot pull key %q: %+v\nCommand:\n%s %s\nOutput:\n%s\n",
-			sylabsAdminFingerprint,
-			err,
-			c.env.CmdPath, strings.Join(argv, " "),
-			out)
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			tmpdir, err := ioutil.TempDir(c.env.TestDir, "pull_test.")
