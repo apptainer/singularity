@@ -131,7 +131,7 @@ var tests = []testStruct{
 	// transport tests
 	{
 		desc:             "bare image name",
-		srcURI:           "alpine:3.8",
+		srcURI:           "alpine:3.11.5",
 		force:            true,
 		unauthenticated:  true,
 		expectedExitCode: 0,

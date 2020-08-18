@@ -245,7 +245,7 @@ func TestPull(t *testing.T) {
 		},
 		{
 			name:            "PullWithoutTransportProtocol",
-			sourceSpec:      "alpine:3.8",
+			sourceSpec:      "alpine:3.11.5",
 			force:           true,
 			unauthenticated: true,
 			library:         "",
