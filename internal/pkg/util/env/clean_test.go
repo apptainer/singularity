@@ -76,7 +76,6 @@ func TestSetContainerEnv(t *testing.T) {
 				"SOCIOPATH=VolanDeMort",
 				"TERM=xterm-256color",
 				"LANG=C",
-				"LD_LIBRARY_PATH=/my/custom/libs",
 				"PWD=/tmp",
 				"LC_ALL=C",
 				"HOME=/home/tester",
@@ -140,7 +139,6 @@ func TestSetContainerEnv(t *testing.T) {
 			resultEnv: []string{
 				"LANG=C",
 				"TERM=xterm-256color",
-				"FOO=VAR",
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
@@ -189,7 +187,6 @@ func TestSetContainerEnv(t *testing.T) {
 				"NO_PROXY=no_proxy",
 				"ALL_PROXY=all_proxy",
 				"FTP_PROXY=ftp_proxy",
-				"FOO=VAR",
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
@@ -220,7 +217,6 @@ func TestSetContainerEnv(t *testing.T) {
 				"SINGULARITYENV_LANG=en",
 			},
 			resultEnv: []string{
-				"LANG=en",
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
@@ -249,7 +245,6 @@ func TestSetContainerEnv(t *testing.T) {
 				"SINGULARITYENV_LD_LIBRARY_PATH=/my/libs",
 			},
 			resultEnv: []string{
-				"LD_LIBRARY_PATH=/my/libs",
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
@@ -266,7 +261,6 @@ func TestSetContainerEnv(t *testing.T) {
 			},
 			resultEnv: []string{
 				"LANG=C",
-				"LD_LIBRARY_PATH=/my/libs",
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
@@ -283,7 +277,6 @@ func TestSetContainerEnv(t *testing.T) {
 				"SINGULARITYENV_HOST=myhostenv",
 			},
 			resultEnv: []string{
-				"HOST=myhostenv",
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
@@ -300,7 +293,6 @@ func TestSetContainerEnv(t *testing.T) {
 				"HOST=myhost",
 			},
 			resultEnv: []string{
-				"HOST=myhostenv",
 				"HOME=/home/tester",
 				"PATH=" + DefaultPath,
 			},
