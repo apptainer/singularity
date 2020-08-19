@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -92,7 +91,7 @@ var tests = []testStruct{
 	// test version specifications
 	{
 		desc:             "image with specific hash",
-		srcURI:           "library://sylabs/tests/signed:sha256.5c439fd262095766693dae95fb81334c3a02a7f0e4dc6291e0648ed4ddc61c6c",
+		srcURI:           "library://alpine:sha256.03883ca565b32e58fa0a496316d69de35741f2ef34b5b4658a6fec04ed8149a8",
 		unauthenticated:  true,
 		expectedExitCode: 0,
 	},
@@ -131,7 +130,7 @@ var tests = []testStruct{
 	// transport tests
 	{
 		desc:             "bare image name",
-		srcURI:           "alpine:3.8",
+		srcURI:           "alpine:3.11.5",
 		force:            true,
 		unauthenticated:  true,
 		expectedExitCode: 0,
@@ -287,18 +286,6 @@ func (c *ctx) setup(t *testing.T) {
 }
 
 func (c ctx) testPullCmd(t *testing.T) {
-	// XXX(mem): this should come from the environment
-	sylabsAdminFingerprint := "8883491F4268F173C6E5DC49EDECE4F3F38D871E"
-	argv := []string{"key", "pull", sylabsAdminFingerprint}
-	out, err := exec.Command(c.env.CmdPath, argv...).CombinedOutput()
-	if err != nil {
-		t.Fatalf("Cannot pull key %q: %+v\nCommand:\n%s %s\nOutput:\n%s\n",
-			sylabsAdminFingerprint,
-			err,
-			c.env.CmdPath, strings.Join(argv, " "),
-			out)
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			tmpdir, err := ioutil.TempDir(c.env.TestDir, "pull_test.")
