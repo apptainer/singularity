@@ -137,6 +137,11 @@ func TestGenerate(t *testing.T) {
 		t.Fatalf("wrong OCI process environment size: %d instead of 2", len(config.Process.Env))
 	}
 
+	g.RemoveProcessEnv("FOO2")
+	if len(config.Process.Env) != 1 {
+		t.Fatalf("wrong OCI process environment size: %d instead of 1", len(config.Process.Env))
+	}
+
 	g.AddOrReplaceLinuxNamespace("bad", "")
 	if len(config.Linux.Namespaces) != 0 {
 		t.Fatalf("wrong OCI process namespace size: %d instead of 0", len(config.Linux.Namespaces))

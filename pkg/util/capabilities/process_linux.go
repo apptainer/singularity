@@ -13,46 +13,90 @@ import (
 
 // getProcessCapabilities returns capabilities either effective,
 // permitted or inheritable for the current process.
-func getProcessCapabilities(capType string) (uint64, error) {
-	var caps uint64
+func getProcessCapabilities() ([2]unix.CapUserData, error) {
 	var data [2]unix.CapUserData
 	var header unix.CapUserHeader
 
 	header.Version = unix.LINUX_CAPABILITY_VERSION_3
 
 	if err := unix.Capget(&header, &data[0]); err != nil {
-		return caps, fmt.Errorf("while getting capability: %s", err)
+		return data, fmt.Errorf("while getting capability: %s", err)
 	}
 
-	switch capType {
-	case Effective:
-		caps = uint64(data[0].Effective)
-		caps |= uint64(data[1].Effective) << 32
-	case Permitted:
-		caps = uint64(data[0].Permitted)
-		caps |= uint64(data[1].Permitted) << 32
-	case Inheritable:
-		caps = uint64(data[0].Inheritable)
-		caps |= uint64(data[1].Inheritable) << 32
-	}
-
-	return caps, nil
+	return data, nil
 }
 
 // GetProcessEffective returns effective capabilities for
 // the current process.
 func GetProcessEffective() (uint64, error) {
-	return getProcessCapabilities(Effective)
+	data, err := getProcessCapabilities()
+	if err != nil {
+		return 0, err
+	}
+	return uint64(data[0].Effective) | uint64(data[1].Effective)<<32, nil
 }
 
 // GetProcessPermitted returns permitted capabilities for
 // the current process.
 func GetProcessPermitted() (uint64, error) {
-	return getProcessCapabilities(Permitted)
+	data, err := getProcessCapabilities()
+	if err != nil {
+		return 0, err
+	}
+	return uint64(data[0].Permitted) | uint64(data[1].Permitted)<<32, nil
 }
 
 // GetProcessInheritable returns inheritable capabilities for
 // the current process.
 func GetProcessInheritable() (uint64, error) {
-	return getProcessCapabilities(Inheritable)
+	data, err := getProcessCapabilities()
+	if err != nil {
+		return 0, err
+	}
+	return uint64(data[0].Inheritable) | uint64(data[1].Inheritable)<<32, nil
+}
+
+// SetProcessEffective set effective capabilities for the
+// the current process and returns previous effective set.
+func SetProcessEffective(caps uint64) (uint64, error) {
+	var data [2]unix.CapUserData
+	var header unix.CapUserHeader
+
+	header.Version = unix.LINUX_CAPABILITY_VERSION_3
+
+	data, err := getProcessCapabilities()
+	if err != nil {
+		return 0, err
+	}
+
+	oldEffective := uint64(data[0].Effective) | uint64(data[1].Effective)<<32
+
+	data[0].Effective = uint32(caps)
+	data[1].Effective = uint32(caps >> 32)
+
+	effective := uint64(data[0].Effective) | uint64(data[1].Effective)<<32
+	permitted := uint64(data[0].Permitted) | uint64(data[1].Permitted)<<32
+
+	for i := 0; i <= len(Map); i++ {
+		if effective&uint64(1<<i) != 0 {
+			if permitted&uint64(1<<i) != 0 {
+				continue
+			}
+			strCap := "UNKNOWN"
+			for _, cap := range Map {
+				if uint(i) == cap.Value {
+					strCap = cap.Name
+					break
+				}
+			}
+			err := fmt.Sprintf("%s is not in the permitted capability set", strCap)
+			return 0, fmt.Errorf("while setting effective capabilities: %s", err)
+		}
+	}
+
+	if err := unix.Capset(&header, &data[0]); err != nil {
+		return 0, fmt.Errorf("while setting effective capabilities: %s", err)
+	}
+
+	return oldEffective, nil
 }

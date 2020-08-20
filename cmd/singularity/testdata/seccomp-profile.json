@@ -12,7 +12,8 @@
     "syscalls": [
         {
             "names": [
-                "mkdir"
+                "mkdir",
+                "mkdirat"
             ],
             "action": "SCMP_ACT_KILL",
             "args": [],

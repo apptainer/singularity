@@ -14,19 +14,26 @@ import (
 	"strings"
 	"syscall"
 
-	"golang.org/x/sys/unix"
-
 	args "github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
+	"golang.org/x/sys/unix"
 )
 
 var diskGID = -1
+var defaultEffective = uint64(0)
+
+func init() {
+	defaultEffective |= uint64(1 << capabilities.Map["CAP_SETUID"].Value)
+	defaultEffective |= uint64(1 << capabilities.Map["CAP_SETGID"].Value)
+	defaultEffective |= uint64(1 << capabilities.Map["CAP_SYS_ADMIN"].Value)
+}
 
 // Methods is a receiver type.
 type Methods int
@@ -34,36 +41,79 @@ type Methods int
 // Mount performs a mount with the specified arguments.
 func (t *Methods) Mount(arguments *args.MountArgs, mountErr *error) (err error) {
 	mainthread.Execute(func() {
+		if arguments.Filesystem == "overlay" {
+			var oldEffective uint64
+
+			runtime.LockOSThread()
+			defer runtime.UnlockOSThread()
+
+			caps := uint64(0)
+			caps |= uint64(1 << capabilities.Map["CAP_FOWNER"].Value)
+			caps |= uint64(1 << capabilities.Map["CAP_DAC_OVERRIDE"].Value)
+			caps |= uint64(1 << capabilities.Map["CAP_DAC_READ_SEARCH"].Value)
+			caps |= uint64(1 << capabilities.Map["CAP_CHOWN"].Value)
+			caps |= uint64(1 << capabilities.Map["CAP_SYS_ADMIN"].Value)
+
+			oldEffective, err = capabilities.SetProcessEffective(caps)
+			if err != nil {
+				return
+			}
+			defer func() {
+				_, err = capabilities.SetProcessEffective(oldEffective)
+			}()
+		}
 		*mountErr = syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
 	})
-	return nil
+	return
 }
 
 // Decrypt decrypts the loop device.
 func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *string) (err error) {
+	cryptName := ""
 	cryptDev := &crypt.Device{}
+	hasIPC := arguments.MasterPid > 0
 
-	// cryptsetup requires to run in the host IPC namespace
-	// so we enter temporarily in the host IPC namespace
-	// via the master processus ID if its greater than zero
-	// which means that a container IPC namespace was requested
-	if arguments.MasterPid > 0 {
-		runtime.LockOSThread()
-		defer runtime.UnlockOSThread()
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 
+	caps := defaultEffective
+	caps |= uint64(1 << capabilities.Map["CAP_IPC_LOCK"].Value)
+
+	if hasIPC {
+		// required for /proc/pid/ns/ipc access with namespaces.Enter
+		caps |= uint64(1 << capabilities.Map["CAP_SYS_PTRACE"].Value)
+	}
+
+	oldEffective, capErr := capabilities.SetProcessEffective(caps)
+	if capErr != nil {
+		return capErr
+	}
+
+	if hasIPC {
+		// cryptsetup requires to run in the host IPC namespace
+		// so we enter temporarily in the host IPC namespace
+		// via the master processus ID if its greater than zero
+		// which means that a container IPC namespace was requested
 		if err := namespaces.Enter(arguments.MasterPid, "ipc"); err != nil {
 			return fmt.Errorf("while joining host IPC namespace: %s", err)
 		}
 	}
 
-	cryptName, err := cryptDev.Open(arguments.Key, arguments.Loopdev)
-
-	// return to the container IPC namespace if required
-	if arguments.MasterPid > 0 {
-		if err := namespaces.Enter(os.Getpid(), "ipc"); err != nil {
-			return fmt.Errorf("while joining container IPC namespace: %s", err)
+	defer func() {
+		_, e := capabilities.SetProcessEffective(oldEffective)
+		if err == nil {
+			err = e
 		}
-	}
+
+		if hasIPC {
+			e := namespaces.Enter(os.Getpid(), "ipc")
+			if err == nil && e != nil {
+				err = fmt.Errorf("while joining container IPC namespace: %s", e)
+			}
+		}
+	}()
+
+	cryptName, err = cryptDev.Open(arguments.Key, arguments.Loopdev)
 
 	*reply = "/dev/mapper/" + cryptName
 
@@ -81,7 +131,7 @@ func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) (err error) {
 }
 
 // Chroot performs a chroot with the specified arguments.
-func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
+func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) (err error) {
 	root := arguments.Root
 
 	if root != "." {
@@ -95,6 +145,26 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 			root = cwd
 		}
 	}
+
+	var oldEffective uint64
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	caps := uint64(0)
+	caps |= uint64(1 << capabilities.Map["CAP_SYS_CHROOT"].Value)
+	caps |= uint64(1 << capabilities.Map["CAP_SYS_ADMIN"].Value)
+
+	oldEffective, err = capabilities.SetProcessEffective(caps)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_, e := capabilities.SetProcessEffective(oldEffective)
+		if err == nil {
+			err = e
+		}
+	}()
 
 	switch arguments.Method {
 	case "pivot":
@@ -149,11 +219,12 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 	if err := syscall.Chdir("/"); err != nil {
 		return fmt.Errorf("chdir / %s", err)
 	}
-	return nil
+
+	return err
 }
 
 // LoopDevice attaches a loop device with the specified arguments.
-func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
+func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) (err error) {
 	var image *os.File
 
 	loopdev := &loop.Device{}
@@ -185,17 +256,34 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	}
 
 	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	caps := defaultEffective
+	caps |= uint64(1 << capabilities.Map["CAP_MKNOD"].Value)
+
+	oldEffective, err := capabilities.SetProcessEffective(caps)
+	if err != nil {
+		return err
+	}
+
 	syscall.Setfsuid(0)
 	syscall.Setfsgid(diskGID)
-	defer runtime.UnlockOSThread()
-	defer syscall.Setfsuid(os.Getuid())
-	defer syscall.Setfsgid(os.Getgid())
 
-	err := loopdev.AttachFromFile(image, arguments.Mode, reply)
-	if err != nil {
+	defer func() {
+		syscall.Setfsuid(os.Getuid())
+		syscall.Setfsgid(os.Getgid())
+
+		_, e := capabilities.SetProcessEffective(oldEffective)
+		if err == nil {
+			err = e
+		}
+	}()
+
+	if err := loopdev.AttachFromFile(image, arguments.Mode, reply); err != nil {
 		return fmt.Errorf("could not attach image file to loop device: %v", err)
 	}
-	return nil
+
+	return err
 }
 
 // SetHostname sets hostname with the specified arguments.

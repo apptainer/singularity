@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
@@ -40,7 +42,7 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 	e.stopFuseDrivers()
 
 	if imageDriver != nil {
-		if err := umount(true); err != nil {
+		if err := umount(); err != nil {
 			sylog.Errorf("%s", err)
 		}
 		if err := imageDriver.Stop(); err != nil {
@@ -105,19 +107,32 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 	return nil
 }
 
-func umount(escalate bool) error {
-	if escalate {
-		// elevate the privilege to unmount
-		priv.Escalate()
-		defer priv.Drop()
+func umount() (err error) {
+	var oldEffective uint64
+
+	caps := uint64(0)
+	caps |= uint64(1 << capabilities.Map["CAP_SYS_ADMIN"].Value)
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	oldEffective, err = capabilities.SetProcessEffective(caps)
+	if err != nil {
+		return
 	}
+	defer func() {
+		_, e := capabilities.SetProcessEffective(oldEffective)
+		if err == nil {
+			err = e
+		}
+	}()
 
 	for i := len(umountPoints) - 1; i >= 0; i-- {
 		p := umountPoints[i]
 		sylog.Debugf("Umount %s", p)
 		retries := 0
 	retry:
-		err := syscall.Unmount(p, 0)
+		err = syscall.Unmount(p, 0)
 		// ignore EINVAL meaning it's not a mount point
 		if err != nil && err.(syscall.Errno) != syscall.EINVAL {
 			// when rootfs mount point is a sandbox, the unmount
@@ -132,14 +147,11 @@ func umount(escalate bool) error {
 		}
 	}
 
-	return nil
+	return err
 }
 
 func cleanupCrypt(path string) error {
-	priv.Escalate()
-	defer priv.Drop()
-
-	if err := umount(false); err != nil {
+	if err := umount(); err != nil {
 		return err
 	}
 

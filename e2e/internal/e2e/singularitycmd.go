@@ -595,11 +595,12 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 			cmd.Stdin = s.console.Tty()
 			cmd.Stdout = s.console.Tty()
 			cmd.Stderr = s.console.Tty()
+			cmd.ExtraFiles = []*os.File{s.console.Tty()}
 
 			cmd.SysProcAttr = &syscall.SysProcAttr{
 				Setctty: true,
 				Setsid:  true,
-				Ctty:    int(s.console.Tty().Fd()),
+				Ctty:    3,
 			}
 		}
 		if s.postFn != nil {

@@ -49,3 +49,41 @@ func TestGetProcess(t *testing.T) {
 		}
 	}
 }
+
+func TestSetProcessEffective(t *testing.T) {
+	test.EnsurePrivilege(t)
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	data, err := getProcessCapabilities()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name         string
+		cap          uint64
+		oldEffective uint64
+	}{
+		{
+			name:         "set cap_sys_admin only",
+			cap:          uint64(1 << Map["CAP_SYS_ADMIN"].Value),
+			oldEffective: uint64(data[0].Effective) | uint64(data[1].Effective)<<32,
+		},
+		{
+			name:         "restore capabilities",
+			cap:          uint64(data[0].Effective) | uint64(data[1].Effective)<<32,
+			oldEffective: uint64(1 << Map["CAP_SYS_ADMIN"].Value),
+		},
+	}
+
+	for _, tt := range tests {
+		old, err := SetProcessEffective(tt.cap)
+		if err != nil {
+			t.Fatalf("unexpected error for %s: %s", tt.name, err)
+		} else if old != tt.oldEffective {
+			t.Fatalf("unexpected old effective set for %s", tt.name)
+		}
+	}
+}
