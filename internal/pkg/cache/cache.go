@@ -256,14 +256,19 @@ func New(cfg Config) (h *Handle, err error) {
 	}
 	h.parentDir = parentDir
 
+	// If we can't access the parent of the cache directory then don't use the
+	// cache.
 	ep, err := fs.FirstExistingParent(parentDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get first existing parent of cache directory: %v", err)
+		sylog.Warningf("Cache disabled - cannot access parent directory of cache: %s.", err)
+		h.disabled = true
+		return h, nil
 	}
 
 	// We check if we can write to the basedir or its first existing parent,
 	// if not we disable the caching mechanism
 	if !fs.IsWritable(ep) {
+		sylog.Warningf("Cache disabled - cache location %s is not writable.", ep)
 		h.disabled = true
 		return h, nil
 	}
