@@ -6,12 +6,15 @@
 package unpacker
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // Squashfs represents a squashfs unpacker.
@@ -60,6 +63,33 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) error 
 		}
 		if err := tmp.Close(); err != nil {
 			return fmt.Errorf("failed to close staging file: %s", err)
+		}
+	}
+
+	// If we are running as non-root, first try with `-user-xattrs` so we won't fail trying
+	// to set system xatts. This isn't supported on unsquashfs 4.0 in RHEL6 so we
+	//  have to fall back to not using that option on failure.
+	if os.Geteuid() != 0 {
+		sylog.Debugf("Rootless extraction. Trying -user-xattrs for unsquashfs")
+		args := []string{"-user-xattrs", "-f", "-d", dest, filename}
+		args = append(args, files...)
+		cmd := exec.Command(s.UnsquashfsPath, args...)
+		if stdin {
+			cmd.Stdin = reader
+		}
+
+		o, err := cmd.CombinedOutput()
+		if err == nil {
+			return nil
+		}
+
+		// Invalid options give output...
+		// SYNTAX: unsquashfs [options] filesystem [directories or files to extract]
+		if bytes.HasPrefix(o, []byte("SYNTAX")) {
+			sylog.Warningf("unsquashfs does not support -user-xattrs. Images with system xattrs may fail to extract")
+		} else {
+			// A different error is fatal
+			return fmt.Errorf("extract command failed: %s: %s", string(o), err)
 		}
 	}
 

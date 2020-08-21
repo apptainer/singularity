@@ -405,6 +405,36 @@ func (c actionTests) issue5307(t *testing.T) {
 	)
 }
 
+// Check we can fakeroot exec an image containing a system xattr, which we may
+// not be able to set in the SIF -> sandbox extraction.
+func (c actionTests) issue5399(t *testing.T) {
+
+	dir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue5399-", "")
+	defer e2e.Privileged(cleanup)(t)
+	image := filepath.Join(dir, "issue_5399.sif")
+
+	// Build as root to guarantee no issue setting the system xattr
+	// Certain config may not allow us to do it as fakeroot e.g. it failed
+	// in Ubuntu1604 CI.
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(image, "testdata/regressions/issue_5399.def"),
+		e2e.ExpectExit(0),
+	)
+
+	// Fakeroot will extract to a sandbox using mksquashfs as the user.
+	// Should succeed, though it can't set a system xattr.
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(image, "/bin/true"),
+		e2e.ExpectExit(0),
+	)
+}
+
 // Check that we can create a directory in a root owned directory
 // with others write permissions in conjunction with --writable-tmpfs.
 func (c actionTests) issue5455(t *testing.T) {
