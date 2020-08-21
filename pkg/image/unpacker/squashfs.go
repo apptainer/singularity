@@ -86,7 +86,7 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) error 
 		// Invalid options give output...
 		// SYNTAX: unsquashfs [options] filesystem [directories or files to extract]
 		if bytes.HasPrefix(o, []byte("SYNTAX")) {
-			sylog.Warningf("unsquashfs does not support -user-xattrs. Images with system xattrs my fail to extract")
+			sylog.Warningf("unsquashfs does not support -user-xattrs. Images with system xattrs may fail to extract")
 		} else {
 			// A different error is fatal
 			return fmt.Errorf("extract command failed: %s: %s", string(o), err)
