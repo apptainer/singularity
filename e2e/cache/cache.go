@@ -298,5 +298,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"interactive commands":     np(c.testInteractiveCacheCmds),
 		"non-interactive commands": np(c.testNoninteractiveCacheCmds),
 		"issue5097":                np(c.issue5097),
+		"issue5350":                np(c.issue5350),
 	}
 }
