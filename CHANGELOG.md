@@ -9,7 +9,7 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes since v3.6.1
+# v3.6.2 - [2020-08-25]
 
 ## New features / functionalities
 
@@ -23,6 +23,18 @@ _The old changelog can be found in the `release-2.6` branch_
 ## Bug Fixes
 
   - Respect current remote for `singularity delete` command.
+  - Allow `rw` as a (noop) bind option.
+  - Fix capability handling regression in overlay mount.
+  - Fix LD_LIBRARY_PATH environment override regression with
+    `--nv/--rocm`.
+  - Fix environment variable duplication within singularity engine.
+  - Use `-user-xattrs` for unsquashfs to avoid error with rootless
+    extraction using unsquashfs 3.4 (Ubuntu 20.04).
+  - Correct `--no-home` message for 3.6 CWD behavior.
+  - Don't fail if parent of cache dir not accessible.
+  - Fix tests for Go 1.15 Ctty handling.
+  - Fix additional issues with test images on ARM64. 
+  - Fix FUSE e2e tests to use container ssh_config.
 
 
 # v3.6.1 - [2020-07-21]
