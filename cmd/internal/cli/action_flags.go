@@ -432,7 +432,7 @@ var actionNoHomeFlag = cmdline.Flag{
 	Value:        &NoHome,
 	DefaultValue: false,
 	Name:         "no-home",
-	Usage:        "do NOT mount users home directory if home is not the current working directory",
+	Usage:        "do NOT mount users home directory if /home is not the current working directory",
 	EnvKeys:      []string{"NO_HOME"},
 	ExcludedOS:   []string{cmdline.Darwin},
 }
