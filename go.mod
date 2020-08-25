@@ -44,7 +44,7 @@ require (
 	github.com/sylabs/json-resp v0.7.0
 	github.com/sylabs/scs-build-client v0.1.4
 	github.com/sylabs/scs-key-client v0.5.1
-	github.com/sylabs/scs-library-client v0.5.5
+	github.com/sylabs/scs-library-client v0.5.6
 	github.com/sylabs/sif v1.2.1
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6 // indirect
