@@ -50,9 +50,8 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 		}
 	}
 
-	if e.EngineConfig.GetDeleteImage() {
-		image := e.EngineConfig.GetImage()
-		sylog.Verbosef("Removing image %s", image)
+	if tempDir := e.EngineConfig.GetDeleteTempDir(); tempDir != "" {
+		sylog.Verbosef("Removing image tempDir %s", tempDir)
 		sylog.Infof("Cleaning up image...")
 
 		var err error
@@ -63,12 +62,12 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 			// context and can get permission denied error during
 			// image removal, so we execute "rm -rf /tmp/image" via
 			// the fakeroot engine
-			err = fakerootCleanup(image)
+			err = fakerootCleanup(tempDir)
 		} else {
-			err = os.RemoveAll(image)
+			err = os.RemoveAll(tempDir)
 		}
 		if err != nil {
-			sylog.Errorf("failed to delete container image %s: %s", image, err)
+			sylog.Errorf("failed to delete container image tempDir %s: %s", tempDir, err)
 		}
 	}
 

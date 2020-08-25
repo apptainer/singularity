@@ -45,7 +45,10 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func convertImage(filename string, unsquashfsPath string) (string, error) {
+// convertImage extracts the image found at filename to a folder named "root" within a temporary
+// directory tempDir. If the unsquashfs binary is not located, the binary at unsquashfsPath is
+// used. It is the caller's responsibility to remove tempDir when no longer needed.
+func convertImage(filename string, unsquashfsPath string) (tempDir string, err error) {
 	img, err := imgutil.Init(filename, false)
 	if err != nil {
 		return "", fmt.Errorf("could not open image %s: %s", filename, err)
@@ -82,18 +85,28 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 	}
 
 	// create temporary sandbox
-	dir, err := ioutil.TempDir(tmpdir, "rootfs-")
+	tempDir, err = ioutil.TempDir(tmpdir, "rootfs-")
 	if err != nil {
 		return "", fmt.Errorf("could not create temporary sandbox: %s", err)
+	}
+	defer func() {
+		if err != nil {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	// create an inner dir to extract to, so we don't clobber the secure permissions on the tmpDir.
+	dir := filepath.Join(tempDir, "root")
+	if err := os.Mkdir(dir, 0755); err != nil {
+		return "", fmt.Errorf("could not create root directory: %s", err)
 	}
 
 	// extract root filesystem
 	if err := s.ExtractAll(reader, dir); err != nil {
-		os.RemoveAll(dir)
 		return "", fmt.Errorf("root filesystem extraction failed: %s", err)
 	}
 
-	return dir, err
+	return tempDir, err
 }
 
 // checkHidepid checks if hidepid is set on /proc mount point, when this
@@ -650,12 +663,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			}
 			sylog.Verbosef("User namespace requested, convert image %s to sandbox", image)
 			sylog.Infof("Convert SIF file to sandbox...")
-			dir, err := convertImage(image, unsquashfsPath)
+			tempDir, err := convertImage(image, unsquashfsPath)
 			if err != nil {
 				sylog.Fatalf("while extracting %s: %s", image, err)
 			}
+			dir := filepath.Join(tempDir, "root")
 			engineConfig.SetImage(dir)
-			engineConfig.SetDeleteImage(true)
+			engineConfig.SetDeleteTempDir(tempDir)
 			generator.AddProcessEnv("SINGULARITY_CONTAINER", dir)
 
 			// if '--disable-cache' flag, then remove original SIF after converting to sandbox
