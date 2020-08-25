@@ -157,7 +157,7 @@ func (c ctx) testSecurityPriv(t *testing.T) {
 			name:     "capabilities_keep",
 			argv:     []string{"grep", "^CapEff:", "/proc/self/status"},
 			opts:     []string{"--keep-privs"},
-			expectOp: e2e.ExpectOutput(e2e.RegexMatch, `CapEff:\s+[0f]{6}[3f]fffffffff\n`),
+			expectOp: e2e.ExpectOutput(e2e.RegexMatch, `CapEff:\s+[0f]{6}[13f]fffffffff\n`),
 		},
 		{
 			// this might break if new capabilities are
@@ -171,7 +171,7 @@ func (c ctx) testSecurityPriv(t *testing.T) {
 			name:     "capabilities_drop",
 			argv:     []string{"grep", "^CapEff:", "/proc/self/status"},
 			opts:     []string{"--drop-caps", "CAP_NET_RAW"},
-			expectOp: e2e.ExpectOutput(e2e.RegexMatch, `CapEff:\s+[0f]{6}[3f]fffffdfff\n`),
+			expectOp: e2e.ExpectOutput(e2e.RegexMatch, `CapEff:\s+[0f]{6}[13f]fffffdfff\n`),
 		},
 	}
 
