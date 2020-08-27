@@ -13,13 +13,13 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 
-	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/internal/pkg/build/apps"
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
@@ -113,14 +113,16 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		if conf.Format == "sandbox" {
 			rootfsParent = filepath.Dir(conf.Dest)
 		}
-		rootfs := filepath.Join(rootfsParent, "rootfs-"+uuid.NewV1().String())
+		parentPath, err := ioutil.TempDir(rootfsParent, "build-temp-")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create build parent dir: %w", err)
+		}
 
 		var s stage
-		var err error
 		if conf.Opts.EncryptionKeyInfo != nil {
-			s.b, err = types.NewEncryptedBundle(rootfs, conf.Opts.TmpDir, conf.Opts.EncryptionKeyInfo)
+			s.b, err = types.NewEncryptedBundle(parentPath, conf.Opts.TmpDir, conf.Opts.EncryptionKeyInfo)
 		} else {
-			s.b, err = types.NewBundle(rootfs, conf.Opts.TmpDir)
+			s.b, err = types.NewBundle(parentPath, conf.Opts.TmpDir)
 		}
 		if err != nil {
 			return nil, err
@@ -134,7 +136,7 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 			// the old behavior which is to create the temporary rootfs inside
 			// $TMPDIR and copy the final root filesystem to the destination
 			// provided
-			if s.b.RootfsPath != rootfs {
+			if !strings.HasPrefix(s.b.RootfsPath, parentPath) {
 				sandboxCopy = true
 				sylog.Warningf("The underlying filesystem on which resides %q won't allow to set ownership, "+
 					"as a consequence the sandbox could not preserve image's files/directories ownerships", conf.Dest)
