@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -10,9 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	golog "github.com/go-log/log"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/client/library"
@@ -20,7 +19,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/internal/pkg/client/shub"
-	scs "github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -46,8 +45,6 @@ var (
 	pullLibraryURI string
 	// pullImageName holds the name to be given to the pulled image.
 	pullImageName string
-	// keyServerURL server URL.
-	keyServerURL = "https://keys.sylabs.io"
 	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it.
 	unauthenticatedPull bool
 	// pullDir is the path that the containers will be pulled to, if set.
@@ -71,7 +68,7 @@ var pullArchFlag = cmdline.Flag{
 var pullLibraryURIFlag = cmdline.Flag{
 	ID:           "pullLibraryURIFlag",
 	Value:        &pullLibraryURI,
-	DefaultValue: "https://library.sylabs.io",
+	DefaultValue: endpoint.SCSDefaultLibraryURI,
 	Name:         "library",
 	Usage:        "download images from the provided library",
 	EnvKeys:      []string{"LIBRARY"},
@@ -159,7 +156,6 @@ func init() {
 var PullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.RangeArgs(1, 2),
-	PreRun:                sylabsToken,
 	Run:                   pullRun,
 	Use:                   docs.PullUse,
 	Short:                 docs.PullShort,
@@ -207,15 +203,16 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 	switch transport {
 	case LibraryProtocol, "":
-		handlePullFlags(cmd)
-
-		libraryConfig := &client.Config{
-			BaseURL:   pullLibraryURI,
-			AuthToken: authToken,
-			Logger:    (golog.Logger)(sylog.DebugLogger{}),
+		lc, err := getLibraryClientConfig(pullLibraryURI)
+		if err != nil {
+			sylog.Fatalf("Unable to get library client configuration: %v", err)
+		}
+		kc, err := getKeyserverClientConfig(endpoint.SCSDefaultKeyserverURI, endpoint.KeyserverVerifyOp)
+		if err != nil {
+			sylog.Fatalf("Unable to get keyserver client configuration: %v", err)
 		}
 
-		_, err = library.PullToFile(ctx, imgCache, pullTo, pullFrom, pullArch, tmpDir, libraryConfig, keyServerURL)
+		_, err = library.PullToFile(ctx, imgCache, pullTo, pullFrom, pullArch, tmpDir, lc, kc)
 		if err != nil && err != library.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
@@ -255,34 +252,4 @@ func pullRun(cmd *cobra.Command, args []string) {
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
-}
-
-func handlePullFlags(cmd *cobra.Command) {
-	// if we can load config and if default endpoint is set, use that
-	// otherwise fall back on regular authtoken and URI behavior
-	endpoint, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to: %v", pullLibraryURI)
-		sylog.Debugf("Using default key server url: %v", keyServerURL)
-		return
-	}
-	if err != nil {
-		sylog.Fatalf("Unable to load remote configuration: %v", err)
-	}
-
-	authToken = endpoint.Token
-	if !cmd.Flags().Lookup("library").Changed {
-		libraryURI, err := endpoint.GetServiceURI("library")
-		if err != nil {
-			sylog.Fatalf("Unable to get library service URI: %v", err)
-		}
-		pullLibraryURI = libraryURI
-	}
-
-	keystoreURI, err := endpoint.GetServiceURI("keystore")
-	if err != nil {
-		sylog.Warningf("Unable to get library service URI: %v, defaulting to %s", err, keyServerURL)
-		return
-	}
-	keyServerURL = keystoreURI
 }

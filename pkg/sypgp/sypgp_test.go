@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -17,6 +18,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	"golang.org/x/crypto/openpgp"
@@ -84,7 +86,13 @@ func TestSearchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			if err := SearchPubkey(context.Background(), srv.Client(), tt.search, tt.uri, tt.authToken, false); (err != nil) != tt.wantErr {
+			config := &client.Config{
+				BaseURL:    tt.uri,
+				AuthToken:  tt.authToken,
+				HTTPClient: srv.Client(),
+			}
+
+			if err := SearchPubkey(context.Background(), config, tt.search, false); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
@@ -121,7 +129,13 @@ func TestFetchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			el, err := FetchPubkey(context.Background(), srv.Client(), tt.fingerprint, tt.uri, tt.authToken, false)
+			config := &client.Config{
+				BaseURL:    tt.uri,
+				AuthToken:  tt.authToken,
+				HTTPClient: srv.Client(),
+			}
+
+			el, err := FetchPubkey(context.Background(), config, tt.fingerprint, false)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("unexpected error: %v", err)
 				return
@@ -196,7 +210,13 @@ func TestPushPubkey(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms.code = tt.code
 
-			if err := PushPubkey(context.Background(), srv.Client(), testEntity, tt.uri, tt.authToken); (err != nil) != tt.wantErr {
+			config := &client.Config{
+				BaseURL:    tt.uri,
+				AuthToken:  tt.authToken,
+				HTTPClient: srv.Client(),
+			}
+
+			if err := PushPubkey(context.Background(), config, testEntity); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})

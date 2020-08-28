@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -8,12 +9,11 @@ package cli
 import (
 	"context"
 
-	golog "github.com/go-log/log"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/client/library"
-	scs "github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -27,7 +27,7 @@ var (
 var searchLibraryFlag = cmdline.Flag{
 	ID:           "searchLibraryFlag",
 	Value:        &SearchLibraryURI,
-	DefaultValue: "https://library.sylabs.io",
+	DefaultValue: endpoint.SCSDefaultLibraryURI,
 	Name:         "library",
 	Usage:        "URI for library to search",
 	EnvKeys:      []string{"LIBRARY"},
@@ -45,17 +45,15 @@ func init() {
 var SearchCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(1),
-	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.TODO()
 
-		handleSearchFlags(cmd)
+		config, err := getLibraryClientConfig(SearchLibraryURI)
+		if err != nil {
+			sylog.Fatalf("Error while getting library client config: %v", err)
+		}
 
-		libraryClient, err := client.NewClient(&client.Config{
-			BaseURL:   SearchLibraryURI,
-			AuthToken: authToken,
-			Logger:    (golog.Logger)(sylog.DebugLogger{}),
-		})
+		libraryClient, err := client.NewClient(config)
 		if err != nil {
 			sylog.Fatalf("Error initializing library client: %v", err)
 		}
@@ -70,25 +68,4 @@ var SearchCmd = &cobra.Command{
 	Short:   docs.SearchShort,
 	Long:    docs.SearchLong,
 	Example: docs.SearchExample,
-}
-
-func handleSearchFlags(cmd *cobra.Command) {
-	// if we can load config and if default endpoint is set, use that
-	// otherwise fall back on regular authtoken and URI behavior
-	endpoint, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to: %v", SearchLibraryURI)
-		return
-	} else if err != nil {
-		sylog.Fatalf("Unable to load remote configuration: %v", err)
-	}
-
-	authToken = endpoint.Token
-	if !cmd.Flags().Lookup("library").Changed {
-		uri, err := endpoint.GetServiceURI("library")
-		if err != nil {
-			sylog.Fatalf("Unable to get library URI: %v", err)
-		}
-		SearchLibraryURI = uri
-	}
 }

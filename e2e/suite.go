@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -106,6 +107,9 @@ func Run(t *testing.T) {
 
 	// create an empty plugin directory
 	e2e.SetupPluginDir(t, testenv.TestDir)
+
+	// duplicate system remote.yaml and create a temporary one on top of original
+	e2e.SetupSystemRemoteFile(t, testenv.TestDir)
 
 	// Ensure config files are installed
 	configFiles := []string{

@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -38,7 +39,6 @@ func init() {
 // RunHelpCmd singularity run-help <image>
 var RunHelpCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	PreRun:                sylabsToken,
 	Args:                  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		// Sanity check

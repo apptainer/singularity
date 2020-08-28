@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,49 +11,15 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 )
 
-func syncSysConfig(cUsr *remote.Config) error {
-	// opening system config file
-	f, err := os.OpenFile(remote.SystemConfigPath, os.O_RDONLY, 0600)
-	if err != nil && os.IsNotExist(err) {
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("while opening remote config file: %s", err)
-	}
-	defer f.Close()
-
-	// read file contents to config struct
-	cSys, err := remote.ReadFrom(f)
-	if err != nil {
-		return fmt.Errorf("while parsing remote config data: %s", err)
-	}
-
-	// sync cUsr with system config cSys
-	if err := cUsr.SyncFrom(cSys); err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
-// RemoteUse sets remote to use
-func RemoteUse(usrConfigFile, name string, global, exclusive bool) (err error) {
+// RemoteLogout logs out from an endpoint or service.
+func RemoteLogout(usrConfigFile, name string) (err error) {
 	c := &remote.Config{}
 
-	if exclusive && !global {
-		return fmt.Errorf("-e/--exclusive requires --global/-g")
-	}
-
-	// system config should be world readable
-	perm := os.FileMode(0600)
-	if global {
-		perm = os.FileMode(0644)
-	}
-
 	// opening config file
-	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, perm)
+	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}
@@ -69,8 +35,21 @@ func RemoteUse(usrConfigFile, name string, global, exclusive bool) (err error) {
 		return err
 	}
 
-	if err := c.SetDefault(name, exclusive); err != nil {
-		return err
+	var r *endpoint.Config
+	if name == "" {
+		r, err = c.GetDefault()
+	} else {
+		r, err = c.GetRemote(name)
+	}
+
+	if r != nil {
+		// endpoint
+		r.Token = ""
+	} else {
+		// services
+		if err := c.Logout(name); err != nil {
+			return fmt.Errorf("while verifying token: %v", err)
+		}
 	}
 
 	// truncating file before writing new contents and syncing to commit file

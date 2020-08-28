@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -11,12 +12,10 @@ import (
 	"strings"
 	"time"
 
-	golog "github.com/go-log/log"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
-	scs "github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -70,7 +69,7 @@ var deleteLibraryURI string
 var deleteLibraryURIFlag = cmdline.Flag{
 	ID:           "deleteLibraryURIFlag",
 	Value:        &deleteLibraryURI,
-	DefaultValue: "https://library.sylabs.io",
+	DefaultValue: endpoint.SCSDefaultLibraryURI,
 	Name:         "library",
 	Usage:        "delete images from the provided library",
 	EnvKeys:      []string{"LIBRARY"},
@@ -82,18 +81,10 @@ var deleteImageCmd = &cobra.Command{
 	Long:    docs.DeleteLong,
 	Example: docs.DeleteExample,
 	Args:    cobra.ExactArgs(1),
-	PreRun:  sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		handleDeleteFlags(cmd)
 		sylog.Debugf("Using library service URI: %s", deleteLibraryURI)
 
 		imageRef := strings.TrimPrefix(args[0], "library://")
-
-		libraryConfig := &client.Config{
-			BaseURL:   deleteLibraryURI,
-			AuthToken: authToken,
-			Logger:    (golog.Logger)(sylog.DebugLogger{}),
-		}
 
 		if !deleteForce {
 			y, err := interactive.AskYNQuestion("n", "Are you sure you want to delete %s (%s) [N/y] ", imageRef, deleteImageArch)
@@ -105,32 +96,18 @@ var deleteImageCmd = &cobra.Command{
 			}
 		}
 
+		libraryConfig, err := getLibraryClientConfig(deleteLibraryURI)
+		if err != nil {
+			sylog.Fatalf("Error while getting library client config: %v", err)
+		}
+
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(deleteImageTimeout)*time.Second)
 		defer cancel()
-		err := singularity.DeleteImage(ctx, libraryConfig, imageRef, deleteImageArch)
+		err = singularity.DeleteImage(ctx, libraryConfig, imageRef, deleteImageArch)
 		if err != nil {
 			sylog.Fatalf("Unable to delete image from library: %s\n", err)
 		}
 
 		sylog.Infof("Image %s arch[%s] deleted.", imageRef, deleteImageArch)
 	},
-}
-
-func handleDeleteFlags(cmd *cobra.Command) {
-	endpoint, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to: %v", deleteLibraryURI)
-		return
-	} else if err != nil {
-		sylog.Fatalf("Unable to load remote configuration: %v", err)
-	}
-
-	authToken = endpoint.Token
-	if !cmd.Flags().Lookup("library").Changed {
-		uri, err := endpoint.GetServiceURI("library")
-		if err != nil {
-			sylog.Fatalf("Unable to get library service URI: %v", err)
-		}
-		deleteLibraryURI = uri
-	}
 }

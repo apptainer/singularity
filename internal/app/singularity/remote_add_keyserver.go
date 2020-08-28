@@ -1,5 +1,4 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,67 +8,46 @@ package singularity
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 )
 
-func syncSysConfig(cUsr *remote.Config) error {
-	// opening system config file
-	f, err := os.OpenFile(remote.SystemConfigPath, os.O_RDONLY, 0600)
-	if err != nil && os.IsNotExist(err) {
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("while opening remote config file: %s", err)
-	}
-	defer f.Close()
-
-	// read file contents to config struct
-	cSys, err := remote.ReadFrom(f)
-	if err != nil {
-		return fmt.Errorf("while parsing remote config data: %s", err)
-	}
-
-	// sync cUsr with system config cSys
-	if err := cUsr.SyncFrom(cSys); err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
-// RemoteUse sets remote to use
-func RemoteUse(usrConfigFile, name string, global, exclusive bool) (err error) {
-	c := &remote.Config{}
-
-	if exclusive && !global {
-		return fmt.Errorf("-e/--exclusive requires --global/-g")
-	}
-
-	// system config should be world readable
-	perm := os.FileMode(0600)
-	if global {
-		perm = os.FileMode(0644)
+func RemoteAddKeyserver(name, uri string, order uint32, insecure bool) error {
+	// Explicit handling of corner cases: name and uri must be valid strings
+	if strings.TrimSpace(uri) == "" {
+		return fmt.Errorf("invalid URI: cannot have empty URI")
 	}
 
 	// opening config file
-	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, perm)
+	file, err := os.OpenFile(remote.SystemConfigPath, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}
 	defer file.Close()
 
 	// read file contents to config struct
-	c, err = remote.ReadFrom(file)
+	c, err := remote.ReadFrom(file)
 	if err != nil {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	if err := syncSysConfig(c); err != nil {
-		return err
+	var ep *endpoint.Config
+
+	if name == "" {
+		ep, err = c.GetDefault()
+	} else {
+		ep, err = c.GetRemote(name)
 	}
 
-	if err := c.SetDefault(name, exclusive); err != nil {
+	if err != nil {
+		return fmt.Errorf("no endpoint found: %s", err)
+	} else if !ep.System {
+		return fmt.Errorf("current endpoint is not a system defined endpoint")
+	}
+
+	if err := ep.AddKeyserver(uri, order, insecure); err != nil {
 		return err
 	}
 

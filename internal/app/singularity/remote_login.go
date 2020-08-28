@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -10,15 +11,22 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
-	"github.com/sylabs/singularity/internal/pkg/util/interactive"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
+
+type LoginArgs struct {
+	Name      string
+	Username  string
+	Password  string
+	Tokenfile string
+	Insecure  bool
+}
 
 // RemoteLogin logs in remote by setting API token
 // If the supplied remote name is an empty string, it will attempt
 // to use the default remote.
-func RemoteLogin(usrConfigFile, sysConfigFile, name, tokenfile string) (err error) {
+func RemoteLogin(usrConfigFile string, args *LoginArgs) (err error) {
 	c := &remote.Config{}
 
 	// opening config file
@@ -34,40 +42,35 @@ func RemoteLogin(usrConfigFile, sysConfigFile, name, tokenfile string) (err erro
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	if err := syncSysConfig(c, sysConfigFile); err != nil {
+	if err := syncSysConfig(c); err != nil {
 		return err
 	}
 
-	var r *remote.EndPoint
-	if name == "" {
+	var r *endpoint.Config
+	if args.Name == "" {
 		r, err = c.GetDefault()
 	} else {
-		r, err = c.GetRemote(name)
+		r, err = c.GetRemote(args.Name)
 	}
 
-	if err != nil {
-		return err
-	}
-
-	if tokenfile != "" {
-		var authWarning string
-		r.Token, authWarning = auth.ReadToken(tokenfile)
-		if authWarning != "" {
-			return fmt.Errorf("while reading tokenfile: %s", authWarning)
+	if r != nil {
+		// endpoint
+		if args.Tokenfile != "" {
+			var authWarning string
+			r.Token, authWarning = auth.ReadToken(args.Tokenfile)
+			if authWarning != "" {
+				return fmt.Errorf("while reading tokenfile: %s", authWarning)
+			}
+		}
+		if err := r.VerifyToken(); err != nil {
+			return fmt.Errorf("while verifying token: %v", err)
 		}
 	} else {
-		fmt.Printf("Generate an API Key at https://%s/auth/tokens, and paste here:\n", r.URI)
-		r.Token, err = interactive.AskQuestionNoEcho("API Key: ")
-		if err != nil {
-			return err
+		// services
+		if err := c.Login(args.Name, args.Username, args.Password, args.Insecure); err != nil {
+			return fmt.Errorf("while login to %s: %s", args.Name, err)
 		}
 	}
-
-	if err := r.VerifyToken(); err != nil {
-		return fmt.Errorf("while verifying token: %v", err)
-	}
-
-	sylog.Infof("API Key Verified!")
 
 	// truncating file before writing new contents and syncing to commit file
 	if err := file.Truncate(0); err != nil {

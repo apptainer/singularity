@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -32,7 +33,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
 	buildTypes "github.com/sylabs/singularity/pkg/build/types"
 	sytypes "github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
@@ -65,6 +68,8 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 		OCIInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
 		DockerAuthConfig:         cp.b.Opts.DockerAuthConfig,
 		OSChoice:                 "linux",
+		AuthFilePath:             syfs.DockerConf(),
+		DockerRegistryUserAgent:  useragent.Value(),
 	}
 	if cp.b.Opts.NoHTTPS {
 		cp.sysCtx.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)

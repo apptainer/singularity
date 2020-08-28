@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 )
 
 // RemoteAdd adds remote to configuration
@@ -50,7 +51,7 @@ func RemoteAdd(configFile, name, uri string, global bool) (err error) {
 	if err != nil {
 		return err
 	}
-	e := remote.EndPoint{URI: path.Join(u.Host + u.Path), System: global}
+	e := endpoint.Config{URI: path.Join(u.Host + u.Path), System: global}
 
 	if err := c.Add(name, &e); err != nil {
 		return err

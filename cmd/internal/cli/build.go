@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -13,8 +14,10 @@ import (
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
+	scsbuildclient "github.com/sylabs/scs-build-client/client"
+	scslibclient "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
-	scs "github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -129,7 +132,7 @@ var buildDetachedFlag = cmdline.Flag{
 var buildBuilderFlag = cmdline.Flag{
 	ID:           "buildBuilderFlag",
 	Value:        &buildArgs.builderURL,
-	DefaultValue: "https://build.sylabs.io",
+	DefaultValue: endpoint.SCSDefaultBuilderURI,
 	Name:         "builder",
 	Usage:        "remote Build Service URL, setting this implies --remote",
 	EnvKeys:      []string{"BUILDER"},
@@ -139,7 +142,7 @@ var buildBuilderFlag = cmdline.Flag{
 var buildLibraryFlag = cmdline.Flag{
 	ID:           "buildLibraryFlag",
 	Value:        &buildArgs.libraryURL,
-	DefaultValue: "https://library.sylabs.io",
+	DefaultValue: endpoint.SCSDefaultLibraryURI,
 	Name:         "library",
 	Usage:        "container Library URL",
 	EnvKeys:      []string{"LIBRARY"},
@@ -252,8 +255,6 @@ func preRun(cmd *cobra.Command, args []string) {
 	if cmd.Flags().Lookup("builder").Changed {
 		cmd.Flags().Lookup("remote").Value.Set("true")
 	}
-
-	sylabsToken(cmd, args)
 }
 
 // checkBuildTarget makes sure output target doesn't exist, or is ok to overwrite.
@@ -393,30 +394,14 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 }
 
 // remote builds need to fail if we cannot resolve remote URLS
-func handleRemoteBuildFlags(cmd *cobra.Command) {
-	// if we can load config and if default endpoint is set, use that
-	// otherwise fall back on regular authtoken and URI behavior
-	endpoint, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to CLI defaults")
-		return
-	} else if err != nil {
-		sylog.Fatalf("Unable to load remote configuration: %v", err)
+func getBuildAndLibraryClientConfig(buildURI, libraryURI string) (*scsbuildclient.Config, *scslibclient.Config, error) {
+	lc, err := getLibraryClientConfig(libraryURI)
+	if err != nil {
+		return nil, nil, err
 	}
-
-	authToken = endpoint.Token
-	if !cmd.Flags().Lookup("builder").Changed {
-		uri, err := endpoint.GetServiceURI("builder")
-		if err != nil {
-			sylog.Fatalf("Unable to get build service URI: %v", err)
-		}
-		buildArgs.builderURL = uri
+	bc, err := getBuilderClientConfig(buildURI)
+	if err != nil {
+		return nil, nil, err
 	}
-	if !cmd.Flags().Lookup("library").Changed {
-		uri, err := endpoint.GetServiceURI("library")
-		if err != nil {
-			sylog.Fatalf("Unable to get library service URI: %v", err)
-		}
-		buildArgs.libraryURL = uri
-	}
+	return bc, lc, nil
 }

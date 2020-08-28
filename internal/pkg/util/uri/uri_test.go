@@ -5,7 +5,9 @@
 
 package uri
 
-import "testing"
+import (
+	"testing"
+)
 
 func Test_GetName(t *testing.T) {
 	tests := []struct {
