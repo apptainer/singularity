@@ -13,7 +13,7 @@ require (
 	github.com/containerd/cgroups v0.0.0-20200116170754-a8908713319d
 	github.com/containerd/containerd v1.4.0
 	github.com/containernetworking/cni v0.8.0
-	github.com/containernetworking/plugins v0.8.6
+	github.com/containernetworking/plugins v0.8.7
 	github.com/containers/image/v5 v5.5.2
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
