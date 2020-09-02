@@ -1,0 +1,59 @@
+BootStrap: docker
+From: centos:8
+
+%post
+    # Set build time env variable
+    NOW=`date`
+    echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
+
+    # Install build dependencies
+    dnf -y install cryptsetup gcc git golang libseccomp-devel libuuid-devel make rpm-build wget
+
+    # Build/Install alien package converter
+    dnf -y install 'dnf-command(config-manager)'
+    dnf config-manager --set-enabled PowerTools
+    dnf -y install epel-release perl
+    dnf -y install debhelper dpkg-dev fakeroot
+    curl -L -o alien.tar.xz https://sourceforge.net/projects/alien-pkg-convert/files/latest/download
+    tar -xf alien.tar.xz
+    cd alien-8.95
+    perl Makefile.PL
+    make
+    make install
+
+%runscript
+    uname -r
+    cat /etc/centos-release 
+    echo "Container created: $NOW"
+    echo "Singularity build target: $* "
+    export EL_VERSION=8
+    export VERSION=$*
+    export TMP_DIR=$(mktemp -d -u -p .)
+    curl -L -o singularity-${VERSION}.tar.gz https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
+    rpmbuild --define "_topdir `pwd`/${TMP_DIR}" -tb singularity-${VERSION}.tar.gz
+    cp ./${TMP_DIR}/RPMS/x86_64/singularity-${VERSION}-1.el${EL_VERSION}.x86_64.rpm .
+    fakeroot alien singularity-${VERSION}-1.el${EL_VERSION}.x86_64.rpm
+    chmod -R 777 ./${TMP_DIR}
+    rm -rf ./${TMP_DIR}
+    rm singularity-${VERSION}.tar.gz
+
+%help
+
+    SUMMARY
+    This is a build container that generates installable singularity packages for singularity v3.X.X. The container will output a deb and rpm in the current directory.
+
+    KNOWN BUGS
+    Some versions of singularity contain the character 'v', such as v3.0.0.
+    The container will have to be rebuilt with the following statement modified:
+
+        curl -L -o singularity-${VERSION}.tar.gz https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
+
+    USAGE
+
+        ./build-singularity.sif {version}
+
+    	./build-singularity.sif 3.6.2
+
+%labels
+    Author chrismmaggio
+    Version 1.0.0
