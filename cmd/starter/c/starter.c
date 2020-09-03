@@ -373,6 +373,7 @@ static void set_rpc_privileges(void) {
     /* required by cryptsetup */
     priv->capabilities.bounding = capflag(CAP_SYS_ADMIN);
     priv->capabilities.bounding |= capflag(CAP_IPC_LOCK);
+    priv->capabilities.bounding |= capflag(CAP_MKNOD);
 
     debugf("Set RPC privileges\n");
     apply_privileges(priv, current);
