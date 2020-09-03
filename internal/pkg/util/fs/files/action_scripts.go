@@ -16,6 +16,16 @@ fi
 
 export PWD
 
+unsupported_builtin() {
+    sylog warning "$1 is not supported by this shell interpreter"
+}
+
+# create alias for unsupported builtin that trigger a panic
+alias umask="umask_builtin"
+alias trap="unsupported_builtin trap"
+alias fg="unsupported_builtin fg"
+alias bg="unsupported_builtin bg"
+
 clear_env() {
     local IFS=$'\n'
 
@@ -69,6 +79,7 @@ restore_env() {
 }
 
 clear_env
+shopt -s expand_aliases
 
 if test -d "/.singularity.d/env"; then
     for __script__ in /.singularity.d/env/*.sh; do
@@ -116,6 +127,7 @@ if ! test -f "/.singularity.d/env/99-runtimevars.sh"; then
     source "/.singularity.d/env/99-runtimevars.sh"
 fi
 
+shopt -u expand_aliases
 restore_env
 
 # See https://github.com/sylabs/singularity/issues/2721,
