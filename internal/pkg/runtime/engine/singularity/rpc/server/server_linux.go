@@ -89,7 +89,20 @@ func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *string) (err error) 
 		return capErr
 	}
 
+	pid := 0
+
 	if hasIPC {
+		// we can't rely on os.Getpid since this process may
+		// be in the container PID namespace
+		self, err := os.Readlink("/proc/self")
+		if err != nil {
+			return err
+		}
+		pid, err = strconv.Atoi(self)
+		if err != nil {
+			return err
+		}
+
 		// cryptsetup requires to run in the host IPC namespace
 		// so we enter temporarily in the host IPC namespace
 		// via the master processus ID if its greater than zero
@@ -106,7 +119,7 @@ func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *string) (err error) 
 		}
 
 		if hasIPC {
-			e := namespaces.Enter(os.Getpid(), "ipc")
+			e := namespaces.Enter(pid, "ipc")
 			if err == nil && e != nil {
 				err = fmt.Errorf("while joining container IPC namespace: %s", e)
 			}

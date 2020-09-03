@@ -166,6 +166,18 @@ func (c ctx) testRunPassphraseEncrypted(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 
+	// Ensure decryption works with containall (IPC and PID namespaces)
+	cmdArgs = []string{"--containall", imgPath}
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("env var passphrase with containall"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("run"),
+		e2e.WithArgs(cmdArgs...),
+		e2e.WithEnv(append(os.Environ(), passphraseEnvVar)),
+		e2e.ExpectExit(0),
+	)
+
 	// Specifying the passphrase on the command line should always fail
 	cmdArgs = []string{"--passphrase", e2e.Passphrase, imgPath}
 	c.env.RunSingularity(
