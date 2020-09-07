@@ -44,13 +44,12 @@ func nvidiaContainerCli(args ...string) ([]string, error) {
 		}
 
 		if strings.Contains(line, ".so") {
-			// this is a library -> add library name
-			lib := filepath.Base(line)
-			libs = append(libs, lib)
+			// this is a library -> add full path to library
+			libs = append(libs, line)
 
-			// also add library without .xxx.xx suffix
-			bareLib := strings.SplitAfter(lib, ".so")[0]
-			libs = append(libs, bareLib)
+			// also add full path to library without .xxx.xx suffix
+			bareLibPath := strings.SplitAfter(line, ".so")[0]
+			libs = append(libs, bareLibPath)
 		} else {
 			// this is a binary -> need full path
 			libs = append(libs, line)
@@ -178,24 +177,43 @@ func paths(gpuFileList []string) ([]string, []string, error) {
 	for _, file := range gpuFileList {
 		// if the file contains a ".so", treat it as a library
 		if strings.Contains(file, ".so") {
-			for libPath, libName := range ldCache {
-				if !strings.HasPrefix(libName, file) {
+			// if library path is absolute, it will have been returned by the container cli, which is more
+			// accurate than ldconfig when more than one drivers are found with same basename (e.g.
+			// /usr/lib64/libnvidia-tls.so and /usr/lib64/tls/libnvidia-tls.so)
+			if filepath.IsAbs(file) {
+				elib, err := elf.Open(file)
+				if err != nil {
+					sylog.Debugf("ignore library %s: %s", file, err)
 					continue
 				}
-				if _, ok := libs[libName]; !ok {
-					elib, err := elf.Open(libPath)
-					if err != nil {
-						sylog.Debugf("ignore library %s: %s", libName, err)
+
+				if elib.Machine == machine {
+					libraries = append(libraries, file)
+				}
+
+				if err := elib.Close(); err != nil {
+					sylog.Warningf("Could not close ELIB: %v", err)
+				}
+			} else {
+				for libPath, libName := range ldCache {
+					if !strings.HasPrefix(libName, file) {
 						continue
 					}
+					if _, ok := libs[libName]; !ok {
+						elib, err := elf.Open(libPath)
+						if err != nil {
+							sylog.Debugf("ignore library %s: %s", libName, err)
+							continue
+						}
 
-					if elib.Machine == machine {
-						libs[libName] = struct{}{}
-						libraries = append(libraries, libPath)
-					}
+						if elib.Machine == machine {
+							libs[libName] = struct{}{}
+							libraries = append(libraries, libPath)
+						}
 
-					if err := elib.Close(); err != nil {
-						sylog.Warningf("Could not close ELIB: %v", err)
+						if err := elib.Close(); err != nil {
+							sylog.Warningf("Could not close ELIB: %v", err)
+						}
 					}
 				}
 			}
