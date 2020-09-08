@@ -47,9 +47,21 @@ func nvidiaContainerCli(args ...string) ([]string, error) {
 			// this is a library -> add full path to library
 			libs = append(libs, line)
 
-			// also add full path to library without .xxx.xx suffix
+			// also add full path to all linked libraries of similar name
 			bareLibPath := strings.SplitAfter(line, ".so")[0]
-			libs = append(libs, bareLibPath)
+			linkedLibCandidates, _ := filepath.Glob(fmt.Sprintf("%s*", bareLibPath))
+			for _, linkedLibCandidate := range linkedLibCandidates {
+				if fi, err := os.Lstat(linkedLibCandidate); err == nil {
+					if fi.Mode() & os.ModeSymlink == os.ModeSymlink {
+						if resolvedLib, err := filepath.EvalSymlinks(linkedLibCandidate); err == nil {
+							if resolvedLib == line {
+								// linkedLibCandidate links (eventually) to required lib
+								libs = append(libs, linkedLibCandidate)
+							}
+						}
+					}
+				}
+			}
 		} else {
 			// this is a binary -> need full path
 			libs = append(libs, line)
