@@ -45,30 +45,30 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// convertImage extracts the image found at filename to a folder named "root" within a temporary
-// directory tempDir. If the unsquashfs binary is not located, the binary at unsquashfsPath is
-// used. It is the caller's responsibility to remove tempDir when no longer needed.
-func convertImage(filename string, unsquashfsPath string) (tempDir string, err error) {
+// convertImage extracts the image found at filename to directory dir within a temporary directory
+// tempDir. If the unsquashfs binary is not located, the binary at unsquashfsPath is used. It is
+// the caller's responsibility to remove tempDir when no longer needed.
+func convertImage(filename string, unsquashfsPath string) (tempDir, imageDir string, err error) {
 	img, err := imgutil.Init(filename, false)
 	if err != nil {
-		return "", fmt.Errorf("could not open image %s: %s", filename, err)
+		return "", "", fmt.Errorf("could not open image %s: %s", filename, err)
 	}
 	defer img.File.Close()
 
 	part, err := img.GetRootFsPartition()
 	if err != nil {
-		return "", fmt.Errorf("while getting root filesystem in %s: %s", filename, err)
+		return "", "", fmt.Errorf("while getting root filesystem in %s: %s", filename, err)
 	}
 
 	// squashfs only
 	if part.Type != imgutil.SQUASHFS {
-		return "", fmt.Errorf("not a squashfs root filesystem")
+		return "", "", fmt.Errorf("not a squashfs root filesystem")
 	}
 
 	// create a reader for rootfs partition
 	reader, err := imgutil.NewPartitionReader(img, "", 0)
 	if err != nil {
-		return "", fmt.Errorf("could not extract root filesystem: %s", err)
+		return "", "", fmt.Errorf("could not extract root filesystem: %s", err)
 	}
 	s := unpacker.NewSquashfs()
 	if !s.HasUnsquashfs() && unsquashfsPath != "" {
@@ -87,7 +87,7 @@ func convertImage(filename string, unsquashfsPath string) (tempDir string, err e
 	// create temporary sandbox
 	tempDir, err = ioutil.TempDir(tmpdir, "rootfs-")
 	if err != nil {
-		return "", fmt.Errorf("could not create temporary sandbox: %s", err)
+		return "", "", fmt.Errorf("could not create temporary sandbox: %s", err)
 	}
 	defer func() {
 		if err != nil {
@@ -96,17 +96,17 @@ func convertImage(filename string, unsquashfsPath string) (tempDir string, err e
 	}()
 
 	// create an inner dir to extract to, so we don't clobber the secure permissions on the tmpDir.
-	dir := filepath.Join(tempDir, "root")
-	if err := os.Mkdir(dir, 0755); err != nil {
-		return "", fmt.Errorf("could not create root directory: %s", err)
+	imageDir = filepath.Join(tempDir, "root")
+	if err := os.Mkdir(imageDir, 0755); err != nil {
+		return "", "", fmt.Errorf("could not create root directory: %s", err)
 	}
 
 	// extract root filesystem
-	if err := s.ExtractAll(reader, dir); err != nil {
-		return "", fmt.Errorf("root filesystem extraction failed: %s", err)
+	if err := s.ExtractAll(reader, imageDir); err != nil {
+		return "", "", fmt.Errorf("root filesystem extraction failed: %s", err)
 	}
 
-	return tempDir, err
+	return tempDir, imageDir, err
 }
 
 // checkHidepid checks if hidepid is set on /proc mount point, when this
@@ -663,14 +663,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			}
 			sylog.Verbosef("User namespace requested, convert image %s to sandbox", image)
 			sylog.Infof("Convert SIF file to sandbox...")
-			tempDir, err := convertImage(image, unsquashfsPath)
+			tempDir, imageDir, err := convertImage(image, unsquashfsPath)
 			if err != nil {
 				sylog.Fatalf("while extracting %s: %s", image, err)
 			}
-			dir := filepath.Join(tempDir, "root")
-			engineConfig.SetImage(dir)
+			engineConfig.SetImage(imageDir)
 			engineConfig.SetDeleteTempDir(tempDir)
-			generator.AddProcessEnv("SINGULARITY_CONTAINER", dir)
+			generator.AddProcessEnv("SINGULARITY_CONTAINER", imageDir)
 
 			// if '--disable-cache' flag, then remove original SIF after converting to sandbox
 			if disableCache {
