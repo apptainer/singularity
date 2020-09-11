@@ -35,6 +35,11 @@ x-run:
       sudo apt-get update -y && \
       sudo apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup
 
+  buildtest_rpm: &buildtest_rpm
+    name: Build and test rpm under docker
+    no_output_timeout: 20m
+    command: scripts/ci-docker-run
+
   build_singularity: &build_singularity
     name: Build Singularity
     command: |-
@@ -144,6 +149,26 @@ jobs:
           command: |-
             make -C ./builddir check
 
+  rpmbuild-centos7:
+    <<: *vm_defaults
+    steps:
+      - checkout
+      - run:
+          name: set OS type and version
+          command: echo 'export OS_TYPE=centos OS_VERSION=7' >> $BASH_ENV
+      - run:
+          <<: *buildtest_rpm
+
+  rpmbuild-centos8:
+    <<: *vm_defaults
+    steps:
+      - checkout
+      - run:
+          name: set OS type and version
+          command: echo 'export OS_TYPE=centos OS_VERSION=8' >> $BASH_ENV
+      - run:
+          <<: *buildtest_rpm
+
   unit_tests:
     <<: *vm_defaults
     steps:
@@ -217,6 +242,8 @@ workflows:
       - go113-alpine
       - go113-macos
       - check_go_mod
+      - rpmbuild-centos7
+      - rpmbuild-centos8
       - unit_tests
       - short_integration_tests
       - e2e_tests

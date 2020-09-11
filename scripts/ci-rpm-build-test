@@ -2,6 +2,9 @@
 
 # this script runs as root under docker
 
+OS_TYPE="$1"
+OS_VERSION="$2"
+
 # build and install
 yum install -y rpm-build make yum-utils gcc binutils util-linux-ng which
 yum install -y libseccomp-devel e2fsprogs cryptsetup
@@ -10,7 +13,7 @@ yum install -y golang
 
 if [[ "$OS_TYPE" = "centos" ]] && [[ "$OS_VERSION" = "6" ]]; then
     yum install -y nc
-elif [[ "$OS_TYPE" = "centos" ]] && [[ "$OS_VERSION" = "7" ]]; then
+elif [[ "$OS_TYPE" = "centos" ]]; then
     yum install -y nmap-ncat iptables
 fi
 
@@ -35,5 +38,5 @@ su testuser -c '
   PATH=$GOPATH/bin:$PATH
 
   cd $GOPATH/src/github.com/sylabs/singularity
-  make -C builddir test
+  make -C builddir short-integration-test
 '
