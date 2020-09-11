@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -757,6 +758,24 @@ func hashBuiltin(ctx context.Context, argv []string) error {
 	return nil
 }
 
+func umaskBuiltin(ctx context.Context, argv []string) error {
+	hc := interp.HandlerCtx(ctx)
+
+	if len(argv) == 0 {
+		old := unix.Umask(0)
+		unix.Umask(old)
+		fmt.Fprintf(hc.Stdout, "%#.4o\n", old)
+	} else {
+		umask, err := strconv.ParseUint(argv[0], 8, 16)
+		if err != nil {
+			return fmt.Errorf("umask: %s: invalid octal number: %s", argv[0], err)
+		}
+		unix.Umask(int(umask))
+	}
+
+	return nil
+}
+
 // runActionScript interprets and executes the action script within
 // an embedded shell interpreter.
 func runActionScript(engineConfig *singularityConfig.EngineConfig) ([]string, []string, error) {
@@ -794,6 +813,7 @@ func runActionScript(engineConfig *singularityConfig.EngineConfig) ([]string, []
 	shell.RegisterShellBuiltin("fixpath", fixPathBuiltin)
 	shell.RegisterShellBuiltin("hash", hashBuiltin)
 	shell.RegisterShellBuiltin("unescape", unescapeBuiltin)
+	shell.RegisterShellBuiltin("umask_builtin", umaskBuiltin)
 
 	// exec builtin won't execute the command but instead
 	// it returns arguments and environment variables and
