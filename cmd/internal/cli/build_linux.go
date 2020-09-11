@@ -12,6 +12,7 @@ import (
 	"os"
 	osExec "os/exec"
 	"runtime"
+	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -126,17 +127,27 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		sylog.Fatalf("Unable to build from %s: %v", spec, err)
 	}
 
+	// path SIF from remote builder should be placed
+	rbDst := dst
 	if buildArgs.sandbox {
+		if strings.HasPrefix(dst, "library://") {
+			// image destination is the library.
+			sylog.Fatalf("Library URI detected as destination, sandbox builds are incompatible with library destinations.")
+		}
+
 		// create temporary file to download sif
 		f, err := ioutil.TempFile(tmpDir, "remote-build-")
 		if err != nil {
 			sylog.Fatalf("Could not create temporary directory: %s", err)
 		}
-		os.Remove(f.Name())
-		dest := f.Name()
+		f.Close()
+
+		// override remote build destation to temporary file for conversion to a sandbox
+		rbDst = f.Name()
+		sylog.Debugf("Overriding remote build destination to temporary file: %s", rbDst)
 
 		// remove downloaded sif
-		defer os.Remove(f.Name())
+		defer os.Remove(rbDst)
 
 		// build from sif downloaded in tmp location
 		defer func() {
@@ -146,7 +157,7 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 				sylog.Fatalf("failed to create an image cache handle")
 			}
 
-			d, err := types.NewDefinitionFromURI("localimage" + "://" + dest)
+			d, err := types.NewDefinitionFromURI("localimage" + "://" + rbDst)
 			if err != nil {
 				sylog.Fatalf("Unable to create definition for sandbox build: %v", err)
 			}
@@ -175,7 +186,7 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		}()
 	}
 
-	b, err := remotebuilder.New(dst, buildArgs.libraryURL, def, buildArgs.detached, forceOverwrite, buildArgs.builderURL, authToken, buildArgs.arch)
+	b, err := remotebuilder.New(rbDst, buildArgs.libraryURL, def, buildArgs.detached, forceOverwrite, buildArgs.builderURL, authToken, buildArgs.arch)
 	if err != nil {
 		sylog.Fatalf("Failed to create builder: %v", err)
 	}
