@@ -9,7 +9,31 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes since v3.6.2
+# v3.6.3 - [2020-09-15]
+
+## Security related fixes
+
+Singularity 3.6.3 addresses the following security issues.
+
+  - [CVE-2020-25039](https://github.com/hpcng/singularity/security/advisories/GHSA-w6v2-qchm-grj7):
+    When a Singularity action command (run, shell, exec) is run with
+    the fakeroot or user namespace option, Singularity will extract a
+    container image to a temporary sandbox directory. Due to insecure
+    permissions on the temporary directory it is possible for any user
+    with access to the system to read the contents of the
+    image. Additionally, if the image contains a world-writable file
+    or directory, it is possible for a user to inject arbitrary
+    content into the running container.
+
+  - [CVE-2020-25040](https://github.com/hpcng/singularity/security/advisories/GHSA-jv9c-w74q-6762):
+    When a Singularity command that results in a container build
+    operation is executed, it is possible for a user with access to
+    the system to read the contents of the image during the
+    build. Additionally, if the image contains a world-writable file
+    or directory, it is possible for a user to inject arbitrary
+    content into the running build, which in certain circumstances may
+    enable arbitrary code execution during the build and/or when the
+    built container is run.
 
 ## Bug Fixes
 
