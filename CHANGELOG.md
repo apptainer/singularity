@@ -9,6 +9,19 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
+# Changes since v3.6.2
+
+## Bug Fixes
+
+  - Add CAP_MKNOD in capability bounding set of RPC to fix issue with
+    cryptsetup when decrypting image from within a docker container.
+  - Fix decryption issue when using both IPC and PID namespaces.
+  - Fix unsupported builtins panic from shell interpreter and add umask
+    support for definition file scripts.
+  - Do not load keyring in prepare_linux if ECL not enabled.
+  - Ensure sandbox option overrides remote build destination.
+
+
 # v3.6.2 - [2020-08-25]
 
 ## New features / functionalities
