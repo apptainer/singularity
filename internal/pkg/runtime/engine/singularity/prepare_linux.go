@@ -41,6 +41,7 @@ import (
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"golang.org/x/crypto/openpgp"
 	"golang.org/x/sys/unix"
 )
 
@@ -1166,9 +1167,16 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 				return fmt.Errorf("while validating ECL configuration: %s", err)
 			}
 
-			kr, err := sypgp.PublicKeyRing()
-			if err != nil {
-				return fmt.Errorf("while obtaining keyring for ECL: %s", err)
+			// Only try to load the keyring here if the ECL is active.
+			// Otherwise pass through an empty keyring rather than avoiding calling
+			// the ECL functions as this keeps the logic for applying / ignoring ECL in a
+			// single location.
+			var kr openpgp.KeyRing = openpgp.EntityList{}
+			if ecl.Activated {
+				kr, err = sypgp.PublicKeyRing()
+				if err != nil {
+					return fmt.Errorf("while obtaining keyring for ECL: %s", err)
+				}
 			}
 
 			if ok, err := ecl.ShouldRunFp(img.File, kr); err != nil {
