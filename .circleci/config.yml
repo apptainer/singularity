@@ -37,7 +37,7 @@ x-run:
 
   buildtest_rpm: &buildtest_rpm
     name: Build and test rpm under docker
-    no_output_timeout: 20m
+    no_output_timeout: 10m
     command: scripts/ci-docker-run
 
   build_singularity: &build_singularity
