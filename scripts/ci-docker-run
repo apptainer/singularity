@@ -26,30 +26,9 @@ else
 fi
 DOCKER_CONTAINER_NAME="test_${OS_TYPE}_${OS_VERSION}"
 
-if [[ "$OS_TYPE" = "centos" ]] && [[ "$OS_VERSION" = "6" ]]; then
-    docker run --privileged -ti \
-      --network=host -v "$(pwd):/build:rw"  --name "$DOCKER_CONTAINER_NAME" \
-      "$DOCKER_HUB_URI" /bin/bash -exc "
-    cd /build &&
-    scripts/ci-rpm-build-test $OS_TYPE $OS_VERSION
-"
-elif [[ "$OS_TYPE" = "centos" ]]; then
-    docker run --privileged -d -ti \
-      --network=host -v /sys/fs/cgroup:/sys/fs/cgroup -v "$(pwd):/build:rw"  --name "$DOCKER_CONTAINER_NAME" \
-      "$DOCKER_HUB_URI" /usr/sbin/init
-    sleep 1 # suggested by https://bugzilla.redhat.com/show_bug.cgi?id=1647343
-    docker exec -ti "$DOCKER_CONTAINER_NAME" /bin/bash -exc "
-    cd /build &&
-    scripts/ci-rpm-build-test $OS_TYPE $OS_VERSION
-"
-else
-    docker run --privileged -ti \
-      --network=host -v "$(pwd):/build:rw"  --name "$DOCKER_CONTAINER_NAME" \
-      "$DOCKER_HUB_URI" /bin/bash -exc "
-    cd /build &&
-    scripts/ci-rpm-build-test $OS_TYPE $OS_VERSION
-"
-fi
+docker run --privileged -ti --network=host -v "$(pwd):/build:rw"  \
+  --name "$DOCKER_CONTAINER_NAME" "$DOCKER_HUB_URI" /bin/bash -exc \
+	"cd /build && scripts/ci-rpm-build-test $OS_TYPE $OS_VERSION"
 
 docker ps -a
 docker stop "$DOCKER_CONTAINER_NAME"
