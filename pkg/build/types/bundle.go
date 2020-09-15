@@ -30,6 +30,8 @@ type Bundle struct {
 
 	RootfsPath string `json:"rootfsPath"` // where actual fs to chroot will appear
 	TmpDir     string `json:"tmpPath"`    // where temp files required during build will appear
+
+	parentPath string // parent directory for RootfsPath
 }
 
 // Options defines build time behavior to be executed on the bundle.
@@ -73,13 +75,13 @@ type Options struct {
 }
 
 // NewEncryptedBundle creates an Encrypted Bundle environment.
-func NewEncryptedBundle(rootfs, tempDir string, keyInfo *crypt.KeyInfo) (b *Bundle, err error) {
-	return newBundle(rootfs, tempDir, keyInfo)
+func NewEncryptedBundle(parentPath, tempDir string, keyInfo *crypt.KeyInfo) (b *Bundle, err error) {
+	return newBundle(parentPath, tempDir, keyInfo)
 }
 
 // NewBundle creates a Bundle environment.
-func NewBundle(rootfs, tempDir string) (b *Bundle, err error) {
-	return newBundle(rootfs, tempDir, nil)
+func NewBundle(parentPath, tempDir string) (b *Bundle, err error) {
+	return newBundle(parentPath, tempDir, nil)
 }
 
 // RunSection iterates through the sections specified in a bundle
@@ -100,7 +102,7 @@ func (b *Bundle) RunSection(s string) bool {
 // Remove cleans up any bundle files.
 func (b *Bundle) Remove() error {
 	var errors []string
-	for _, dir := range []string{b.TmpDir, b.RootfsPath} {
+	for _, dir := range []string{b.TmpDir, b.parentPath} {
 		if err := fs.ForceRemoveAll(dir); err != nil {
 			errors = append(errors, fmt.Sprintf("could not remove %q: %v", dir, err))
 		}
@@ -141,11 +143,19 @@ func cleanupDir(path string) {
 	}
 }
 
-// newBundle creates a minimum bundle with root filesystem in rootfs.
+// newBundle creates a minimum bundle with root filesystem in parentPath.
 // Any temporary files created during build process will be in tempDir/bundle-temp-*
 // directory, that will be cleaned up after successful build.
-func newBundle(rootfs, tempDir string, keyInfo *crypt.KeyInfo) (*Bundle, error) {
-	rootfsPath := rootfs
+
+//
+// TODO: much of the logic in this func should likely be re-factored to func newBuild in the
+// internal/pkg/build package, since it is the sole caller and has conditional logic which depends
+// on implementation details of this package. In particular, chown() handling should be done at the
+// build level, rather than the bundle level, to avoid repetition during multi-stage builds, and
+// clarify responsibility for cleanup of the various directories that are created during the build
+// process.
+func newBundle(parentPath, tempDir string, keyInfo *crypt.KeyInfo) (*Bundle, error) {
+	rootfsPath := filepath.Join(parentPath, "rootfs")
 
 	tmpPath, err := ioutil.TempDir(tempDir, "bundle-temp-")
 	if err != nil {
@@ -155,6 +165,7 @@ func newBundle(rootfs, tempDir string, keyInfo *crypt.KeyInfo) (*Bundle, error) 
 
 	if err := os.MkdirAll(rootfsPath, 0755); err != nil {
 		cleanupDir(tmpPath)
+		cleanupDir(parentPath)
 		return nil, fmt.Errorf("could not create %q: %v", rootfsPath, err)
 	}
 
@@ -164,14 +175,25 @@ func newBundle(rootfs, tempDir string, keyInfo *crypt.KeyInfo) (*Bundle, error) 
 	if err != nil {
 		cleanupDir(tmpPath)
 		cleanupDir(rootfsPath)
+		cleanupDir(parentPath)
 		return nil, err
 	} else if !can {
-		defer cleanupDir(rootfsPath)
+		cleanupDir(rootfsPath)
+		cleanupDir(parentPath)
 
-		rootfsNewPath := filepath.Join(tempDir, filepath.Base(rootfsPath))
-		if rootfsNewPath != rootfsPath {
-			if err := os.MkdirAll(rootfsNewPath, 0755); err != nil {
+		// If the supplied rootfs was not inside tempDir (as is the case during a sandbox build),
+		// try tempDir as a fallback.
+		if !strings.HasPrefix(parentPath, tempDir) {
+			parentPath, err = ioutil.TempDir(tempDir, "build-temp-")
+			if err != nil {
 				cleanupDir(tmpPath)
+				return nil, fmt.Errorf("failed to create rootfs directory: %v", err)
+			}
+			// Create an inner dir, so we don't clobber the secure permissions on the surrounding dir.
+			rootfsNewPath := filepath.Join(parentPath, "rootfs")
+			if err := os.Mkdir(rootfsNewPath, 0755); err != nil {
+				cleanupDir(tmpPath)
+				cleanupDir(parentPath)
 				return nil, fmt.Errorf("could not create rootfs dir in %q: %v", rootfsNewPath, err)
 			}
 			// check that chown works with the underlying filesystem pointed
@@ -180,10 +202,12 @@ func newBundle(rootfs, tempDir string, keyInfo *crypt.KeyInfo) (*Bundle, error) 
 			if err != nil {
 				cleanupDir(tmpPath)
 				cleanupDir(rootfsNewPath)
+				cleanupDir(parentPath)
 				return nil, err
 			} else if !can {
 				cleanupDir(tmpPath)
 				cleanupDir(rootfsNewPath)
+				cleanupDir(parentPath)
 				sylog.Errorf("Could not set files/directories ownership, if %s is on a network filesystem, "+
 					"you must set TMPDIR to a local path (eg: TMPDIR=/var/tmp singularity build ...)", rootfsNewPath)
 				return nil, fmt.Errorf("ownership change not allowed in %s, aborting", tempDir)
@@ -195,6 +219,7 @@ func newBundle(rootfs, tempDir string, keyInfo *crypt.KeyInfo) (*Bundle, error) 
 	sylog.Debugf("Created directory %q for the bundle", rootfsPath)
 
 	return &Bundle{
+		parentPath:  parentPath,
 		RootfsPath:  rootfsPath,
 		TmpDir:      tmpPath,
 		JSONObjects: make(map[string][]byte),

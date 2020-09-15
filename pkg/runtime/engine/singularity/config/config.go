@@ -148,7 +148,7 @@ type JSONConfig struct {
 	NoPrivs           bool              `json:"noPrivs,omitempty"`
 	NoHome            bool              `json:"noHome,omitempty"`
 	NoInit            bool              `json:"noInit,omitempty"`
-	DeleteImage       bool              `json:"deleteImage,omitempty"`
+	DeleteTempDir     string            `json:"deleteTempDir,omitempty"`
 	Fakeroot          bool              `json:"fakeroot,omitempty"`
 	SignalPropagation bool              `json:"signalPropagation,omitempty"`
 }
@@ -711,14 +711,16 @@ func (e *EngineConfig) GetFakeroot() bool {
 	return e.JSON.Fakeroot
 }
 
-// GetDeleteImage returns if container image must be deleted after use.
-func (e *EngineConfig) GetDeleteImage() bool {
-	return e.JSON.DeleteImage
+// GetDeleteTempDir returns the path of the temporary directory containing the root filesystem
+// which must be deleted after use. If no deletion is required, the empty string is returned.
+func (e *EngineConfig) GetDeleteTempDir() string {
+	return e.JSON.DeleteTempDir
 }
 
-// SetDeleteImage sets if container image must be deleted after use.
-func (e *EngineConfig) SetDeleteImage(delete bool) {
-	e.JSON.DeleteImage = delete
+// SetDeleteTempDir sets dir as the path of the temporary directory containing the root filesystem,
+// which must be deleted after use.
+func (e *EngineConfig) SetDeleteTempDir(dir string) {
+	e.JSON.DeleteTempDir = dir
 }
 
 // SetSignalPropagation sets if engine must propagate signals from
