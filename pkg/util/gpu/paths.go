@@ -52,7 +52,7 @@ func nvidiaContainerCli(args ...string) ([]string, error) {
 			linkedLibCandidates, _ := filepath.Glob(fmt.Sprintf("%s*", bareLibPath))
 			for _, linkedLibCandidate := range linkedLibCandidates {
 				if fi, err := os.Lstat(linkedLibCandidate); err == nil {
-					if fi.Mode() & os.ModeSymlink == os.ModeSymlink {
+					if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
 						if resolvedLib, err := filepath.EvalSymlinks(linkedLibCandidate); err == nil {
 							if resolvedLib == line {
 								// linkedLibCandidate links (eventually) to required lib
