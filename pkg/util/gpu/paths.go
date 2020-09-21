@@ -48,18 +48,40 @@ func nvidiaContainerCli(args ...string) ([]string, error) {
 			libs = append(libs, line)
 
 			// also add full path to all linked libraries of similar name
+			// for example libGLX_nvidia.so.0 -> libGLX_nvidia.so.390.116
+			var symlinkCandidates []string
 			bareLibPath := strings.SplitAfter(line, ".so")[0]
-			linkedLibCandidates, _ := filepath.Glob(fmt.Sprintf("%s*", bareLibPath))
-			for _, linkedLibCandidate := range linkedLibCandidates {
-				if fi, err := os.Lstat(linkedLibCandidate); err == nil {
+			similarlyNamedFiles, _ := filepath.Glob(fmt.Sprintf("%s*", bareLibPath))
+
+			if len(similarlyNamedFiles) == 0 {
+				// should have at least found current lib
+				sylog.Warningf("no files found matching %s*", bareLibPath)
+				continue
+			}
+
+			// check all files with a similar name (up to .so extension) and
+			// work out which are symlinks rather than regular files
+			for _, similarlyNamedFile := range similarlyNamedFiles {
+				if fi, err := os.Lstat(similarlyNamedFile); err == nil {
 					if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
-						if resolvedLib, err := filepath.EvalSymlinks(linkedLibCandidate); err == nil {
-							if resolvedLib == line {
-								// linkedLibCandidate links (eventually) to required lib
-								libs = append(libs, linkedLibCandidate)
-							}
-						}
+						symlinkCandidates = append(symlinkCandidates, similarlyNamedFile)
 					}
+				} else {
+					// error in Lstat
+					sylog.Warningf("error extracting file info for %s: %v", similarlyNamedFile, err)
+				}
+			}
+
+			// resolve symlinks and check if they eventually point to driver
+			for _, symlinkCandidate := range symlinkCandidates {
+				if resolvedLib, err := filepath.EvalSymlinks(symlinkCandidate); err == nil {
+					if resolvedLib == line {
+						// symlinkCandidate resolves (eventually) to required lib
+						libs = append(libs, symlinkCandidate)
+					}
+				} else {
+					// error resolving symlink?
+					sylog.Warningf("unable to resolve symlink for %s: %v", symlinkCandidate, err)
 				}
 			}
 		} else {
