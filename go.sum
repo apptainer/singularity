@@ -535,6 +535,8 @@ github.com/sylabs/scs-key-client v0.5.1 h1:Gig1O0Rs926UJtXyKJLAYn5Kn2Wmi3g5VupOW
 github.com/sylabs/scs-key-client v0.5.1/go.mod h1:iKD05EsmJMGaxKhcjjwh/thEShfaWmky1qo24zHE0pw=
 github.com/sylabs/scs-library-client v0.5.6 h1:LjAkFFSqJZy/HfdnSdxPPtugo3lRVLors+Q6J+fjSd4=
 github.com/sylabs/scs-library-client v0.5.6/go.mod h1:DqZKmwqx8B3PbYS0YrETlCVUviOTz+ZQewoLqWjU2AI=
+github.com/sylabs/scs-library-client v0.5.7 h1:qJACZ/rJByKle7HyeG/iGZxcc39vAJezVMDLr5YV73E=
+github.com/sylabs/scs-library-client v0.5.7/go.mod h1:DqZKmwqx8B3PbYS0YrETlCVUviOTz+ZQewoLqWjU2AI=
 github.com/sylabs/sif v1.2.1 h1:BvNER55n5ppPzVO8TFxADfM8xMaZKdHur7BR5Yf3leE=
 github.com/sylabs/sif v1.2.1/go.mod h1:gLZA1tQWzKe8lr4Pt+iUP+rJUPcDXZJjs/142yRwmVE=
 github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
