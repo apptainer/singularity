@@ -11,12 +11,6 @@ yum install -y libseccomp-devel e2fsprogs cryptsetup
 yum install -y epel-release
 yum install -y golang
 
-if [[ "$OS_TYPE" = "centos" ]] && [[ "$OS_VERSION" = "6" ]]; then
-    yum install -y nc
-elif [[ "$OS_TYPE" = "centos" ]]; then
-    yum install -y nmap-ncat iptables
-fi
-
 # switch to an unprivileged user with sudo privileges
 yum install -y sudo
 # We need Git existing here prior to the run
