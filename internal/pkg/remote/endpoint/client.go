@@ -63,7 +63,7 @@ func (ep *Config) KeyserverClientConfig(uri string, op KeyserverOp) (*keyclient.
 		}
 	} else {
 		keyservers = []*ServiceConfig{
-			&ServiceConfig{
+			{
 				URI:      uri,
 				External: true,
 			},

@@ -39,11 +39,11 @@ func TestKeyserverClientConfig(t *testing.T) {
 			endpoint: &Config{
 				URI: SCSDefaultCloudURI,
 				Keyservers: []*ServiceConfig{
-					&ServiceConfig{
+					{
 						URI:  SCSDefaultKeyserverURI,
 						Skip: true,
 					},
-					&ServiceConfig{
+					{
 						URI:      "http://localhost:11371",
 						External: true,
 					},
@@ -59,10 +59,10 @@ func TestKeyserverClientConfig(t *testing.T) {
 			endpoint: &Config{
 				URI: SCSDefaultCloudURI,
 				Keyservers: []*ServiceConfig{
-					&ServiceConfig{
+					{
 						URI: SCSDefaultKeyserverURI,
 					},
-					&ServiceConfig{
+					{
 						URI:      "http://localhost:11371",
 						External: true,
 					},

@@ -46,11 +46,11 @@ func TestAddRemoveKeyserver(t *testing.T) {
 			insecure:  true,
 			wantErr:   false,
 			wantKeyservers: []*ServiceConfig{
-				&ServiceConfig{
+				{
 					URI:        SCSDefaultKeyserverURI,
 					credential: scsDefaultCredential,
 				},
-				&ServiceConfig{
+				{
 					URI:      localhostKeyserver,
 					External: true,
 					Insecure: true,
@@ -77,15 +77,15 @@ func TestAddRemoveKeyserver(t *testing.T) {
 			order:     1,
 			wantErr:   false,
 			wantKeyservers: []*ServiceConfig{
-				&ServiceConfig{
+				{
 					URI:      "hkps://localhost",
 					External: true,
 				},
-				&ServiceConfig{
+				{
 					URI:        SCSDefaultKeyserverURI,
 					credential: scsDefaultCredential,
 				},
-				&ServiceConfig{
+				{
 					URI:      localhostKeyserver,
 					External: true,
 					Insecure: true,
@@ -104,11 +104,11 @@ func TestAddRemoveKeyserver(t *testing.T) {
 			uri:       "hkps://localhost",
 			wantErr:   false,
 			wantKeyservers: []*ServiceConfig{
-				&ServiceConfig{
+				{
 					URI:        SCSDefaultKeyserverURI,
 					credential: scsDefaultCredential,
 				},
-				&ServiceConfig{
+				{
 					URI:      localhostKeyserver,
 					External: true,
 					Insecure: true,
@@ -121,12 +121,12 @@ func TestAddRemoveKeyserver(t *testing.T) {
 			uri:       SCSDefaultKeyserverURI,
 			wantErr:   false,
 			wantKeyservers: []*ServiceConfig{
-				&ServiceConfig{
+				{
 					URI:        SCSDefaultKeyserverURI,
 					Skip:       true,
 					credential: scsDefaultCredential,
 				},
-				&ServiceConfig{
+				{
 					URI:      localhostKeyserver,
 					External: true,
 					Insecure: true,
@@ -146,12 +146,12 @@ func TestAddRemoveKeyserver(t *testing.T) {
 			order:     2,
 			wantErr:   false,
 			wantKeyservers: []*ServiceConfig{
-				&ServiceConfig{
+				{
 					URI:      localhostKeyserver,
 					External: true,
 					Insecure: true,
 				},
-				&ServiceConfig{
+				{
 					URI:        SCSDefaultKeyserverURI,
 					credential: scsDefaultCredential,
 				},

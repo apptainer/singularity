@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	hkpPort  = "11371"
-	hkpsPort = "443"
+	hkpPort = "11371"
 )
 
 const (
