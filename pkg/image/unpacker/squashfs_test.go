@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -105,4 +106,9 @@ func TestSquashfs(t *testing.T) {
 	if !isExist(path) {
 		t.Errorf("file extraction failed, %s is missing", path)
 	}
+}
+
+func TestMain(m *testing.M) {
+	cmdFunc = unsquashfsCmd
+	os.Exit(m.Run())
 }
