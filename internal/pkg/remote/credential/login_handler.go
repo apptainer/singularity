@@ -61,6 +61,9 @@ func ensurePassword(password string) (string, error) {
 type ociHandler struct{}
 
 func (h *ociHandler) login(u *url.URL, username, password string, insecure bool) (*Config, error) {
+	if username == "" {
+		return nil, fmt.Errorf("Docker/OCI registry requires a username")
+	}
 	pass, err := ensurePassword(password)
 	if err != nil {
 		return nil, err
