@@ -15,8 +15,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/remote"
 )
 
-const listLine = "%s\t%s\t%s\t%s\n"
-const listLineDefault = "[%s]\t%s\t%s\t%s\n"
+const listLine = "%s\t%s\t%s\t%s\t%s\n"
 
 // RemoteList prints information about remote configurations
 func RemoteList(usrConfigFile string) (err error) {
@@ -65,7 +64,7 @@ func RemoteList(usrConfigFile string) (err error) {
 	fmt.Println()
 
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(tw, listLine, "NAME", "URI", "GLOBAL", "EXCLUSIVE")
+	fmt.Fprintf(tw, listLine, "NAME", "URI", "ACTIVE", "GLOBAL", "EXCLUSIVE")
 	for _, n := range names {
 		sys := "NO"
 		if c.Remotes[n].System {
@@ -75,54 +74,50 @@ func RemoteList(usrConfigFile string) (err error) {
 		if c.Remotes[n].Exclusive {
 			excl = "YES"
 		}
-
-		uri := c.Remotes[n].URI
+		active := "NO"
 		if c.DefaultRemote != "" && c.DefaultRemote == n {
-			fmt.Fprintf(tw, listLineDefault, n, uri, sys, excl)
-		} else {
-			fmt.Fprintf(tw, listLine, n, uri, sys, excl)
+			active = "YES"
 		}
+		fmt.Fprintf(tw, listLine, n, c.Remotes[n].URI, active, sys, excl)
 	}
 	tw.Flush()
 
 	if ep, err := c.GetDefault(); err == nil {
-		if err := ep.UpdateKeyserversConfig(); err != nil {
-			return err
+		if err := ep.UpdateKeyserversConfig(); err == nil {
+			fmt.Println()
+			fmt.Println("Keyservers")
+			fmt.Println("==========")
+			fmt.Println()
+
+			tw = tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", "URI", "GLOBAL", "INSECURE", "ORDER")
+			order := 1
+			for _, kc := range ep.Keyservers {
+				if kc.Skip {
+					continue
+				}
+				insecure := "NO"
+				if kc.Insecure {
+					insecure = "YES"
+				}
+				fmt.Fprintf(tw, "%s\tYES\t%s\t%d", kc.URI, insecure, order)
+				if !kc.External {
+					fmt.Fprintf(tw, "*\n")
+				} else {
+					fmt.Fprintf(tw, "\n")
+				}
+				order++
+			}
+			tw.Flush()
+
+			fmt.Println()
+			fmt.Println("* Active cloud services keyserver")
 		}
-
-		fmt.Println()
-		fmt.Println("Keyservers")
-		fmt.Println("==========")
-		fmt.Println()
-
-		tw = tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", "URI", "GLOBAL", "INSECURE", "ORDER")
-		order := 1
-		for _, kc := range ep.Keyservers {
-			if kc.Skip {
-				continue
-			}
-			insecure := "NO"
-			if kc.Insecure {
-				insecure = "YES"
-			}
-			fmt.Fprintf(tw, "%s\tYES\t%s\t%d", kc.URI, insecure, order)
-			if !kc.External {
-				fmt.Fprintf(tw, "*\n")
-			} else {
-				fmt.Fprintf(tw, "\n")
-			}
-			order++
-		}
-		tw.Flush()
-
-		fmt.Println()
-		fmt.Println("* Active cloud services keyserver")
 	}
 
 	if len(c.Credentials) > 0 {
 		fmt.Println()
-		fmt.Println("Service's credentials")
+		fmt.Println("Authenticated Logins")
 		fmt.Println("=================================")
 		fmt.Println()
 

@@ -7,8 +7,17 @@
 package endpoint
 
 import (
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/sylabs/singularity/internal/pkg/remote/credential"
+	"github.com/sylabs/singularity/pkg/syfs"
 )
+
+var cacheDuration = 720 * time.Hour
 
 var DefaultEndpointConfig = &Config{
 	URI:    SCSDefaultCloudURI,
@@ -40,4 +49,42 @@ type ServiceConfig struct {
 	Skip     bool   `yaml:"Skip"`
 	External bool   `yaml:"External"`
 	Insecure bool   `yaml:"Insecure"`
+}
+
+func cacheDir() string {
+	cacheDir := syfs.RemoteCacheDir()
+	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
+		if err := os.Mkdir(cacheDir, 0700); err != nil {
+			return ""
+		}
+	}
+	return cacheDir
+}
+
+func getCachedConfig(uri string) io.ReadCloser {
+	dir := cacheDir()
+	if dir == "" {
+		return nil
+	}
+	config := filepath.Join(dir, uri+".json")
+	fi, err := os.Stat(config)
+	if err != nil {
+		return nil
+	} else if fi.ModTime().Add(cacheDuration).Before(time.Now()) {
+		return nil
+	}
+	rc, err := os.Open(config)
+	if err != nil {
+		return nil
+	}
+	return rc
+}
+
+func updateCachedConfig(uri string, data []byte) {
+	dir := cacheDir()
+	if dir == "" {
+		return
+	}
+	config := filepath.Join(dir, uri+".json")
+	ioutil.WriteFile(config, data, 0600)
 }

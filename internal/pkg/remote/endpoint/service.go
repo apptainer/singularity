@@ -130,17 +130,21 @@ func (ep *Config) GetAllServices() (map[string][]Service, error) {
 
 	req.Header.Set("User-Agent", useragent.Value())
 
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error making request to server: %v", err)
-	}
-	defer res.Body.Close()
+	cacheReader := getCachedConfig(ep.URI)
+	reader := cacheReader
 
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("error response from server: %v", res.StatusCode)
+	if cacheReader == nil {
+		res, err := client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("error making request to server: %s", err)
+		} else if res.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("error response from server: %s", err)
+		}
+		reader = res.Body
 	}
+	defer reader.Close()
 
-	b, err := ioutil.ReadAll(res.Body)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, fmt.Errorf("while reading response body: %v", err)
 	}
@@ -149,6 +153,10 @@ func (ep *Config) GetAllServices() (map[string][]Service, error) {
 
 	if err := json.Unmarshal(b, &a); err != nil {
 		return nil, fmt.Errorf("jsonresp: failed to unmarshal response: %v", err)
+	}
+
+	if reader != cacheReader {
+		updateCachedConfig(ep.URI, b)
 	}
 
 	for k, v := range a {

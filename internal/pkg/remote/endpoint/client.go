@@ -8,12 +8,14 @@ package endpoint
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	golog "github.com/go-log/log"
 	buildclient "github.com/sylabs/scs-build-client/client"
 	keyclient "github.com/sylabs/scs-key-client/client"
 	libclient "github.com/sylabs/scs-library-client/client"
+	remoteutil "github.com/sylabs/singularity/internal/pkg/remote/util"
 	"github.com/sylabs/singularity/pkg/sylog"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
@@ -61,6 +63,26 @@ func (ep *Config) KeyserverClientConfig(uri string, op KeyserverOp) (*keyclient.
 				primaryKeyserver,
 			}
 		}
+	} else if ep.Exclusive {
+		available := make([]string, 0)
+		found := false
+		for _, kc := range ep.Keyservers {
+			if kc.Skip {
+				continue
+			}
+			available = append(available, kc.URI)
+			if remoteutil.SameKeyserver(uri, kc.URI) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			list := strings.Join(available, ", ")
+			return nil, fmt.Errorf(
+				"endpoint is set as exclusive by the system administrator: only %q can be used",
+				list,
+			)
+		}
 	} else {
 		keyservers = []*ServiceConfig{
 			{
@@ -92,6 +114,17 @@ func (ep *Config) LibraryClientConfig(uri string) (*libclient.Config, error) {
 		}
 		config.AuthToken = ep.Token
 		config.BaseURL = libURI
+	} else if ep.Exclusive {
+		libURI, err := ep.GetServiceURI(Library)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get library service URI: %v", err)
+		}
+		if !remoteutil.SameURI(uri, libURI) {
+			return nil, fmt.Errorf(
+				"endpoint is set as exclusive by the system administrator: only %q can be used",
+				libURI,
+			)
+		}
 	}
 
 	return config, nil
@@ -117,6 +150,17 @@ func (ep *Config) BuilderClientConfig(uri string) (*buildclient.Config, error) {
 		}
 		config.AuthToken = ep.Token
 		config.BaseURL = buildURI
+	} else if ep.Exclusive {
+		buildURI, err := ep.GetServiceURI(Builder)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get builder service URI: %v", err)
+		}
+		if !remoteutil.SameURI(uri, buildURI) {
+			return nil, fmt.Errorf(
+				"endpoint is set as exclusive by the system administrator: only %q can be used",
+				buildURI,
+			)
+		}
 	}
 
 	return config, nil

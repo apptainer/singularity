@@ -42,8 +42,12 @@ func syncSysConfig(cUsr *remote.Config) error {
 func RemoteUse(usrConfigFile, name string, global, exclusive bool) (err error) {
 	c := &remote.Config{}
 
-	if exclusive && !global {
-		return fmt.Errorf("-e/--exclusive requires --global/-g")
+	if exclusive {
+		if os.Getuid() != 0 {
+			return fmt.Errorf("unable to set endpoint as exclusive: not root user")
+		}
+		global = true
+		usrConfigFile = remote.SystemConfigPath
 	}
 
 	// system config should be world readable

@@ -155,7 +155,10 @@ func (c *Config) SetDefault(name string, exclusive bool) error {
 	} else if name != c.DefaultRemote {
 		for n, r := range c.Remotes {
 			if r.Exclusive && !c.system {
-				return fmt.Errorf("could not use %s: remote %s is set to exclusive", name, n)
+				return fmt.Errorf(
+					"could not use %s: remote %s has been set exclusive by the system administrator",
+					name, n,
+				)
 			}
 		}
 	}

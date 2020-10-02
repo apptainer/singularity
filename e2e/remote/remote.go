@@ -769,13 +769,6 @@ func (c ctx) remoteUseExclusive(t *testing.T) {
 		profile    e2e.Profile
 	}{
 		{
-			name:       "use exclusive without global",
-			command:    "remote use",
-			args:       []string{"--exclusive", testRemote},
-			expectExit: 255,
-			profile:    e2e.RootProfile,
-		},
-		{
 			name:       "use exclusive as user",
 			command:    "remote use",
 			args:       []string{"--exclusive", "--global", testRemote},
@@ -790,7 +783,7 @@ func (c ctx) remoteUseExclusive(t *testing.T) {
 			profile:    e2e.RootProfile,
 		},
 		{
-			name:       "use remote exclusive as root",
+			name:       "use remote exclusive with global as root",
 			command:    "remote use",
 			args:       []string{"--exclusive", "--global", testRemote},
 			expectExit: 0,
@@ -816,6 +809,34 @@ func (c ctx) remoteUseExclusive(t *testing.T) {
 			args:       []string{sylabsRemote},
 			expectExit: 0,
 			profile:    e2e.UserProfile,
+		},
+		{
+			name:       "add remote",
+			command:    "remote add",
+			args:       []string{"--global", testRemote, "cloud.test.com"},
+			expectExit: 0,
+			profile:    e2e.RootProfile,
+		},
+		{
+			name:       "use remote exclusive without global as root",
+			command:    "remote use",
+			args:       []string{"--exclusive", testRemote},
+			expectExit: 0,
+			profile:    e2e.RootProfile,
+		},
+		{
+			name:       "use remote SylabsCloud as user KO",
+			command:    "remote use",
+			args:       []string{sylabsRemote},
+			expectExit: 255,
+			profile:    e2e.UserProfile,
+		},
+		{
+			name:       "remove e2e remote",
+			command:    "remote remove",
+			args:       []string{"--global", testRemote},
+			expectExit: 0,
+			profile:    e2e.RootProfile,
 		},
 	}
 

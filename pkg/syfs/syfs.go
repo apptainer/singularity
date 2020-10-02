@@ -19,6 +19,7 @@ import (
 
 const (
 	RemoteConfFile = "remote.yaml"
+	RemoteCache    = "remote-cache"
 	DockerConfFile = "docker-config.json"
 	singularityDir = ".singularity"
 )
@@ -60,6 +61,10 @@ func configDir() string {
 
 func RemoteConf() string {
 	return filepath.Join(ConfigDir(), RemoteConfFile)
+}
+
+func RemoteCacheDir() string {
+	return filepath.Join(ConfigDir(), RemoteCache)
 }
 
 func DockerConf() string {

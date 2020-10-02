@@ -35,6 +35,27 @@ func TestKeyserverClientConfig(t *testing.T) {
 			op:            KeyserverSearchOp,
 		},
 		{
+			name: "Sylabs cloud exclusive KO",
+			endpoint: &Config{
+				URI:       SCSDefaultCloudURI,
+				Exclusive: true,
+			},
+			uri:           "https://custom.keys",
+			expectSuccess: false,
+			op:            KeyserverSearchOp,
+		},
+		{
+			name: "Sylabs cloud exclusive OK",
+			endpoint: &Config{
+				URI:       SCSDefaultCloudURI,
+				Exclusive: true,
+			},
+			uri:           SCSDefaultKeyserverURI,
+			expectedURI:   SCSDefaultKeyserverURI,
+			expectSuccess: true,
+			op:            KeyserverSearchOp,
+		},
+		{
 			name: "Sylabs cloud verify",
 			endpoint: &Config{
 				URI: SCSDefaultCloudURI,
@@ -127,6 +148,24 @@ func TestLibraryClientConfig(t *testing.T) {
 			expectSuccess: true,
 		},
 		{
+			name: "Sylabs cloud exclusive KO",
+			endpoint: &Config{
+				URI:       SCSDefaultCloudURI,
+				Exclusive: true,
+			},
+			uri:           "https://custom.library",
+			expectSuccess: false,
+		},
+		{
+			name: "Sylabs cloud exclusive OK",
+			endpoint: &Config{
+				URI:       SCSDefaultCloudURI,
+				Exclusive: true,
+			},
+			uri:           SCSDefaultLibraryURI,
+			expectSuccess: true,
+		},
+		{
 			name: "Custom library",
 			endpoint: &Config{
 				URI: SCSDefaultCloudURI,
@@ -173,6 +212,24 @@ func TestBuilderClientConfig(t *testing.T) {
 			name: "Sylabs cloud",
 			endpoint: &Config{
 				URI: SCSDefaultCloudURI,
+			},
+			uri:           SCSDefaultBuilderURI,
+			expectSuccess: true,
+		},
+		{
+			name: "Sylabs cloud exclusive KO",
+			endpoint: &Config{
+				URI:       SCSDefaultCloudURI,
+				Exclusive: true,
+			},
+			uri:           "https://custom.builder",
+			expectSuccess: false,
+		},
+		{
+			name: "Sylabs cloud exclusive OK",
+			endpoint: &Config{
+				URI:       SCSDefaultCloudURI,
+				Exclusive: true,
 			},
 			uri:           SCSDefaultBuilderURI,
 			expectSuccess: true,

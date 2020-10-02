@@ -8,8 +8,6 @@ package credential
 import (
 	"fmt"
 	"net/url"
-
-	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 )
 
 // Manager handle login/logout handlers.
@@ -19,18 +17,6 @@ type manager struct{}
 
 // Login allows to log into a service like a Docker/OCI registry or a keyserver.
 func (m *manager) Login(uri, username, password string, insecure bool) (*Config, error) {
-	if password == "" {
-		question := "Password (or token when username is empty): "
-		input, err := interactive.AskQuestionNoEcho(question)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read password: %s", err)
-		}
-		password = input
-	}
-	if password == "" {
-		return nil, fmt.Errorf("A password is required")
-	}
-
 	u, err := url.Parse(uri)
 	if err != nil {
 		return nil, err

@@ -128,7 +128,7 @@ var remoteUseExclusiveFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "exclusive",
 	ShortHand:    "e",
-	Usage:        "set the endpoint as exclusive",
+	Usage:        "set the endpoint as exclusive (root user only, imply --global)",
 }
 
 // -o|--order
