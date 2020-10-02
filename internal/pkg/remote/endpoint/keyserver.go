@@ -198,7 +198,7 @@ func (c *keyserverTransport) RoundTrip(req *http.Request) (*http.Response, error
 			return resp, err
 		}
 
-		if resp.StatusCode/100 == 2 && i < len(c.keyservers)-1 {
+		if resp.StatusCode/100 != 2 && i < len(c.keyservers)-1 {
 			resp.Body.Close()
 			continue
 		}
