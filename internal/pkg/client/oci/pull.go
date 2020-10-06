@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -15,7 +16,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 // pull will build a SIF image into the cache if directTo="", or a specific file if directTo is set.
@@ -28,6 +31,8 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom, tmpDi
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify: noHTTPS,
 		DockerAuthConfig:         ociAuth,
+		AuthFilePath:             syfs.DockerConf(),
+		DockerRegistryUserAgent:  useragent.Value(),
 	}
 	if noHTTPS {
 		sysCtx.DockerInsecureSkipTLSVerify = ocitypes.NewOptionalBool(true)

@@ -1,4 +1,5 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,35 +8,18 @@ package singularity
 
 import (
 	"fmt"
-	"net/url"
 	"os"
-	"path"
-	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 )
 
-// RemoteAdd adds remote to configuration
-func RemoteAdd(configFile, name, uri string, global bool) (err error) {
-	// Explicit handling of corner cases: name and uri must be valid strings
-	if strings.TrimSpace(name) == "" {
-		return fmt.Errorf("invalid name: cannot have empty name")
-	}
-	if strings.TrimSpace(uri) == "" {
-		return fmt.Errorf("invalid URI: cannot have empty URI")
-	}
-
+// RemoteLogout logs out from an endpoint or service.
+func RemoteLogout(usrConfigFile, name string) (err error) {
 	c := &remote.Config{}
 
-	// system config should be world readable
-	perm := os.FileMode(0600)
-	if global {
-		perm = os.FileMode(0644)
-	}
-
 	// opening config file
-	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE, perm)
+	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}
@@ -47,14 +31,25 @@ func RemoteAdd(configFile, name, uri string, global bool) (err error) {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	u, err := url.Parse(uri)
-	if err != nil {
+	if err := syncSysConfig(c); err != nil {
 		return err
 	}
-	e := endpoint.Config{URI: path.Join(u.Host + u.Path), System: global}
 
-	if err := c.Add(name, &e); err != nil {
-		return err
+	var r *endpoint.Config
+	if name == "" {
+		r, err = c.GetDefault()
+	} else {
+		r, err = c.GetRemote(name)
+	}
+
+	if r != nil {
+		// endpoint
+		r.Token = ""
+	} else {
+		// services
+		if err := c.Logout(name); err != nil {
+			return fmt.Errorf("while verifying token: %v", err)
+		}
 	}
 
 	// truncating file before writing new contents and syncing to commit file

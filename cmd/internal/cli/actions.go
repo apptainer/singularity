@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -12,9 +13,7 @@ import (
 	"runtime"
 	"strings"
 
-	golog "github.com/go-log/log"
 	"github.com/spf13/cobra"
-	scslibrary "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/client/library"
@@ -22,7 +21,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/internal/pkg/client/shub"
-	scs "github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -49,7 +48,6 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	userPath := strings.Join([]string{os.Getenv("PATH"), defaultPath}, ":")
 
 	os.Setenv("USER_PATH", userPath)
-	os.Setenv("PATH", defaultPath)
 
 	// create an handle for the current image cache
 	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
@@ -60,6 +58,10 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	ctx := context.TODO()
 
 	replaceURIWithImage(ctx, imgCache, cmd, args)
+
+	// set PATH after pulling images to be able to find potential
+	// docker credential helpers outside of standard paths
+	os.Setenv("PATH", defaultPath)
 }
 
 func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, pullFrom string) (string, error) {
@@ -78,13 +80,12 @@ func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command,
 	return oras.Pull(ctx, imgCache, pullFrom, tmpDir, ociAuth)
 }
 
-func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom, libraryURL string) (string, error) {
-	c := &scslibrary.Config{
-		AuthToken: authToken,
-		BaseURL:   libraryURL,
-		Logger:    (golog.Logger)(sylog.DebugLogger{}),
+func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom string) (string, error) {
+	c, err := getLibraryClientConfig(endpoint.SCSDefaultLibraryURI)
+	if err != nil {
+		return "", err
 	}
-	return library.Pull(ctx, imgCache, pullFrom, runtime.GOARCH, tmpDir, c, keyServerURL)
+	return library.Pull(ctx, imgCache, pullFrom, runtime.GOARCH, tmpDir, c)
 }
 
 func handleShub(ctx context.Context, imgCache *cache.Handle, pullFrom string) (string, error) {
@@ -107,9 +108,7 @@ func replaceURIWithImage(ctx context.Context, imgCache *cache.Handle, cmd *cobra
 
 	switch t {
 	case uri.Library:
-		sylabsToken(cmd, args) // Fetch Auth Token for library access
-
-		image, err = handleLibrary(ctx, imgCache, args[0], handleActionRemote(cmd))
+		image, err = handleLibrary(ctx, imgCache, args[0])
 	case uri.Oras:
 		image, err = handleOras(ctx, imgCache, cmd, args[0])
 	case uri.Shub:
@@ -148,30 +147,6 @@ func setVM(cmd *cobra.Command) {
 		sylog.Warningf("The --syos option requires a virtual machine, automatically enabling --vm option.")
 		cmd.Flags().Set("vm", "true")
 	}
-}
-
-// returns url for library and sets auth token based on remote config
-// defaults to https://library.sylabs.io
-func handleActionRemote(cmd *cobra.Command) string {
-	defaultURI := "https://library.sylabs.io"
-
-	// if we can load config and if default endpoint is set, use that
-	// otherwise fall back on regular authtoken and URI behavior
-	endpoint, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to %v", defaultURI)
-		return defaultURI
-	} else if err != nil {
-		sylog.Fatalf("Unable to load remote configuration: %v", err)
-	}
-
-	authToken = endpoint.Token
-	endpointURI, err := endpoint.GetServiceURI("library")
-	if err != nil {
-		sylog.Warningf("Unable to get library service URI: %v", err)
-		return defaultURI
-	}
-	return endpointURI
 }
 
 // ExecCmd represents the exec command

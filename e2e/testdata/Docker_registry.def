@@ -1,15 +1,31 @@
 bootstrap: docker
 from: registry:2.7.1
 
+%environment
+    export REGISTRY_AUTH=token
+    export REGISTRY_AUTH_TOKEN_REALM=http://localhost:5001/auth
+    export REGISTRY_AUTH_TOKEN_SERVICE=Authentication
+    export REGISTRY_AUTH_TOKEN_ISSUER=E2E
+    export REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE=/certs/root.crt
+
 %post
+    apk add openssl
     apk add runc --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 
     # Install v0.5.7 of img (latest will not talk to http registries)
     export IMG_SHA256="41aa98ab28be55ba3d383cb4e8f86dceac6d6e92102ee4410a6b43514f4da1fa"
     # Download and check the sha256sum.
-    wget "https://github.com/genuinetools/img/releases/download/v0.5.7/img-linux-amd64" -O "/usr/local/bin/img" \
+    wget -q "https://github.com/genuinetools/img/releases/download/v0.5.7/img-linux-amd64" -O "/usr/local/bin/img" \
 	  && echo "${IMG_SHA256}  /usr/local/bin/img" | sha256sum -c - \
 	  && chmod a+x "/usr/local/bin/img"
+
+    mkdir /certs
+
+    openssl req -x509 -nodes -new -sha256 -days 1024 -newkey rsa:2048 \
+      -keyout /certs/root.key -out /certs/root.pem -subj "/C=US/CN=localhost"
+    openssl x509 -outform pem -in /certs/root.pem -out /certs/root.crt
+
+    chmod 644 /certs/root.*
 
 %startscript
     /.singularity.d/runscript &

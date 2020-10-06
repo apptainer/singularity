@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -574,7 +575,7 @@ func formatMROutput(mrString string) (int, []byte, error) {
 }
 
 // SearchPubkey connects to a key server and searches for a specific key
-func SearchPubkey(ctx context.Context, httpClient *http.Client, search, keyserverURI, authToken string, longOutput bool) error {
+func SearchPubkey(ctx context.Context, clientConfig *client.Config, search string, longOutput bool) error {
 	// If the search term is 8+ hex chars then it's a fingerprint, and
 	// we need to prefix with 0x for the search.
 	var IsFingerprint = regexp.MustCompile(`^[0-9A-F]{8,}$`).MatchString
@@ -583,11 +584,7 @@ func SearchPubkey(ctx context.Context, httpClient *http.Client, search, keyserve
 	}
 
 	// Get a Key Service client.
-	c, err := client.NewClient(&client.Config{
-		BaseURL:    keyserverURI,
-		AuthToken:  authToken,
-		HTTPClient: httpClient,
-	})
+	c, err := client.NewClient(clientConfig)
 	if err != nil {
 		return err
 	}
@@ -774,7 +771,7 @@ func formatMROutputLongList(mrString string) (int, []byte, error) {
 }
 
 // FetchPubkey pulls a public key from the Key Service.
-func FetchPubkey(ctx context.Context, httpClient *http.Client, fingerprint, keyserverURI, authToken string, noPrompt bool) (openpgp.EntityList, error) {
+func FetchPubkey(ctx context.Context, clientConfig *client.Config, fingerprint string, noPrompt bool) (openpgp.EntityList, error) {
 
 	// Decode fingerprint and ensure proper length.
 	var fp []byte
@@ -789,11 +786,7 @@ func FetchPubkey(ctx context.Context, httpClient *http.Client, fingerprint, keys
 	}
 
 	// Get a Key Service client.
-	c, err := client.NewClient(&client.Config{
-		BaseURL:    keyserverURI,
-		AuthToken:  authToken,
-		HTTPClient: httpClient,
-	})
+	c, err := client.NewClient(clientConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -1092,18 +1085,14 @@ func (keyring *Handle) ImportKey(kpath string, setNewPassword bool) error {
 }
 
 // PushPubkey pushes a public key to the Key Service.
-func PushPubkey(ctx context.Context, httpClient *http.Client, e *openpgp.Entity, keyserverURI, authToken string) error {
+func PushPubkey(ctx context.Context, clientConfig *client.Config, e *openpgp.Entity) error {
 	keyText, err := serializeEntity(e, openpgp.PublicKeyType)
 	if err != nil {
 		return err
 	}
 
 	// Get a Key Service client.
-	c, err := client.NewClient(&client.Config{
-		BaseURL:    keyserverURI,
-		AuthToken:  authToken,
-		HTTPClient: httpClient,
-	})
+	c, err := client.NewClient(clientConfig)
 	if err != nil {
 		return err
 	}

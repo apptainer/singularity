@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -13,20 +14,24 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/reference"
+	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/containerd/remotes/docker"
 	ocitypes "github.com/containers/image/v5/types"
+	auth "github.com/deislabs/oras/pkg/auth/docker"
 	"github.com/deislabs/oras/pkg/content"
 	orasctx "github.com/deislabs/oras/pkg/context"
 	"github.com/deislabs/oras/pkg/oras"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
@@ -40,6 +45,21 @@ const (
 	// SifLayerMediaType is the mediaType for the "layer" which contains the actual SIF file
 	SifLayerMediaType = "appliciation/vnd.sylabs.sif.layer.tar"
 )
+
+func getResolver(ociAuth *ocitypes.DockerAuthConfig) (remotes.Resolver, error) {
+	opts := docker.ResolverOptions{Credentials: genCredfn(ociAuth)}
+	if ociAuth != nil && (ociAuth.Username != "" || ociAuth.Password != "") {
+		return docker.NewResolver(opts), nil
+	}
+
+	cli, err := auth.NewClient(syfs.DockerConf())
+	if err != nil {
+		sylog.Warningf("Couldn't load auth credential file: %s", err)
+		return docker.NewResolver(opts), nil
+	}
+
+	return cli.Resolver(context.Background(), &http.Client{}, false)
+}
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
 func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
@@ -57,7 +77,10 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 		sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
 	}
 
-	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: genCredfn(ociAuth)})
+	resolver, err := getResolver(ociAuth)
+	if err != nil {
+		return fmt.Errorf("while getting resolver: %s", err)
+	}
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -137,7 +160,10 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 		sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
 	}
 
-	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: genCredfn(ociAuth)})
+	resolver, err := getResolver(ociAuth)
+	if err != nil {
+		return fmt.Errorf("while getting resolver: %s", err)
+	}
 
 	store := content.NewFileStore("")
 	defer store.Close()
@@ -189,7 +215,10 @@ func ImageSHA(ctx context.Context, uri string, ociAuth *ocitypes.DockerAuthConfi
 	ref := strings.TrimPrefix(uri, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
-	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: genCredfn(ociAuth)})
+	resolver, err := getResolver(ociAuth)
+	if err != nil {
+		return "", fmt.Errorf("while getting resolver: %s", err)
+	}
 
 	_, desc, err := resolver.Resolve(ctx, ref)
 	if err != nil {

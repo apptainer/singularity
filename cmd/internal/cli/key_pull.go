@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2017-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -8,11 +9,12 @@ package cli
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
@@ -21,13 +23,15 @@ import (
 var KeyPullCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.TODO()
 
-		handleKeyFlags(cmd)
+		keyClient, err := getKeyserverClientConfig(keyServerURI, endpoint.KeyserverPullOp)
+		if err != nil {
+			sylog.Fatalf("Keyserver client failed: %s", err)
+		}
 
-		if err := doKeyPullCmd(ctx, args[0], keyServerURI); err != nil {
+		if err := doKeyPullCmd(ctx, args[0], keyClient); err != nil {
 			sylog.Errorf("pull failed: %s", err)
 			os.Exit(2)
 		}
@@ -39,13 +43,13 @@ var KeyPullCmd = &cobra.Command{
 	Example: docs.KeyPullExample,
 }
 
-func doKeyPullCmd(ctx context.Context, fingerprint string, url string) error {
+func doKeyPullCmd(ctx context.Context, fingerprint string, c *client.Config) error {
 	var count int
 
 	keyring := sypgp.NewHandle("")
 
 	// get matching keyring
-	el, err := sypgp.FetchPubkey(ctx, http.DefaultClient, fingerprint, url, authToken, false)
+	el, err := sypgp.FetchPubkey(ctx, c, fingerprint, false)
 	if err != nil {
 		return fmt.Errorf("unable to pull key from server: %v", err)
 	}

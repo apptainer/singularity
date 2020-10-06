@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -20,7 +21,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cache"
-	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
@@ -115,10 +115,15 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		sylog.Fatalf("Building encrypted container with the remote builder is not currently supported.")
 	}
 
-	handleRemoteBuildFlags(cmd)
+	bc, lc, err := getBuildAndLibraryClientConfig(buildArgs.builderURL, buildArgs.libraryURL)
+	if err != nil {
+		sylog.Fatalf("Unable to get builder and library client configuration: %v", err)
+	}
+	buildArgs.libraryURL = lc.BaseURL
+	buildArgs.builderURL = bc.BaseURL
 
 	// submitting a remote build requires a valid authToken
-	if authToken == "" {
+	if bc.AuthToken == "" {
 		sylog.Fatalf("Unable to submit build job: %v", remoteWarning)
 	}
 
@@ -186,7 +191,7 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		}()
 	}
 
-	b, err := remotebuilder.New(rbDst, buildArgs.libraryURL, def, buildArgs.detached, forceOverwrite, buildArgs.builderURL, authToken, buildArgs.arch)
+	b, err := remotebuilder.New(rbDst, buildArgs.libraryURL, def, buildArgs.detached, forceOverwrite, buildArgs.builderURL, bc.AuthToken, buildArgs.arch)
 	if err != nil {
 		sylog.Fatalf("Failed to create builder: %v", err)
 	}
@@ -241,12 +246,25 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		sylog.Fatalf("Unable to build from %s: %v", spec, err)
 	}
 
+	hasLibrary := false
+
 	// only resolve remote endpoints if library is a build source
 	for _, d := range defs {
 		if d.Header["bootstrap"] == "library" {
-			handleBuildFlags(cmd)
-			continue
+			hasLibrary = true
+			break
 		}
+	}
+
+	authToken := ""
+
+	if hasLibrary {
+		lc, err := getLibraryClientConfig(buildArgs.libraryURL)
+		if err != nil {
+			sylog.Fatalf("Unable to get library client configuration: %v", err)
+		}
+		buildArgs.libraryURL = lc.BaseURL
+		authToken = lc.AuthToken
 	}
 
 	buildFormat := "sif"
@@ -316,29 +334,6 @@ func isImage(spec string) bool {
 		_ = i.File.Close()
 	}
 	return err == nil
-}
-
-// standard builds should just warn and fall back to CLI default if we cannot resolve library URL
-func handleBuildFlags(cmd *cobra.Command) {
-	// if we can load config and if default endpoint is set, use that
-	// otherwise fall back on regular authtoken and URI behavior
-	endpoint, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to %v", buildArgs.libraryURL)
-		return
-	} else if err != nil {
-		sylog.Fatalf("Unable to load remote configuration: %v", err)
-	}
-
-	authToken = endpoint.Token
-	if !cmd.Flags().Lookup("library").Changed {
-		uri, err := endpoint.GetServiceURI("library")
-		if err == nil {
-			buildArgs.libraryURL = uri
-		} else {
-			sylog.Warningf("Unable to get library service URI: %v", err)
-		}
-	}
 }
 
 // getEncryptionMaterial handles the setting of encryption environment and flag parameters to eventually be

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,53 +7,47 @@ package singularity
 
 import (
 	"fmt"
-	"net/url"
 	"os"
-	"path"
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 )
 
-// RemoteAdd adds remote to configuration
-func RemoteAdd(configFile, name, uri string, global bool) (err error) {
+func RemoteRemoveKeyserver(name, uri string) error {
 	// Explicit handling of corner cases: name and uri must be valid strings
-	if strings.TrimSpace(name) == "" {
-		return fmt.Errorf("invalid name: cannot have empty name")
-	}
 	if strings.TrimSpace(uri) == "" {
 		return fmt.Errorf("invalid URI: cannot have empty URI")
 	}
 
-	c := &remote.Config{}
-
-	// system config should be world readable
-	perm := os.FileMode(0600)
-	if global {
-		perm = os.FileMode(0644)
-	}
-
 	// opening config file
-	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE, perm)
+	file, err := os.OpenFile(remote.SystemConfigPath, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}
 	defer file.Close()
 
 	// read file contents to config struct
-	c, err = remote.ReadFrom(file)
+	c, err := remote.ReadFrom(file)
 	if err != nil {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	u, err := url.Parse(uri)
-	if err != nil {
-		return err
-	}
-	e := endpoint.Config{URI: path.Join(u.Host + u.Path), System: global}
+	var ep *endpoint.Config
 
-	if err := c.Add(name, &e); err != nil {
+	if name == "" {
+		ep, err = c.GetDefault()
+	} else {
+		ep, err = c.GetRemote(name)
+	}
+
+	if err != nil {
+		return fmt.Errorf("no endpoint found: %s", err)
+	} else if !ep.System {
+		return fmt.Errorf("current endpoint is not a system defined endpoint")
+	}
+
+	if err := ep.RemoveKeyserver(uri); err != nil {
 		return err
 	}
 

@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2017-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -8,13 +9,13 @@ package cli
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/docs"
-	scs "github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
@@ -23,13 +24,15 @@ import (
 var KeyPushCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.TODO()
 
-		handleKeyFlags(cmd)
+		keyClient, err := getKeyserverClientConfig(keyServerURI, endpoint.KeyserverPushOp)
+		if err != nil {
+			sylog.Fatalf("Keyserver client failed: %s", err)
+		}
 
-		if err := doKeyPushCmd(ctx, args[0], keyServerURI); err != nil {
+		if err := doKeyPushCmd(ctx, args[0], keyClient); err != nil {
 			sylog.Errorf("push failed: %s", err)
 			os.Exit(2)
 		}
@@ -41,7 +44,7 @@ var KeyPushCmd = &cobra.Command{
 	Example: docs.KeyPushExample,
 }
 
-func doKeyPushCmd(ctx context.Context, fingerprint string, url string) error {
+func doKeyPushCmd(ctx context.Context, fingerprint string, c *client.Config) error {
 	keyring := sypgp.NewHandle("")
 	el, err := keyring.LoadPubKeyring()
 	if err != nil {
@@ -66,32 +69,11 @@ func doKeyPushCmd(ctx context.Context, fingerprint string, url string) error {
 	}
 	entity := keys[0].Entity
 
-	if err = sypgp.PushPubkey(ctx, http.DefaultClient, entity, url, authToken); err != nil {
+	if err = sypgp.PushPubkey(ctx, c, entity); err != nil {
 		return err
 	}
 
 	fmt.Printf("public key `%v' pushed to server successfully\n", fingerprint)
 
 	return nil
-}
-
-func handleKeyFlags(cmd *cobra.Command) {
-	// if we can load config and if default endpoint is set, use that
-	// otherwise fall back on regular authtoken and URI behavior
-	endpoint, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
-		return
-	} else if err != nil {
-		sylog.Fatalf("Unable to load remote configuration: %v", err)
-	}
-
-	authToken = endpoint.Token
-	if !cmd.Flags().Lookup("url").Changed {
-		uri, err := endpoint.GetServiceURI("keystore")
-		if err != nil {
-			sylog.Fatalf("Unable to get key service URI: %v", err)
-		}
-		keyServerURI = uri
-	}
 }
