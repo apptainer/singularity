@@ -3,7 +3,7 @@ version: 2.1
 vm_defaults: &vm_defaults
   working_directory: ~/go/singularity
   machine:
-    image: ubuntu-1604:201903-01
+    image: ubuntu-2004:202008-01
 
 x-run:
   setup_environment: &setup_environment
@@ -18,12 +18,12 @@ x-run:
       test -e $BASH_ENV && sed -e 's,^,BASH_ENV: ,' < $BASH_ENV
 
   update_go: &update_go
-    name: Update Go to 1.13.1
+    name: Update Go to 1.14.9
     working_directory: /tmp
     command: |-
-      wget https://dl.google.com/go/go1.13.1.linux-amd64.tar.gz
+      wget https://dl.google.com/go/go1.14.9.linux-amd64.tar.gz
       sudo rm -rf $GOROOT
-      sudo tar -C /usr/local -xzf go1.13.1.linux-amd64.tar.gz
+      sudo tar -C /usr/local -xzf go1.14.9.linux-amd64.tar.gz
       sudo ln -s $GOROOT/bin/go /usr/local/bin/go
 
   fetch_deb_deps: &fetch_deb_deps
@@ -80,16 +80,16 @@ x-run:
 jobs:
   check_go_mod:
     docker:
-      - image: golang:1.13
+      - image: golang:1.14
     steps:
       - checkout
       - run:
           name: Check go.mod
           command: scripts/check-go.mod
 
-  go113-stretch:
+  go114-stretch:
     docker:
-      - image: golang:1.13-stretch
+      - image: golang:1.14-stretch
     steps:
       - checkout
       - run:
@@ -103,9 +103,9 @@ jobs:
       - run:
           <<: *check_singularity
 
-  go113-alpine:
+  go114-alpine:
     docker:
-      - image: golang:1.13-alpine
+      - image: golang:1.14-alpine
     steps:
       - checkout
       - run:
@@ -119,7 +119,7 @@ jobs:
       - run:
           <<: *check_singularity
 
-  go113-macos:
+  go114-macos:
     macos:
       xcode: "10.2.0"
     working_directory: /Users/distiller/go/src/github.com/sylabs/singularity
@@ -132,12 +132,12 @@ jobs:
             echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> $BASH_ENV
       - run:
-          name: Update Go to 1.13.1
+          name: Update Go to 1.14.9
           working_directory: /tmp
           command: |-
-            curl -LO https://dl.google.com/go/go1.13.1.darwin-amd64.tar.gz
+            curl -LO https://dl.google.com/go/go1.14.9.darwin-amd64.tar.gz
             sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.13.1.darwin-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.14.9.darwin-amd64.tar.gz
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
       - run:
           name: Build Singularity
@@ -238,9 +238,9 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - go113-stretch
-      - go113-alpine
-      - go113-macos
+      - go114-stretch
+      - go114-alpine
+      - go114-macos
       - check_go_mod
       - rpmbuild-centos7
       - rpmbuild-centos8
