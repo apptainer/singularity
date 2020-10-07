@@ -69,8 +69,10 @@ func RemoteUse(usrConfigFile, name string, global, exclusive bool) (err error) {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	if err := syncSysConfig(c); err != nil {
-		return err
+	if !global {
+		if err := syncSysConfig(c); err != nil {
+			return err
+		}
 	}
 
 	if err := c.SetDefault(name, exclusive); err != nil {
