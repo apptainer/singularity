@@ -519,11 +519,25 @@ func sylabsRemote() (*endpoint.Config, error) {
 	}
 
 	ep, err := c.GetDefault()
-	if err != nil {
-		return endpoint.DefaultEndpointConfig, err
+	if err == remote.ErrNoDefault {
+		// all remotes have been deleted, fix that by returning
+		// the default remote endpoint to avoid side effects when
+		// pulling from library or with remote build
+		if len(c.Remotes) == 0 {
+			return endpoint.DefaultEndpointConfig, nil
+		}
+		// otherwise notify users about available endpoints and
+		// invite them to select one of them
+		help := "use 'singularity remote use <endpoint>', available endpoints are: "
+		endpoints := make([]string, 0, len(c.Remotes))
+		for name := range c.Remotes {
+			endpoints = append(endpoints, name)
+		}
+		help += strings.Join(endpoints, ", ")
+		return nil, fmt.Errorf("no default endpoint set: %s", help)
 	}
 
-	return ep, nil
+	return ep, err
 }
 
 func singularityExec(image string, args []string) (string, error) {
