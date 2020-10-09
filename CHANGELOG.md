@@ -9,6 +9,15 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
+# Changes since v3.6.3
+
+## Bug Fixes
+
+  - Update scs-library-client to support library:// backends using an
+    3rd party S3 object store that does not strictly conform to v4
+    signature spec.
+
+
 # v3.6.3 - [2020-09-15]
 
 ## Security related fixes
