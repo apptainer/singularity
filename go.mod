@@ -57,7 +57,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9
 	golang.org/x/sys v0.0.0-20200810151505-1b9f1253b3ed
 	gopkg.in/yaml.v2 v2.3.0
-	gotest.tools/v3 v3.0.2
+	gotest.tools/v3 v3.0.3
 	mvdan.cc/sh/v3 v3.1.2
 	rsc.io/letsencrypt v0.0.3 // indirect
 )
