@@ -32,7 +32,7 @@ var imagePath string
 var appsImage string
 var skipOverlay bool
 
-func init () {
+func init() {
 	flag.BoolVar(&skipOverlay, "skip-overlay", false, "Skip Overlay tests (for use under docker")
 }
 

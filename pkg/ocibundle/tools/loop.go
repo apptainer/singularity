@@ -16,7 +16,7 @@ import (
 // path of loop device used
 func CreateLoop(file *os.File, offset, size uint64) (string, error) {
 	loopDev := &loop.Device{
-		MaxLoopDevices: 256,
+		MaxLoopDevices: 10000,
 		Shared:         true,
 		Info: &loop.Info64{
 			SizeLimit: size,

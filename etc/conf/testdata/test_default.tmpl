@@ -16,7 +16,7 @@ allow setuid = {{ if eq .AllowSetuid true }}yes{{ else }}no{{ end }}
 
 
 # MAX LOOP DEVICES: [INT]
-# DEFAULT: 256
+# DEFAULT: 10000
 # Set the maximum number of loop devices that Singularity should ever attempt
 # to utilize.
 max loop devices = {{ .MaxLoopDevices }}
@@ -162,7 +162,7 @@ sessiondir max size = {{ .SessiondirMaxSize }}
 # SUID mode and the user is non-root.
 #limit container owners = gmk, singularity, nobody
 {{ range $index, $owners := .LimitContainerOwners }}
-limit container owners = 
+limit container owners =
 {{ if $index }}, {{ end }}{{$owners}}
 {{- end }}
 
@@ -174,7 +174,7 @@ limit container owners =
 # SUID mode and the user is non-root.
 #limit container groups = group1, singularity, nobody
 {{ range $index, $groups := .LimitContainerGroups }}
-limit container groups = 
+limit container groups =
 {{ if $index }}, {{ end }}{{$groups}}
 {{- end }}
 
@@ -187,7 +187,7 @@ limit container groups =
 # non-root.
 #limit container paths = /scratch, /tmp, /global
 {{ range $index, $paths := .LimitContainerPaths }}
-limit container paths = 
+limit container paths =
 {{ if $index }}, {{ end }}{{$paths}}
 {{- end }}
 
@@ -203,8 +203,8 @@ allow container dir = {{ if eq .AllowContainerDir true }}yes{{ else }}no{{ end }
 # ALWAYS USE NV ${TYPE}: [BOOL]
 # DEFAULT: no
 # This feature allows an administrator to determine that every action command
-# should be executed implicitely with the --nv option (useful for GPU only 
-# environments). 
+# should be executed implicitely with the --nv option (useful for GPU only
+# environments).
 always use nv = {{ if eq .AlwaysUseNv true }}yes{{ else }}no{{ end }}
 
 

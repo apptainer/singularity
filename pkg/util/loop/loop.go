@@ -46,6 +46,7 @@ const (
 	CmdChangeFd    = 0x4C06
 	CmdSetCapacity = 0x4C07
 	CmdSetDirectIO = 0x4C08
+	CmdGetFree     = 0x4C82
 )
 
 // Info64 contains information about a loop device.
