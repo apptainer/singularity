@@ -33,6 +33,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom, tmpDi
 		DockerAuthConfig:         ociAuth,
 		AuthFilePath:             syfs.DockerConf(),
 		DockerRegistryUserAgent:  useragent.Value(),
+		BigFilesTemporaryDir:     tmpDir,
 	}
 	if noHTTPS {
 		sysCtx.DockerInsecureSkipTLSVerify = ocitypes.NewOptionalBool(true)
