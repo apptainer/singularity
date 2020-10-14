@@ -3,14 +3,13 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build !linux
-
 package e2e
 
-import "testing"
+import (
+	"testing"
+)
 
-func SetupPluginDir(t *testing.T, testDir string) {
-	// TODO - address unsupported tests on MacOS better
-	// This is a hack to avoid golangci-lint failures on non-Linux
-	t.Fatalf("Plugin tests only supported on Linux")
+// Privileged on Darwin will not actually raise privileges
+func Privileged(f func(*testing.T)) func(*testing.T) {
+	return f
 }

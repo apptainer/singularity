@@ -2,7 +2,7 @@
 
 set -e
 
-golangci_lint_version=1.21.0
+golangci_lint_version=1.31.0
 golangci_lint_install_url=https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
 
 info() {
@@ -66,7 +66,10 @@ check_golangci_lint() {
 	elif golangci-lint version 2>&1 | grep -q -F 'golangci-lint has version (devel) ' ; then
 		warn 'Using development version of golangci-lint.'
 	else
-		error "Expecting version ${golangci_lint_version} of golangci-lint but found something else. Abort."
+        warn ''
+        warn '********************************************************************************************'
+        warn "Singularity's CI checks will use version ${golangci_lint_version} of golangci-lint."
+        warn "Your installed version differs. Please use ${golangci_lint_version} if you experience issues."
 		info ''
 		info 'The output of "golangci-lint version" is:'
 		info ''
@@ -75,7 +78,8 @@ check_golangci_lint() {
 		info 'It was found in the following location:'
 		info ''
 		info "    $(command -v golangci-lint)"
-		exit 1
+        info '********************************************************************************************'
+        info ''
 	fi
 }
 

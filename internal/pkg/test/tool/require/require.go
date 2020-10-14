@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/containerd/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
@@ -28,31 +27,6 @@ func Filesystem(t *testing.T, fs string) {
 	if !has {
 		t.Skipf("%s filesystem seems not supported", fs)
 	}
-}
-
-// Cgroups checks that cgroups is enabled, if not the
-// current test is skipped with a message.
-func Cgroups(t *testing.T) {
-	_, err := cgroups.V1()
-	if err != nil {
-		t.Skipf("cgroups disabled")
-	}
-}
-
-// CgroupsFreezer checks that cgroup freezer subsystem is
-// available, if not the current test is skipped with a
-// message
-func CgroupsFreezer(t *testing.T) {
-	subSys, err := cgroups.V1()
-	if err != nil {
-		t.Skipf("cgroups disabled")
-	}
-	for _, s := range subSys {
-		if s.Name() == "freezer" {
-			return
-		}
-	}
-	t.Skipf("no cgroups freezer subsystem available")
 }
 
 // Command checks if the provided command is found

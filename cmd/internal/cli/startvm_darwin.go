@@ -126,7 +126,7 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 			sylog.Debugf("Image is sandbox. Setting up share.")
 			pciArgs = fmt.Sprintf("4:1,virtio-9p,runimg=%s", sifImage)
 			args = append(args, "-s", pciArgs)
-			sboxImgBind := fmt.Sprintf("runimg:/runImage")
+			sboxImgBind := "runimg:/runImage"
 			singBinds = append(singBinds, sboxImgBind)
 		} else {
 			// We are not a sandbox

@@ -22,3 +22,16 @@ func UserNamespace(t *testing.T) {
 func Network(t *testing.T) {
 	t.Skipf("network not supported on this platform")
 }
+
+// Cgroups checks that cgroups is enabled, if not the
+// current test is skipped with a message.
+func Cgroups(t *testing.T) {
+	t.Skipf("cgroups not supported on this platform")
+}
+
+// CgroupsFreezer checks that cgroup freezer subsystem is
+// available, if not the current test is skipped with a
+// message
+func CgroupsFreezer(t *testing.T) {
+	t.Skipf("cgroups not supported on this platform")
+}
