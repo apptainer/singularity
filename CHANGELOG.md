@@ -35,6 +35,12 @@ Singularity 3.6.3 addresses the following security issues.
     enable arbitrary code execution during the build and/or when the
     built container is run.
 
+## Change defaults / behaviours
+
+    - Change the default number of loop devices from 256 to 10000
+    - Use LOOP_CTL_GET_FREE to get a new free loop device instead of checking each
+      loop device to see if it is free
+
 ## Bug Fixes
 
   - Add CAP_MKNOD in capability bounding set of RPC to fix issue with
@@ -56,9 +62,6 @@ Singularity 3.6.3 addresses the following security issues.
 ## Change defaults / behaviours
 
   - Default to current architecture for `singularity delete`.
-  - Change the default number of loop devices from 256 to 10000
-  - Use LOOP_CTL_GET_FREE to get a new free loop device instead of checking each
-    loop device to see if it is free
 
 ## Bug Fixes
 
@@ -75,6 +78,8 @@ Singularity 3.6.3 addresses the following security issues.
   - Fix tests for Go 1.15 Ctty handling.
   - Fix additional issues with test images on ARM64.
   - Fix FUSE e2e tests to use container ssh_config.
+  - Fix a bug that makes the host allocate a large number of loop devices
+    and become unresponsive
 
 
 # v3.6.1 - [2020-07-21]
