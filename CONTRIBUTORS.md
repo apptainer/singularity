@@ -16,6 +16,7 @@
     - Amanda Duffy <aduffy@lenovo.com>
     - Ana Guerrero Lopez <aguerrero@suse.com>
     - Ángel Bejarano <abejarano@ontropos.com>
+    - Aron Öfjörð Jóhannesson <aron1991@gmail.com>
     - Bernard Li <bernardli@lbl.gov>
     - Brian Bockelman <bbockelm@cse.unl.edu>
     - Carl Madison <carl@sylabs.io>
