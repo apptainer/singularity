@@ -610,7 +610,7 @@ This point release addresses the following issues:
     - All image formats are mounted as read only by default
     - `--writable` only works on images which can be mounted in read/write [applicable to: `sandbox` and legacy `ext3` images]
     - `--writable-tmpfs` runs the container with a writable `tmpfs`-based overlay [applicable to: all image formats]
-    - `--overlay <string>` now specifies a list of `ext3`/`sandbox` images which are set as the containers overlay [applicable to: all image formats] 
+    - `--overlay <string>` now specifies a list of `ext3`/`sandbox` images which are set as the containers overlay [applicable to: all image formats]
 
 ### Build Command:
   - All images are now built as [Singularity Image Format (SIF)](https://www.sylabs.io/2018/03/sif-containing-your-containers/) images by default
