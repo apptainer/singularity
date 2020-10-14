@@ -37,9 +37,9 @@ Singularity 3.6.3 addresses the following security issues.
     
 ## Change defaults / behaviours
 
-    - Change the default number of loop devices from 256 to 10000
-    - Use LOOP_CTL_GET_FREE to get a new free loop device instead of checking each
-      loop device to see if it is free
+  - Change the default number of loop devices from 256 to 10000
+  - Use LOOP_CTL_GET_FREE to get a new free loop device instead of checking each
+    loop device to see if it is free
 
 ## Bug Fixes
 
