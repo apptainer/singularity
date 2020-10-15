@@ -76,8 +76,8 @@ import (
 
 func RelocatePath(original string) (string) {
 	// For security, never allow relocation when built with SetUID support
-	if SINGULARITY_SUID_INSTALL == 1 {
-		return original
+	if SINGULARITY_SUID_INSTALL != 0 {
+		panic("This code should not exist when SINGULARITY_SUID_INSTALL is set")
 	}
 
 	if ! strings.HasPrefix(original, "{{.Prefix}}") {
