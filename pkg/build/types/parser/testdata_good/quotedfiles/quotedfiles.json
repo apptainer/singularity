@@ -1,0 +1,94 @@
+{
+  "header": {
+    "bootstrap": "docker",
+    "from": "alpine:latest"
+  },
+  "imageData": {
+    "metadata": null,
+    "labels": {},
+    "imageScripts": {
+      "help": {
+        "args": "",
+        "script": ""
+      },
+      "environment": {
+        "args": "",
+        "script": ""
+      },
+      "runScript": {
+        "args": "",
+        "script": ""
+      },
+      "test": {
+        "args": "",
+        "script": ""
+      },
+      "startScript": {
+        "args": "",
+        "script": ""
+      }
+    }
+  },
+  "buildData": {
+    "files": [
+      {
+        "args": "",
+        "files": [
+          {
+            "source": "file 1",
+            "destination": ""
+          },
+          {
+            "source": "file 1",
+            "destination": "nospace1"
+          },
+          {
+            "source": "file 1",
+            "destination": "with space 1"
+          },
+          {
+            "source": "file2",
+            "destination": ""
+          },
+          {
+            "source": "file2",
+            "destination": "nospace2"
+          },
+          {
+            "source": "file2",
+            "destination": "with space 2"
+          },
+          {
+            "source": "file3",
+            "destination": "nospace3"
+          },
+          {
+            "source": "file3",
+            "destination": "with space 3"
+          }
+        ]
+      }
+    ],
+    "buildScripts": {
+      "pre": {
+        "args": "",
+        "script": ""
+      },
+      "setup": {
+        "args": "",
+        "script": ""
+      },
+      "post": {
+        "args": "",
+        "script": "    echo \"Hello\"\n"
+      },
+      "test": {
+        "args": "",
+        "script": ""
+      }
+    }
+  },
+  "customData": null,
+  "raw": "Qm9vdHN0cmFwOiBkb2NrZXIKRnJvbTogYWxwaW5lOmxhdGVzdAoKJWZpbGVzCiAgICAiZmlsZSAxIgogICAgImZpbGUgMSIgIm5vc3BhY2UxIgogICAgImZpbGUgMSIgIndpdGggc3BhY2UgMSIKICAgIGZpbGUyCiAgICBmaWxlMiAibm9zcGFjZTIiCiAgICBmaWxlMiAid2l0aCBzcGFjZSAyIgogICAgImZpbGUzIiAibm9zcGFjZTMiCiAgICAiZmlsZTMiICJ3aXRoIHNwYWNlIDMiCgolcG9zdAogICAgZWNobyAiSGVsbG8iCg==",
+  "appOrder": []
+}

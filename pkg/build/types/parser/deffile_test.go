@@ -185,7 +185,8 @@ func TestParseDefinitionFile(t *testing.T) {
 		{"NoHeaderWhiteSpace", "testdata_good/noheaderwhitespace/noheaderwhitespace", "testdata_good/noheaderwhitespace/noheaderwhitespace.json"},
 		{"MultipleScripts", "testdata_good/multiplescripts/multiplescripts", "testdata_good/multiplescripts/multiplescripts.json"},
 		{"SectionArgs", "testdata_good/sectionargs/sectionargs", "testdata_good/sectionargs/sectionargs.json"},
-		{"MultipleFiless", "testdata_good/multiplefiles/multiplefiles", "testdata_good/multiplefiles/multiplefiles.json"},
+		{"MultipleFiles", "testdata_good/multiplefiles/multiplefiles", "testdata_good/multiplefiles/multiplefiles.json"},
+		{"QuotedFiles", "testdata_good/quotedfiles/quotedfiles", "testdata_good/quotedfiles/quotedfiles.json"},
 		{"Shebang", "testdata_good/shebang/shebang", "testdata_good/shebang/shebang.json"},
 	}
 

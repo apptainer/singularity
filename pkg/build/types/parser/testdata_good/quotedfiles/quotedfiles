@@ -1,0 +1,15 @@
+Bootstrap: docker
+From: alpine:latest
+
+%files
+    "file 1"
+    "file 1" "nospace1"
+    "file 1" "with space 1"
+    file2
+    file2 "nospace2"
+    file2 "with space 2"
+    "file3" "nospace3"
+    "file3" "with space 3"
+
+%post
+    echo "Hello"

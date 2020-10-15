@@ -114,6 +114,10 @@ func TestCopyFile(t *testing.T) {
 	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0644); err != nil {
 		t.Fatal(err)
 	}
+	srcSpaceFile := filepath.Join(dir, "source File")
+	if err := ioutil.WriteFile(srcSpaceFile, []byte(sourceFileContent), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		name      string
@@ -125,6 +129,8 @@ func TestCopyFile(t *testing.T) {
 		{"ToDirSlash", srcFile, "destDir/", "destDir/sourceFile"},
 		{"ToFile", srcFile, "destDir/destFile", "destDir/destFile"},
 		{"LongPathToFile", srcFile, "destDir/long/path/to/destFile", "destDir/long/path/to/destFile"},
+		{"FromSpace", srcSpaceFile, "", "source File"},
+		{"ToSpace", srcFile, "dest File", "dest File"},
 	}
 
 	for _, tt := range tests {
