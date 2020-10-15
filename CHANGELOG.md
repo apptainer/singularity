@@ -9,6 +9,17 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
+# Changes since v3.6.4
+
+## Changed defaults / behaviours
+
+  - When actions (run/shell/exec...) are used without --fakeroot the
+    umask from the calling environment will be propagated into the
+    container, so that files are created with expected permissions.
+    Use the `--no-umask` flag to return to the previous behaviour of
+    setting a default 0022 umask.
+
+
 # v3.6.3 - [2020-09-15]
 
 ## Security related fixes

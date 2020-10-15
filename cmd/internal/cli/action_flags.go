@@ -48,6 +48,7 @@ var (
 	NoInit          bool
 	NoNvidia        bool
 	NoRocm          bool
+	NoUmask         bool
 	VM              bool
 	VMErr           bool
 	NoNet           bool
@@ -636,6 +637,17 @@ var actionEnvFileFlag = cmdline.Flag{
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
+// --no-umask
+var actionNoUmaskFlag = cmdline.Flag{
+	ID:           " actionNoUmask",
+	Value:        &NoUmask,
+	DefaultValue: false,
+	Name:         "no-umask",
+	Usage:        "do not propagate umask to the container, set default 0022 umask",
+	EnvKeys:      []string{"NO_UMASK"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(ExecCmd)
@@ -711,5 +723,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionEnvFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionEnvFileFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionNoUmaskFlag, actionsInstanceCmd...)
 	})
 }

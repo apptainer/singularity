@@ -151,6 +151,8 @@ type JSONConfig struct {
 	DeleteTempDir     string            `json:"deleteTempDir,omitempty"`
 	Fakeroot          bool              `json:"fakeroot,omitempty"`
 	SignalPropagation bool              `json:"signalPropagation,omitempty"`
+	RestoreUmask      bool              `json:"restoreUmask,omitempty"`
+	Umask             int               `json:"umask,omitempty"`
 }
 
 // SetImage sets the container image path to be used by EngineConfig.JSON.
@@ -830,4 +832,24 @@ func (e *EngineConfig) SetConfigurationFile(filename string) {
 // GetConfigurationFile returns the singularity configuration file to use.
 func (e *EngineConfig) GetConfigurationFile() string {
 	return e.JSON.ConfigurationFile
+}
+
+// SetRestoreUmask returns whether to restore Umask for the container launched process.
+func (e *EngineConfig) SetRestoreUmask(restoreUmask bool) {
+	e.JSON.RestoreUmask = restoreUmask
+}
+
+// GetRestoreUmask returns the umask to be used in the container launched process.
+func (e *EngineConfig) GetRestoreUmask() bool {
+	return e.JSON.RestoreUmask
+}
+
+// SetUmask sets the umask to be used in the container launched process.
+func (e *EngineConfig) SetUmask(umask int) {
+	e.JSON.Umask = umask
+}
+
+// SetUmask returns the umask to be used in the container launched process.
+func (e *EngineConfig) GetUmask() int {
+	return e.JSON.Umask
 }
