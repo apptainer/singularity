@@ -20,6 +20,9 @@ done
 
 func expandPath(path string) ([]string, error) {
 	var output, stderr bytes.Buffer
+
+	// Escape spaces for glob pattern
+	path = strings.Replace(path, " ", "\\ ", -1)
 	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf(filenameExpansionScript, path))
 	cmd.Stdout = &output
 	cmd.Stderr = &stderr

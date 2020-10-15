@@ -18,12 +18,16 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/sylabs/singularity/pkg/sylog"
+
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 var (
 	errInvalidSection  = errors.New("invalid section(s) specified")
 	errEmptyDefinition = errors.New("Empty definition file")
+	// Match space but not within double quotes
+	fileSplitter = regexp.MustCompile(`[^\s"']+|"([^"]*)"|'([^']*)`)
 )
 
 // InvalidSectionError records an error and the sections that caused it.
@@ -157,7 +161,9 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 				continue
 			}
 			var src, dst string
-			lineSubs := strings.SplitN(line, " ", 2)
+			// Split at space, but not within double quotes
+			lineSubs := fileSplitter.FindAllString(line, -1)
+			sylog.Warningf("%v : %v", line, lineSubs)
 			if len(lineSubs) < 2 {
 				src = strings.TrimSpace(lineSubs[0])
 				dst = ""
@@ -165,6 +171,8 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 				src = strings.TrimSpace(lineSubs[0])
 				dst = strings.TrimSpace(lineSubs[1])
 			}
+			src = strings.Trim(src, "\"")
+			dst = strings.Trim(dst, "\"")
 			f.Files = append(f.Files, types.FileTransport{Src: src, Dst: dst})
 		}
 
