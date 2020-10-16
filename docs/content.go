@@ -255,7 +255,7 @@ Enterprise Performance Computing (EPC)`
 	KeyNewPairShort string = `Create a new key pair`
 	KeyNewPairLong  string = `
   The 'key newpair' command allows you to create a new key or public/private
-  keys to be stored in the default user local key store location (e.g., 
+  keys to be stored in the default user local keyring location (e.g., 
   $HOME/.singularity/sypgp).`
 	KeyNewPairExample string = `
   $ singularity key newpair
@@ -297,9 +297,12 @@ Enterprise Performance Computing (EPC)`
 	KeyPullUse   string = `pull [pull options...] <fingerprint>`
 	KeyPullShort string = `Download a public key from a key server`
 	KeyPullLong  string = `
-  The 'key pull' command allows you to connect to a key server look for and 
-  download a public key. Key rings are stored into (e.g., 
-  $HOME/.singularity/sypgp).`
+  The 'key pull' command allows you to retrieve public key material from a
+  remote key server, and add it to your keyring. Note that Singularity consults
+  your keyring when running commands such as 'singularity verify', and thus
+  adding a key to your keyring implies a level of trust. Because of this, it is
+  recommended that you verify the fingerprint of the key with its owner prior
+  to running this command.`
 	KeyPullExample string = `
   $ singularity key pull 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 
@@ -310,7 +313,7 @@ Enterprise Performance Computing (EPC)`
 	KeyPushShort string = `Upload a public key to a key server`
 	KeyPushLong  string = `
   The 'key push' command allows you to connect to a key server and upload public
-  keys from the local key store.`
+  keys from the local keyring.`
 	KeyPushExample string = `
   $ singularity key push 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 

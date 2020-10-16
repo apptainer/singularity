@@ -16,7 +16,7 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-// KeyImportCmd is `singularity key (or keys) import` and imports a local key into the singularity key store.
+// KeyImportCmd is `singularity key (or keys) import` and imports a local key into the singularity keyring.
 var KeyImportCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
