@@ -82,7 +82,7 @@ func init() {
 	})
 }
 
-// KeyCmd is the 'key' command that allows management of key stores
+// KeyCmd is the 'key' command that allows management of keyrings
 var KeyCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return errors.New("Invalid command")

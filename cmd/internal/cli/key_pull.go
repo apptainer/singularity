@@ -70,7 +70,7 @@ func doKeyPullCmd(ctx context.Context, fingerprint string, c *client.Config) err
 		storeKey := true
 		for _, estore := range elstore {
 			if e.PrimaryKey.KeyId == estore.PrimaryKey.KeyId {
-				storeKey = false // Entity is already in key store
+				storeKey = false // Entity is already in keyring
 				break
 			}
 		}
