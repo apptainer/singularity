@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -170,22 +171,47 @@ func init() {
 	})
 }
 
-const sectionDelim = "~~##@@> "
+const (
+	sectionDelim = "~~##@@> "
+	metadataJSON = "inspect-metadata.json"
+)
 
 type command struct {
-	script   string
-	metadata *inspect.Metadata
-	img      *image.Image
+	script      string
+	appName     string
+	metadata    *inspect.Metadata
+	sifMetadata *inspect.Metadata
+	img         *image.Image
 }
 
 func newCommand(allData bool, appName string, img *image.Image) *command {
 	command := new(command)
-	command.metadata = inspect.NewMetadata()
 	command.img = img
+	command.metadata = inspect.NewMetadata()
+	command.appName = appName
 
 	prefix := ""
 	if img.Type == image.SANDBOX {
 		prefix = img.Path
+	} else if img.Type == image.SIF {
+		metadata, err := getInspectMetadataFromSIF(img)
+		if err == nil {
+			sylog.Debugf("Using %s SIF descriptor", metadataJSON)
+			command.sifMetadata = metadata
+			if allData {
+				// copy app attributes as they are not copied when --all is selected
+				command.metadata.Attributes.Apps = metadata.Attributes.Apps
+			}
+		} else if err != image.ErrNoSection {
+			sylog.Warningf("Unable to read %s SIF descriptor: %s", metadataJSON, err)
+		} else {
+			if runtime.GOOS != "linux" {
+				sylog.Fatalf("Could not inspect %s: %s SIF descriptor not found", img.Path, metadataJSON)
+			}
+			sylog.Debugf("No %s SIF descriptor found", metadataJSON)
+		}
+	} else if runtime.GOOS != "linux" {
+		sylog.Fatalf("Could not inspect image %s on this platform, only SIF and sandbox images are supported", img.Path)
 	}
 
 	pathPrefix := filepath.Join(prefix, "/.singularity.d")
@@ -197,10 +223,10 @@ func newCommand(allData bool, appName string, img *image.Image) *command {
 		allVar = "ALL_DATA=1"
 	}
 
-	var snippet = `%s
-	for app in %s/scif/apps/*; do
+	var snippet = `%[1]s
+	for app in %[2]s/scif/apps/*; do
 	if [ -d "$app/scif" ]; then
-		echo "%s apps"
+		echo "%[3]s apps"
 		echo "${app##*/}"
 		if [ ! -z "${ALL_DATA}" ]; then
 			if [ -z "${ALL_PATH}" ]; then
@@ -212,7 +238,19 @@ func newCommand(allData bool, appName string, img *image.Image) *command {
 	fi
 	done
 
-	ALL_PATH="%s:${ALL_PATH}"
+	cat_file() {
+		echo "%[3]s $1:$2"
+
+		local IFS=$'\n'
+		while read -r content; do
+			printf "%%s\n" "$content"
+		done < "$2"
+		if [ ! -z "$content" ]; then
+			printf "%%s\n" "$content"
+		fi
+	}
+
+	ALL_PATH="%[4]s:${ALL_PATH}"
 
 	IFS=":"
 	`
@@ -283,6 +321,11 @@ func (c *command) setAttribute(section, value, file string) error {
 }
 
 func (c *command) getMetadata() (*inspect.Metadata, error) {
+	// we got metadata from SIF, no need to run script
+	if c.sifMetadata != nil {
+		return c.metadata, nil
+	}
+
 	args := []string{"/bin/sh", "-c", c.script}
 	prefix := ""
 	outBuf := new(bytes.Buffer)
@@ -297,12 +340,6 @@ func (c *command) getMetadata() (*inspect.Metadata, error) {
 			return nil, fmt.Errorf("could not inspect container: sh command not found in %q", env.DefaultPath)
 		}
 		args[0] = shell
-
-		// look for cat command
-		_, err = exec.LookPath("cat")
-		if err != nil {
-			return nil, fmt.Errorf("could not inspect container: cat command not found in %q", env.DefaultPath)
-		}
 
 		cmd := exec.Command(args[0], args[1:]...)
 		cmd.Env = []string{"PATH=" + env.DefaultPath}
@@ -372,71 +409,149 @@ func (c *command) getMetadata() (*inspect.Metadata, error) {
 func (c *command) addSingleFileCommand(file string, label string) {
 	var snippet = `
 	for prefix in ${ALL_PATH}; do
-		file="$prefix/%s"
+		file="$prefix/%[1]s"
 		if [ -f "$file" ]; then
-			echo "%s %s:$file"
-			cat $file
-			echo ""
+			cat_file "%[2]s" "$file"
 		fi
 	done
 	`
-	c.script += fmt.Sprintf(snippet, file, sectionDelim, label)
+	c.script += fmt.Sprintf(snippet, file, label)
 }
 
 func (c *command) addLabelsCommand() {
-	c.addSingleFileCommand("labels.json", "labels")
+	if c.sifMetadata == nil {
+		c.addSingleFileCommand("labels.json", "labels")
+		return
+	}
+
+	if c.appName != "" {
+		if c.sifMetadata.Attributes.Apps[c.appName] != nil {
+			c.metadata.AddApp(c.appName)
+			c.metadata.Attributes.Apps[c.appName].Labels = c.sifMetadata.Attributes.Apps[c.appName].Labels
+		}
+	} else {
+		c.metadata.Attributes.Labels = c.sifMetadata.Attributes.Labels
+	}
 }
 
 func (c *command) addRunscriptCommand() {
-	c.addSingleFileCommand("runscript", "runscript")
+	if c.sifMetadata == nil {
+		c.addSingleFileCommand("runscript", "runscript")
+		return
+	}
+
+	if c.appName != "" {
+		if c.sifMetadata.Attributes.Apps[c.appName] != nil {
+			c.metadata.AddApp(c.appName)
+			c.metadata.Attributes.Apps[c.appName].Runscript = c.sifMetadata.Attributes.Apps[c.appName].Runscript
+		}
+	} else {
+		c.metadata.Attributes.Runscript = c.sifMetadata.Attributes.Runscript
+	}
 }
 
 func (c *command) addStartscriptCommand() {
-	c.addSingleFileCommand("startscript", "startscript")
+	if c.sifMetadata == nil {
+		c.addSingleFileCommand("startscript", "startscript")
+		return
+	}
+
+	if c.appName == "" {
+		c.metadata.Attributes.Startscript = c.sifMetadata.Attributes.Startscript
+	}
 }
 
 func (c *command) addTestCommand() {
-	c.addSingleFileCommand("test", "test")
+	if c.sifMetadata == nil {
+		c.addSingleFileCommand("test", "test")
+		return
+	}
+
+	if c.appName != "" {
+		if c.sifMetadata.Attributes.Apps[c.appName] != nil {
+			c.metadata.AddApp(c.appName)
+			c.metadata.Attributes.Apps[c.appName].Test = c.sifMetadata.Attributes.Apps[c.appName].Test
+		}
+	} else {
+		c.metadata.Attributes.Test = c.sifMetadata.Attributes.Test
+	}
 }
 
 func (c *command) addHelpCommand() {
-	c.addSingleFileCommand("runscript.help", "helpfile")
+	if c.sifMetadata == nil {
+		c.addSingleFileCommand("runscript.help", "helpfile")
+		return
+	}
+
+	if c.appName != "" {
+		if c.sifMetadata.Attributes.Apps[c.appName] != nil {
+			c.metadata.AddApp(c.appName)
+			c.metadata.Attributes.Apps[c.appName].Helpfile = c.sifMetadata.Attributes.Apps[c.appName].Helpfile
+		}
+	} else {
+		c.metadata.Attributes.Helpfile = c.sifMetadata.Attributes.Helpfile
+	}
 }
 
 func (c *command) addEnvironmentCommand() {
-	var snippet = `
-	for prefix in ${ALL_PATH}; do
-		if [ "${prefix##*/}" = ".singularity.d" ]; then
-			for env in $prefix/env/10-docker*.sh; do
+	if c.sifMetadata == nil {
+		c.script += `
+		for prefix in ${ALL_PATH}; do
+			if [ "${prefix##*/}" = ".singularity.d" ]; then
+				for env in $prefix/env/10-docker*.sh; do
+					if [ -f "$env" ]; then
+						cat_file "environment" "$env"
+					fi
+				done
+			fi
+
+			for env in $prefix/env/9*-environment.sh; do
 				if [ -f "$env" ]; then
-					echo "%[1]s environment:$env"
-					cat $env
-					echo ""
+					cat_file "environment" "$env"
 				fi
 			done
-		fi
-
-		for env in $prefix/env/9*-environment.sh; do
-			if [ -f "$env" ]; then
-				echo "%[1]s environment:$env"
-				cat $env
-				echo ""
-			fi
 		done
-	done
-	`
-	c.script += fmt.Sprintf(snippet, sectionDelim)
+		`
+		return
+	}
+
+	if c.appName != "" {
+		if c.sifMetadata.Attributes.Apps[c.appName] != nil {
+			c.metadata.AddApp(c.appName)
+			c.metadata.Attributes.Apps[c.appName].Environment = c.sifMetadata.Attributes.Apps[c.appName].Environment
+		}
+	} else {
+		c.metadata.Attributes.Environment = c.sifMetadata.Attributes.Environment
+	}
 }
 
 func (c *command) addDefinitionCommand() {
-	var err error
-
-	c.metadata.Attributes.Deffile, err = inspectDeffilePartition(c.img)
+	deffile, err := inspectDeffilePartition(c.img)
 	if err == errNoSIFMetadata || err == errNoSIF {
 		c.addSingleFileCommand("Singularity", "deffile")
 	} else if err != nil {
 		sylog.Warningf("Unable to inspect deffile: %s", err)
+	} else {
+		if c.sifMetadata == nil {
+			c.metadata.Attributes.Deffile = deffile
+		} else {
+			c.metadata.Attributes.Deffile = c.sifMetadata.Attributes.Deffile
+		}
 	}
+}
+
+func getInspectMetadataFromSIF(img *image.Image) (*inspect.Metadata, error) {
+	r, err := image.NewSectionReader(img, metadataJSON, -1)
+	if err != nil {
+		return nil, err
+	}
+	metadata := new(inspect.Metadata)
+
+	if err := json.NewDecoder(r).Decode(metadata); err != nil {
+		return nil, fmt.Errorf("while decoding inspect metadata: %s", err)
+	}
+
+	return metadata, nil
 }
 
 func getSIFMetadata(img *image.Image, dataType uint32) ([]byte, error) {
