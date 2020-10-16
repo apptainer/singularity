@@ -15,25 +15,31 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cache"
 )
 
+const (
+	KiB = 1024
+	MiB = KiB * 1024
+	GiB = MiB * 1024
+	TiB = GiB * 1024
+)
+
 // findSize takes a size in bytes and converts it to a human-readable string representation
 // expressing kB, MB, GB or TB (whatever is smaller, but still larger than one).
 func findSize(size int64) string {
-
 	var factor float64
 	var unit string
 	switch {
-	case size < 1e6:
-		factor = 1e3
-		unit = "kB"
-	case size < 1e9:
-		factor = 1e6
-		unit = "MB"
-	case size < 1e12:
-		factor = 1e9
-		unit = "GB"
+	case size < MiB:
+		factor = KiB
+		unit = "KiB"
+	case size < GiB:
+		factor = MiB
+		unit = "MiB"
+	case size < TiB:
+		factor = GiB
+		unit = "GiB"
 	default:
-		factor = 1e12
-		unit = "TB"
+		factor = TiB
+		unit = "TiB"
 	}
 	return fmt.Sprintf("%.2f %s", float64(size)/factor, unit)
 }
