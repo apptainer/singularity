@@ -1,11 +1,14 @@
 # Installing Singularity
 
 Since you are reading this from the Singularity source code, it will be assumed
-that you are building/compiling.
+that you are building/compiling from source.
 
-For full instructions on installation, check out our
-[installation
-guide](https://sylabs.io/guides/3.6/admin-guide/installation.html).
+Singularity packages are available for various Linux distributions, but may not
+always be up-to-date with the latest source release version.
+
+For full instructions on installation, including building RPMs,
+installing pre-built EPEL packages etc. please check the
+[installation  guide](https://sylabs.io/guides/3.6/admin-guide/installation.html).
 
 ## Install system dependencies
 
