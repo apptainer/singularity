@@ -2018,8 +2018,8 @@ func (c actionTests) bindImage(t *testing.T) {
 			name:    "SifWithID",
 			profile: e2e.UserProfile,
 			args: []string{
-				// rootfs ID is now '3'
-				"--bind", c.env.ImagePath + ":/rootfs:id=3",
+				// rootfs ID is now '4'
+				"--bind", c.env.ImagePath + ":/rootfs:id=4",
 				c.env.ImagePath,
 				"test", "-d", "/rootfs/etc",
 			},
