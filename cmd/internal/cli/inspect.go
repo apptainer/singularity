@@ -198,8 +198,8 @@ func newCommand(allData bool, appName string, img *image.Image) *command {
 		if err == nil {
 			sylog.Debugf("Using %s SIF descriptor", metadataJSON)
 			command.sifMetadata = metadata
-			if allData {
-				// copy app attributes as they are not copied when --all is selected
+			if listApps || allData {
+				// copy app attributes for related flags as they are not copied by default
 				command.metadata.Attributes.Apps = metadata.Attributes.Apps
 			}
 		} else if err != image.ErrNoSection {
