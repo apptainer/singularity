@@ -157,8 +157,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		fn()
 	}
 
-	syscall.Umask(0022)
-
 	engineConfig := singularityConfig.NewConfig()
 
 	engineConfig.File = singularityconf.GetCurrentConfig()
@@ -172,6 +170,15 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.OciConfig = ociConfig
 
 	generator.SetProcessArgs(args)
+
+	currMask := syscall.Umask(0022)
+	if !NoUmask {
+		// Save the current umask, to be set for the process run in the container
+		// https://github.com/hpcng/singularity/issues/5214
+		sylog.Debugf("Saving umask %04o for propagation into container", currMask)
+		engineConfig.SetUmask(currMask)
+		engineConfig.SetRestoreUmask(true)
+	}
 
 	uidParam := security.GetParam(Security, "uid")
 	gidParam := security.GetParam(Security, "gid")

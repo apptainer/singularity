@@ -154,6 +154,13 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 		return fmt.Errorf("failed to apply security configuration: %s", err)
 	}
 
+	// If necessary, set the umask that was saved from the calling environment
+	// https://github.com/hpcng/singularity/issues/5214
+	if e.EngineConfig.GetRestoreUmask() {
+		sylog.Debugf("Setting umask in container to %04o", e.EngineConfig.GetUmask())
+		_ = syscall.Umask(e.EngineConfig.GetUmask())
+	}
+
 	if (!isInstance && !shimProcess) || bootInstance || e.EngineConfig.GetInstanceJoin() {
 		args := e.EngineConfig.OciConfig.Process.Args
 		env := e.EngineConfig.OciConfig.Process.Env

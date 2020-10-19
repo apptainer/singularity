@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"syscall"
 	"testing"
 	"time"
 
@@ -2039,6 +2040,42 @@ func (c actionTests) bindImage(t *testing.T) {
 	}
 }
 
+// actionUmask tests that the within-container umask is correct in action flows
+func (c actionTests) actionUmask(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	u := e2e.UserProfile.HostUser(t)
+
+	// Set umask for tests to 0000
+	oldUmask := syscall.Umask(0)
+	defer syscall.Umask(oldUmask)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithDir(u.Dir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(c.env.ImagePath, "sh", "-c", "umask"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ExactMatch, "0000"),
+		),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithDir(u.Dir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--no-umask", c.env.ImagePath, "sh", "-c", "umask"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ExactMatch, "0022"),
+		),
+	)
+
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := actionTests{
@@ -2071,5 +2108,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"exit and signals":      c.exitSignals,         // test exit and signals propagation
 		"fuse mount":            c.fuseMount,           // test fusemount option
 		"bind image":            c.bindImage,           // test bind image
+		"umask":                 c.actionUmask,         // test umask propagation
 	}
 }
