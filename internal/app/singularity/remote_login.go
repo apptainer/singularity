@@ -13,6 +13,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 type LoginArgs struct {
@@ -89,5 +90,6 @@ func RemoteLogin(usrConfigFile string, args *LoginArgs) (err error) {
 		return fmt.Errorf("failed to flush remote config file %s: %s", file.Name(), err)
 	}
 
+	sylog.Infof("Token stored in %s", file.Name())
 	return nil
 }

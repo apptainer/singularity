@@ -24,13 +24,14 @@ func (ep *Config) VerifyToken() (err error) {
 
 	defer func() {
 		if err == nil {
-			sylog.Infof("API Key Verified!")
+			sylog.Infof("Access Token Verified!")
 		}
 	}()
 
 	if ep.Token == "" {
-		fmt.Printf("Generate an API Key at https://%s/auth/tokens, and paste here:\n", ep.URI)
-		ep.Token, err = interactive.AskQuestionNoEcho("API Key: ")
+		fmt.Printf("Generate an access token at https://%s/auth/tokens, and paste it here.\n", ep.URI)
+		fmt.Println("Token entered will be hidden for security.")
+		ep.Token, err = interactive.AskQuestionNoEcho("Access Token: ")
 		if err != nil {
 			return err
 		}
