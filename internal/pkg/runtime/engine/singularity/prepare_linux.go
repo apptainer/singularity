@@ -917,15 +917,19 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 // openDevFuse is a helper function that opens /dev/fuse once for each
 // plugin that wants to mount a FUSE filesystem.
 func openDevFuse(e *EngineOperations, starterConfig *starter.Config) (bool, error) {
-	if !e.EngineConfig.File.EnableFusemount {
-		return false, fmt.Errorf("fusemount disabled by configuration 'enable fusemount = no'")
-	}
-
 	// do we require to send file descriptor
 	sendFd := false
 
 	// we won't copy slice while iterating fuse mounts
 	mounts := e.EngineConfig.GetFuseMount()
+
+	if len(mounts) == 0 {
+		return false, nil
+	}
+
+	if !e.EngineConfig.File.EnableFusemount {
+		return false, fmt.Errorf("fusemount disabled by configuration 'enable fusemount = no'")
+	}
 
 	for i := range mounts {
 		sylog.Debugf("Opening /dev/fuse for FUSE mount point %s\n", mounts[i].MountPoint)
