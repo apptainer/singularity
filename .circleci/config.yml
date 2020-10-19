@@ -93,9 +93,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install golangci-lint
-          command: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
-      - run:
           name: Fetch deps
           command: apt-get -q update && apt-get -q install -y build-essential libssl-dev uuid-dev squashfs-tools cryptsetup-bin
       - run:
@@ -108,9 +105,6 @@ jobs:
       - image: golang:1.14-alpine
     steps:
       - checkout
-      - run:
-          name: Install golangci-lint
-          command: wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
       - run:
           name: Fetch deps
           command: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
