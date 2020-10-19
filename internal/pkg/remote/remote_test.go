@@ -23,7 +23,7 @@ const testToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkw
 func TestVerifyToken(t *testing.T) {
 	ep := new(endpoint.Config)
 
-	err := ep.VerifyToken()
+	err := ep.VerifyToken("")
 	if err == nil {
 		t.Fatal("VerifyToken() succeeded with an empty endpoint")
 	}

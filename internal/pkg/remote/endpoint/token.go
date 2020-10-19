@@ -11,13 +11,14 @@ import (
 	"net/http"
 
 	"github.com/sylabs/singularity/internal/pkg/remote/credential"
-	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/sylog"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
-// VerifyToken returns an error if a token is not valid
-func (ep *Config) VerifyToken() (err error) {
+// VerifyToken returns an error if a token is not valid against an endpoint.
+// If token is provided as an argument, it will verify the provided token.
+// If token is "", it will attempt to verify the configured token for the endpoint.
+func (ep *Config) VerifyToken(token string) (err error) {
 	if ep.URI == "" {
 		return fmt.Errorf("no endpoint URI")
 	}
@@ -28,13 +29,8 @@ func (ep *Config) VerifyToken() (err error) {
 		}
 	}()
 
-	if ep.Token == "" {
-		fmt.Printf("Generate an access token at https://%s/auth/tokens, and paste it here.\n", ep.URI)
-		fmt.Println("Token entered will be hidden for security.")
-		ep.Token, err = interactive.AskQuestionNoEcho("Access Token: ")
-		if err != nil {
-			return err
-		}
+	if token == "" {
+		token = ep.Token
 	}
 
 	sp, err := ep.GetAllServices()
@@ -55,7 +51,7 @@ func (ep *Config) VerifyToken() (err error) {
 		return err
 	}
 
-	req.Header.Set("Authorization", credential.TokenPrefix+ep.Token)
+	req.Header.Set("Authorization", credential.TokenPrefix+token)
 	req.Header.Set("User-Agent", useragent.Value())
 
 	res, err := client.Do(req)
