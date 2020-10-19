@@ -338,7 +338,6 @@ var RemoteLoginCmd = &cobra.Command{
 		if err := singularity.RemoteLogin(remoteConfig, loginArgs); err != nil {
 			sylog.Fatalf("%s", err)
 		}
-		sylog.Infof("Login succeeded")
 	},
 
 	Use:     docs.RemoteLoginUse,
