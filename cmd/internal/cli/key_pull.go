@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
@@ -21,6 +22,7 @@ import (
 
 // KeyPullCmd is `singularity key pull' and fetches public keys from a key server
 var KeyPullCmd = &cobra.Command{
+	PreRun:                checkGlobal,
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -45,8 +47,17 @@ var KeyPullCmd = &cobra.Command{
 
 func doKeyPullCmd(ctx context.Context, fingerprint string, c *client.Config) error {
 	var count int
+	var opts []sypgp.HandleOpt
+	path := ""
+	mode := os.FileMode(0600)
 
-	keyring := sypgp.NewHandle("")
+	if keyGlobalPubKey {
+		path = buildcfg.SINGULARITY_CONFDIR
+		opts = append(opts, sypgp.GlobalHandleOpt())
+		mode = os.FileMode(0644)
+	}
+
+	keyring := sypgp.NewHandle(path, opts...)
 
 	// get matching keyring
 	el, err := sypgp.FetchPubkey(ctx, c, fingerprint, false)
@@ -60,7 +71,7 @@ func doKeyPullCmd(ctx context.Context, fingerprint string, c *client.Config) err
 	}
 
 	// store in local cache
-	fp, err := os.OpenFile(keyring.PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	fp, err := os.OpenFile(keyring.PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, mode)
 	if err != nil {
 		return err
 	}

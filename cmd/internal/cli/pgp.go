@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
@@ -12,6 +13,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 
 	"github.com/fatih/color"
 	"github.com/sylabs/sif/pkg/integrity"
@@ -129,6 +132,18 @@ func isLocal(e *openpgp.Entity) bool {
 	return len(keys) > 0
 }
 
+// isGlobal returns true if signing entity e is found in the global keyring, and false otherwise.
+func isGlobal(e *openpgp.Entity) bool {
+	keyring := sypgp.NewHandle(buildcfg.SINGULARITY_CONFDIR, sypgp.GlobalHandleOpt())
+	kr, err := keyring.LoadPubKeyring()
+	if err != nil {
+		return false
+	}
+
+	keys := kr.KeysByIdUsage(e.PrimaryKey.KeyId, packet.KeyFlagSign)
+	return len(keys) > 0
+}
+
 // outputVerify outputs a textual representation of r to stdout.
 func outputVerify(f *sif.FileImage, r integrity.VerifyResult) bool {
 	e := r.Entity()
@@ -136,7 +151,10 @@ func outputVerify(f *sif.FileImage, r integrity.VerifyResult) bool {
 	// Print signing entity info.
 	if e != nil {
 		prefix := color.New(color.FgYellow).Sprint("[REMOTE]")
-		if isLocal(e) {
+
+		if isGlobal(e) {
+			prefix = color.New(color.FgCyan).Sprint("[GLOBAL]")
+		} else if isLocal(e) {
 			prefix = color.New(color.FgGreen).Sprint("[LOCAL]")
 		}
 

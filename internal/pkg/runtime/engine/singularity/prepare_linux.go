@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -1171,13 +1172,14 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 				return fmt.Errorf("while validating ECL configuration: %s", err)
 			}
 
-			// Only try to load the keyring here if the ECL is active.
+			// Only try to load the global keyring here if the ECL is active.
 			// Otherwise pass through an empty keyring rather than avoiding calling
 			// the ECL functions as this keeps the logic for applying / ignoring ECL in a
 			// single location.
 			var kr openpgp.KeyRing = openpgp.EntityList{}
 			if ecl.Activated {
-				kr, err = sypgp.PublicKeyRing()
+				keyring := sypgp.NewHandle(buildcfg.SINGULARITY_CONFDIR, sypgp.GlobalHandleOpt())
+				kr, err = keyring.LoadPubKeyring()
 				if err != nil {
 					return fmt.Errorf("while obtaining keyring for ECL: %s", err)
 				}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
@@ -60,7 +61,15 @@ var KeyExportCmd = &cobra.Command{
 }
 
 func exportRun(cmd *cobra.Command, args []string) {
-	keyring := sypgp.NewHandle("")
+	var opts []sypgp.HandleOpt
+	path := ""
+
+	if keyGlobalPubKey {
+		path = buildcfg.SINGULARITY_CONFDIR
+		opts = append(opts, sypgp.GlobalHandleOpt())
+	}
+
+	keyring := sypgp.NewHandle(path, opts...)
 	if secretExport {
 		err := keyring.ExportPrivateKey(args[0], armor)
 		if err != nil {

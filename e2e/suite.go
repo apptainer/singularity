@@ -26,6 +26,7 @@ import (
 	"github.com/sylabs/singularity/e2e/config"
 	"github.com/sylabs/singularity/e2e/delete"
 	"github.com/sylabs/singularity/e2e/docker"
+	"github.com/sylabs/singularity/e2e/ecl"
 	singularityenv "github.com/sylabs/singularity/e2e/env"
 	"github.com/sylabs/singularity/e2e/help"
 	"github.com/sylabs/singularity/e2e/imgbuild"
@@ -111,6 +112,9 @@ func Run(t *testing.T) {
 	// duplicate system remote.yaml and create a temporary one on top of original
 	e2e.SetupSystemRemoteFile(t, testenv.TestDir)
 
+	// create an empty ECL configuration and empty global keyring
+	e2e.SetupSystemECLAndGlobalKeyRing(t, testenv.TestDir)
+
 	// Ensure config files are installed
 	configFiles := []string{
 		sysconfdir("singularity.conf"),
@@ -163,6 +167,7 @@ func Run(t *testing.T) {
 	suite.AddGroup("CONFIG", config.E2ETests)
 	suite.AddGroup("DELETE", delete.E2ETests)
 	suite.AddGroup("DOCKER", docker.E2ETests)
+	suite.AddGroup("ECL", ecl.E2ETests)
 	suite.AddGroup("ENV", singularityenv.E2ETests)
 	suite.AddGroup("HELP", help.E2ETests)
 	suite.AddGroup("INSPECT", inspect.E2ETests)

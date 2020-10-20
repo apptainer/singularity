@@ -147,6 +147,7 @@ make DESTDIR=$RPM_BUILD_ROOT install man
 %config(noreplace) %{_sysconfdir}/singularity/*.toml
 %config(noreplace) %{_sysconfdir}/singularity/*.json
 %config(noreplace) %{_sysconfdir}/singularity/*.yaml
+%config(noreplace) %{_sysconfdir}/singularity/pgp-public
 %config(noreplace) %{_sysconfdir}/singularity/cgroups/*
 %config(noreplace) %{_sysconfdir}/singularity/network/*
 %config(noreplace) %{_sysconfdir}/singularity/seccomp-profiles/*

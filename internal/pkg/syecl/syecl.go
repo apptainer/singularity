@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -33,10 +34,10 @@ var (
 type EclConfig struct {
 	Activated  bool        `toml:"activated"`      // toggle the activation of the ECL rules
 	Legacy     bool        `toml:"legacyinsecure"` // Legacy (insecure) signature mode
-	ExecGroups []execgroup `toml:"execgroup"`      // Slice of all execution groups
+	ExecGroups []Execgroup `toml:"execgroup"`      // Slice of all execution groups
 }
 
-// execgroup describes an execution group, the main unit of configuration:
+// Execgroup describes an execution group, the main unit of configuration:
 //	TagName: a descriptive identifier
 //	ListMode: whether the execgroup follows a whitelist, whitestrict or blacklist model
 //		whitelist: one or more KeyFP's present and verified,
@@ -44,7 +45,7 @@ type EclConfig struct {
 //		blacklist: none of the KeyFP should be present
 //	DirPath: containers must be stored in this directory path
 //	KeyFPs: list of Key Fingerprints of entities to verify
-type execgroup struct {
+type Execgroup struct {
 	TagName  string   `toml:"tagname"`
 	ListMode string   `toml:"mode"`
 	DirPath  string   `toml:"dirpath"`
@@ -71,7 +72,7 @@ func PutConfig(ecl EclConfig, confPath string) (err error) {
 		return
 	}
 
-	return ioutil.WriteFile(confPath, data, 0600)
+	return ioutil.WriteFile(confPath, data, 0644)
 }
 
 // ValidateConfig makes sure paths from configs are fully resolved and that
@@ -114,7 +115,7 @@ func (ecl *EclConfig) ValidateConfig() error {
 }
 
 // checkWhiteList evaluates authorization by requiring at least 1 entity
-func checkWhiteList(v *integrity.Verifier, egroup *execgroup) (ok bool, err error) {
+func checkWhiteList(v *integrity.Verifier, egroup *Execgroup) (ok bool, err error) {
 	// get signing entities fingerprints that have signed all selected objects
 	keyfps, err := v.AllSignedBy()
 	if err != nil {
@@ -138,7 +139,7 @@ func checkWhiteList(v *integrity.Verifier, egroup *execgroup) (ok bool, err erro
 }
 
 // checkWhiteStrict evaluates authorization by requiring all entities
-func checkWhiteStrict(v *integrity.Verifier, egroup *execgroup) (ok bool, err error) {
+func checkWhiteStrict(v *integrity.Verifier, egroup *Execgroup) (ok bool, err error) {
 	// get signing entities fingerprints that have signed all selected objects
 	keyfps, err := v.AllSignedBy()
 	if err != nil {
@@ -166,7 +167,7 @@ func checkWhiteStrict(v *integrity.Verifier, egroup *execgroup) (ok bool, err er
 }
 
 // checkBlackList evaluates authorization by requiring all entities to be absent
-func checkBlackList(v *integrity.Verifier, egroup *execgroup) (ok bool, err error) {
+func checkBlackList(v *integrity.Verifier, egroup *Execgroup) (ok bool, err error) {
 	// get all signing entities fingerprints that have signed any selected object
 	keyfps, err := v.AnySignedBy()
 	if err != nil {
@@ -186,7 +187,7 @@ func checkBlackList(v *integrity.Verifier, egroup *execgroup) (ok bool, err erro
 }
 
 func shouldRun(ecl *EclConfig, fp *os.File, kr openpgp.KeyRing) (ok bool, err error) {
-	var egroup *execgroup
+	var egroup *Execgroup
 
 	// look what execgroup a container is part of
 	for _, v := range ecl.ExecGroups {

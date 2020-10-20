@@ -128,3 +128,15 @@ $(cgroups_config_INSTALL): $(cgroups_config)
 	$(V)install -m 0644 $< $@
 
 INSTALLFILES += $(cgroups_config_INSTALL)
+
+# global keyring
+global_keyring := $(SOURCEDIR)/etc/pgp-public
+
+global_keyring_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/pgp-public
+$(global_keyring_INSTALL): $(global_keyring)
+	@echo " INSTALL" $@
+	$(V)umask 0022 && mkdir -p $(@D)
+	$(V)install -m 0644 $< $@
+
+INSTALLFILES += $(global_keyring_INSTALL)
+
