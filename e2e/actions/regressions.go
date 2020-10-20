@@ -473,3 +473,40 @@ func (c actionTests) issue5455(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 }
+
+// Check that we can run a container with no fuse mounts when they are disabled
+// by config enable fusemount=no
+func (c actionTests) issue5631(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	// Set enable fusemount = no in a custom config file
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-5631-", "")
+	defer e2e.Privileged(cleanup)(t)
+	tmpConfig := path.Join(tmpDir, "singularity.conf")
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.PreRun(
+			// Custom config file must exist and be root owned with tight permissions
+			func(t *testing.T) {
+				err := fs.EnsureFileWithPermission(tmpConfig, 0600)
+				if err != nil {
+					t.Fatalf("while creating temporary config file: %s", err)
+				}
+			}),
+		e2e.WithCommand("config global"),
+		e2e.WithGlobalOptions("--config", tmpConfig),
+		e2e.WithArgs("--set", "enable fusemount", "no"),
+		e2e.ExpectExit(0),
+	)
+
+	// Check we can run a bare container still against the custom config
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithGlobalOptions("--config", tmpConfig),
+		e2e.WithArgs(c.env.ImagePath, "/bin/true"),
+		e2e.ExpectExit(0),
+	)
+}
