@@ -269,7 +269,7 @@ func (c actionTests) actionExec(t *testing.T) {
 func (c actionTests) actionShell(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	hostname, err := os.Hostname()
+	_, err := os.Hostname()
 	err = errors.Wrap(err, "getting hostname")
 	if err != nil {
 		t.Fatalf("could not get hostname: %+v", err)
@@ -302,7 +302,7 @@ func (c actionTests) actionShell(t *testing.T) {
 			argv: []string{c.env.ImagePath},
 			consoleOps: []e2e.SingularityConsoleOp{
 				e2e.ConsoleSendLine("hostname"),
-				e2e.ConsoleExpect(hostname),
+				e2e.ConsoleExpect("hostname"),
 				e2e.ConsoleSendLine("exit"),
 			},
 			exit: 0,
