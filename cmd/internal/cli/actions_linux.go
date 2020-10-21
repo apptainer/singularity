@@ -60,7 +60,15 @@ func convertImage(filename string, unsquashfsPath string) (tempDir, imageDir str
 		return "", "", fmt.Errorf("while getting root filesystem in %s: %s", filename, err)
 	}
 
-	// squashfs only
+	// Nice message if we have been given an older ext3 image, which cannot be extracted due to lack of privilege
+	// to loopback mount.
+	if part.Type == imgutil.EXT3 {
+		sylog.Errorf("File %q is an ext3 format continer image.", filename)
+		sylog.Errorf("Only SIF and squashfs images can be extracted in unprivileged mode.")
+		sylog.Errorf("Use `singularity build` to convert this image to a SIF file using a setuid install of Singularity.")
+	}
+
+	// Only squashfs can be extracted
 	if part.Type != imgutil.SQUASHFS {
 		return "", "", fmt.Errorf("not a squashfs root filesystem")
 	}
@@ -669,7 +677,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				unsquashfsPath = filepath.Join(d, "unsquashfs")
 			}
 			sylog.Verbosef("User namespace requested, convert image %s to sandbox", image)
-			sylog.Infof("Convert SIF file to sandbox...")
+			sylog.Infof("Converting SIF file to temporary sandbox...")
 			tempDir, imageDir, err := convertImage(image, unsquashfsPath)
 			if err != nil {
 				sylog.Fatalf("while extracting %s: %s", image, err)
