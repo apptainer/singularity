@@ -423,6 +423,7 @@ func orasPushNoCheck(file, ref string) error {
 }
 
 func (c ctx) testPullDisableCacheCmd(t *testing.T) {
+
 	cacheDir, err := ioutil.TempDir("", "e2e-imgcache-")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
@@ -435,21 +436,52 @@ func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 	}()
 
 	c.env.ImgCacheDir = cacheDir
-	imgName := "testImg.sif"
-	imgPath := filepath.Join(c.env.TestDir, imgName)
-	cmdArgs := []string{"--disable-cache", imgPath, "library://alpine:latest"}
 
-	c.env.RunSingularity(
-		t,
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("pull"),
-		e2e.WithArgs(cmdArgs...),
-		e2e.ExpectExit(0),
-	)
+	disableCacheTests := []struct {
+		name      string
+		imagePath string
+		imageSrc  string
+	}{
+		{
+			name:      "library",
+			imagePath: filepath.Join(c.env.TestDir, "library.sif"),
+			imageSrc:  "library://alpine:latest",
+		},
+		{
+			name:      "docker",
+			imagePath: filepath.Join(c.env.TestDir, "docker.sif"),
+			imageSrc:  "docker://alpine:latest",
+		},
+		{
+			name:      "oras",
+			imagePath: filepath.Join(c.env.TestDir, "oras.sif"),
+			imageSrc:  "oras://localhost:5000/pull_test_sif:latest",
+		},
+	}
 
-	cacheEntryPath := filepath.Join(cacheDir, "cache")
-	if _, err := os.Stat(cacheEntryPath); !os.IsNotExist(err) {
-		t.Fatalf("cache created while disabled (%s exists)", cacheEntryPath)
+	for _, tt := range disableCacheTests {
+		cmdArgs := []string{"--disable-cache", tt.imagePath, tt.imageSrc}
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("pull"),
+			e2e.WithArgs(cmdArgs...),
+			e2e.ExpectExit(0),
+			e2e.PostRun(func(t *testing.T) {
+				// Cache entry must not have been created
+				cacheEntryPath := filepath.Join(cacheDir, "cache")
+				if _, err := os.Stat(cacheEntryPath); !os.IsNotExist(err) {
+					t.Errorf("cache created while disabled (%s exists)", cacheEntryPath)
+				}
+				// We also need to check the image pulled is in the correct place!
+				// Issue #5628s
+				_, err := os.Stat(tt.imagePath)
+				if os.IsNotExist(err) {
+					t.Errorf("image does not exist at %s", tt.imagePath)
+				}
+			}),
+		)
 	}
 }
 
