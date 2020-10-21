@@ -104,7 +104,7 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, t
 		sylog.Debugf("Cache disabled, pulling directly to: %s", directTo)
 	}
 
-	src, err := Pull(ctx, imgCache, pullFrom, tmpDir, ociAuth, noHTTPS, noCleanUp)
+	src, err := pull(ctx, imgCache, directTo, pullFrom, tmpDir, ociAuth, noHTTPS, noCleanUp)
 	if err != nil {
 		return "", fmt.Errorf("error fetching image to cache: %v", err)
 	}
