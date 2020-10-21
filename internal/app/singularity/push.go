@@ -58,7 +58,7 @@ func (c *progressCallback) Finish() {
 // LibraryPush will upload the image specified by file to the library specified by libraryURI.
 // Before uploading, the image will be checked for a valid signature, unless specified not to by the
 // unauthenticated bool
-func LibraryPush(ctx context.Context, file, dest string, libraryConfig *client.Config, keyConfig *keyclient.Config, remoteWarning string, unauthenticated bool) error {
+func LibraryPush(ctx context.Context, file, dest string, libraryConfig *client.Config, keyConfig *keyclient.Config, remoteWarning string, unauthenticated bool, description string) error {
 	// Push to library requires a valid authToken
 	if libraryConfig.AuthToken == "" {
 		return fmt.Errorf("couldn't push image to library: %v", remoteWarning)
@@ -101,7 +101,11 @@ func LibraryPush(ctx context.Context, file, dest string, libraryConfig *client.C
 	}
 	defer f.Close()
 
-	return libraryClient.UploadImage(ctx, f, r.Host+r.Path, arch, r.Tags, "No Description", &progressCallback{})
+	if description == "" {
+		description = "No Description"
+	}
+
+	return libraryClient.UploadImage(ctx, f, r.Host+r.Path, arch, r.Tags, description, &progressCallback{})
 }
 
 func sifArch(filename string) (string, error) {
