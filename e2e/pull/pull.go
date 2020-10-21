@@ -423,7 +423,6 @@ func orasPushNoCheck(file, ref string) error {
 }
 
 func (c ctx) testPullDisableCacheCmd(t *testing.T) {
-
 	cacheDir, err := ioutil.TempDir("", "e2e-imgcache-")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
