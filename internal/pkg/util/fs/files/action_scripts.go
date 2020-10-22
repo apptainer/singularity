@@ -130,6 +130,14 @@ fi
 shopt -u expand_aliases
 restore_env
 
+# See https://github.com/hpcng/singularity/issues/5340
+# If there is no .singularity.d then a custom PS1 wasn't set.
+# If we were called through a script and PS1 is empty this
+# gives a confusing silent prompt. Force a PS1 if it's empty.
+if test -z "${PS1:-}"; then
+	export PS1="Singularity> "
+fi
+
 # See https://github.com/sylabs/singularity/issues/2721,
 # as bash is often used as the current shell it may confuse
 # users if the provided command is /bin/bash implying to
