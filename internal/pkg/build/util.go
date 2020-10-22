@@ -69,6 +69,18 @@ func createStageFile(source string, b *types.Bundle, warnMsg string) (string, er
 	if err != nil {
 		return "", fmt.Errorf("failed to read %s: %s", source, err)
 	}
+
+	// Append an extra blank line to the end of the staged file. This is a trick to fix #5250
+	// where a yum install of the `setup` package can fail
+	//
+	// When /etc/hosts on the host system is unmodified from the distro 'setup' package, yum
+	// will try to rename & replace it if the 'setup' package is reinstalled / upgraded. This will
+	// fail as it is bind mounted, and cannot be renamed.
+	//
+	// Adding a newline means the staged file is now different than the one in the 'setup' package
+	// and yum will leave the file alone, as it considers it modified.
+	content = append(content, []byte("\n")...)
+
 	if _, err := stageFile.Write(content); err != nil {
 		return "", fmt.Errorf("failed to copy %s content to %s: %s", source, sessionFile, err)
 	}
