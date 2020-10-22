@@ -25,8 +25,11 @@ var (
 	// PushLibraryURI holds the base URI to a Sylabs library API instance
 	PushLibraryURI string
 
-	// unauthenticatedPush when true; will never ask to push a unsigned container
-	unauthenticatedPush bool
+	// unsignedPush when true will allow pushing a unsigned container
+	unsignedPush bool
+
+	// pushDescription holds a description to be set against a library container
+	pushDescription string
 )
 
 // --library
@@ -42,12 +45,22 @@ var pushLibraryURIFlag = cmdline.Flag{
 // -U|--allow-unsigned
 var pushAllowUnsignedFlag = cmdline.Flag{
 	ID:           "pushAllowUnsignedFlag",
-	Value:        &unauthenticatedPush,
+	Value:        &unsignedPush,
 	DefaultValue: false,
 	Name:         "allow-unsigned",
 	ShortHand:    "U",
-	Usage:        "do not require a signed container",
+	Usage:        "do not require a signed container image",
 	EnvKeys:      []string{"ALLOW_UNSIGNED"},
+}
+
+// -D|--description
+var pushDescriptionFlag = cmdline.Flag{
+	ID:           "pushDescriptionFlag",
+	Value:        &pushDescription,
+	DefaultValue: "",
+	Name:         "description",
+	ShortHand:    "D",
+	Usage:        "description for container image (library:// only)",
 }
 
 func init() {
@@ -56,6 +69,7 @@ func init() {
 
 		cmdManager.RegisterFlagForCmd(&pushLibraryURIFlag, PushCmd)
 		cmdManager.RegisterFlagForCmd(&pushAllowUnsignedFlag, PushCmd)
+		cmdManager.RegisterFlagForCmd(&pushDescriptionFlag, PushCmd)
 
 		cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, PushCmd)
 		cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, PushCmd)
@@ -82,12 +96,25 @@ var PushCmd = &cobra.Command{
 			if err != nil {
 				sylog.Fatalf("Unable to get library client configuration: %v", err)
 			}
+
+			// Push to library requires a valid authToken
+			if lc.AuthToken == "" {
+				sylog.Fatalf("Cannot push image to library: %v", remoteWarning)
+			}
+
 			kc, err := getKeyserverClientConfig(endpoint.SCSDefaultKeyserverURI, endpoint.KeyserverVerifyOp)
 			if err != nil {
 				sylog.Fatalf("Unable to get keyserver client configuration: %v", err)
 			}
 
-			err = singularity.LibraryPush(ctx, file, dest, lc, kc, remoteWarning, unauthenticatedPush)
+			pushSpec := singularity.LibraryPushSpec{
+				SourceFile:    file,
+				DestRef:       dest,
+				Description:   pushDescription,
+				AllowUnsigned: unsignedPush,
+			}
+
+			err = singularity.LibraryPush(ctx, pushSpec, lc, kc)
 			if err == singularity.ErrLibraryUnsigned {
 				fmt.Printf("TIP: You can push unsigned images with 'singularity push -U %s'.\n", file)
 				fmt.Printf("TIP: Learn how to sign your own containers by using 'singularity help sign'\n\n")
@@ -97,6 +124,9 @@ var PushCmd = &cobra.Command{
 				sylog.Fatalf("Unable to push image to library: %v", err)
 			}
 		case OrasProtocol:
+			if cmd.Flag(pushDescriptionFlag.Name).Changed {
+				sylog.Warningf("Description is not supported for push to oras. Ignoring it.")
+			}
 			ociAuth, err := makeDockerCredentials(cmd)
 			if err != nil {
 				sylog.Fatalf("Unable to make docker oci credentials: %s", err)

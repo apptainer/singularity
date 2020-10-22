@@ -27,6 +27,18 @@ var (
 	ErrLibraryUnsigned = errors.New("image is not signed")
 )
 
+// LibraryPushSpec describes how a source image file should be pushed to a library server
+type LibraryPushSpec struct {
+	// SourceFile is the path to the container image to be pushed to the library
+	SourceFile string
+	// DestRef is the destination reference that the container image will be pushed to in the library
+	DestRef string
+	// Description is an optional string that describes the container image
+	Description string
+	// AllowUnsigned must be set to true to allow push of an unsigned container image to succeed
+	AllowUnsigned bool
+}
+
 type progressCallback struct {
 	bar *mpb.Bar
 	r   io.Reader
@@ -55,27 +67,21 @@ func (c *progressCallback) GetReader() io.Reader {
 func (c *progressCallback) Finish() {
 }
 
-// LibraryPush will upload the image specified by file to the library specified by libraryURI.
-// Before uploading, the image will be checked for a valid signature, unless specified not to by the
-// unauthenticated bool
-func LibraryPush(ctx context.Context, file, dest string, libraryConfig *client.Config, keyConfig *keyclient.Config, remoteWarning string, unauthenticated bool) error {
-	// Push to library requires a valid authToken
-	if libraryConfig.AuthToken == "" {
-		return fmt.Errorf("couldn't push image to library: %v", remoteWarning)
+// LibraryPush will upload an image file according to the provided LibraryPushSpec
+// Before uploading, the image will be checked for a valid signature unless AllowUnsigned is true
+func LibraryPush(ctx context.Context, pushSpec LibraryPushSpec, libraryConfig *client.Config, keyConfig *keyclient.Config) error {
+	if _, err := os.Stat(pushSpec.SourceFile); os.IsNotExist(err) {
+		return fmt.Errorf("unable to open: %v: %v", pushSpec.SourceFile, err)
 	}
 
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return fmt.Errorf("unable to open: %v: %v", file, err)
-	}
-
-	arch, err := sifArch(file)
+	arch, err := sifArch(pushSpec.SourceFile)
 	if err != nil {
 		return err
 	}
 
-	if !unauthenticated {
+	if !pushSpec.AllowUnsigned {
 		// Check if the container has a valid signature.
-		if err := Verify(ctx, file, OptVerifyUseKeyServer(keyConfig)); err != nil {
+		if err := Verify(ctx, pushSpec.SourceFile, OptVerifyUseKeyServer(keyConfig)); err != nil {
 			sylog.Warningf("%v", err)
 			return ErrLibraryUnsigned
 		}
@@ -89,19 +95,19 @@ func LibraryPush(ctx context.Context, file, dest string, libraryConfig *client.C
 	}
 
 	// split library ref into components
-	r, err := client.Parse(dest)
+	r, err := client.Parse(pushSpec.DestRef)
 	if err != nil {
 		return fmt.Errorf("error parsing destination: %v", err)
 	}
 
 	// open image for uploading
-	f, err := os.Open(file)
+	f, err := os.Open(pushSpec.SourceFile)
 	if err != nil {
-		return fmt.Errorf("error opening image %s for reading: %v", file, err)
+		return fmt.Errorf("error opening image %s for reading: %v", pushSpec.SourceFile, err)
 	}
 	defer f.Close()
 
-	return libraryClient.UploadImage(ctx, f, r.Host+r.Path, arch, r.Tags, "No Description", &progressCallback{})
+	return libraryClient.UploadImage(ctx, f, r.Host+r.Path, arch, r.Tags, pushSpec.Description, &progressCallback{})
 }
 
 func sifArch(filename string) (string, error) {
