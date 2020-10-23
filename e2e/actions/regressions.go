@@ -510,3 +510,61 @@ func (c actionTests) issue5631(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 }
+
+// Check that mount failure for /etc/hosts and /etc/localtime are not fatal
+// Separate code paths for contain and non-contained, so check both
+func (c actionTests) issue5465(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	sandbox, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "sandbox-", "")
+	defer cleanup(t)
+
+	// convert test image to sandbox
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", sandbox, c.env.ImagePath),
+		e2e.ExpectExit(0),
+	)
+
+	// Link /etc/localtime and /etc/hosts to a directory
+	// (bind file onto dir will fail)
+	if err := os.Mkdir(filepath.Join(sandbox, "dir"), 0o755); err != nil {
+		t.Fatalf("couldn't create dir in sandbox: %s", err)
+	}
+	if err := os.Remove(filepath.Join(sandbox, "etc", "localtime")); err != nil && !os.IsNotExist(err) {
+		t.Fatalf("couldn't remove sandbox localtime: %s", err)
+	}
+	if err := os.Remove(filepath.Join(sandbox, "etc", "hosts")); err != nil && !os.IsNotExist(err) {
+		t.Fatalf("couldn't remove sandbox hosts: %s", err)
+	}
+	if err := os.Symlink("/dir", filepath.Join(sandbox, "etc", "localtime")); err != nil {
+		t.Fatalf("couldn't symlink sandbox localtime: %s", err)
+	}
+	if err := os.Symlink("/dir", filepath.Join(sandbox, "etc", "hosts")); err != nil {
+		t.Fatalf("couldn't symlink sandbox hosts: %s", err)
+	}
+
+	// The standard flow where the binds come from singularity.conf
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("Standard"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithDir(c.env.TestDir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(sandbox, "true"),
+		e2e.ExpectExit(0),
+	)
+
+	// With `--contain` where the binds are hard coded
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("Contain"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithDir(c.env.TestDir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--contain", sandbox, "true"),
+		e2e.ExpectExit(0),
+	)
+}
