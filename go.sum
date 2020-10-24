@@ -469,8 +469,8 @@ github.com/opencontainers/runtime-tools v0.9.0/go.mod h1:r3f7wjNzSs2extwzU3Y+6pK
 github.com/opencontainers/selinux v1.5.1/go.mod h1:yTcKuYAh6R95iDpefGLQaPaRwJFwyzAJufJyiTt7s0g=
 github.com/opencontainers/selinux v1.6.0 h1:+bIAS/Za3q5FTwWym4fTB0vObnfCf3G/NC7K6Jx62mY=
 github.com/opencontainers/selinux v1.6.0/go.mod h1:VVGKuOLlE7v4PJyT6h7mNWvq1rzqiriPsEqVhc+svHE=
-github.com/opencontainers/umoci v0.4.6-0.20200622135030-30d116059d97 h1:SsJcBc3+euld4fMn+kbbcxFdSijktWJz/8KR+7TkIeE=
-github.com/opencontainers/umoci v0.4.6-0.20200622135030-30d116059d97/go.mod h1:ZyTwgJPvYl9xv1Cf3ykU41BxMSCxW3AtoueA5Bmxs1E=
+github.com/opencontainers/umoci v0.4.6 h1:nUULYM+jSLLJCVN2gd4wldm8/yuVMahC36UXna3jEqI=
+github.com/opencontainers/umoci v0.4.6/go.mod h1:ZyTwgJPvYl9xv1Cf3ykU41BxMSCxW3AtoueA5Bmxs1E=
 github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913/go.mod h1:J6OG6YJVEWopen4avK3VNQSnALmmjvniMmni/YFYAwc=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=
