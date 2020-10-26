@@ -39,6 +39,7 @@ func (c *ctx) singularityKeyList(t *testing.T) {
 		name   string
 		args   []string
 		stdout string
+		exit   int
 	}{
 		{
 			name:   "key list help",
@@ -55,6 +56,12 @@ func (c *ctx) singularityKeyList(t *testing.T) {
 			args:   []string{"list", "--secret"},
 			stdout: "^Private key listing",
 		},
+		{
+			name:   "key list global secret",
+			args:   []string{"list", "--global", "--secret"},
+			stdout: "^Private key listing",
+			exit:   255,
+		},
 	}
 
 	for _, tt := range tests {
@@ -64,7 +71,7 @@ func (c *ctx) singularityKeyList(t *testing.T) {
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("key"),
 			e2e.WithArgs(tt.args...),
-			e2e.ExpectExit(0, e2e.ExpectOutput(e2e.RegexMatch, tt.stdout)),
+			e2e.ExpectExit(tt.exit, e2e.ExpectOutput(e2e.RegexMatch, tt.stdout)),
 		)
 	}
 }
