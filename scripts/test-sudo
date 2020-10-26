@@ -1,7 +1,6 @@
 #!/bin/sh
 
-#sudocmd="sudo -E ${sudo_args}"
-sudocmd="/bin/true"
+sudocmd="sudo -E ${sudo_args}"
 unset sudo_args
 
 # reset timeout for each invocation or exit
