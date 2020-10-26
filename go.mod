@@ -17,7 +17,6 @@ require (
 	github.com/containernetworking/plugins v0.8.7
 	github.com/containers/image/v5 v5.6.0
 	github.com/deislabs/oras v0.8.1
-	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 	github.com/fatih/color v1.9.0
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/go-log/log v0.2.0
