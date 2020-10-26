@@ -49,15 +49,9 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 
 	os.Setenv("USER_PATH", userPath)
 
-	// create an handle for the current image cache
-	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
-	if imgCache == nil {
-		sylog.Fatalf("failed to create a new image cache handle")
-	}
-
 	ctx := context.TODO()
 
-	replaceURIWithImage(ctx, imgCache, cmd, args)
+	replaceURIWithImage(ctx, cmd, args)
 
 	// set PATH after pulling images to be able to find potential
 	// docker credential helpers outside of standard paths
@@ -96,7 +90,7 @@ func handleNet(ctx context.Context, imgCache *cache.Handle, pullFrom string) (st
 	return net.Pull(ctx, imgCache, pullFrom, tmpDir)
 }
 
-func replaceURIWithImage(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, args []string) {
+func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string) {
 	// If args[0] is not transport:ref (ex. instance://...) formatted return, not a URI
 	t, _ := uri.Split(args[0])
 	if t == "instance" || t == "" {
@@ -105,6 +99,12 @@ func replaceURIWithImage(ctx context.Context, imgCache *cache.Handle, cmd *cobra
 
 	var image string
 	var err error
+
+	// Create a cache handle only when we know we are are using a URI
+	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
+	if imgCache == nil {
+		sylog.Fatalf("failed to create a new image cache handle")
+	}
 
 	switch t {
 	case uri.Library:
