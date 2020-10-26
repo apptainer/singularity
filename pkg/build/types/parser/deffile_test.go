@@ -30,6 +30,7 @@ func TestScanDefinitionFile(t *testing.T) {
 		{"BusyBox", "testdata_good/busybox/busybox", "testdata_good/busybox/busybox_sections.json"},
 		{"Debootstrap", "testdata_good/debootstrap/debootstrap", "testdata_good/debootstrap/debootstrap_sections.json"},
 		{"Docker", "testdata_good/docker/docker", "testdata_good/docker/docker_sections.json"},
+		{"Fingerprint", "testdata_good/fingerprint/fingerprint", "testdata_good/fingerprint/fingerprint_sections.json"},
 		{"LocalImage", "testdata_good/localimage/localimage", "testdata_good/localimage/localimage_sections.json"},
 		{"Scratch", "testdata_good/scratch/scratch", "testdata_good/scratch/scratch_sections.json"},
 		// TODO(mem): reenable this; disabled while shub is down
@@ -173,6 +174,7 @@ func TestParseDefinitionFile(t *testing.T) {
 		{"BusyBox", "testdata_good/busybox/busybox", "testdata_good/busybox/busybox.json"},
 		{"Debootstrap", "testdata_good/debootstrap/debootstrap", "testdata_good/debootstrap/debootstrap.json"},
 		{"Docker", "testdata_good/docker/docker", "testdata_good/docker/docker.json"},
+		{"Fingerprint", "testdata_good/fingerprint/fingerprint", "testdata_good/fingerprint/fingerprint.json"},
 		{"LocalImage", "testdata_good/localimage/localimage", "testdata_good/localimage/localimage.json"},
 		{"Scratch", "testdata_good/scratch/scratch", "testdata_good/scratch/scratch.json"},
 		// TODO(mem): reenable this; disabled while shub is down
@@ -215,6 +217,10 @@ func TestParseDefinitionFile(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(defTest, defCorrect) {
+				b, _ := json.MarshalIndent(defCorrect, "", "  ")
+				t.Logf("Expected:\n%s", string(b))
+				b, _ = json.MarshalIndent(defTest, "", "  ")
+				t.Logf("Got:\n%s", string(b))
 				t.Fatal("parsed definition did not match reference")
 			}
 		}))

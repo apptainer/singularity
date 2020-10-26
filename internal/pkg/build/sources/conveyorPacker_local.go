@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
@@ -43,7 +44,33 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 	switch imageObject.Type {
 	case image.SIF:
 		sylog.Debugf("Packing from SIF")
-
+		// Retrieve list of required fingerprints from definition, if any
+		fps := []string{}
+		if fpHdr, ok := b.Recipe.Header["fingerprints"]; ok {
+			// Remove trailing comment
+			fpHdr = strings.Split(fpHdr, "#")[0]
+			fpHdr = strings.TrimSpace(fpHdr)
+			if fpHdr != "" {
+				fps = strings.Split(fpHdr, ",")
+				for i, v := range fps {
+					fps[i] = strings.TrimSpace(v)
+				}
+			}
+		}
+		// Check if the SIF matches the `fingerprints:` specified in the build, if there are any
+		if len(fps) > 0 {
+			err := checkSIFFingerprint(src, fps, b.Opts.KeyServerConfig)
+			if err != nil {
+				return nil, fmt.Errorf("while checking fingerprint: %s", err)
+			}
+		} else {
+			// Otherwise do a verification and make failures warn, like for push
+			err := verifySIF(src, b.Opts.KeyServerConfig)
+			if err != nil {
+				sylog.Warningf("%s", err)
+				sylog.Warningf("Bootstrap image could not be verified, but build will continue.")
+			}
+		}
 		return &SIFPacker{
 			srcFile: src,
 			b:       b,

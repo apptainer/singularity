@@ -31,12 +31,13 @@ func runBuild(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("Only remote builds are supported on this platform")
 	}
 
-	bc, lc, err := getBuildAndLibraryClientConfig(buildArgs.builderURL, buildArgs.libraryURL)
+	bc, lc, kc, err := getServiceConfigs(buildArgs.builderURL, buildArgs.libraryURL, buildArgs.keyServerURL)
 	if err != nil {
-		sylog.Fatalf("Unable to get builder and library client configuration: %v", err)
+		sylog.Fatalf("Unable to get service configuration: %v", err)
 	}
 	buildArgs.libraryURL = lc.BaseURL
 	buildArgs.builderURL = bc.BaseURL
+	buildArgs.keyServerURL = kc.BaseURL
 
 	// Submiting a remote build requires a valid authToken
 	if bc.AuthToken == "" {

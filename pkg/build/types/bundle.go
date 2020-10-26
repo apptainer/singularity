@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	ocitypes "github.com/containers/image/v5/types"
+	scskeyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -44,6 +45,8 @@ type Options struct {
 	LibraryURL string `json:"libraryURL"`
 	// LibraryAuthToken contains authentication token to access specified library.
 	LibraryAuthToken string `json:"libraryAuthToken"`
+	// KeyserverURL contains config for keyserver used for SIF fingerprint verification in builds.
+	KeyServerConfig *scskeyclient.Config
 	// contains docker credentials if specified.
 	DockerAuthConfig *ocitypes.DockerAuthConfig
 	// EncryptionKeyInfo specifies the key used for filesystem

@@ -16,6 +16,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
@@ -115,7 +117,9 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		sylog.Fatalf("Building encrypted container with the remote builder is not currently supported.")
 	}
 
-	bc, lc, err := getBuildAndLibraryClientConfig(buildArgs.builderURL, buildArgs.libraryURL)
+	// TODO - the keyserver config needs to go to the remote builder for fingerprint verification at
+	// build time to be fully supported.
+	bc, lc, _, err := getServiceConfigs(buildArgs.builderURL, buildArgs.libraryURL, buildArgs.keyServerURL)
 	if err != nil {
 		sylog.Fatalf("Unable to get builder and library client configuration: %v", err)
 	}
@@ -267,6 +271,11 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		authToken = lc.AuthToken
 	}
 
+	kc, err := getKeyserverClientConfig(buildArgs.keyServerURL, endpoint.KeyserverVerifyOp)
+	if err != nil {
+		sylog.Fatalf("Unable to get key server client configuration: %v", err)
+	}
+
 	buildFormat := "sif"
 	sandboxTarget := false
 	if buildArgs.sandbox {
@@ -292,6 +301,7 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 				NoHTTPS:           noHTTPS,
 				LibraryURL:        buildArgs.libraryURL,
 				LibraryAuthToken:  authToken,
+				KeyServerConfig:   kc,
 				DockerAuthConfig:  authConf,
 				EncryptionKeyInfo: keyInfo,
 				FixPerms:          buildArgs.fixPerms,

@@ -22,6 +22,11 @@ import (
 	"golang.org/x/crypto/openpgp/armor"
 )
 
+const (
+	testFingerPrint    = "12045C8C0B1004D058DE4BEDA20C27EE7FF7BA84"
+	invalidFingerPrint = "0000000000000000000000000000000000000000"
+)
+
 // getTestEntity returns a fixed test PGP entity.
 func getTestEntity(t *testing.T) *openpgp.Entity {
 	t.Helper()
@@ -360,6 +365,162 @@ func TestVerify(t *testing.T) {
 
 			err := Verify(context.Background(), tt.path, tt.opts...)
 
+			if got, want := err, tt.wantErr; !errors.Is(got, want) {
+				t.Errorf("got error %v, want %v", got, want)
+			}
+		})
+	}
+}
+
+func TestVerifyFingerPrint(t *testing.T) {
+	// Start up a mock HKP server.
+	e := getTestEntity(t)
+	s := httptest.NewServer(mockHKP{e: e})
+	defer s.Close()
+
+	// Create an option that points to the mock HKP server.
+	keyServerOpt := OptVerifyUseKeyServer(&client.Config{BaseURL: s.URL})
+
+	tests := []struct {
+		name         string
+		path         string
+		fingerprints []string
+		opts         []VerifyOpt
+		wantVerified [][]uint32
+		wantEntity   *openpgp.Entity
+		wantErr      error
+	}{
+		{
+			name:         "SignatureNotFound",
+			path:         filepath.Join("testdata", "images", "one-group.sif"),
+			fingerprints: []string{testFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt},
+			wantErr:      &integrity.SignatureNotFoundError{},
+		},
+		{
+			name:         "SignatureNotFoundNonLegacy",
+			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			fingerprints: []string{testFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt, OptVerifyLegacy()},
+			wantErr:      &integrity.SignatureNotFoundError{},
+		},
+		{
+			name:         "SignatureNotFoundLegacy",
+			path:         filepath.Join("testdata", "images", "one-group-signed-legacy.sif"),
+			fingerprints: []string{testFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt},
+			wantErr:      &integrity.SignatureNotFoundError{},
+		},
+		{
+			name:         "SignatureNotFoundLegacyAll",
+			path:         filepath.Join("testdata", "images", "one-group-signed-legacy-all.sif"),
+			fingerprints: []string{testFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt},
+			wantErr:      &integrity.SignatureNotFoundError{},
+		},
+		{
+			name:         "SignatureNotFoundLegacyGroup",
+			path:         filepath.Join("testdata", "images", "one-group-signed-legacy-group.sif"),
+			fingerprints: []string{testFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt},
+			wantErr:      &integrity.SignatureNotFoundError{},
+		},
+		{
+			name:         "Defaults",
+			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			fingerprints: []string{testFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt},
+			wantVerified: [][]uint32{{1, 2}},
+			wantEntity:   e,
+		},
+		{
+			name:         "OptVerifyGroup",
+			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			fingerprints: []string{testFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt, OptVerifyGroup(1)},
+			wantVerified: [][]uint32{{1, 2}},
+			wantEntity:   e,
+		},
+		{
+			name:         "OptVerifyObject",
+			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			fingerprints: []string{testFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt, OptVerifyObject(1)},
+			wantVerified: [][]uint32{{1}},
+			wantEntity:   e,
+		},
+		{
+			name:         "LegacyDefaults",
+			path:         filepath.Join("testdata", "images", "one-group-signed-legacy.sif"),
+			fingerprints: []string{testFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt, OptVerifyLegacy()},
+			wantVerified: [][]uint32{{2}},
+			wantEntity:   e,
+		},
+		{
+			name:         "LegacyOptVerifyObject",
+			path:         filepath.Join("testdata", "images", "one-group-signed-legacy-all.sif"),
+			fingerprints: []string{testFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt, OptVerifyLegacy(), OptVerifyObject(1)},
+			wantVerified: [][]uint32{{1}},
+			wantEntity:   e,
+		},
+		{
+			name:         "LegacyOptVerifyAll",
+			path:         filepath.Join("testdata", "images", "one-group-signed-legacy-all.sif"),
+			fingerprints: []string{testFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt, OptVerifyLegacy(), OptVerifyAll()},
+			wantVerified: [][]uint32{{1}, {2}},
+			wantEntity:   e,
+		},
+		{
+			name:         "LegacyOptVerifyGroup",
+			path:         filepath.Join("testdata", "images", "one-group-signed-legacy-group.sif"),
+			fingerprints: []string{testFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt, OptVerifyLegacy(), OptVerifyGroup(1)},
+			wantVerified: [][]uint32{{1, 2}},
+			wantEntity:   e,
+		},
+		{
+			name:         "SingleFingerprintWrong",
+			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			fingerprints: []string{invalidFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt},
+			wantVerified: [][]uint32{{1, 2}},
+			wantEntity:   e,
+			wantErr:      errNotSignedByRequired,
+		},
+		{
+			name:         "MultipleFingerprintOneWrong",
+			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			fingerprints: []string{testFingerPrint, invalidFingerPrint},
+			opts:         []VerifyOpt{keyServerOpt},
+			wantVerified: [][]uint32{{1, 2}},
+			wantEntity:   e,
+			wantErr:      errNotSignedByRequired,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			cb := func(f *sif.FileImage, r integrity.VerifyResult) bool {
+				if len(tt.wantVerified) == 0 {
+					t.Fatalf("wantVerified consumed")
+				}
+				if got, want := r.Verified(), tt.wantVerified[0]; !reflect.DeepEqual(got, want) {
+					t.Errorf("got verified %v, want %v", got, want)
+				}
+				tt.wantVerified = tt.wantVerified[1:]
+
+				if got, want := r.Entity().PrimaryKey, tt.wantEntity.PrimaryKey; !reflect.DeepEqual(got, want) {
+					t.Errorf("got entity public key %+v, want %+v", got, want)
+				}
+
+				return false
+			}
+			tt.opts = append(tt.opts, OptVerifyCallback(cb))
+			err := VerifyFingerprints(context.Background(), tt.path, tt.fingerprints, tt.opts...)
 			if got, want := err, tt.wantErr; !errors.Is(got, want) {
 				t.Errorf("got error %v, want %v", got, want)
 			}

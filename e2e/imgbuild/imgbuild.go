@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sylabs/singularity/e2e/ecl"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
@@ -1059,6 +1060,190 @@ func (c imgBuildTests) buildUpdateSandbox(t *testing.T) {
 	}
 }
 
+// buildWithFingerprint checks that we correctly verify a source image fingerprint when specified
+func (c imgBuildTests) buildWithFingerprint(t *testing.T) {
+	tmpDir, remove := e2e.MakeTempDir(t, "", "imgbuild-fingerprint-", "")
+	defer func() {
+		c.env.KeyringDir = ""
+		remove(t)
+	}()
+
+	pgpDir, _ := e2e.MakeSyPGPDir(t, tmpDir)
+	c.env.KeyringDir = pgpDir
+	invalidFingerPrint := "0000000000000000000000000000000000000000"
+	singleSigned := filepath.Join(tmpDir, "singleSigned.sif")
+	doubleSigned := filepath.Join(tmpDir, "doubleSigned.sif")
+	unsigned := filepath.Join(tmpDir, "unsigned.sif")
+	output := filepath.Join(tmpDir, "output.sif")
+
+	// Prepare the test source images
+	prep := []struct {
+		name       string
+		command    string
+		args       []string
+		consoleOps []e2e.SingularityConsoleOp
+	}{
+		{
+			name:    "import key1 local",
+			command: "key import",
+			args:    []string{"testdata/ecl-pgpkeys/key1.asc"},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("e2e"),
+			},
+		},
+		{
+			name:    "import key2 local",
+			command: "key import",
+			args:    []string{"testdata/ecl-pgpkeys/key2.asc"},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("e2e"),
+			},
+		},
+		{
+			name:    "build single signed source image",
+			command: "build",
+			args:    []string{singleSigned, "library://busybox"},
+		},
+		{
+			name:    "build double signed source image",
+			command: "build",
+			args:    []string{doubleSigned, singleSigned},
+		},
+		{
+			name:    "build unsigned source image",
+			command: "build",
+			args:    []string{unsigned, singleSigned},
+		},
+		{
+			name:    "sign single signed image with key1",
+			command: "sign",
+			args:    []string{"-k", "0", singleSigned},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("e2e"),
+			},
+		},
+		{
+			name:    "sign double signed image with key1",
+			command: "sign",
+			args:    []string{"-k", "0", doubleSigned},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("e2e"),
+			},
+		},
+		{
+			name:    "sign double signed image with key2",
+			command: "sign",
+			args:    []string{"-k", "1", doubleSigned},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("e2e"),
+			},
+		},
+	}
+
+	for _, tt := range prep {
+		cmdOps := []e2e.SingularityCmdOp{
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand(tt.command),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(0),
+		}
+		if tt.consoleOps != nil {
+			cmdOps = append(cmdOps, e2e.ConsoleRun(tt.consoleOps...))
+		}
+		c.env.RunSingularity(t, cmdOps...)
+	}
+
+	// Test builds with "Fingerprint:" headers
+	tests := []struct {
+		name       string
+		definition string
+		exit       int
+		wantErr    string
+	}{
+		{
+			name:       "build single signed one fingerprint",
+			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints: %s\n", singleSigned, ecl.KeyMap["key1"]),
+			exit:       0,
+		},
+		{
+			name:       "build single signed two fingerprints",
+			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints: %s,%s\n", singleSigned, ecl.KeyMap["key1"], ecl.KeyMap["key2"]),
+			exit:       255,
+			wantErr:    "image not signed by required entities",
+		},
+		{
+			name:       "build single signed one wrong fingerprint",
+			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints: %s\n", singleSigned, invalidFingerPrint),
+			exit:       255,
+			wantErr:    "image not signed by required entities",
+		},
+		{
+			name:       "build single signed two fingerprints one wrong",
+			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints: %s,%s\n", singleSigned, invalidFingerPrint, ecl.KeyMap["key2"]),
+			exit:       255,
+			wantErr:    "image not signed by required entities",
+		},
+		{
+			name:       "build double signed one fingerprint",
+			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints: %s\n", doubleSigned, ecl.KeyMap["key1"]),
+			exit:       0,
+		},
+		{
+			name:       "build double signed two fingerprints",
+			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints: %s,%s\n", doubleSigned, ecl.KeyMap["key1"], ecl.KeyMap["key2"]),
+			exit:       0,
+		},
+		{
+			name:       "build double signed one wrong fingerprint",
+			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints: %s\n", doubleSigned, invalidFingerPrint),
+			exit:       255,
+			wantErr:    "image not signed by required entities",
+		},
+		{
+			name:       "build double signed two fingerprints one wrong",
+			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints: %s,%s\n", doubleSigned, invalidFingerPrint, ecl.KeyMap["key2"]),
+			exit:       255,
+			wantErr:    "image not signed by required entities",
+		},
+		{
+			name:       "build unsigned one fingerprint",
+			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints: %s\n", unsigned, ecl.KeyMap["key1"]),
+			exit:       255,
+			wantErr:    "signature not found",
+		},
+		{
+			name:       "build unsigned two fingerprints",
+			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints: %s,%s\n", unsigned, ecl.KeyMap["key1"], ecl.KeyMap["key2"]),
+			exit:       255,
+			wantErr:    "signature not found",
+		},
+		{
+			name:       "build unsigned empty fingerprints",
+			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints:\n", unsigned),
+			exit:       0,
+		},
+	}
+
+	for _, tt := range tests {
+		defFile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", tt.definition)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer os.Remove(defFile)
+		c.env.RunSingularity(t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithCommand("build"),
+			e2e.WithArgs("-F", output, defFile),
+			e2e.ExpectExit(tt.exit,
+				e2e.ExpectError(e2e.ContainMatch, tt.wantErr),
+			),
+		)
+	}
+
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := imgBuildTests{
@@ -1075,6 +1260,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"multistage":                      c.buildMultiStageDefinition, // multistage build from definition templates
 		"non-root build":                  c.nonRootBuild,              // build sifs from non-root
 		"build and update sandbox":        c.buildUpdateSandbox,        // build/update sandbox
+		"fingerprint check":               c.buildWithFingerprint,      // definition file includes fingerprint check
 		"issue 4203":                      c.issue4203,                 // https://github.com/sylabs/singularity/issues/4203
 		"issue 4407":                      c.issue4407,                 // https://github.com/sylabs/singularity/issues/4407
 		"issue 4524":                      c.issue4524,                 // https://github.com/sylabs/singularity/issues/4524
