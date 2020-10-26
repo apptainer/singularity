@@ -43,7 +43,7 @@ func (c *ctx) singularityKeyList(t *testing.T) {
 		{
 			name:   "key list help",
 			args:   []string{"list", "--help"},
-			stdout: "^List keys in your local keyring",
+			stdout: "^List keys in your local or in the global keyring",
 		},
 		{
 			name:   "key list",
@@ -249,7 +249,7 @@ func (c *ctx) singularityKeyImport(t *testing.T) {
 		{
 			name:       "import help",
 			args:       []string{"import", "--help"},
-			stdout:     "Import a local key into the local keyring",
+			stdout:     "Import a local key into the local or global keyring",
 			expectExit: 0,
 		},
 		{
@@ -395,7 +395,7 @@ func (c *ctx) singularityKeyRemove(t *testing.T) {
 			name:          "remove help",
 			cmdArgs:       []string{"--help"},
 			expectedExit:  0,
-			expectedRegex: `^Remove a local public key from your keyring`,
+			expectedRegex: `^Remove a local public key from your local or the global keyring`,
 		},
 	}
 	for _, tt := range tests {
