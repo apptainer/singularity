@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 func TestLoop(t *testing.T) {
@@ -23,7 +24,7 @@ func TestLoop(t *testing.T) {
 		Flags: FlagsAutoClear | FlagsReadOnly,
 	}
 	loopDev := &Device{
-		MaxLoopDevices: 256,
+		MaxLoopDevices: int(singularityconf.GetCurrentConfig().MaxLoopDevices),
 		Info:           info,
 	}
 

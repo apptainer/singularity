@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // Pack puts relevant objects in a Bundle!
@@ -41,7 +42,7 @@ func unpackExt3(b *types.Bundle, img *image.Image) error {
 
 	var number int
 	loopdev := &loop.Device{
-		MaxLoopDevices: 256,
+		MaxLoopDevices: int(singularityconf.GetCurrentConfig().MaxLoopDevices),
 		Info:           info,
 	}
 
