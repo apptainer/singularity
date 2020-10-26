@@ -20,7 +20,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/docker/docker/pkg/system"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -324,7 +323,7 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err e
 
 	// run zypper
 	if err = cmd.Run(); err != nil {
-		if ret, _ := system.GetExitCode(err); ret == 107 {
+		if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 107 {
 			sylog.Warningf("Bootstrap succeeded, some RPM scripts failed")
 		} else {
 			return fmt.Errorf("while bootstrapping from zypper: %v", err)
