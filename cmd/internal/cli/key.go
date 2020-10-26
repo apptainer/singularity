@@ -8,6 +8,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -67,7 +68,7 @@ var keyGlobalPubKeyFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "global",
 	ShortHand:    "g",
-	Usage:        "use global public keys (import/pull/remove are restricted to root user or unprivileged installation only)",
+	Usage:        "manage global public keys (import/pull/remove are restricted to root user or unprivileged installation only)",
 }
 
 func init() {
@@ -119,7 +120,7 @@ var KeyCmd = &cobra.Command{
 
 	Use:           docs.KeyUse,
 	Short:         docs.KeyShort,
-	Long:          docs.KeyLong,
+	Long:          fmt.Sprintf(docs.KeyLong, buildcfg.SYSCONFDIR),
 	Example:       docs.KeyExample,
 	SilenceErrors: true,
 }

@@ -210,8 +210,9 @@ Enterprise Performance Computing (EPC)`
 	KeyUse   string = `key [key options...]`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
-  Manage your trusted, public and private keys in your keyring
-  (default: '~/.singularity/sypgp' if 'SINGULARITY_SYPGPDIR' is not set.)`
+  Manage your trusted, public and private keys in your local or in the global keyring
+  (local keyring: '~/.singularity/sypgp' if 'SINGULARITY_SYPGPDIR' is not set,
+  global keyring: '%[1]s/singularity/global-pgp-public')`
 	KeyExample string = `
   All group commands have their own help output:
 
@@ -225,12 +226,15 @@ Enterprise Performance Computing (EPC)`
 	// key import
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyImportUse   string = `import [import options...] <input-key>`
-	KeyImportShort string = `Import a local key into the local keyring`
+	KeyImportShort string = `Import a local key into the local or global keyring`
 	KeyImportLong  string = `
-  The 'key import' command allows you to add a key to your local keyring from a 
-  specific file.`
+  The 'key import' command allows you to add a key to your local or global keyring
+  from a specific file.`
 	KeyImportExample string = `
-  $ singularity key import ./my-key.asc`
+  $ singularity key import ./my-key.asc
+
+  # Import into global keyring (root user only)
+  $ singularity key import --global ./my-key.asc`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key export
@@ -265,13 +269,16 @@ Enterprise Performance Computing (EPC)`
 	// key list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyListUse   string = `list`
-	KeyListShort string = `List keys in your local keyring`
+	KeyListShort string = `List keys in your local or in the global keyring`
 	KeyListLong  string = `
   List your local keys in your keyring. Will list public (trusted) keys
   by default.`
 	KeyListExample string = `
   $ singularity key list
-  $ singularity key list --secret`
+  $ singularity key list --secret
+
+  # list global public keys
+  $ singularity key list --global`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key search
@@ -313,7 +320,7 @@ Enterprise Performance Computing (EPC)`
 	KeyPushShort string = `Upload a public key to a key server`
 	KeyPushLong  string = `
   The 'key push' command allows you to connect to a key server and upload public
-  keys from the local keyring.`
+  keys from the local or the global keyring.`
 	KeyPushExample string = `
   $ singularity key push 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 
@@ -321,10 +328,10 @@ Enterprise Performance Computing (EPC)`
 	// key remove
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyRemoveUse   string = `remove <fingerprint>`
-	KeyRemoveShort string = `Remove a local public key from your keyring`
+	KeyRemoveShort string = `Remove a local public key from your local or the global keyring`
 	KeyRemoveLong  string = `
   The 'key remove' command will remove a local public key from
-  your keyring.`
+  the local or the global keyring.`
 	KeyRemoveExample string = `
   $ singularity key remove D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 

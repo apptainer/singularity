@@ -142,6 +142,9 @@ func (keyring *Handle) SecretPath() string {
 
 // PublicPath returns a string describing the path to the public keys store
 func (keyring *Handle) PublicPath() string {
+	if keyring.global {
+		return filepath.Join(keyring.path, "global-pgp-public")
+	}
 	return filepath.Join(keyring.path, "pgp-public")
 }
 
