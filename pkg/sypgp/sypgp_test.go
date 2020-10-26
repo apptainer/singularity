@@ -789,6 +789,51 @@ func TestRemoveKey(t *testing.T) {
 	}
 }
 
+func TestGlobalKeyRing(t *testing.T) {
+	dir, err := ioutil.TempDir("", "global-keyring-")
+	if err != nil {
+		t.Fatalf("could not create temporary global keyring: %s", err)
+	}
+	defer os.RemoveAll(dir)
+
+	keypairOptions := GenKeyPairOptions{
+		Name:      "test",
+		Email:     "test@test.com",
+		KeyLength: 2048,
+	}
+
+	keyring := NewHandle(dir, GlobalHandleOpt())
+
+	_, err = keyring.GenKeyPair(keypairOptions)
+	if err == nil {
+		t.Errorf("unexpected success while generating keypair for global keyring")
+	}
+
+	_, err = keyring.genKeyPair(keypairOptions)
+	if err == nil {
+		t.Errorf("unexpected success while generating keypair for global keyring")
+	}
+
+	_, err = keyring.LoadPrivKeyring()
+	if err == nil {
+		t.Errorf("unexpected success while loading private key from global keyring")
+	}
+
+	el, err := keyring.LoadPubKeyring()
+	if err != nil {
+		t.Errorf("unexpected error while loading public key from global keyring: %s", err)
+	} else if len(el) != 0 {
+		t.Errorf("unexpected number of PGP keys: got %d instead of 0", len(el))
+	}
+
+	err = keyring.importPublicKey(&openpgp.Entity{
+		PrimaryKey: getPublicKey(rsaPkDataHex),
+	})
+	if err != nil {
+		t.Errorf("unexpected error while importing public key into global keyring: %s", err)
+	}
+}
+
 func TestMain(m *testing.M) {
 	// Set TZ to UTC so that the code converting a time.Time value
 	// to a string produces consistent output.

@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
@@ -7,6 +8,8 @@ package singularity
 
 import (
 	"context"
+
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/sif/pkg/integrity"
@@ -112,6 +115,15 @@ func (v verifier) getOpts(ctx context.Context, f *sif.FileImage) ([]integrity.Ve
 		}
 		kr = pkr
 	}
+
+	// wrap the global keyring around
+	global := sypgp.NewHandle(buildcfg.SINGULARITY_CONFDIR, sypgp.GlobalHandleOpt())
+	gkr, err := global.LoadPubKeyring()
+	if err != nil {
+		return nil, err
+	}
+	kr = sypgp.NewMultiKeyRing(gkr, kr)
+
 	iopts = append(iopts, integrity.OptVerifyWithKeyRing(kr))
 
 	// Add group IDs, if applicable.

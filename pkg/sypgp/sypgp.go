@@ -59,9 +59,20 @@ type KeyExistsError struct {
 	fingerprint [20]byte
 }
 
+// HandleOpt is a type representing option which can be passed to NewHandle.
+type HandleOpt func(*Handle)
+
+// GlobalHandleOpt is the option to set a keyring as global.
+func GlobalHandleOpt() HandleOpt {
+	return func(h *Handle) {
+		h.global = true
+	}
+}
+
 // Handle is a structure representing a keyring
 type Handle struct {
-	path string
+	path   string
+	global bool
 }
 
 // GenKeyPairOptions parameters needed for generating new key pair.
@@ -106,13 +117,20 @@ func dirPath() string {
 }
 
 // NewHandle initializes a new keyring in path.
-func NewHandle(path string) *Handle {
-	if path == "" {
-		path = dirPath()
-	}
-
+func NewHandle(path string, opts ...HandleOpt) *Handle {
 	newHandle := new(Handle)
 	newHandle.path = path
+
+	for _, opt := range opts {
+		opt(newHandle)
+	}
+
+	if newHandle.path == "" {
+		if newHandle.global {
+			panic("global public keyring requires a path")
+		}
+		newHandle.path = dirPath()
+	}
 
 	return newHandle
 }
@@ -124,6 +142,9 @@ func (keyring *Handle) SecretPath() string {
 
 // PublicPath returns a string describing the path to the public keys store
 func (keyring *Handle) PublicPath() string {
+	if keyring.global {
+		return filepath.Join(keyring.path, "global-pgp-public")
+	}
 	return filepath.Join(keyring.path, "pgp-public")
 }
 
@@ -162,24 +183,51 @@ func ensureDirPrivate(dn string) error {
 	return nil
 }
 
-// createOrAppendPrivateFile creates the named filename, making sure
-// it's only accessible to the current user.
-//
-// TODO(mem): move this function to a common location
-func createOrAppendPrivateFile(fn string) (*os.File, error) {
-	return os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+// createOrAppendFile creates the named filename or open it in append mode,
+// making sure it has the provided file permissions.
+func createOrAppendFile(fn string, mode os.FileMode) (*os.File, error) {
+	oldumask := syscall.Umask(0)
+	defer syscall.Umask(oldumask)
+
+	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, mode)
+	if err != nil {
+		return nil, err
+	}
+
+	return f, f.Chmod(mode)
+}
+
+// createOrTruncateFile creates the named filename or truncate it,
+// making sure it has the provided file permissions.
+func createOrTruncateFile(fn string, mode os.FileMode) (*os.File, error) {
+	oldumask := syscall.Umask(0)
+	defer syscall.Umask(oldumask)
+
+	f, err := os.OpenFile(fn, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, mode)
+	if err != nil {
+		return nil, err
+	}
+
+	return f, f.Chmod(mode)
 }
 
 // PathsCheck creates the sypgp home folder, secret and public keyring files
+// for non global keyring.
 func (keyring *Handle) PathsCheck() error {
+	// global keyring is expected to have the parent directory created
+	// and accessible by all users, it also doesn't use private keys, the
+	// permission enforcement for the global keyring is deferred to
+	// createOrAppendFile and createOrTruncateFile functions
+	if keyring.global {
+		return nil
+	}
+
 	if err := ensureDirPrivate(keyring.path); err != nil {
 		return err
 	}
-
 	if err := fs.EnsureFileWithPermission(keyring.SecretPath(), 0600); err != nil {
 		return err
 	}
-
 	if err := fs.EnsureFileWithPermission(keyring.PublicPath(), 0600); err != nil {
 		return err
 	}
@@ -190,6 +238,9 @@ func (keyring *Handle) PathsCheck() error {
 func loadKeyring(fn string) (openpgp.EntityList, error) {
 	f, err := os.Open(fn)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return openpgp.EntityList{}, nil
+		}
 		return nil, err
 	}
 	defer f.Close()
@@ -199,6 +250,10 @@ func loadKeyring(fn string) (openpgp.EntityList, error) {
 
 // LoadPrivKeyring loads the private keys from local store into an EntityList
 func (keyring *Handle) LoadPrivKeyring() (openpgp.EntityList, error) {
+	if keyring.global {
+		return nil, fmt.Errorf("global keyring doesn't contain private keys")
+	}
+
 	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
 	}
@@ -302,7 +357,11 @@ func storePrivKeys(w io.Writer, list openpgp.EntityList) error {
 
 // appendPrivateKey appends a private key entity to the local keyring
 func (keyring *Handle) appendPrivateKey(e *openpgp.Entity) error {
-	f, err := createOrAppendPrivateFile(keyring.SecretPath())
+	if keyring.global {
+		return fmt.Errorf("global keyring can't contain private keys")
+	}
+
+	f, err := createOrAppendFile(keyring.SecretPath(), 0600)
 	if err != nil {
 		return err
 	}
@@ -324,7 +383,12 @@ func storePubKeys(w io.Writer, list openpgp.EntityList) error {
 
 // appendPubKey appends a public key entity to the local keyring
 func (keyring *Handle) appendPubKey(e *openpgp.Entity) error {
-	f, err := createOrAppendPrivateFile(keyring.PublicPath())
+	mode := os.FileMode(0600)
+	if keyring.global {
+		mode = os.FileMode(0644)
+	}
+
+	f, err := createOrAppendFile(keyring.PublicPath(), mode)
 	if err != nil {
 		return err
 	}
@@ -335,7 +399,12 @@ func (keyring *Handle) appendPubKey(e *openpgp.Entity) error {
 
 // storePubKeyring overwrites the public keyring with the listed keys
 func (keyring *Handle) storePubKeyring(keys openpgp.EntityList) error {
-	f, err := os.OpenFile(keyring.PublicPath(), os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0600)
+	mode := os.FileMode(0600)
+	if keyring.global {
+		mode = os.FileMode(0644)
+	}
+
+	f, err := createOrTruncateFile(keyring.PublicPath(), mode)
 	if err != nil {
 		return err
 	}
@@ -458,6 +527,10 @@ func (keyring *Handle) genKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, erro
 
 // GenKeyPair generates an PGP key pair and store them in the sypgp home folder
 func (keyring *Handle) GenKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, error) {
+	if keyring.global {
+		return nil, fmt.Errorf("operation not supported for global keyring")
+	}
+
 	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
 	}

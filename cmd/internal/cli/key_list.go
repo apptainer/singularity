@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2017-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -7,12 +8,12 @@ package cli
 
 import (
 	"fmt"
-	"os"
-
-	"github.com/sylabs/singularity/pkg/cmdline"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
@@ -41,7 +42,7 @@ var KeyListCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := doKeyListCmd(secret); err != nil {
-			os.Exit(2)
+			sylog.Fatalf("While listing keys: %s", err)
 		}
 	},
 
@@ -52,13 +53,25 @@ var KeyListCmd = &cobra.Command{
 }
 
 func doKeyListCmd(secret bool) error {
-	keyring := sypgp.NewHandle("")
+	var opts []sypgp.HandleOpt
+	path := ""
+
+	if keyGlobalPubKey {
+		path = buildcfg.SINGULARITY_CONFDIR
+		opts = append(opts, sypgp.GlobalHandleOpt())
+	}
+
+	keyring := sypgp.NewHandle(path, opts...)
 	if !secret {
 		fmt.Printf("Public key listing (%s):\n\n", keyring.PublicPath())
-		keyring.PrintPubKeyring()
+		if err := keyring.PrintPubKeyring(); err != nil {
+			return fmt.Errorf("could not list public keys: %s", err)
+		}
 	} else {
 		fmt.Printf("Private key listing (%s):\n\n", keyring.SecretPath())
-		keyring.PrintPrivKeyring()
+		if err := keyring.PrintPrivKeyring(); err != nil {
+			return fmt.Errorf("could not list private keys: %s", err)
+		}
 	}
 
 	return nil

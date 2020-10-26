@@ -8,11 +8,15 @@ package cli
 
 import (
 	"errors"
+	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 const (
@@ -23,6 +27,7 @@ var (
 	keyServerURI        string // -u command line option
 	keySearchLongList   bool   // -l option for long-list
 	keyNewpairBitLength int    // -b option for bit length
+	keyGlobalPubKey     bool   // -g option to manage global public keys
 )
 
 // -u|--url
@@ -56,6 +61,16 @@ var keyNewpairBitLengthFlag = cmdline.Flag{
 	Usage:        "specify key bit length",
 }
 
+// -g|--global
+var keyGlobalPubKeyFlag = cmdline.Flag{
+	ID:           "keyGlobalPubKeyFlag",
+	Value:        &keyGlobalPubKey,
+	DefaultValue: false,
+	Name:         "global",
+	ShortHand:    "g",
+	Usage:        "manage global public keys (import/pull/remove are restricted to root user or unprivileged installation only)",
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(KeyCmd)
@@ -79,7 +94,20 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&keySearchLongListFlag, KeySearchCmd)
 		cmdManager.RegisterFlagForCmd(&keyNewpairBitLengthFlag, KeyNewPairCmd)
 		cmdManager.RegisterFlagForCmd(&keyImportWithNewPasswordFlag, KeyImportCmd)
+
+		cmdManager.RegisterFlagForCmd(
+			&keyGlobalPubKeyFlag,
+			KeyImportCmd, KeyExportCmd, KeyListCmd, KeyPullCmd, KeyPushCmd, KeyRemoveCmd,
+		)
 	})
+}
+
+func checkGlobal(cmd *cobra.Command, args []string) {
+	if !keyGlobalPubKey || os.Geteuid() == 0 || buildcfg.SINGULARITY_SUID_INSTALL == 0 {
+		return
+	}
+	path := cmd.CommandPath()
+	sylog.Fatalf("%q command with --global requires root privileges or an unprivileged installation", path)
 }
 
 // KeyCmd is the 'key' command that allows management of keyrings
@@ -92,7 +120,7 @@ var KeyCmd = &cobra.Command{
 
 	Use:           docs.KeyUse,
 	Short:         docs.KeyShort,
-	Long:          docs.KeyLong,
+	Long:          fmt.Sprintf(docs.KeyLong, buildcfg.SYSCONFDIR),
 	Example:       docs.KeyExample,
 	SilenceErrors: true,
 }
