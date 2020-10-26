@@ -59,9 +59,9 @@ Enterprise Performance Computing (EPC)`
   Targets can also be remote and defined by a URI of the following formats:
 
       library://  an image library (default https://cloud.sylabs.io/library)
-      docker://   a Docker registry (default Docker Hub)
+      docker://   a Docker/OCI registry (default Docker Hub)
       shub://     a Singularity registry (default Singularity Hub)
-      oras://     a supporting OCI registry`
+      oras://     an OCI registry that holds SIF files using ORAS`
 
 	BuildExample string = `
 
@@ -454,14 +454,16 @@ Enterprise Performance Computing (EPC)`
   instance://*        A local running instance of a container. (See the instance
                       command group.)
 
-  library://*         A container hosted on a Library (default 
-                      https://cloud.sylabs.io/library)
+  library://*         A SIF container hosted on a Library
+                      (default https://cloud.sylabs.io/library)
 
-  docker://*          A container hosted on Docker Hub
+  docker://*          A Docker/OCI container hosted on Docker Hub or another
+                      OCI registry.
 
-  shub://*            A container hosted on Singularity Hub
+  shub://*            A container hosted on Singularity Hub.
 
-  oras://*            A container hosted on a supporting OCI registry`
+  oras://*            A SIF container hosted on an OCI registry that supports
+                      the OCI Registry As Storage (ORAS) specification.`
 	ExecUse   string = `exec [exec options...] <container> <command>`
 	ExecShort string = `Run a command within a container`
 	ExecLong  string = `
@@ -579,13 +581,13 @@ Enterprise Performance Computing (EPC)`
   library: Pull an image from the currently configured library
       library://user/collection/container[:tag]
 
-  docker: Pull an image from Docker Hub
+  docker: Pull a Docker/OCI image from Docker Hub, or another OCI registry.
       docker://user/image:tag
     
   shub: Pull an image from Singularity Hub
       shub://user/image:tag
 
-  oras: Pull a SIF image from a supporting OCI registry
+  oras: Pull a SIF image from an OCI registry that supports ORAS.
       oras://registry/namespace/image:tag
 
   http, https: Pull an image using the http(s?) protocol
