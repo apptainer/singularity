@@ -40,8 +40,8 @@ type Shell struct {
 }
 
 // execTimeout defines the execution timeout for commands executed by the
-// shell interpreter.
-var execTimeout = 5 * time.Second
+// shell interpreter (default: 1 minute).
+var execTimeout = time.Minute
 
 // defaultExecHandler is the default command execution handler if there is
 // no registered shell builtin.
