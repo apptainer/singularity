@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	syoras "github.com/sylabs/singularity/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"golang.org/x/sys/unix"
 )
@@ -151,9 +152,18 @@ var tests = []testStruct{
 	// 	unauthenticated: false,
 	// 	expectSuccess:   true,
 	// },
+	// Finalized v1 layer mediaType (3.7 and onward)
 	{
 		desc:             "oras transport for SIF from registry",
 		srcURI:           "oras://localhost:5000/pull_test_sif:latest", // TODO(mem): obtain registry from context
+		force:            true,
+		unauthenticated:  false,
+		expectedExitCode: 0,
+	},
+	// Original/prototype layer mediaType (<3.7)
+	{
+		desc:             "oras transport for SIF from registry (SifLayerMediaTypeProto)",
+		srcURI:           "oras://localhost:5000/pull_test_sif_mediatypeproto:latest", // TODO(mem): obtain registry from context
 		force:            true,
 		unauthenticated:  false,
 		expectedExitCode: 0,
@@ -260,25 +270,34 @@ func (c *ctx) setup(t *testing.T) {
 	// Note: the image name prevents collisions by using a package specific name
 	// as the registry is shared between different test packages
 	orasImages := []struct {
-		srcPath string
-		uri     string
+		srcPath        string
+		uri            string
+		layerMediaType string
 	}{
 		{
-			srcPath: c.env.ImagePath,
-			uri:     fmt.Sprintf("%s/pull_test_sif:latest", c.env.TestRegistry),
+			srcPath:        c.env.ImagePath,
+			uri:            fmt.Sprintf("%s/pull_test_sif:latest", c.env.TestRegistry),
+			layerMediaType: syoras.SifLayerMediaTypeV1,
 		},
 		{
-			srcPath: orasInvalidDir,
-			uri:     fmt.Sprintf("%s/pull_test_dir:latest", c.env.TestRegistry),
+			srcPath:        c.env.ImagePath,
+			uri:            fmt.Sprintf("%s/pull_test_sif_mediatypeproto:latest", c.env.TestRegistry),
+			layerMediaType: syoras.SifLayerMediaTypeProto,
 		},
 		{
-			srcPath: orasInvalidFile,
-			uri:     fmt.Sprintf("%s/pull_test_invalid_file:latest", c.env.TestRegistry),
+			srcPath:        orasInvalidDir,
+			uri:            fmt.Sprintf("%s/pull_test_dir:latest", c.env.TestRegistry),
+			layerMediaType: syoras.SifLayerMediaTypeV1,
+		},
+		{
+			srcPath:        orasInvalidFile,
+			uri:            fmt.Sprintf("%s/pull_test_invalid_file:latest", c.env.TestRegistry),
+			layerMediaType: syoras.SifLayerMediaTypeV1,
 		},
 	}
 
 	for _, i := range orasImages {
-		err = orasPushNoCheck(i.srcPath, i.uri)
+		err = orasPushNoCheck(i.srcPath, i.uri, i.layerMediaType)
 		if err != nil {
 			t.Fatalf("while prepping registry for oras tests: %v", err)
 		}
@@ -371,7 +390,9 @@ func checkPullResult(t *testing.T, tt testStruct) {
 // this is a version of the oras push functionality that does not check that given the
 // file is a valid SIF, this allows us to push arbitrary objects to the local registry
 // to test the pull validation
-func orasPushNoCheck(file, ref string) error {
+// We can also set the layer mediaType - so we can push images with older media types
+// to verify that they can still be pulled.
+func orasPushNoCheck(file, ref, layerMediaType string) error {
 	ref = strings.TrimPrefix(ref, "//")
 
 	spec, err := reference.Parse(ref)
@@ -397,7 +418,7 @@ func orasPushNoCheck(file, ref string) error {
 	store := content.NewFileStore("")
 	defer store.Close()
 
-	conf, err := store.Add("$config", "application/vnd.sylabs.sif.config.v1+json", "/dev/null")
+	conf, err := store.Add("$config", syoras.SifConfigMediaTypeV1, "/dev/null")
 	if err != nil {
 		err = errors.Wrap(err, "adding manifest config to file store")
 		return fmt.Errorf("unable to add manifest config to FileStore: %+v", err)
@@ -406,7 +427,7 @@ func orasPushNoCheck(file, ref string) error {
 
 	// use last element of filepath as file name in annotation
 	fileName := filepath.Base(file)
-	desc, err := store.Add(fileName, "appliciation/vnd.sylabs.sif.layer.tar", file)
+	desc, err := store.Add(fileName, layerMediaType, file)
 	if err != nil {
 		err = errors.Wrap(err, "adding manifest SIF file to file store")
 		return fmt.Errorf("unable to add SIF file to FileStore: %+v", err)
