@@ -19,6 +19,7 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/build/types/parser"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/inspect"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -212,6 +213,20 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 
 	if err = getExistingLabels(labels, b); err != nil {
 		return err
+	}
+
+	// get labels added through SINGULARITY_LABELS environment variables
+	buildLabels := filepath.Join(b.RootfsPath, sLabelsPath)
+	content, err := ioutil.ReadFile(buildLabels)
+	if err == nil {
+		if err := os.Remove(filepath.Join(b.RootfsPath, sLabelsPath)); err != nil {
+			return err
+		}
+		for k, v := range parser.GetLabels(string(content)) {
+			labels[k] = v
+		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("while reading %s: %s", buildLabels, err)
 	}
 
 	if err = addBuildLabels(labels, b); err != nil {

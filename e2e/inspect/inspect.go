@@ -82,7 +82,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 				v = meta.Attributes.Apps[appName].Labels[label]
 			}
 			if v != out {
-				t.Errorf("unpexected %s label value, got %s instead of %s", label, out, v)
+				t.Errorf("unexpected %s label value, got %s instead of %s", label, out, v)
 			}
 		}
 	}
@@ -117,6 +117,16 @@ func (c ctx) singularityInspect(t *testing.T) {
 			name:      "label_hi",
 			insType:   "--labels",
 			compareFn: compareLabel("hi", "\"hello world\"", ""),
+		},
+		{
+			name:      "build_label_first",
+			insType:   "--labels",
+			compareFn: compareLabel("first.build.labels", "first", ""),
+		},
+		{
+			name:      "build_label_second",
+			insType:   "--labels",
+			compareFn: compareLabel("second.build.labels", "second", ""),
 		},
 		{
 			name:      "label_org.label-schema.usage",
