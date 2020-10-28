@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -275,24 +276,25 @@ func (keyring *Handle) LoadPubKeyring() (openpgp.EntityList, error) {
 // The key can be either a public or private key, and the file might be
 // in binary or ascii armored format.
 func loadKeysFromFile(fn string) (openpgp.EntityList, error) {
-	f, err := os.Open(fn)
+	// use an intermediary bytes.Reader to support key import from
+	// stdin for the seek operation below
+	data, err := ioutil.ReadFile(fn)
 	if err != nil {
 		return nil, err
 	}
+	buf := bytes.NewReader(data)
 
-	defer f.Close()
-
-	if entities, err := openpgp.ReadKeyRing(f); err == nil {
+	if entities, err := openpgp.ReadKeyRing(buf); err == nil {
 		return entities, nil
 	}
 
 	// cannot load keys from file, perhaps it's ascii armored?
 	// rewind and try again
-	if _, err := f.Seek(0, io.SeekStart); err != nil {
+	if _, err := buf.Seek(0, io.SeekStart); err != nil {
 		return nil, err
 	}
 
-	return openpgp.ReadArmoredKeyRing(f)
+	return openpgp.ReadArmoredKeyRing(buf)
 }
 
 // printEntity pretty prints an entity entry to w
