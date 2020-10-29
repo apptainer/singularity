@@ -25,7 +25,7 @@ func SetupDockerHubCredentials(t *testing.T) {
 	pass := os.Getenv("E2E_DOCKER_PASSWORD")
 
 	if username == "" && pass == "" {
-		t.Log("No DockerHub credentials supplied, DockerHub rate limits could be hit")
+		t.Fatal("No DockerHub credentials supplied, DockerHub rate limits could be hit")
 		return
 	}
 
