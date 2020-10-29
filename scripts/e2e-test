@@ -21,5 +21,5 @@ else
     procs=`getconf _NPROCESSORS_ONLN`
 fi
 
-export sudo_args="env -i PATH=$PATH HOME=$HOME SINGULARITY_E2E_COVERAGE=$SINGULARITY_E2E_COVERAGE"
+export sudo_args="env -i PATH=$PATH HOME=$HOME E2E_DOCKER_USERNAME=$E2E_DOCKER_USERNAME E2E_DOCKER_PASSWORD=$E2E_DOCKER_PASSWORD SINGULARITY_E2E_COVERAGE=$SINGULARITY_E2E_COVERAGE"
 exec scripts/go-test -sudo -parallel $procs -tags "e2e_test" "$@" ./e2e
