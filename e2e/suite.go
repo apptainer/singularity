@@ -115,6 +115,8 @@ func Run(t *testing.T) {
 	// create an empty ECL configuration and empty global keyring
 	e2e.SetupSystemECLAndGlobalKeyRing(t, testenv.TestDir)
 
+	e2e.SetupDockerHubCredentials(t)
+
 	// Ensure config files are installed
 	configFiles := []string{
 		sysconfdir("singularity.conf"),

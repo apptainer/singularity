@@ -31,5 +31,6 @@ if [ -n "$ALL_PROXY" -o -n "$HTTP_PROXY" -o -n "$HTTPS_PROXY" ]; then
 fi
 
 proxy_vars="HTTP_PROXY=$HTTP_PROXY HTTPS_PROXY=$HTTPS_PROXY ALL_PROXY=$ALL_PROXY NO_PROXY=$NO_PROXY"
+cred_vars="E2E_DOCKER_USERNAME=$E2E_DOCKER_USERNAME E2E_DOCKER_PASSWORD=$E2E_DOCKER_PASSWORD"
 export sudo_args="env -i PATH=$PATH HOME=$HOME $proxy_vars SINGULARITY_E2E_COVERAGE=$SINGULARITY_E2E_COVERAGE"
 exec scripts/go-test -sudo -parallel $procs -tags "e2e_test" "$@" ./e2e
