@@ -72,6 +72,12 @@ func getLibraries(binary string) ([]string, error) {
 	cmd.Stdout = buf
 	cmd.Stderr = errBuf
 
+	// set an empty environment as LD_LIBRARY_PATH
+	// may mix dependencies, just rely only on the library
+	// cache or its own lookup mechanism, see issue:
+	// https://github.com/hpcng/singularity/issues/5666
+	cmd.Env = []string{}
+
 	if err := cmd.Run(); err != nil {
 		return nil, fmt.Errorf("while getting library dependencies: %s\n%s", err, errBuf.String())
 	}
