@@ -16,21 +16,20 @@ import (
 	"path/filepath"
 
 	"github.com/sylabs/singularity/pkg/sylog"
+	"golang.org/x/sys/unix"
 )
 
 const (
 	stdinFile = "/proc/self/fd/0"
 )
 
-var cmdFunc func(unsquashfs string, dest string, filename string, rootless bool) (*exec.Cmd, error)
+var cmdFunc func(unsquashfs string, dest string, filename string, opts ...string) (*exec.Cmd, error)
 
 // unsquashfsCmd is the command instance for executing unsquashfs command
 // in a non sandboxed environment when this package is used for unit tests.
-func unsquashfsCmd(unsquashfs string, dest string, filename string, rootless bool) (*exec.Cmd, error) {
-	args := make([]string, 0)
-	if rootless {
-		args = append(args, "-user-xattrs")
-	}
+func unsquashfsCmd(unsquashfs string, dest string, filename string, opts ...string) (*exec.Cmd, error) {
+	args := []string{}
+	args = append(args, opts...)
 	// remove the destination directory if any, if the directory is
 	// not empty (typically during image build), the unsafe option -f is
 	// set, this is unfortunately required by image build
@@ -42,6 +41,7 @@ func unsquashfsCmd(unsquashfs string, dest string, filename string, rootless boo
 		args = append(args, "-f")
 	}
 	args = append(args, "-d", dest, filename)
+	sylog.Debugf("Calling %s %v", unsquashfs, args)
 	return exec.Command(unsquashfs, args...), nil
 }
 
@@ -94,37 +94,57 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) error 
 		}
 	}
 
-	// If we are running as non-root, first try with `-user-xattrs` so we won't fail trying
-	// to set system xatts. This isn't supported on unsquashfs 4.0 in RHEL6 so we
-	//  have to fall back to not using that option on failure.
-	if os.Geteuid() != 0 {
-		sylog.Debugf("Rootless extraction. Trying -user-xattrs for unsquashfs")
+	// First we try unsquashfs with appropriate xattr options.
+	// If we are in rootless mode we need "-user-xattrs" so we don't try to set system xattrs that require root.
+	// However...
+	//  1. This isn't supported on unsquashfs 4.0 in RHEL6 so we have to fall back to not using that option on failure.
+	//  2. Must check (user) xattrs are supported on the FS as unsquashfs >=4.4 will give a non-zero error code if
+	//	   it cannot set them, e.g. on tmpfs (#5668)
+	opts := []string{}
+	rootless := os.Geteuid() != 0
 
-		cmd, err := cmdFunc(s.UnsquashfsPath, dest, filename, true)
-		if err != nil {
-			return fmt.Errorf("command error: %s", err)
-		}
-		cmd.Args = append(cmd.Args, files...)
-		if stdin {
-			cmd.Stdin = reader
-		}
-
-		o, err := cmd.CombinedOutput()
-		if err == nil {
-			return nil
-		}
-
-		// Invalid options give output...
-		// SYNTAX: unsquashfs [options] filesystem [directories or files to extract]
-		if bytes.Contains(o, []byte("SYNTAX")) {
-			sylog.Warningf("unsquashfs does not support -user-xattrs. Images with system xattrs may fail to extract")
-		} else {
-			// A different error is fatal
-			return fmt.Errorf("extract command failed: %s: %s", string(o), err)
-		}
+	// Do we support user xattrs?
+	ok, err := TestUserXattr(filepath.Dir(dest))
+	if err != nil {
+		return err
+	}
+	// If we are in rootless mode & we support user xattrs, set -user-xattrs so that user xattrs are extracted, but
+	// system xattrs are ignored (needs root).
+	if ok && rootless {
+		opts = append(opts, "-user-xattrs")
+	}
+	// If user-xattrs aren't supported we need to disable setting of all xattrs.
+	if !ok {
+		opts = append(opts, "-no-xattrs")
+	}
+	// Now run unsquashfs with our 'best' options
+	sylog.Debugf("Trying unsquashfs options: %v", opts)
+	cmd, err := cmdFunc(s.UnsquashfsPath, dest, filename, opts...)
+	if err != nil {
+		return fmt.Errorf("command error: %s", err)
+	}
+	cmd.Args = append(cmd.Args, files...)
+	if stdin {
+		cmd.Stdin = reader
 	}
 
-	cmd, err := cmdFunc(s.UnsquashfsPath, dest, filename, false)
+	o, err := cmd.CombinedOutput()
+	if err == nil {
+		return nil
+	}
+
+	// Invalid options give output...
+	// SYNTAX: unsquashfs [options] filesystem [directories or files to extract]
+	if bytes.Contains(o, []byte("SYNTAX")) {
+		sylog.Warningf("unsquashfs does not support %v. Images with xattrs may fail to extract", opts)
+	} else {
+		// A different error is fatal
+		return fmt.Errorf("extract command failed: %s: %s", string(o), err)
+	}
+
+	// Now we fall back to running without additional xattr options - to do the best we can on old 4.0 squashfs that
+	// does not support them.
+	cmd, err = cmdFunc(s.UnsquashfsPath, dest, filename)
 	if err != nil {
 		return fmt.Errorf("command error: %s", err)
 	}
@@ -151,4 +171,18 @@ func (s *Squashfs) ExtractFiles(files []string, reader io.Reader, dest string) e
 		return fmt.Errorf("no files to extract")
 	}
 	return s.extract(files, reader, dest)
+}
+
+// TestUserXattr tries to set a user xattr on PATH to ensure they are supported on this fs
+func TestUserXattr(path string) (ok bool, err error) {
+	tmp, err := ioutil.TempFile(path, "uxattr-")
+	defer os.Remove(tmp.Name())
+	tmp.Close()
+	err = unix.Setxattr(tmp.Name(), "user.singularity", []byte{}, 0)
+	if err == unix.ENOTSUP || err == unix.EOPNOTSUPP {
+		return false, nil
+	} else if err != nil {
+		return false, fmt.Errorf("while testing user xattr support at %s: %v", tmp.Name(), err)
+	}
+	return true, nil
 }

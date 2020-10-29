@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 func init() {
@@ -108,7 +109,7 @@ func getLibraries(binary string) ([]string, error) {
 
 // unsquashfsSandboxCmd is the command instance for executing unsquashfs command
 // in a sandboxed environment with singularity.
-func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, rootless bool) (*exec.Cmd, error) {
+func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, opts ...string) (*exec.Cmd, error) {
 	const (
 		// will contain both dest and filename inside the sandbox
 		rootfsImageDir = "/image"
@@ -216,14 +217,14 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, rootl
 
 	// unsquashfs execution arguments
 	args = append(args, unsquashfs)
-	if rootless {
-		args = append(args, "-user-xattrs")
-	}
+	args = append(args, opts...)
+
 	if overwrite {
 		args = append(args, "-f")
 	}
 	args = append(args, "-d", rootfsDest, filename)
 
+	sylog.Debugf("Calling wrapped unsquashfs: singularity %v", args)
 	cmd := exec.Command(filepath.Join(buildcfg.BINDIR, "singularity"), args...)
 	cmd.Dir = "/"
 	cmd.Env = []string{
