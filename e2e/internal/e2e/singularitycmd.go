@@ -565,6 +565,14 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 			cmd.Env = append(cmd.Env, fmt.Sprintf("PWD=%s", cmd.Dir))
 		}
 
+		// propagate proxy environment variables
+		for _, env := range []string{"HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY"} {
+			val := os.Getenv(env)
+			if val != "" {
+				cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", env, val))
+			}
+		}
+
 		cmd.Stdin = s.stdin
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
