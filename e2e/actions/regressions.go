@@ -6,6 +6,7 @@
 package actions
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -566,5 +567,30 @@ func (c actionTests) issue5465(t *testing.T) {
 		e2e.WithCommand("exec"),
 		e2e.WithArgs("--contain", sandbox, "true"),
 		e2e.ExpectExit(0),
+	)
+}
+
+// Check that flag / env var binds are passed in $SINGULARITY_BIND in the
+// conainer. Sometimes used by containers that require data to be bound in to a
+// location etc., and was present in older versions of Singularity.
+func (c actionTests) issue5599(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-5599-", "")
+	defer e2e.Privileged(cleanup)(t)
+	// Binds from env var and flag are additive
+	envBind := tmpDir + ":/srv"
+	bindEnv := "SINGULARITY_BIND=" + envBind
+	flagBind := tmpDir + ":/mnt"
+	expectedEnv := fmt.Sprintf("SINGULARITY_BIND=%s,%s", flagBind, envBind)
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithEnv(append(os.Environ(), bindEnv)),
+		e2e.WithArgs("--bind", flagBind, c.env.ImagePath, "/usr/bin/env"),
+		e2e.ExpectExit(0,
+			e2e.ExpectOutput(e2e.ContainMatch, expectedEnv),
+		),
 	)
 }
