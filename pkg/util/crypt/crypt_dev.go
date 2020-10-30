@@ -20,7 +20,7 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
 	"github.com/sylabs/singularity/pkg/util/loop"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	// "github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // Device describes a crypt device
@@ -41,8 +41,9 @@ var (
 // device and sets the sizelimit on it
 func createLoop(path string, offset, size uint64) (string, error) {
 	loopDev := &loop.Device{
-		MaxLoopDevices: int(singularityconf.GetCurrentConfig().MaxLoopDevices),
-		Shared:         true,
+		MaxLoopDevices: 256,
+		// MaxLoopDevices: int(singularityconf.GetCurrentConfig().MaxLoopDevices),
+		Shared: true,
 		Info: &loop.Info64{
 			SizeLimit: size,
 			Offset:    offset,

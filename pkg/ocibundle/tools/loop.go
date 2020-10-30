@@ -10,15 +10,16 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/pkg/util/loop"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	// "github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // CreateLoop associates a file to loop device and returns
 // path of loop device used
 func CreateLoop(file *os.File, offset, size uint64) (string, error) {
 	loopDev := &loop.Device{
-		MaxLoopDevices: int(singularityconf.GetCurrentConfig().MaxLoopDevices),
-		Shared:         true,
+		MaxLoopDevices: 256,
+		// MaxLoopDevices: int(singularityconf.GetCurrentConfig().MaxLoopDevices),
+		Shared: true,
 		Info: &loop.Info64{
 			SizeLimit: size,
 			Offset:    offset,
