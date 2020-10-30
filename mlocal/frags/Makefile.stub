@@ -49,6 +49,15 @@ unit-test:
 		./...
 	@echo "       PASS"
 
+.PHONY: short-unit-test
+short-unit-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(BUILDDIR_ABSPATH)/unit-test.xml)
+short-unit-test:
+	@echo " TEST sudo go test [unit]"
+	$(V)cd $(SOURCEDIR) && \
+		scripts/go-test -sudo -v -short $(EXTRA_FLAGS) \
+		./...
+	@echo "       PASS"
+
 
 .PHONY: e2e-test
 e2e-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(BUILDDIR_ABSPATH)/e2e-test.xml)
