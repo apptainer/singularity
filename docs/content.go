@@ -644,11 +644,13 @@ Enterprise Performance Computing (EPC)`
 	SearchUse   string = `search [search options...] <search_query>`
 	SearchShort string = `Search a Container Library for images`
 	SearchLong  string = `
-  Search a Container Library for users and containers matching the search query.
-  (default cloud.sylabs.io)`
+  Search a Container Library for container images matching the search query.
+  (default cloud.sylabs.io). You can specify an alternate architecture, and/or limit
+  the results to only signed images.`
 	SearchExample string = `
   $ singularity search lolcow
-  $ singularity search centos`
+  $ singularity search --arch arm64 alpine
+  $ singularity search --signed tensorflow`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// run

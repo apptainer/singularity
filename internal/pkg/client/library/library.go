@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -18,6 +19,10 @@ import (
 )
 
 const defaultTag = "latest"
+
+// Default empty description set by older pushes, which is not informative to display
+// Comparison will be lower case as the GUI / code has used different capitalisation through time.
+const noDescription = "no description"
 
 // NormalizeLibraryRef strips off leading "library://" prefix, if any, and
 // appends the default tag (latest) if none specified.
@@ -75,13 +80,18 @@ func DownloadImageNoProgress(ctx context.Context, c *scslibrary.Client, imagePat
 }
 
 // SearchLibrary searches the library and outputs results to stdout
-func SearchLibrary(ctx context.Context, c *scslibrary.Client, value string) error {
+func SearchLibrary(ctx context.Context, c *scslibrary.Client, value, arch string, signed bool) error {
 	if len(value) < 3 {
 		return fmt.Errorf("bad query '%s'. You must search for at least 3 characters", value)
 	}
 
 	searchSpec := map[string]string{
 		"value": value,
+		"arch":  arch,
+	}
+
+	if signed {
+		searchSpec["signed"] = "true"
 	}
 
 	results, err := c.Search(ctx, searchSpec)
@@ -89,45 +99,30 @@ func SearchLibrary(ctx context.Context, c *scslibrary.Client, value string) erro
 		return err
 	}
 
-	numEntities := len(results.Entities)
-	numCollections := len(results.Collections)
-	numContainers := len(results.Containers)
+	numImages := len(results.Images)
 
-	if numEntities > 0 {
-		fmt.Printf("Found %d users for '%s'\n", numEntities, value)
-		for _, ent := range results.Entities {
-			fmt.Printf("\t%s\n", ent.LibraryURI())
-		}
-		fmt.Printf("\n")
-	} else {
-		fmt.Printf("No users found for '%s'\n\n", value)
-	}
-
-	if numCollections > 0 {
-		fmt.Printf("Found %d collections for '%s'\n", numCollections, value)
-		for _, col := range results.Collections {
-			fmt.Printf("\t%s\n", col.LibraryURI())
-		}
-		fmt.Printf("\n")
-	} else {
-		fmt.Printf("No collections found for '%s'\n\n", value)
-	}
-
-	if numContainers > 0 {
-		fmt.Printf("Found %d containers for '%s'\n", numContainers, value)
-		for _, con := range results.Containers {
-			fmt.Printf("\t%s\n", con.LibraryURI())
-			if len(con.ImageTags) != 0 {
-				fmt.Printf("\t\tTags: %s\n", con.TagList())
-			} else if len(con.Images) > 0 {
-				fmt.Printf("\t\tImage ID: %s (no tag)\n", con.Images)
+	if numImages > 0 {
+		imageList := []string{}
+		for _, img := range results.Images {
+			tagSpec := img.Hash
+			if len(img.Tags) > 0 {
+				tagSpec = strings.Join(img.Tags, ",")
 			}
-			fmt.Printf("\n")
+			imageItem := fmt.Sprintf("\tlibrary://%s/%s/%s:%s", img.EntityName, img.CollectionName, img.ContainerName, tagSpec)
+			if img.Description != "" && strings.ToLower(img.Description) != noDescription {
+				imageItem = imageItem + fmt.Sprintf("\n\t\t%s", img.Description)
+			}
+			if len(img.Fingerprints) > 0 {
+				imageItem = imageItem + fmt.Sprintf("\n\t\tSigned by: %s", strings.Join(img.Fingerprints, ","))
+			}
+			imageList = append(imageList, imageItem)
 		}
+		sort.Strings(imageList)
+		fmt.Printf("Found %d container images for %s matching %q:\n\n", numImages, arch, value)
+		fmt.Println(strings.Join(imageList, "\n\n"))
 		fmt.Printf("\n")
-
 	} else {
-		fmt.Printf("No containers found for '%s'\n\n", value)
+		fmt.Printf("No container images found for %s matching %q.\n\n", arch, value)
 	}
 
 	return nil
