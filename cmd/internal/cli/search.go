@@ -8,6 +8,7 @@ package cli
 
 import (
 	"context"
+	"runtime"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
@@ -21,6 +22,10 @@ import (
 var (
 	// SearchLibraryURI holds the base URI to a Sylabs library API instance
 	SearchLibraryURI string
+	// SearchArch holds the architecture for images to display in search results
+	SearchArch string
+	// SearchSigned is set true to only search for signed containers
+	SearchSigned bool
 )
 
 // --library
@@ -33,11 +38,33 @@ var searchLibraryFlag = cmdline.Flag{
 	EnvKeys:      []string{"LIBRARY"},
 }
 
+// --arch
+var searchArchFlag = cmdline.Flag{
+	ID:           "searchArchFlag",
+	Value:        &SearchArch,
+	DefaultValue: runtime.GOARCH,
+	Name:         "arch",
+	Usage:        "architecture to search for",
+	EnvKeys:      []string{"SEARCH_ARCH"},
+}
+
+// --signed
+var searchSignedFlag = cmdline.Flag{
+	ID:           "searchSignedFlag",
+	Value:        &SearchSigned,
+	DefaultValue: false,
+	Name:         "signed",
+	Usage:        "architecture to search for",
+	EnvKeys:      []string{"SEARCH_SIGNED"},
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(SearchCmd)
 
 		cmdManager.RegisterFlagForCmd(&searchLibraryFlag, SearchCmd)
+		cmdManager.RegisterFlagForCmd(&searchArchFlag, SearchCmd)
+		cmdManager.RegisterFlagForCmd(&searchSignedFlag, SearchCmd)
 	})
 }
 
@@ -58,7 +85,7 @@ var SearchCmd = &cobra.Command{
 			sylog.Fatalf("Error initializing library client: %v", err)
 		}
 
-		if err := library.SearchLibrary(ctx, libraryClient, args[0]); err != nil {
+		if err := library.SearchLibrary(ctx, libraryClient, args[0], SearchArch, SearchSigned); err != nil {
 			sylog.Fatalf("Couldn't search library: %v", err)
 		}
 
