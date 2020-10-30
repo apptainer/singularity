@@ -113,7 +113,7 @@ func RemoteStatus(usrConfigFile, name string) (err error) {
 	}
 	tw.Flush()
 
-	return nil
+	return doTokenCheck(e)
 }
 
 func doStatusCheck(name string, sp endpoint.Service) *status {
@@ -126,4 +126,18 @@ func doStatusCheck(name string, sp endpoint.Service) *status {
 		return &status{name: name, uri: uri, status: "N/A"}
 	}
 	return &status{name: name, uri: uri, status: "OK", version: version}
+}
+
+func doTokenCheck(e *endpoint.Config) error {
+	if e.Token == "" {
+		fmt.Println("\nNo authentication token set (logged out).")
+		return nil
+	}
+	if err := e.VerifyToken(""); err != nil {
+		fmt.Println("\nAuthentication token is invalid (please login again).")
+		return err
+
+	}
+	fmt.Println("\nValid authentication token set (logged in).")
+	return nil
 }
