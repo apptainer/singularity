@@ -20,6 +20,27 @@ _The old changelog can be found in the `release-2.6` branch_
     setting a default 0022 umask.
 
 
+# v3.6.4 - [2020-10-13]
+
+## Security related fixes
+
+Singularity 3.6.4 addresses the following security issue.
+
+  - [CVE-2020-15229](https://github.com/hpcng/singularity/security/advisories/GHSA-7gcp-w6ww-2xv9):
+    Due to insecure handling of path traversal and the lack of path
+    sanitization within unsquashfs (a distribution provided utility
+    used by Singularity), it is possible to overwrite/create files on
+    the host filesystem during the extraction of a crafted squashfs
+    filesystem. Affects unprivileged execution of SIF / SquashFS
+    images, and image builds from SIF / SquashFS images.
+
+## Bug Fixes
+
+  - Update scs-library-client to support `library://` backends using an
+    3rd party S3 object store that does not strictly conform to v4
+    signature spec.
+
+
 # v3.6.3 - [2020-09-15]
 
 ## Security related fixes
