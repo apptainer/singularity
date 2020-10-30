@@ -1,4 +1,12 @@
-#!/bin/bash -ex
+#!/bin/bash -e
+
+if [[ ! -z "$E2E_DOCKER_USERNAME" && ! -z "$E2E_DOCKER_PASSWORD" ]]; then
+    docker login --username $E2E_DOCKER_USERNAME --password $E2E_DOCKER_PASSWORD
+    function logout {
+        docker logout
+    }
+    trap logout EXIT
+fi
 
 # Run docker as shown at
 #  https://djw8605.github.io/2016/05/03/building-centos-packages-on-travisci/
@@ -13,7 +21,8 @@ if [[ "$OS_TYPE" = "opensuse" ]]; then
 else
     DOCKER_HUB_URI="${OS_TYPE}:$OS_VERSION"
 fi
-sudo docker pull "$DOCKER_HUB_URI"
+
+docker pull "$DOCKER_HUB_URI"
 
 # Mount /var/run/docker.sock and set --network=host so we can call docker from inside
 # cause some tests need it. Cannot mount to /var/run/docker.sock inside cause CentOS
@@ -26,7 +35,10 @@ else
 fi
 DOCKER_CONTAINER_NAME="test_${OS_TYPE}_${OS_VERSION}"
 
-docker run --privileged -ti --network=host -v "$(pwd):/build:rw"  \
+docker run --privileged -ti --network=host \
+  -e E2E_DOCKER_USERNAME=$E2E_DOCKER_USERNAME \
+  -e E2E_DOCKER_PASSWORD=$E2E_DOCKER_PASSWORD \
+  -v "$(pwd):/build:rw"  \
   --name "$DOCKER_CONTAINER_NAME" "$DOCKER_HUB_URI" /bin/bash -exc \
 	"cd /build && scripts/ci-rpm-build-test $OS_TYPE $OS_VERSION"
 

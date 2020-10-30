@@ -38,7 +38,10 @@ x-run:
   buildtest_rpm: &buildtest_rpm
     name: Build and test rpm under docker
     no_output_timeout: 10m
-    command: scripts/ci-docker-run
+    command: |-
+      export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
+      export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
+      scripts/ci-docker-run
 
   build_singularity: &build_singularity
     name: Build Singularity
@@ -81,6 +84,9 @@ jobs:
   check_go_mod:
     docker:
       - image: golang:1.14
+        auth:
+          username: $CIRCLE_CI_DOCKER_USERNAME
+          password: $CIRCLE_CI_DOCKER_PASSWORD
     steps:
       - checkout
       - run:
@@ -90,6 +96,9 @@ jobs:
   go114-stretch:
     docker:
       - image: golang:1.14-stretch
+        auth:
+          username: $CIRCLE_CI_DOCKER_USERNAME
+          password: $CIRCLE_CI_DOCKER_PASSWORD
     steps:
       - checkout
       - run:
@@ -103,6 +112,9 @@ jobs:
   go114-alpine:
     docker:
       - image: golang:1.14-alpine
+        auth:
+          username: $CIRCLE_CI_DOCKER_USERNAME
+          password: $CIRCLE_CI_DOCKER_PASSWORD
     steps:
       - checkout
       - run:
@@ -163,7 +175,7 @@ jobs:
       - run:
           <<: *buildtest_rpm
 
-  unit_tests:
+  short_unit_tests:
     <<: *vm_defaults
     steps:
       - checkout
@@ -180,7 +192,7 @@ jobs:
       - run:
           name: Run unit tests
           command: |-
-            make -C ./builddir unit-test
+            make -C ./builddir short-unit-test
 
   short_integration_tests:
     <<: *vm_defaults
@@ -224,7 +236,10 @@ jobs:
           name: Run E2E tests
           no_output_timeout: 35m
           command: |-
-            export E2E_PARALLEL=8 && make -C ./builddir e2e-test
+            export E2E_PARALLEL=8 && \
+            export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
+            export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
+            make -C ./builddir e2e-test
       - store_artifacts:
           path: builddir/e2e-cmd-report.txt
 
@@ -238,6 +253,6 @@ workflows:
       - check_go_mod
       - rpmbuild-centos7
       - rpmbuild-centos8
-      - unit_tests
+      - short_unit_tests
       - short_integration_tests
       - e2e_tests
