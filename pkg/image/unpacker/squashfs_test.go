@@ -37,13 +37,27 @@ func isExist(path string) bool {
 }
 
 func TestSquashfs(t *testing.T) {
+	// Run on default TMPDIR which is unlikely to be a tmpfs but may be.
+	t.Run("default", func(t *testing.T) {
+		testSquashfs(t, "")
+	})
+	// Run on /dev/shm which should be a tmpfs - catches #5668
+	t.Run("dev_shm", func(t *testing.T) {
+		if _, err := os.Stat("/dev/shm"); err != nil {
+			t.Skipf("Could not access /dev/shm")
+		}
+		testSquashfs(t, "/dev/shm")
+	})
+}
+
+func testSquashfs(t *testing.T, tmpParent string) {
 	s := NewSquashfs()
 
 	if !s.HasUnsquashfs() {
-		t.SkipNow()
+		t.Skip("unsquashfs not found")
 	}
 
-	dir, err := ioutil.TempDir("", "unpacker-")
+	dir, err := ioutil.TempDir(tmpParent, "unpacker-")
 	if err != nil {
 		t.Fatal(err)
 	}

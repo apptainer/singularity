@@ -450,3 +450,23 @@ func (c *imgBuildTests) issue5250(t *testing.T) {
 		),
 	)
 }
+
+// Check that unsquashfs (SIF -> sandbox) works on a tmpfs, that will not support
+// user xattrs. Our home dir in the e2e test is a tmpfs bound over our real home dir
+// so we can use that.
+func (c *imgBuildTests) issue5668(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("Could not get home dir: %v", err)
+	}
+	sbDir, sbCleanup := e2e.MakeTempDir(t, home, "issue-5668-", "")
+	defer e2e.Privileged(sbCleanup)(t)
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", sbDir, c.env.ImagePath),
+		e2e.ExpectExit(0),
+	)
+}
