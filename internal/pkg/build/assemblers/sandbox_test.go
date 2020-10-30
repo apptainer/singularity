@@ -25,6 +25,10 @@ const (
 
 // TestSandboxAssemblerDocker sees if we can build a sandbox from an image from a Docker registry
 func TestSandboxAssemblerDocker(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-sandboxAssembler"), os.TempDir())
 	if err != nil {
 		t.Fatalf("unable to make bundle: %v", err)
@@ -68,6 +72,10 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 
 // TestSandboxAssemblerShub sees if we can build a sandbox from an image from a Singularity registry
 func TestSandboxAssemblerShub(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	// TODO(mem): reenable this; disabled while shub is down
 	t.Skip("Skipping tests that access singularity hub")
 
