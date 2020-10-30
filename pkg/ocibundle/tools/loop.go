@@ -9,17 +9,33 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/pkg/util/loop"
-	// "github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
+
+func getMaxLoopDevices() int {
+	// if the caller has set the current config use it
+	// otherwise parse the default configuration file
+	cfg := singularityconf.GetCurrentConfig()
+	if cfg == nil {
+		var err error
+
+		configFile := buildcfg.SINGULARITY_CONF_FILE
+		cfg, err = singularityconf.Parse(configFile)
+		if err != nil {
+			return 256
+		}
+	}
+	return int(cfg.MaxLoopDevices)
+}
 
 // CreateLoop associates a file to loop device and returns
 // path of loop device used
 func CreateLoop(file *os.File, offset, size uint64) (string, error) {
 	loopDev := &loop.Device{
-		MaxLoopDevices: 256,
-		// MaxLoopDevices: int(singularityconf.GetCurrentConfig().MaxLoopDevices),
-		Shared: true,
+		MaxLoopDevices: getMaxLoopDevices(),
+		Shared:         true,
 		Info: &loop.Info64{
 			SizeLimit: size,
 			Offset:    offset,
