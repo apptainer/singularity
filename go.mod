@@ -51,10 +51,10 @@ require (
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go.opencensus.io v0.22.2 // indirect
 	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9
-	golang.org/x/sys v0.0.0-20200810151505-1b9f1253b3ed
+	golang.org/x/sys v0.0.0-20201029080932-201ba4db2418
 	gopkg.in/yaml.v2 v2.3.0
 	gotest.tools/v3 v3.0.3
-	mvdan.cc/sh/v3 v3.1.2
+	mvdan.cc/sh/v3 v3.2.0
 	rsc.io/letsencrypt v0.0.3 // indirect
 )
 
