@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	keyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/scs-library-client/client"
@@ -37,6 +38,8 @@ type LibraryPushSpec struct {
 	Description string
 	// AllowUnsigned must be set to true to allow push of an unsigned container image to succeed
 	AllowUnsigned bool
+	// FrontendURI is the URI for the frontend (ie. https://cloud.sylabs.io)
+	FrontendURI string
 }
 
 type progressCallback struct {
@@ -114,7 +117,25 @@ func LibraryPush(ctx context.Context, pushSpec LibraryPushSpec, libraryConfig *c
 	}
 	defer f.Close()
 
-	return libraryClient.UploadImage(ctx, f, r.Host+r.Path, arch, r.Tags, pushSpec.Description, &progressCallback{})
+	resp, err := libraryClient.UploadImage(ctx, f, r.Host+r.Path, arch, r.Tags, pushSpec.Description, &progressCallback{})
+	if err != nil {
+		return err
+	}
+
+	// if the container already existed in the library, no upload was performed, so skip display
+	if resp != nil {
+		used, quota := resp.Quota.QuotaUsageBytes, resp.Quota.QuotaTotalBytes
+
+		if quota == 0 {
+			fmt.Printf("\nLibrary storage: using %s out of unlimited quota\n", findSize(used))
+		} else {
+			fmt.Printf("\nLibrary storage: using %s out of %s quota (%.1f%% used)\n", findSize(used), findSize(quota), float64(used)/float64(quota)*100.0)
+		}
+
+		fmt.Printf("Container URL: %s\n", pushSpec.FrontendURI+"/"+strings.TrimPrefix(resp.ContainerURL, "/"))
+	}
+
+	return nil
 }
 
 func sifArch(filename string) (string, error) {

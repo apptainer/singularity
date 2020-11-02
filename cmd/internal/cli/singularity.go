@@ -654,3 +654,7 @@ func getBuilderClientConfig(uri string) (*scsbuildclient.Config, error) {
 
 	return currentRemoteEndpoint.BuilderClientConfig(uri)
 }
+
+func URI() string {
+	return "https://" + strings.TrimSuffix(currentRemoteEndpoint.URI, "/")
+}

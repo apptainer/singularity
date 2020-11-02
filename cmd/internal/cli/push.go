@@ -112,6 +112,7 @@ var PushCmd = &cobra.Command{
 				DestRef:       dest,
 				Description:   pushDescription,
 				AllowUnsigned: unsignedPush,
+				FrontendURI:   URI(),
 			}
 
 			err = singularity.LibraryPush(ctx, pushSpec, lc, kc)
