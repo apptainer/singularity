@@ -42,7 +42,7 @@ require (
 	github.com/sylabs/json-resp v0.7.0
 	github.com/sylabs/scs-build-client v0.1.5
 	github.com/sylabs/scs-key-client v0.5.1
-	github.com/sylabs/scs-library-client v0.5.7
+	github.com/sylabs/scs-library-client v0.5.8
 	github.com/sylabs/sif v1.2.1
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
