@@ -86,7 +86,7 @@ func LibraryPush(ctx context.Context, pushSpec LibraryPushSpec, libraryConfig *c
 			return ErrLibraryUnsigned
 		}
 	} else {
-		sylog.Warningf("Skipping container verifying")
+		sylog.Warningf("Skipping container verification")
 	}
 
 	libraryClient, err := client.NewClient(libraryConfig)
