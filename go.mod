@@ -58,4 +58,7 @@ require (
 	rsc.io/letsencrypt v0.0.3 // indirect
 )
 
-replace golang.org/x/crypto => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
+replace (
+	github.com/sylabs/scs-library-client => ../scs-library-client
+	golang.org/x/crypto => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
+)

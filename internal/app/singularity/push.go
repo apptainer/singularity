@@ -40,14 +40,15 @@ type LibraryPushSpec struct {
 }
 
 type progressCallback struct {
-	bar *mpb.Bar
-	r   io.Reader
+	progress *mpb.Progress
+	bar      *mpb.Bar
+	r        io.Reader
 }
 
 func (c *progressCallback) InitUpload(totalSize int64, r io.Reader) {
 	// create bar
-	p := mpb.New()
-	c.bar = p.AddBar(totalSize,
+	c.progress = mpb.New()
+	c.bar = c.progress.AddBar(totalSize,
 		mpb.PrependDecorators(
 			decor.Counters(decor.UnitKiB, "%.1f / %.1f"),
 		),
@@ -64,7 +65,13 @@ func (c *progressCallback) GetReader() io.Reader {
 	return c.r
 }
 
+func (c *progressCallback) Terminate() {
+	c.bar.Abort(true)
+}
+
 func (c *progressCallback) Finish() {
+	// wait for our bar to complete and flush
+	c.progress.Wait()
 }
 
 // LibraryPush will upload an image file according to the provided LibraryPushSpec
