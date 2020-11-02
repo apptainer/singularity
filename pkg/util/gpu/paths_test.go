@@ -17,11 +17,12 @@ import (
 )
 
 const testLibFile = "testdata/testliblist.conf"
+
 var testLibList = []string{"libc.so", "echo"}
 
 func TestElfMachine(t *testing.T) {
 	gotMachine, err := elfMachine()
-	if (err != nil) {
+	if err != nil {
 		t.Errorf("elfMachine() error = %v", err)
 		return
 	}
@@ -32,7 +33,7 @@ func TestElfMachine(t *testing.T) {
 
 func TestLdCache(t *testing.T) {
 	gotCache, err := ldCache()
-	if (err != nil) {
+	if err != nil {
 		t.Errorf("ldCache() error = %v", err)
 		return
 	}
@@ -40,7 +41,7 @@ func TestLdCache(t *testing.T) {
 		t.Error("ldCache() gave no results")
 	}
 	for path, name := range gotCache {
-		if strings.HasPrefix(name, "ld-linux"){
+		if strings.HasPrefix(name, "ld-linux") {
 			if strings.Contains(path, "ld-linux") {
 				return
 			}
@@ -49,17 +50,16 @@ func TestLdCache(t *testing.T) {
 	t.Error("ldCache() result did not include expected ld-linux entry")
 }
 
-
 func Test_gpuliblist(t *testing.T) {
 	gotLibs, err := gpuliblist(testLibFile)
-	if (err != nil) {
+	if err != nil {
 		t.Errorf("gpuliblist() error = %v", err)
 		return
 	}
 	if len(gotLibs) == 0 {
 		t.Error("gpuliblist() gave no results")
 	}
-	if !reflect.DeepEqual(gotLibs, testLibList){
+	if !reflect.DeepEqual(gotLibs, testLibList) {
 		t.Errorf("gpuliblist() gave unexpected results, got: %v expected: %v", gotLibs, testLibList)
 	}
 }
@@ -71,7 +71,7 @@ func TestSoLinks(t *testing.T) {
 	// a.so.2 -> b.so
 	//   - this should *not* get included, as it doesn't resolve back to a.so
 	tmpDir, err := ioutil.TempDir("", "test-solinks")
-	if err != nil{
+	if err != nil {
 		t.Fatalf("Could not create tempDir: %v", err)
 	}
 	aFile := filepath.Join(tmpDir, "a.so")
@@ -80,33 +80,33 @@ func TestSoLinks(t *testing.T) {
 	if err := ioutil.WriteFile(aFile, nil, 0o644); err != nil {
 		t.Fatalf("Could not create file: %v", err)
 	}
-	if err := os.Symlink(aFile, a1Link); err != nil{
+	if err := os.Symlink(aFile, a1Link); err != nil {
 		t.Fatalf("Could not symlink: %v", err)
 	}
-	if err := os.Symlink(aFile, a12Link); err != nil{
+	if err := os.Symlink(aFile, a12Link); err != nil {
 		t.Fatalf("Could not symlink: %v", err)
 	}
 	bFile := filepath.Join(tmpDir, "b.so")
 	err = ioutil.WriteFile(bFile, nil, 0o644)
-	if err != nil{
+	if err != nil {
 		t.Fatalf("Could not create file: %v", err)
 	}
 	a2Link := filepath.Join(tmpDir, "a.so.2")
-	if err := os.Symlink(bFile, a2Link); err != nil{
+	if err := os.Symlink(bFile, a2Link); err != nil {
 		t.Fatalf("Could not symlink: %v", err)
 	}
 
 	expectedLinks := []string{a1Link, a12Link}
 
 	gotLinks, err := soLinks(aFile)
-	if (err != nil) {
+	if err != nil {
 		t.Errorf("soLinks() error = %v", err)
 		return
 	}
 	if len(gotLinks) == 0 {
 		t.Error("soLinks() gave no results")
 	}
-	if !reflect.DeepEqual(gotLinks, expectedLinks){
+	if !reflect.DeepEqual(gotLinks, expectedLinks) {
 		t.Errorf("soList() gave unexpected results, got: %v expected: %v", gotLinks, expectedLinks)
 	}
 
@@ -115,7 +115,7 @@ func TestSoLinks(t *testing.T) {
 func TestPaths(t *testing.T) {
 	// Very naive sanity test. Check we can find one lib and one binary without error
 	gotLibs, gotBin, err := paths(testLibList)
-	if (err != nil) {
+	if err != nil {
 		t.Errorf("paths() error = %v", err)
 		return
 	}

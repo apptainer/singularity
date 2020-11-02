@@ -570,36 +570,6 @@ func (c actionTests) issue5465(t *testing.T) {
 	)
 }
 
-// Check that we fall back to system ldconfig if a non-working one is on PATH
-func (c actionTests) issue5002(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
-
-	// Create a dummy ldconfig that doesn't work
-	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-5631-", "")
-	defer e2e.Privileged(cleanup)(t)
-	fakeLdconfig := filepath.Join(tmpDir, "ldconfig")
-	err := fs.EnsureFileWithPermission(fakeLdconfig, 0755)
-	if err != nil {
-		t.Fatalf("Could not create fake ldconfig: %s", err)
-	}
-
-	pathEnv := os.Getenv("PATH")
-	env := os.Environ()
-	env = append(env, fmt.Sprintf("PATH=%s:%s", tmpDir, pathEnv))
-
-	// Make sure we fall back to system ldconfig okay
-	c.env.RunSingularity(
-		t,
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("exec"),
-		e2e.WithEnv(env),
-		e2e.WithArgs("--nv", c.env.ImagePath, "/bin/true"),
-		e2e.ExpectExit(0,
-			e2e.ExpectError(e2e.ContainMatch, "trying /sbin/ldconfig"),
-		),
-	)
-}
-
 // Check that flag / env var binds are passed in $SINGULARITY_BIND in the
 // container. Sometimes used by containers that require data to be bound in to a
 // location etc., and was present in older versions of Singularity.

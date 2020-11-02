@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019,2020 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -28,6 +28,7 @@ import (
 	"github.com/sylabs/singularity/e2e/docker"
 	"github.com/sylabs/singularity/e2e/ecl"
 	singularityenv "github.com/sylabs/singularity/e2e/env"
+	"github.com/sylabs/singularity/e2e/gpu"
 	"github.com/sylabs/singularity/e2e/help"
 	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/e2e/inspect"
@@ -171,6 +172,7 @@ func Run(t *testing.T) {
 	suite.AddGroup("DOCKER", docker.E2ETests)
 	suite.AddGroup("ECL", ecl.E2ETests)
 	suite.AddGroup("ENV", singularityenv.E2ETests)
+	suite.AddGroup("GPU", gpu.E2ETests)
 	suite.AddGroup("HELP", help.E2ETests)
 	suite.AddGroup("INSPECT", inspect.E2ETests)
 	suite.AddGroup("INSTANCE", instance.E2ETests)

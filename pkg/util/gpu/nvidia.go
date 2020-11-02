@@ -9,11 +9,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/sylabs/singularity/pkg/sylog"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // NvidiaPaths returns a list of Nvidia libraries/binaries that should be
@@ -95,12 +96,12 @@ func nvidiaContainerCli(args ...string) ([]string, error) {
 		}
 		if strings.Contains(line, ".so") {
 			// Handle the library reported by nvidia-container-cli
-			libs = append(libs,line)
+			libs = append(libs, line)
 			// Look for and add any symlinks for this library
 			soPath := strings.SplitAfter(line, ".so")[0]
 			soPaths, err := soLinks(soPath)
 			if err != nil {
-				sylog.Errorf("while finding links for %s:", soPath, err)
+				sylog.Errorf("while finding links for %s: %v", soPath, err)
 			}
 			libs = append(libs, soPaths...)
 		} else {
