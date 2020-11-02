@@ -17,7 +17,7 @@ require (
 	github.com/containernetworking/plugins v0.8.7
 	github.com/containers/image/v5 v5.6.0
 	github.com/deislabs/oras v0.8.1
-	github.com/fatih/color v1.9.0
+	github.com/fatih/color v1.10.0
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/go-log/log v0.2.0
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
