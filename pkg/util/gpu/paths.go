@@ -19,6 +19,8 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
+const systemLdconfig = "/sbin/ldconfig"
+
 // nvidiaContainerCli runs `nvidia-container-cli list` and returns list of
 // libraries, ipcs and binaries for proper NVIDIA work. This may return duplicates!
 func nvidiaContainerCli(args ...string) ([]string, error) {
@@ -160,14 +162,15 @@ func paths(gpuFileList []string) ([]string, []string, error) {
 	// walk through the ldconfig output and add entries which contain the filenames
 	// returned by nvidia-container-cli OR the nvliblist.conf file contents
 	ldConfig, err := exec.LookPath("ldconfig")
-	if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
-		sylog.Debugf("Could not find ldconfig in PATH")
-		ldConfig = "ldconfig"
-	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not lookup ldconfig: %v", err)
 	}
 	out, err := exec.Command(ldConfig, "-p").Output()
+	// #5002 If we failed and our ldconfig is not in standard POSIX location, try that
+	if err != nil && ldConfig != systemLdconfig {
+		sylog.Warningf("%s failed - trying %s", ldConfig, systemLdconfig)
+		out, err = exec.Command(systemLdconfig, "-p").Output()
+	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not execute ldconfig: %v", err)
 	}
