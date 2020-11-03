@@ -24,7 +24,7 @@ const (
 
 // findSize takes a size in bytes and converts it to a human-readable string representation
 // expressing kB, MB, GB or TB (whatever is smaller, but still larger than one).
-func findSize(size int64) string {
+func FindSize(size int64) string {
 	var factor float64
 	var unit string
 	switch {
@@ -70,7 +70,7 @@ func listTypeCache(printList bool, name, cachePath string) (int, int64, error) {
 			fmt.Printf("%-24.22s %-22s %-16s %s\n",
 				entry.Name(),
 				entry.ModTime().Format("2006-01-02 15:04:05"),
-				findSize(entry.Size()),
+				FindSize(entry.Size()),
 				name)
 		}
 		totalSize += entry.Size()
@@ -154,18 +154,18 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 	out := new(strings.Builder)
 	out.WriteString("There are")
 	if containersShown {
-		fmt.Fprintf(out, " %d container file(s) using %s", containerCount, findSize(containerSpace))
+		fmt.Fprintf(out, " %d container file(s) using %s", containerCount, FindSize(containerSpace))
 	}
 	if containersShown && blobsShown {
 		fmt.Fprintf(out, " and")
 	}
 	if blobsShown {
-		fmt.Fprintf(out, " %d oci blob file(s) using %s", blobCount, findSize(blobSpace))
+		fmt.Fprintf(out, " %d oci blob file(s) using %s", blobCount, FindSize(blobSpace))
 	}
 	out.WriteString(" of space\n")
 
 	fmt.Print(out.String())
-	fmt.Printf("Total space used: %s\n", findSize(totalSpace))
+	fmt.Printf("Total space used: %s\n", FindSize(totalSpace))
 
 	return nil
 }
