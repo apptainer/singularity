@@ -17,6 +17,7 @@ import (
 	keyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
@@ -127,9 +128,9 @@ func LibraryPush(ctx context.Context, pushSpec LibraryPushSpec, libraryConfig *c
 		used, quota := resp.Quota.QuotaUsageBytes, resp.Quota.QuotaTotalBytes
 
 		if quota == 0 {
-			fmt.Printf("\nLibrary storage: using %s out of unlimited quota\n", FindSize(used))
+			fmt.Printf("\nLibrary storage: using %s out of unlimited quota\n", fs.FindSize(used))
 		} else {
-			fmt.Printf("\nLibrary storage: using %s out of %s quota (%.1f%% used)\n", FindSize(used), FindSize(quota), float64(used)/float64(quota)*100.0)
+			fmt.Printf("\nLibrary storage: using %s out of %s quota (%.1f%% used)\n", fs.FindSize(used), fs.FindSize(quota), float64(used)/float64(quota)*100.0)
 		}
 
 		fmt.Printf("Container URL: %s\n", pushSpec.FrontendURI+"/"+strings.TrimPrefix(resp.ContainerURL, "/"))
