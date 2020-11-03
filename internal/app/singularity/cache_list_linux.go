@@ -22,7 +22,7 @@ const (
 	TiB = GiB * 1024
 )
 
-// findSize takes a size in bytes and converts it to a human-readable string representation
+// FindSize takes a size in bytes and converts it to a human-readable string representation
 // expressing kB, MB, GB or TB (whatever is smaller, but still larger than one).
 func FindSize(size int64) string {
 	var factor float64
