@@ -12,10 +12,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	keyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
@@ -37,17 +39,20 @@ type LibraryPushSpec struct {
 	Description string
 	// AllowUnsigned must be set to true to allow push of an unsigned container image to succeed
 	AllowUnsigned bool
+	// FrontendURI is the URI for the frontend (ie. https://cloud.sylabs.io)
+	FrontendURI string
 }
 
 type progressCallback struct {
-	bar *mpb.Bar
-	r   io.Reader
+	progress *mpb.Progress
+	bar      *mpb.Bar
+	r        io.Reader
 }
 
 func (c *progressCallback) InitUpload(totalSize int64, r io.Reader) {
 	// create bar
-	p := mpb.New()
-	c.bar = p.AddBar(totalSize,
+	c.progress = mpb.New()
+	c.bar = c.progress.AddBar(totalSize,
 		mpb.PrependDecorators(
 			decor.Counters(decor.UnitKiB, "%.1f / %.1f"),
 		),
@@ -64,7 +69,13 @@ func (c *progressCallback) GetReader() io.Reader {
 	return c.r
 }
 
+func (c *progressCallback) Terminate() {
+	c.bar.Abort(true)
+}
+
 func (c *progressCallback) Finish() {
+	// wait for our bar to complete and flush
+	c.progress.Wait()
 }
 
 // LibraryPush will upload an image file according to the provided LibraryPushSpec
@@ -107,7 +118,25 @@ func LibraryPush(ctx context.Context, pushSpec LibraryPushSpec, libraryConfig *c
 	}
 	defer f.Close()
 
-	return libraryClient.UploadImage(ctx, f, r.Host+r.Path, arch, r.Tags, pushSpec.Description, &progressCallback{})
+	resp, err := libraryClient.UploadImage(ctx, f, r.Host+r.Path, arch, r.Tags, pushSpec.Description, &progressCallback{})
+	if err != nil {
+		return err
+	}
+
+	// if the container already existed in the library, no upload was performed, so skip display
+	if resp != nil {
+		used, quota := resp.Quota.QuotaUsageBytes, resp.Quota.QuotaTotalBytes
+
+		if quota == 0 {
+			fmt.Printf("\nLibrary storage: using %s out of unlimited quota\n", fs.FindSize(used))
+		} else {
+			fmt.Printf("\nLibrary storage: using %s out of %s quota (%.1f%% used)\n", fs.FindSize(used), fs.FindSize(quota), float64(used)/float64(quota)*100.0)
+		}
+
+		fmt.Printf("Container URL: %s\n", pushSpec.FrontendURI+"/"+strings.TrimPrefix(resp.ContainerURL, "/"))
+	}
+
+	return nil
 }
 
 func sifArch(filename string) (string, error) {

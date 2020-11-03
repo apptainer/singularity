@@ -19,6 +19,13 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+const (
+	KiB = 1024
+	MiB = KiB * 1024
+	GiB = MiB * 1024
+	TiB = GiB * 1024
+)
+
 // Abs resolves a path to an absolute path.
 // The supplied path can not be an empty string.
 func Abs(path string) (string, error) {
@@ -573,4 +580,26 @@ func readDirNames(dirname string) ([]string, error) {
 	}
 	sort.Strings(names)
 	return names, nil
+}
+
+// FindSize takes a size in bytes and converts it to a human-readable string representation
+// expressing kB, MB, GB or TB (whatever is smaller, but still larger than one).
+func FindSize(size int64) string {
+	var factor float64
+	var unit string
+	switch {
+	case size < MiB:
+		factor = KiB
+		unit = "KiB"
+	case size < GiB:
+		factor = MiB
+		unit = "MiB"
+	case size < TiB:
+		factor = GiB
+		unit = "GiB"
+	default:
+		factor = TiB
+		unit = "TiB"
+	}
+	return fmt.Sprintf("%.2f %s", float64(size)/factor, unit)
 }

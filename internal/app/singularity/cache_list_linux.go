@@ -13,36 +13,8 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
-
-const (
-	KiB = 1024
-	MiB = KiB * 1024
-	GiB = MiB * 1024
-	TiB = GiB * 1024
-)
-
-// findSize takes a size in bytes and converts it to a human-readable string representation
-// expressing kB, MB, GB or TB (whatever is smaller, but still larger than one).
-func findSize(size int64) string {
-	var factor float64
-	var unit string
-	switch {
-	case size < MiB:
-		factor = KiB
-		unit = "KiB"
-	case size < GiB:
-		factor = MiB
-		unit = "MiB"
-	case size < TiB:
-		factor = GiB
-		unit = "GiB"
-	default:
-		factor = TiB
-		unit = "TiB"
-	}
-	return fmt.Sprintf("%.2f %s", float64(size)/factor, unit)
-}
 
 // listTypeCache will list a cache type with given name (cacheType). The options are 'library', and 'oci'.
 // Will return: the number of containers for that type (int), the total space the container type is using (int64),
@@ -70,7 +42,7 @@ func listTypeCache(printList bool, name, cachePath string) (int, int64, error) {
 			fmt.Printf("%-24.22s %-22s %-16s %s\n",
 				entry.Name(),
 				entry.ModTime().Format("2006-01-02 15:04:05"),
-				findSize(entry.Size()),
+				fs.FindSize(entry.Size()),
 				name)
 		}
 		totalSize += entry.Size()
@@ -154,18 +126,18 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 	out := new(strings.Builder)
 	out.WriteString("There are")
 	if containersShown {
-		fmt.Fprintf(out, " %d container file(s) using %s", containerCount, findSize(containerSpace))
+		fmt.Fprintf(out, " %d container file(s) using %s", containerCount, fs.FindSize(containerSpace))
 	}
 	if containersShown && blobsShown {
 		fmt.Fprintf(out, " and")
 	}
 	if blobsShown {
-		fmt.Fprintf(out, " %d oci blob file(s) using %s", blobCount, findSize(blobSpace))
+		fmt.Fprintf(out, " %d oci blob file(s) using %s", blobCount, fs.FindSize(blobSpace))
 	}
 	out.WriteString(" of space\n")
 
 	fmt.Print(out.String())
-	fmt.Printf("Total space used: %s\n", findSize(totalSpace))
+	fmt.Printf("Total space used: %s\n", fs.FindSize(totalSpace))
 
 	return nil
 }
