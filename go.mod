@@ -59,3 +59,5 @@ require (
 )
 
 replace golang.org/x/crypto => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
+
+replace github.com/sylabs/scs-key-client => github.com/tri-adam/scs-key-client v0.0.0-20201103205727-a2f10371de0a

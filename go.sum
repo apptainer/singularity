@@ -595,8 +595,6 @@ github.com/sylabs/json-resp v0.7.0 h1:h3jO5QZ+K8Zul4QtmTqEp5TTIUkmdcfz6CsdUceaSn
 github.com/sylabs/json-resp v0.7.0/go.mod h1:QYGGBTYDgiIH+c6zRQuVd4PIYfm//vFD2flnIdF1k7E=
 github.com/sylabs/scs-build-client v0.1.5 h1:MIizN9RNZOUwUMtypPYnTK10MC2wL0knk71bJrb5g04=
 github.com/sylabs/scs-build-client v0.1.5/go.mod h1:czsOuBuW6HWVL8poIp0klSE0gwWYqJo8bzNFYVhk1Rg=
-github.com/sylabs/scs-key-client v0.5.1 h1:Gig1O0Rs926UJtXyKJLAYn5Kn2Wmi3g5VupOWNizvnE=
-github.com/sylabs/scs-key-client v0.5.1/go.mod h1:iKD05EsmJMGaxKhcjjwh/thEShfaWmky1qo24zHE0pw=
 github.com/sylabs/scs-library-client v1.0.0 h1:Izrrn+zw97wfnq/tOIGVGzb8dTNga445KqNu3Z8VHh4=
 github.com/sylabs/scs-library-client v1.0.0/go.mod h1:DqZKmwqx8B3PbYS0YrETlCVUviOTz+ZQewoLqWjU2AI=
 github.com/sylabs/sif v1.2.1 h1:BvNER55n5ppPzVO8TFxADfM8xMaZKdHur7BR5Yf3leE=
@@ -615,6 +613,8 @@ github.com/tj/go-elastic v0.0.0-20171221160941-36157cbbebc2/go.mod h1:WjeM0Oo1eN
 github.com/tj/go-kinesis v0.0.0-20171128231115-08b17f58cb1b/go.mod h1:/yhzCV0xPfx6jb1bBgRFjl5lytqVqZXEaeqWP8lTEao=
 github.com/tj/go-spin v1.1.0/go.mod h1:Mg1mzmePZm4dva8Qz60H2lHwmJ2loum4VIrLgVnKwh4=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
+github.com/tri-adam/scs-key-client v0.0.0-20201103205727-a2f10371de0a h1:Q7D2jsGuTnyKJbT+ZsxAZEc9XbebCtSKTatB02KfQjc=
+github.com/tri-adam/scs-key-client v0.0.0-20201103205727-a2f10371de0a/go.mod h1:6qpocb6puLce1cwrxmSQ6iAhJOE3vkn/yAla6lnRhFA=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/ulikunitz/xz v0.5.8 h1:ERv8V6GKqVi23rgu5cj9pVfVzJbOqAY2Ntl88O6c2nQ=
