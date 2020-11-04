@@ -39,7 +39,7 @@ func (cp *ShubConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
-	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)
+	cp.LocalPacker, err = GetLocalPacker(ctx, imagePath, cp.b)
 
 	return err
 }

@@ -34,7 +34,7 @@ type LocalConveyorPacker struct {
 }
 
 // GetLocalPacker ...
-func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
+func GetLocalPacker(ctx context.Context, src string, b *types.Bundle) (LocalPacker, error) {
 
 	imageObject, err := image.Init(src, false)
 	if err != nil {
@@ -59,13 +59,13 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 		}
 		// Check if the SIF matches the `fingerprints:` specified in the build, if there are any
 		if len(fps) > 0 {
-			err := checkSIFFingerprint(src, fps, b.Opts.KeyServerConfig)
+			err := checkSIFFingerprint(ctx, src, fps, b.Opts.KeyServerConfig)
 			if err != nil {
 				return nil, fmt.Errorf("while checking fingerprint: %s", err)
 			}
 		} else {
 			// Otherwise do a verification and make failures warn, like for push
-			err := verifySIF(src, b.Opts.KeyServerConfig)
+			err := verifySIF(ctx, src, b.Opts.KeyServerConfig)
 			if err != nil {
 				sylog.Warningf("%s", err)
 				sylog.Warningf("Bootstrap image could not be verified, but build will continue.")
@@ -113,6 +113,6 @@ func (cp *LocalConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err er
 
 	cp.src = filepath.Clean(b.Recipe.Header["from"])
 
-	cp.LocalPacker, err = GetLocalPacker(cp.src, b)
+	cp.LocalPacker, err = GetLocalPacker(ctx, cp.src, b)
 	return err
 }

@@ -70,7 +70,7 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
-	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)
+	cp.LocalPacker, err = GetLocalPacker(ctx, imagePath, cp.b)
 
 	return err
 }
