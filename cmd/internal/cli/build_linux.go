@@ -271,7 +271,7 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		authToken = lc.AuthToken
 	}
 
-	kc, err := getKeyserverClientConfig(buildArgs.keyServerURL, endpoint.KeyserverVerifyOp)
+	co, err := getKeyserverClientOpts(buildArgs.keyServerURL, endpoint.KeyserverVerifyOp)
 	if err != nil {
 		sylog.Fatalf("Unable to get key server client configuration: %v", err)
 	}
@@ -301,7 +301,7 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 				NoHTTPS:           noHTTPS,
 				LibraryURL:        buildArgs.libraryURL,
 				LibraryAuthToken:  authToken,
-				KeyServerConfig:   kc,
+				KeyServerOpts:     co,
 				DockerAuthConfig:  authConf,
 				EncryptionKeyInfo: keyInfo,
 				FixPerms:          buildArgs.fixPerms,

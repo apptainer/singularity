@@ -586,7 +586,7 @@ func CheckRootOrUnpriv(cmd *cobra.Command, args []string) {
 	}
 }
 
-func getKeyserverClientConfig(uri string, op endpoint.KeyserverOp) (*scskeyclient.Config, error) {
+func getKeyserverClientOpts(uri string, op endpoint.KeyserverOp) ([]scskeyclient.Option, error) {
 	isDefault := uri == endpoint.SCSDefaultKeyserverURI
 
 	if currentRemoteEndpoint == nil {
@@ -606,7 +606,7 @@ func getKeyserverClientConfig(uri string, op endpoint.KeyserverOp) (*scskeyclien
 		uri = ""
 	}
 
-	return currentRemoteEndpoint.KeyserverClientConfig(uri, op)
+	return currentRemoteEndpoint.KeyserverClientOpts(uri, op)
 }
 
 func getLibraryClientConfig(uri string) (*scslibclient.Config, error) {

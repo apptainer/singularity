@@ -15,12 +15,12 @@ func init() {
 	useragent.InitValue("singularity", "3.0.0")
 }
 
-func TestKeyserverClientConfig(t *testing.T) {
+func TestKeyserverClientOpts(t *testing.T) {
 	tests := []struct {
 		name          string
 		endpoint      *Config
 		uri           string
-		expectedURI   string
+		expectedOpts  int
 		expectSuccess bool
 		op            KeyserverOp
 	}{
@@ -30,7 +30,7 @@ func TestKeyserverClientConfig(t *testing.T) {
 				URI: SCSDefaultCloudURI,
 			},
 			uri:           SCSDefaultKeyserverURI,
-			expectedURI:   SCSDefaultKeyserverURI,
+			expectedOpts:  3,
 			expectSuccess: true,
 			op:            KeyserverSearchOp,
 		},
@@ -51,7 +51,7 @@ func TestKeyserverClientConfig(t *testing.T) {
 				Exclusive: true,
 			},
 			uri:           SCSDefaultKeyserverURI,
-			expectedURI:   SCSDefaultKeyserverURI,
+			expectedOpts:  3,
 			expectSuccess: true,
 			op:            KeyserverSearchOp,
 		},
@@ -71,7 +71,7 @@ func TestKeyserverClientConfig(t *testing.T) {
 				},
 			},
 			uri:           "",
-			expectedURI:   "http://localhost:11371",
+			expectedOpts:  3,
 			expectSuccess: true,
 			op:            KeyserverVerifyOp,
 		},
@@ -90,7 +90,7 @@ func TestKeyserverClientConfig(t *testing.T) {
 				},
 			},
 			uri:           "",
-			expectedURI:   SCSDefaultKeyserverURI,
+			expectedOpts:  3,
 			expectSuccess: true,
 			op:            KeyserverSearchOp,
 		},
@@ -100,7 +100,7 @@ func TestKeyserverClientConfig(t *testing.T) {
 				URI: SCSDefaultCloudURI,
 			},
 			uri:           "https://custom.keys",
-			expectedURI:   "https://custom.keys",
+			expectedOpts:  3,
 			expectSuccess: true,
 			op:            KeyserverVerifyOp,
 		},
@@ -115,7 +115,7 @@ func TestKeyserverClientConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config, err := tt.endpoint.KeyserverClientConfig(tt.uri, tt.op)
+			co, err := tt.endpoint.KeyserverClientOpts(tt.uri, tt.op)
 			if err != nil && tt.expectSuccess {
 				t.Errorf("unexpected error: %s", err)
 			} else if err == nil && !tt.expectSuccess {
@@ -123,10 +123,8 @@ func TestKeyserverClientConfig(t *testing.T) {
 			} else if err != nil && !tt.expectSuccess {
 				return
 			}
-			if config.BaseURL != tt.expectedURI {
-				t.Errorf("unexpected uri returned: %s instead of %s", config.BaseURL, tt.expectedURI)
-			} else if config.AuthToken != "" {
-				t.Errorf("unexpected token returned: %s", config.AuthToken)
+			if len(co) != tt.expectedOpts {
+				t.Errorf("unexpected number of options: %v", len(co))
 			}
 		})
 	}
