@@ -16,18 +16,22 @@ import (
 	"path/filepath"
 
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"golang.org/x/sys/unix"
 )
 
 const (
 	stdinFile = "/proc/self/fd/0"
+
+	// exclude 'dev/' directory from extraction for non root users
+	excludeDevRegex = `^(.{0}[^d]|.{1}[^e]|.{2}[^v]|.{3}[^\x2f]).*$`
 )
 
-var cmdFunc func(unsquashfs string, dest string, filename string, opts ...string) (*exec.Cmd, error)
+var cmdFunc func(unsquashfs string, dest string, filename string, filter string, opts ...string) (*exec.Cmd, error)
 
 // unsquashfsCmd is the command instance for executing unsquashfs command
 // in a non sandboxed environment when this package is used for unit tests.
-func unsquashfsCmd(unsquashfs string, dest string, filename string, opts ...string) (*exec.Cmd, error) {
+func unsquashfsCmd(unsquashfs string, dest string, filename string, filter string, opts ...string) (*exec.Cmd, error) {
 	args := []string{}
 	args = append(args, opts...)
 	// remove the destination directory if any, if the directory is
@@ -40,7 +44,12 @@ func unsquashfsCmd(unsquashfs string, dest string, filename string, opts ...stri
 		// unsafe mode
 		args = append(args, "-f")
 	}
+
 	args = append(args, "-d", dest, filename)
+	if filter != "" {
+		args = append(args, filter)
+	}
+
 	sylog.Debugf("Calling %s %v", unsquashfs, args)
 	return exec.Command(unsquashfs, args...), nil
 }
@@ -62,7 +71,7 @@ func (s *Squashfs) HasUnsquashfs() bool {
 	return s.UnsquashfsPath != ""
 }
 
-func (s *Squashfs) extract(files []string, reader io.Reader, dest string) error {
+func (s *Squashfs) extract(files []string, reader io.Reader, dest string) (err error) {
 	if !s.HasUnsquashfs() {
 		return fmt.Errorf("could not extract squashfs data, unsquashfs not found")
 	}
@@ -117,9 +126,38 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) error 
 	if !ok {
 		opts = append(opts, "-no-xattrs")
 	}
+
+	// non real root users could not create pseudo devices so we compare
+	// the host UID (to include fake root user) and apply a filter at extraction (#5690)
+	hostuid, err := namespaces.HostUID()
+	if err != nil {
+		return fmt.Errorf("could not get host UID: %s", err)
+	}
+	filter := ""
+
+	// exclude dev directory only if there no specific files provided for extraction
+	// as globbing won't work with POSIX regex enabled
+	if hostuid != 0 && len(files) == 0 {
+		sylog.Debugf("Excluding /dev directory during root filesystem extraction (non root user)")
+		// filter requires POSIX regex
+		opts = append(opts, "-r")
+		filter = excludeDevRegex
+	}
+	defer func() {
+		if err != nil || filter == "" {
+			return
+		}
+		// create $rootfs/dev as it has been excluded
+		rootfsDev := filepath.Join(dest, "dev")
+		devErr := os.Mkdir(rootfsDev, 0755)
+		if devErr != nil && !os.IsExist(devErr) {
+			err = fmt.Errorf("could not create %s: %s", rootfsDev, devErr)
+		}
+	}()
+
 	// Now run unsquashfs with our 'best' options
 	sylog.Debugf("Trying unsquashfs options: %v", opts)
-	cmd, err := cmdFunc(s.UnsquashfsPath, dest, filename, opts...)
+	cmd, err := cmdFunc(s.UnsquashfsPath, dest, filename, filter, opts...)
 	if err != nil {
 		return fmt.Errorf("command error: %s", err)
 	}
@@ -144,7 +182,7 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) error 
 
 	// Now we fall back to running without additional xattr options - to do the best we can on old 4.0 squashfs that
 	// does not support them.
-	cmd, err = cmdFunc(s.UnsquashfsPath, dest, filename)
+	cmd, err = cmdFunc(s.UnsquashfsPath, dest, filter, filename)
 	if err != nil {
 		return fmt.Errorf("command error: %s", err)
 	}

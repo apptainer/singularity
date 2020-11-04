@@ -470,3 +470,28 @@ func (c *imgBuildTests) issue5668(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 }
+
+// Check that unsquashfs (for version >= 4.4) works for non root users when image contains
+// pseudo devices in /dev.
+func (c *imgBuildTests) issue5690(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	sandbox, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-5690-", "")
+	defer e2e.Privileged(cleanup)(t)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", sandbox, c.env.ImagePath),
+		e2e.ExpectExit(0),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", sandbox, c.env.ImagePath),
+		e2e.ExpectExit(0),
+	)
+}
