@@ -28,12 +28,12 @@ var KeyPullCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.TODO()
 
-		keyClient, err := getKeyserverClientConfig(keyServerURI, endpoint.KeyserverPullOp)
+		co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverPullOp)
 		if err != nil {
 			sylog.Fatalf("Keyserver client failed: %s", err)
 		}
 
-		if err := doKeyPullCmd(ctx, args[0], keyClient); err != nil {
+		if err := doKeyPullCmd(ctx, args[0], co...); err != nil {
 			sylog.Errorf("pull failed: %s", err)
 			os.Exit(2)
 		}
@@ -45,7 +45,7 @@ var KeyPullCmd = &cobra.Command{
 	Example: docs.KeyPullExample,
 }
 
-func doKeyPullCmd(ctx context.Context, fingerprint string, c *client.Config) error {
+func doKeyPullCmd(ctx context.Context, fingerprint string, co ...client.Option) error {
 	var count int
 	var opts []sypgp.HandleOpt
 	path := ""
@@ -60,7 +60,7 @@ func doKeyPullCmd(ctx context.Context, fingerprint string, c *client.Config) err
 	keyring := sypgp.NewHandle(path, opts...)
 
 	// get matching keyring
-	el, err := sypgp.FetchPubkey(ctx, c, fingerprint, false)
+	el, err := sypgp.FetchPubkey(ctx, fingerprint, false, co...)
 	if err != nil {
 		return fmt.Errorf("unable to pull key from server: %v", err)
 	}

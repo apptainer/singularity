@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"strings"
 
-	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"golang.org/x/crypto/openpgp"
@@ -34,7 +33,7 @@ type hybridKeyRing struct {
 
 // NewHybridKeyRing returns a keyring backed by both the local public keyring and the configured
 // keyserver.
-func NewHybridKeyRing(ctx context.Context, cfg *client.Config) (openpgp.KeyRing, error) {
+func NewHybridKeyRing(ctx context.Context, opts ...client.Option) (openpgp.KeyRing, error) {
 	// Get local keyring.
 	kr, err := PublicKeyRing()
 	if err != nil {
@@ -42,7 +41,7 @@ func NewHybridKeyRing(ctx context.Context, cfg *client.Config) (openpgp.KeyRing,
 	}
 
 	// Set up client to retrieve keys from keyserver.
-	c, err := client.NewClient(cfg)
+	c, err := client.NewClient(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -97,13 +96,10 @@ func (kr *hybridKeyRing) remoteEntitiesByID(id uint64) (openpgp.EntityList, erro
 	kt, err := kr.c.PKSLookup(kr.ctx, nil, fmt.Sprintf("%#x", id), client.OperationGet, false, true, nil)
 	if err != nil {
 		// If the request failed with HTTP status code unauthorized, guide the user to fix that.
-		var jerr *jsonresp.Error
-		if errors.As(err, &jerr) {
-			if jerr.Code == http.StatusUnauthorized {
-				sylog.Infof(helpAuth)
-			}
+		var httpError *client.HTTPError
+		if errors.As(err, &httpError) && httpError.Code() == http.StatusUnauthorized {
+			sylog.Infof(helpAuth)
 		}
-
 		return nil, err
 	}
 

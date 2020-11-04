@@ -63,7 +63,7 @@ func (m mockHKP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func Test_newVerifier(t *testing.T) {
-	cfg := client.Config{AuthToken: "token"}
+	opts := []client.Option{client.OptBearerToken("token")}
 
 	tests := []struct {
 		name         string
@@ -76,9 +76,9 @@ func Test_newVerifier(t *testing.T) {
 			wantVerifier: verifier{},
 		},
 		{
-			name:         "OptVerifyUseKeyServer",
-			opts:         []VerifyOpt{OptVerifyUseKeyServer(&cfg)},
-			wantVerifier: verifier{c: &cfg},
+			name:         "OptVerifyUseKeyServerOpts",
+			opts:         []VerifyOpt{OptVerifyUseKeyServer(opts...)},
+			wantVerifier: verifier{opts: opts},
 		},
 		{
 			name:         "OptVerifyGroup",
@@ -119,8 +119,6 @@ func Test_newVerifier(t *testing.T) {
 }
 
 func Test_verifier_getOpts(t *testing.T) {
-	cfg := client.Config{AuthToken: "token"}
-
 	emptyImage, err := sif.LoadContainer(filepath.Join("testdata", "images", "empty.sif"), true)
 	if err != nil {
 		t.Fatal(err)
@@ -146,9 +144,9 @@ func Test_verifier_getOpts(t *testing.T) {
 			name: "TLSRequired",
 			f:    &emptyImage,
 			v: verifier{
-				c: &client.Config{
-					BaseURL:   "hkp://pool.sks-keyservers.net",
-					AuthToken: "blah",
+				opts: []client.Option{
+					client.OptBaseURL("hkp://pool.sks-keyservers.net"),
+					client.OptBearerToken("blah"),
 				},
 			},
 			wantErr: client.ErrTLSRequired,
@@ -165,8 +163,12 @@ func Test_verifier_getOpts(t *testing.T) {
 			wantOpts: 1,
 		},
 		{
-			name:     "ClientConfig",
-			v:        verifier{c: &cfg},
+			name: "ClientConfig",
+			v: verifier{
+				opts: []client.Option{
+					client.OptBearerToken("token"),
+				},
+			},
 			f:        &oneGroupImage,
 			wantOpts: 1,
 		},
@@ -243,7 +245,7 @@ func TestVerify(t *testing.T) {
 	defer s.Close()
 
 	// Create an option that points to the mock HKP server.
-	keyServerOpt := OptVerifyUseKeyServer(&client.Config{BaseURL: s.URL})
+	keyServerOpt := OptVerifyUseKeyServer(client.OptBaseURL(s.URL))
 
 	tests := []struct {
 		name         string

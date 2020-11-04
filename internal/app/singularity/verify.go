@@ -21,7 +21,7 @@ import (
 type VerifyCallback func(*sif.FileImage, integrity.VerifyResult) bool
 
 type verifier struct {
-	c         *client.Config
+	opts      []client.Option
 	groupIDs  []uint32
 	objectIDs []uint32
 	all       bool
@@ -32,11 +32,11 @@ type verifier struct {
 // VerifyOpt are used to configure v.
 type VerifyOpt func(v *verifier) error
 
-// OptVerifyUseKeyServer specifies that the keyserver specified by c be used as a source of key
+// OptVerifyUseKeyServer specifies that the keyserver specified by opts be used as a source of key
 // material, in addition to the local public keyring.
-func OptVerifyUseKeyServer(c *client.Config) VerifyOpt {
+func OptVerifyUseKeyServer(opts ...client.Option) VerifyOpt {
 	return func(v *verifier) error {
-		v.c = c
+		v.opts = opts
 		return nil
 	}
 }
@@ -102,8 +102,8 @@ func (v verifier) getOpts(ctx context.Context, f *sif.FileImage) ([]integrity.Ve
 
 	// Add keyring.
 	var kr openpgp.KeyRing
-	if v.c != nil {
-		hkr, err := sypgp.NewHybridKeyRing(ctx, v.c)
+	if v.opts != nil {
+		hkr, err := sypgp.NewHybridKeyRing(ctx, v.opts...)
 		if err != nil {
 			return nil, err
 		}

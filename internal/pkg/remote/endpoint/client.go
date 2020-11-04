@@ -20,14 +20,9 @@ import (
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
-func (ep *Config) KeyserverClientConfig(uri string, op KeyserverOp) (*keyclient.Config, error) {
+func (ep *Config) KeyserverClientOpts(uri string, op KeyserverOp) ([]keyclient.Option, error) {
 	// empty uri means to use the default endpoint
 	isDefault := uri == ""
-
-	config := &keyclient.Config{
-		BaseURL:   uri,
-		UserAgent: useragent.Value(),
-	}
 
 	if err := ep.UpdateKeyserversConfig(); err != nil {
 		return nil, err
@@ -51,7 +46,7 @@ func (ep *Config) KeyserverClientConfig(uri string, op KeyserverOp) (*keyclient.
 	var keyservers []*ServiceConfig
 
 	if isDefault {
-		config.BaseURL = primaryKeyserver.URI
+		uri = primaryKeyserver.URI
 
 		if op == KeyserverVerifyOp {
 			// verify operation can query multiple keyserver, the token
@@ -92,9 +87,12 @@ func (ep *Config) KeyserverClientConfig(uri string, op KeyserverOp) (*keyclient.
 		}
 	}
 
-	config.HTTPClient = newClient(keyservers, op)
-
-	return config, nil
+	co := []keyclient.Option{
+		keyclient.OptBaseURL(uri),
+		keyclient.OptUserAgent(useragent.Value()),
+		keyclient.OptHTTPClient(newClient(keyservers, op)),
+	}
+	return co, nil
 }
 
 func (ep *Config) LibraryClientConfig(uri string) (*libclient.Config, error) {
