@@ -8,15 +8,20 @@ package singularity
 
 import (
 	"context"
-
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"encoding/hex"
+	"errors"
+	"strings"
 
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/sif/pkg/integrity"
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
 )
+
+// TODO - error overlaps with ECL - should probably become part of a common errors package at some point.
+var errNotSignedByRequired = errors.New("image not signed by required entities")
 
 type VerifyCallback func(*sif.FileImage, integrity.VerifyResult) bool
 
@@ -197,4 +202,64 @@ func Verify(ctx context.Context, path string, opts ...VerifyOpt) error {
 		return err
 	}
 	return iv.Verify()
+}
+
+// VerifyFingerprints verifies an image and checks it was signed by *all* of the provided fingerprints
+//
+// By default, the singularity public keyring provides key material. To supplement this with a
+// keyserver, use OptVerifyUseKeyServer.
+//
+// By default, non-legacy signatures for all object groups are verified. To override the default
+// behavior, consider using OptVerifyGroup, OptVerifyObject, OptVerifyAll, and/or OptVerifyLegacy.
+func VerifyFingerprints(ctx context.Context, path string, fingerprints []string, opts ...VerifyOpt) error {
+	v, err := newVerifier(opts)
+	if err != nil {
+		return err
+	}
+
+	// Load container.
+	f, err := sif.LoadContainer(path, true)
+	if err != nil {
+		return err
+	}
+	defer f.UnloadContainer()
+
+	// Get options to validate f.
+	vopts, err := v.getOpts(ctx, &f)
+	if err != nil {
+		return err
+	}
+
+	// Verify signature(s).
+	iv, err := integrity.NewVerifier(&f, vopts...)
+	if err != nil {
+		return err
+	}
+	err = iv.Verify()
+	if err != nil {
+		return err
+	}
+
+	// get signing entities fingerprints that have signed all selected objects
+	keyfps, err := iv.AllSignedBy()
+	if err != nil {
+		return err
+	}
+	// were the selected objects signed by the provided fingerprints?
+
+	m := map[string]bool{}
+	for _, v := range fingerprints {
+		m[v] = false
+		for _, u := range keyfps {
+			if strings.EqualFold(v, hex.EncodeToString(u[:])) {
+				m[v] = true
+			}
+		}
+	}
+	for _, v := range m {
+		if !v {
+			return errNotSignedByRequired
+		}
+	}
+	return nil
 }

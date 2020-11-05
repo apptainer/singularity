@@ -1,0 +1,3 @@
+from: /path/to/container/file/or/directory
+bootstrap: localimage
+fingerprint: 12045C8C0B1004D058DE4BEDA20C27EE7FF7BA84

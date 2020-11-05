@@ -15,6 +15,7 @@ import (
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
 	scsbuildclient "github.com/sylabs/scs-build-client/client"
+	scskeyclient "github.com/sylabs/scs-key-client/client"
 	scslibclient "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
@@ -27,20 +28,21 @@ import (
 )
 
 var buildArgs struct {
-	sections   []string
-	arch       string
-	builderURL string
-	libraryURL string
-	detached   bool
-	encrypt    bool
-	fakeroot   bool
-	fixPerms   bool
-	isJSON     bool
-	noCleanUp  bool
-	noTest     bool
-	remote     bool
-	sandbox    bool
-	update     bool
+	sections     []string
+	arch         string
+	builderURL   string
+	libraryURL   string
+	keyServerURL string
+	detached     bool
+	encrypt      bool
+	fakeroot     bool
+	fixPerms     bool
+	isJSON       bool
+	noCleanUp    bool
+	noTest       bool
+	remote       bool
+	sandbox      bool
+	update       bool
 }
 
 // -s|--sandbox
@@ -393,15 +395,19 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 	return nil, nil
 }
 
-// remote builds need to fail if we cannot resolve remote URLS
-func getBuildAndLibraryClientConfig(buildURI, libraryURI string) (*scsbuildclient.Config, *scslibclient.Config, error) {
+// get configuration for remote library, builder, keyserver that may be used in the build
+func getServiceConfigs(buildURI, libraryURI, keyserverURI string) (*scsbuildclient.Config, *scslibclient.Config, *scskeyclient.Config, error) {
 	lc, err := getLibraryClientConfig(libraryURI)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	bc, err := getBuilderClientConfig(buildURI)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return bc, lc, nil
+	kc, err := getKeyserverClientConfig(keyserverURI, endpoint.KeyserverVerifyOp)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return bc, lc, kc, nil
 }

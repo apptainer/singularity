@@ -368,7 +368,7 @@ func (b *Build) Full(ctx context.Context) error {
 		if update {
 			// updating, extract dest container to bundle
 			sylog.Infof("Building into existing container: %s", b.Conf.Dest)
-			p, err := sources.GetLocalPacker(b.Conf.Dest, stage.b)
+			p, err := sources.GetLocalPacker(ctx, b.Conf.Dest, stage.b)
 			if err != nil {
 				return err
 			}

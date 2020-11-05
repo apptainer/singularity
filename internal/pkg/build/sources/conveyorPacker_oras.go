@@ -39,6 +39,6 @@ func (cp *OrasConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
-	cp.LocalPacker, err = GetLocalPacker(imagePath, b)
+	cp.LocalPacker, err = GetLocalPacker(ctx, imagePath, b)
 	return err
 }

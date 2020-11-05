@@ -1,0 +1,57 @@
+{
+	"header": {
+		"bootstrap": "localimage",
+		"fingerprints": "12045C8C0B1004D058DE4BEDA20C27EE7FF7BA84,22045C8C0B1004D058DE4BEDA20C27EE7FF7BA84",
+		"from": "/path/to/container/file/or/directory"
+	},
+	"imageData": {
+		"metadata": null,
+		"labels": {},
+		"imageScripts": {
+			"help": {
+				"args": "",
+				"script": ""
+			},
+			"environment": {
+				"args": "",
+				"script": ""
+			},
+			"runScript": {
+				"args": "",
+				"script": ""
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			},
+			"startScript": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"buildData": {
+		"files": [],
+		"buildScripts": {
+			"pre": {
+				"args": "",
+				"script": ""
+			},
+			"setup": {
+				"args": "",
+				"script": ""
+			},
+			"post": {
+				"args": "",
+				"script": ""
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"customData": null,
+	"raw": "Qm9vdHN0cmFwOiBsb2NhbGltYWdlCkZyb206IC9wYXRoL3RvL2NvbnRhaW5lci9maWxlL29yL2RpcmVjdG9yeQpGaW5nZXJwcmludHM6IDEyMDQ1QzhDMEIxMDA0RDA1OERFNEJFREEyMEMyN0VFN0ZGN0JBODQsMjIwNDVDOEMwQjEwMDREMDU4REU0QkVEQTIwQzI3RUU3RkY3QkE4NAojIHNvbWUgY29tbWVudCAxCg==",
+	"appOrder": []
+}
