@@ -13,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+	"text/template"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -492,6 +493,63 @@ func (c *imgBuildTests) issue5690(t *testing.T) {
 		e2e.WithProfile(e2e.FakerootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs("--force", "--sandbox", sandbox, c.env.ImagePath),
+		e2e.ExpectExit(0),
+	)
+}
+
+func (c *imgBuildTests) issue3848(t *testing.T) {
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-3848-", "")
+	defer cleanup(t)
+
+	f, err := ioutil.TempFile(tmpDir, "test-def-")
+	if err != nil {
+		t.Fatalf("failed to open temp file: %v", err)
+	}
+	defer f.Close()
+
+	tmpfile, err := e2e.WriteTempFile(tmpDir, "test-file-", testFileContent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile) // clean up
+
+	d := struct {
+		File string
+	}{
+		File: tmpfile,
+	}
+
+	defTmpl := `Bootstrap: docker
+From: alpine:latest
+
+%files
+	{{ .File }}
+
+%files #  # from test
+	{{ .File }}
+
+%files #   #comment
+	{{ .File }}
+`
+
+	tmpl, err := template.New("test").Parse(defTmpl)
+	if err != nil {
+		t.Fatalf("while parsing pattern: %v", err)
+	}
+
+	if err := tmpl.Execute(f, d); err != nil {
+		t.Fatalf("failed to execute template: %v", err)
+	}
+
+	image := path.Join(tmpDir, "image.sif")
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(image, f.Name()),
+		e2e.PostRun(func(t *testing.T) {
+			os.Remove(image)
+		}),
 		e2e.ExpectExit(0),
 	)
 }

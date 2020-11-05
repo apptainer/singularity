@@ -1261,6 +1261,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"non-root build":                  c.nonRootBuild,              // build sifs from non-root
 		"build and update sandbox":        c.buildUpdateSandbox,        // build/update sandbox
 		"fingerprint check":               c.buildWithFingerprint,      // definition file includes fingerprint check
+		"issue 3848":                      c.issue3848,                 // https://github.com/hpcng/singularity/issues/3848
 		"issue 4203":                      c.issue4203,                 // https://github.com/sylabs/singularity/issues/4203
 		"issue 4407":                      c.issue4407,                 // https://github.com/sylabs/singularity/issues/4407
 		"issue 4524":                      c.issue4524,                 // https://github.com/sylabs/singularity/issues/4524
