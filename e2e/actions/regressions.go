@@ -624,3 +624,25 @@ func (c actionTests) issue5599(t *testing.T) {
 		),
 	)
 }
+
+// Check that unsquashfs (for version >= 4.4) works for non root users when image contains
+// pseudo devices in /dev.
+func (c actionTests) issue5690(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(c.env.ImagePath, "/bin/true"),
+		e2e.ExpectExit(0),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(c.env.ImagePath, "/bin/true"),
+		e2e.ExpectExit(0),
+	)
+}
