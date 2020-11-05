@@ -2097,7 +2097,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"issue 4797":            c.issue4797,           // https://github.com/sylabs/singularity/issues/4797
 		"issue 4823":            c.issue4823,           // https://github.com/sylabs/singularity/issues/4823
 		"issue 4836":            c.issue4836,           // https://github.com/sylabs/singularity/issues/4836
-		"issue 5002":            c.issue5002,           // https://github.com/sylabs/singularity/issues/5002
 		"issue 5211":            c.issue5211,           // https://github.com/sylabs/singularity/issues/5211
 		"issue 5228":            c.issue5228,           // https://github.com/sylabs/singularity/issues/5228
 		"issue 5271":            c.issue5271,           // https://github.com/sylabs/singularity/issues/5271
