@@ -34,6 +34,7 @@ var (
 	FuseMount          []string
 	SingularityEnv     []string
 	SingularityEnvFile string
+	NoMount            []string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -438,6 +439,17 @@ var actionNoHomeFlag = cmdline.Flag{
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
+// --no-mount
+var actionNoMountFlag = cmdline.Flag{
+	ID:           "actionNoMountFlag",
+	Value:        &NoMount,
+	DefaultValue: []string{},
+	Name:         "no-mount",
+	Usage:        "disable one or more mount xxx options set in singularity.conf",
+	EnvKeys:      []string{"NO_MOUNT"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
 // --no-init
 var actionNoInitFlag = cmdline.Flag{
 	ID:           "actionNoInitFlag",
@@ -690,6 +702,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionNetworkArgsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNetworkFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoHomeFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionNoMountFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoInitFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNONETFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoNvidiaFlag, actionsInstanceCmd...)
