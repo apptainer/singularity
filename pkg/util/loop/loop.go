@@ -10,6 +10,7 @@ type Device struct {
 	MaxLoopDevices int
 	Shared         bool
 	Info           *Info64
+	fd             *int
 }
 
 // Loop device flags values

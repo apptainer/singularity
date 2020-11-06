@@ -130,6 +130,8 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 		break
 	}
 
+	loop.fd = new(int)
+	*loop.fd = loopFd
 	return nil
 }
 
@@ -141,6 +143,14 @@ func (loop *Device) AttachFromPath(image string, mode int, number *int) error {
 		return err
 	}
 	return loop.AttachFromFile(file, mode, number)
+}
+
+// Close closes the loop device.
+func (loop *Device) Close() error {
+	if loop.fd != nil {
+		return syscall.Close(*loop.fd)
+	}
+	return nil
 }
 
 // GetStatusFromFd gets info status about an opened loop device
