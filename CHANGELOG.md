@@ -9,15 +9,105 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes since v3.6.4
+# v3.7.0-rc.1 Release Candidate - [2020-11-10]
+
+## New features / functionalities
+
+  - Allow configuration of global custom keyservers, separate from
+    remote endpoints.
+  - Add a new global keyring, for public keys only (used for ECL).
+  - The `remote login` commmand now suports authentication to Docker/OCI
+    registries and custom keyservers.
+  - New `--exclusive` option for `remote use` allows admin to lock usage
+    to a specific remote.
+  - A new `Fingerprints:` header in definition files will check that
+    a SIF source image can be verified, and is signed with keys
+    matching all specified fingerprints.
+  - Labels can be set dynamically from a build's `%post` section by
+    setting them in the `SINGULARITY_LABELS` environment variable.
+  - New `build-arch` label is automatically set to the architecure of
+    the host during a container build.
+  - New `-D/--description` flag for `singularity push` sets
+    description for a library container image.
+  - `singularity remote status` shows validity of authentication token if
+    set.
+  - `singularity push` reports quota usage and URL on successful push
+    to a library server that supports this.
+  - A new `--no-mount` flag for actions allows a user to disable
+    proc/sys/dev/devpts/home/tmp/hostfs/cwd mounts, even if they are
+    enabled in `singularity.conf`.
 
 ## Changed defaults / behaviours
 
-  - When actions (run/shell/exec...) are used without --fakeroot the
+  - When actions (run/shell/exec...) are used without `--fakeroot` the
     umask from the calling environment will be propagated into the
     container, so that files are created with expected permissions.
-    Use the `--no-umask` flag to return to the previous behaviour of
-    setting a default 0022 umask.
+    Use the new `--no-umask` flag to return to the previous behaviour
+    of setting a default 0022 umask.
+  - Container metadata, environment, scripts are recorded in a
+    descriptor in builds to SIF files, and `inspect` will use this if
+    present.
+  - The `--nv` flag for NVIDIA GPU support will not resolve libraries
+    reported by `nvidia-container-cli` via the ld cache. Will instead
+    respect absolute paths to libraries reported by the tool, and bind
+    all versioned symlinks to them.
+  - General re-work of the `remote login` flow, adds prompts and token
+    verification before replacing an existing authentication token.
+  - The Execution Control List (ECL) now verifies container
+    fingerprints using the new global keyring. Previously all users
+    would need relevant keys in their own keyring.
+  - The SIF layer mediatype for ORAS has been changed to
+    `application/vnd.sylabs.sif.layer.v1.sif` reflecting the published
+    [opencontainers/artifacts](https://github.com/opencontainers/artifacts/blob/master/artifact-authors.md#defining-layermediatypes)
+    value.
+  - `SINGULARITY_BIND` has been restored as an environment variable
+    set within a running container. It now reflects all user binds
+    requested by the `-B/--bind` flag, as well as via
+    `SINGULARITY_BIND[PATHS]`.
+  - `singularity search` now correctly searches for container images
+    matching the host architecture by default. A new `--arch` flag
+    allows searching for other architectures. A new results format
+    gives more detail about container image results, while users and
+    collections are no longer returned.
+
+## Bug Fixes
+
+  - Support larger definition files, environments etc. by passing
+    engine configuration in the environment vs. via socket buffer.
+  - Ensure `docker-daemon:` and other source operations respect
+    `SINGULARITY_TMPDIR` for all temporary files.
+  - Support double quoted filenames in the `%files` section of build
+    definitions.
+  - Correct `cache list` sizes to show KiB with powers of 1024,
+    matching `du` etc.
+  - Don't fail on `enable fusemount=no` when no fuse mounts are
+    needed.
+  - Pull OCI images to the correct requested location when the cache
+    is disabled.
+  - Ensure `Singularity>` prompt is set when container has no
+    environment script, or singularity is called through a wrapper
+    script.
+  - Avoid build failures in `yum/dnf` operations against the 'setup'
+    package on `RHEL/CentOS/Fedora` by ensuring staged `/etc/` files
+    do not match distro default content.
+  - Failed binds to `/etc/hosts` and `/etc/localtime` in a container
+    run with `--contain` are no longer fatal errors.
+  - Don't initialize the cache for actions where it is not required.
+  - Increase embedded shell interpreter timeout, to allow slow-running
+    environment scripts to complete.
+  - Correct buffer handling for key import to allow import from STDIN. 
+  - Reset environment to avoid `LD_LIBRARYPATH` issues when resolving
+    dependencies for the `unsquashfs` sandbox.
+  - Fall back to `/sbin/ldconfig` if `ldconfig` on `PATH` fails while
+    resolving GPU libraries. Fixes problems on systems using Nix /
+    Guix.
+  - Address issues caused by error code changes in `unsquashfs`
+    version 4.4.
+  - Ensure `/dev/kfd` is bound into container for ROCm when `--rocm`
+    is used with `--contain`.
+  - Tolerate comments on `%files` sections in build definition files.
+  - Fix a loop device file descriptor leak.
+  
 
 
 # v3.6.4 - [2020-10-13]
