@@ -25,12 +25,12 @@ var KeySearchCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.TODO()
 
-		keyClient, err := getKeyserverClientConfig(keyServerURI, endpoint.KeyserverSearchOp)
+		co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverSearchOp)
 		if err != nil {
 			sylog.Fatalf("Keyserver client failed: %s", err)
 		}
 
-		if err := doKeySearchCmd(ctx, args[0], keyClient); err != nil {
+		if err := doKeySearchCmd(ctx, args[0], co...); err != nil {
 			sylog.Errorf("search failed: %s", err)
 			os.Exit(2)
 		}
@@ -42,7 +42,7 @@ var KeySearchCmd = &cobra.Command{
 	Example: docs.KeySearchExample,
 }
 
-func doKeySearchCmd(ctx context.Context, search string, c *client.Config) error {
+func doKeySearchCmd(ctx context.Context, search string, co ...client.Option) error {
 	// get keyring with matching search string
-	return sypgp.SearchPubkey(ctx, c, search, keySearchLongList)
+	return sypgp.SearchPubkey(ctx, search, keySearchLongList, co...)
 }

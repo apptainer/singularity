@@ -155,12 +155,12 @@ func doVerifyCmd(cmd *cobra.Command, cpath string) {
 
 	// Set keyserver option, if applicable.
 	if !localVerify {
-		c, err := getKeyserverClientConfig(keyServerURI, endpoint.KeyserverVerifyOp)
+		co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverVerifyOp)
 		if err != nil {
 			sylog.Fatalf("Error while getting keyserver client config: %v", err)
 		}
 
-		opts = append(opts, singularity.OptVerifyUseKeyServer(c))
+		opts = append(opts, singularity.OptVerifyUseKeyServer(co...))
 	}
 
 	// Set group option, if applicable.

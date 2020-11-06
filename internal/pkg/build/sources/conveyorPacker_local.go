@@ -59,13 +59,13 @@ func GetLocalPacker(ctx context.Context, src string, b *types.Bundle) (LocalPack
 		}
 		// Check if the SIF matches the `fingerprints:` specified in the build, if there are any
 		if len(fps) > 0 {
-			err := checkSIFFingerprint(ctx, src, fps, b.Opts.KeyServerConfig)
+			err := checkSIFFingerprint(ctx, src, fps, b.Opts.KeyServerOpts...)
 			if err != nil {
 				return nil, fmt.Errorf("while checking fingerprint: %s", err)
 			}
 		} else {
 			// Otherwise do a verification and make failures warn, like for push
-			err := verifySIF(ctx, src, b.Opts.KeyServerConfig)
+			err := verifySIF(ctx, src, b.Opts.KeyServerOpts...)
 			if err != nil {
 				sylog.Warningf("%s", err)
 				sylog.Warningf("Bootstrap image could not be verified, but build will continue.")

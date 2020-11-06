@@ -26,7 +26,6 @@ import (
 	"text/tabwriter"
 	"time"
 
-	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
@@ -650,7 +649,7 @@ func formatMROutput(mrString string) (int, []byte, error) {
 }
 
 // SearchPubkey connects to a key server and searches for a specific key
-func SearchPubkey(ctx context.Context, clientConfig *client.Config, search string, longOutput bool) error {
+func SearchPubkey(ctx context.Context, search string, longOutput bool, opts ...client.Option) error {
 	// If the search term is 8+ hex chars then it's a fingerprint, and
 	// we need to prefix with 0x for the search.
 	var IsFingerprint = regexp.MustCompile(`^[0-9A-F]{8,}$`).MatchString
@@ -659,7 +658,7 @@ func SearchPubkey(ctx context.Context, clientConfig *client.Config, search strin
 	}
 
 	// Get a Key Service client.
-	c, err := client.NewClient(clientConfig)
+	c, err := client.NewClient(opts...)
 	if err != nil {
 		return err
 	}
@@ -675,11 +674,12 @@ func SearchPubkey(ctx context.Context, clientConfig *client.Config, search strin
 	// Retrieve first page of search results from Key Service.
 	keyText, err := c.PKSLookup(ctx, &pd, search, client.OperationIndex, true, false, options)
 	if err != nil {
-		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
+		var httpError *client.HTTPError
+		if ok := errors.As(err, &httpError); ok && httpError.Code() == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			sylog.Infof(helpAuth)
 			return fmt.Errorf("unauthorized or missing token")
-		} else if ok && jerr.Code == http.StatusNotFound {
+		} else if ok && httpError.Code() == http.StatusNotFound {
 			return fmt.Errorf("no matching keys found for fingerprint")
 		} else {
 			return fmt.Errorf("failed to get key: %v", err)
@@ -846,7 +846,7 @@ func formatMROutputLongList(mrString string) (int, []byte, error) {
 }
 
 // FetchPubkey pulls a public key from the Key Service.
-func FetchPubkey(ctx context.Context, clientConfig *client.Config, fingerprint string, noPrompt bool) (openpgp.EntityList, error) {
+func FetchPubkey(ctx context.Context, fingerprint string, noPrompt bool, opts ...client.Option) (openpgp.EntityList, error) {
 
 	// Decode fingerprint and ensure proper length.
 	var fp []byte
@@ -861,7 +861,7 @@ func FetchPubkey(ctx context.Context, clientConfig *client.Config, fingerprint s
 	}
 
 	// Get a Key Service client.
-	c, err := client.NewClient(clientConfig)
+	c, err := client.NewClient(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -869,11 +869,12 @@ func FetchPubkey(ctx context.Context, clientConfig *client.Config, fingerprint s
 	// Pull key from Key Service.
 	keyText, err := c.GetKey(ctx, fp)
 	if err != nil {
-		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
+		var httpError *client.HTTPError
+		if ok := errors.As(err, &httpError); ok && httpError.Code() == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			sylog.Infof(helpAuth)
 			return nil, fmt.Errorf("unauthorized or missing token")
-		} else if ok && jerr.Code == http.StatusNotFound {
+		} else if ok && httpError.Code() == http.StatusNotFound {
 			return nil, fmt.Errorf("no matching keys found for fingerprint")
 		} else {
 			return nil, fmt.Errorf("failed to get key: %v", err)
@@ -1160,21 +1161,22 @@ func (keyring *Handle) ImportKey(kpath string, setNewPassword bool) error {
 }
 
 // PushPubkey pushes a public key to the Key Service.
-func PushPubkey(ctx context.Context, clientConfig *client.Config, e *openpgp.Entity) error {
+func PushPubkey(ctx context.Context, e *openpgp.Entity, opts ...client.Option) error {
 	keyText, err := serializeEntity(e, openpgp.PublicKeyType)
 	if err != nil {
 		return err
 	}
 
 	// Get a Key Service client.
-	c, err := client.NewClient(clientConfig)
+	c, err := client.NewClient(opts...)
 	if err != nil {
 		return err
 	}
 
 	// Push key to Key Service.
 	if err := c.PKSAdd(ctx, keyText); err != nil {
-		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
+		var httpError *client.HTTPError
+		if errors.As(err, &httpError) && httpError.Code() == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			sylog.Infof(helpAuth+helpPush, e.PrimaryKey.Fingerprint)
 			return fmt.Errorf("unauthorized or missing token")

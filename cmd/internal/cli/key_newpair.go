@@ -115,12 +115,12 @@ func runNewPairCmd(cmd *cobra.Command, args []string) {
 	}
 
 	// Only connect to the endpoint if we are pushing the key.
-	keyClient, err := getKeyserverClientConfig(keyServerURI, endpoint.KeyserverPushOp)
+	co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverPushOp)
 	if err != nil {
 		sylog.Fatalf("Keyserver client failed: %s", err)
 	}
 
-	if err := sypgp.PushPubkey(ctx, keyClient, key); err != nil {
+	if err := sypgp.PushPubkey(ctx, key, co...); err != nil {
 		fmt.Printf("Failed to push newly created key to keystore: %s\n", err)
 	} else {
 		fmt.Printf("Key successfully pushed to: %s\n", keyServerURI)

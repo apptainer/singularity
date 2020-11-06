@@ -102,7 +102,7 @@ var PushCmd = &cobra.Command{
 				sylog.Fatalf("Cannot push image to library: %v", remoteWarning)
 			}
 
-			kc, err := getKeyserverClientConfig(endpoint.SCSDefaultKeyserverURI, endpoint.KeyserverVerifyOp)
+			co, err := getKeyserverClientOpts(endpoint.SCSDefaultKeyserverURI, endpoint.KeyserverVerifyOp)
 			if err != nil {
 				sylog.Fatalf("Unable to get keyserver client configuration: %v", err)
 			}
@@ -115,7 +115,7 @@ var PushCmd = &cobra.Command{
 				FrontendURI:   URI(),
 			}
 
-			err = singularity.LibraryPush(ctx, pushSpec, lc, kc)
+			err = singularity.LibraryPush(ctx, pushSpec, lc, co)
 			if err == singularity.ErrLibraryUnsigned {
 				fmt.Printf("TIP: You can push unsigned images with 'singularity push -U %s'.\n", file)
 				fmt.Printf("TIP: Learn how to sign your own containers by using 'singularity help sign'\n\n")

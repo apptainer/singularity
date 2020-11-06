@@ -396,7 +396,7 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 }
 
 // get configuration for remote library, builder, keyserver that may be used in the build
-func getServiceConfigs(buildURI, libraryURI, keyserverURI string) (*scsbuildclient.Config, *scslibclient.Config, *scskeyclient.Config, error) {
+func getServiceConfigs(buildURI, libraryURI, keyserverURI string) (*scsbuildclient.Config, *scslibclient.Config, []scskeyclient.Option, error) {
 	lc, err := getLibraryClientConfig(libraryURI)
 	if err != nil {
 		return nil, nil, nil, err
@@ -405,9 +405,9 @@ func getServiceConfigs(buildURI, libraryURI, keyserverURI string) (*scsbuildclie
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	kc, err := getKeyserverClientConfig(keyserverURI, endpoint.KeyserverVerifyOp)
+	co, err := getKeyserverClientOpts(keyserverURI, endpoint.KeyserverVerifyOp)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	return bc, lc, kc, nil
+	return bc, lc, co, nil
 }

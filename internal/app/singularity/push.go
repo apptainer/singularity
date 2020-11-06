@@ -80,7 +80,7 @@ func (c *progressCallback) Finish() {
 
 // LibraryPush will upload an image file according to the provided LibraryPushSpec
 // Before uploading, the image will be checked for a valid signature unless AllowUnsigned is true
-func LibraryPush(ctx context.Context, pushSpec LibraryPushSpec, libraryConfig *client.Config, keyConfig *keyclient.Config) error {
+func LibraryPush(ctx context.Context, pushSpec LibraryPushSpec, libraryConfig *client.Config, co []keyclient.Option) error {
 	if _, err := os.Stat(pushSpec.SourceFile); os.IsNotExist(err) {
 		return fmt.Errorf("unable to open: %v: %v", pushSpec.SourceFile, err)
 	}
@@ -92,7 +92,7 @@ func LibraryPush(ctx context.Context, pushSpec LibraryPushSpec, libraryConfig *c
 
 	if !pushSpec.AllowUnsigned {
 		// Check if the container has a valid signature.
-		if err := Verify(ctx, pushSpec.SourceFile, OptVerifyUseKeyServer(keyConfig)); err != nil {
+		if err := Verify(ctx, pushSpec.SourceFile, OptVerifyUseKeyServer(co...)); err != nil {
 			sylog.Warningf("%v", err)
 			return ErrLibraryUnsigned
 		}

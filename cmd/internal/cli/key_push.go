@@ -28,12 +28,12 @@ var KeyPushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.TODO()
 
-		keyClient, err := getKeyserverClientConfig(keyServerURI, endpoint.KeyserverPushOp)
+		co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverPushOp)
 		if err != nil {
 			sylog.Fatalf("Keyserver client failed: %s", err)
 		}
 
-		if err := doKeyPushCmd(ctx, args[0], keyClient); err != nil {
+		if err := doKeyPushCmd(ctx, args[0], co...); err != nil {
 			sylog.Errorf("push failed: %s", err)
 			os.Exit(2)
 		}
@@ -45,7 +45,7 @@ var KeyPushCmd = &cobra.Command{
 	Example: docs.KeyPushExample,
 }
 
-func doKeyPushCmd(ctx context.Context, fingerprint string, c *client.Config) error {
+func doKeyPushCmd(ctx context.Context, fingerprint string, co ...client.Option) error {
 	var opts []sypgp.HandleOpt
 	path := ""
 
@@ -78,7 +78,7 @@ func doKeyPushCmd(ctx context.Context, fingerprint string, c *client.Config) err
 	}
 	entity := keys[0].Entity
 
-	if err = sypgp.PushPubkey(ctx, c, entity); err != nil {
+	if err = sypgp.PushPubkey(ctx, entity, co...); err != nil {
 		return err
 	}
 

@@ -102,7 +102,7 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, arch str
 }
 
 // PullToFile will pull a library image to the specified location, through the cache, or directly if cache is disabled
-func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, arch string, tmpDir string, libraryConfig *libclient.Config, keyConfig *keyclient.Config) (imagePath string, err error) {
+func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, arch string, tmpDir string, libraryConfig *libclient.Config, co []keyclient.Option) (imagePath string, err error) {
 
 	directTo := ""
 	if imgCache.IsDisabled() {
@@ -123,7 +123,7 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, a
 		}
 	}
 
-	if err := singularity.Verify(ctx, pullTo, singularity.OptVerifyUseKeyServer(keyConfig)); err != nil {
+	if err := singularity.Verify(ctx, pullTo, singularity.OptVerifyUseKeyServer(co...)); err != nil {
 		sylog.Warningf("%v", err)
 		return pullTo, ErrLibraryPullUnsigned
 	}

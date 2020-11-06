@@ -86,13 +86,13 @@ func TestSearchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			config := &client.Config{
-				BaseURL:    tt.uri,
-				AuthToken:  tt.authToken,
-				HTTPClient: srv.Client(),
+			opts := []client.Option{
+				client.OptBaseURL(tt.uri),
+				client.OptBearerToken(tt.authToken),
+				client.OptHTTPClient(srv.Client()),
 			}
 
-			if err := SearchPubkey(context.Background(), config, tt.search, false); (err != nil) != tt.wantErr {
+			if err := SearchPubkey(context.Background(), tt.search, false, opts...); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
@@ -129,13 +129,13 @@ func TestFetchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			config := &client.Config{
-				BaseURL:    tt.uri,
-				AuthToken:  tt.authToken,
-				HTTPClient: srv.Client(),
+			opts := []client.Option{
+				client.OptBaseURL(tt.uri),
+				client.OptBearerToken(tt.authToken),
+				client.OptHTTPClient(srv.Client()),
 			}
 
-			el, err := FetchPubkey(context.Background(), config, tt.fingerprint, false)
+			el, err := FetchPubkey(context.Background(), tt.fingerprint, false, opts...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("unexpected error: %v", err)
 				return
@@ -210,13 +210,13 @@ func TestPushPubkey(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms.code = tt.code
 
-			config := &client.Config{
-				BaseURL:    tt.uri,
-				AuthToken:  tt.authToken,
-				HTTPClient: srv.Client(),
+			opts := []client.Option{
+				client.OptBaseURL(tt.uri),
+				client.OptBearerToken(tt.authToken),
+				client.OptHTTPClient(srv.Client()),
 			}
 
-			if err := PushPubkey(context.Background(), config, testEntity); (err != nil) != tt.wantErr {
+			if err := PushPubkey(context.Background(), testEntity, opts...); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
