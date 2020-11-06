@@ -1176,7 +1176,7 @@ func (c *container) addKernelMount(system *mount.System) error {
 	bindFlags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
 
 	sylog.Debugf("Checking configuration file for 'mount proc'")
-	if c.engine.EngineConfig.File.MountProc {
+	if c.engine.EngineConfig.File.MountProc && !c.engine.EngineConfig.GetNoProc() {
 		sylog.Debugf("Adding proc to mount list\n")
 		if c.pidNS {
 			err = system.Points.AddFS(mount.KernelTag, "/proc", "proc", syscall.MS_NOSUID|syscall.MS_NODEV, "")
@@ -1197,7 +1197,7 @@ func (c *container) addKernelMount(system *mount.System) error {
 	}
 
 	sylog.Debugf("Checking configuration file for 'mount sys'")
-	if c.engine.EngineConfig.File.MountSys {
+	if c.engine.EngineConfig.File.MountSys && !c.engine.EngineConfig.GetNoSys() {
 		sylog.Debugf("Adding sysfs to mount list\n")
 		if !c.userNS {
 			err = system.Points.AddFS(mount.KernelTag, "/sys", "sysfs", syscall.MS_NOSUID|syscall.MS_NODEV, "")
@@ -1278,7 +1278,9 @@ func (c *container) addSessionDevMount(system *mount.System) error {
 func (c *container) addDevMount(system *mount.System) error {
 	sylog.Debugf("Checking configuration file for 'mount dev'")
 
-	if c.engine.EngineConfig.File.MountDev == "minimal" || c.engine.EngineConfig.GetContain() {
+	if c.engine.EngineConfig.File.MountDev == "no" || c.engine.EngineConfig.GetNoDev() {
+		sylog.Verbosef("Not mounting /dev inside the container, disallowed by configuration")
+	} else if c.engine.EngineConfig.File.MountDev == "minimal" || c.engine.EngineConfig.GetContain() {
 		sylog.Debugf("Creating temporary staged /dev")
 		if err := c.session.AddDir("/dev"); err != nil {
 			return fmt.Errorf("failed to add /dev session directory: %s", err)
@@ -1307,7 +1309,7 @@ func (c *container) addDevMount(system *mount.System) error {
 			}
 		}
 
-		if c.engine.EngineConfig.File.MountDevPts {
+		if c.engine.EngineConfig.File.MountDevPts && !c.engine.EngineConfig.GetNoDevPts() {
 			if _, err := os.Stat("/dev/pts/ptmx"); os.IsNotExist(err) {
 				return fmt.Errorf("multiple devpts instances unsupported and /dev/pts configured")
 			}
@@ -1447,14 +1449,12 @@ func (c *container) addDevMount(system *mount.System) error {
 			return fmt.Errorf("unable to add dev to mount list: %s", err)
 		}
 		sylog.Verbosef("Default mount: /dev:/dev")
-	} else if c.engine.EngineConfig.File.MountDev == "no" {
-		sylog.Verbosef("Not mounting /dev inside the container, disallowed by configuration")
 	}
 	return nil
 }
 
 func (c *container) addHostMount(system *mount.System) error {
-	if !c.engine.EngineConfig.File.MountHostfs {
+	if !c.engine.EngineConfig.File.MountHostfs || c.engine.EngineConfig.GetNoHostfs() {
 		sylog.Debugf("Not mounting host file systems per configuration")
 		return nil
 	}
@@ -1730,7 +1730,10 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 				sylog.Warningf("Skipping %s bind mount: source and destination must be identical when binding to %s", src, devPrefix)
 				continue
 			}
-			if c.engine.EngineConfig.File.MountDev == "minimal" || c.engine.EngineConfig.GetContain() {
+			if c.engine.EngineConfig.File.MountDev == "no" || c.engine.EngineConfig.GetNoDev() {
+				sylog.Warningf("Skipping %s bind mount: disallowed by configuration", src)
+				continue
+			} else if c.engine.EngineConfig.File.MountDev == "minimal" || c.engine.EngineConfig.GetContain() {
 				// "--bind /dev" bind case
 				if src == devPrefix {
 					system.Points.RemoveByTag(mount.DevTag)
@@ -1747,9 +1750,6 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 					sylog.Warningf("Skipping %s bind mount: %s", src, err)
 				}
 				sylog.Debugf("Adding device %s to mount list\n", src)
-				continue
-			} else if c.engine.EngineConfig.File.MountDev == "no" {
-				sylog.Warningf("Skipping %s bind mount: disallowed by configuration", src)
 				continue
 			}
 			// proceed with normal binds below if 'mount dev = yes'
@@ -1785,7 +1785,7 @@ func (c *container) addTmpMount(system *mount.System) error {
 	)
 
 	sylog.Debugf("Checking for 'mount tmp' in configuration file")
-	if !c.engine.EngineConfig.File.MountTmp {
+	if !c.engine.EngineConfig.File.MountTmp || c.engine.EngineConfig.GetNoTmp() {
 		sylog.Verbosef("Skipping tmp dir mounting (per config)")
 		return nil
 	}
@@ -1934,16 +1934,20 @@ func (c *container) isMounted(dest string) bool {
 
 func (c *container) addCwdMount(system *mount.System) error {
 	if c.engine.EngineConfig.GetContain() {
-		sylog.Verbosef("Not mounting current directory: container was requested")
+		sylog.Verbosef("Not mounting current directory: contain was requested")
 		return nil
 	}
 	if !c.engine.EngineConfig.File.UserBindControl {
 		sylog.Warningf("Not mounting current directory: user bind control is disabled by system administrator")
 		return nil
 	}
+	if c.engine.EngineConfig.GetNoCwd() {
+		sylog.Debugf("Skipping current directory mount by user request.")
+		return nil
+	}
 	cwd := c.engine.EngineConfig.GetCwd()
 	if cwd == "" {
-		sylog.Warningf("Not current working directory set: skipping mount")
+		sylog.Warningf("No current working directory set: skipping mount")
 	}
 
 	current, err := filepath.EvalSymlinks(cwd)

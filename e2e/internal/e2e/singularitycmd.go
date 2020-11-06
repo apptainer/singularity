@@ -45,8 +45,10 @@ const (
 	ContainMatch MatchType = iota
 	// ExactMatch is for exact match
 	ExactMatch
-	// UnwantedMatch is for unwanted match
-	UnwantedMatch
+	// UnwaantedContainMatch checks that output does not contain text
+	UnwantedContainMatch
+	// UnwantedExactMatch checks that output does not exactly match text
+	UnwantedExactMatch
 	// RegexMatch is for regular expression match
 	RegexMatch
 )
@@ -57,8 +59,10 @@ func (m MatchType) String() string {
 		return "ContainMatch"
 	case ExactMatch:
 		return "ExactMatch"
-	case UnwantedMatch:
-		return "UnwantedMatch"
+	case UnwantedContainMatch:
+		return "UnwantedContainMatch"
+	case UnwantedExactMatch:
+		return "UnwantedExactMatch"
 	case RegexMatch:
 		return "RegexMatch"
 	default:
@@ -105,7 +109,14 @@ func (r *SingularityCmdResult) expectMatch(mt MatchType, stream streamType, patt
 				r.FullCmd, streamName, pattern, streamName, output,
 			)
 		}
-	case UnwantedMatch:
+	case UnwantedContainMatch:
+		if strings.Contains(output, pattern) {
+			return errors.Errorf(
+				"Command %q:\nExpect %s stream does not contain:\n%s\nCommand %s stream:\n%s",
+				r.FullCmd, streamName, pattern, streamName, output,
+			)
+		}
+	case UnwantedExactMatch:
 		if strings.TrimSuffix(output, "\n") == pattern {
 			return errors.Errorf(
 				"Command %q:\nExpect %s stream not matching:\n%s\nCommand %s output:\n%s",

@@ -2076,6 +2076,122 @@ func (c actionTests) actionUmask(t *testing.T) {
 
 }
 
+func (c actionTests) actionNoMount(t *testing.T) {
+	// TODO - this does not test --no-mount hostfs as that is a little tricky
+	// We are in a mount namespace for e2e tests, so we can setup some mounts in there,
+	// create a custom config with `mount hostfs = yes` set, and then look for presence
+	// or absence of the mounts. I'd like to think about this a bit more though - work up
+	// some nice helpers & cleanup for the actions we need.
+	e2e.EnsureImage(t, c.env)
+
+	tests := []struct {
+		name string
+		// Which mount directive to override (disable)
+		noMount string
+		// Output of `mount` command to ensure we should not find
+		// e.g for `--no-mount home` "on /home" as mount command output is of the form:
+		//   tmpfs on /home/dave type tmpfs (rw,seclabel,nosuid,nodev,relatime,size=16384k,uid=1000,gid=1000)
+		noMatch string
+		// Whether to run the test in default and/or contained modes
+		// Needs to be specified as e.g. by default `/dev` mount is a full bind that will always include `/dev/pts`
+		// ... but in --contained mode disabling devpts stops it being bound in.
+		testDefault   bool
+		testContained bool
+		// To test --no-mount cwd we need to chdir for the execution
+		cwd  string
+		exit int
+	}{
+		{
+			name:          "proc",
+			noMount:       "proc",
+			noMatch:       "on /proc",
+			testDefault:   true,
+			testContained: true,
+			exit:          1, // mount fails with exit code 1 when there is no `/proc`
+		},
+		{
+			name:          "sys",
+			noMount:       "sys",
+			noMatch:       "on /sys",
+			testDefault:   true,
+			testContained: true,
+			exit:          0,
+		},
+		{
+			name:          "dev",
+			noMount:       "dev",
+			noMatch:       "on /dev",
+			testDefault:   true,
+			testContained: true,
+			exit:          0,
+		},
+		{
+			name:          "devpts",
+			noMount:       "devpts",
+			noMatch:       "on /dev/pts",
+			testDefault:   false,
+			testContained: true,
+			exit:          0,
+		},
+		{
+			name:          "tmp",
+			noMount:       "tmp",
+			noMatch:       "on /tmp",
+			testDefault:   true,
+			testContained: true,
+			exit:          0,
+		},
+		{
+			name:          "home",
+			noMount:       "home",
+			noMatch:       "on /home",
+			testDefault:   true,
+			testContained: true,
+			exit:          0,
+		},
+		{
+			// /srv is an LSB directory we should be able to rely on for our CWD test
+			name:        "cwd",
+			noMount:     "cwd",
+			noMatch:     "on /srv",
+			testDefault: true,
+			// CWD is never mounted with contain so --no-mount CWD doesn't have an effect,
+			// but let's verify it isn't mounted anyway.
+			testContained: true,
+			cwd:           "/srv",
+			exit:          0,
+		},
+	}
+
+	for _, tt := range tests {
+
+		if tt.testDefault {
+			c.env.RunSingularity(
+				t,
+				e2e.WithDir(tt.cwd),
+				e2e.AsSubtest(tt.name),
+				e2e.WithProfile(e2e.UserProfile),
+				e2e.WithCommand("exec"),
+				e2e.WithArgs("--no-mount", tt.noMount, c.env.ImagePath, "mount"),
+				e2e.ExpectExit(tt.exit,
+					e2e.ExpectOutput(e2e.UnwantedContainMatch, tt.noMatch)),
+			)
+		}
+		if tt.testContained {
+			c.env.RunSingularity(
+				t,
+				e2e.WithDir(tt.cwd),
+				e2e.AsSubtest(tt.name+"Contained"),
+				e2e.WithProfile(e2e.UserProfile),
+				e2e.WithCommand("exec"),
+				e2e.WithArgs("--contain", "--no-mount", tt.noMount, c.env.ImagePath, "mount"),
+				e2e.ExpectExit(tt.exit,
+					e2e.ExpectOutput(e2e.UnwantedContainMatch, tt.noMatch)),
+			)
+		}
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := actionTests{
@@ -2113,5 +2229,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"fuse mount":            c.fuseMount,           // test fusemount option
 		"bind image":            c.bindImage,           // test bind image
 		"umask":                 c.actionUmask,         // test umask propagation
+		"no-mount":              c.actionNoMount,       // test --no-mount
 	}
 }

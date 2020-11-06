@@ -138,6 +138,33 @@ func hidepidProc() bool {
 	return false
 }
 
+// Set engine flags to disable mounts, to allow overriding them if they are set true
+// in the singularity.conf
+func setNoMountFlags(c *singularityConfig.EngineConfig) {
+	for _, v := range NoMount {
+		switch v {
+		case "proc":
+			c.SetNoProc(true)
+		case "sys":
+			c.SetNoSys(true)
+		case "dev":
+			c.SetNoDev(true)
+		case "devpts":
+			c.SetNoDevPts(true)
+		case "home":
+			c.SetNoHome(true)
+		case "tmp":
+			c.SetNoTmp(true)
+		case "hostfs":
+			c.SetNoHostfs(true)
+		case "cwd":
+			c.SetNoCwd(true)
+		default:
+			sylog.Warningf("Ignoring unknown mount type '%s'", v)
+		}
+	}
+}
+
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
 	var err error
@@ -401,6 +428,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetOverlayImage(OverlayPath)
 	engineConfig.SetWritableImage(IsWritable)
 	engineConfig.SetNoHome(NoHome)
+	setNoMountFlags(engineConfig)
 	engineConfig.SetNv(Nvidia)
 	engineConfig.SetRocm(Rocm)
 	engineConfig.SetAddCaps(AddCaps)
