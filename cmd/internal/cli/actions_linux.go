@@ -157,6 +157,8 @@ func setNoMountFlags(c *singularityConfig.EngineConfig) {
 			c.SetNoTmp(true)
 		case "hostfs":
 			c.SetNoHostfs(true)
+		case "cwd":
+			c.SetNoCwd(true)
 		default:
 			sylog.Warningf("Ignoring unknown mount type '%s'", v)
 		}

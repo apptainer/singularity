@@ -153,6 +153,7 @@ type JSONConfig struct {
 	NoHome            bool              `json:"noHome,omitempty"`
 	NoTmp             bool              `json:"noTmp,omitempty"`
 	NoHostfs          bool              `json:"noHostfs,omitempty"`
+	NoCwd             bool              `json:"noCwd,omitempty"`
 	NoInit            bool              `json:"noInit,omitempty"`
 	Fakeroot          bool              `json:"fakeroot,omitempty"`
 	SignalPropagation bool              `json:"signalPropagation,omitempty"`
@@ -614,6 +615,16 @@ func (e *EngineConfig) SetNoHostfs(val bool) {
 // SetNoHostfs returns if no-hostfs flag is set or not.
 func (e *EngineConfig) GetNoHostfs() bool {
 	return e.JSON.NoHostfs
+}
+
+// SetNoCwd set flag to not mount CWD
+func (e *EngineConfig) SetNoCwd(val bool) {
+	e.JSON.NoCwd = val
+}
+
+// SetNoCwd returns if no-cwd flag is set or not.
+func (e *EngineConfig) GetNoCwd() bool {
+	return e.JSON.NoCwd
 }
 
 // SetNoInit set noinit flag to not start shim init process.

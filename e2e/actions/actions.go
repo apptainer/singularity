@@ -2097,7 +2097,9 @@ func (c actionTests) actionNoMount(t *testing.T) {
 		// ... but in --contained mode disabling devpts stops it being bound in.
 		testDefault   bool
 		testContained bool
-		exit          int
+		// To test --no-mount cwd we need to chdir for the execution
+		cwd  string
+		exit int
 	}{
 		{
 			name:          "proc",
@@ -2147,12 +2149,26 @@ func (c actionTests) actionNoMount(t *testing.T) {
 			testContained: true,
 			exit:          0,
 		},
+		{
+			// /srv is an LSB directory we should be able to rely on for our CWD test
+			name:        "cwd",
+			noMount:     "cwd",
+			noMatch:     "on /srv",
+			testDefault: true,
+			// CWD is never mounted with contain so --no-mount CWD doesn't have an effect,
+			// but let's verify it isn't mounted anyway.
+			testContained: true,
+			cwd:           "/srv",
+			exit:          0,
+		},
 	}
 
 	for _, tt := range tests {
+
 		if tt.testDefault {
 			c.env.RunSingularity(
 				t,
+				e2e.WithDir(tt.cwd),
 				e2e.AsSubtest(tt.name),
 				e2e.WithProfile(e2e.UserProfile),
 				e2e.WithCommand("exec"),
@@ -2164,6 +2180,7 @@ func (c actionTests) actionNoMount(t *testing.T) {
 		if tt.testContained {
 			c.env.RunSingularity(
 				t,
+				e2e.WithDir(tt.cwd),
 				e2e.AsSubtest(tt.name+"Contained"),
 				e2e.WithProfile(e2e.UserProfile),
 				e2e.WithCommand("exec"),

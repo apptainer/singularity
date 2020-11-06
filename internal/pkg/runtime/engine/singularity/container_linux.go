@@ -1934,16 +1934,20 @@ func (c *container) isMounted(dest string) bool {
 
 func (c *container) addCwdMount(system *mount.System) error {
 	if c.engine.EngineConfig.GetContain() {
-		sylog.Verbosef("Not mounting current directory: container was requested")
+		sylog.Verbosef("Not mounting current directory: contain was requested")
 		return nil
 	}
 	if !c.engine.EngineConfig.File.UserBindControl {
 		sylog.Warningf("Not mounting current directory: user bind control is disabled by system administrator")
 		return nil
 	}
+	if c.engine.EngineConfig.GetNoCwd() {
+		sylog.Debugf("Skipping current directory mount by user request.")
+		return nil
+	}
 	cwd := c.engine.EngineConfig.GetCwd()
 	if cwd == "" {
-		sylog.Warningf("Not current working directory set: skipping mount")
+		sylog.Warningf("No current working directory set: skipping mount")
 	}
 
 	current, err := filepath.EvalSymlinks(cwd)
