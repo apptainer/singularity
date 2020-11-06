@@ -14,12 +14,10 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/loop"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // Pack puts relevant objects in a Bundle!
@@ -33,22 +31,6 @@ func (p *Ext3Packer) Pack(context.Context) (*types.Bundle, error) {
 	return p.b, nil
 }
 
-func getMaxLoopDevices() int {
-	// if the caller has set the current config use it
-	// otherwise parse the default configuration file
-	cfg := singularityconf.GetCurrentConfig()
-	if cfg == nil {
-		var err error
-
-		configFile := buildcfg.SINGULARITY_CONF_FILE
-		cfg, err = singularityconf.Parse(configFile)
-		if err != nil {
-			return 256
-		}
-	}
-	return int(cfg.MaxLoopDevices)
-}
-
 // unpackExt3 mounts the ext3 image using a loop device and then copies its contents to the bundle
 func unpackExt3(b *types.Bundle, img *image.Image) error {
 	info := &loop.Info64{
@@ -59,7 +41,7 @@ func unpackExt3(b *types.Bundle, img *image.Image) error {
 
 	var number int
 	loopdev := &loop.Device{
-		MaxLoopDevices: getMaxLoopDevices(),
+		MaxLoopDevices: loop.GetMaxLoopDevices(),
 		Info:           info,
 	}
 

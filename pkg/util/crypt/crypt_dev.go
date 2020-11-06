@@ -16,12 +16,10 @@ import (
 	"syscall"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
 	"github.com/sylabs/singularity/pkg/util/loop"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // Device describes a crypt device
@@ -38,27 +36,11 @@ var (
 	ErrInvalidPassphrase = errors.New("no key available with this passphrase")
 )
 
-func getMaxLoopDevices() int {
-	// if the caller has set the current config use it
-	// otherwise parse the default configuration file
-	cfg := singularityconf.GetCurrentConfig()
-	if cfg == nil {
-		var err error
-
-		configFile := buildcfg.SINGULARITY_CONF_FILE
-		cfg, err = singularityconf.Parse(configFile)
-		if err != nil {
-			return 256
-		}
-	}
-	return int(cfg.MaxLoopDevices)
-}
-
 // createLoop attaches the specified file to the next available loop
 // device and sets the sizelimit on it
 func createLoop(path string, offset, size uint64) (string, error) {
 	loopDev := &loop.Device{
-		MaxLoopDevices: getMaxLoopDevices(),
+		MaxLoopDevices: loop.GetMaxLoopDevices(),
 		Shared:         true,
 		Info: &loop.Info64{
 			SizeLimit: size,

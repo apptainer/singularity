@@ -11,26 +11,8 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
-
-func getMaxLoopDevices() int {
-	// if the caller has set the current config use it
-	// otherwise parse the default configuration file
-	cfg := singularityconf.GetCurrentConfig()
-	if cfg == nil {
-		var err error
-
-		configFile := buildcfg.SINGULARITY_CONF_FILE
-		cfg, err = singularityconf.Parse(configFile)
-		if err != nil {
-			return 256
-		}
-	}
-	return int(cfg.MaxLoopDevices)
-}
 
 func TestLoop(t *testing.T) {
 	test.EnsurePrivilege(t)
@@ -41,7 +23,7 @@ func TestLoop(t *testing.T) {
 		Flags: FlagsAutoClear | FlagsReadOnly,
 	}
 	loopDev := &Device{
-		MaxLoopDevices: getMaxLoopDevices(),
+		MaxLoopDevices: GetMaxLoopDevices(),
 		Info:           info,
 	}
 
