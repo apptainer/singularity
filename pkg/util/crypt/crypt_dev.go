@@ -40,7 +40,7 @@ var (
 // device and sets the sizelimit on it
 func createLoop(path string, offset, size uint64) (string, error) {
 	loopDev := &loop.Device{
-		MaxLoopDevices: 10000,
+		MaxLoopDevices: 256,
 		Shared:         true,
 		Info: &loop.Info64{
 			SizeLimit: size,

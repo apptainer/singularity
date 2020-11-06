@@ -37,9 +37,9 @@ Singularity 3.6.3 addresses the following security issues.
 
 ## Change defaults / behaviours
 
-    - Change the default number of loop devices from 256 to 10000
     - Use LOOP_CTL_GET_FREE to get a new free loop device instead of checking each
-      loop device to see if it is free
+      loop device to see if it is free. This is only if LOOP_CTL_GET_FREE is
+      supported on the machine.
 
 ## Bug Fixes
 
@@ -50,6 +50,9 @@ Singularity 3.6.3 addresses the following security issues.
     support for definition file scripts.
   - Do not load keyring in prepare_linux if ECL not enabled.
   - Ensure sandbox option overrides remote build destination.
+  - Fix a bug that makes the host allocate a large number of loop devices
+    and become unresponsive
+
 
 
 # v3.6.2 - [2020-08-25]
@@ -78,9 +81,6 @@ Singularity 3.6.3 addresses the following security issues.
   - Fix tests for Go 1.15 Ctty handling.
   - Fix additional issues with test images on ARM64.
   - Fix FUSE e2e tests to use container ssh_config.
-  - Fix a bug that makes the host allocate a large number of loop devices
-    and become unresponsive
-
 
 # v3.6.1 - [2020-07-21]
 

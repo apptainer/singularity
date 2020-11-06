@@ -41,7 +41,7 @@ func unpackExt3(b *types.Bundle, img *image.Image) error {
 
 	var number int
 	loopdev := &loop.Device{
-		MaxLoopDevices: 10000,
+		MaxLoopDevices: 256,
 		Info:           info,
 	}
 

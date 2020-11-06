@@ -11,6 +11,9 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
+
+	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/fs/lock"
 )
 
 // AttachFromFile finds a free loop device, opens it, and stores file descriptor
@@ -24,57 +27,139 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 		return fmt.Errorf("empty file pointer")
 	}
 
-	_, err := image.Stat()
+	fi, err := image.Stat()
 	if err != nil {
 		return err
 	}
+
+	st := fi.Sys().(*syscall.Stat_t)
+	imageIno := st.Ino
+	// cast to uint64 as st.Dev is uint32 on MIPS
+	imageDev := uint64(st.Dev)
 
 	if loopCtlFd, err = syscall.Open("/dev/loop-control", os.O_RDONLY, 0600); err != nil {
 		return err
 	}
 	defer syscall.Close(loopCtlFd)
 
-	for {
-		// get a new loop device using LOOP_CTL_GET_FREE
-		n, _, esys := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopCtlFd), CmdGetFree, 0)
-		if esys != 0 {
-			return err
-		}
+    //if the function call to LOOP_CTL_GET_FREE doesn't fail, then we will use this to find a free loop device
+	if _, _, esys := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopCtlFd), CmdGetFree, 0); esys == 0 {
+	    for {
+            // get a new loop device using LOOP_CTL_GET_FREE
+            n, _, esys := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopCtlFd), CmdGetFree, 0)
+            if esys != 0 {
+                return err
+            }
 
-		*number = int(n)
+            *number = int(n)
 
-		if *number > loop.MaxLoopDevices {
-			return fmt.Errorf("dynamically allocated loop device exceeds maximum")
-		}
+            if *number > loop.MaxLoopDevices {
+                return fmt.Errorf("dynamically allocated loop device exceeds maximum")
+            }
 
-		path = fmt.Sprintf("/dev/loop%d", n)
+            path = fmt.Sprintf("/dev/loop%d", n)
 
-		// try to open the loop device
-		if loopFd, err = syscall.Open(path, mode, 0600); err != nil {
-			// Failed to open the device node; the node should've been created
-			// automatically but maybe we got here before that happened. We
-			// restart the loop and look for another free loop device using
-			// LOOP_CTL_GET_FREE; if the device hasn't been taken yet we will
-			// get the same number and hopefully this time the node got
-			// created correctly. Note that we wait a little bit to avoid
-			// a tight loop with high cpu usage.
-			time.Sleep(10 * time.Millisecond)
-			continue
-		}
+            // try to open the loop device
+            if loopFd, err = syscall.Open(path, mode, 0600); err != nil {
+                // Failed to open the device node; the node should've been created
+                // automatically but maybe we got here before that happened. We
+                // restart the loop and look for another free loop device using
+                // LOOP_CTL_GET_FREE; if the device hasn't been taken yet we will
+                // get the same number and hopefully this time the node got
+                // created correctly. Note that we wait a little bit to avoid
+                // a tight loop with high cpu usage.
+                time.Sleep(10 * time.Millisecond)
+                continue
+            }
 
-		// attach the image file to the loop device
-		_, _, esys = syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdSetFd, image.Fd())
-		if esys != 0 {
-			// Failed to attach the image. Most likely we lost the race and
-			// some other process took the loop device before we got here. We
-			// restart the loop and look for another free loop device using
-			// LOOP_CTL_GET_FREE.
-			syscall.Close(loopFd)
-			continue
-		}
+            // attach the image file to the loop device
+            _, _, esys = syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdSetFd, image.Fd())
+            if esys != 0 {
+                // Failed to attach the image. Most likely we lost the race and
+                // some other process took the loop device before we got here. We
+                // restart the loop and look for another free loop device using
+                // LOOP_CTL_GET_FREE.
+                syscall.Close(loopFd)
+                continue
+            }
 
-		break
+            break
+        }
+	} else {
+	    fd, err := lock.Exclusive("/dev")
+        if err != nil {
+            return err
+        }
+        defer lock.Release(fd)
+
+        freeDevice := -1
+
+        for device := 0; device <= loop.MaxLoopDevices; device++ {
+            *number = device
+
+            if device == loop.MaxLoopDevices {
+                if loop.Shared {
+                    loop.Shared = false
+                    if freeDevice != -1 {
+                        device = freeDevice
+                        continue
+                    }
+                }
+                return fmt.Errorf("no loop devices available")
+            }
+
+            path = fmt.Sprintf("/dev/loop%d", device)
+            if fi, err := os.Stat(path); err != nil {
+                dev := int((7 << 8) | (device & 0xff) | ((device & 0xfff00) << 12))
+                esys := syscall.Mknod(path, syscall.S_IFBLK|0660, dev)
+                if errno, ok := esys.(syscall.Errno); ok {
+                    if errno != syscall.EEXIST {
+                        return esys
+                    }
+                }
+            } else if fi.Mode()&os.ModeDevice == 0 {
+                return fmt.Errorf("%s is not a block device", path)
+            }
+
+            if loopFd, err = syscall.Open(path, mode, 0600); err != nil {
+                continue
+            }
+            if loop.Shared {
+                status, err := GetStatusFromFd(uintptr(loopFd))
+                if err != nil {
+                    syscall.Close(loopFd)
+                    sylog.Debugf("Could not get loop device %d status: %s", device, err)
+                    continue
+                }
+                // there is no associated image with loop device, save indice so second loop
+                // iteration will start from this device
+                if status.Inode == 0 && freeDevice == -1 {
+                    freeDevice = device
+                    syscall.Close(loopFd)
+                    continue
+                }
+                if status.Inode == imageIno && status.Device == imageDev &&
+                    status.Flags&FlagsReadOnly == loop.Info.Flags&FlagsReadOnly &&
+                    status.Offset == loop.Info.Offset && status.SizeLimit == loop.Info.SizeLimit {
+                    // keep the reference to the loop device file descriptor to
+                    // be sure that the loop device won't be released between this
+                    // check and the mount of the filesystem
+                    sylog.Debugf("Sharing loop device %d", device)
+                    return nil
+                }
+                syscall.Close(loopFd)
+            } else {
+                _, _, esys := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdSetFd, image.Fd())
+                if esys != 0 {
+                    syscall.Close(loopFd)
+                    continue
+                }
+                break
+            }
+        }
 	}
+
+
 
 	if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, uintptr(loopFd), syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
 		return fmt.Errorf("failed to set close-on-exec on loop device %s: %s", path, err.Error())

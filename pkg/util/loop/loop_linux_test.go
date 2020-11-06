@@ -23,7 +23,7 @@ func TestLoop(t *testing.T) {
 		Flags: FlagsAutoClear | FlagsReadOnly,
 	}
 	loopDev := &Device{
-		MaxLoopDevices: 10000,
+		MaxLoopDevices: 256,
 		Info:           info,
 	}
 

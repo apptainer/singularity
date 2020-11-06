@@ -16,7 +16,7 @@ allow setuid = {{ if eq .AllowSetuid true }}yes{{ else }}no{{ end }}
 
 
 # MAX LOOP DEVICES: [INT]
-# DEFAULT: 10000
+# DEFAULT: 256
 # Set the maximum number of loop devices that Singularity should ever attempt
 # to utilize.
 max loop devices = {{ .MaxLoopDevices }}
