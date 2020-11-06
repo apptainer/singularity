@@ -121,11 +121,12 @@ func (s *sifBundle) Create(ociConfig *specs.Spec) error {
 	}
 
 	// associate SIF image with a block
-	loop, err := tools.CreateLoop(img.File, offset, size)
+	loop, loopCloser, err := tools.CreateLoop(img.File, offset, size)
 	if err != nil {
 		tools.DeleteBundle(s.bundlePath)
 		return fmt.Errorf("failed to find loop device: %s", err)
 	}
+	defer loopCloser.Close()
 
 	rootFs := tools.RootFs(s.bundlePath).Path()
 	if err := syscall.Mount(loop, rootFs, "squashfs", syscall.MS_RDONLY, ""); err != nil {
