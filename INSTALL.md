@@ -8,7 +8,7 @@ always be up-to-date with the latest source release version.
 
 For full instructions on installation, including building RPMs,
 installing pre-built EPEL packages etc. please check the
-[installation  guide](https://sylabs.io/guides/3.6/admin-guide/installation.html).
+[installation section of the admin guide](https://sylabs.io/guides/latest/admin-guide/).
 
 ## Install system dependencies
 
