@@ -51,6 +51,7 @@ func ProgressBarCallback(ctx context.Context) ProgressCallback {
 			bar.Abort(true)
 			return err
 		}
+		p.Wait()
 
 		return nil
 	}
