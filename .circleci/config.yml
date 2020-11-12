@@ -251,8 +251,10 @@ workflows:
       - go114-alpine
       - go114-macos
       - check_go_mod
-      - rpmbuild-centos7
-      - rpmbuild-centos8
       - short_unit_tests
       - short_integration_tests
       - e2e_tests
+  rpmbuild:
+    jobs:
+      - rpmbuild-centos7
+      - rpmbuild-centos8
