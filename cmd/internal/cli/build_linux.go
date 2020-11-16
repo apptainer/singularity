@@ -13,6 +13,7 @@ import (
 	"os"
 	osExec "os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -66,6 +67,12 @@ func fakerootExec(cmdArgs []string) {
 	if err != nil {
 		sylog.Fatalf("failed to retrieve user information: %s", err)
 	}
+
+	// Append the user's real UID to the environment as _CONTAINERS_ROOTLESS_UID.
+	// This is required in fakeroot builds that may use containers/image 5.7 and above.
+	// https://github.com/containers/image/issues/1066
+	// https://github.com/containers/image/blob/master/internal/rootless/rootless.go
+	os.Setenv("_CONTAINERS_ROOTLESS_UID", strconv.Itoa(os.Getuid()))
 
 	engineConfig := &fakerootConfig.EngineConfig{
 		Args:     args,
