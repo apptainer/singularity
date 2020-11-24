@@ -112,7 +112,7 @@ _The old changelog can be found in the `release-2.6` branch_
 
   - A change in Linux kernel 5.9 causes `--fakeroot` builds to fail with a
     `/sys/fs/selinux` remount error. This will be addressed in Singularity
-    v3.5.1.
+    v3.7.1.
 
 
 # v3.6.4 - [2020-10-13]

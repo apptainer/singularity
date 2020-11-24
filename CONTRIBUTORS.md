@@ -82,6 +82,7 @@
     - Shengjing Zhu <i@zhsj.me>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
+    - Tim Wright <7im.Wright@protonmail.com>
     - Tru Huynh <tru@pasteur.fr>
     - Vanessa Sochat <vsochat@stanford.edu>
     - Westley Kurtzer <westley@sylabs.io>, <westleyk@nym.hush.com>
