@@ -9,7 +9,7 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# v3.7.0-rc.1 Release Candidate - [2020-11-10]
+# v3.7.0 - [2020-11-24]
 
 ## New features / functionalities
 
@@ -107,7 +107,12 @@ _The old changelog can be found in the `release-2.6` branch_
     is used with `--contain`.
   - Tolerate comments on `%files` sections in build definition files.
   - Fix a loop device file descriptor leak.
-  
+
+## Known Issues
+
+  - A change in Linux kernel 5.9 causes `--fakeroot` builds to fail with a
+    `/sys/fs/selinux` remount error. This will be addressed in Singularity
+    v3.5.1.
 
 
 # v3.6.4 - [2020-10-13]

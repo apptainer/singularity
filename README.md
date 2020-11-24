@@ -37,8 +37,8 @@ Community contributions are always greatly appreciated. To start developing
 Singularity, check out the [guidelines for contributing](CONTRIBUTING.md).
 
 We also welcome contributions to our [user
-guide](https://github.com/sylabs/singularity-userdocs) and [admin
-guide](https://github.com/sylabs/singularity-admindocs).
+guide](https://github.com/hpcng/singularity-userdocs) and [admin
+guide](https://github.com/hpcng/singularity-admindocs).
 
 ## Support
 
