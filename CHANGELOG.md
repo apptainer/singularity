@@ -96,7 +96,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Increase embedded shell interpreter timeout, to allow slow-running
     environment scripts to complete.
   - Correct buffer handling for key import to allow import from STDIN. 
-  - Reset environment to avoid `LD_LIBRARYPATH` issues when resolving
+  - Reset environment to avoid `LD_LIBRARY_PATH` issues when resolving
     dependencies for the `unsquashfs` sandbox.
   - Fall back to `/sbin/ldconfig` if `ldconfig` on `PATH` fails while
     resolving GPU libraries. Fixes problems on systems using Nix /

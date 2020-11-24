@@ -41,7 +41,7 @@
     - Hakon Enger <hakonenger@github.com>
     - Hugo Meiland <hugo.meiland@microsoft.com>
     - Ian Kaneshiro <ian@sylabs.io>, <iankane@umich.edu>
-    - Jack Morrison <morrisonjc@ornl.gov>
+    - Jack Morrison <morrisonjc@ornl.gov>, <jack@rescale.com>
     - Jacob Chappell <chappellind@gmail.com>, <jacob.chappell@uky.edu>
     - Jarrod Johnson <jjohnson2@lenovo.com>
     - Jason Stover <jms@sylabs.io>, <jason.stover@gmail.com>
