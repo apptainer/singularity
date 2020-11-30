@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -1723,6 +1724,12 @@ func (c actionTests) fuseMount(t *testing.T) {
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(tt.profile),
+			e2e.PreRun(func(t *testing.T) {
+				// Host tests require fuse v3 - will fail on host with libfuse v2
+				if strings.Contains(tt.spec, "host") {
+					require.Fusermount3(t)
+				}
+			}),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs([]string{
 				"--fusemount", fmt.Sprintf(optionFmt, tt.spec, sshfsWrapper, sshConfig, tt.key, "/mnt"),

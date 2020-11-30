@@ -69,3 +69,18 @@ func ArchIn(t *testing.T, archs []string) {
 		t.Skipf("test requires architecture %s", strings.Join(archs, "|"))
 	}
 }
+
+// Fusermount3 checks for a version 3 of fusermount, as
+// Singularity requires 3 for fd based mounts.
+func Fusermount3(t *testing.T) {
+	cmd := exec.Command("fusermount", "-V")
+	output, err := cmd.CombinedOutput()
+	msg := string(output)
+	if err != nil {
+		t.Skipf("could not run fusermount: %v", err)
+	}
+	if strings.Contains(msg, "version: 3") {
+		return
+	}
+	t.Skipf("need fusermount 3, found: %s", msg)
+}
