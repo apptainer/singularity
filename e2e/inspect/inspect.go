@@ -70,9 +70,16 @@ func (c ctx) singularityInspect(t *testing.T) {
 
 	require.Command(t, "unsquashfs")
 
-	cmd := exec.Command("unsquashfs", "-d", sandboxImage, squashImage)
+	// First try with -user-xattrs since unsquashfs 4.4 gives an error code if
+	// it can't set system xattrs while rootless.
+	cmd := exec.Command("unsquashfs", "-user-xattrs", "-d", sandboxImage, squashImage)
 	if res := cmd.Run(t); res.Error != nil {
-		t.Fatalf("Unexpected error while running command.\n%s", res)
+		// If we failed, then try without -user-xattrs for older unsquashfs
+		// versions that don't have that flag.
+		cmd := exec.Command("unsquashfs", "-d", sandboxImage, squashImage)
+		if res := cmd.Run(t); res.Error != nil {
+			t.Fatalf("Unexpected error while running command.\n%s", res)
+		}
 	}
 
 	compareLabel := func(label, out string, appName string) func(*testing.T, *inspect.Metadata) {
