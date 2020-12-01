@@ -15,7 +15,7 @@ require (
 	github.com/containerd/containerd v1.4.2
 	github.com/containernetworking/cni v0.8.0
 	github.com/containernetworking/plugins v0.8.7
-	github.com/containers/image/v5 v5.8.0
+	github.com/containers/image/v5 v5.8.1
 	github.com/deislabs/oras v0.8.1
 	github.com/fatih/color v1.10.0
 	github.com/garyburd/redigo v1.6.0 // indirect
