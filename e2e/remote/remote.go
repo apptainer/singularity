@@ -458,7 +458,7 @@ func (c ctx) remoteTestFlag(t *testing.T) {
 }
 
 func (c ctx) remoteBasicLogin(t *testing.T) {
-	e2e.PrepRegistry(t, c.env)
+	e2e.EnsureRegistry(t)
 
 	var (
 		registry    = fmt.Sprintf("oras://%s", c.env.TestRegistry)
@@ -549,7 +549,7 @@ func (c ctx) remoteBasicLogin(t *testing.T) {
 }
 
 func (c ctx) remoteLoginPushPrivate(t *testing.T) {
-	e2e.PrepRegistry(t, c.env)
+	e2e.EnsureRegistry(t)
 	e2e.EnsureImage(t, c.env)
 
 	var (

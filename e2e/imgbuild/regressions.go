@@ -308,7 +308,7 @@ func (c *imgBuildTests) issue5166(t *testing.T) {
 }
 
 func (c *imgBuildTests) issue5172(t *testing.T) {
-	e2e.PrepRegistry(t, c.env)
+	e2e.EnsureRegistry(t)
 
 	u := e2e.UserProfile.HostUser(t)
 
