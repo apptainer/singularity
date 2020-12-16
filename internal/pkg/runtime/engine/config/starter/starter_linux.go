@@ -35,7 +35,7 @@ const searchPath = "/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin
 type SConfig *C.struct_starterConfig
 
 // Config wraps SConfig. It is used to manipulate starter's config which
-// lies on a shared memory. Thus the Go part can update the config and
+// lies in shared memory. Thus the Go part can update the config and
 // starter will respect it during container creation. More specifically,
 // all SetXXX methods of the Config will modify the shared memory unless
 // the Release method was called.
@@ -51,13 +51,13 @@ func NewConfig(config SConfig) *Config {
 	}
 }
 
-// GetIsSUID returns true if SUID workflow is enabled.
+// GetIsSUID returns true if the SUID workflow is enabled.
 // This field is set by starter at the very beginning of its execution.
 func (c *Config) GetIsSUID() bool {
 	return c.config.starter.isSuid == C.true
 }
 
-// GetContainerPid returns container PID (if any).
+// GetContainerPid returns the container PID (if any).
 // Container PID is set by master process before stage 2 or rpc.
 func (c *Config) GetContainerPid() int {
 	return int(c.config.container.pid)
@@ -145,9 +145,9 @@ func (c *Config) SetWorkingDirectoryFd(fd int) {
 }
 
 // KeepFileDescriptor adds a file descriptor to an array of file
-// descriptor that starter will kept open. All files opened during
-// stage 1 will be shared with starter process, once stage 1 returns
-// all file descriptor which are not listed here will be closed.
+// descriptors that starter will keep open. All files opened during
+// stage 1 will be shared with starter process. Once stage 1 returns,
+// all file descriptor whichs are not listed here will be closed.
 func (c *Config) KeepFileDescriptor(fd int) error {
 	if c.config.starter.numfds >= C.MAX_STARTER_FDS {
 		return fmt.Errorf("maximum number of kept file descriptors reached")
@@ -158,9 +158,9 @@ func (c *Config) KeepFileDescriptor(fd int) error {
 }
 
 // SetHybridWorkflow sets the flag to tell starter container setup
-// will require an hybrid workflow. Typically used for fakeroot.
-// In hybrid workflow master process lives in host user namespace
-// with the ability to escalate privileges, while container process
+// will require a hybrid workflow. Typically used for fakeroot.
+// In a hybrid workflow, the master process lives in host user namespace
+// with the ability to escalate privileges, while the container process
 // lives in its own user namespace.
 func (c *Config) SetHybridWorkflow(hybrid bool) {
 	if hybrid {
@@ -294,12 +294,12 @@ func (c *Config) SetNewGIDMapPath() error {
 	)
 }
 
-// SetNsFlags sets namespaces flag directly from flags argument.
+// SetNsFlags sets namespace flags directly from flags argument.
 func (c *Config) SetNsFlags(flags int) {
 	c.config.container.namespace.flags = C.uint(flags)
 }
 
-// SetNsFlagsFromSpec sets namespaces flag from OCI spec.
+// SetNsFlagsFromSpec sets namespace flags from OCI spec.
 func (c *Config) SetNsFlagsFromSpec(namespaces []specs.LinuxNamespace) {
 	c.config.container.namespace.flags = 0
 	for _, namespace := range namespaces {
@@ -324,7 +324,7 @@ func (c *Config) SetNsFlagsFromSpec(namespaces []specs.LinuxNamespace) {
 	}
 }
 
-// SetNsPath sets corresponding namespace to be joined.
+// SetNsPath sets namespaces to be joined.
 func (c *Config) SetNsPath(nstype specs.LinuxNamespaceType, path string) error {
 	cpath := unsafe.Pointer(C.CString(path))
 	l := len(path)
@@ -356,7 +356,7 @@ func (c *Config) SetNsPath(nstype specs.LinuxNamespaceType, path string) error {
 	return nil
 }
 
-// SetNsPathFromSpec sets corresponding namespace to be joined from OCI spec.
+// SetNsPathFromSpec sets namespaces to be joined from OCI spec.
 func (c *Config) SetNsPathFromSpec(namespaces []specs.LinuxNamespace) error {
 	for _, namespace := range namespaces {
 		if namespace.Path != "" {
@@ -446,7 +446,7 @@ func (c *Config) SetTargetGID(gids []int) {
 // Release performs an unmap of a shared starter config and releases the mapped memory.
 // This method should be called as soon as the process doesn't need to access or modify
 // the underlying starter configuration. Attempt to modify the underlying config after
-// call to Release will result in a segmentation fault.
+// the call to Release will result in a segmentation fault.
 func (c *Config) Release() error {
 	if C.munmap(unsafe.Pointer(c.config.engine.config), c.config.engine.map_size) != 0 {
 		return fmt.Errorf("failed to release engine config memory")
