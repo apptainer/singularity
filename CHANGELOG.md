@@ -162,6 +162,11 @@ Singularity 3.6.3 addresses the following security issues.
     enable arbitrary code execution during the build and/or when the
     built container is run.
 
+  ## Change defaults / behaviours
+
+  - The value for maximum number of loop devices in the config file is now used everywhere
+    instead of redefining this value
+
 ## Bug Fixes
 
   - Add CAP_MKNOD in capability bounding set of RPC to fix issue with

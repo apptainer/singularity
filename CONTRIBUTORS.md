@@ -89,3 +89,4 @@
     - Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>
     - Yaroslav Halchenko <debian@onerussian.com>
     - Onur Yılmaz <csonuryilmaz@gmail.com>
+    - Pranathi Locula <locula@deshaw.com>

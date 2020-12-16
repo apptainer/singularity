@@ -17,7 +17,7 @@ import (
 // path of loop device used and a closer to close the loop device
 func CreateLoop(file *os.File, offset, size uint64) (string, io.Closer, error) {
 	loopDev := &loop.Device{
-		MaxLoopDevices: 256,
+		MaxLoopDevices: loop.GetMaxLoopDevices(),
 		Shared:         true,
 		Info: &loop.Info64{
 			SizeLimit: size,
