@@ -14,7 +14,7 @@ require (
 	github.com/containerd/cgroups v0.0.0-20200116170754-a8908713319d
 	github.com/containerd/containerd v1.4.3
 	github.com/containernetworking/cni v0.8.0
-	github.com/containernetworking/plugins v0.8.7
+	github.com/containernetworking/plugins v0.9.0
 	github.com/containers/image/v5 v5.9.0
 	github.com/deislabs/oras v0.8.1
 	github.com/fatih/color v1.10.0
@@ -52,7 +52,7 @@ require (
 	go.opencensus.io v0.22.2 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
-	golang.org/x/sys v0.0.0-20201029080932-201ba4db2418
+	golang.org/x/sys v0.0.0-20201117170446-d9b008d0a637
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
