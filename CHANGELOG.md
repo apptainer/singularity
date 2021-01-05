@@ -9,6 +9,21 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
+# Changes since v3.7.0
+
+## Bug Fixes
+
+  - Accommodate /sys/fs/selinux mount changes on kernel 5.9+.
+  - Fix loop devices file descriptor leak when shared loop devices is
+    enabled.
+  - Use MaxLoopDevices variable from config file in all appropriate
+    locations.
+  - Use -buildmode=default (non pie) on ppc64le to prevent crashes
+    when using plugins.
+  - Remove spurious warning in parseTokenSection()
+  - e2e test fixes for new kernels, new unsquashfs version.
+
+
 # v3.7.0 - [2020-11-24]
 
 ## New features / functionalities
@@ -96,7 +111,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Increase embedded shell interpreter timeout, to allow slow-running
     environment scripts to complete.
   - Correct buffer handling for key import to allow import from STDIN. 
-  - Reset environment to avoid `LD_LIBRARYPATH` issues when resolving
+  - Reset environment to avoid `LD_LIBRARY_PATH` issues when resolving
     dependencies for the `unsquashfs` sandbox.
   - Fall back to `/sbin/ldconfig` if `ldconfig` on `PATH` fails while
     resolving GPU libraries. Fixes problems on systems using Nix /
@@ -112,7 +127,7 @@ _The old changelog can be found in the `release-2.6` branch_
 
   - A change in Linux kernel 5.9 causes `--fakeroot` builds to fail with a
     `/sys/fs/selinux` remount error. This will be addressed in Singularity
-    v3.5.1.
+    v3.7.1.
 
 
 # v3.6.4 - [2020-10-13]
@@ -161,6 +176,11 @@ Singularity 3.6.3 addresses the following security issues.
     content into the running build, which in certain circumstances may
     enable arbitrary code execution during the build and/or when the
     built container is run.
+
+  ## Change defaults / behaviours
+
+  - The value for maximum number of loop devices in the config file is now used everywhere
+    instead of redefining this value
 
 ## Bug Fixes
 

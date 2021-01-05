@@ -474,7 +474,7 @@ func (c actionTests) STDPipe(t *testing.T) {
 
 // RunFromURI tests min fuctionality for singularity run/exec URI://
 func (c actionTests) RunFromURI(t *testing.T) {
-	e2e.PrepRegistry(t, c.env)
+	e2e.EnsureRegistry(t)
 
 	runScript := "testdata/runscript.sh"
 	bind := fmt.Sprintf("%s:/.singularity.d/runscript", runScript)

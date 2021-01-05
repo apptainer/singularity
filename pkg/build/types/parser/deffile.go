@@ -18,8 +18,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/sylog"
-
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -163,7 +161,6 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 			var src, dst string
 			// Split at space, but not within double quotes
 			lineSubs := fileSplitter.FindAllString(line, -1)
-			sylog.Warningf("%v : %v", line, lineSubs)
 			if len(lineSubs) < 2 {
 				src = strings.TrimSpace(lineSubs[0])
 				dst = ""

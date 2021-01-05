@@ -338,7 +338,7 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 	defer cleanup(t)
 	imagePath := filepath.Join(imageDir, "container")
 
-	e2e.PrepRegistry(t, c.env)
+	e2e.EnsureRegistry(t)
 
 	tests := []struct {
 		name string

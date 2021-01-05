@@ -57,7 +57,7 @@ func (c ctx) testInvalidTransport(t *testing.T) {
 func (c ctx) testPushCmd(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	e2e.PrepRegistry(t, c.env)
+	e2e.EnsureRegistry(t)
 
 	// setup file and dir to use as invalid sources
 	orasInvalidDir, err := ioutil.TempDir(c.env.TestDir, "oras_push_dir-")

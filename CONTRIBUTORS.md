@@ -41,7 +41,7 @@
     - Hakon Enger <hakonenger@github.com>
     - Hugo Meiland <hugo.meiland@microsoft.com>
     - Ian Kaneshiro <ian@sylabs.io>, <iankane@umich.edu>
-    - Jack Morrison <morrisonjc@ornl.gov>
+    - Jack Morrison <morrisonjc@ornl.gov>, <jack@rescale.com>
     - Jacob Chappell <chappellind@gmail.com>, <jacob.chappell@uky.edu>
     - Jarrod Johnson <jjohnson2@lenovo.com>
     - Jason Stover <jms@sylabs.io>, <jason.stover@gmail.com>
@@ -82,9 +82,11 @@
     - Shengjing Zhu <i@zhsj.me>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
+    - Tim Wright <7im.Wright@protonmail.com>
     - Tru Huynh <tru@pasteur.fr>
     - Vanessa Sochat <vsochat@stanford.edu>
     - Westley Kurtzer <westley@sylabs.io>, <westleyk@nym.hush.com>
     - Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>
     - Yaroslav Halchenko <debian@onerussian.com>
     - Onur Yılmaz <csonuryilmaz@gmail.com>
+    - Pranathi Locula <locula@deshaw.com>

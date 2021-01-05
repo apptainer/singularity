@@ -49,7 +49,7 @@ func (c imgBuildTests) tempDir(t *testing.T, namespace string) (string, func()) 
 }
 
 func (c imgBuildTests) buildFrom(t *testing.T) {
-	e2e.PrepRegistry(t, c.env)
+	e2e.EnsureRegistry(t)
 
 	// use a trailing slash in tests for sandbox intentionally to make sure
 	// `singularity build -s /tmp/sand/ docker://alpine` works,

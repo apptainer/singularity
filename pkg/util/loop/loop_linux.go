@@ -94,6 +94,8 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 				// be sure that the loop device won't be released between this
 				// check and the mount of the filesystem
 				sylog.Debugf("Sharing loop device %d", device)
+				loop.fd = new(int)
+				*loop.fd = loopFd
 				return nil
 			}
 			syscall.Close(loopFd)
