@@ -9,6 +9,21 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
+# Changes since v3.7.0
+
+## Bug Fixes
+
+  - Accommodate /sys/fs/selinux mount changes on kernel 5.9+.
+  - Fix loop devices file descriptor leak when shared loop devices is
+    enabled.
+  - Use MaxLoopDevices variable from config file in all appropriate
+    locations.
+  - Use -buildmode=default (non pie) on ppc64le to prevent crashes
+    when using plugins.
+  - Remove spurious warning in parseTokenSection()
+  - e2e test fixes for new kernels, new unsquashfs version.
+
+
 # v3.7.0 - [2020-11-24]
 
 ## New features / functionalities
