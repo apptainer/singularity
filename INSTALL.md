@@ -30,8 +30,6 @@ $ sudo yum groupinstall -y 'Development Tools' && \
   squashfs-tools cryptsetup
 ```
 
-_NOTE:_ On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
-
 ## Install Golang
 
 This is one of several ways to [install and configure golang](https://golang.org/doc/install).
@@ -43,7 +41,7 @@ _**NOTE:** if you are updating Go from a older version, make sure you remove `/u
 reinstalling it._
 
 ```
-$ export VERSION=1.14.12 OS=linux ARCH=amd64  # change this as you need
+$ export VERSION=1.15.6 OS=linux ARCH=amd64  # change this as you need
 
 $ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
   sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
@@ -92,7 +90,7 @@ $ mkdir -p ${GOPATH}/src/github.com/sylabs && \
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.6.4
+$ git checkout v3.7.1
 ```
 
 ## Compiling Singularity
@@ -135,7 +133,7 @@ as shown above.  Then download the latest
 and use it to install the RPM like this: 
 
 ```
-$ export VERSION=3.6.4  # this is the singularity version, change as you need
+$ export VERSION=3.7.1  # this is the singularity version, change as you need
 
 $ wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-${VERSION}.tar.gz && \
@@ -151,7 +149,7 @@ tarball and use it to install Singularity:
 $ cd $GOPATH/src/github.com/sylabs/singularity && \
   ./mconfig && \
   make -C builddir rpm && \
-  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.6.4*.x86_64.rpm # or whatever version you built
+  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.7.1*.x86_64.rpm # or whatever version you built
 ```
 
 To build an rpm with an alternative install prefix set RPMPREFIX on the
