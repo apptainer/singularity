@@ -31,9 +31,6 @@ import (
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
-// CloudURI holds the URI of the Library web front-end.
-const CloudURI = "https://cloud.sylabs.io"
-
 // RemoteBuilder contains the build request and response
 type RemoteBuilder struct {
 	BuildClient         *buildclient.Client
@@ -45,10 +42,11 @@ type RemoteBuilder struct {
 	Force               bool
 	IsDetached          bool
 	BuilderRequirements map[string]string
+	WebURL              string
 }
 
 // New creates a RemoteBuilder with the specified details.
-func New(imagePath, libraryURL string, d types.Definition, isDetached, force bool, builderAddr, authToken, buildArch string) (rb *RemoteBuilder, err error) {
+func New(imagePath, libraryURL string, d types.Definition, isDetached, force bool, builderAddr, authToken, buildArch, webURL string) (rb *RemoteBuilder, err error) {
 	bc, err := buildclient.New(&buildclient.Config{
 		BaseURL:   builderAddr,
 		AuthToken: authToken,
@@ -73,6 +71,7 @@ func New(imagePath, libraryURL string, d types.Definition, isDetached, force boo
 		BuilderRequirements: map[string]string{
 			"arch": buildArch,
 		},
+		WebURL: webURL,
 	}, nil
 }
 
@@ -107,7 +106,9 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	if rb.IsDetached {
 		fmt.Printf("Build submitted! Once it is complete, the image can be retrieved by running:\n")
 		fmt.Printf("\tsingularity pull --library %s library://%s\n\n", bi.LibraryURL, libraryRefRaw)
-		fmt.Printf("Alternatively, you can access it from a browser at:\n\t%s/library/%s\n", CloudURI, libraryRefRaw)
+		if rb.WebURL != "" {
+			fmt.Printf("Alternatively, you can access it from a browser at:\n\t%s/library/%s\n", rb.WebURL, libraryRefRaw)
+		}
 		return nil
 	}
 
