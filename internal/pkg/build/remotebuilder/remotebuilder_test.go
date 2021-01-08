@@ -39,7 +39,7 @@ func TestBuild(t *testing.T) {
 	// Loop over test cases
 	for _, tt := range tests {
 		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
-			_, err := New("", "", types.Definition{}, false, false, tt.builderAddr, "", runtime.GOARCH)
+			_, err := New("", "", types.Definition{}, false, false, tt.builderAddr, "", runtime.GOARCH, "")
 			if tt.expectSuccess {
 				// Ensure the handler returned no error, and the response is as expected
 				if err != nil {

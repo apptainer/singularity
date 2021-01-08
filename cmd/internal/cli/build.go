@@ -33,6 +33,7 @@ var buildArgs struct {
 	builderURL   string
 	libraryURL   string
 	keyServerURL string
+	webURL       string
 	detached     bool
 	encrypt      bool
 	fakeroot     bool

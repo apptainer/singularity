@@ -133,6 +133,14 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	buildArgs.libraryURL = lc.BaseURL
 	buildArgs.builderURL = bc.BaseURL
 
+	// To provide a web link to detached remote builds we need to know the web frontend URI.
+	// We only know this working forward from a remote config, and not if the user has set custom
+	// service URLs, since there is no straightforward foolproof way to work back from them to a
+	// matching frontend URL.
+	if !cmd.Flag("builder").Changed && !cmd.Flag("library").Changed {
+		buildArgs.webURL = URI()
+	}
+
 	// submitting a remote build requires a valid authToken
 	if bc.AuthToken == "" {
 		sylog.Fatalf("Unable to submit build job: %v", remoteWarning)
@@ -202,7 +210,7 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		}()
 	}
 
-	b, err := remotebuilder.New(rbDst, buildArgs.libraryURL, def, buildArgs.detached, forceOverwrite, buildArgs.builderURL, bc.AuthToken, buildArgs.arch)
+	b, err := remotebuilder.New(rbDst, buildArgs.libraryURL, def, buildArgs.detached, forceOverwrite, buildArgs.builderURL, bc.AuthToken, buildArgs.arch, buildArgs.webURL)
 	if err != nil {
 		sylog.Fatalf("Failed to create builder: %v", err)
 	}
