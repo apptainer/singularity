@@ -9,7 +9,7 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes since v3.7.0
+# v3.7.1 - [2021-01-12]
 
 ## Bug Fixes
 
