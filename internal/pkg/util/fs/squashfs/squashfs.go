@@ -7,8 +7,10 @@ package squashfs
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -53,10 +55,17 @@ func GetPath() (string, error) {
 }
 
 func GetProcs() (uint, error) {
+	// prioritize the environment variable over config
+	procstr, exists := os.LookupEnv("SINGULARITY_MKSQUASHFS_PROCS")
+	if exists {
+		proc, err := strconv.ParseUint(procstr, 10, 32)
+		return uint(proc), err
+	}
 	c, err := getConfig()
 	if err != nil {
 		return 0, err
 	}
+
 	// proc is either "" or the string value in the conf file
 	proc := c.MksquashfsProcs
 
@@ -64,12 +73,17 @@ func GetProcs() (uint, error) {
 }
 
 func GetMem() (string, error) {
+	// prioritize the environment variable over config
+	mem, exists := os.LookupEnv("SINGULARITY_MKSQUASHFS_MEM")
+	if exists {
+		return mem, nil
+	}
 	c, err := getConfig()
 	if err != nil {
 		return "", err
 	}
 	// mem is either "" or the string value in the conf file
-	mem := c.MksquashfsMem
+	mem = c.MksquashfsMem
 
 	return mem, err
 }
