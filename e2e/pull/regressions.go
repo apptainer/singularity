@@ -35,7 +35,7 @@ func (c ctx) issue5808(t *testing.T) {
 	)
 	// Remove test remote when we are done here
 	defer func(t *testing.T) {
-		argv := []string{"use", testEndpoint}
+		argv := []string{"remove", testEndpoint}
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest("remote remove"),
