@@ -610,8 +610,6 @@ func getKeyserverClientOpts(uri string, op endpoint.KeyserverOp) ([]scskeyclient
 }
 
 func getLibraryClientConfig(uri string) (*scslibclient.Config, error) {
-	isDefault := uri == endpoint.SCSDefaultLibraryURI
-
 	if currentRemoteEndpoint == nil {
 		var err error
 
@@ -622,11 +620,8 @@ func getLibraryClientConfig(uri string) (*scslibclient.Config, error) {
 			return nil, fmt.Errorf("unable to load remote configuration: %v", err)
 		}
 	}
-	if currentRemoteEndpoint == endpoint.DefaultEndpointConfig && isDefault {
+	if currentRemoteEndpoint == endpoint.DefaultEndpointConfig {
 		sylog.Warningf("No default remote in use, falling back to default library: %s", uri)
-	}
-	if isDefault {
-		uri = ""
 	}
 
 	return currentRemoteEndpoint.LibraryClientConfig(uri)

@@ -68,7 +68,7 @@ var pullArchFlag = cmdline.Flag{
 var pullLibraryURIFlag = cmdline.Flag{
 	ID:           "pullLibraryURIFlag",
 	Value:        &pullLibraryURI,
-	DefaultValue: endpoint.SCSDefaultLibraryURI,
+	DefaultValue: "",
 	Name:         "library",
 	Usage:        "download images from the provided library",
 	EnvKeys:      []string{"LIBRARY"},
