@@ -621,7 +621,7 @@ func getLibraryClientConfig(uri string) (*scslibclient.Config, error) {
 		}
 	}
 	if currentRemoteEndpoint == endpoint.DefaultEndpointConfig {
-		sylog.Warningf("No default remote in use, falling back to default library: %s", uri)
+		sylog.Warningf("No default remote in use, falling back to default library: %s", endpoint.SCSDefaultLibraryURI)
 	}
 
 	return currentRemoteEndpoint.LibraryClientConfig(uri)
