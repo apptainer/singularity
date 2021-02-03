@@ -207,7 +207,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if err != nil {
 			sylog.Fatalf("Unable to get library client configuration: %v", err)
 		}
-		co, err := getKeyserverClientOpts(endpoint.SCSDefaultKeyserverURI, endpoint.KeyserverVerifyOp)
+		co, err := getKeyserverClientOpts("", endpoint.KeyserverVerifyOp)
 		if err != nil {
 			sylog.Fatalf("Unable to get keyserver client configuration: %v", err)
 		}

@@ -102,7 +102,7 @@ var PushCmd = &cobra.Command{
 				sylog.Fatalf("Cannot push image to library: %v", remoteWarning)
 			}
 
-			co, err := getKeyserverClientOpts(endpoint.SCSDefaultKeyserverURI, endpoint.KeyserverVerifyOp)
+			co, err := getKeyserverClientOpts("", endpoint.KeyserverVerifyOp)
 			if err != nil {
 				sylog.Fatalf("Unable to get keyserver client configuration: %v", err)
 			}

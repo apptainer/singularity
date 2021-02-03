@@ -135,7 +135,7 @@ var buildDetachedFlag = cmdline.Flag{
 var buildBuilderFlag = cmdline.Flag{
 	ID:           "buildBuilderFlag",
 	Value:        &buildArgs.builderURL,
-	DefaultValue: endpoint.SCSDefaultBuilderURI,
+	DefaultValue: "",
 	Name:         "builder",
 	Usage:        "remote Build Service URL, setting this implies --remote",
 	EnvKeys:      []string{"BUILDER"},
