@@ -36,7 +36,7 @@ var (
 var pushLibraryURIFlag = cmdline.Flag{
 	ID:           "pushLibraryURIFlag",
 	Value:        &PushLibraryURI,
-	DefaultValue: endpoint.SCSDefaultLibraryURI,
+	DefaultValue: "",
 	Name:         "library",
 	Usage:        "the library to push to",
 	EnvKeys:      []string{"LIBRARY"},

@@ -145,7 +145,7 @@ var buildBuilderFlag = cmdline.Flag{
 var buildLibraryFlag = cmdline.Flag{
 	ID:           "buildLibraryFlag",
 	Value:        &buildArgs.libraryURL,
-	DefaultValue: endpoint.SCSDefaultLibraryURI,
+	DefaultValue: "",
 	Name:         "library",
 	Usage:        "container Library URL",
 	EnvKeys:      []string{"LIBRARY"},
