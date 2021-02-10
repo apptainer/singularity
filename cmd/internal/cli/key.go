@@ -14,13 +14,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
-)
-
-const (
-	defaultKeyServer = endpoint.SCSDefaultKeyserverURI
 )
 
 var (
@@ -34,7 +29,7 @@ var (
 var keyServerURIFlag = cmdline.Flag{
 	ID:           "keyServerURIFlag",
 	Value:        &keyServerURI,
-	DefaultValue: defaultKeyServer,
+	DefaultValue: "",
 	Name:         "url",
 	ShortHand:    "u",
 	Usage:        "specify the key server URL",

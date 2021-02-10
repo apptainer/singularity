@@ -31,7 +31,7 @@ var (
 var verifyServerURIFlag = cmdline.Flag{
 	ID:           "verifyServerURIFlag",
 	Value:        &keyServerURI,
-	DefaultValue: defaultKeyServer,
+	DefaultValue: "",
 	Name:         "url",
 	ShortHand:    "u",
 	Usage:        "specify a URL for a key server",

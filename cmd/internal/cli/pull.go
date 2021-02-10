@@ -68,7 +68,7 @@ var pullArchFlag = cmdline.Flag{
 var pullLibraryURIFlag = cmdline.Flag{
 	ID:           "pullLibraryURIFlag",
 	Value:        &pullLibraryURI,
-	DefaultValue: endpoint.SCSDefaultLibraryURI,
+	DefaultValue: "",
 	Name:         "library",
 	Usage:        "download images from the provided library",
 	EnvKeys:      []string{"LIBRARY"},
@@ -207,7 +207,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if err != nil {
 			sylog.Fatalf("Unable to get library client configuration: %v", err)
 		}
-		co, err := getKeyserverClientOpts(endpoint.SCSDefaultKeyserverURI, endpoint.KeyserverVerifyOp)
+		co, err := getKeyserverClientOpts("", endpoint.KeyserverVerifyOp)
 		if err != nil {
 			sylog.Fatalf("Unable to get keyserver client configuration: %v", err)
 		}
