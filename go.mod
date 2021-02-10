@@ -14,7 +14,7 @@ require (
 	github.com/containerd/cgroups v0.0.0-20200531161412-0dbf7f05ba59
 	github.com/containerd/containerd v1.4.3
 	github.com/containernetworking/cni v0.8.1
-	github.com/containernetworking/plugins v0.9.0
+	github.com/containernetworking/plugins v0.9.1
 	github.com/containers/image/v5 v5.10.2
 	github.com/deislabs/oras v0.9.0
 	github.com/fatih/color v1.10.0
