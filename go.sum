@@ -604,8 +604,8 @@ github.com/vbauerster/mpb/v4 v4.12.2 h1:TsBs1nWRYF0m8cUH13pxNhOUqY6yKcOr2PeSYxp2
 github.com/vbauerster/mpb/v4 v4.12.2/go.mod h1:LVRGvMch8T4HQO3eg2pFPsACH9kO/O6fT/7vhGje3QE=
 github.com/vbauerster/mpb/v5 v5.4.0 h1:n8JPunifvQvh6P1D1HAl2Ur9YcmKT1tpoUuiea5mlmg=
 github.com/vbauerster/mpb/v5 v5.4.0/go.mod h1:fi4wVo7BVQ22QcvFObm+VwliQXlV1eBT8JDaKXR4JGI=
-github.com/vbauerster/mpb/v6 v6.0.1 h1:4yhYhsQBOcdOm5P/siVgnZQZ2LAs2t8THzzO7YrNZEQ=
-github.com/vbauerster/mpb/v6 v6.0.1/go.mod h1:7St0pxq43OVmVYNSSSMB3Hj1jsEZCk3QDuMWUHJSClc=
+github.com/vbauerster/mpb/v6 v6.0.2 h1:DWFnBOcgHi9GUNduC1MbQ936Z7B77wvOnZexP9Hjzcw=
+github.com/vbauerster/mpb/v6 v6.0.2/go.mod h1:JDNVbdx4oAMMxZNXodDH2DeDY5xBJC8bDGHNFZwRqQM=
 github.com/vishvananda/netlink v1.1.0/go.mod h1:cTgwzPIzzgDAYoQrMm0EdrjRUBkTqKYppBueQtXaqoE=
 github.com/vishvananda/netlink v1.1.1-0.20201029203352-d40f9887b852 h1:cPXZWzzG0NllBLdjWoD1nDfaqu98YMv+OneaKc8sPOA=
 github.com/vishvananda/netlink v1.1.1-0.20201029203352-d40f9887b852/go.mod h1:twkDnbuQxJYemMlGd4JFIcuhgX83tXhKS2B/PRMpOho=
@@ -742,7 +742,7 @@ golang.org/x/sys v0.0.0-20201029080932-201ba4db2418/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20201117170446-d9b008d0a637/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201218084310-7d0127a74742/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20210113131315-ba0562f347e0/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20210113181707-4bcb84eeeb78/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c h1:VwygUrnw9jn88c4u8GD3rZQbqrP/tgas88tPUbBxQrk=
 golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/term v0.0.0-20191110171634-ad39bd3f0407 h1:5zh5atpUEdIc478E/ebrIaHLKcfVvG6dL/fGv7BcMoM=
