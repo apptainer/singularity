@@ -86,7 +86,7 @@ func RelocatePath(original string) (string) {
 
 	executablePath, err := os.Executable()
 	if err != nil {
-		panic(err)
+		return original
 	}
 	prefix := filepath.Dir(executablePath)
 
