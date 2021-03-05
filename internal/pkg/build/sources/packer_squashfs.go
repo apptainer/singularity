@@ -29,7 +29,7 @@ func (p *SquashfsPacker) Pack(context.Context) (*types.Bundle, error) {
 		return nil, fmt.Errorf("could not extract root filesystem: %s", err)
 	}
 
-	s := unpacker.NewSquashfs()
+	s := unpacker.NewSquashfs("")
 
 	// extract root filesystem
 	if err := s.ExtractAll(reader, p.b.RootfsPath); err != nil {

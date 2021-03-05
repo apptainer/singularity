@@ -51,7 +51,7 @@ func TestSquashfs(t *testing.T) {
 }
 
 func testSquashfs(t *testing.T, tmpParent string) {
-	s := NewSquashfs()
+	s := NewSquashfs("")
 
 	if !s.HasUnsquashfs() {
 		t.Skip("unsquashfs not found")

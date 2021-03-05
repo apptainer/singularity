@@ -81,7 +81,7 @@ func checkPartition(reader io.Reader) error {
 	}
 	defer os.RemoveAll(dir)
 
-	s := unpacker.NewSquashfs()
+	s := unpacker.NewSquashfs("")
 	if s.HasUnsquashfs() {
 		if err := s.ExtractFiles([]string{extracted}, reader, dir); err != nil {
 			return fmt.Errorf("extraction failed: %s", err)
