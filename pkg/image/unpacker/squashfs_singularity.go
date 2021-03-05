@@ -29,12 +29,12 @@ func init() {
 
 // getLibraries returns the libraries required by the elf binary,
 // the binary path must be absolute.
-func getLibraries(binary string) ([]string, error) {
+func getLibraries(binary string) (string, []string, error) {
 	libs := make([]string, 0)
 
 	exe, err := elf.Open(binary)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	defer exe.Close()
 
@@ -48,9 +48,9 @@ func getLibraries(binary string) ([]string, error) {
 		buf := make([]byte, 4096)
 		n, err := p.ReadAt(buf, 0)
 		if err != nil && err != io.EOF {
-			return nil, err
+			return interp, nil, err
 		} else if n > cap(buf) {
-			return nil, fmt.Errorf("buffer too small to store interpreter")
+			return interp, nil, fmt.Errorf("buffer too small to store interpreter")
 		}
 		// trim null byte to avoid an execution failure with
 		// an invalid argument error
@@ -59,7 +59,7 @@ func getLibraries(binary string) ([]string, error) {
 
 	// this is a static binary, nothing to do
 	if interp == "" {
-		return libs, nil
+		return interp, libs, nil
 	}
 
 	// run interpreter to list library dependencies for the
@@ -80,7 +80,7 @@ func getLibraries(binary string) ([]string, error) {
 	cmd.Env = []string{}
 
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("while getting library dependencies: %s\n%s", err, errBuf.String())
+		return interp, nil, fmt.Errorf("while getting library dependencies: %s\n%s", err, errBuf.String())
 	}
 
 	// parse the output to get matches for ' /an/absolute/path ('
@@ -104,7 +104,7 @@ func getLibraries(binary string) ([]string, error) {
 		}
 	}
 
-	return libs, nil
+	return interp, libs, nil
 }
 
 // unsquashfsSandboxCmd is the command instance for executing unsquashfs command
@@ -171,7 +171,7 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 	}
 
 	// get the library dependencies of unsquashfs
-	libs, err := getLibraries(unsquashfs)
+	interp, libs, err := getLibraries(unsquashfs)
 	if err != nil {
 		return nil, err
 	}
@@ -216,6 +216,9 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 	args = append(args, rootfs)
 
 	// unsquashfs execution arguments
+	if interp != "" {
+		args = append(args, interp)
+	}
 	args = append(args, unsquashfs)
 	args = append(args, opts...)
 

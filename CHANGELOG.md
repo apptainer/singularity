@@ -23,6 +23,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Remove spurious warning in parseTokenSection()
   - e2e test fixes for new kernels, new unsquashfs version.
   - Show correct web URI for detached builds against alternate remotes.
+  - Support finding unsqashfs from non-standard locations
 
 
 # v3.7.0 - [2020-11-24]

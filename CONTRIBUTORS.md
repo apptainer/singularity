@@ -21,6 +21,7 @@
     - Brian Bockelman <bbockelm@cse.unl.edu>
     - Carl Madison <carl@sylabs.io>
     - Cedric Clerget <cedric@sylabs.io>, <cedric.clerget@univ-fcomte.fr>
+    - Chris Burr <christopher.burr@cern.ch>
     - Chris Hollowell <hollowec@bnl.gov>
     - Christian Neyers <foss@neyers.org>
     - Daniele Tamino <daniele.tamino@gmail.com>

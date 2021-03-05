@@ -62,7 +62,10 @@ type Squashfs struct {
 // NewSquashfs initializes and returns a Squahfs unpacker instance
 func NewSquashfs() *Squashfs {
 	s := &Squashfs{}
+	defaultPath := os.Getenv("PATH")
+	os.Setenv("PATH", os.Getenv("USER_PATH"))
 	s.UnsquashfsPath, _ = exec.LookPath("unsquashfs")
+	os.Setenv("PATH", defaultPath)
 	return s
 }
 
