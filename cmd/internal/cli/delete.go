@@ -15,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -69,7 +68,7 @@ var deleteLibraryURI string
 var deleteLibraryURIFlag = cmdline.Flag{
 	ID:           "deleteLibraryURIFlag",
 	Value:        &deleteLibraryURI,
-	DefaultValue: endpoint.SCSDefaultLibraryURI,
+	DefaultValue: "",
 	Name:         "library",
 	Usage:        "delete images from the provided library",
 	EnvKeys:      []string{"LIBRARY"},

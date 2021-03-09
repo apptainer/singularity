@@ -586,9 +586,10 @@ func CheckRootOrUnpriv(cmd *cobra.Command, args []string) {
 	}
 }
 
+// getKeyServerClientOpts returns client options for keyserver access.
+// A "" value for uri will return client options for the current endpoint.
+// A specified uri will return client options for that keyserver.
 func getKeyserverClientOpts(uri string, op endpoint.KeyserverOp) ([]scskeyclient.Option, error) {
-	isDefault := uri == endpoint.SCSDefaultKeyserverURI
-
 	if currentRemoteEndpoint == nil {
 		var err error
 
@@ -599,19 +600,17 @@ func getKeyserverClientOpts(uri string, op endpoint.KeyserverOp) ([]scskeyclient
 			return nil, fmt.Errorf("unable to load remote configuration: %v", err)
 		}
 	}
-	if currentRemoteEndpoint == endpoint.DefaultEndpointConfig && isDefault {
-		sylog.Warningf("No default remote in use, falling back to default keyserver: %s", uri)
-	}
-	if isDefault {
-		uri = ""
+	if currentRemoteEndpoint == endpoint.DefaultEndpointConfig {
+		sylog.Warningf("No default remote in use, falling back to default keyserver: %s", endpoint.SCSDefaultKeyserverURI)
 	}
 
 	return currentRemoteEndpoint.KeyserverClientOpts(uri, op)
 }
 
+// getLibraryClientConfig returns client config for library server access.
+// A "" value for uri will return client config for the current endpoint.
+// A specified uri will return client options for that library server.
 func getLibraryClientConfig(uri string) (*scslibclient.Config, error) {
-	isDefault := uri == endpoint.SCSDefaultLibraryURI
-
 	if currentRemoteEndpoint == nil {
 		var err error
 
@@ -622,19 +621,17 @@ func getLibraryClientConfig(uri string) (*scslibclient.Config, error) {
 			return nil, fmt.Errorf("unable to load remote configuration: %v", err)
 		}
 	}
-	if currentRemoteEndpoint == endpoint.DefaultEndpointConfig && isDefault {
-		sylog.Warningf("No default remote in use, falling back to default library: %s", uri)
-	}
-	if isDefault {
-		uri = ""
+	if currentRemoteEndpoint == endpoint.DefaultEndpointConfig {
+		sylog.Warningf("No default remote in use, falling back to default library: %s", endpoint.SCSDefaultLibraryURI)
 	}
 
 	return currentRemoteEndpoint.LibraryClientConfig(uri)
 }
 
+// getBuilderClientConfig returns client config for build server access.
+// A "" value for uri will return client config for the current endpoint.
+// A specified uri will return client options for that build server.
 func getBuilderClientConfig(uri string) (*scsbuildclient.Config, error) {
-	isDefault := uri == endpoint.SCSDefaultBuilderURI
-
 	if currentRemoteEndpoint == nil {
 		var err error
 
@@ -645,11 +642,8 @@ func getBuilderClientConfig(uri string) (*scsbuildclient.Config, error) {
 			return nil, fmt.Errorf("unable to load remote configuration: %v", err)
 		}
 	}
-	if currentRemoteEndpoint == endpoint.DefaultEndpointConfig && isDefault {
-		sylog.Warningf("No default remote in use, falling back to default builder: %s", uri)
-	}
-	if isDefault {
-		uri = ""
+	if currentRemoteEndpoint == endpoint.DefaultEndpointConfig {
+		sylog.Warningf("No default remote in use, falling back to default builder: %s", endpoint.SCSDefaultBuilderURI)
 	}
 
 	return currentRemoteEndpoint.BuilderClientConfig(uri)

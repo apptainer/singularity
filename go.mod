@@ -11,12 +11,12 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
-	github.com/containerd/cgroups v0.0.0-20200116170754-a8908713319d
-	github.com/containerd/containerd v1.4.3
-	github.com/containernetworking/cni v0.8.0
-	github.com/containernetworking/plugins v0.9.0
-	github.com/containers/image/v5 v5.9.0
-	github.com/deislabs/oras v0.8.1
+	github.com/containerd/cgroups v0.0.0-20200531161412-0dbf7f05ba59
+	github.com/containerd/containerd v1.4.4
+	github.com/containernetworking/cni v0.8.1
+	github.com/containernetworking/plugins v0.9.1
+	github.com/containers/image/v5 v5.10.5
+	github.com/deislabs/oras v0.10.0
 	github.com/fatih/color v1.10.0
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/go-log/log v0.2.0
@@ -37,27 +37,33 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/seccomp/containers-golang v0.6.0
 	github.com/seccomp/libseccomp-golang v0.9.1
-	github.com/spf13/cobra v1.1.1
+	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.7.0
 	github.com/sylabs/scs-build-client v0.1.5
 	github.com/sylabs/scs-key-client v0.6.0
-	github.com/sylabs/scs-library-client v1.0.2
+	github.com/sylabs/scs-library-client v1.0.3
 	github.com/sylabs/sif v1.2.1
 	github.com/vbauerster/mpb/v4 v4.12.2
+	github.com/vbauerster/mpb/v6 v6.0.2
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go.opencensus.io v0.22.2 // indirect
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
-	golang.org/x/sys v0.0.0-20201117170446-d9b008d0a637
+	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
-	mvdan.cc/sh/v3 v3.2.1
-	rsc.io/letsencrypt v0.0.3 // indirect
+	mvdan.cc/sh/v3 v3.2.2
 )
 
-replace golang.org/x/crypto => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
+replace (
+	// These are required for oras v0.9.0
+	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
+	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
+
+	golang.org/x/crypto => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
+)

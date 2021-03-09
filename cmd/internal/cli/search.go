@@ -14,7 +14,6 @@ import (
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/client/library"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -32,7 +31,7 @@ var (
 var searchLibraryFlag = cmdline.Flag{
 	ID:           "searchLibraryFlag",
 	Value:        &SearchLibraryURI,
-	DefaultValue: endpoint.SCSDefaultLibraryURI,
+	DefaultValue: "",
 	Name:         "library",
 	Usage:        "URI for library to search",
 	EnvKeys:      []string{"LIBRARY"},

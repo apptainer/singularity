@@ -24,6 +24,7 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
@@ -135,7 +136,7 @@ var buildDetachedFlag = cmdline.Flag{
 var buildBuilderFlag = cmdline.Flag{
 	ID:           "buildBuilderFlag",
 	Value:        &buildArgs.builderURL,
-	DefaultValue: endpoint.SCSDefaultBuilderURI,
+	DefaultValue: "",
 	Name:         "builder",
 	Usage:        "remote Build Service URL, setting this implies --remote",
 	EnvKeys:      []string{"BUILDER"},
@@ -145,7 +146,7 @@ var buildBuilderFlag = cmdline.Flag{
 var buildLibraryFlag = cmdline.Flag{
 	ID:           "buildLibraryFlag",
 	Value:        &buildArgs.libraryURL,
-	DefaultValue: endpoint.SCSDefaultLibraryURI,
+	DefaultValue: "",
 	Name:         "library",
 	Usage:        "container Library URL",
 	EnvKeys:      []string{"LIBRARY"},
@@ -299,8 +300,15 @@ func checkBuildTarget(path string) error {
 
 			question := fmt.Sprintf("Build target '%s' already exists and will be deleted during the build process. Do you want to continue? [N/y]", f.Name())
 
-			if isDefFile, _ := parser.IsValidDefinition(abspath); isDefFile {
-				question = fmt.Sprintf("Build target '%s' is a definition file that will be overwritten. Do you still want to overwrite? [N/y]", f.Name())
+			img, err := image.Init(abspath, false)
+			if err != nil {
+				if err != image.ErrUnknownFormat {
+					return fmt.Errorf("while determining '%s' format: %s", f.Name(), err)
+				}
+				// unknown image file format
+				question = fmt.Sprintf("Build target '%s' may be a definition file or a text/binary file that will be overwritten. Do you still want to overwrite it? [N/y]", f.Name())
+			} else {
+				img.File.Close()
 			}
 
 			input, err := interactive.AskYNQuestion("n", question)
