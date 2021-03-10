@@ -20,7 +20,7 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
-const (
+var (
 	// rootDir is the root directory for the plugin
 	// installation, typically located within LIBEXECDIR.
 	rootDir = buildcfg.PLUGIN_ROOTDIR
