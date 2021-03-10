@@ -9,7 +9,20 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes since v3.7.0
+# v3.7.2 - [2021-03-09]
+
+## Bug Fixes
+
+  - Fix progress bar display when source image size is unknown.
+  - Fix a memory usage / leak issue when building from an existing
+    image file.
+  - Fix to allow use of ``--library`` flag to point push/pull at
+    default cloud library when another remote is in use.
+  - Address false positive loop test errors, and an e2e test registry
+    setup issue.
+
+
+# v3.7.1 - [2021-01-12]
 
 ## Bug Fixes
 
