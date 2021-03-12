@@ -45,7 +45,7 @@ unit-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(B
 unit-test:
 	@echo " TEST sudo go test [unit]"
 	$(V)cd $(SOURCEDIR) && \
-		scripts/go-test -sudo -v $(EXTRA_FLAGS) \
+		scripts/go-test -sudo -v $(GO_RACE) $(EXTRA_FLAGS) \
 		./...
 	@echo "       PASS"
 
@@ -54,7 +54,7 @@ short-unit-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-jun
 short-unit-test:
 	@echo " TEST sudo go test [unit]"
 	$(V)cd $(SOURCEDIR) && \
-		scripts/go-test -sudo -v -short $(EXTRA_FLAGS) \
+		scripts/go-test -sudo -v -short $(GO_RACE) $(EXTRA_FLAGS) \
 		./...
 	@echo "       PASS"
 
@@ -66,7 +66,7 @@ e2e-test:
 	$(V)rm -f $(BUILDDIR_ABSPATH)/e2e-cmd-coverage
 	$(V)cd $(SOURCEDIR) && \
 		SINGULARITY_E2E_COVERAGE=$(BUILDDIR_ABSPATH)/e2e-cmd-coverage \
-		scripts/e2e-test -v $(EXTRA_FLAGS)
+		scripts/e2e-test -v $(GO_RACE) $(EXTRA_FLAGS)
 	@echo "       PASS"
 	@echo " TEST e2e-coverage"
 	$(V)cd $(SOURCEDIR) && \
@@ -79,7 +79,7 @@ e2e-test:
 integration-test:
 	@echo " TEST sudo go test [integration]"
 	$(V)cd $(SOURCEDIR) && \
-		scripts/go-test -sudo -v -tags 'integration_test' \
+		scripts/go-test -sudo -v -tags 'integration_test' $(GO_RACE) \
 		./cmd/singularity ./pkg/network
 	@echo "       PASS"
 
@@ -87,7 +87,7 @@ integration-test:
 short-integration-test:
 	@echo " TEST sudo go test [short-integration]"
 	$(V)cd $(SOURCEDIR) && \
-		scripts/go-test -sudo -v -tags 'integration_test' \
+		scripts/go-test -sudo -v -tags 'integration_test' $(GO_RACE) \
 		./pkg/network
 	@echo "       PASS"
 
@@ -95,7 +95,7 @@ short-integration-test:
 action-test:
 	@echo " TEST sudo go test [action]"
 	$(V)cd $(SOURCEDIR) && \
-		scripts/go-test -sudo -v -tags 'integration_test' \
+		scripts/go-test -sudo -v -tags 'integration_test' $(GO_RACE) \
 		-run TestSingularityActions ./cmd/singularity \
 		-args -skip-overlay
 	@echo "       PASS"
@@ -106,7 +106,7 @@ test:
 	$(V)M=0; eval 'while [ $$M -le 20 ]; do sleep 60; M=`expr $$M + 1`; echo "Still testing ($$M) ..."; done &' ; \
     	trap "kill $$! || true" 0; \
 		cd $(SOURCEDIR) && \
-		scripts/go-test -sudo -v -tags 'integration_test' \
+		scripts/go-test -sudo -v -tags 'integration_test' $(GO_RACE) \
 		./...
 	@echo "       PASS"
 

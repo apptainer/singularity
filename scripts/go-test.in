@@ -129,7 +129,6 @@ rc=0
 	-timeout=30m \
 	-tags "${GO_TAGS}" \
 	-cover \
-	-race \
 	${sudo_exec} \
 	"$@" ||
 rc=$?
