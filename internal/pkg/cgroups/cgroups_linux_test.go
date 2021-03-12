@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -52,7 +53,14 @@ func TestCgroups(t *testing.T) {
 	path := filepath.Join("/singularity", strPid)
 
 	manager := &Manager{Pid: pid, Path: path}
-	if err := manager.ApplyFromFile("example/cgroups.toml"); err != nil {
+
+	cgroupsToml := "example/cgroups.toml"
+	// A different pageSize is needed on pp64le
+	if runtime.GOARCH == "ppc64le" {
+		cgroupsToml = "example/cgroups-ppc64le.toml"
+	}
+
+	if err := manager.ApplyFromFile(cgroupsToml); err != nil {
 		t.Fatal(err)
 	}
 	defer manager.Remove()
