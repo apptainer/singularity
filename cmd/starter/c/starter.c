@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2020, Sylabs, Inc. All rights reserved.
+  Copyright (c) 2018-2021, Sylabs, Inc. All rights reserved.
 
   This software is licensed under a 3-clause BSD license.  Please
   consult LICENSE.md file distributed with the sources of this project regarding
@@ -1145,9 +1145,9 @@ static void cleanenv(void) {
      * debugging purposes.
      */
     for (e = environ; *e != NULL; e++) {
-        if ( strncmp(MSGLVL_ENV "=", *e, sizeof(MSGLVL_ENV)) == 0 ||
-             strncmp("GOGC" "=", *e, sizeof("GOGC")) == 0 ||
-             strncmp("GODEBUG" "=", *e, sizeof("GODEBUG")) == 0 ) {
+        if ( strncmp(MSGLVL_ENV "=", *e, strlen(MSGLVL_ENV "=")) == 0 ||
+             strncmp("GOGC" "=", *e, strlen("GOGC" "=")) == 0 ||
+             strncmp("GODEBUG" "=", *e, strlen("GODEBUG" "=")) == 0 ) {
             debugf("Keeping env var %s\n", *e);
         } else {
             debugf("Clearing env var %s\n", *e);
