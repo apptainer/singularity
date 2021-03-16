@@ -986,6 +986,7 @@ static void cleanup_fd(fdlist_t *master, struct starter *starter) {
             if ( starter->fds[i] == fd ) {
                 found = true;
                 /* set force close on exec */
+                debugf("Setting FD_CLOEXEC on starter fd %d\n", starter->fds[i]);
                 if ( fcntl(starter->fds[i], F_SETFD, FD_CLOEXEC) < 0 ) {
                     debugf("Can't set FD_CLOEXEC on file descriptor %d: %s\n", starter->fds[i], strerror(errno));
                 }
@@ -1139,9 +1140,17 @@ static void cleanenv(void) {
     /*
      * keep only SINGULARITY_MESSAGELEVEL for GO runtime, set others to empty
      * string and not NULL (see issue #3703 for why)
+     *
+     * DCT - also keep any GOGC and GODEBUG vars for go runtime
+     * debugging purposes.
      */
     for (e = environ; *e != NULL; e++) {
-        if ( strncmp(MSGLVL_ENV "=", *e, sizeof(MSGLVL_ENV)) != 0 ) {
+        if ( strncmp(MSGLVL_ENV "=", *e, sizeof(MSGLVL_ENV)) == 0 ||
+             strncmp("GOGC" "=", *e, sizeof("GOGC")) == 0 ||
+             strncmp("GODEBUG" "=", *e, sizeof("GODEBUG")) == 0 ) {
+            debugf("Keeping env var %s\n", *e);
+        } else {
+            debugf("Clearing env var %s\n", *e);
             *e = "";
         }
     }
