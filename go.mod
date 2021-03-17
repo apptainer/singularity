@@ -16,7 +16,7 @@ require (
 	github.com/containernetworking/cni v0.8.1
 	github.com/containernetworking/plugins v0.9.1
 	github.com/containers/image/v5 v5.10.5
-	github.com/deislabs/oras v0.10.0
+	github.com/deislabs/oras v0.11.0
 	github.com/fatih/color v1.10.0
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/go-log/log v0.2.0
