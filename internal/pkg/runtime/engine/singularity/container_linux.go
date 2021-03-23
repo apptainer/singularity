@@ -8,6 +8,7 @@ package singularity
 import (
 	"context"
 	"fmt"
+	"github.com/sylabs/singularity/pkg/util/slice"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -2245,39 +2246,26 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 	fakeroot := c.engine.EngineConfig.GetFakeroot()
 	net := c.engine.EngineConfig.GetNetwork()
 	euid := os.Geteuid()
-	eUser, err := user.GetPwUID((uint32)(euid))
-	if err != nil {
-		return nil, fmt.Errorf("could not retrieve group information while validating --net usage")
-	}
-
-	allowedNetUser := false
-	allowedNetGroup := false
-
-	// TODO - factor out into a username / uid in slice utility function
-	for _, u := range c.engine.EngineConfig.File.AllowNetUsers {
-		if u == eUser.Name || u == fmt.Sprintf("%d", eUser.UID) {
-			allowedNetUser = true
-			sylog.Debugf("User %v is permitted to request network configurations by singularity.conf", u)
-			break
+	allowedNetUnpriv := false
+	if euid != 0 {
+		// Is the user permitted in the list of unpriv users / groups permitted to use CNI?
+		allowedNetUser, err := user.UserInList(fmt.Sprintf("%d", euid), c.engine.EngineConfig.File.AllowNetUsers)
+		if err != nil {
+			return nil, err
 		}
-	}
-	// TODO - This is only looking at the primary GID.. needs to be factored out into a utility function
-	// that considers all groups the user is a member of.
-	eGroup, err := user.GetGrGID(eUser.GID)
-	if err != nil {
-		return nil, fmt.Errorf("could not retrieve group information while validating --net usage")
-	}
-	for _, g := range c.engine.EngineConfig.File.AllowNetGroups {
-		if g == eGroup.Name || g == fmt.Sprintf("%d", eGroup.GID) {
-			allowedNetGroup = true
-			sylog.Debugf("Group %v is permitted to request network configurations by singularity.conf", g)
-			break
+		allowedNetGroup, err := user.UserInGroup(fmt.Sprintf("%d", euid), c.engine.EngineConfig.File.AllowNetGroups)
+		if err != nil {
+			return nil, err
 		}
+		// Is the requested network in the list of networks allowed for unpriv CNI?
+		allowedNetNetwork := slice.ContainsString(c.engine.EngineConfig.File.AllowNetNetworks, net)
+		// User is in the user / groups allowed, and requesting an allowed network?
+		allowedNetUnpriv = (allowedNetUser || allowedNetGroup) && allowedNetNetwork
 	}
 
 	if !c.netNS || net == noneNet {
 		return nil, nil
-	} else if (c.userNS || eUser.UID != 0) && !fakeroot && !allowedNetUser && !allowedNetGroup {
+	} else if (c.userNS || euid != 0) && !fakeroot && !allowedNetUnpriv {
 		return nil, fmt.Errorf("network requires root or --fakeroot, non-root users can only use --network=%s unless permitted by the administrator", noneNet)
 	}
 
@@ -2323,7 +2311,7 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 	}
 
 	return func(ctx context.Context) error {
-		if fakeroot || allowedNetUser || allowedNetGroup {
+		if fakeroot || allowedNetUnpriv {
 			// prevent port hijacking between user processes
 			if err := networkSetup.SetPortProtection(net, 0); err != nil {
 				return err

@@ -41,8 +41,6 @@ type File struct {
 	AllowContainerExtfs     bool     `default:"yes" authorized:"yes,no" directive:"allow container extfs"`
 	AllowContainerDir       bool     `default:"yes" authorized:"yes,no" directive:"allow container dir"`
 	AllowContainerEncrypted bool     `default:"yes" authorized:"yes,no" directive:"allow container encrypted"`
-	AllowNetUsers			[]string `directive:"allow net users"`
-	AllowNetGroups			[]string `directive:"allow net groups"`
 	AlwaysUseNv             bool     `default:"no" authorized:"yes,no" directive:"always use nv"`
 	AlwaysUseRocm           bool     `default:"no" authorized:"yes,no" directive:"always use rocm"`
 	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
@@ -54,6 +52,9 @@ type File struct {
 	LimitContainerOwners    []string `directive:"limit container owners"`
 	LimitContainerGroups    []string `directive:"limit container groups"`
 	LimitContainerPaths     []string `directive:"limit container paths"`
+	AllowNetUsers           []string `directive:"allow net users"`
+	AllowNetGroups          []string `directive:"allow net groups"`
+	AllowNetNetworks        []string `directive:"allow net networks"`
 	RootDefaultCapabilities string   `default:"full" authorized:"full,file,no" directive:"root default capabilities"`
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 	CniConfPath             string   `directive:"cni configuration path"`
@@ -266,7 +267,7 @@ allow container encrypted = {{ if eq .AllowContainerEncrypted true }}yes{{ else 
 
 # ALLOW NET USERS: [STRING]
 # DEFAULT: NULL
-# Allow the root administered CNI network configurations to be used by the
+# Allow specified root administered CNI network configurations to be used by the
 # specified list of users. By default only root may use CNI configuration,
 # except in the case of a fakeroot execution where only 40_fakeroot.conflist
 # is used. This feature only applies when Singularity is running in
@@ -278,7 +279,7 @@ allow container encrypted = {{ if eq .AllowContainerEncrypted true }}yes{{ else 
 
 # ALLOW NET GROUPS: [STRING]
 # DEFAULT: NULL
-# Allow the root administered CNI network configurations to be used by the
+# Allow specified root administered CNI network configurations to be used by the
 # specified list of users. By default only root may use CNI configuration,
 # except in the case of a fakeroot execution where only 40_fakeroot.conflist
 # is used. This feature only applies when Singularity is running in
@@ -286,6 +287,16 @@ allow container encrypted = {{ if eq .AllowContainerEncrypted true }}yes{{ else 
 #allow net groups = group1, singularity
 {{ range $index, $group := .AllowNetGroups }}
 {{- if eq $index 0 }}allow net groups = {{ else }}, {{ end }}{{$group}}
+{{- end }}
+
+# ALLOW NET NETWORKS: [STRING]
+# DEFAULT: NULL
+# Specify the names of CNI network configurations that may be used by users and
+# groups listed in the allow net users / allow net groups directives. Thus feature
+# only applies when Singularity is running in SUID mode and the user is non-root.
+#allow net networks = bridge
+{{ range $index, $group := .AllowNetNetworks }}
+{{- if eq $index 0 }}allow net networks = {{ else }}, {{ end }}{{$group}}
 {{- end }}
 
 # ALWAYS USE NV ${TYPE}: [BOOL]
