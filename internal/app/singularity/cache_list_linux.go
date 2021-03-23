@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"fmt"
+	"github.com/sylabs/singularity/pkg/util/slice"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -74,7 +75,7 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 	blobsShown := false
 
 	// If types requested includes "all" then we don't want to filter anything
-	if stringInSlice("all", cacheListTypes) {
+	if slice.ContainsString(cacheListTypes, "all") {
 		cacheListTypes = []string{}
 	}
 
@@ -82,7 +83,7 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 		// the type blob is special: 1. there's a
 		// separate counter for it; 2. the cache entries
 		// are actually one level deeper
-		if len(cacheListTypes) > 0 && !stringInSlice(cacheType, cacheListTypes) {
+		if len(cacheListTypes) > 0 && !slice.ContainsString(cacheListTypes, cacheType) {
 			continue
 		}
 		cacheDir, err := imgCache.GetOciCacheDir(cacheType)
@@ -101,7 +102,7 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 		blobsShown = true
 	}
 	for _, cacheType := range cache.FileCacheTypes {
-		if len(cacheListTypes) > 0 && !stringInSlice(cacheType, cacheListTypes) {
+		if len(cacheListTypes) > 0 && !slice.ContainsString(cacheListTypes, cacheType) {
 			continue
 		}
 		cacheDir, err := imgCache.GetFileCacheDir(cacheType)
@@ -140,13 +141,4 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 	fmt.Printf("Total space used: %s\n", fs.FindSize(totalSpace))
 
 	return nil
-}
-
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
 }
