@@ -8,6 +8,7 @@ package singularity
 import (
 	"errors"
 	"fmt"
+
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/slice"

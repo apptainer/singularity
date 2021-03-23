@@ -8,7 +8,6 @@ package singularity
 import (
 	"context"
 	"fmt"
-	"github.com/sylabs/singularity/pkg/util/slice"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -41,6 +40,7 @@ import (
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/sylabs/singularity/pkg/util/slice"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sys/unix"
 )
@@ -2249,11 +2249,11 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 	allowedNetUnpriv := false
 	if euid != 0 {
 		// Is the user permitted in the list of unpriv users / groups permitted to use CNI?
-		allowedNetUser, err := user.UserInList(fmt.Sprintf("%d", euid), c.engine.EngineConfig.File.AllowNetUsers)
+		allowedNetUser, err := user.UIDInList(euid, c.engine.EngineConfig.File.AllowNetUsers)
 		if err != nil {
 			return nil, err
 		}
-		allowedNetGroup, err := user.UserInGroup(fmt.Sprintf("%d", euid), c.engine.EngineConfig.File.AllowNetGroups)
+		allowedNetGroup, err := user.UIDInAnyGroup(euid, c.engine.EngineConfig.File.AllowNetGroups)
 		if err != nil {
 			return nil, err
 		}

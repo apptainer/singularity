@@ -7,7 +7,7 @@ package slice
 
 // ContainsString returns true if string slice s contains match
 func ContainsString(s []string, match string) bool {
-	for _, a := range s  {
+	for _, a := range s {
 		if a == match {
 			return true
 		}

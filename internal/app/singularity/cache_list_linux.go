@@ -7,7 +7,6 @@ package singularity
 
 import (
 	"fmt"
-	"github.com/sylabs/singularity/pkg/util/slice"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/pkg/util/slice"
 )
 
 // listTypeCache will list a cache type with given name (cacheType). The options are 'library', and 'oci'.

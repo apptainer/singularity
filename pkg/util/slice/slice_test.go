@@ -59,7 +59,7 @@ func TestContainsString(t *testing.T) {
 
 func TestContainsAnyString(t *testing.T) {
 	type args struct {
-		s     []string
+		s       []string
 		matches []string
 	}
 	tests := []struct {
@@ -84,17 +84,17 @@ func TestContainsAnyString(t *testing.T) {
 		},
 		{
 			name: "NoMatchesSingle",
-			args: args{[]string{}, []string{"1","2","3"}},
+			args: args{[]string{}, []string{"1", "2", "3"}},
 			want: false,
 		},
 		{
 			name: "NoMatchesMulti",
-			args: args{[]string{}, []string{"1","2","3"}},
+			args: args{[]string{}, []string{"1", "2", "3"}},
 			want: false,
 		},
 		{
 			name: "NoMatchesEmpty",
-			args: args{[]string{}, []string{"1","2","3"}},
+			args: args{[]string{}, []string{"1", "2", "3"}},
 			want: false,
 		},
 		{

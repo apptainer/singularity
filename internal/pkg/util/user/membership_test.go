@@ -7,18 +7,18 @@ package user
 
 import (
 	"fmt"
-	"os/user"
+	"strconv"
 	"testing"
 )
 
 func TestUserInList(t *testing.T) {
-	u, err := user.Current()
-	if err != nil{
+	u, err := Current()
+	if err != nil {
 		t.Fatalf("Could not identify current user for test: %v", err)
 	}
 
 	type args struct {
-		uid  string
+		uid  int
 		list []string
 	}
 	tests := []struct {
@@ -28,50 +28,50 @@ func TestUserInList(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "NotInList",
-			args: args{u.Uid, []string{"0", "root"}},
-			want: false,
+			name:    "NotInList",
+			args:    args{int(u.UID), []string{"9999", "notauser"}},
+			want:    false,
 			wantErr: false,
 		},
 		{
-			name: "InListUid",
-			args: args{u.Uid, []string{"0", "root", u.Uid}},
-			want: true,
+			name:    "InListUid",
+			args:    args{int(u.UID), []string{"9999", "notauser", strconv.Itoa(int(u.UID))}},
+			want:    true,
 			wantErr: false,
 		},
 		{
-			name: "InListName",
-			args: args{u.Uid, []string{"0", "root", u.Name}},
-			want: true,
+			name:    "InListName",
+			args:    args{int(u.UID), []string{"9999", "notauser", u.Name}},
+			want:    true,
 			wantErr: false,
 		},
 	}
-		for _, tt := range tests {
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := UserInList(tt.args.uid, tt.args.list)
+			got, err := UIDInList(tt.args.uid, tt.args.list)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("UserInList() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("UIDInList() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("UserInList() got = %v, want %v", got, tt.want)
+				t.Errorf("UIDInList() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func TestUserInGroup(t *testing.T) {
-	u, err := user.Current()
-	if err != nil{
+	u, err := current()
+	if err != nil {
 		t.Fatalf("Could not identify current user for test: %v", err)
 	}
 	g, err := currentGroup()
-	if err != nil{
+	if err != nil {
 		t.Fatalf("Could not identify current group for test: %v", err)
 	}
 
 	type args struct {
-		uid  string
+		uid  int
 		list []string
 	}
 	tests := []struct {
@@ -81,33 +81,33 @@ func TestUserInGroup(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "NotInList",
-			args: args{u.Uid, []string{"0", "root"}},
-			want: false,
+			name:    "NotInList",
+			args:    args{int(u.UID), []string{"9999", "notagroup"}},
+			want:    false,
 			wantErr: false,
 		},
 		{
-			name: "InListUid",
-			args: args{u.Uid, []string{"0", "root", fmt.Sprintf("%d",g.GID)}},
-			want: true,
+			name:    "InListUid",
+			args:    args{int(u.UID), []string{"9999", "notagroup", fmt.Sprintf("%d", g.GID)}},
+			want:    true,
 			wantErr: false,
 		},
 		{
-			name: "InListName",
-			args: args{u.Uid, []string{"0", "root", g.Name}},
-			want: true,
+			name:    "InListName",
+			args:    args{int(u.UID), []string{"9999", "notagroup", g.Name}},
+			want:    true,
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := UserInGroup(tt.args.uid, tt.args.list)
+			got, err := UIDInAnyGroup(tt.args.uid, tt.args.list)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("UserInGroup() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("UIDInAnyGroup() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("UserInGroup() got = %v, want %v", got, tt.want)
+				t.Errorf("UIDInAnyGroup() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

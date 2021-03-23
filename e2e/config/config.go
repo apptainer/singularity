@@ -406,7 +406,7 @@ func (c configTests) configGlobalCombination(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	setDirective := func(t *testing.T, directives map[string]string) {
-		for k,v := range directives {
+		for k, v := range directives {
 			c.env.RunSingularity(
 				t,
 				e2e.WithProfile(e2e.RootProfile),
@@ -417,7 +417,7 @@ func (c configTests) configGlobalCombination(t *testing.T) {
 		}
 	}
 	resetDirective := func(t *testing.T, directives map[string]string) {
-		for k,_ := range directives {
+		for k := range directives {
 			c.env.RunSingularity(
 				t,
 				e2e.WithProfile(e2e.RootProfile),
@@ -440,103 +440,103 @@ func (c configTests) configGlobalCombination(t *testing.T) {
 		profile           e2e.Profile
 		addRequirementsFn func(*testing.T)
 		cwd               string
-		directives         map[string]string
+		directives        map[string]string
 		exit              int
 		resultOp          e2e.SingularityCmdResultOp
 	}{
-			{
-			name:           "AllowNetUsersNobody",
-			argv:           []string{"--net", c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
-			directives:     map[string]string{
+		{
+			name:    "AllowNetUsersNobody",
+			argv:    []string{"--net", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
 				"allow net users": "nobody",
-			} ,
-			exit:           255,
+			},
+			exit: 255,
 		},
 		{
-			name:           "AllowNetUsersUser",
-			argv:           []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
-			directives:     map[string]string{
+			name:    "AllowNetUsersUser",
+			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
 				"allow net users": u.Name,
-			} ,
-			exit:           255,
+			},
+			exit: 255,
 		},
 		{
-			name:           "AllowNetUsersUID",
-			argv:           []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
-			directives:     map[string]string{
+			name:    "AllowNetUsersUID",
+			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
 				"allow net users": fmt.Sprintf("%d", u.UID),
 			},
-			exit:           255,
+			exit: 255,
 		},
 		{
-			name:           "AllowNetUsersUserOK",
-			argv:           []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
-			directives:     map[string]string{
-				"allow net users": u.Name,
-				"allow net networks": "bridge",
-			} ,
-			exit:           0,
-		},
-		{
-			name:           "AllowNetUsersUIDOK",
-			argv:           []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
-			directives:     map[string]string{
-				"allow net users": fmt.Sprintf("%d", u.UID),
+			name:    "AllowNetUsersUserOK",
+			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
+				"allow net users":    u.Name,
 				"allow net networks": "bridge",
 			},
-			exit:           0,
+			exit: 0,
 		},
 		{
-			name:           "AllowNetGroupsNobody",
-			argv:           []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
-			directives:     map[string]string{
+			name:    "AllowNetUsersUIDOK",
+			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
+				"allow net users":    fmt.Sprintf("%d", u.UID),
+				"allow net networks": "bridge",
+			},
+			exit: 0,
+		},
+		{
+			name:    "AllowNetGroupsNobody",
+			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
 				"allow net groups": "nobody",
 			},
-			exit:           255,
+			exit: 255,
 		},
 		{
-			name:           "AllowNetGroupsGroup",
-			argv:           []string{"--net","--network", "bridge", c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
-			directives:     map[string]string{
+			name:    "AllowNetGroupsGroup",
+			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
 				"allow net groups": g.Name,
 			},
-			exit:           255,
+			exit: 255,
 		},
 		{
-			name:           "AllowNetGroupsGID",
-			argv:           []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
-			directives:     map[string]string{
+			name:    "AllowNetGroupsGID",
+			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
 				"allow net groups": fmt.Sprintf("%d", g.GID),
 			},
-			exit:           255,
+			exit: 255,
 		},
 		{
-			name:           "AllowNetGroupsGroupOK",
-			argv:           []string{"--net","--network", "bridge", c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
-			directives:     map[string]string{
-				"allow net groups": g.Name,
+			name:    "AllowNetGroupsGroupOK",
+			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
+				"allow net groups":   g.Name,
 				"allow net networks": "bridge",
 			},
-			exit:           0,
+			exit: 0,
 		},
 		{
-			name:           "AllowNetGroupsGIDOK",
-			argv:           []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
-			directives:     map[string]string{
-				"allow net groups": fmt.Sprintf("%d", g.GID),
+			name:    "AllowNetGroupsGIDOK",
+			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
+				"allow net groups":   fmt.Sprintf("%d", g.GID),
 				"allow net networks": "bridge",
 			},
-			exit:           0,
+			exit: 0,
 		},
 	}
 
@@ -631,8 +631,8 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	np := testhelper.NoParallel
 
 	return testhelper.Tests{
-		"config file":   c.configFile,       // test --config file option
-		"config global": np(c.configGlobal), // test various global configuration
+		"config file":               c.configFile,                  // test --config file option
+		"config global":             np(c.configGlobal),            // test various global configuration
 		"config global combination": np(c.configGlobalCombination), // test various global configuration with combination
 	}
 }

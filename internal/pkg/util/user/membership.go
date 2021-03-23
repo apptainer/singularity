@@ -6,25 +6,29 @@
 package user
 
 import (
+	"os/user"
+	"strconv"
+
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/slice"
-	"os/user"
 )
 
-// UserInList returns true if the user with supplied uid is in list
+// UIDInList returns true if the user with supplied uid is in list (match by uid or username).
 // List is a string slice that may contain UIDs, usernames, or both.
-func UserInList(uid string, list []string) (bool, error) {
-	eUser, err := user.LookupId(uid)
+func UIDInList(uid int, list []string) (bool, error) {
+	uidStr := strconv.Itoa(uid)
+	u, err := lookupUnixUid(uid)
 	if err != nil {
 		return false, err
 	}
-	return slice.ContainsAnyString(list, []string{ eUser.Uid, eUser.Name }), nil
+	return slice.ContainsAnyString(list, []string{uidStr, u.Name}), nil
 }
 
-// UserInGroup returns true if the user with supplied uid is a member of a group in list
+// UIDInAnyGroup returns true if the user with supplied uid is a member of any group in list.
 // List is a string slice that may contain GIDs, groupnames, or both.
-func UserInGroup(uid string, list []string) (bool, error) {
-	u, err := user.LookupId(uid)
+func UIDInAnyGroup(uid int, list []string) (bool, error) {
+	uidStr := strconv.Itoa(uid)
+	u, err := user.LookupId(uidStr)
 	if err != nil {
 		return false, err
 	}
