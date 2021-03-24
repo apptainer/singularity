@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -21,15 +21,11 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
-var (
-	// ErrLibraryPullUnsigned indicates that the interactive portion of the pull was aborted.
-	ErrLibraryPullUnsigned = errors.New("failed to verify container")
-)
+// ErrLibraryPullUnsigned indicates that the interactive portion of the pull was aborted.
+var ErrLibraryPullUnsigned = errors.New("failed to verify container")
 
 // pull will pull a library image into the cache if directTo="", or a specific file if directTo is set.
-func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, arch string, libraryConfig *libclient.Config) (imagePath string, err error) {
-	imageRef := NormalizeLibraryRef(pullFrom)
-
+func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef *libclient.Ref, arch string, libraryConfig *libclient.Config) (imagePath string, err error) {
 	sylog.GetLevel()
 
 	c, err := libclient.NewClient(libraryConfig)
@@ -37,9 +33,11 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 		return "", fmt.Errorf("unable to initialize client library: %v", err)
 	}
 
-	libraryImage, err := c.GetImage(ctx, arch, imageRef)
+	ref := fmt.Sprintf("%s:%s", imageRef.Path, imageRef.Tags[0])
+
+	libraryImage, err := c.GetImage(ctx, arch, ref)
 	if err == libclient.ErrNotFound {
-		return "", fmt.Errorf("image does not exist in the library: %s (%s)", imageRef, arch)
+		return "", fmt.Errorf("image does not exist in the library: %s (%s)", ref, arch)
 	}
 	if err != nil {
 		return "", err
@@ -85,8 +83,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 }
 
 // Pull will pull a library image to the cache or direct to a temporary file if cache is disabled
-func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, arch string, tmpDir string, libraryConfig *libclient.Config) (imagePath string, err error) {
-
+func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom *libclient.Ref, arch string, tmpDir string, libraryConfig *libclient.Config) (imagePath string, err error) {
 	directTo := ""
 
 	if imgCache.IsDisabled() {
@@ -102,8 +99,7 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, arch str
 }
 
 // PullToFile will pull a library image to the specified location, through the cache, or directly if cache is disabled
-func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, arch string, tmpDir string, libraryConfig *libclient.Config, co []keyclient.Option) (imagePath string, err error) {
-
+func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo string, pullFrom *libclient.Ref, arch string, tmpDir string, libraryConfig *libclient.Config, co []keyclient.Option) (imagePath string, err error) {
 	directTo := ""
 	if imgCache.IsDisabled() {
 		directTo = pullTo

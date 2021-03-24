@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -203,7 +203,24 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 	switch transport {
 	case LibraryProtocol, "":
-		lc, err := getLibraryClientConfig(pullLibraryURI)
+		ref, err := library.NormalizeLibraryRef(pullFrom)
+		if err != nil {
+			sylog.Fatalf("Malformed library reference: %v", err)
+		}
+
+		if pullLibraryURI != "" && ref.Host != "" {
+			sylog.Fatalf("Conflicting arguments; do not use --library with a library URI containing host name")
+		}
+
+		var libraryURI string
+		if pullLibraryURI != "" {
+			libraryURI = pullLibraryURI
+		} else if ref.Host != "" {
+			// override libraryURI if ref contains host name
+			libraryURI = "https://" + ref.Host
+		}
+
+		lc, err := getLibraryClientConfig(libraryURI)
 		if err != nil {
 			sylog.Fatalf("Unable to get library client configuration: %v", err)
 		}
@@ -212,7 +229,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Unable to get keyserver client configuration: %v", err)
 		}
 
-		_, err = library.PullToFile(ctx, imgCache, pullTo, pullFrom, pullArch, tmpDir, lc, co)
+		_, err = library.PullToFile(ctx, imgCache, pullTo, ref, pullArch, tmpDir, lc, co)
 		if err != nil && err != library.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}

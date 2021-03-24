@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -150,7 +150,10 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 			return errors.Wrap(err, fmt.Sprintf("error initializing library client: %v", err))
 		}
 
-		imageRef := library.NormalizeLibraryRef(bi.LibraryRef)
+		imageRef, err := library.NormalizeLibraryRef(bi.LibraryRef)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("error parsing library reference: %v", err))
+		}
 
 		if err = library.DownloadImageNoProgress(ctx, c, rb.ImagePath, rb.BuilderRequirements["arch"], imageRef); err != nil {
 			return errors.Wrap(err, "failed to pull image file")

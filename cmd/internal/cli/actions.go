@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -75,11 +75,23 @@ func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command,
 }
 
 func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom string) (string, error) {
-	c, err := getLibraryClientConfig(endpoint.SCSDefaultLibraryURI)
+	r, err := library.NormalizeLibraryRef(pullFrom)
 	if err != nil {
 		return "", err
 	}
-	return library.Pull(ctx, imgCache, pullFrom, runtime.GOARCH, tmpDir, c)
+
+	var libraryURI string
+	if r.Host != "" {
+		libraryURI = "https://" + r.Host
+	} else {
+		libraryURI = endpoint.SCSDefaultLibraryURI
+	}
+
+	c, err := getLibraryClientConfig(libraryURI)
+	if err != nil {
+		return "", err
+	}
+	return library.Pull(ctx, imgCache, r, runtime.GOARCH, tmpDir, c)
 }
 
 func handleShub(ctx context.Context, imgCache *cache.Handle, pullFrom string) (string, error) {
