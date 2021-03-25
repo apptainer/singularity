@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -24,27 +24,37 @@ const defaultTag = "latest"
 // Comparison will be lower case as the GUI / code has used different capitalisation through time.
 const noDescription = "no description"
 
-// NormalizeLibraryRef strips off leading "library://" prefix, if any, and
-// appends the default tag (latest) if none specified.
-func NormalizeLibraryRef(libraryRef string) string {
-	ir := strings.TrimPrefix(libraryRef, "library://")
-	if !strings.Contains(ir, ":") {
-		return ir + ":" + defaultTag
+func splitHostNameAndPath(ref string) (string, string) {
+	ref = strings.TrimPrefix(ref, "library://")
+
+	if strings.Count(ref, "/") <= 2 {
+		// handle "library://container[:tag]", "library://collection/container[:tag]", or "library://entity/collection/container[:tag]"
+		return "", ref
 	}
-	return ir
+
+	// handle "library://hostname/entity/collection/container[:tag]"
+	c := strings.SplitN(ref, "/", 2)
+	return c[0], c[1]
+}
+
+// NormalizeLibraryRef parses library ref and sets default tag, if necessary.
+func NormalizeLibraryRef(ref string) (*scslibrary.Ref, error) {
+	host, pathref := splitHostNameAndPath(ref)
+
+	elem := strings.SplitN(pathref, ":", 2)
+
+	var tags []string
+	if len(elem) == 2 {
+		tags = strings.Split(elem[1], ",")
+	} else {
+		tags = []string{defaultTag}
+	}
+
+	return &scslibrary.Ref{Host: host, Path: elem[0], Tags: tags}, nil
 }
 
 // DownloadImage is a helper function to wrap library image download operation
-func DownloadImage(ctx context.Context, c *scslibrary.Client, imagePath, arch, libraryRef string, callback client.ProgressCallback) error {
-	// reassemble "stripped" library ref for scs-library-client
-	validLibraryRef := "library:///" + libraryRef
-
-	// parse library ref
-	r, err := scslibrary.Parse(validLibraryRef)
-	if err != nil {
-		return fmt.Errorf("error parsing library ref: %v", err)
-	}
-
+func DownloadImage(ctx context.Context, c *scslibrary.Client, imagePath, arch string, libraryRef *scslibrary.Ref, callback client.ProgressCallback) error {
 	// open destination file for writing
 	f, err := os.OpenFile(imagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0777)
 	if err != nil {
@@ -53,12 +63,12 @@ func DownloadImage(ctx context.Context, c *scslibrary.Client, imagePath, arch, l
 	defer f.Close()
 
 	var tag string
-	if len(r.Tags) > 0 {
-		tag = r.Tags[0]
+	if len(libraryRef.Tags) > 0 {
+		tag = libraryRef.Tags[0]
 	}
 
 	// call library client to download image
-	err = c.DownloadImage(ctx, f, arch, r.Path, tag, callback)
+	err = c.DownloadImage(ctx, f, arch, libraryRef.Path, tag, callback)
 	if err != nil {
 		// Delete incomplete image file in the event of failure
 		// we get here e.g. if the context is canceled by Ctrl-C
@@ -75,7 +85,7 @@ func DownloadImage(ctx context.Context, c *scslibrary.Client, imagePath, arch, l
 
 // DownloadImageNoProgress downloads an image from the library without
 // displaying a progress bar while doing so
-func DownloadImageNoProgress(ctx context.Context, c *scslibrary.Client, imagePath, arch, libraryRef string) error {
+func DownloadImageNoProgress(ctx context.Context, c *scslibrary.Client, imagePath, arch string, libraryRef *scslibrary.Ref) error {
 	return DownloadImage(ctx, c, imagePath, arch, libraryRef, nil)
 }
 

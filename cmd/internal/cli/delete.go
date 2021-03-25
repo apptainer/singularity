@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,13 +8,14 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/internal/pkg/client/library"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -30,49 +31,57 @@ func init() {
 	})
 }
 
-var deleteForce bool
-var deleteForceFlag = cmdline.Flag{
-	ID:           "deleteForceFlag",
-	Value:        &deleteForce,
-	DefaultValue: false,
-	Name:         "force",
-	ShortHand:    "F",
-	Usage:        "delete image without confirmation",
-	EnvKeys:      []string{"FORCE"},
-}
+var (
+	deleteForce     bool
+	deleteForceFlag = cmdline.Flag{
+		ID:           "deleteForceFlag",
+		Value:        &deleteForce,
+		DefaultValue: false,
+		Name:         "force",
+		ShortHand:    "F",
+		Usage:        "delete image without confirmation",
+		EnvKeys:      []string{"FORCE"},
+	}
+)
 
-var deleteImageArch string
-var deleteImageArchFlag = cmdline.Flag{
-	ID:           "deleteImageArchFlag",
-	Value:        &deleteImageArch,
-	DefaultValue: runtime.GOARCH,
-	Name:         "arch",
-	ShortHand:    "A",
-	Usage:        "specify requested image arch",
-	EnvKeys:      []string{"ARCH"},
-}
+var (
+	deleteImageArch     string
+	deleteImageArchFlag = cmdline.Flag{
+		ID:           "deleteImageArchFlag",
+		Value:        &deleteImageArch,
+		DefaultValue: runtime.GOARCH,
+		Name:         "arch",
+		ShortHand:    "A",
+		Usage:        "specify requested image arch",
+		EnvKeys:      []string{"ARCH"},
+	}
+)
 
-var deleteImageTimeout int
-var deleteImageTimeoutFlag = cmdline.Flag{
-	ID:           "deleteImageTimeoutFlag",
-	Value:        &deleteImageTimeout,
-	DefaultValue: 15,
-	Name:         "timeout",
-	ShortHand:    "T",
-	Hidden:       true,
-	Usage:        "specify delete timeout in seconds",
-	EnvKeys:      []string{"TIMEOUT"},
-}
+var (
+	deleteImageTimeout     int
+	deleteImageTimeoutFlag = cmdline.Flag{
+		ID:           "deleteImageTimeoutFlag",
+		Value:        &deleteImageTimeout,
+		DefaultValue: 15,
+		Name:         "timeout",
+		ShortHand:    "T",
+		Hidden:       true,
+		Usage:        "specify delete timeout in seconds",
+		EnvKeys:      []string{"TIMEOUT"},
+	}
+)
 
-var deleteLibraryURI string
-var deleteLibraryURIFlag = cmdline.Flag{
-	ID:           "deleteLibraryURIFlag",
-	Value:        &deleteLibraryURI,
-	DefaultValue: "",
-	Name:         "library",
-	Usage:        "delete images from the provided library",
-	EnvKeys:      []string{"LIBRARY"},
-}
+var (
+	deleteLibraryURI     string
+	deleteLibraryURIFlag = cmdline.Flag{
+		ID:           "deleteLibraryURIFlag",
+		Value:        &deleteLibraryURI,
+		DefaultValue: "",
+		Name:         "library",
+		Usage:        "delete images from the provided library",
+		EnvKeys:      []string{"LIBRARY"},
+	}
+)
 
 var deleteImageCmd = &cobra.Command{
 	Use:     docs.DeleteUse,
@@ -83,10 +92,15 @@ var deleteImageCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		sylog.Debugf("Using library service URI: %s", deleteLibraryURI)
 
-		imageRef := strings.TrimPrefix(args[0], "library://")
+		imageRef, err := library.NormalizeLibraryRef(args[0])
+		if err != nil {
+			sylog.Fatalf("Error parsing library ref: %v", err)
+		}
+
+		r := fmt.Sprintf("%s:%s", imageRef.Path, imageRef.Tags[0])
 
 		if !deleteForce {
-			y, err := interactive.AskYNQuestion("n", "Are you sure you want to delete %s (%s) [N/y] ", imageRef, deleteImageArch)
+			y, err := interactive.AskYNQuestion("n", "Are you sure you want to delete %s (%s) [N/y] ", r, deleteImageArch)
 			if err != nil {
 				sylog.Fatalf(err.Error())
 			}
@@ -102,11 +116,11 @@ var deleteImageCmd = &cobra.Command{
 
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(deleteImageTimeout)*time.Second)
 		defer cancel()
-		err = singularity.DeleteImage(ctx, libraryConfig, imageRef, deleteImageArch)
-		if err != nil {
+
+		if err := singularity.DeleteImage(ctx, libraryConfig, r, deleteImageArch); err != nil {
 			sylog.Fatalf("Unable to delete image from library: %s\n", err)
 		}
 
-		sylog.Infof("Image %s arch[%s] deleted.", imageRef, deleteImageArch)
+		sylog.Infof("Image %s (%s) deleted.", r, deleteImageArch)
 	},
 }
