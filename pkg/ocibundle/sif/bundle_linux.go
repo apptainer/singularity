@@ -31,9 +31,9 @@ type sifBundle struct {
 
 func (s *sifBundle) writeConfig(img *image.Image, g *generate.Generator) error {
 	// check if SIF file contain an OCI image configuration
-	reader, err := image.NewSectionReader(img, "oci-config.json", -1)
+	reader, err := image.NewSectionReader(img, image.SIFDescOCIConfigJSON, -1)
 	if err != nil && err != image.ErrNoSection {
-		return fmt.Errorf("failed to read oci-config.json section: %s", err)
+		return fmt.Errorf("failed to read %s section: %s", image.SIFDescOCIConfigJSON, err)
 	} else if err == image.ErrNoSection {
 		return tools.SaveBundleConfig(s.bundlePath, g)
 	}
@@ -41,7 +41,7 @@ func (s *sifBundle) writeConfig(img *image.Image, g *generate.Generator) error {
 	var imgConfig imageSpecs.ImageConfig
 
 	if err := json.NewDecoder(reader).Decode(&imgConfig); err != nil {
-		return fmt.Errorf("failed to decode oci-config.json: %s", err)
+		return fmt.Errorf("failed to decode %s: %s", image.SIFDescOCIConfigJSON, err)
 	}
 
 	if len(g.Config.Process.Args) == 1 && g.Config.Process.Args[0] == tools.RunScript {
@@ -121,11 +121,12 @@ func (s *sifBundle) Create(ociConfig *specs.Spec) error {
 	}
 
 	// associate SIF image with a block
-	loop, err := tools.CreateLoop(img.File, offset, size)
+	loop, loopCloser, err := tools.CreateLoop(img.File, offset, size)
 	if err != nil {
 		tools.DeleteBundle(s.bundlePath)
 		return fmt.Errorf("failed to find loop device: %s", err)
 	}
+	defer loopCloser.Close()
 
 	rootFs := tools.RootFs(s.bundlePath).Path()
 	if err := syscall.Mount(loop, rootFs, "squashfs", syscall.MS_RDONLY, ""); err != nil {

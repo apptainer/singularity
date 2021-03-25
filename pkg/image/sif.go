@@ -16,6 +16,13 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/machine"
 )
 
+const (
+	//SIFDescOCIConfigJSON is the name of the SIF descriptor holding the OCI configuration.
+	SIFDescOCIConfigJSON = "oci-config.json"
+	// SIFDescInspectMetadataJSON is the name of the SIF descriptor holding the container metadata.
+	SIFDescInspectMetadataJSON = "inspect-metadata.json"
+)
+
 type sifFormat struct{}
 
 func checkPartitionType(img *Image, fstype sif.Fstype, offset int64) (uint32, error) {

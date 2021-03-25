@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -30,9 +31,11 @@ import (
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
-	buildTypes "github.com/sylabs/singularity/pkg/build/types"
 	sytypes "github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
@@ -65,6 +68,9 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 		OCIInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
 		DockerAuthConfig:         cp.b.Opts.DockerAuthConfig,
 		OSChoice:                 "linux",
+		AuthFilePath:             syfs.DockerConf(),
+		DockerRegistryUserAgent:  useragent.Value(),
+		BigFilesTemporaryDir:     b.TmpDir,
 	}
 	if cp.b.Opts.NoHTTPS {
 		cp.sysCtx.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)
@@ -96,7 +102,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 			cp.srcRef, err = ociarchive.ParseReference(ref)
 		} else {
 			// As non-root we need to do a dumb tar extraction first
-			tmpDir, err := ioutil.TempDir(cp.b.Opts.TmpDir, "temp-oci-")
+			tmpDir, err := ioutil.TempDir(b.TmpDir, "temp-oci-")
 			if err != nil {
 				return fmt.Errorf("could not create temporary oci directory: %v", err)
 			}
@@ -212,7 +218,7 @@ func (cp *OCIConveyorPacker) insertOCIConfig() error {
 		return err
 	}
 
-	cp.b.JSONObjects[buildTypes.OCIConfigJSON] = conf
+	cp.b.JSONObjects[image.SIFDescOCIConfigJSON] = conf
 	return nil
 }
 

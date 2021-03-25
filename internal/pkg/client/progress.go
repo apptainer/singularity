@@ -10,8 +10,8 @@ import (
 	"io"
 
 	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/vbauerster/mpb/v4"
-	"github.com/vbauerster/mpb/v4/decor"
+	"github.com/vbauerster/mpb/v6"
+	"github.com/vbauerster/mpb/v6/decor"
 )
 
 // See: https://ixday.github.io/post/golang-cancel-copy/
@@ -31,16 +31,28 @@ func ProgressBarCallback(ctx context.Context) ProgressCallback {
 
 	return func(totalSize int64, r io.Reader, w io.Writer) error {
 		p := mpb.New()
-		bar := p.AddBar(totalSize,
-			mpb.PrependDecorators(
-				decor.Counters(decor.UnitKiB, "%.1f / %.1f"),
-			),
-			mpb.AppendDecorators(
-				decor.Percentage(),
-				decor.AverageSpeed(decor.UnitKiB, " % .1f "),
-				decor.AverageETA(decor.ET_STYLE_GO),
-			),
-		)
+		var bar *mpb.Bar
+		if totalSize > 0 {
+			bar = p.AddBar(totalSize,
+				mpb.PrependDecorators(
+					decor.Counters(decor.UnitKiB, "%.1f / %.1f"),
+				),
+				mpb.AppendDecorators(
+					decor.Percentage(),
+					decor.AverageSpeed(decor.UnitKiB, " % .1f "),
+					decor.AverageETA(decor.ET_STYLE_GO),
+				),
+			)
+		} else {
+			bar = p.AddBar(totalSize,
+				mpb.PrependDecorators(
+					decor.Current(decor.UnitKiB, "%.1f / ???"),
+				),
+				mpb.AppendDecorators(
+					decor.AverageSpeed(decor.UnitKiB, " % .1f "),
+				),
+			)
+		}
 
 		// create proxy reader
 		bodyProgress := bar.ProxyReader(r)
@@ -51,6 +63,7 @@ func ProgressBarCallback(ctx context.Context) ProgressCallback {
 			bar.Abort(true)
 			return err
 		}
+		p.Wait()
 
 		return nil
 	}

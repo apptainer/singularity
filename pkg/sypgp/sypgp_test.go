@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -17,6 +18,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	"golang.org/x/crypto/openpgp"
@@ -84,7 +86,13 @@ func TestSearchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			if err := SearchPubkey(context.Background(), srv.Client(), tt.search, tt.uri, tt.authToken, false); (err != nil) != tt.wantErr {
+			opts := []client.Option{
+				client.OptBaseURL(tt.uri),
+				client.OptBearerToken(tt.authToken),
+				client.OptHTTPClient(srv.Client()),
+			}
+
+			if err := SearchPubkey(context.Background(), tt.search, false, opts...); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
@@ -121,7 +129,13 @@ func TestFetchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			el, err := FetchPubkey(context.Background(), srv.Client(), tt.fingerprint, tt.uri, tt.authToken, false)
+			opts := []client.Option{
+				client.OptBaseURL(tt.uri),
+				client.OptBearerToken(tt.authToken),
+				client.OptHTTPClient(srv.Client()),
+			}
+
+			el, err := FetchPubkey(context.Background(), tt.fingerprint, false, opts...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("unexpected error: %v", err)
 				return
@@ -196,7 +210,13 @@ func TestPushPubkey(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms.code = tt.code
 
-			if err := PushPubkey(context.Background(), srv.Client(), testEntity, tt.uri, tt.authToken); (err != nil) != tt.wantErr {
+			opts := []client.Option{
+				client.OptBaseURL(tt.uri),
+				client.OptBearerToken(tt.authToken),
+				client.OptHTTPClient(srv.Client()),
+			}
+
+			if err := PushPubkey(context.Background(), testEntity, opts...); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
@@ -766,6 +786,51 @@ func TestRemoveKey(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestGlobalKeyRing(t *testing.T) {
+	dir, err := ioutil.TempDir("", "global-keyring-")
+	if err != nil {
+		t.Fatalf("could not create temporary global keyring: %s", err)
+	}
+	defer os.RemoveAll(dir)
+
+	keypairOptions := GenKeyPairOptions{
+		Name:      "test",
+		Email:     "test@test.com",
+		KeyLength: 2048,
+	}
+
+	keyring := NewHandle(dir, GlobalHandleOpt())
+
+	_, err = keyring.GenKeyPair(keypairOptions)
+	if err == nil {
+		t.Errorf("unexpected success while generating keypair for global keyring")
+	}
+
+	_, err = keyring.genKeyPair(keypairOptions)
+	if err == nil {
+		t.Errorf("unexpected success while generating keypair for global keyring")
+	}
+
+	_, err = keyring.LoadPrivKeyring()
+	if err == nil {
+		t.Errorf("unexpected success while loading private key from global keyring")
+	}
+
+	el, err := keyring.LoadPubKeyring()
+	if err != nil {
+		t.Errorf("unexpected error while loading public key from global keyring: %s", err)
+	} else if len(el) != 0 {
+		t.Errorf("unexpected number of PGP keys: got %d instead of 0", len(el))
+	}
+
+	err = keyring.importPublicKey(&openpgp.Entity{
+		PrimaryKey: getPublicKey(rsaPkDataHex),
+	})
+	if err != nil {
+		t.Errorf("unexpected error while importing public key into global keyring: %s", err)
 	}
 }
 

@@ -16,6 +16,8 @@ import (
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/inspect"
 )
@@ -62,17 +64,23 @@ func (c ctx) singularityInspect(t *testing.T) {
 			if _, err := io.Copy(f, r); err != nil {
 				t.Fatalf("failed to copy squash image %s: %s", squashImage, err)
 			}
-
-			c.env.RunSingularity(
-				t,
-				e2e.WithProfile(e2e.UserProfile),
-				e2e.WithCommand("build"),
-				e2e.WithArgs("--sandbox", sandboxImage, sifImage),
-				e2e.ExpectExit(0),
-			)
 		}),
 		e2e.ExpectExit(0),
 	)
+
+	require.Command(t, "unsquashfs")
+
+	// First try with -user-xattrs since unsquashfs 4.4 gives an error code if
+	// it can't set system xattrs while rootless.
+	cmd := exec.Command("unsquashfs", "-user-xattrs", "-d", sandboxImage, squashImage)
+	if res := cmd.Run(t); res.Error != nil {
+		// If we failed, then try without -user-xattrs for older unsquashfs
+		// versions that don't have that flag.
+		cmd := exec.Command("unsquashfs", "-d", sandboxImage, squashImage)
+		if res := cmd.Run(t); res.Error != nil {
+			t.Fatalf("Unexpected error while running command.\n%s", res)
+		}
+	}
 
 	compareLabel := func(label, out string, appName string) func(*testing.T, *inspect.Metadata) {
 		return func(t *testing.T, meta *inspect.Metadata) {
@@ -81,7 +89,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 				v = meta.Attributes.Apps[appName].Labels[label]
 			}
 			if v != out {
-				t.Errorf("unpexected %s label value, got %s instead of %s", label, out, v)
+				t.Errorf("unexpected %s label value, got %s instead of %s", label, out, v)
 			}
 		}
 	}
@@ -116,6 +124,16 @@ func (c ctx) singularityInspect(t *testing.T) {
 			name:      "label_hi",
 			insType:   "--labels",
 			compareFn: compareLabel("hi", "\"hello world\"", ""),
+		},
+		{
+			name:      "build_label_first",
+			insType:   "--labels",
+			compareFn: compareLabel("first.build.labels", "first", ""),
+		},
+		{
+			name:      "build_label_second",
+			insType:   "--labels",
+			compareFn: compareLabel("second.build.labels", "second", ""),
 		},
 		{
 			name:      "label_org.label-schema.usage",
@@ -344,7 +362,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 			e2e.AsSubtest("Sandbox/"+tt.name),
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("inspect"),
-			e2e.WithArgs(append(args, squashImage)...),
+			e2e.WithArgs(append(args, sandboxImage)...),
 			e2e.ExpectExit(0, compareOutput),
 		)
 	}
@@ -383,7 +401,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 		e2e.AsSubtest("Sandbox/all"),
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("inspect"),
-		e2e.WithArgs("--all", squashImage),
+		e2e.WithArgs("--all", sandboxImage),
 		e2e.ExpectExit(0, compareAll),
 	)
 }

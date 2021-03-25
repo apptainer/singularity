@@ -68,7 +68,7 @@ static int getUnprivIDs(pid_t pid, uid_t *uid, gid_t *gid) {
 		return -1;
 	}
 	pid_t ppid = getProcInfo(pid, uid, gid);
-	if ( *uid == 0 ) {
+	if ( *uid == 0 || *gid == 0 ) {
 		return getUnprivIDs(ppid, uid, gid);
 	}
 	return 0;

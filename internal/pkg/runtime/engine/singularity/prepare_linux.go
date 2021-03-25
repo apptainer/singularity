@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -41,6 +42,7 @@ import (
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"golang.org/x/crypto/openpgp"
 	"golang.org/x/sys/unix"
 )
 
@@ -916,15 +918,19 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 // openDevFuse is a helper function that opens /dev/fuse once for each
 // plugin that wants to mount a FUSE filesystem.
 func openDevFuse(e *EngineOperations, starterConfig *starter.Config) (bool, error) {
-	if !e.EngineConfig.File.EnableFusemount {
-		return false, fmt.Errorf("fusemount disabled by configuration 'enable fusemount = no'")
-	}
-
 	// do we require to send file descriptor
 	sendFd := false
 
 	// we won't copy slice while iterating fuse mounts
 	mounts := e.EngineConfig.GetFuseMount()
+
+	if len(mounts) == 0 {
+		return false, nil
+	}
+
+	if !e.EngineConfig.File.EnableFusemount {
+		return false, fmt.Errorf("fusemount disabled by configuration 'enable fusemount = no'")
+	}
 
 	for i := range mounts {
 		sylog.Debugf("Opening /dev/fuse for FUSE mount point %s\n", mounts[i].MountPoint)
@@ -1166,9 +1172,17 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 				return fmt.Errorf("while validating ECL configuration: %s", err)
 			}
 
-			kr, err := sypgp.PublicKeyRing()
-			if err != nil {
-				return fmt.Errorf("while obtaining keyring for ECL: %s", err)
+			// Only try to load the global keyring here if the ECL is active.
+			// Otherwise pass through an empty keyring rather than avoiding calling
+			// the ECL functions as this keeps the logic for applying / ignoring ECL in a
+			// single location.
+			var kr openpgp.KeyRing = openpgp.EntityList{}
+			if ecl.Activated {
+				keyring := sypgp.NewHandle(buildcfg.SINGULARITY_CONFDIR, sypgp.GlobalHandleOpt())
+				kr, err = keyring.LoadPubKeyring()
+				if err != nil {
+					return fmt.Errorf("while obtaining keyring for ECL: %s", err)
+				}
 			}
 
 			if ok, err := ecl.ShouldRunFp(img.File, kr); err != nil {

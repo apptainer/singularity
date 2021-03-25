@@ -35,6 +35,10 @@ func TestMain(m *testing.M) {
 
 // TestSIFAssemblerDocker sees if we can build a SIF image from an image from a Docker registry
 func TestSIFAssemblerDocker(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	mksquashfsPath, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		t.Fatalf("could not find mksquashfs: %v", err)
@@ -85,6 +89,10 @@ func TestSIFAssemblerDocker(t *testing.T) {
 
 // TestSIFAssemblerShub sees if we can build a SIF image from an image from a Singularity registry
 func TestSIFAssemblerShub(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	// TODO(mem): reenable this; disabled while shub is down
 	t.Skip("Skipping tests that access singularity hub")
 

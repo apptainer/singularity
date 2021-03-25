@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -13,20 +14,24 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/reference"
+	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/containerd/remotes/docker"
 	ocitypes "github.com/containers/image/v5/types"
+	auth "github.com/deislabs/oras/pkg/auth/docker"
 	"github.com/deislabs/oras/pkg/content"
 	orasctx "github.com/deislabs/oras/pkg/context"
 	"github.com/deislabs/oras/pkg/oras"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
@@ -35,11 +40,33 @@ const (
 	SifDefaultTag = "latest"
 
 	// SifConfigMediaType is the config descriptor mediaType
-	SifConfigMediaType = "application/vnd.sylabs.sif.config.v1+json"
+	SifConfigMediaTypeV1 = "application/vnd.sylabs.sif.config.v1+json"
 
-	// SifLayerMediaType is the mediaType for the "layer" which contains the actual SIF file
-	SifLayerMediaType = "appliciation/vnd.sylabs.sif.layer.tar"
+	// SifLayerMediaTypeV1 is the mediaType for the "layer" which contains the actual SIF file
+	SifLayerMediaTypeV1 = "application/vnd.sylabs.sif.layer.v1.sif"
+
+	// SifLayerMediaTypeProto is the mediaType from prototyping and Singularity
+	// <3.7 which unfortunately includes a typo and doesn't have a version suffix
+	// See: https://github.com/hpcng/singularity/issues/4437
+	SifLayerMediaTypeProto = "appliciation/vnd.sylabs.sif.layer.tar"
 )
+
+var SifLayerMediaTypes = []string{SifLayerMediaTypeV1, SifLayerMediaTypeProto}
+
+func getResolver(ociAuth *ocitypes.DockerAuthConfig) (remotes.Resolver, error) {
+	opts := docker.ResolverOptions{Credentials: genCredfn(ociAuth)}
+	if ociAuth != nil && (ociAuth.Username != "" || ociAuth.Password != "") {
+		return docker.NewResolver(opts), nil
+	}
+
+	cli, err := auth.NewClient(syfs.DockerConf())
+	if err != nil {
+		sylog.Warningf("Couldn't load auth credential file: %s", err)
+		return docker.NewResolver(opts), nil
+	}
+
+	return cli.Resolver(context.Background(), &http.Client{}, false)
+}
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
 func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
@@ -57,7 +84,10 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 		sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
 	}
 
-	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: genCredfn(ociAuth)})
+	resolver, err := getResolver(ociAuth)
+	if err != nil {
+		return fmt.Errorf("while getting resolver: %s", err)
+	}
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -72,17 +102,19 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 	// so we have to allow an overwrite here.
 	store.DisableOverwrite = false
 
-	allowedMediaTypes := oras.WithAllowedMediaTypes([]string{SifLayerMediaType})
+	allowedMediaTypes := oras.WithAllowedMediaTypes(SifLayerMediaTypes)
 	handlerFunc := func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
-		if desc.MediaType == SifLayerMediaType {
-			// Ensure descriptor is of a single file
-			// AnnotationUnpack indicates that the descriptor is of a directory
-			if desc.Annotations[content.AnnotationUnpack] == "true" {
-				return nil, fmt.Errorf("descriptor is of a bundled directory, not a SIF image")
+		for _, mt := range SifLayerMediaTypes {
+			if desc.MediaType == mt {
+				// Ensure descriptor is of a single file
+				// AnnotationUnpack indicates that the descriptor is of a directory
+				if desc.Annotations[content.AnnotationUnpack] == "true" {
+					return nil, fmt.Errorf("descriptor is of a bundled directory, not a SIF image")
+				}
+				nameOld, _ := content.ResolveName(desc)
+				sylog.Debugf("Will pull oras image %s to %s", nameOld, imagePath)
+				_ = store.MapPath(nameOld, imagePath)
 			}
-			nameOld, _ := content.ResolveName(desc)
-			sylog.Debugf("Will pull oras image %s to %s", nameOld, imagePath)
-			_ = store.MapPath(nameOld, imagePath)
 		}
 		return nil, nil
 	}
@@ -137,12 +169,15 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 		sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
 	}
 
-	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: genCredfn(ociAuth)})
+	resolver, err := getResolver(ociAuth)
+	if err != nil {
+		return fmt.Errorf("while getting resolver: %s", err)
+	}
 
 	store := content.NewFileStore("")
 	defer store.Close()
 
-	conf, err := store.Add("$config", SifConfigMediaType, "/dev/null")
+	conf, err := store.Add("$config", SifConfigMediaTypeV1, "/dev/null")
 	if err != nil {
 		return fmt.Errorf("unable to add manifest config to FileStore: %s", err)
 	}
@@ -151,7 +186,7 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	// Get the filename from path and use it as the name in the file store
 	name := filepath.Base(path)
 
-	desc, err := store.Add(name, SifLayerMediaType, path)
+	desc, err := store.Add(name, SifLayerMediaTypeV1, path)
 	if err != nil {
 		return fmt.Errorf("unable to add SIF file to FileStore: %s", err)
 	}
@@ -189,7 +224,10 @@ func ImageSHA(ctx context.Context, uri string, ociAuth *ocitypes.DockerAuthConfi
 	ref := strings.TrimPrefix(uri, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
-	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: genCredfn(ociAuth)})
+	resolver, err := getResolver(ociAuth)
+	if err != nil {
+		return "", fmt.Errorf("while getting resolver: %s", err)
+	}
 
 	_, desc, err := resolver.Resolve(ctx, ref)
 	if err != nil {
@@ -224,12 +262,14 @@ func ImageSHA(ctx context.Context, uri string, ociAuth *ocitypes.DockerAuthConfi
 
 	// search image layers for sif image and return sha
 	for _, l := range man.Layers {
-		if l.MediaType == SifLayerMediaType {
-			// only allow sha256 digests
-			if l.Digest.Algorithm() != digest.SHA256 {
-				return "", fmt.Errorf("SIF layer found with incorrect digest algorithm: %s", l.Digest.Algorithm())
+		for _, t := range SifLayerMediaTypes {
+			if l.MediaType == t {
+				// only allow sha256 digests
+				if l.Digest.Algorithm() != digest.SHA256 {
+					return "", fmt.Errorf("SIF layer found with incorrect digest algorithm: %s", l.Digest.Algorithm())
+				}
+				return l.Digest.String(), nil
 			}
-			return l.Digest.String(), nil
 		}
 	}
 

@@ -1,0 +1,47 @@
+#!/bin/bash -e
+
+if [[ ! -z "$E2E_DOCKER_USERNAME" && ! -z "$E2E_DOCKER_PASSWORD" ]]; then
+    docker login --username $E2E_DOCKER_USERNAME --password $E2E_DOCKER_PASSWORD
+    function logout {
+        docker logout
+    }
+    trap logout EXIT
+fi
+
+# Run docker as shown at
+#  https://djw8605.github.io/2016/05/03/building-centos-packages-on-travisci/
+#
+# This more complicated setup is needed for CircleCI too because their
+#  standard docker machine type does not give the container enough privileges
+#  for any reasonable subset of standard singularity tests to succeed.  
+# CircleCI does at least start a VM with docker already started.
+
+if [[ "$OS_TYPE" = "opensuse" ]]; then
+    DOCKER_HUB_URI="${OS_TYPE}/leap:$OS_VERSION"
+else
+    DOCKER_HUB_URI="${OS_TYPE}:$OS_VERSION"
+fi
+
+docker pull "$DOCKER_HUB_URI"
+
+# Mount /var/run/docker.sock and set --network=host so we can call docker from inside
+# cause some tests need it. Cannot mount to /var/run/docker.sock inside cause CentOS
+# /usr/sbin/init mounts another overlayfs on top of it
+
+if [[ "$OS_TYPE" = "opensuse" ]]; then
+    DOCKER_HUB_URI="${OS_TYPE}/leap:$OS_VERSION"
+else
+    DOCKER_HUB_URI="${OS_TYPE}:$OS_VERSION"
+fi
+DOCKER_CONTAINER_NAME="test_${OS_TYPE}_${OS_VERSION}"
+
+docker run --privileged -ti --network=host \
+  -e E2E_DOCKER_USERNAME=$E2E_DOCKER_USERNAME \
+  -e E2E_DOCKER_PASSWORD=$E2E_DOCKER_PASSWORD \
+  -v "$(pwd):/build:rw"  \
+  --name "$DOCKER_CONTAINER_NAME" "$DOCKER_HUB_URI" /bin/bash -exc \
+	"cd /build && scripts/ci-rpm-build-test $OS_TYPE $OS_VERSION"
+
+docker ps -a
+docker stop "$DOCKER_CONTAINER_NAME"
+docker rm -v "$DOCKER_CONTAINER_NAME"

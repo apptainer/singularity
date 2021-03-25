@@ -13,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+	"text/template"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -307,7 +308,7 @@ func (c *imgBuildTests) issue5166(t *testing.T) {
 }
 
 func (c *imgBuildTests) issue5172(t *testing.T) {
-	e2e.PrepRegistry(t, c.env)
+	e2e.EnsureRegistry(t)
 
 	u := e2e.UserProfile.HostUser(t)
 
@@ -427,5 +428,128 @@ func (c *imgBuildTests) issue5435(t *testing.T) {
 			}
 		}),
 		e2e.ExpectExit(255),
+	)
+}
+
+// This test will yum reinstall the 'setup' package in a centos 7 container during %post.
+// On a CentOS/RHEL/Fedora host this yum reinstall errors unless the bound in /etc/hosts in the build is modified from
+// the package default, so that yum does not attempt to remove->replace it (which is not possible as it is bound in).
+// See the workaround in build.createStageFile
+func (c *imgBuildTests) issue5250(t *testing.T) {
+	image := filepath.Join(c.env.TestDir, "issue_5250.sif")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(image, "testdata/regressions/issue_5250.def"),
+		e2e.PostRun(func(t *testing.T) {
+			os.Remove(image)
+		}),
+		e2e.ExpectExit(
+			0,
+		),
+	)
+}
+
+// Check that unsquashfs (SIF -> sandbox) works on a tmpfs, that will not support
+// user xattrs. Our home dir in the e2e test is a tmpfs bound over our real home dir
+// so we can use that.
+func (c *imgBuildTests) issue5668(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("Could not get home dir: %v", err)
+	}
+	sbDir, sbCleanup := e2e.MakeTempDir(t, home, "issue-5668-", "")
+	defer e2e.Privileged(sbCleanup)(t)
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", sbDir, c.env.ImagePath),
+		e2e.ExpectExit(0),
+	)
+}
+
+// Check that unsquashfs (for version >= 4.4) works for non root users when image contains
+// pseudo devices in /dev.
+func (c *imgBuildTests) issue5690(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	sandbox, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-5690-", "")
+	defer e2e.Privileged(cleanup)(t)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", sandbox, c.env.ImagePath),
+		e2e.ExpectExit(0),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", sandbox, c.env.ImagePath),
+		e2e.ExpectExit(0),
+	)
+}
+
+func (c *imgBuildTests) issue3848(t *testing.T) {
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-3848-", "")
+	defer cleanup(t)
+
+	f, err := ioutil.TempFile(tmpDir, "test-def-")
+	if err != nil {
+		t.Fatalf("failed to open temp file: %v", err)
+	}
+	defer f.Close()
+
+	tmpfile, err := e2e.WriteTempFile(tmpDir, "test-file-", testFileContent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile) // clean up
+
+	d := struct {
+		File string
+	}{
+		File: tmpfile,
+	}
+
+	defTmpl := `Bootstrap: docker
+From: alpine:latest
+
+%files
+	{{ .File }}
+
+%files #  # from test
+	{{ .File }}
+
+%files #   #comment
+	{{ .File }}
+`
+
+	tmpl, err := template.New("test").Parse(defTmpl)
+	if err != nil {
+		t.Fatalf("while parsing pattern: %v", err)
+	}
+
+	if err := tmpl.Execute(f, d); err != nil {
+		t.Fatalf("failed to execute template: %v", err)
+	}
+
+	image := path.Join(tmpDir, "image.sif")
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(image, f.Name()),
+		e2e.PostRun(func(t *testing.T) {
+			os.Remove(image)
+		}),
+		e2e.ExpectExit(0),
 	)
 }

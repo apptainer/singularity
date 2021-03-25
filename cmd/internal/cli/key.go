@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2017-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -7,27 +8,28 @@ package cli
 
 import (
 	"errors"
+	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/pkg/cmdline"
-)
-
-const (
-	defaultKeyServer = "https://keys.sylabs.io"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 var (
 	keyServerURI        string // -u command line option
 	keySearchLongList   bool   // -l option for long-list
 	keyNewpairBitLength int    // -b option for bit length
+	keyGlobalPubKey     bool   // -g option to manage global public keys
 )
 
 // -u|--url
 var keyServerURIFlag = cmdline.Flag{
 	ID:           "keyServerURIFlag",
 	Value:        &keyServerURI,
-	DefaultValue: defaultKeyServer,
+	DefaultValue: "",
 	Name:         "url",
 	ShortHand:    "u",
 	Usage:        "specify the key server URL",
@@ -54,6 +56,16 @@ var keyNewpairBitLengthFlag = cmdline.Flag{
 	Usage:        "specify key bit length",
 }
 
+// -g|--global
+var keyGlobalPubKeyFlag = cmdline.Flag{
+	ID:           "keyGlobalPubKeyFlag",
+	Value:        &keyGlobalPubKey,
+	DefaultValue: false,
+	Name:         "global",
+	ShortHand:    "g",
+	Usage:        "manage global public keys (import/pull/remove are restricted to root user or unprivileged installation only)",
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(KeyCmd)
@@ -77,10 +89,23 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&keySearchLongListFlag, KeySearchCmd)
 		cmdManager.RegisterFlagForCmd(&keyNewpairBitLengthFlag, KeyNewPairCmd)
 		cmdManager.RegisterFlagForCmd(&keyImportWithNewPasswordFlag, KeyImportCmd)
+
+		cmdManager.RegisterFlagForCmd(
+			&keyGlobalPubKeyFlag,
+			KeyImportCmd, KeyExportCmd, KeyListCmd, KeyPullCmd, KeyPushCmd, KeyRemoveCmd,
+		)
 	})
 }
 
-// KeyCmd is the 'key' command that allows management of key stores
+func checkGlobal(cmd *cobra.Command, args []string) {
+	if !keyGlobalPubKey || os.Geteuid() == 0 || buildcfg.SINGULARITY_SUID_INSTALL == 0 {
+		return
+	}
+	path := cmd.CommandPath()
+	sylog.Fatalf("%q command with --global requires root privileges or an unprivileged installation", path)
+}
+
+// KeyCmd is the 'key' command that allows management of keyrings
 var KeyCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return errors.New("Invalid command")
@@ -90,7 +115,7 @@ var KeyCmd = &cobra.Command{
 
 	Use:           docs.KeyUse,
 	Short:         docs.KeyShort,
-	Long:          docs.KeyLong,
+	Long:          fmt.Sprintf(docs.KeyLong, buildcfg.SYSCONFDIR),
 	Example:       docs.KeyExample,
 	SilenceErrors: true,
 }

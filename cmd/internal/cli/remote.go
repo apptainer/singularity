@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -6,33 +7,39 @@
 package cli
 
 import (
+	"io/ioutil"
 	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 const (
-	sysDir        = "singularity"
 	remoteWarning = "no authentication token, log in with `singularity remote login`"
 )
 
 var (
-	loginTokenFile string
-	remoteConfig   string
-	remoteNoLogin  bool
-	global         bool
+	loginTokenFile          string
+	loginUsername           string
+	loginPassword           string
+	remoteConfig            string
+	remoteKeyserverOrder    uint32
+	remoteKeyserverInsecure bool
+	loginPasswordStdin      bool
+	loginInsecure           bool
+	remoteNoLogin           bool
+	global                  bool
+	remoteUseExclusive      bool
 )
 
 // assemble values of remoteConfig for user/sys locations
 var remoteConfigUser = syfs.RemoteConf()
-var remoteConfigSys = filepath.Join(buildcfg.SYSCONFDIR, sysDir, syfs.RemoteConfFile)
 
 // -g|--global
 var remoteGlobalFlag = cmdline.Flag{
@@ -72,6 +79,78 @@ var remoteNoLoginFlag = cmdline.Flag{
 	Usage:        "skip automatic login step",
 }
 
+// -u|--username
+var remoteLoginUsernameFlag = cmdline.Flag{
+	ID:           "remoteLoginUsernameFlag",
+	Value:        &loginUsername,
+	DefaultValue: "",
+	Name:         "username",
+	ShortHand:    "u",
+	Usage:        "username to authenticate with (leave it empty for token authentication)",
+	EnvKeys:      []string{"LOGIN_USERNAME"},
+}
+
+// -p|--password
+var remoteLoginPasswordFlag = cmdline.Flag{
+	ID:           "remoteLoginPasswordFlag",
+	Value:        &loginPassword,
+	DefaultValue: "",
+	Name:         "password",
+	ShortHand:    "p",
+	Usage:        "password to authenticate with",
+	EnvKeys:      []string{"LOGIN_PASSWORD"},
+}
+
+// --password-stdin
+var remoteLoginPasswordStdinFlag = cmdline.Flag{
+	ID:           "remoteLoginPasswordStdinFlag",
+	Value:        &loginPasswordStdin,
+	DefaultValue: false,
+	Name:         "password-stdin",
+	Usage:        "take password from standard input",
+}
+
+// -i|--insecure
+var remoteLoginInsecureFlag = cmdline.Flag{
+	ID:           "remoteLoginInsecureFlag",
+	Value:        &loginInsecure,
+	DefaultValue: false,
+	Name:         "insecure",
+	ShortHand:    "i",
+	Usage:        "allow insecure login",
+	EnvKeys:      []string{"LOGIN_INSECURE"},
+}
+
+// -e|--exclusive
+var remoteUseExclusiveFlag = cmdline.Flag{
+	ID:           "remoteUseExclusiveFlag",
+	Value:        &remoteUseExclusive,
+	DefaultValue: false,
+	Name:         "exclusive",
+	ShortHand:    "e",
+	Usage:        "set the endpoint as exclusive (root user only, imply --global)",
+}
+
+// -o|--order
+var remoteKeyserverOrderFlag = cmdline.Flag{
+	ID:           "remoteKeyserverOrderFlag",
+	Value:        &remoteKeyserverOrder,
+	DefaultValue: uint32(0),
+	Name:         "order",
+	ShortHand:    "o",
+	Usage:        "define the keyserver order",
+}
+
+// -i|--insecure
+var remoteKeyserverInsecureFlag = cmdline.Flag{
+	ID:           "remoteKeyserverInsecureFlag",
+	Value:        &remoteKeyserverInsecure,
+	DefaultValue: false,
+	Name:         "insecure",
+	ShortHand:    "i",
+	Usage:        "allow insecure connection to keyserver",
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(RemoteCmd)
@@ -80,7 +159,10 @@ func init() {
 		cmdManager.RegisterSubCmd(RemoteCmd, RemoteUseCmd)
 		cmdManager.RegisterSubCmd(RemoteCmd, RemoteListCmd)
 		cmdManager.RegisterSubCmd(RemoteCmd, RemoteLoginCmd)
+		cmdManager.RegisterSubCmd(RemoteCmd, RemoteLogoutCmd)
 		cmdManager.RegisterSubCmd(RemoteCmd, RemoteStatusCmd)
+		cmdManager.RegisterSubCmd(RemoteCmd, RemoteAddKeyserverCmd)
+		cmdManager.RegisterSubCmd(RemoteCmd, RemoteRemoveKeyserverCmd)
 
 		// default location of the remote.yaml file is the user directory
 		cmdManager.RegisterFlagForCmd(&remoteConfigFlag, RemoteCmd)
@@ -90,6 +172,16 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&remoteGlobalFlag, RemoteAddCmd, RemoteRemoveCmd, RemoteUseCmd)
 		// add --no-login flag to add command
 		cmdManager.RegisterFlagForCmd(&remoteNoLoginFlag, RemoteAddCmd)
+
+		cmdManager.RegisterFlagForCmd(&remoteLoginUsernameFlag, RemoteLoginCmd)
+		cmdManager.RegisterFlagForCmd(&remoteLoginPasswordFlag, RemoteLoginCmd)
+		cmdManager.RegisterFlagForCmd(&remoteLoginPasswordStdinFlag, RemoteLoginCmd)
+		cmdManager.RegisterFlagForCmd(&remoteLoginInsecureFlag, RemoteLoginCmd)
+
+		cmdManager.RegisterFlagForCmd(&remoteUseExclusiveFlag, RemoteUseCmd)
+
+		cmdManager.RegisterFlagForCmd(&remoteKeyserverOrderFlag, RemoteAddKeyserverCmd)
+		cmdManager.RegisterFlagForCmd(&remoteKeyserverInsecureFlag, RemoteAddKeyserverCmd)
 	})
 }
 
@@ -117,7 +209,13 @@ func setGlobalRemoteConfig(_ *cobra.Command, _ []string) {
 	}
 
 	// set remoteConfig value to the location of the global remote.yaml file
-	remoteConfig = remoteConfigSys
+	remoteConfig = remote.SystemConfigPath
+}
+
+func setKeyserver(_ *cobra.Command, _ []string) {
+	if uint32(os.Getuid()) != 0 {
+		sylog.Fatalf("Unable to modify keyserver configuration: not root user")
+	}
 }
 
 // RemoteAddCmd singularity remote add [remoteName] [remoteURI]
@@ -137,8 +235,11 @@ var RemoteAddCmd = &cobra.Command{
 		if global && !remoteNoLogin {
 			sylog.Infof("Global option detected. Will not automatically log into remote.")
 		} else if !remoteNoLogin {
-			sylog.Infof("Authenticating with remote: %s", name)
-			if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, name, loginTokenFile); err != nil {
+			loginArgs := &singularity.LoginArgs{
+				Name:      name,
+				Tokenfile: loginTokenFile,
+			}
+			if err := singularity.RemoteLogin(remoteConfig, loginArgs); err != nil {
 				sylog.Fatalf("%s", err)
 			}
 		}
@@ -178,7 +279,7 @@ var RemoteUseCmd = &cobra.Command{
 	PreRun: setGlobalRemoteConfig,
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		if err := singularity.RemoteUse(remoteConfig, remoteConfigSys, name, global); err != nil {
+		if err := singularity.RemoteUse(remoteConfig, name, global, remoteUseExclusive); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 		sylog.Infof("Remote %q now in use.", name)
@@ -196,7 +297,7 @@ var RemoteUseCmd = &cobra.Command{
 var RemoteListCmd = &cobra.Command{
 	Args: cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteList(remoteConfig, remoteConfigSys); err != nil {
+		if err := singularity.RemoteList(remoteConfig); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -213,16 +314,28 @@ var RemoteListCmd = &cobra.Command{
 var RemoteLoginCmd = &cobra.Command{
 	Args: cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
+		loginArgs := new(singularity.LoginArgs)
+
 		// default to empty string to signal to RemoteLogin to use default remote
-		name := ""
 		if len(args) > 0 {
-			name = args[0]
-			sylog.Infof("Authenticating with remote: %s", name)
-		} else {
-			sylog.Infof("Authenticating with default remote.")
+			loginArgs.Name = args[0]
 		}
 
-		if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, name, loginTokenFile); err != nil {
+		loginArgs.Username = loginUsername
+		loginArgs.Password = loginPassword
+		loginArgs.Tokenfile = loginTokenFile
+		loginArgs.Insecure = loginInsecure
+
+		if loginPasswordStdin {
+			p, err := ioutil.ReadAll(os.Stdin)
+			if err != nil {
+				sylog.Fatalf("Failed to read password from stdin: %s", err)
+			}
+			loginArgs.Password = strings.TrimSuffix(string(p), "\n")
+			loginArgs.Password = strings.TrimSuffix(loginArgs.Password, "\r")
+		}
+
+		if err := singularity.RemoteLogin(remoteConfig, loginArgs); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -235,6 +348,30 @@ var RemoteLoginCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 }
 
+// RemoteLogoutCmd singularity remote logout [remoteName|serviceURI]
+var RemoteLogoutCmd = &cobra.Command{
+	Args: cobra.RangeArgs(0, 1),
+	Run: func(cmd *cobra.Command, args []string) {
+		// default to empty string to signal to RemoteLogin to use default remote
+		name := ""
+		if len(args) > 0 {
+			name = args[0]
+		}
+
+		if err := singularity.RemoteLogout(remoteConfig, name); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+		sylog.Infof("Logout succeeded")
+	},
+
+	Use:     docs.RemoteLogoutUse,
+	Short:   docs.RemoteLogoutShort,
+	Long:    docs.RemoteLogoutLong,
+	Example: docs.RemoteLogoutExample,
+
+	DisableFlagsInUseLine: true,
+}
+
 // RemoteStatusCmd singularity remote status [remoteName]
 var RemoteStatusCmd = &cobra.Command{
 	Args: cobra.RangeArgs(0, 1),
@@ -243,12 +380,9 @@ var RemoteStatusCmd = &cobra.Command{
 		name := ""
 		if len(args) > 0 {
 			name = args[0]
-			sylog.Infof("Checking status of remote: %s", name)
-		} else {
-			sylog.Infof("Checking status of default remote.")
 		}
 
-		if err := singularity.RemoteStatus(remoteConfig, remoteConfigSys, name); err != nil {
+		if err := singularity.RemoteStatus(remoteConfig, name); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -257,6 +391,60 @@ var RemoteStatusCmd = &cobra.Command{
 	Short:   docs.RemoteStatusShort,
 	Long:    docs.RemoteStatusLong,
 	Example: docs.RemoteStatusExample,
+
+	DisableFlagsInUseLine: true,
+}
+
+// RemoteAddKeyserverCmd singularity remote add-keyserver [option] [remoteName] <keyserver_url>
+var RemoteAddKeyserverCmd = &cobra.Command{
+	Args:   cobra.RangeArgs(1, 2),
+	PreRun: setKeyserver,
+	Run: func(cmd *cobra.Command, args []string) {
+		uri := args[0]
+		name := ""
+		if len(args) > 1 {
+			name = args[0]
+			uri = args[1]
+		}
+
+		if cmd.Flag(remoteKeyserverOrderFlag.Name).Changed && remoteKeyserverOrder == 0 {
+			sylog.Fatalf("order must be > 0")
+		}
+
+		if err := singularity.RemoteAddKeyserver(name, uri, remoteKeyserverOrder, remoteKeyserverInsecure); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+
+	Use:     docs.RemoteAddKeyserverUse,
+	Short:   docs.RemoteAddKeyserverShort,
+	Long:    docs.RemoteAddKeyserverLong,
+	Example: docs.RemoteAddKeyserverExample,
+
+	DisableFlagsInUseLine: true,
+}
+
+// RemoteRemoveKeyserverCmd singularity remote remove-keyserver [remoteName] <keyserver_url>
+var RemoteRemoveKeyserverCmd = &cobra.Command{
+	Args:   cobra.RangeArgs(1, 2),
+	PreRun: setKeyserver,
+	Run: func(cmd *cobra.Command, args []string) {
+		uri := args[0]
+		name := ""
+		if len(args) > 1 {
+			name = args[0]
+			uri = args[1]
+		}
+
+		if err := singularity.RemoteRemoveKeyserver(name, uri); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+
+	Use:     docs.RemoteRemoveKeyserverUse,
+	Short:   docs.RemoteRemoveKeyserverShort,
+	Long:    docs.RemoteRemoveKeyserverLong,
+	Example: docs.RemoteRemoveKeyserverExample,
 
 	DisableFlagsInUseLine: true,
 }

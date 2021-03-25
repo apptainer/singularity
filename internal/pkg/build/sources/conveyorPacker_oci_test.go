@@ -120,6 +120,10 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 // TestOCIConveyerDockerDaemon tests if we can use an oci laytout dir
 // as a source
 func TestOCIConveyorDockerDaemon(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	cmd := exec.Command("docker", "ps")
 	err := cmd.Run()
 	if err != nil {
@@ -245,6 +249,10 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 
 // TestOCIPacker checks if we can create a Kitchen
 func TestOCIPacker(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-oci"), os.TempDir())
 	if err != nil {
 		return

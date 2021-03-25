@@ -59,9 +59,9 @@ Enterprise Performance Computing (EPC)`
   Targets can also be remote and defined by a URI of the following formats:
 
       library://  an image library (default https://cloud.sylabs.io/library)
-      docker://   a Docker registry (default Docker Hub)
+      docker://   a Docker/OCI registry (default Docker Hub)
       shub://     a Singularity registry (default Singularity Hub)
-      oras://     a supporting OCI registry`
+      oras://     an OCI registry that holds SIF files using ORAS`
 
 	BuildExample string = `
 
@@ -210,8 +210,9 @@ Enterprise Performance Computing (EPC)`
 	KeyUse   string = `key [key options...]`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
-  Manage your trusted, public and private keys in your keyring
-  (default: '~/.singularity/sypgp' if 'SINGULARITY_SYPGPDIR' is not set.)`
+  Manage your trusted, public and private keys in your local or in the global keyring
+  (local keyring: '~/.singularity/sypgp' if 'SINGULARITY_SYPGPDIR' is not set,
+  global keyring: '%[1]s/singularity/global-pgp-public')`
 	KeyExample string = `
   All group commands have their own help output:
 
@@ -225,12 +226,15 @@ Enterprise Performance Computing (EPC)`
 	// key import
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyImportUse   string = `import [import options...] <input-key>`
-	KeyImportShort string = `Import a local key into the local keyring`
+	KeyImportShort string = `Import a local key into the local or global keyring`
 	KeyImportLong  string = `
-  The 'key import' command allows you to add a key to your local keyring from a 
-  specific file.`
+  The 'key import' command allows you to add a key to your local or global keyring
+  from a specific file.`
 	KeyImportExample string = `
-  $ singularity key import ./my-key.asc`
+  $ singularity key import ./my-key.asc
+
+  # Import into global keyring (root user only)
+  $ singularity key import --global ./my-key.asc`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key export
@@ -255,7 +259,7 @@ Enterprise Performance Computing (EPC)`
 	KeyNewPairShort string = `Create a new key pair`
 	KeyNewPairLong  string = `
   The 'key newpair' command allows you to create a new key or public/private
-  keys to be stored in the default user local key store location (e.g., 
+  keys to be stored in the default user local keyring location (e.g., 
   $HOME/.singularity/sypgp).`
 	KeyNewPairExample string = `
   $ singularity key newpair
@@ -265,13 +269,16 @@ Enterprise Performance Computing (EPC)`
 	// key list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyListUse   string = `list`
-	KeyListShort string = `List keys in your local keyring`
+	KeyListShort string = `List keys in your local or in the global keyring`
 	KeyListLong  string = `
   List your local keys in your keyring. Will list public (trusted) keys
   by default.`
 	KeyListExample string = `
   $ singularity key list
-  $ singularity key list --secret`
+  $ singularity key list --secret
+
+  # list global public keys
+  $ singularity key list --global`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key search
@@ -297,9 +304,12 @@ Enterprise Performance Computing (EPC)`
 	KeyPullUse   string = `pull [pull options...] <fingerprint>`
 	KeyPullShort string = `Download a public key from a key server`
 	KeyPullLong  string = `
-  The 'key pull' command allows you to connect to a key server look for and 
-  download a public key. Key rings are stored into (e.g., 
-  $HOME/.singularity/sypgp).`
+  The 'key pull' command allows you to retrieve public key material from a
+  remote key server, and add it to your keyring. Note that Singularity consults
+  your keyring when running commands such as 'singularity verify', and thus
+  adding a key to your keyring implies a level of trust. Because of this, it is
+  recommended that you verify the fingerprint of the key with its owner prior
+  to running this command.`
 	KeyPullExample string = `
   $ singularity key pull 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 
@@ -310,7 +320,7 @@ Enterprise Performance Computing (EPC)`
 	KeyPushShort string = `Upload a public key to a key server`
 	KeyPushLong  string = `
   The 'key push' command allows you to connect to a key server and upload public
-  keys from the local key store.`
+  keys from the local or the global keyring.`
 	KeyPushExample string = `
   $ singularity key push 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 
@@ -318,10 +328,10 @@ Enterprise Performance Computing (EPC)`
 	// key remove
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyRemoveUse   string = `remove <fingerprint>`
-	KeyRemoveShort string = `Remove a local public key from your keyring`
+	KeyRemoveShort string = `Remove a local public key from your local or the global keyring`
 	KeyRemoveLong  string = `
   The 'key remove' command will remove a local public key from
-  your keyring.`
+  the local or the global keyring.`
 	KeyRemoveExample string = `
   $ singularity key remove D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
@@ -451,14 +461,16 @@ Enterprise Performance Computing (EPC)`
   instance://*        A local running instance of a container. (See the instance
                       command group.)
 
-  library://*         A container hosted on a Library (default 
-                      https://cloud.sylabs.io/library)
+  library://*         A SIF container hosted on a Library
+                      (default https://cloud.sylabs.io/library)
 
-  docker://*          A container hosted on Docker Hub
+  docker://*          A Docker/OCI container hosted on Docker Hub or another
+                      OCI registry.
 
-  shub://*            A container hosted on Singularity Hub
+  shub://*            A container hosted on Singularity Hub.
 
-  oras://*            A container hosted on a supporting OCI registry`
+  oras://*            A SIF container hosted on an OCI registry that supports
+                      the OCI Registry As Storage (ORAS) specification.`
 	ExecUse   string = `exec [exec options...] <container> <command>`
 	ExecShort string = `Run a command within a container`
 	ExecLong  string = `
@@ -576,13 +588,13 @@ Enterprise Performance Computing (EPC)`
   library: Pull an image from the currently configured library
       library://user/collection/container[:tag]
 
-  docker: Pull an image from Docker Hub
+  docker: Pull a Docker/OCI image from Docker Hub, or another OCI registry.
       docker://user/image:tag
     
   shub: Pull an image from Singularity Hub
       shub://user/image:tag
 
-  oras: Pull a SIF image from a supporting OCI registry
+  oras: Pull a SIF image from an OCI registry that supports ORAS.
       oras://registry/namespace/image:tag
 
   http, https: Pull an image using the http(s?) protocol
@@ -632,11 +644,13 @@ Enterprise Performance Computing (EPC)`
 	SearchUse   string = `search [search options...] <search_query>`
 	SearchShort string = `Search a Container Library for images`
 	SearchLong  string = `
-  Search a Container Library for users and containers matching the search query.
-  (default cloud.sylabs.io)`
+  Search a Container Library for container images matching the search query.
+  (default cloud.sylabs.io). You can specify an alternate architecture, and/or limit
+  the results to only signed images.`
 	SearchExample string = `
   $ singularity search lolcow
-  $ singularity search centos`
+  $ singularity search --arch arm64 alpine
+  $ singularity search --signed tensorflow`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// run

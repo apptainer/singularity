@@ -12,6 +12,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"syscall"
 
@@ -37,7 +38,9 @@ type encryptionOptions struct {
 	plaintext []byte
 }
 
-func createSIF(path string, definition, ociConf []byte, squashfile string, encOpts *encryptionOptions, arch string) (err error) {
+func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encryptionOptions, arch string) (err error) {
+	definition := b.Recipe.Raw
+
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -58,19 +61,28 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encOp
 	// add this descriptor input element to creation descriptor slice
 	cinfo.InputDescr = append(cinfo.InputDescr, definput)
 
-	if len(ociConf) > 0 {
-		// data we need to create a definition file descriptor
-		ociInput := sif.DescriptorInput{
-			Datatype: sif.DataGenericJSON,
-			Groupid:  sif.DescrDefaultGroup,
-			Link:     sif.DescrUnusedLink,
-			Data:     ociConf,
-			Fname:    "oci-config.json",
-		}
-		ociInput.Size = int64(binary.Size(ociInput.Data))
+	// add all JSON data object within SIF by alphabetical order
+	sorted := make([]string, 0, len(b.JSONObjects))
+	for name := range b.JSONObjects {
+		sorted = append(sorted, name)
+	}
+	sort.Strings(sorted)
 
-		// add this descriptor input element to creation descriptor slice
-		cinfo.InputDescr = append(cinfo.InputDescr, ociInput)
+	for _, name := range sorted {
+		if len(b.JSONObjects[name]) > 0 {
+			// data we need to create a definition file descriptor
+			in := sif.DescriptorInput{
+				Datatype: sif.DataGenericJSON,
+				Groupid:  sif.DescrDefaultGroup,
+				Link:     sif.DescrUnusedLink,
+				Data:     b.JSONObjects[name],
+				Fname:    name,
+			}
+			in.Size = int64(binary.Size(in.Data))
+
+			// add this descriptor input element to creation descriptor slice
+			cinfo.InputDescr = append(cinfo.InputDescr, in)
+		}
 	}
 
 	// data we need to create a system partition descriptor
@@ -226,7 +238,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 
 	}
 
-	err = createSIF(path, b.Recipe.Raw, b.JSONObjects[types.OCIConfigJSON], fsPath, encOpts, arch)
+	err = createSIF(path, b, fsPath, encOpts, arch)
 	if err != nil {
 		return fmt.Errorf("while creating SIF: %v", err)
 	}

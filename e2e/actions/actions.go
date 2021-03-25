@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"syscall"
 	"testing"
 	"time"
 
@@ -473,7 +474,7 @@ func (c actionTests) STDPipe(t *testing.T) {
 
 // RunFromURI tests min fuctionality for singularity run/exec URI://
 func (c actionTests) RunFromURI(t *testing.T) {
-	e2e.PrepRegistry(t, c.env)
+	e2e.EnsureRegistry(t)
 
 	runScript := "testdata/runscript.sh"
 	bind := fmt.Sprintf("%s:/.singularity.d/runscript", runScript)
@@ -2018,8 +2019,8 @@ func (c actionTests) bindImage(t *testing.T) {
 			name:    "SifWithID",
 			profile: e2e.UserProfile,
 			args: []string{
-				// rootfs ID is now '3'
-				"--bind", c.env.ImagePath + ":/rootfs:id=3",
+				// rootfs ID is now '4'
+				"--bind", c.env.ImagePath + ":/rootfs:id=4",
 				c.env.ImagePath,
 				"test", "-d", "/rootfs/etc",
 			},
@@ -2036,6 +2037,158 @@ func (c actionTests) bindImage(t *testing.T) {
 			e2e.WithArgs(tt.args...),
 			e2e.ExpectExit(tt.exit),
 		)
+	}
+}
+
+// actionUmask tests that the within-container umask is correct in action flows
+func (c actionTests) actionUmask(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	u := e2e.UserProfile.HostUser(t)
+
+	// Set umask for tests to 0000
+	oldUmask := syscall.Umask(0)
+	defer syscall.Umask(oldUmask)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithDir(u.Dir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(c.env.ImagePath, "sh", "-c", "umask"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ExactMatch, "0000"),
+		),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithDir(u.Dir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--no-umask", c.env.ImagePath, "sh", "-c", "umask"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ExactMatch, "0022"),
+		),
+	)
+
+}
+
+func (c actionTests) actionNoMount(t *testing.T) {
+	// TODO - this does not test --no-mount hostfs as that is a little tricky
+	// We are in a mount namespace for e2e tests, so we can setup some mounts in there,
+	// create a custom config with `mount hostfs = yes` set, and then look for presence
+	// or absence of the mounts. I'd like to think about this a bit more though - work up
+	// some nice helpers & cleanup for the actions we need.
+	e2e.EnsureImage(t, c.env)
+
+	tests := []struct {
+		name string
+		// Which mount directive to override (disable)
+		noMount string
+		// Output of `mount` command to ensure we should not find
+		// e.g for `--no-mount home` "on /home" as mount command output is of the form:
+		//   tmpfs on /home/dave type tmpfs (rw,seclabel,nosuid,nodev,relatime,size=16384k,uid=1000,gid=1000)
+		noMatch string
+		// Whether to run the test in default and/or contained modes
+		// Needs to be specified as e.g. by default `/dev` mount is a full bind that will always include `/dev/pts`
+		// ... but in --contained mode disabling devpts stops it being bound in.
+		testDefault   bool
+		testContained bool
+		// To test --no-mount cwd we need to chdir for the execution
+		cwd  string
+		exit int
+	}{
+		{
+			name:          "proc",
+			noMount:       "proc",
+			noMatch:       "on /proc",
+			testDefault:   true,
+			testContained: true,
+			exit:          1, // mount fails with exit code 1 when there is no `/proc`
+		},
+		{
+			name:          "sys",
+			noMount:       "sys",
+			noMatch:       "on /sys",
+			testDefault:   true,
+			testContained: true,
+			exit:          0,
+		},
+		{
+			name:          "dev",
+			noMount:       "dev",
+			noMatch:       "on /dev",
+			testDefault:   true,
+			testContained: true,
+			exit:          0,
+		},
+		{
+			name:          "devpts",
+			noMount:       "devpts",
+			noMatch:       "on /dev/pts",
+			testDefault:   false,
+			testContained: true,
+			exit:          0,
+		},
+		{
+			name:          "tmp",
+			noMount:       "tmp",
+			noMatch:       "on /tmp",
+			testDefault:   true,
+			testContained: true,
+			exit:          0,
+		},
+		{
+			name:          "home",
+			noMount:       "home",
+			noMatch:       "on /home",
+			testDefault:   true,
+			testContained: true,
+			exit:          0,
+		},
+		{
+			// /srv is an LSB directory we should be able to rely on for our CWD test
+			name:        "cwd",
+			noMount:     "cwd",
+			noMatch:     "on /srv",
+			testDefault: true,
+			// CWD is never mounted with contain so --no-mount CWD doesn't have an effect,
+			// but let's verify it isn't mounted anyway.
+			testContained: true,
+			cwd:           "/srv",
+			exit:          0,
+		},
+	}
+
+	for _, tt := range tests {
+
+		if tt.testDefault {
+			c.env.RunSingularity(
+				t,
+				e2e.WithDir(tt.cwd),
+				e2e.AsSubtest(tt.name),
+				e2e.WithProfile(e2e.UserProfile),
+				e2e.WithCommand("exec"),
+				e2e.WithArgs("--no-mount", tt.noMount, c.env.ImagePath, "mount"),
+				e2e.ExpectExit(tt.exit,
+					e2e.ExpectOutput(e2e.UnwantedContainMatch, tt.noMatch)),
+			)
+		}
+		if tt.testContained {
+			c.env.RunSingularity(
+				t,
+				e2e.WithDir(tt.cwd),
+				e2e.AsSubtest(tt.name+"Contained"),
+				e2e.WithProfile(e2e.UserProfile),
+				e2e.WithCommand("exec"),
+				e2e.WithArgs("--contain", "--no-mount", tt.noMount, c.env.ImagePath, "mount"),
+				e2e.ExpectExit(tt.exit,
+					e2e.ExpectOutput(e2e.UnwantedContainMatch, tt.noMatch)),
+			)
+		}
 	}
 }
 
@@ -2066,10 +2219,16 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"issue 5307":            c.issue5307,           // https://github.com/sylabs/singularity/issues/5307
 		"issue 5399":            c.issue5399,           // https://github.com/sylabs/singularity/issues/5399
 		"issue 5455":            c.issue5455,           // https://github.com/sylabs/singularity/issues/5455
+		"issue 5465":            c.issue5465,           // https://github.com/sylabs/singularity/issues/5465
+		"issue 5599":            c.issue5599,           // https://github.com/sylabs/singularity/issues/5599
+		"issue 5631":            c.issue5631,           // https://github.com/sylabs/singularity/issues/5631
+		"issue 5690":            c.issue5690,           // https://github.com/sylabs/singularity/issues/5690
 		"network":               c.actionNetwork,       // test basic networking
 		"binds":                 c.actionBinds,         // test various binds
 		"exit and signals":      c.exitSignals,         // test exit and signals propagation
 		"fuse mount":            c.fuseMount,           // test fusemount option
 		"bind image":            c.bindImage,           // test bind image
+		"umask":                 c.actionUmask,         // test umask propagation
+		"no-mount":              c.actionNoMount,       // test --no-mount
 	}
 }

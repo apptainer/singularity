@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -13,31 +14,37 @@ import (
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
+	scsbuildclient "github.com/sylabs/scs-build-client/client"
+	scskeyclient "github.com/sylabs/scs-key-client/client"
+	scslibclient "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
-	scs "github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 var buildArgs struct {
-	sections   []string
-	arch       string
-	builderURL string
-	libraryURL string
-	detached   bool
-	encrypt    bool
-	fakeroot   bool
-	fixPerms   bool
-	isJSON     bool
-	noCleanUp  bool
-	noTest     bool
-	remote     bool
-	sandbox    bool
-	update     bool
+	sections     []string
+	arch         string
+	builderURL   string
+	libraryURL   string
+	keyServerURL string
+	webURL       string
+	detached     bool
+	encrypt      bool
+	fakeroot     bool
+	fixPerms     bool
+	isJSON       bool
+	noCleanUp    bool
+	noTest       bool
+	remote       bool
+	sandbox      bool
+	update       bool
 }
 
 // -s|--sandbox
@@ -129,7 +136,7 @@ var buildDetachedFlag = cmdline.Flag{
 var buildBuilderFlag = cmdline.Flag{
 	ID:           "buildBuilderFlag",
 	Value:        &buildArgs.builderURL,
-	DefaultValue: "https://build.sylabs.io",
+	DefaultValue: "",
 	Name:         "builder",
 	Usage:        "remote Build Service URL, setting this implies --remote",
 	EnvKeys:      []string{"BUILDER"},
@@ -139,7 +146,7 @@ var buildBuilderFlag = cmdline.Flag{
 var buildLibraryFlag = cmdline.Flag{
 	ID:           "buildLibraryFlag",
 	Value:        &buildArgs.libraryURL,
-	DefaultValue: "https://library.sylabs.io",
+	DefaultValue: "",
 	Name:         "library",
 	Usage:        "container Library URL",
 	EnvKeys:      []string{"LIBRARY"},
@@ -252,8 +259,6 @@ func preRun(cmd *cobra.Command, args []string) {
 	if cmd.Flags().Lookup("builder").Changed {
 		cmd.Flags().Lookup("remote").Value.Set("true")
 	}
-
-	sylabsToken(cmd, args)
 }
 
 // checkBuildTarget makes sure output target doesn't exist, or is ok to overwrite.
@@ -295,8 +300,15 @@ func checkBuildTarget(path string) error {
 
 			question := fmt.Sprintf("Build target '%s' already exists and will be deleted during the build process. Do you want to continue? [N/y]", f.Name())
 
-			if isDefFile, _ := parser.IsValidDefinition(abspath); isDefFile {
-				question = fmt.Sprintf("Build target '%s' is a definition file that will be overwritten. Do you still want to overwrite? [N/y]", f.Name())
+			img, err := image.Init(abspath, false)
+			if err != nil {
+				if err != image.ErrUnknownFormat {
+					return fmt.Errorf("while determining '%s' format: %s", f.Name(), err)
+				}
+				// unknown image file format
+				question = fmt.Sprintf("Build target '%s' may be a definition file or a text/binary file that will be overwritten. Do you still want to overwrite it? [N/y]", f.Name())
+			} else {
+				img.File.Close()
 			}
 
 			input, err := interactive.AskYNQuestion("n", question)
@@ -392,31 +404,19 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 	return nil, nil
 }
 
-// remote builds need to fail if we cannot resolve remote URLS
-func handleRemoteBuildFlags(cmd *cobra.Command) {
-	// if we can load config and if default endpoint is set, use that
-	// otherwise fall back on regular authtoken and URI behavior
-	endpoint, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to CLI defaults")
-		return
-	} else if err != nil {
-		sylog.Fatalf("Unable to load remote configuration: %v", err)
+// get configuration for remote library, builder, keyserver that may be used in the build
+func getServiceConfigs(buildURI, libraryURI, keyserverURI string) (*scsbuildclient.Config, *scslibclient.Config, []scskeyclient.Option, error) {
+	lc, err := getLibraryClientConfig(libraryURI)
+	if err != nil {
+		return nil, nil, nil, err
 	}
-
-	authToken = endpoint.Token
-	if !cmd.Flags().Lookup("builder").Changed {
-		uri, err := endpoint.GetServiceURI("builder")
-		if err != nil {
-			sylog.Fatalf("Unable to get build service URI: %v", err)
-		}
-		buildArgs.builderURL = uri
+	bc, err := getBuilderClientConfig(buildURI)
+	if err != nil {
+		return nil, nil, nil, err
 	}
-	if !cmd.Flags().Lookup("library").Changed {
-		uri, err := endpoint.GetServiceURI("library")
-		if err != nil {
-			sylog.Fatalf("Unable to get library service URI: %v", err)
-		}
-		buildArgs.libraryURL = uri
+	co, err := getKeyserverClientOpts(keyserverURI, endpoint.KeyserverVerifyOp)
+	if err != nil {
+		return nil, nil, nil, err
 	}
+	return bc, lc, co, nil
 }

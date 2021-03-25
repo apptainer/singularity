@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
@@ -12,7 +13,6 @@ import (
 	"net/http"
 	"strings"
 
-	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"golang.org/x/crypto/openpgp"
@@ -33,7 +33,7 @@ type hybridKeyRing struct {
 
 // NewHybridKeyRing returns a keyring backed by both the local public keyring and the configured
 // keyserver.
-func NewHybridKeyRing(ctx context.Context, cfg *client.Config) (openpgp.KeyRing, error) {
+func NewHybridKeyRing(ctx context.Context, opts ...client.Option) (openpgp.KeyRing, error) {
 	// Get local keyring.
 	kr, err := PublicKeyRing()
 	if err != nil {
@@ -41,7 +41,7 @@ func NewHybridKeyRing(ctx context.Context, cfg *client.Config) (openpgp.KeyRing,
 	}
 
 	// Set up client to retrieve keys from keyserver.
-	c, err := client.NewClient(cfg)
+	c, err := client.NewClient(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -96,15 +96,54 @@ func (kr *hybridKeyRing) remoteEntitiesByID(id uint64) (openpgp.EntityList, erro
 	kt, err := kr.c.PKSLookup(kr.ctx, nil, fmt.Sprintf("%#x", id), client.OperationGet, false, true, nil)
 	if err != nil {
 		// If the request failed with HTTP status code unauthorized, guide the user to fix that.
-		var jerr *jsonresp.Error
-		if errors.As(err, &jerr) {
-			if jerr.Code == http.StatusUnauthorized {
-				sylog.Infof(helpAuth)
-			}
+		var httpError *client.HTTPError
+		if errors.As(err, &httpError) && httpError.Code() == http.StatusUnauthorized {
+			sylog.Infof(helpAuth)
 		}
-
 		return nil, err
 	}
 
 	return openpgp.ReadArmoredKeyRing(strings.NewReader(kt))
+}
+
+type multiKeyRing struct {
+	keyrings []openpgp.KeyRing
+}
+
+// NewMultiKeyRing returns a keyring backed by different public keyring.
+func NewMultiKeyRing(keyrings ...openpgp.KeyRing) openpgp.KeyRing {
+	return &multiKeyRing{keyrings: keyrings}
+}
+
+// KeysById returns the set of keys that have the given key id.
+//nolint:golint  // golang/x/crypto uses Id instead of ID so we have to too
+func (mkr *multiKeyRing) KeysById(id uint64) []openpgp.Key {
+	for _, kr := range mkr.keyrings {
+		if keys := kr.KeysById(id); len(keys) > 0 {
+			return keys
+		}
+	}
+	return nil
+}
+
+// KeysByIdUsage returns the set of keys with the given id that also meet the key usage given by
+// requiredUsage. The requiredUsage is expressed as the bitwise-OR of packet.KeyFlag* values.
+//nolint:golint  // golang/x/crypto uses Id instead of ID so we have to too
+func (mkr *multiKeyRing) KeysByIdUsage(id uint64, requiredUsage byte) []openpgp.Key {
+	for _, kr := range mkr.keyrings {
+		if keys := kr.KeysByIdUsage(id, requiredUsage); len(keys) > 0 {
+			return keys
+		}
+	}
+	return nil
+}
+
+// DecryptionKeys returns all private keys that are valid for decryption.
+func (mkr *multiKeyRing) DecryptionKeys() []openpgp.Key {
+	for _, kr := range mkr.keyrings {
+		if keys := kr.DecryptionKeys(); len(keys) > 0 {
+			return keys
+		}
+	}
+	return nil
 }

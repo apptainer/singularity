@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"gopkg.in/yaml.v2"
 )
@@ -62,7 +63,7 @@ func createValidCfgFile(t *testing.T) string {
 	// Set a valid configuration
 	cfg := remote.Config{
 		DefaultRemote: validRemoteName,
-		Remotes: map[string]*remote.EndPoint{
+		Remotes: map[string]*endpoint.Config{
 			"random": {
 				URI:   "validURI",
 				Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
@@ -309,7 +310,7 @@ func TestRemoteAdd(t *testing.T) {
 			shallPass:  false,
 		},
 		{
-			name:       "26: valid config file; valid remote name; valid URI; local",
+			name:       "26: valid config file; valid remote name; valid URI; global",
 			cfgfile:    validCfgFile,
 			remoteName: validRemoteName,
 			uri:        validURI,
@@ -317,7 +318,7 @@ func TestRemoteAdd(t *testing.T) {
 			shallPass:  true,
 		},
 		{
-			name:       "27: valid config file; empty remote name; valid URI; local",
+			name:       "27: valid config file; empty remote name; valid URI; global",
 			cfgfile:    validCfgFile,
 			remoteName: "",
 			uri:        validURI,
@@ -347,18 +348,39 @@ func TestRemoteAdd(t *testing.T) {
 			test.DropPrivilege(t)
 			defer test.ResetPrivilege(t)
 
+			// remote package detect if the configuration file is
+			// the system configuration to apply some restriction,
+			// therefore we need to replace SystemConfigPath in
+			// the remote package in order to make the test configuration
+			// file as the system configuration file. This shouldn't interfere
+			// with remove tests in remote_remove_test.go (hopefully)
+			oldSysConfig := ""
+			restoreSysConfig := func() {
+				if oldSysConfig != "" {
+					remote.SystemConfigPath = oldSysConfig
+				}
+			}
+
+			if tt.global && tt.shallPass {
+				oldSysConfig = remote.SystemConfigPath
+				remote.SystemConfigPath = tt.cfgfile
+			}
+
 			err := RemoteAdd(tt.cfgfile, tt.remoteName, tt.uri, tt.global)
 			if tt.shallPass == true && err != nil {
+				restoreSysConfig()
 				t.Fatalf("valid case failed: %s\n", err)
 			}
 
 			if tt.shallPass == false && err == nil {
+				restoreSysConfig()
 				RemoteRemove(tt.cfgfile, tt.remoteName)
 				t.Fatal("invalid case passed")
 			}
 
 			if tt.shallPass == true && err == nil {
 				RemoteRemove(tt.cfgfile, tt.remoteName)
+				restoreSysConfig()
 			}
 		})
 	}

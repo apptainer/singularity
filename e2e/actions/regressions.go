@@ -6,6 +6,7 @@
 package actions
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -470,6 +471,148 @@ func (c actionTests) issue5455(t *testing.T) {
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("exec"),
 		e2e.WithArgs("--writable-tmpfs", dir, "mkdir", "/perm/issue5455"),
+		e2e.ExpectExit(0),
+	)
+}
+
+// Check that we can run a container with no fuse mounts when they are disabled
+// by config enable fusemount=no
+func (c actionTests) issue5631(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	// Set enable fusemount = no in a custom config file
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-5631-", "")
+	defer e2e.Privileged(cleanup)(t)
+	tmpConfig := path.Join(tmpDir, "singularity.conf")
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.PreRun(
+			// Custom config file must exist and be root owned with tight permissions
+			func(t *testing.T) {
+				err := fs.EnsureFileWithPermission(tmpConfig, 0600)
+				if err != nil {
+					t.Fatalf("while creating temporary config file: %s", err)
+				}
+			}),
+		e2e.WithCommand("config global"),
+		e2e.WithGlobalOptions("--config", tmpConfig),
+		e2e.WithArgs("--set", "enable fusemount", "no"),
+		e2e.ExpectExit(0),
+	)
+
+	// Check we can run a bare container still against the custom config
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithGlobalOptions("--config", tmpConfig),
+		e2e.WithArgs(c.env.ImagePath, "/bin/true"),
+		e2e.ExpectExit(0),
+	)
+}
+
+// Check that mount failure for /etc/hosts and /etc/localtime are not fatal
+// Separate code paths for contain and non-contained, so check both
+func (c actionTests) issue5465(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	sandbox, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "sandbox-", "")
+	defer cleanup(t)
+
+	// convert test image to sandbox
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", sandbox, c.env.ImagePath),
+		e2e.ExpectExit(0),
+	)
+
+	// Link /etc/localtime and /etc/hosts to a directory
+	// (bind file onto dir will fail)
+	if err := os.Mkdir(filepath.Join(sandbox, "dir"), 0o755); err != nil {
+		t.Fatalf("couldn't create dir in sandbox: %s", err)
+	}
+	if err := os.Remove(filepath.Join(sandbox, "etc", "localtime")); err != nil && !os.IsNotExist(err) {
+		t.Fatalf("couldn't remove sandbox localtime: %s", err)
+	}
+	if err := os.Remove(filepath.Join(sandbox, "etc", "hosts")); err != nil && !os.IsNotExist(err) {
+		t.Fatalf("couldn't remove sandbox hosts: %s", err)
+	}
+	if err := os.Symlink("/dir", filepath.Join(sandbox, "etc", "localtime")); err != nil {
+		t.Fatalf("couldn't symlink sandbox localtime: %s", err)
+	}
+	if err := os.Symlink("/dir", filepath.Join(sandbox, "etc", "hosts")); err != nil {
+		t.Fatalf("couldn't symlink sandbox hosts: %s", err)
+	}
+
+	// The standard flow where the binds come from singularity.conf
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("Standard"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithDir(c.env.TestDir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(sandbox, "true"),
+		e2e.ExpectExit(0),
+	)
+
+	// With `--contain` where the binds are hard coded
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("Contain"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithDir(c.env.TestDir),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--contain", sandbox, "true"),
+		e2e.ExpectExit(0),
+	)
+}
+
+// Check that flag / env var binds are passed in $SINGULARITY_BIND in the
+// container. Sometimes used by containers that require data to be bound in to a
+// location etc., and was present in older versions of Singularity.
+func (c actionTests) issue5599(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-5599-", "")
+	defer e2e.Privileged(cleanup)(t)
+	// Binds from env var and flag are additive
+	envBind := tmpDir + ":/srv"
+	bindEnv := "SINGULARITY_BIND=" + envBind
+	flagBind := tmpDir + ":/mnt"
+	expectedEnv := fmt.Sprintf("SINGULARITY_BIND=%s,%s", flagBind, envBind)
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithEnv(append(os.Environ(), bindEnv)),
+		e2e.WithArgs("--bind", flagBind, c.env.ImagePath, "/usr/bin/env"),
+		e2e.ExpectExit(0,
+			e2e.ExpectOutput(e2e.ContainMatch, expectedEnv),
+		),
+	)
+}
+
+// Check that unsquashfs (for version >= 4.4) works for non root users when image contains
+// pseudo devices in /dev.
+func (c actionTests) issue5690(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(c.env.ImagePath, "/bin/true"),
+		e2e.ExpectExit(0),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(c.env.ImagePath, "/bin/true"),
 		e2e.ExpectExit(0),
 	)
 }

@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -59,7 +60,7 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 		Logger:    (golog.Logger)(sylog.DebugLogger{}),
 	}
 
-	imagePath, err := library.Pull(ctx, b.Opts.ImgCache, imageRef, runtime.GOARCH, cp.b.TmpDir, libraryConfig, "")
+	imagePath, err := library.Pull(ctx, b.Opts.ImgCache, imageRef, runtime.GOARCH, cp.b.TmpDir, libraryConfig)
 	if err != nil {
 		return fmt.Errorf("while fetching library image: %v", err)
 	}
@@ -69,7 +70,7 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
-	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)
+	cp.LocalPacker, err = GetLocalPacker(ctx, imagePath, cp.b)
 
 	return err
 }

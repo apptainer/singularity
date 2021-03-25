@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -6,16 +7,19 @@
 package remote
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
-	"strings"
-	"time"
+	"os"
+	"path/filepath"
 
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/remote/credential"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
+	remoteutil "github.com/sylabs/singularity/internal/pkg/remote/util"
+	"github.com/sylabs/singularity/pkg/syfs"
+	"github.com/sylabs/singularity/pkg/sylog"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -24,29 +28,44 @@ var (
 	ErrNoDefault = errors.New("no default remote")
 )
 
-var errorCodeMap = map[int]string{
-	404: "Invalid Token",
-	500: "Internal Server Error",
+const (
+	// DefaultRemoteName is the default remote name
+	DefaultRemoteName = "SylabsCloud"
+)
+
+// DefaultRemoteConfig holds the default remote configuration
+// if there is no remote.yaml present both in user home directory
+// and in system location.
+var DefaultRemoteConfig = &Config{
+	DefaultRemote: DefaultRemoteName,
+	Remotes: map[string]*endpoint.Config{
+		DefaultRemoteName: endpoint.DefaultEndpointConfig,
+	},
 }
+
+// SystemConfigPath holds the path to the remote system configuration.
+var SystemConfigPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", syfs.RemoteConfFile)
 
 // Config stores the state of remote endpoint configurations
 type Config struct {
-	DefaultRemote string               `yaml:"Active"`
-	Remotes       map[string]*EndPoint `yaml:"Remotes"`
-}
+	DefaultRemote string                      `yaml:"Active"`
+	Remotes       map[string]*endpoint.Config `yaml:"Remotes"`
+	Credentials   []*credential.Config        `yaml:"Credentials,omitempty"`
 
-// EndPoint descriptes a single remote service
-type EndPoint struct {
-	URI    string `yaml:"URI,omitempty"`
-	Token  string `yaml:"Token,omitempty"`
-	System bool   `yaml:"System"` // Was this EndPoint set from system config file
+	// set to true when this is the system configuration
+	system bool
 }
 
 // ReadFrom reads remote configuration from io.Reader
 // returns Config populated with remotes
 func ReadFrom(r io.Reader) (*Config, error) {
 	c := &Config{
-		Remotes: make(map[string]*EndPoint),
+		Remotes: make(map[string]*endpoint.Config),
+	}
+
+	// check if the reader point to the remote system configuration
+	if f, ok := r.(*os.File); ok {
+		c.system = f.Name() == SystemConfigPath
 	}
 
 	// read all data from r into b
@@ -93,12 +112,22 @@ func (c *Config) SyncFrom(sys *Config) error {
 			return fmt.Errorf("name collision while syncing: %s", name)
 		} else if err == nil {
 			eUsr.URI = eSys.URI // update URI just in case
+			eUsr.Exclusive = eSys.Exclusive
+			if eSys.Exclusive {
+				c.DefaultRemote = name
+			}
+			eUsr.Keyservers = eSys.Keyservers
 			continue
 		}
 
-		e := &EndPoint{
-			URI:    eSys.URI,
-			System: true,
+		if eSys.Exclusive {
+			c.DefaultRemote = name
+		}
+		e := &endpoint.Config{
+			URI:        eSys.URI,
+			System:     true,
+			Exclusive:  eSys.Exclusive,
+			Keyservers: eSys.Keyservers,
 		}
 
 		if err := c.Add(name, e); err != nil {
@@ -114,32 +143,47 @@ func (c *Config) SyncFrom(sys *Config) error {
 	return nil
 }
 
-// SetDefault sets default remote endpoint or returns an error if it does not exist
-func (c *Config) SetDefault(name string) error {
-	if _, ok := c.Remotes[name]; !ok {
+// SetDefault sets default remote endpoint or returns an error if it does not exist.
+// A remote endpoint can also be set as exclusive.
+func (c *Config) SetDefault(name string, exclusive bool) error {
+	r, ok := c.Remotes[name]
+	if !ok {
 		return fmt.Errorf("%s is not a remote", name)
 	}
+	if !c.system && exclusive {
+		return fmt.Errorf("exclusive can't be set by user")
+	} else if name != c.DefaultRemote {
+		for n, r := range c.Remotes {
+			if r.Exclusive && !c.system {
+				return fmt.Errorf(
+					"could not use %s: remote %s has been set exclusive by the system administrator",
+					name, n,
+				)
+			}
+		}
+	}
+
+	dr, ok := c.Remotes[c.DefaultRemote]
+	if ok && c.DefaultRemote != name && exclusive {
+		dr.Exclusive = false
+	}
+	r.Exclusive = exclusive
 
 	c.DefaultRemote = name
 	return nil
 }
 
 // GetDefault returns default remote endpoint or an error
-func (c *Config) GetDefault() (*EndPoint, error) {
+func (c *Config) GetDefault() (*endpoint.Config, error) {
 	if c.DefaultRemote == "" {
 		return nil, ErrNoDefault
 	}
-
-	if _, ok := c.Remotes[c.DefaultRemote]; !ok {
-		return nil, fmt.Errorf("%s is not a remote", c.DefaultRemote)
-	}
-
-	return c.Remotes[c.DefaultRemote], nil
+	return c.GetRemote(c.DefaultRemote)
 }
 
 // Add a new remote endpoint
 // returns an error if it already exists
-func (c *Config) Add(name string, e *EndPoint) error {
+func (c *Config) Add(name string, e *endpoint.Config) error {
 	if _, ok := c.Remotes[name]; ok {
 		return fmt.Errorf("%s is already a remote", name)
 	}
@@ -152,8 +196,10 @@ func (c *Config) Add(name string, e *EndPoint) error {
 // if endpoint is the default, the default is cleared
 // returns an error if it does not exist
 func (c *Config) Remove(name string) error {
-	if _, ok := c.Remotes[name]; !ok {
+	if r, ok := c.Remotes[name]; !ok {
 		return fmt.Errorf("%s is not a remote", name)
+	} else if r.System && !c.system {
+		return fmt.Errorf("%s is global and can't be removed", name)
 	}
 
 	if c.DefaultRemote == name {
@@ -166,12 +212,67 @@ func (c *Config) Remove(name string) error {
 
 // GetRemote returns a reference to an existing endpoint
 // returns error if remote does not exist
-func (c *Config) GetRemote(name string) (*EndPoint, error) {
+func (c *Config) GetRemote(name string) (*endpoint.Config, error) {
 	r, ok := c.Remotes[name]
 	if !ok {
 		return nil, fmt.Errorf("%s is not a remote", name)
 	}
+	r.SetCredentials(c.Credentials)
 	return r, nil
+}
+
+// Login validates and stores credentials for a service like Docker/OCI registries
+// and keyservers.
+func (c *Config) Login(uri, username, password string, insecure bool) error {
+	_, err := remoteutil.NormalizeKeyserverURI(uri)
+	// if there is no error, we consider it as a keyserver
+	if err == nil {
+		var keyserverConfig *endpoint.ServiceConfig
+
+		for _, ep := range c.Remotes {
+			if keyserverConfig != nil {
+				break
+			}
+			for _, kc := range ep.Keyservers {
+				if !kc.External {
+					continue
+				}
+				if remoteutil.SameKeyserver(uri, kc.URI) {
+					keyserverConfig = kc
+					break
+				}
+			}
+		}
+		if keyserverConfig == nil {
+			return fmt.Errorf("no external keyserver configuration found for %s", uri)
+		} else if keyserverConfig.Insecure && !insecure {
+			sylog.Warningf("%s is configured as insecure, forcing insecure flag for login", uri)
+			insecure = true
+		} else if !keyserverConfig.Insecure && insecure {
+			insecure = false
+		}
+	}
+
+	credConfig, err := credential.Manager.Login(uri, username, password, insecure)
+	if err != nil {
+		return err
+	}
+	c.Credentials = append(c.Credentials, credConfig)
+	return nil
+}
+
+// Logout removes previously stored credentials for a service.
+func (c *Config) Logout(uri string) error {
+	if err := credential.Manager.Logout(uri); err != nil {
+		return err
+	}
+	for i, cred := range c.Credentials {
+		if remoteutil.SameURI(cred.URI, uri) {
+			c.Credentials = append(c.Credentials[:i], c.Credentials[i+1:]...)
+			return nil
+		}
+	}
+	return fmt.Errorf("%s is not configured", uri)
 }
 
 // Rename an existing remote
@@ -192,120 +293,4 @@ func (c *Config) Rename(name, newName string) error {
 	c.Remotes[newName] = c.Remotes[name]
 	delete(c.Remotes, name)
 	return nil
-}
-
-// VerifyToken returns an error if a token is not valid
-func (e *EndPoint) VerifyToken() error {
-	baseURL, err := e.GetServiceURI("token")
-	if err != nil {
-		return fmt.Errorf("while getting token service uri: %v", err)
-	}
-
-	client := &http.Client{
-		Timeout: (30 * time.Second),
-	}
-	req, err := http.NewRequest(http.MethodGet, baseURL+"/v1/token-status", nil)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", e.Token))
-	req.Header.Set("User-Agent", useragent.Value())
-
-	res, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("error making request to server: %v", err)
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		convStatus, ok := errorCodeMap[res.StatusCode]
-		if !ok {
-			convStatus = "Unknown"
-		}
-		return fmt.Errorf("error response from server: %v", convStatus)
-	}
-
-	return nil
-}
-
-func getCloudConfig(uri string) ([]byte, error) {
-	client := &http.Client{
-		Timeout: (30 * time.Second),
-	}
-
-	url := "https://" + uri + "/assets/config/config.prod.json"
-
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("User-Agent", useragent.Value())
-
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error making request to server: %v", err)
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("error response from server: %v", res.StatusCode)
-	}
-
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, fmt.Errorf("while reading response body: %v", err)
-	}
-	return b, nil
-}
-
-// GetServiceURI returns the URI for the service at the specified SCS endpoint
-// Examples of services: consent, build, library, key, token
-func (e *EndPoint) GetServiceURI(service string) (string, error) {
-	b, err := getCloudConfig(e.URI)
-	if err != nil {
-		return "", err
-	}
-
-	var a map[string]map[string]interface{}
-	if err := json.Unmarshal(b, &a); err != nil {
-		return "", fmt.Errorf("jsonresp: failed to unmarshal response: %v", err)
-	}
-
-	val, ok := a[service+"API"]
-	if !ok {
-		return "", fmt.Errorf("%v is not a service at endpoint", service)
-	}
-
-	uri, ok := val["uri"].(string)
-	if !ok {
-		return "", fmt.Errorf("%v service at endpoint failed to provide URI in response", service)
-	}
-
-	return uri, nil
-}
-
-// GetAllServiceURIs returns all available service urls for a given endpoint in a map
-func (e *EndPoint) GetAllServiceURIs() (map[string]string, error) {
-	b, err := getCloudConfig(e.URI)
-	if err != nil {
-		return nil, err
-	}
-
-	var a map[string]map[string]interface{}
-	if err := json.Unmarshal(b, &a); err != nil {
-		return nil, fmt.Errorf("jsonresp: failed to unmarshal response: %v", err)
-	}
-
-	uris := make(map[string]string)
-	for k := range a {
-		if strings.HasSuffix(k, "API") {
-			if s, ok := a[k]["uri"].(string); ok {
-				uris[strings.TrimSuffix(k, "API")] = s
-			}
-		}
-	}
-
-	return uris, nil
 }

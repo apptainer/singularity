@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -14,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -24,7 +26,6 @@ import (
 	"text/tabwriter"
 	"time"
 
-	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
@@ -58,9 +59,20 @@ type KeyExistsError struct {
 	fingerprint [20]byte
 }
 
+// HandleOpt is a type representing option which can be passed to NewHandle.
+type HandleOpt func(*Handle)
+
+// GlobalHandleOpt is the option to set a keyring as global.
+func GlobalHandleOpt() HandleOpt {
+	return func(h *Handle) {
+		h.global = true
+	}
+}
+
 // Handle is a structure representing a keyring
 type Handle struct {
-	path string
+	path   string
+	global bool
 }
 
 // GenKeyPairOptions parameters needed for generating new key pair.
@@ -105,13 +117,20 @@ func dirPath() string {
 }
 
 // NewHandle initializes a new keyring in path.
-func NewHandle(path string) *Handle {
-	if path == "" {
-		path = dirPath()
-	}
-
+func NewHandle(path string, opts ...HandleOpt) *Handle {
 	newHandle := new(Handle)
 	newHandle.path = path
+
+	for _, opt := range opts {
+		opt(newHandle)
+	}
+
+	if newHandle.path == "" {
+		if newHandle.global {
+			panic("global public keyring requires a path")
+		}
+		newHandle.path = dirPath()
+	}
 
 	return newHandle
 }
@@ -123,6 +142,9 @@ func (keyring *Handle) SecretPath() string {
 
 // PublicPath returns a string describing the path to the public keys store
 func (keyring *Handle) PublicPath() string {
+	if keyring.global {
+		return filepath.Join(keyring.path, "global-pgp-public")
+	}
 	return filepath.Join(keyring.path, "pgp-public")
 }
 
@@ -161,24 +183,51 @@ func ensureDirPrivate(dn string) error {
 	return nil
 }
 
-// createOrAppendPrivateFile creates the named filename, making sure
-// it's only accessible to the current user.
-//
-// TODO(mem): move this function to a common location
-func createOrAppendPrivateFile(fn string) (*os.File, error) {
-	return os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+// createOrAppendFile creates the named filename or open it in append mode,
+// making sure it has the provided file permissions.
+func createOrAppendFile(fn string, mode os.FileMode) (*os.File, error) {
+	oldumask := syscall.Umask(0)
+	defer syscall.Umask(oldumask)
+
+	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, mode)
+	if err != nil {
+		return nil, err
+	}
+
+	return f, f.Chmod(mode)
+}
+
+// createOrTruncateFile creates the named filename or truncate it,
+// making sure it has the provided file permissions.
+func createOrTruncateFile(fn string, mode os.FileMode) (*os.File, error) {
+	oldumask := syscall.Umask(0)
+	defer syscall.Umask(oldumask)
+
+	f, err := os.OpenFile(fn, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, mode)
+	if err != nil {
+		return nil, err
+	}
+
+	return f, f.Chmod(mode)
 }
 
 // PathsCheck creates the sypgp home folder, secret and public keyring files
+// for non global keyring.
 func (keyring *Handle) PathsCheck() error {
+	// global keyring is expected to have the parent directory created
+	// and accessible by all users, it also doesn't use private keys, the
+	// permission enforcement for the global keyring is deferred to
+	// createOrAppendFile and createOrTruncateFile functions
+	if keyring.global {
+		return nil
+	}
+
 	if err := ensureDirPrivate(keyring.path); err != nil {
 		return err
 	}
-
 	if err := fs.EnsureFileWithPermission(keyring.SecretPath(), 0600); err != nil {
 		return err
 	}
-
 	if err := fs.EnsureFileWithPermission(keyring.PublicPath(), 0600); err != nil {
 		return err
 	}
@@ -189,6 +238,9 @@ func (keyring *Handle) PathsCheck() error {
 func loadKeyring(fn string) (openpgp.EntityList, error) {
 	f, err := os.Open(fn)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return openpgp.EntityList{}, nil
+		}
 		return nil, err
 	}
 	defer f.Close()
@@ -198,6 +250,10 @@ func loadKeyring(fn string) (openpgp.EntityList, error) {
 
 // LoadPrivKeyring loads the private keys from local store into an EntityList
 func (keyring *Handle) LoadPrivKeyring() (openpgp.EntityList, error) {
+	if keyring.global {
+		return nil, fmt.Errorf("global keyring doesn't contain private keys")
+	}
+
 	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
 	}
@@ -219,24 +275,25 @@ func (keyring *Handle) LoadPubKeyring() (openpgp.EntityList, error) {
 // The key can be either a public or private key, and the file might be
 // in binary or ascii armored format.
 func loadKeysFromFile(fn string) (openpgp.EntityList, error) {
-	f, err := os.Open(fn)
+	// use an intermediary bytes.Reader to support key import from
+	// stdin for the seek operation below
+	data, err := ioutil.ReadFile(fn)
 	if err != nil {
 		return nil, err
 	}
+	buf := bytes.NewReader(data)
 
-	defer f.Close()
-
-	if entities, err := openpgp.ReadKeyRing(f); err == nil {
+	if entities, err := openpgp.ReadKeyRing(buf); err == nil {
 		return entities, nil
 	}
 
 	// cannot load keys from file, perhaps it's ascii armored?
 	// rewind and try again
-	if _, err := f.Seek(0, io.SeekStart); err != nil {
+	if _, err := buf.Seek(0, io.SeekStart); err != nil {
 		return nil, err
 	}
 
-	return openpgp.ReadArmoredKeyRing(f)
+	return openpgp.ReadArmoredKeyRing(buf)
 }
 
 // printEntity pretty prints an entity entry to w
@@ -301,7 +358,11 @@ func storePrivKeys(w io.Writer, list openpgp.EntityList) error {
 
 // appendPrivateKey appends a private key entity to the local keyring
 func (keyring *Handle) appendPrivateKey(e *openpgp.Entity) error {
-	f, err := createOrAppendPrivateFile(keyring.SecretPath())
+	if keyring.global {
+		return fmt.Errorf("global keyring can't contain private keys")
+	}
+
+	f, err := createOrAppendFile(keyring.SecretPath(), 0600)
 	if err != nil {
 		return err
 	}
@@ -323,7 +384,12 @@ func storePubKeys(w io.Writer, list openpgp.EntityList) error {
 
 // appendPubKey appends a public key entity to the local keyring
 func (keyring *Handle) appendPubKey(e *openpgp.Entity) error {
-	f, err := createOrAppendPrivateFile(keyring.PublicPath())
+	mode := os.FileMode(0600)
+	if keyring.global {
+		mode = os.FileMode(0644)
+	}
+
+	f, err := createOrAppendFile(keyring.PublicPath(), mode)
 	if err != nil {
 		return err
 	}
@@ -334,7 +400,12 @@ func (keyring *Handle) appendPubKey(e *openpgp.Entity) error {
 
 // storePubKeyring overwrites the public keyring with the listed keys
 func (keyring *Handle) storePubKeyring(keys openpgp.EntityList) error {
-	f, err := os.OpenFile(keyring.PublicPath(), os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0600)
+	mode := os.FileMode(0600)
+	if keyring.global {
+		mode = os.FileMode(0644)
+	}
+
+	f, err := createOrTruncateFile(keyring.PublicPath(), mode)
 	if err != nil {
 		return err
 	}
@@ -457,6 +528,10 @@ func (keyring *Handle) genKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, erro
 
 // GenKeyPair generates an PGP key pair and store them in the sypgp home folder
 func (keyring *Handle) GenKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, error) {
+	if keyring.global {
+		return nil, fmt.Errorf("operation not supported for global keyring")
+	}
+
 	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
 	}
@@ -574,7 +649,7 @@ func formatMROutput(mrString string) (int, []byte, error) {
 }
 
 // SearchPubkey connects to a key server and searches for a specific key
-func SearchPubkey(ctx context.Context, httpClient *http.Client, search, keyserverURI, authToken string, longOutput bool) error {
+func SearchPubkey(ctx context.Context, search string, longOutput bool, opts ...client.Option) error {
 	// If the search term is 8+ hex chars then it's a fingerprint, and
 	// we need to prefix with 0x for the search.
 	var IsFingerprint = regexp.MustCompile(`^[0-9A-F]{8,}$`).MatchString
@@ -583,11 +658,7 @@ func SearchPubkey(ctx context.Context, httpClient *http.Client, search, keyserve
 	}
 
 	// Get a Key Service client.
-	c, err := client.NewClient(&client.Config{
-		BaseURL:    keyserverURI,
-		AuthToken:  authToken,
-		HTTPClient: httpClient,
-	})
+	c, err := client.NewClient(opts...)
 	if err != nil {
 		return err
 	}
@@ -603,11 +674,12 @@ func SearchPubkey(ctx context.Context, httpClient *http.Client, search, keyserve
 	// Retrieve first page of search results from Key Service.
 	keyText, err := c.PKSLookup(ctx, &pd, search, client.OperationIndex, true, false, options)
 	if err != nil {
-		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
+		var httpError *client.HTTPError
+		if ok := errors.As(err, &httpError); ok && httpError.Code() == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			sylog.Infof(helpAuth)
 			return fmt.Errorf("unauthorized or missing token")
-		} else if ok && jerr.Code == http.StatusNotFound {
+		} else if ok && httpError.Code() == http.StatusNotFound {
 			return fmt.Errorf("no matching keys found for fingerprint")
 		} else {
 			return fmt.Errorf("failed to get key: %v", err)
@@ -774,7 +846,7 @@ func formatMROutputLongList(mrString string) (int, []byte, error) {
 }
 
 // FetchPubkey pulls a public key from the Key Service.
-func FetchPubkey(ctx context.Context, httpClient *http.Client, fingerprint, keyserverURI, authToken string, noPrompt bool) (openpgp.EntityList, error) {
+func FetchPubkey(ctx context.Context, fingerprint string, noPrompt bool, opts ...client.Option) (openpgp.EntityList, error) {
 
 	// Decode fingerprint and ensure proper length.
 	var fp []byte
@@ -789,11 +861,7 @@ func FetchPubkey(ctx context.Context, httpClient *http.Client, fingerprint, keys
 	}
 
 	// Get a Key Service client.
-	c, err := client.NewClient(&client.Config{
-		BaseURL:    keyserverURI,
-		AuthToken:  authToken,
-		HTTPClient: httpClient,
-	})
+	c, err := client.NewClient(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -801,11 +869,12 @@ func FetchPubkey(ctx context.Context, httpClient *http.Client, fingerprint, keys
 	// Pull key from Key Service.
 	keyText, err := c.GetKey(ctx, fp)
 	if err != nil {
-		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
+		var httpError *client.HTTPError
+		if ok := errors.As(err, &httpError); ok && httpError.Code() == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			sylog.Infof(helpAuth)
 			return nil, fmt.Errorf("unauthorized or missing token")
-		} else if ok && jerr.Code == http.StatusNotFound {
+		} else if ok && httpError.Code() == http.StatusNotFound {
 			return nil, fmt.Errorf("no matching keys found for fingerprint")
 		} else {
 			return nil, fmt.Errorf("failed to get key: %v", err)
@@ -1092,25 +1161,22 @@ func (keyring *Handle) ImportKey(kpath string, setNewPassword bool) error {
 }
 
 // PushPubkey pushes a public key to the Key Service.
-func PushPubkey(ctx context.Context, httpClient *http.Client, e *openpgp.Entity, keyserverURI, authToken string) error {
+func PushPubkey(ctx context.Context, e *openpgp.Entity, opts ...client.Option) error {
 	keyText, err := serializeEntity(e, openpgp.PublicKeyType)
 	if err != nil {
 		return err
 	}
 
 	// Get a Key Service client.
-	c, err := client.NewClient(&client.Config{
-		BaseURL:    keyserverURI,
-		AuthToken:  authToken,
-		HTTPClient: httpClient,
-	})
+	c, err := client.NewClient(opts...)
 	if err != nil {
 		return err
 	}
 
 	// Push key to Key Service.
 	if err := c.PKSAdd(ctx, keyText); err != nil {
-		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
+		var httpError *client.HTTPError
+		if errors.As(err, &httpError) && httpError.Code() == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			sylog.Infof(helpAuth+helpPush, e.PrimaryKey.Fingerprint)
 			return fmt.Errorf("unauthorized or missing token")

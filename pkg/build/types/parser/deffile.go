@@ -24,6 +24,8 @@ import (
 var (
 	errInvalidSection  = errors.New("invalid section(s) specified")
 	errEmptyDefinition = errors.New("Empty definition file")
+	// Match space but not within double quotes
+	fileSplitter = regexp.MustCompile(`[^\s"']+|"([^"]*)"|'([^']*)`)
 )
 
 // InvalidSectionError records an error and the sections that caused it.
@@ -157,7 +159,8 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 				continue
 			}
 			var src, dst string
-			lineSubs := strings.SplitN(line, " ", 2)
+			// Split at space, but not within double quotes
+			lineSubs := fileSplitter.FindAllString(line, -1)
 			if len(lineSubs) < 2 {
 				src = strings.TrimSpace(lineSubs[0])
 				dst = ""
@@ -165,6 +168,8 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 				src = strings.TrimSpace(lineSubs[0])
 				dst = strings.TrimSpace(lineSubs[1])
 			}
+			src = strings.Trim(src, "\"")
+			dst = strings.Trim(dst, "\"")
 			f.Files = append(f.Files, types.FileTransport{Src: src, Dst: dst})
 		}
 
@@ -264,17 +269,9 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 	return populateDefinition(sectionsMap, &files, &appOrder, d)
 }
 
-func populateDefinition(sections map[string]*types.Script, files *[]types.Files, appOrder *[]string, d *types.Definition) (err error) {
-	// initialize standard sections if not already created
-	// this function relies on standard sections being initialized in the map
-	for section := range validSections {
-		if _, ok := sections[section]; !ok {
-			sections[section] = &types.Script{}
-		}
-	}
-
+func GetLabels(content string) map[string]string {
 	// labels are parsed as a map[string]string
-	labelsSections := strings.TrimSpace(sections["labels"].Script)
+	labelsSections := strings.TrimSpace(content)
 	subs := strings.Split(labelsSections, "\n")
 	labels := make(map[string]string)
 
@@ -295,6 +292,18 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 		labels[key] = val
 	}
 
+	return labels
+}
+
+func populateDefinition(sections map[string]*types.Script, files *[]types.Files, appOrder *[]string, d *types.Definition) (err error) {
+	// initialize standard sections if not already created
+	// this function relies on standard sections being initialized in the map
+	for section := range validSections {
+		if _, ok := sections[section]; !ok {
+			sections[section] = &types.Script{}
+		}
+	}
+
 	d.ImageData = types.ImageData{
 		ImageScripts: types.ImageScripts{
 			Help:        *sections["help"],
@@ -303,7 +312,7 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 			Test:        *sections["test"],
 			Startscript: *sections["startscript"],
 		},
-		Labels: labels,
+		Labels: GetLabels(sections["labels"].Script),
 	}
 	d.BuildData.Files = *files
 	d.BuildData.Scripts = types.Scripts{
@@ -559,22 +568,23 @@ var appSections = map[string]bool{
 // validHeaders just contains a list of all the valid headers a definition file
 // could contain. If any others are found, an error will generate
 var validHeaders = map[string]bool{
-	"bootstrap":   true,
-	"from":        true,
-	"includecmd":  true,
-	"mirrorurl":   true,
-	"updateurl":   true,
-	"osversion":   true,
-	"include":     true,
-	"library":     true,
-	"registry":    true,
-	"namespace":   true,
-	"stage":       true,
-	"product":     true,
-	"user":        true,
-	"regcode":     true,
-	"productpgp":  true,
-	"registerurl": true,
-	"modules":     true,
-	"otherurl&n":  true,
+	"bootstrap":    true,
+	"from":         true,
+	"includecmd":   true,
+	"mirrorurl":    true,
+	"updateurl":    true,
+	"osversion":    true,
+	"include":      true,
+	"library":      true,
+	"registry":     true,
+	"namespace":    true,
+	"stage":        true,
+	"product":      true,
+	"user":         true,
+	"regcode":      true,
+	"productpgp":   true,
+	"registerurl":  true,
+	"modules":      true,
+	"otherurl&n":   true,
+	"fingerprints": true,
 }

@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2017-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -10,13 +11,11 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
-	scs "github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 var (
@@ -32,7 +31,7 @@ var (
 var verifyServerURIFlag = cmdline.Flag{
 	ID:           "verifyServerURIFlag",
 	Value:        &keyServerURI,
-	DefaultValue: defaultKeyServer,
+	DefaultValue: "",
 	Name:         "url",
 	ShortHand:    "u",
 	Usage:        "specify a URL for a key server",
@@ -139,7 +138,6 @@ func init() {
 var VerifyCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(1),
-	PreRun:                sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
@@ -157,14 +155,12 @@ func doVerifyCmd(cmd *cobra.Command, cpath string) {
 
 	// Set keyserver option, if applicable.
 	if !localVerify {
-		handleVerifyFlags(cmd)
-
-		c := client.Config{
-			BaseURL:   keyServerURI,
-			AuthToken: authToken,
-			UserAgent: useragent.Value(),
+		co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverVerifyOp)
+		if err != nil {
+			sylog.Fatalf("Error while getting keyserver client config: %v", err)
 		}
-		opts = append(opts, singularity.OptVerifyUseKeyServer(&c))
+
+		opts = append(opts, singularity.OptVerifyUseKeyServer(co...))
 	}
 
 	// Set group option, if applicable.
@@ -213,26 +209,5 @@ func doVerifyCmd(cmd *cobra.Command, cpath string) {
 		}
 
 		fmt.Printf("Container verified: %s\n", cpath)
-	}
-}
-
-func handleVerifyFlags(cmd *cobra.Command) {
-	// if we can load config and if default endpoint is set, use that
-	// otherwise fall back on regular authtoken and URI behavior
-	endpoint, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
-		return
-	} else if err != nil {
-		sylog.Fatalf("Unable to load remote configuration: %v", err)
-	}
-
-	authToken = endpoint.Token
-	if !cmd.Flags().Lookup("url").Changed {
-		uri, err := endpoint.GetServiceURI("keystore")
-		if err != nil {
-			sylog.Fatalf("Unable to get library service URI: %v", err)
-		}
-		keyServerURI = uri
 	}
 }

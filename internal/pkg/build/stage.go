@@ -31,7 +31,11 @@ type stage struct {
 	b *types.Bundle
 }
 
-const sEnvironment = "SINGULARITY_ENVIRONMENT=/.singularity.d/env/91-environment.sh"
+const (
+	sLabelsPath  = "/.build.labels"
+	sEnvironment = "SINGULARITY_ENVIRONMENT=/.singularity.d/env/91-environment.sh"
+	sLabels      = "SINGULARITY_LABELS=" + sLabelsPath
+)
 
 // Assemble assembles the bundle to the specified path.
 func (s *stage) Assemble(path string) error {
@@ -76,7 +80,7 @@ func (s *stage) runSectionScript(name string, script types.Script) error {
 func (s *stage) runPostScript(configFile, sessionResolv, sessionHosts string) error {
 	if s.b.Recipe.BuildData.Post.Script != "" {
 		cmdArgs := []string{"-s", "-c", configFile, "exec", "--pwd", "/", "--writable"}
-		cmdArgs = append(cmdArgs, "--cleanenv", "--env", sEnvironment)
+		cmdArgs = append(cmdArgs, "--cleanenv", "--env", sEnvironment, "--env", sLabels)
 
 		if sessionResolv != "" {
 			cmdArgs = append(cmdArgs, "-B", sessionResolv+":/etc/resolv.conf")
@@ -142,10 +146,13 @@ func (s *stage) runTestScript(configFile, sessionResolv, sessionHosts string) er
 func (s *stage) copyFilesFrom(b *Build) error {
 	def := s.b.Recipe
 	for _, f := range def.BuildData.Files {
-		if f.Args == "" {
+		// Trim comments from args
+		cleanArgs := strings.Split(f.Args, "#")[0]
+		if cleanArgs == "" {
 			continue
 		}
-		args := strings.Fields(f.Args)
+
+		args := strings.Fields(cleanArgs)
 		if len(args) != 2 {
 			continue
 		}
@@ -188,8 +195,10 @@ func (s *stage) copyFiles() error {
 	def := s.b.Recipe
 	filesSection := types.Files{}
 	for _, f := range def.BuildData.Files {
-		if f.Args == "" {
-			filesSection = f
+		// Trim comments from args
+		cleanArgs := strings.Split(f.Args, "#")[0]
+		if cleanArgs == "" {
+			filesSection.Files = append(filesSection.Files, f.Files...)
 		}
 	}
 	// iterate through filetransfers

@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
@@ -7,18 +8,25 @@ package singularity
 
 import (
 	"context"
+	"encoding/hex"
+	"errors"
+	"strings"
 
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/sif/pkg/integrity"
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
 )
 
+// TODO - error overlaps with ECL - should probably become part of a common errors package at some point.
+var errNotSignedByRequired = errors.New("image not signed by required entities")
+
 type VerifyCallback func(*sif.FileImage, integrity.VerifyResult) bool
 
 type verifier struct {
-	c         *client.Config
+	opts      []client.Option
 	groupIDs  []uint32
 	objectIDs []uint32
 	all       bool
@@ -29,11 +37,11 @@ type verifier struct {
 // VerifyOpt are used to configure v.
 type VerifyOpt func(v *verifier) error
 
-// OptVerifyUseKeyServer specifies that the keyserver specified by c be used as a source of key
+// OptVerifyUseKeyServer specifies that the keyserver specified by opts be used as a source of key
 // material, in addition to the local public keyring.
-func OptVerifyUseKeyServer(c *client.Config) VerifyOpt {
+func OptVerifyUseKeyServer(opts ...client.Option) VerifyOpt {
 	return func(v *verifier) error {
-		v.c = c
+		v.opts = opts
 		return nil
 	}
 }
@@ -99,8 +107,8 @@ func (v verifier) getOpts(ctx context.Context, f *sif.FileImage) ([]integrity.Ve
 
 	// Add keyring.
 	var kr openpgp.KeyRing
-	if v.c != nil {
-		hkr, err := sypgp.NewHybridKeyRing(ctx, v.c)
+	if v.opts != nil {
+		hkr, err := sypgp.NewHybridKeyRing(ctx, v.opts...)
 		if err != nil {
 			return nil, err
 		}
@@ -112,6 +120,15 @@ func (v verifier) getOpts(ctx context.Context, f *sif.FileImage) ([]integrity.Ve
 		}
 		kr = pkr
 	}
+
+	// wrap the global keyring around
+	global := sypgp.NewHandle(buildcfg.SINGULARITY_CONFDIR, sypgp.GlobalHandleOpt())
+	gkr, err := global.LoadPubKeyring()
+	if err != nil {
+		return nil, err
+	}
+	kr = sypgp.NewMultiKeyRing(gkr, kr)
+
 	iopts = append(iopts, integrity.OptVerifyWithKeyRing(kr))
 
 	// Add group IDs, if applicable.
@@ -185,4 +202,64 @@ func Verify(ctx context.Context, path string, opts ...VerifyOpt) error {
 		return err
 	}
 	return iv.Verify()
+}
+
+// VerifyFingerprints verifies an image and checks it was signed by *all* of the provided fingerprints
+//
+// By default, the singularity public keyring provides key material. To supplement this with a
+// keyserver, use OptVerifyUseKeyServer.
+//
+// By default, non-legacy signatures for all object groups are verified. To override the default
+// behavior, consider using OptVerifyGroup, OptVerifyObject, OptVerifyAll, and/or OptVerifyLegacy.
+func VerifyFingerprints(ctx context.Context, path string, fingerprints []string, opts ...VerifyOpt) error {
+	v, err := newVerifier(opts)
+	if err != nil {
+		return err
+	}
+
+	// Load container.
+	f, err := sif.LoadContainer(path, true)
+	if err != nil {
+		return err
+	}
+	defer f.UnloadContainer()
+
+	// Get options to validate f.
+	vopts, err := v.getOpts(ctx, &f)
+	if err != nil {
+		return err
+	}
+
+	// Verify signature(s).
+	iv, err := integrity.NewVerifier(&f, vopts...)
+	if err != nil {
+		return err
+	}
+	err = iv.Verify()
+	if err != nil {
+		return err
+	}
+
+	// get signing entities fingerprints that have signed all selected objects
+	keyfps, err := iv.AllSignedBy()
+	if err != nil {
+		return err
+	}
+	// were the selected objects signed by the provided fingerprints?
+
+	m := map[string]bool{}
+	for _, v := range fingerprints {
+		m[v] = false
+		for _, u := range keyfps {
+			if strings.EqualFold(v, hex.EncodeToString(u[:])) {
+				m[v] = true
+			}
+		}
+	}
+	for _, v := range m {
+		if !v {
+			return errNotSignedByRequired
+		}
+	}
+	return nil
 }

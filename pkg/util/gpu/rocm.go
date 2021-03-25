@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,26 +7,31 @@ package gpu
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 )
 
-// NvidiaDevices return list of all non-GPU nvidia devices present on host. If withGPU
-// is true all GPUs are included in the resulting list as well.
-func NvidiaDevices(withGPU bool) ([]string, error) {
-	nvidiaGlob := "/dev/nvidia*"
-	if !withGPU {
-		nvidiaGlob = "/dev/nvidia[^0-9]*"
+// RocmPaths returns a list of rocm libraries/binaries that should be
+// mounted into the container in order to use AMD GPUs
+func RocmPaths(configFilePath, userEnvPath string) ([]string, []string, error) {
+	if userEnvPath != "" {
+		oldPath := os.Getenv("PATH")
+		os.Setenv("PATH", userEnvPath)
+		defer os.Setenv("PATH", oldPath)
 	}
-	devs, err := filepath.Glob(nvidiaGlob)
+
+	rocmFiles, err := gpuliblist(configFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("could not list nvidia devices: %v", err)
+		return nil, nil, fmt.Errorf("could not read %s: %v", filepath.Base(configFilePath), err)
 	}
-	return devs, nil
+
+	return paths(rocmFiles)
 }
 
 // RocmDevices return list of all non-GPU rocm devices present on host. If withGPU
 // is true all GPUs are included in the resulting list as well.
 func RocmDevices(withGPU bool) ([]string, error) {
+	// Must bind in all GPU DRI devices
 	rocmGlob := "/dev/dri/card*"
 	if !withGPU {
 		rocmGlob = "/dev/dri/card[^0-9]*"
@@ -35,5 +40,7 @@ func RocmDevices(withGPU bool) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not list rocm devices: %v", err)
 	}
+	// /dev/kfd is also required
+	devs = append(devs, "/dev/kfd")
 	return devs, nil
 }

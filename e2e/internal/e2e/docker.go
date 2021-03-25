@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -7,6 +8,7 @@ package e2e
 
 import (
 	"net"
+	"net/http"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
@@ -25,8 +27,12 @@ var registrySetup struct {
 	sync.Mutex
 }
 
-// PrepRegistry run a docker registry and push a busybox
-// image and the test image with oras transport.
+// PrepRegistry runs a docker registry and pushes in a busybox image and
+// the test image using the oras transport.
+// This *MUST* be called before any tests using OCI/instances as it
+// temporarily  mounts a shadow instance directory in the test user
+// $HOME that will obscure any instances of concurrent tests, causing
+// them to fail.
 func PrepRegistry(t *testing.T, env TestEnv) {
 	// The docker registry container is only available for amd64 and arm
 	// See: https://hub.docker.com/_/registry?tab=tags
@@ -37,6 +43,8 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 	defer registrySetup.Unlock()
 
 	registrySetup.Do(func() {
+
+		t.Log("Preparing docker registry instance.")
 
 		EnsureImage(t, env)
 
@@ -50,6 +58,16 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 			WithArgs("-s", dockerImage, dockerDefinition),
 			ExpectExit(0),
 		)
+
+		crt := filepath.Join(dockerImage, "certs/root.crt")
+		key := filepath.Join(dockerImage, "certs/root.key")
+
+		go func() {
+			// for simplicity let this be brutally stopped once test finished
+			if err := startAuthServer(crt, key); err != http.ErrServerClosed {
+				t.Errorf("docker auth server error: %s", err)
+			}
+		}()
 
 		var umountFn func(*testing.T)
 
@@ -124,4 +142,16 @@ func KillRegistry(t *testing.T, env TestEnv) {
 		}),
 		ExpectExit(0),
 	)
+}
+
+// EnsureRegistry fails the current test if the e2e docker registry is not up
+func EnsureRegistry(t *testing.T) {
+	// The docker registry container is only available for amd64 and arm
+	// See: https://hub.docker.com/_/registry?tab=tags
+	// Skip on other architectures
+	require.ArchIn(t, []string{"amd64", "arm64"})
+
+	if registrySetup.up != 1 {
+		t.Fatalf("Registry instance was not setup. e2e.PrepRegistry must be called before this test.")
+	}
 }

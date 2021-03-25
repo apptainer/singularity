@@ -16,6 +16,16 @@ fi
 
 export PWD
 
+unsupported_builtin() {
+    sylog warning "$1 is not supported by this shell interpreter"
+}
+
+# create alias for unsupported builtin that trigger a panic
+alias umask="umask_builtin"
+alias trap="unsupported_builtin trap"
+alias fg="unsupported_builtin fg"
+alias bg="unsupported_builtin bg"
+
 clear_env() {
     local IFS=$'\n'
 
@@ -69,6 +79,7 @@ restore_env() {
 }
 
 clear_env
+shopt -s expand_aliases
 
 if test -d "/.singularity.d/env"; then
     for __script__ in /.singularity.d/env/*.sh; do
@@ -116,7 +127,16 @@ if ! test -f "/.singularity.d/env/99-runtimevars.sh"; then
     source "/.singularity.d/env/99-runtimevars.sh"
 fi
 
+shopt -u expand_aliases
 restore_env
+
+# See https://github.com/hpcng/singularity/issues/5340
+# If there is no .singularity.d then a custom PS1 wasn't set.
+# If we were called through a script and PS1 is empty this
+# gives a confusing silent prompt. Force a PS1 if it's empty.
+if test -z "${PS1:-}"; then
+	export PS1="Singularity> "
+fi
 
 # See https://github.com/sylabs/singularity/issues/2721,
 # as bash is often used as the current shell it may confuse

@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -36,13 +37,27 @@ func isExist(path string) bool {
 }
 
 func TestSquashfs(t *testing.T) {
+	// Run on default TMPDIR which is unlikely to be a tmpfs but may be.
+	t.Run("default", func(t *testing.T) {
+		testSquashfs(t, "")
+	})
+	// Run on /dev/shm which should be a tmpfs - catches #5668
+	t.Run("dev_shm", func(t *testing.T) {
+		if _, err := os.Stat("/dev/shm"); err != nil {
+			t.Skipf("Could not access /dev/shm")
+		}
+		testSquashfs(t, "/dev/shm")
+	})
+}
+
+func testSquashfs(t *testing.T, tmpParent string) {
 	s := NewSquashfs()
 
 	if !s.HasUnsquashfs() {
-		t.SkipNow()
+		t.Skip("unsquashfs not found")
 	}
 
-	dir, err := ioutil.TempDir("", "unpacker-")
+	dir, err := ioutil.TempDir(tmpParent, "unpacker-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,4 +120,9 @@ func TestSquashfs(t *testing.T) {
 	if !isExist(path) {
 		t.Errorf("file extraction failed, %s is missing", path)
 	}
+}
+
+func TestMain(m *testing.M) {
+	cmdFunc = unsquashfsCmd
+	os.Exit(m.Run())
 }

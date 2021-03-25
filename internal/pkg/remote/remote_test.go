@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -7,20 +8,22 @@ package remote
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"reflect"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	yaml "gopkg.in/yaml.v2"
 )
 
+const testToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM"
+
 //NOTE: VerifyToken() cannot be fully tested unless we have a dummy token for the token service to authenticate, so we basically only test a few error cases.
 func TestVerifyToken(t *testing.T) {
-	ep := new(EndPoint)
+	ep := new(endpoint.Config)
 
-	err := ep.VerifyToken()
+	err := ep.VerifyToken("")
 	if err == nil {
 		t.Fatal("VerifyToken() succeeded with an empty endpoint")
 	}
@@ -47,21 +50,21 @@ func TestWriteToReadFrom(t *testing.T) {
 			name: "empty config",
 			c: Config{
 				DefaultRemote: "",
-				Remotes:       map[string]*EndPoint{},
+				Remotes:       map[string]*endpoint.Config{},
 			},
 		},
 		{
 			name: "config with stuff",
 			c: Config{
 				DefaultRemote: "cloud",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -140,7 +143,7 @@ func TestSyncFrom(t *testing.T) {
 		{
 			name: "empty sys config",
 			usr: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs": {
 						URI:   "cloud.sylabs.io",
 						Token: "fake-token",
@@ -148,7 +151,7 @@ func TestSyncFrom(t *testing.T) {
 				},
 			},
 			res: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs": {
 						URI:   "cloud.sylabs.io",
 						Token: "fake-token",
@@ -158,7 +161,7 @@ func TestSyncFrom(t *testing.T) {
 		}, {
 			name: "sys config new endpoint",
 			sys: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:   "cloud.sylabs.io",
 						Token: "fake-token", // should be ignored by SyncFrom
@@ -166,7 +169,7 @@ func TestSyncFrom(t *testing.T) {
 				},
 			},
 			usr: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs": {
 						URI:   "cloud.sylabs.io",
 						Token: "fake-token",
@@ -174,7 +177,7 @@ func TestSyncFrom(t *testing.T) {
 				},
 			},
 			res: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:    "cloud.sylabs.io",
 						System: true,
@@ -188,7 +191,7 @@ func TestSyncFrom(t *testing.T) {
 		}, {
 			name: "sys config existing endpoint",
 			sys: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:   "cloud.sylabs.io",
 						Token: "fake-token", // should be ignored by SyncFrom
@@ -196,7 +199,7 @@ func TestSyncFrom(t *testing.T) {
 				},
 			},
 			usr: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:    "cloud.sylabs.io",
 						System: true,
@@ -208,7 +211,7 @@ func TestSyncFrom(t *testing.T) {
 				},
 			},
 			res: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:    "cloud.sylabs.io",
 						System: true,
@@ -222,7 +225,7 @@ func TestSyncFrom(t *testing.T) {
 		}, {
 			name: "sys config update existing endpoint",
 			sys: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:   "cloud.sylabs.io",
 						Token: "fake-token", // should be ignored by SyncFrom
@@ -230,7 +233,7 @@ func TestSyncFrom(t *testing.T) {
 				},
 			},
 			usr: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:    "cloud.old-url.io",
 						System: true,
@@ -242,7 +245,7 @@ func TestSyncFrom(t *testing.T) {
 				},
 			},
 			res: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:    "cloud.sylabs.io",
 						System: true,
@@ -257,7 +260,7 @@ func TestSyncFrom(t *testing.T) {
 			name: "sys config update default endpoint",
 			sys: Config{
 				DefaultRemote: "sylabs-global",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:   "cloud.sylabs.io",
 						Token: "fake-token", // should be ignored by SyncFrom
@@ -265,7 +268,7 @@ func TestSyncFrom(t *testing.T) {
 				},
 			},
 			usr: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:    "cloud.old-url.io",
 						System: true,
@@ -278,7 +281,7 @@ func TestSyncFrom(t *testing.T) {
 			},
 			res: Config{
 				DefaultRemote: "sylabs-global",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:    "cloud.sylabs.io",
 						System: true,
@@ -293,7 +296,7 @@ func TestSyncFrom(t *testing.T) {
 			name: "sys config dont update default endpoint",
 			sys: Config{
 				DefaultRemote: "sylabs-global",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:   "cloud.sylabs.io",
 						Token: "fake-token", // should be ignored by SyncFrom
@@ -302,7 +305,7 @@ func TestSyncFrom(t *testing.T) {
 			},
 			usr: Config{
 				DefaultRemote: "sylabs",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:    "cloud.old-url.io",
 						System: true,
@@ -315,7 +318,7 @@ func TestSyncFrom(t *testing.T) {
 			},
 			res: Config{
 				DefaultRemote: "sylabs",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:    "cloud.sylabs.io",
 						System: true,
@@ -335,11 +338,8 @@ func TestSyncFrom(t *testing.T) {
 				t.Error("failed to sync from sys")
 			}
 
-			fmt.Println(test.usr)
-			fmt.Println(test.res)
-
 			if !reflect.DeepEqual(test.usr, test.res) {
-				t.Errorf("incorrect result Config")
+				t.Errorf("bad sync from sys:\n\thave: %v\n\twant: %v", test.usr, test.res)
 			}
 		})
 	}
@@ -348,7 +348,7 @@ func TestSyncFrom(t *testing.T) {
 		{
 			name: "sys endpoint collision",
 			sys: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
 						URI:   "cloud.sylabs.io",
 						Token: "fake-token",
@@ -356,7 +356,7 @@ func TestSyncFrom(t *testing.T) {
 				},
 			},
 			usr: Config{
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"sylabs": {
 						URI:   "cloud.sylabs.io",
 						Token: "fake-token",
@@ -384,7 +384,7 @@ type remoteTest struct {
 	new   Config
 	id    string
 	newID string
-	ep    *EndPoint
+	ep    *endpoint.Config
 }
 
 func TestAddRemote(t *testing.T) {
@@ -392,51 +392,51 @@ func TestAddRemote(t *testing.T) {
 		{
 			name: "add remote to empty config",
 			old: Config{
-				Remotes: map[string]*EndPoint{},
+				Remotes: map[string]*endpoint.Config{},
 			},
 			new: Config{
 				DefaultRemote: "",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
 			id: "cloud",
-			ep: &EndPoint{
+			ep: &endpoint.Config{
 				URI:   "cloud.sylabs.io",
-				Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+				Token: testToken,
 			},
 		},
 		{
 			name: "add remote to non-empty config",
 			old: Config{
 				DefaultRemote: "",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
 			new: Config{
 				DefaultRemote: "",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
 			id: "cloud",
-			ep: &EndPoint{
+			ep: &endpoint.Config{
 				URI:   "cloud.sylabs.io",
-				Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+				Token: testToken,
 			},
 		},
 	}
@@ -457,17 +457,17 @@ func TestAddRemote(t *testing.T) {
 		name: "add already existing remote",
 		old: Config{
 			DefaultRemote: "",
-			Remotes: map[string]*EndPoint{
+			Remotes: map[string]*endpoint.Config{
 				"cloud": {
 					URI:   "cloud.sylabs.io",
-					Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+					Token: testToken,
 				},
 			},
 		},
 		id: "cloud",
-		ep: &EndPoint{
+		ep: &endpoint.Config{
 			URI:   "cloud.sylabs.io",
-			Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+			Token: testToken,
 		},
 	}
 
@@ -484,15 +484,15 @@ func TestRemoveRemote(t *testing.T) {
 			name: "remove remote to make empty config",
 			old: Config{
 				DefaultRemote: "",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
 			new: Config{
-				Remotes: map[string]*EndPoint{},
+				Remotes: map[string]*endpoint.Config{},
 			},
 			id: "cloud",
 		},
@@ -500,23 +500,23 @@ func TestRemoveRemote(t *testing.T) {
 			name: "remove remote to make non-empty config",
 			old: Config{
 				DefaultRemote: "",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
 			new: Config{
 				DefaultRemote: "",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -526,23 +526,23 @@ func TestRemoveRemote(t *testing.T) {
 			name: "remove default remote to make defaultless config",
 			old: Config{
 				DefaultRemote: "cloud",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
 			new: Config{
 				DefaultRemote: "",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -566,7 +566,7 @@ func TestRemoveRemote(t *testing.T) {
 		name: "remove non-existent remote",
 		old: Config{
 			DefaultRemote: "",
-			Remotes:       map[string]*EndPoint{},
+			Remotes:       map[string]*endpoint.Config{},
 		},
 		id: "cloud",
 	}
@@ -584,19 +584,19 @@ func TestRenameRemote(t *testing.T) {
 			name: "rename remote not default",
 			old: Config{
 				DefaultRemote: "",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
 			new: Config{
 				DefaultRemote: "",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"newCloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -607,27 +607,27 @@ func TestRenameRemote(t *testing.T) {
 			name: "rename remote when it's default",
 			old: Config{
 				DefaultRemote: "cloud",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
 			new: Config{
 				DefaultRemote: "newCloud",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"newCloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -653,7 +653,7 @@ func TestRenameRemote(t *testing.T) {
 			name: "rename non-existent remote",
 			old: Config{
 				DefaultRemote: "",
-				Remotes:       map[string]*EndPoint{},
+				Remotes:       map[string]*endpoint.Config{},
 			},
 			id:    "cloud",
 			newID: "newCloud",
@@ -663,7 +663,7 @@ func TestRenameRemote(t *testing.T) {
 			name: "rename existing remote to existing remote",
 			old: Config{
 				DefaultRemote: "",
-				Remotes:       map[string]*EndPoint{},
+				Remotes:       map[string]*endpoint.Config{},
 			},
 			id:    "cloud",
 			newID: "newCloud",
@@ -673,14 +673,14 @@ func TestRenameRemote(t *testing.T) {
 			name: "default does not exist",
 			old: Config{
 				DefaultRemote: "",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -703,28 +703,28 @@ func TestGetRemote(t *testing.T) {
 			name: "get existing remote",
 			old: Config{
 				DefaultRemote: "cloud",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
 			id: "cloud",
-			ep: &EndPoint{
+			ep: &endpoint.Config{
 				URI:   "cloud.sylabs.io",
-				Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+				Token: testToken,
 			},
 		},
 	}
 
 	for _, test := range testsPass {
 		t.Run(test.name, func(t *testing.T) {
-			var ep *EndPoint
+			var ep *endpoint.Config
 			ep, err := test.old.GetRemote(test.id)
 			if err != nil {
 				t.Error("failed to get endpoint from config")
@@ -741,10 +741,10 @@ func TestGetRemote(t *testing.T) {
 			name: "remote does not exist",
 			old: Config{
 				DefaultRemote: "cloud",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -766,27 +766,27 @@ func TestGetDefaultRemote(t *testing.T) {
 			name: "get existing default remote",
 			old: Config{
 				DefaultRemote: "cloud",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
-			ep: &EndPoint{
+			ep: &endpoint.Config{
 				URI:   "cloud.sylabs.io",
-				Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+				Token: testToken,
 			},
 		},
 	}
 
 	for _, test := range testsPass {
 		t.Run(test.name, func(t *testing.T) {
-			var ep *EndPoint
+			var ep *endpoint.Config
 			ep, err := test.old.GetDefault()
 			if err != nil {
 				t.Error("failed to get endpoint from config")
@@ -803,14 +803,14 @@ func TestGetDefaultRemote(t *testing.T) {
 			name: "no default set",
 			old: Config{
 				DefaultRemote: "",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -819,10 +819,10 @@ func TestGetDefaultRemote(t *testing.T) {
 			name: "default does not exist",
 			old: Config{
 				DefaultRemote: "notaremote",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -843,27 +843,27 @@ func TestSetDefaultRemote(t *testing.T) {
 			name: "set existing remote to default",
 			old: Config{
 				DefaultRemote: "cloud",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
 			new: Config{
 				DefaultRemote: "random",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -873,7 +873,7 @@ func TestSetDefaultRemote(t *testing.T) {
 
 	for _, test := range testsPass {
 		t.Run(test.name, func(t *testing.T) {
-			if err := test.old.SetDefault(test.id); err != nil {
+			if err := test.old.SetDefault(test.id, false); err != nil {
 				t.Error("failed to set default endpoint in config")
 			}
 
@@ -888,10 +888,10 @@ func TestSetDefaultRemote(t *testing.T) {
 			name: "default does not exist",
 			old: Config{
 				DefaultRemote: "cloud",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -900,7 +900,109 @@ func TestSetDefaultRemote(t *testing.T) {
 	}
 	for _, test := range testsFail {
 		t.Run(test.name, func(t *testing.T) {
-			if err := test.old.SetDefault(test.id); err == nil {
+			if err := test.old.SetDefault(test.id, false); err == nil {
+				t.Error("unexpected success setting default remote")
+			}
+		})
+	}
+
+	testsExclusivePass := []remoteTest{
+		{
+			name: "set existing remote to default and exclusive",
+			old: Config{
+				DefaultRemote: "cloud",
+				system:        true,
+				Remotes: map[string]*endpoint.Config{
+					"random": {
+						URI:   "cloud.random.io",
+						Token: testToken,
+					},
+					"cloud": {
+						URI:   "cloud.sylabs.io",
+						Token: testToken,
+					},
+				},
+			},
+			new: Config{
+				DefaultRemote: "random",
+				system:        true,
+				Remotes: map[string]*endpoint.Config{
+					"random": {
+						URI:       "cloud.random.io",
+						Exclusive: true,
+						Token:     testToken,
+					},
+					"cloud": {
+						URI:   "cloud.sylabs.io",
+						Token: testToken,
+					},
+				},
+			},
+			id: "random",
+		},
+	}
+	for _, test := range testsExclusivePass {
+		t.Run(test.name, func(t *testing.T) {
+			if err := test.old.SetDefault(test.id, true); err != nil {
+				t.Errorf("unexpected error setting default remote as exclusive: %s", err)
+			}
+
+			if !reflect.DeepEqual(test.old, test.new) {
+				t.Errorf("Remove failed to set config:\n\thave: %v\n\twant: %v", test.old, test.new)
+			}
+		})
+	}
+
+	testsUserExclusiveFail := []remoteTest{
+		{
+			name: "set existing remote to default and exclusive as user",
+			old: Config{
+				DefaultRemote: "cloud",
+				Remotes: map[string]*endpoint.Config{
+					"random": {
+						URI:   "cloud.random.io",
+						Token: testToken,
+					},
+					"cloud": {
+						URI:   "cloud.sylabs.io",
+						Token: testToken,
+					},
+				},
+			},
+			id: "random",
+		},
+	}
+	for _, test := range testsUserExclusiveFail {
+		t.Run(test.name, func(t *testing.T) {
+			if err := test.old.SetDefault(test.id, true); err == nil {
+				t.Error("unexpected success setting default remote as exclusive as user")
+			}
+		})
+	}
+
+	testsUserDefaultExclusiveFail := []remoteTest{
+		{
+			name: "set existing remote to default with different exclusive endpoint",
+			old: Config{
+				DefaultRemote: "cloud",
+				Remotes: map[string]*endpoint.Config{
+					"random": {
+						URI:   "cloud.random.io",
+						Token: testToken,
+					},
+					"cloud": {
+						URI:       "cloud.sylabs.io",
+						Exclusive: true,
+						Token:     testToken,
+					},
+				},
+			},
+			id: "random",
+		},
+	}
+	for _, test := range testsUserDefaultExclusiveFail {
+		t.Run(test.name, func(t *testing.T) {
+			if err := test.old.SetDefault(test.id, false); err == nil {
 				t.Error("unexpected success setting default remote")
 			}
 		})
@@ -913,14 +1015,14 @@ func TestGetServiceURI(t *testing.T) {
 			name: "get uri from real cloud remote",
 			old: Config{
 				DefaultRemote: "cloud",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"random": {
 						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -930,7 +1032,7 @@ func TestGetServiceURI(t *testing.T) {
 
 	for _, test := range testsPass {
 		t.Run(test.name, func(t *testing.T) {
-			var ep *EndPoint
+			var ep *endpoint.Config
 			ep, err := test.old.GetRemote(test.id)
 			if err != nil {
 				t.Fatal("failed to get endpoint from config")
@@ -947,14 +1049,14 @@ func TestGetServiceURI(t *testing.T) {
 			name: "get uri from non-existent remote",
 			old: Config{
 				DefaultRemote: "cloud",
-				Remotes: map[string]*EndPoint{
+				Remotes: map[string]*endpoint.Config{
 					"notaremote": {
 						URI:   "not.a.remote",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 					"cloud": {
 						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+						Token: testToken,
 					},
 				},
 			},
@@ -964,83 +1066,13 @@ func TestGetServiceURI(t *testing.T) {
 	for _, test := range testsFail {
 
 		t.Run(test.name, func(t *testing.T) {
-			var ep *EndPoint
+			var ep *endpoint.Config
 			ep, err := test.old.GetRemote(test.id)
 			if err != nil {
 				t.Fatal("failed to get endpoint from config")
 			}
 
 			if _, err := ep.GetServiceURI("token"); err == nil {
-				t.Error("unexpected success getting uri for non-existent remote")
-			}
-		})
-	}
-}
-
-func TestGetAllServiceURIs(t *testing.T) {
-	testsPass := []remoteTest{
-		{
-			name: "get uris from real cloud remote",
-			old: Config{
-				DefaultRemote: "cloud",
-				Remotes: map[string]*EndPoint{
-					"random": {
-						URI:   "cloud.random.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
-					},
-					"cloud": {
-						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
-					},
-				},
-			},
-			id: "cloud",
-		},
-	}
-
-	for _, test := range testsPass {
-		t.Run(test.name, func(t *testing.T) {
-			var ep *EndPoint
-			ep, err := test.old.GetRemote(test.id)
-			if err != nil {
-				t.Fatal("failed to get endpoint from config")
-			}
-
-			if s, err := ep.GetAllServiceURIs(); s == nil || err != nil {
-				t.Errorf("failed to get service uri:\n\tservice uri: %v\n\t err: %v", s, err)
-			}
-		})
-	}
-
-	testsFail := []remoteTest{
-		{
-			name: "get uri from non-existent remote",
-			old: Config{
-				DefaultRemote: "cloud",
-				Remotes: map[string]*EndPoint{
-					"notaremote": {
-						URI:   "not.a.remote",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
-					},
-					"cloud": {
-						URI:   "cloud.sylabs.io",
-						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
-					},
-				},
-			},
-			id: "notaremote",
-		},
-	}
-	for _, test := range testsFail {
-
-		t.Run(test.name, func(t *testing.T) {
-			var ep *EndPoint
-			ep, err := test.old.GetRemote(test.id)
-			if err != nil {
-				t.Fatal("failed to get endpoint from config")
-			}
-
-			if _, err := ep.GetAllServiceURIs(); err == nil {
 				t.Error("unexpected success getting uri for non-existent remote")
 			}
 		})

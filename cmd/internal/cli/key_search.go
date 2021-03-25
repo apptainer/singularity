@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2017-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -7,11 +8,12 @@ package cli
 
 import (
 	"context"
-	"net/http"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
@@ -20,13 +22,15 @@ import (
 var KeySearchCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.TODO()
 
-		handleKeyFlags(cmd)
+		co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverSearchOp)
+		if err != nil {
+			sylog.Fatalf("Keyserver client failed: %s", err)
+		}
 
-		if err := doKeySearchCmd(ctx, args[0], keyServerURI); err != nil {
+		if err := doKeySearchCmd(ctx, args[0], co...); err != nil {
 			sylog.Errorf("search failed: %s", err)
 			os.Exit(2)
 		}
@@ -38,7 +42,7 @@ var KeySearchCmd = &cobra.Command{
 	Example: docs.KeySearchExample,
 }
 
-func doKeySearchCmd(ctx context.Context, search string, url string) error {
+func doKeySearchCmd(ctx context.Context, search string, co ...client.Option) error {
 	// get keyring with matching search string
-	return sypgp.SearchPubkey(ctx, http.DefaultClient, search, url, authToken, keySearchLongList)
+	return sypgp.SearchPubkey(ctx, search, keySearchLongList, co...)
 }

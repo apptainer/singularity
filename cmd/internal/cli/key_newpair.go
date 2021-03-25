@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2017-2020, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -9,12 +10,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
-	scs "github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -76,7 +76,6 @@ var (
 	KeyNewPairCmd = &cobra.Command{
 		Args:                  cobra.ExactArgs(0),
 		DisableFlagsInUseLine: true,
-		PreRun:                sylabsToken,
 		Run:                   runNewPairCmd,
 		Use:                   docs.KeyNewPairUse,
 		Short:                 docs.KeyNewPairShort,
@@ -116,8 +115,12 @@ func runNewPairCmd(cmd *cobra.Command, args []string) {
 	}
 
 	// Only connect to the endpoint if we are pushing the key.
-	handleKeyNewPairEndpoint()
-	if err := sypgp.PushPubkey(ctx, http.DefaultClient, key, keyServerURI, authToken); err != nil {
+	co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverPushOp)
+	if err != nil {
+		sylog.Fatalf("Keyserver client failed: %s", err)
+	}
+
+	if err := sypgp.PushPubkey(ctx, key, co...); err != nil {
 		fmt.Printf("Failed to push newly created key to keystore: %s\n", err)
 	} else {
 		fmt.Printf("Key successfully pushed to: %s\n", keyServerURI)
@@ -197,23 +200,4 @@ func collectInput(cmd *cobra.Command) (*keyNewPairOptions, error) {
 	}
 
 	return &genOpts, nil
-}
-
-func handleKeyNewPairEndpoint() {
-	// if we can load config and if default endpoint is set, use that
-	// otherwise fall back on regular authtoken and URI behavior
-	endpoint, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
-		return
-	} else if err != nil {
-		sylog.Fatalf("Unable to load remote configuration: %v", err)
-	}
-
-	authToken = endpoint.Token
-	uri, err := endpoint.GetServiceURI("keystore")
-	if err != nil {
-		sylog.Fatalf("Unable to get key service URI: %v", err)
-	}
-	keyServerURI = uri
 }

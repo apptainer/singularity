@@ -20,4 +20,6 @@ func SetupHomeDirectories(t *testing.T) {
 // will be bound on top of current user home directory in order to execute
 // a "shadow" instance (eg: docker registry).
 func shadowInstanceDirectory(t *testing.T, env TestEnv) func(t *testing.T) {
+	return func(t *testing.T) {
+	}
 }

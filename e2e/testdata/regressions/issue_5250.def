@@ -1,0 +1,5 @@
+BootStrap: docker
+From: centos:centos7
+
+%post
+    yum -y reinstall setup

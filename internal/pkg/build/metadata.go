@@ -10,13 +10,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/build/types/parser"
+	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/inspect"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
@@ -54,6 +59,11 @@ func (s *stage) insertMetadata() error {
 	// insert test script
 	if err := insertTestScript(s.b); err != nil {
 		return fmt.Errorf("while inserting test script: %v", err)
+	}
+
+	// insert JSON inspect metadata (must be the last call)
+	if err := insertJSONInspectMetadata(s.b); err != nil {
+		return fmt.Errorf("while inserting JSON inspect metadata: %v", err)
 	}
 
 	return nil
@@ -205,6 +215,20 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 		return err
 	}
 
+	// get labels added through SINGULARITY_LABELS environment variables
+	buildLabels := filepath.Join(b.RootfsPath, sLabelsPath)
+	content, err := ioutil.ReadFile(buildLabels)
+	if err == nil {
+		if err := os.Remove(filepath.Join(b.RootfsPath, sLabelsPath)); err != nil {
+			return err
+		}
+		for k, v := range parser.GetLabels(string(content)) {
+			labels[k] = v
+		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("while reading %s: %s", buildLabels, err)
+	}
+
 	if err = addBuildLabels(labels, b); err != nil {
 		return err
 	}
@@ -237,6 +261,31 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 
 	err = ioutil.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/labels.json"), []byte(text), 0644)
 	return err
+}
+
+func insertJSONInspectMetadata(b *types.Bundle) error {
+	metadata := new(inspect.Metadata)
+
+	exe := filepath.Join(buildcfg.BINDIR, "singularity")
+	cmd := exec.Command(exe, "inspect", "--all", b.RootfsPath)
+	cmd.Stderr = os.Stderr
+
+	out, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("while executing inspect command: %s", err)
+	}
+
+	if err := json.Unmarshal(out, metadata); err != nil {
+		return fmt.Errorf("while decoding inspect metadata: %s", err)
+	}
+	data, err := json.Marshal(metadata)
+	if err != nil {
+		return fmt.Errorf("while encoding inspect metadata: %s", err)
+	}
+
+	b.JSONObjects[image.SIFDescInspectMetadataJSON] = data
+
+	return nil
 }
 
 func getExistingLabels(labels map[string]string, b *types.Bundle) error {
@@ -290,6 +339,12 @@ func addBuildLabels(labels map[string]string, b *types.Bundle) error {
 			labels["org.label-schema.usage.singularity.deffile."+key] = value
 		}
 	}
+
+	// Architecture of build
+	// Local builds currently always use the host architecture.
+	// In remote builds this label will be applied on the builder... where the
+	// architecture should match the remote build --arch flag.
+	labels["org.label-schema.build-arch"] = runtime.GOARCH
 
 	return nil
 }

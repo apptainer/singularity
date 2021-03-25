@@ -146,11 +146,20 @@ type JSONConfig struct {
 	AllowSUID         bool              `json:"allowSUID,omitempty"`
 	KeepPrivs         bool              `json:"keepPrivs,omitempty"`
 	NoPrivs           bool              `json:"noPrivs,omitempty"`
+	NoProc            bool              `json:"noProc,omitempty"`
+	NoSys             bool              `json:"noSys,omitempty"`
+	NoDev             bool              `json:"noDev,omitempty"`
+	NoDevPts          bool              `json:"noDevPts,omitempty"`
 	NoHome            bool              `json:"noHome,omitempty"`
+	NoTmp             bool              `json:"noTmp,omitempty"`
+	NoHostfs          bool              `json:"noHostfs,omitempty"`
+	NoCwd             bool              `json:"noCwd,omitempty"`
 	NoInit            bool              `json:"noInit,omitempty"`
-	DeleteImage       bool              `json:"deleteImage,omitempty"`
 	Fakeroot          bool              `json:"fakeroot,omitempty"`
 	SignalPropagation bool              `json:"signalPropagation,omitempty"`
+	RestoreUmask      bool              `json:"restoreUmask,omitempty"`
+	DeleteTempDir     string            `json:"deleteTempDir,omitempty"`
+	Umask             int               `json:"umask,omitempty"`
 }
 
 // SetImage sets the container image path to be used by EngineConfig.JSON.
@@ -538,7 +547,47 @@ func (e *EngineConfig) GetNoPrivs() bool {
 	return e.JSON.NoPrivs
 }
 
-// SetNoHome set no-home flag to not mount home user home directory.
+// SetNoProc set flag to not mount proc directory.
+func (e *EngineConfig) SetNoProc(val bool) {
+	e.JSON.NoProc = val
+}
+
+// GetNoProc returns if no-proc flag is set or not.
+func (e *EngineConfig) GetNoProc() bool {
+	return e.JSON.NoProc
+}
+
+// SetNoSys set flag to not mount sys directory.
+func (e *EngineConfig) SetNoSys(val bool) {
+	e.JSON.NoSys = val
+}
+
+// GetNoSys returns if no-sys flag is set or not.
+func (e *EngineConfig) GetNoSys() bool {
+	return e.JSON.NoSys
+}
+
+// SetNoDev set flag to not mount dev directory.
+func (e *EngineConfig) SetNoDev(val bool) {
+	e.JSON.NoDev = val
+}
+
+// GetNoDev returns if no-dev flag is set or not.
+func (e *EngineConfig) GetNoDev() bool {
+	return e.JSON.NoDev
+}
+
+// SetNoDevPts set flag to not mount dev directory.
+func (e *EngineConfig) SetNoDevPts(val bool) {
+	e.JSON.NoDevPts = val
+}
+
+// GetNoDevPts returns if no-devpts flag is set or not.
+func (e *EngineConfig) GetNoDevPts() bool {
+	return e.JSON.NoDevPts
+}
+
+// SetNoHome set flag to not mount user home directory.
 func (e *EngineConfig) SetNoHome(val bool) {
 	e.JSON.NoHome = val
 }
@@ -546,6 +595,36 @@ func (e *EngineConfig) SetNoHome(val bool) {
 // GetNoHome returns if no-home flag is set or not.
 func (e *EngineConfig) GetNoHome() bool {
 	return e.JSON.NoHome
+}
+
+// SetNoTmp set flag to not mount tmp directories
+func (e *EngineConfig) SetNoTmp(val bool) {
+	e.JSON.NoTmp = val
+}
+
+// GetNoTmp returns if no-tmo flag is set or not.
+func (e *EngineConfig) GetNoTmp() bool {
+	return e.JSON.NoTmp
+}
+
+// SetNoHostFs set flag to not mount all host mounts.
+func (e *EngineConfig) SetNoHostfs(val bool) {
+	e.JSON.NoHostfs = val
+}
+
+// SetNoHostfs returns if no-hostfs flag is set or not.
+func (e *EngineConfig) GetNoHostfs() bool {
+	return e.JSON.NoHostfs
+}
+
+// SetNoCwd set flag to not mount CWD
+func (e *EngineConfig) SetNoCwd(val bool) {
+	e.JSON.NoCwd = val
+}
+
+// SetNoCwd returns if no-cwd flag is set or not.
+func (e *EngineConfig) GetNoCwd() bool {
+	return e.JSON.NoCwd
 }
 
 // SetNoInit set noinit flag to not start shim init process.
@@ -711,14 +790,16 @@ func (e *EngineConfig) GetFakeroot() bool {
 	return e.JSON.Fakeroot
 }
 
-// GetDeleteImage returns if container image must be deleted after use.
-func (e *EngineConfig) GetDeleteImage() bool {
-	return e.JSON.DeleteImage
+// GetDeleteTempDir returns the path of the temporary directory containing the root filesystem
+// which must be deleted after use. If no deletion is required, the empty string is returned.
+func (e *EngineConfig) GetDeleteTempDir() string {
+	return e.JSON.DeleteTempDir
 }
 
-// SetDeleteImage sets if container image must be deleted after use.
-func (e *EngineConfig) SetDeleteImage(delete bool) {
-	e.JSON.DeleteImage = delete
+// SetDeleteTempDir sets dir as the path of the temporary directory containing the root filesystem,
+// which must be deleted after use.
+func (e *EngineConfig) SetDeleteTempDir(dir string) {
+	e.JSON.DeleteTempDir = dir
 }
 
 // SetSignalPropagation sets if engine must propagate signals from
@@ -828,4 +909,24 @@ func (e *EngineConfig) SetConfigurationFile(filename string) {
 // GetConfigurationFile returns the singularity configuration file to use.
 func (e *EngineConfig) GetConfigurationFile() string {
 	return e.JSON.ConfigurationFile
+}
+
+// SetRestoreUmask returns whether to restore Umask for the container launched process.
+func (e *EngineConfig) SetRestoreUmask(restoreUmask bool) {
+	e.JSON.RestoreUmask = restoreUmask
+}
+
+// GetRestoreUmask returns the umask to be used in the container launched process.
+func (e *EngineConfig) GetRestoreUmask() bool {
+	return e.JSON.RestoreUmask
+}
+
+// SetUmask sets the umask to be used in the container launched process.
+func (e *EngineConfig) SetUmask(umask int) {
+	e.JSON.Umask = umask
+}
+
+// SetUmask returns the umask to be used in the container launched process.
+func (e *EngineConfig) GetUmask() int {
+	return e.JSON.Umask
 }

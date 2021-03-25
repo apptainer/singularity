@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
@@ -33,7 +34,7 @@ type LocalConveyorPacker struct {
 }
 
 // GetLocalPacker ...
-func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
+func GetLocalPacker(ctx context.Context, src string, b *types.Bundle) (LocalPacker, error) {
 
 	imageObject, err := image.Init(src, false)
 	if err != nil {
@@ -43,7 +44,33 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 	switch imageObject.Type {
 	case image.SIF:
 		sylog.Debugf("Packing from SIF")
-
+		// Retrieve list of required fingerprints from definition, if any
+		fps := []string{}
+		if fpHdr, ok := b.Recipe.Header["fingerprints"]; ok {
+			// Remove trailing comment
+			fpHdr = strings.Split(fpHdr, "#")[0]
+			fpHdr = strings.TrimSpace(fpHdr)
+			if fpHdr != "" {
+				fps = strings.Split(fpHdr, ",")
+				for i, v := range fps {
+					fps[i] = strings.TrimSpace(v)
+				}
+			}
+		}
+		// Check if the SIF matches the `fingerprints:` specified in the build, if there are any
+		if len(fps) > 0 {
+			err := checkSIFFingerprint(ctx, src, fps, b.Opts.KeyServerOpts...)
+			if err != nil {
+				return nil, fmt.Errorf("while checking fingerprint: %s", err)
+			}
+		} else {
+			// Otherwise do a verification and make failures warn, like for push
+			err := verifySIF(ctx, src, b.Opts.KeyServerOpts...)
+			if err != nil {
+				sylog.Warningf("%s", err)
+				sylog.Warningf("Bootstrap image could not be verified, but build will continue.")
+			}
+		}
 		return &SIFPacker{
 			srcFile: src,
 			b:       b,
@@ -86,6 +113,6 @@ func (cp *LocalConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err er
 
 	cp.src = filepath.Clean(b.Recipe.Header["from"])
 
-	cp.LocalPacker, err = GetLocalPacker(cp.src, b)
+	cp.LocalPacker, err = GetLocalPacker(ctx, cp.src, b)
 	return err
 }

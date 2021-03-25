@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -12,9 +13,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/remote"
 )
 
-func syncSysConfig(cUsr *remote.Config, sysConfigFile string) error {
+func syncSysConfig(cUsr *remote.Config) error {
 	// opening system config file
-	f, err := os.OpenFile(sysConfigFile, os.O_RDONLY, 0600)
+	f, err := os.OpenFile(remote.SystemConfigPath, os.O_RDONLY, 0600)
 	if err != nil && os.IsNotExist(err) {
 		return nil
 	} else if err != nil {
@@ -38,8 +39,16 @@ func syncSysConfig(cUsr *remote.Config, sysConfigFile string) error {
 }
 
 // RemoteUse sets remote to use
-func RemoteUse(usrConfigFile, sysConfigFile, name string, global bool) (err error) {
+func RemoteUse(usrConfigFile, name string, global, exclusive bool) (err error) {
 	c := &remote.Config{}
+
+	if exclusive {
+		if os.Getuid() != 0 {
+			return fmt.Errorf("unable to set endpoint as exclusive: not root user")
+		}
+		global = true
+		usrConfigFile = remote.SystemConfigPath
+	}
 
 	// system config should be world readable
 	perm := os.FileMode(0600)
@@ -60,11 +69,13 @@ func RemoteUse(usrConfigFile, sysConfigFile, name string, global bool) (err erro
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	if err := syncSysConfig(c, sysConfigFile); err != nil {
-		return err
+	if !global {
+		if err := syncSysConfig(c); err != nil {
+			return err
+		}
 	}
 
-	if err := c.SetDefault(name); err != nil {
+	if err := c.SetDefault(name, exclusive); err != nil {
 		return err
 	}
 

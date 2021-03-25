@@ -1,15 +1,24 @@
 bootstrap: docker
 from: registry:2.7.1
 
-%post
-    apk add runc --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+%environment
+    export REGISTRY_AUTH=token
+    export REGISTRY_AUTH_TOKEN_REALM=http://localhost:5001/auth
+    export REGISTRY_AUTH_TOKEN_SERVICE=Authentication
+    export REGISTRY_AUTH_TOKEN_ISSUER=E2E
+    export REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE=/certs/root.crt
 
-    # Install v0.5.7 of img (latest will not talk to http registries)
-    export IMG_SHA256="41aa98ab28be55ba3d383cb4e8f86dceac6d6e92102ee4410a6b43514f4da1fa"
-    # Download and check the sha256sum.
-    wget "https://github.com/genuinetools/img/releases/download/v0.5.7/img-linux-amd64" -O "/usr/local/bin/img" \
-	  && echo "${IMG_SHA256}  /usr/local/bin/img" | sha256sum -c - \
-	  && chmod a+x "/usr/local/bin/img"
+%post
+    apk add openssl
+    apk add skopeo runc --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+
+    mkdir /certs
+
+    openssl req -x509 -nodes -new -sha256 -days 1024 -newkey rsa:2048 \
+      -keyout /certs/root.key -out /certs/root.pem -subj "/C=US/CN=localhost"
+    openssl x509 -outform pem -in /certs/root.pem -out /certs/root.crt
+
+    chmod 644 /certs/root.*
 
 %startscript
     /.singularity.d/runscript &
@@ -17,9 +26,7 @@ from: registry:2.7.1
     # wait until docker registry is up
     while ! wget -q -O /dev/null 127.0.0.1:5000 ; do sleep 0.5; done
 
-    img pull busybox || kill -TERM 1
-    img tag busybox localhost:5000/my-busybox || kill -TERM 1
-    img push localhost:5000/my-busybox || kill -TERM 1
+    skopeo --dest-tls-verify=false --insecure-policy copy docker://busybox docker://localhost:5000/my-busybox
 
     # e2e PrepRegistry will repeatedly trying to connect to this port
     # giving indication that it can start

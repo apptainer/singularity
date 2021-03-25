@@ -1,6 +1,5 @@
 # Singularity
 
-[![Build Status](https://travis-ci.org/hpcng/singularity.svg?branch=master)](https://travis-ci.org/hpcng/singularity)
 [![CircleCI](https://circleci.com/gh/hpcng/singularity/tree/master.svg?style=svg)](https://circleci.com/gh/hpcng/singularity/tree/master)
 
 - [Guidelines for Contributing](CONTRIBUTING.md)
@@ -17,18 +16,19 @@ way.
 Check out [talks about Singularity](https://www.sylabs.io/videos) and some [use
 cases of Singularity](https://sylabs.io/case-studies) on our website.
 
+
 ## Getting Started with Singularity
 
 To install Singularity from source, see the [installation
 instructions](INSTALL.md). For other installation options, see [our
-guide](https://www.sylabs.io/guides/3.6/admin-guide/installation.html).
+guide](https://www.sylabs.io/guides/latest/admin-guide/).
 
 System administrators can learn how to configure Singularity, and get an
 overview of its architecture and security features in the [administrator
-guide](https://www.sylabs.io/guides/3.6/admin-guide/).
+guide](https://www.sylabs.io/guides/latest/admin-guide/).
 
 For users, see the [user
-guide](https://www.sylabs.io/guides/3.6/user-guide/) for details on how to use
+guide](https://www.sylabs.io/guides/latest/user-guide/) for details on how to use
 and build Singularity containers.
 
 ## Contributing to Singularity
@@ -37,8 +37,8 @@ Community contributions are always greatly appreciated. To start developing
 Singularity, check out the [guidelines for contributing](CONTRIBUTING.md).
 
 We also welcome contributions to our [user
-guide](https://github.com/sylabs/singularity-userdocs) and [admin
-guide](https://github.com/sylabs/singularity-admindocs).
+guide](https://github.com/hpcng/singularity-userdocs) and [admin
+guide](https://github.com/hpcng/singularity-admindocs).
 
 ## Support
 

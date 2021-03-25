@@ -144,7 +144,7 @@ func TestReader(t *testing.T) {
 			fn:       NewSectionReader,
 			fnCheck:  checkSection,
 			errCheck: ErrNoSection,
-			name:     "oci-config.json",
+			name:     SIFDescOCIConfigJSON,
 			index:    -1,
 		},
 	} {

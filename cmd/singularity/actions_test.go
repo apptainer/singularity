@@ -9,6 +9,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -29,6 +30,11 @@ const appsImageName = "appsImage.sif"
 
 var imagePath string
 var appsImage string
+var skipOverlay bool
+
+func init () {
+	flag.BoolVar(&skipOverlay, "skip-overlay", false, "Skip Overlay tests (for use under docker")
+}
 
 type opts struct {
 	keepPrivs bool
@@ -553,6 +559,8 @@ func TestSingularityActions(t *testing.T) {
 	t.Run("STDIN", testSTDINPipe)
 	// action_URI
 	t.Run("action_URI", testRunFromURI)
-	// Persistent Overlay
-	t.Run("Persistent_Overlay", testPersistentOverlay)
+	if !skipOverlay {
+		// Persistent Overlay
+		t.Run("Persistent_Overlay", testPersistentOverlay)
+	}
 }

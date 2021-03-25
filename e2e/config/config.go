@@ -87,7 +87,7 @@ func (c configTests) configGlobal(t *testing.T) {
 			directive:      "allow pid ns",
 			directiveValue: "no",
 			exit:           0,
-			resultOp:       e2e.ExpectOutput(e2e.UnwantedMatch, "1"),
+			resultOp:       e2e.ExpectOutput(e2e.UnwantedExactMatch, "1"),
 		},
 		{
 			name:           "AllowPidNsYes",

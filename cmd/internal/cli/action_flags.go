@@ -34,6 +34,7 @@ var (
 	FuseMount          []string
 	SingularityEnv     []string
 	SingularityEnvFile string
+	NoMount            []string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -48,6 +49,7 @@ var (
 	NoInit          bool
 	NoNvidia        bool
 	NoRocm          bool
+	NoUmask         bool
 	VM              bool
 	VMErr           bool
 	NoNet           bool
@@ -437,6 +439,17 @@ var actionNoHomeFlag = cmdline.Flag{
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
+// --no-mount
+var actionNoMountFlag = cmdline.Flag{
+	ID:           "actionNoMountFlag",
+	Value:        &NoMount,
+	DefaultValue: []string{},
+	Name:         "no-mount",
+	Usage:        "disable one or more mount xxx options set in singularity.conf",
+	EnvKeys:      []string{"NO_MOUNT"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
 // --no-init
 var actionNoInitFlag = cmdline.Flag{
 	ID:           "actionNoInitFlag",
@@ -636,6 +649,17 @@ var actionEnvFileFlag = cmdline.Flag{
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
+// --no-umask
+var actionNoUmaskFlag = cmdline.Flag{
+	ID:           " actionNoUmask",
+	Value:        &NoUmask,
+	DefaultValue: false,
+	Name:         "no-umask",
+	Usage:        "do not propagate umask to the container, set default 0022 umask",
+	EnvKeys:      []string{"NO_UMASK"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(ExecCmd)
@@ -678,6 +702,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionNetworkArgsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNetworkFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoHomeFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionNoMountFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoInitFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNONETFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoNvidiaFlag, actionsInstanceCmd...)
@@ -711,5 +736,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionEnvFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionEnvFileFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionNoUmaskFlag, actionsInstanceCmd...)
 	})
 }

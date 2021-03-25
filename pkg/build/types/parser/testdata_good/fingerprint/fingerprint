@@ -1,0 +1,4 @@
+Bootstrap: localimage
+From: /path/to/container/file/or/directory
+Fingerprints: 12045C8C0B1004D058DE4BEDA20C27EE7FF7BA84,22045C8C0B1004D058DE4BEDA20C27EE7FF7BA84
+# some comment 1

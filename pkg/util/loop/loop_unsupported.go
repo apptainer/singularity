@@ -24,6 +24,11 @@ func (loop *Device) AttachFromPath(image string, mode int, number *int) error {
 	return fmt.Errorf("unsupported on this platform")
 }
 
+// Close closes the loop device.
+func (loop *Device) Close() error {
+	return fmt.Errorf("unsupported on this platform")
+}
+
 // GetStatusFromFd gets info status about an opened loop device
 func GetStatusFromFd(fd uintptr) (*Info64, error) {
 	return nil, fmt.Errorf("unsupported on this platform")
