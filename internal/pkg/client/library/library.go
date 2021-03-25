@@ -24,26 +24,26 @@ const defaultTag = "latest"
 // Comparison will be lower case as the GUI / code has used different capitalisation through time.
 const noDescription = "no description"
 
-// NormalizeLibraryRef parses library ref and sets default tag, if necessary.
-func NormalizeLibraryRef(ref string) (*scslibrary.Ref, error) {
+func splitHostNameAndPath(ref string) (string, string) {
 	ref = strings.TrimPrefix(ref, "library://")
 
-	slashes := strings.Count(ref, "/")
-
-	var elem, tags []string
-	var host, pathref string
-
-	if slashes == 0 || slashes == 2 {
-		// handle "library://image:tag" or "library://collection/container/image[:tag]"
-		pathref = ref
-	} else {
-		// handle "library://hostname/collection/container/image[:tag]"
-		c := strings.SplitN(ref, "/", 2)
-		host = c[0]
-		pathref = c[1]
+	if strings.Count(ref, "/") <= 2 {
+		// handle "library://container[:tag]", "library://collection/container[:tag]", or "library://entity/collection/container[:tag]"
+		return "", ref
 	}
 
-	elem = strings.SplitN(pathref, ":", 2)
+	// handle "library://hostname/entity/collection/container[:tag]"
+	c := strings.SplitN(ref, "/", 2)
+	return c[0], c[1]
+}
+
+// NormalizeLibraryRef parses library ref and sets default tag, if necessary.
+func NormalizeLibraryRef(ref string) (*scslibrary.Ref, error) {
+	host, pathref := splitHostNameAndPath(ref)
+
+	elem := strings.SplitN(pathref, ":", 2)
+
+	var tags []string
 	if len(elem) == 2 {
 		tags = strings.Split(elem[1], ",")
 	} else {
