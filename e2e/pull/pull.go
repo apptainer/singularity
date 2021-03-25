@@ -197,6 +197,21 @@ var tests = []testStruct{
 		force:            true,
 		expectedExitCode: 0,
 	},
+
+	// pulling with library URI containing host name
+	{
+		desc:             "library URI containing bad host name",
+		srcURI:           "library://notlibrary.sylabs.io/library/default/busybox:1.31.1",
+		library:          "https://notlibrary.sylabs.io",
+		expectedExitCode: 255,
+	},
+	{
+		desc:             "library URI containing host name",
+		srcURI:           "library://library.sylabs.io/library/default/busybox:1.31.1",
+		library:          "https://library.sylabs.io",
+		force:            true,
+		expectedExitCode: 0,
+	},
 }
 
 func (c *ctx) imagePull(t *testing.T, tt testStruct) {
