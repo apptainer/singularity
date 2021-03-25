@@ -11,7 +11,7 @@ From: centos:8
 
     # Build/Install alien package converter
     dnf -y install 'dnf-command(config-manager)'
-    dnf config-manager --set-enabled PowerTools
+    dnf config-manager --set-enabled powertools
     dnf -y install epel-release perl
     dnf -y install debhelper dpkg-dev fakeroot
     curl -L -o alien.tar.xz https://sourceforge.net/projects/alien-pkg-convert/files/latest/download
