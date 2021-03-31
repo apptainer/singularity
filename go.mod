@@ -45,7 +45,7 @@ require (
 	github.com/sylabs/scs-library-client v1.0.3
 	github.com/sylabs/sif v1.2.1
 	github.com/vbauerster/mpb/v4 v4.12.2
-	github.com/vbauerster/mpb/v6 v6.0.2
+	github.com/vbauerster/mpb/v6 v6.0.3
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
@@ -53,7 +53,7 @@ require (
 	go.opencensus.io v0.22.2 // indirect
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
-	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
+	golang.org/x/sys v0.0.0-20210324051608-47abb6519492
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
