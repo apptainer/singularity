@@ -11,15 +11,10 @@ From: centos:8
 
     # Build/Install alien package converter
     dnf -y install 'dnf-command(config-manager)'
-    dnf config-manager --set-enabled PowerTools
+    dnf config-manager --set-enabled powertools
     dnf -y install epel-release perl
     dnf -y install debhelper dpkg-dev fakeroot
-    curl -L -o alien.tar.xz https://sourceforge.net/projects/alien-pkg-convert/files/latest/download
-    tar -xf alien.tar.xz
-    cd alien-8.95
-    perl Makefile.PL
-    make
-    make install
+    dnf -y install alien
 
 %runscript
     uname -r
@@ -40,7 +35,8 @@ From: centos:8
 %help
 
     SUMMARY
-    This is a build container that generates installable singularity packages for singularity v3.X.X. The container will output a deb and rpm in the current directory.
+    This is a build container that generates installable singularity packages for singularity v3.x.x . 
+    The container will output a deb and rpm in the current directory.
 
     KNOWN BUGS
     Some versions of singularity contain the character 'v', such as v3.0.0.
@@ -52,8 +48,17 @@ From: centos:8
 
         ./build-singularity.sif {version}
 
-    	./build-singularity.sif 3.6.2
+    	./build-singularity.sif 3.7.2
+
+    CHANGELOG
+    
+    v1.0.1
+    changed PowerTools -> powertools
+    removed manual alien build for rpm package
+    
+    v1.0.0
+    initial release
 
 %labels
     Author chrismmaggio
-    Version 1.0.0
+    Version 1.0.1
