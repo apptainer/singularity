@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -33,7 +34,7 @@ func (c *ctx) checkOciState(t *testing.T, containerID, state string) {
 			t.Errorf("can't unmarshal oci state output: %+v", err)
 			return
 		}
-		if s.Status != state {
+		if s.Status != specs.ContainerState(state) {
 			t.Errorf("bad container state returned, got %s instead of %s", s.Status, state)
 		}
 	}
