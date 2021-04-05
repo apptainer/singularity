@@ -89,7 +89,8 @@ func unpackRootfs(ctx context.Context, b *sytypes.Bundle, tmpfsRef types.ImageRe
 	os.RemoveAll(b.RootfsPath)
 
 	// Unpack root filesystem
-	err = umocilayer.UnpackRootfs(ctx, engineExt, b.RootfsPath, manifest, &mapOptions, nil, imgspecv1.Descriptor{})
+	unpackOptions := umocilayer.UnpackOptions{MapOptions: mapOptions}
+	err = umocilayer.UnpackRootfs(ctx, engineExt, b.RootfsPath, manifest, &unpackOptions)
 	if err != nil {
 		return fmt.Errorf("error unpacking rootfs: %s", err)
 	}
