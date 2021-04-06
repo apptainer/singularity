@@ -77,9 +77,9 @@ func OciRun(ctx context.Context, containerID string, args *OciArgs) error {
 				// ignore error there and wait for stopped status
 				OciStart(containerID)
 			case ociruntime.Running:
-				status <- state.Status
+				status <- string(state.Status)
 			case ociruntime.Stopped:
-				status <- state.Status
+				status <- string(state.Status)
 			}
 		}
 	}()
