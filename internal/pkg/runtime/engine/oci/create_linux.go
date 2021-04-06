@@ -424,7 +424,7 @@ func (e *EngineOperations) updateState(status string) error {
 		return nil
 	}
 	oldStatus := e.EngineConfig.State.Status
-	e.EngineConfig.State.Status = status
+	e.EngineConfig.State.Status = specs.ContainerState(status)
 
 	t := time.Now().UnixNano()
 
