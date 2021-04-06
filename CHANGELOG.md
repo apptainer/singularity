@@ -9,6 +9,18 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
+# v3.7.3 - [2021-04-06]
+
+## Security Related Fixes
+
+  - [CVE-2021-29136](https://github.com/opencontainers/umoci/security/advisories/GHSA-9m95-8hx6-7p9v):
+   A dependency used by Singularity to extract docker/OCI image layers
+   can be tricked into modifying host files by creating a malicious
+   layer that has a symlink with the name "." (or "/"), when running
+   as root. This vulnerability affects a `singularity build` or
+   `singularity pull` as root, from a docker or OCI source.
+
+
 # v3.7.2 - [2021-03-09]
 
 ## Bug Fixes
