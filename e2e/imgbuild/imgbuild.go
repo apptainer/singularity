@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/ecl"
@@ -1244,6 +1245,117 @@ func (c imgBuildTests) buildWithFingerprint(t *testing.T) {
 
 }
 
+// buildBindMount checks that we can bind host files/directories during build.
+func (c imgBuildTests) buildBindMount(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	tmpdir, cleanup := c.tempDir(t, "build-local-image")
+	defer cleanup()
+
+	dir, _ := e2e.MakeTempDir(t, tmpdir, "mount", "")
+
+	canaryFile := filepath.Join(dir, "canary")
+	if err := fs.Touch(canaryFile); err != nil {
+		t.Fatalf("while touching %s: %v", canaryFile, err)
+	}
+
+	tests := []struct {
+		name        string
+		buildOption []string
+		buildPost   []string
+		buildTest   []string
+		exit        int
+	}{
+		{
+			name: "Bind test dir to /mnt",
+			buildOption: []string{
+				"--bind", dir + ":/mnt",
+			},
+			buildPost: []string{
+				"cat /mnt/canary",
+			},
+			buildTest: []string{
+				"cat /mnt/canary",
+			},
+			exit: 0,
+		},
+		{
+			name: "Bind test dir to multiple directory",
+			buildOption: []string{
+				"--bind", dir + ":/mnt",
+				"--bind", dir + ":/opt",
+			},
+			buildPost: []string{
+				"cat /mnt/canary",
+				"cat /opt/canary",
+			},
+			buildTest: []string{
+				"cat /mnt/canary",
+				"cat /opt/canary",
+			},
+			exit: 0,
+		},
+		{
+			name: "Bind test dir to /mnt read-only",
+			buildOption: []string{
+				"--bind", dir + ":/mnt:ro",
+			},
+			buildPost: []string{
+				"mkdir /mnt/should_fail",
+			},
+			exit: 255,
+		},
+		{
+			name: "Bind test dir to non-existent image directory",
+			buildOption: []string{
+				"--bind", dir + ":/fake/dir",
+			},
+			buildPost: []string{
+				"cat /mnt/canary",
+			},
+			exit: 255,
+		},
+		{
+			name: "Bind test dir with remote",
+			buildOption: []string{
+				"--bind", dir + ":/mnt",
+				"--remote",
+			},
+			exit: 255,
+		},
+	}
+
+	sandboxImage := filepath.Join(tmpdir, "build-sandbox")
+
+	definition := fmt.Sprintf("Bootstrap: localimage\nFrom: %s", c.env.ImagePath)
+
+	for _, tt := range tests {
+		rawDef := definition
+		if len(tt.buildPost) > 0 {
+			rawDef += fmt.Sprintf("\n%%post\n\t%s", strings.Join(tt.buildPost, "\n"))
+		}
+		if len(tt.buildTest) > 0 {
+			rawDef += fmt.Sprintf("\n%%test\n\t%s", strings.Join(tt.buildTest, "\n"))
+		}
+		defFile := e2e.RawDefFile(t, tmpdir, strings.NewReader(rawDef))
+
+		args := tt.buildOption
+		args = append(args, "-F", "--sandbox", sandboxImage, defFile)
+
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(args...),
+			e2e.PostRun(func(t *testing.T) {
+				os.Remove(defFile)
+			}),
+			e2e.ExpectExit(tt.exit),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := imgBuildTests{
@@ -1261,6 +1373,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"non-root build":                  c.nonRootBuild,              // build sifs from non-root
 		"build and update sandbox":        c.buildUpdateSandbox,        // build/update sandbox
 		"fingerprint check":               c.buildWithFingerprint,      // definition file includes fingerprint check
+		"build with bind mount":           c.buildBindMount,            // build image with bind mount
 		"issue 3848":                      c.issue3848,                 // https://github.com/hpcng/singularity/issues/3848
 		"issue 4203":                      c.issue4203,                 // https://github.com/sylabs/singularity/issues/4203
 		"issue 4407":                      c.issue4407,                 // https://github.com/sylabs/singularity/issues/4407

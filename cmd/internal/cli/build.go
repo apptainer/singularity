@@ -30,6 +30,7 @@ import (
 
 var buildArgs struct {
 	sections     []string
+	bindPaths    []string
 	arch         string
 	builderURL   string
 	libraryURL   string
@@ -45,6 +46,8 @@ var buildArgs struct {
 	remote       bool
 	sandbox      bool
 	update       bool
+	nvidia       bool
+	rocm         bool
 }
 
 // -s|--sandbox
@@ -204,6 +207,44 @@ var buildFixPermsFlag = cmdline.Flag{
 	EnvKeys:      []string{"FIXPERMS"},
 }
 
+// --nv
+var buildNvFlag = cmdline.Flag{
+	ID:           "nvFlag",
+	Value:        &buildArgs.nvidia,
+	DefaultValue: false,
+	Name:         "nv",
+	Usage:        "inject host Nvidia libraries during build for post and test sections (not supported with remote build)",
+	EnvKeys:      []string{"NV"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --rocm
+var buildRocmFlag = cmdline.Flag{
+	ID:           "rocmFlag",
+	Value:        &buildArgs.rocm,
+	DefaultValue: false,
+	Name:         "rocm",
+	Usage:        "inject host Rocm libraries during build for post and test sections (not supported with remote build)",
+	EnvKeys:      []string{"ROCM"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// -B|--bind
+var buildBindFlag = cmdline.Flag{
+	ID:           "buildBindFlag",
+	Value:        &buildArgs.bindPaths,
+	DefaultValue: []string{},
+	Name:         "bind",
+	ShortHand:    "B",
+	Usage: "a user-bind path specification. spec has the format src[:dest[:opts]]," +
+		"where src and dest are outside and inside paths. If dest is not given," +
+		"it is set equal to src. Mount options ('opts') may be specified as 'ro'" +
+		"(read-only) or 'rw' (read/write, which is the default)." +
+		"Multiple bind paths can be given by a comma separated list. (not supported with remote build)",
+	EnvKeys:    []string{"BIND", "BINDPATH"},
+	EnvHandler: cmdline.EnvAppendValue,
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(buildCmd)
@@ -233,6 +274,10 @@ func init() {
 
 		cmdManager.RegisterFlagForCmd(&commonPromptForPassphraseFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&commonPEMFlag, buildCmd)
+
+		cmdManager.RegisterFlagForCmd(&buildNvFlag, buildCmd)
+		cmdManager.RegisterFlagForCmd(&buildRocmFlag, buildCmd)
+		cmdManager.RegisterFlagForCmd(&buildBindFlag, buildCmd)
 	})
 }
 

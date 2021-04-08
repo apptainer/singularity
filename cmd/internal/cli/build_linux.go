@@ -97,6 +97,25 @@ func fakerootExec(cmdArgs []string) {
 func runBuild(cmd *cobra.Command, args []string) {
 	ctx := context.TODO()
 
+	if buildArgs.nvidia {
+		if buildArgs.remote {
+			sylog.Fatalf("--nv option is not supported for remote build")
+		}
+		os.Setenv("SINGULARITY_NV", "1")
+	}
+	if buildArgs.rocm {
+		if buildArgs.remote {
+			sylog.Fatalf("--rocm option is not supported for remote build")
+		}
+		os.Setenv("SINGULARITY_ROCM", "1")
+	}
+	if len(buildArgs.bindPaths) > 0 {
+		if buildArgs.remote {
+			sylog.Fatalf("-B/--bind option is not supported for remote build")
+		}
+		os.Setenv("SINGULARITY_BINDPATH", strings.Join(buildArgs.bindPaths, ","))
+	}
+
 	if buildArgs.arch != runtime.GOARCH && !buildArgs.remote {
 		sylog.Fatalf("Requested architecture (%s) does not match host (%s). Cannot build locally.", buildArgs.arch, runtime.GOARCH)
 	}
