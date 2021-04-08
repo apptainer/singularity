@@ -538,6 +538,49 @@ func (c configTests) configGlobalCombination(t *testing.T) {
 			},
 			exit: 0,
 		},
+		{
+			name: "AllowNetNetworksMultiMulti",
+			// Two networks allowed, asking for both
+			argv:    []string{"--net", "--network", "bridge,ptp", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
+				"allow net users":    u.Name,
+				"allow net networks": "bridge,ptp",
+			},
+			exit: 0,
+		},
+		{
+			// Two networks allowed, asking for one
+			name:    "AllowNetNetworksMultiOne",
+			argv:    []string{"--net", "--network", "ptp", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
+				"allow net users":    u.Name,
+				"allow net networks": "bridge,ptp",
+			},
+			exit: 0,
+		},
+		{
+			// One network allowed, but asking for two
+			name:    "AllowNetNetworksOneMulti",
+			argv:    []string{"--net", "--network", "bridge,ptp", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
+				"allow net users":    u.Name,
+				"allow net networks": "bridge",
+			},
+			exit: 255,
+		},
+		{
+			// No networks allowed, asking for two
+			name:    "AllowNetNetworksNoneMulti",
+			argv:    []string{"--net", "--network", "bridge,ptp", c.env.ImagePath, "true"},
+			profile: e2e.UserProfile,
+			directives: map[string]string{
+				"allow net users": u.Name,
+			},
+			exit: 255,
+		},
 	}
 
 	for _, tt := range tests {

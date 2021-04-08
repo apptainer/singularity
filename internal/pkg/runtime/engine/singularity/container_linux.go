@@ -2257,8 +2257,16 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 		if err != nil {
 			return nil, err
 		}
-		// Is the requested network in the list of networks allowed for unpriv CNI?
-		allowedNetNetwork := slice.ContainsString(c.engine.EngineConfig.File.AllowNetNetworks, net)
+		// Is/are the requested network(s) in the list of networks allowed for unpriv CNI?
+		allowedNetNetwork := false
+		for _, n := range strings.Split(net, ",") {
+			allowedNetNetwork = slice.ContainsString(c.engine.EngineConfig.File.AllowNetNetworks, n)
+			// If any one requested network is not allowed, disallow the whole config
+			if !allowedNetNetwork {
+				sylog.Errorf("Network %s is not permitted for unprivileged users.", n)
+				break
+			}
+		}
 		// User is in the user / groups allowed, and requesting an allowed network?
 		allowedNetUnpriv = (allowedNetUser || allowedNetGroup) && allowedNetNetwork
 	}
@@ -2313,8 +2321,10 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 	return func(ctx context.Context) error {
 		if fakeroot || allowedNetUnpriv {
 			// prevent port hijacking between user processes
-			if err := networkSetup.SetPortProtection(net, 0); err != nil {
-				return err
+			for _, n := range strings.Split(net, ",") {
+				if err := networkSetup.SetPortProtection(n, 0); err != nil {
+					return err
+				}
 			}
 			if euid != 0 {
 				priv.Escalate()
