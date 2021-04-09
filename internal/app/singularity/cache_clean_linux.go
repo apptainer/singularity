@@ -11,6 +11,7 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/slice"
 )
 
 var (
@@ -42,7 +43,7 @@ func CleanSingularityCache(imgCache *cache.Handle, dryRun bool, cacheCleanTypes 
 
 	// If specified caches, and we don't have 'all' specified then clean the specified
 	// ones only.
-	if len(cacheCleanTypes) > 0 && !stringInSlice("all", cacheCleanTypes) {
+	if len(cacheCleanTypes) > 0 && !slice.ContainsString(cacheCleanTypes, "all") {
 		cachesToClean = cacheCleanTypes
 	}
 

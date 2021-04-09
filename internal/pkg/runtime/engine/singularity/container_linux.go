@@ -40,6 +40,7 @@ import (
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/sylabs/singularity/pkg/util/slice"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sys/unix"
 )
@@ -2245,11 +2246,35 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 	fakeroot := c.engine.EngineConfig.GetFakeroot()
 	net := c.engine.EngineConfig.GetNetwork()
 	euid := os.Geteuid()
+	allowedNetUnpriv := false
+	if euid != 0 {
+		// Is the user permitted in the list of unpriv users / groups permitted to use CNI?
+		allowedNetUser, err := user.UIDInList(euid, c.engine.EngineConfig.File.AllowNetUsers)
+		if err != nil {
+			return nil, err
+		}
+		allowedNetGroup, err := user.UIDInAnyGroup(euid, c.engine.EngineConfig.File.AllowNetGroups)
+		if err != nil {
+			return nil, err
+		}
+		// Is/are the requested network(s) in the list of networks allowed for unpriv CNI?
+		allowedNetNetwork := false
+		for _, n := range strings.Split(net, ",") {
+			allowedNetNetwork = slice.ContainsString(c.engine.EngineConfig.File.AllowNetNetworks, n)
+			// If any one requested network is not allowed, disallow the whole config
+			if !allowedNetNetwork {
+				sylog.Errorf("Network %s is not permitted for unprivileged users.", n)
+				break
+			}
+		}
+		// User is in the user / groups allowed, and requesting an allowed network?
+		allowedNetUnpriv = (allowedNetUser || allowedNetGroup) && allowedNetNetwork
+	}
 
 	if !c.netNS || net == noneNet {
 		return nil, nil
-	} else if (c.userNS || euid != 0) && !fakeroot {
-		return nil, fmt.Errorf("network requires root or --fakeroot, users need to specify --network=%s with --net", noneNet)
+	} else if (c.userNS || euid != 0) && !fakeroot && !allowedNetUnpriv {
+		return nil, fmt.Errorf("network requires root or --fakeroot, non-root users can only use --network=%s unless permitted by the administrator", noneNet)
 	}
 
 	// we hold a reference to container network namespace
@@ -2264,6 +2289,7 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 	}
 	networks := strings.Split(c.engine.EngineConfig.GetNetwork(), ",")
 
+	// In fakeroot mode only permit the `fakeroot` CNI config
 	if fakeroot && euid != 0 && net != fakerootNet {
 		// set as debug message to avoid annoying warning
 		sylog.Debugf("only '%s' network is allowed for regular user, you requested '%s'", fakerootNet, net)
@@ -2293,10 +2319,12 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 	}
 
 	return func(ctx context.Context) error {
-		if fakeroot {
+		if fakeroot || allowedNetUnpriv {
 			// prevent port hijacking between user processes
-			if err := networkSetup.SetPortProtection(fakerootNet, 0); err != nil {
-				return err
+			for _, n := range strings.Split(net, ",") {
+				if err := networkSetup.SetPortProtection(n, 0); err != nil {
+					return err
+				}
 			}
 			if euid != 0 {
 				priv.Escalate()
