@@ -143,6 +143,12 @@ func currentEnvNoSingularity() []string {
 	for _, e := range os.Environ() {
 		if !strings.HasPrefix(e, env.SingularityPrefix) {
 			envs = append(envs, e)
+		} else {
+			envKey := strings.SplitN(e, "=", 2)
+			switch strings.TrimPrefix(envKey[0], env.SingularityPrefix) {
+			case "NV", "ROCM", "BINDPATH":
+				envs = append(envs, e)
+			}
 		}
 	}
 

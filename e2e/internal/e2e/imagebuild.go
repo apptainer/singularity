@@ -7,10 +7,14 @@ package e2e
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"log"
 	"path"
+	"testing"
 	"text/template"
+
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 // BuildOpts define image build options
@@ -111,5 +115,17 @@ func PrepareMultiStageDefFile(dfd []DefFileDetails) (outputPath string) {
 		log.Fatalf("failed to write temp file: %v", err)
 	}
 
+	return f.Name()
+}
+
+func RawDefFile(t *testing.T, dir string, r io.Reader) (outputPath string) {
+	f, err := fs.MakeTmpFile(dir, "raw-deffile", 0644)
+	if err != nil {
+		t.Fatalf("while making temporal definition file: %v", err)
+	}
+	defer f.Close()
+	if _, err := io.Copy(f, r); err != nil {
+		t.Fatalf("while writing raw definition file: %v", err)
+	}
 	return f.Name()
 }
