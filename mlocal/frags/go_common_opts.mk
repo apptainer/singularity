@@ -5,11 +5,15 @@ GO_TAGS_SUID := containers_image_openpgp sylog singularity_engine fakeroot_engin
 GO_LDFLAGS :=
 # Need to use non-pie build on ppc64le
 # https://github.com/hpcng/singularity/issues/5762
+# Need to disable race detector on ppc64le
+# https://github.com/hpcng/singularity/issues/5914
 uname_m := $(shell uname -m)
 ifeq ($(uname_m),ppc64le)
 GO_BUILDMODE := -buildmode=default
+GO_RACE :=
 else
 GO_BUILDMODE := -buildmode=pie
+GO_RACE := -race
 endif
 GO_GCFLAGS := -gcflags=github.com/sylabs/singularity/...="-trimpath $(SOURCEDIR)=>github.com/sylabs/singularity@v0.0.0"
 GO_ASMFLAGS := -asmflags=github.com/sylabs/singularity/...="-trimpath $(SOURCEDIR)=>github.com/sylabs/singularity@v0.0.0"
