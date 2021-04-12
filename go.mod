@@ -12,27 +12,24 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
-	github.com/containerd/cgroups v0.0.0-20200531161412-0dbf7f05ba59
-	github.com/containerd/containerd v1.4.4
+	github.com/containerd/cgroups v0.0.0-20200824123100-0b889c03f102
+	github.com/containerd/containerd v1.5.0-beta.1
 	github.com/containernetworking/cni v0.8.1
 	github.com/containernetworking/plugins v0.9.1
-	github.com/containers/image/v5 v5.10.5
+	github.com/containers/image/v5 v5.11.0
 	github.com/deislabs/oras v0.11.1
 	github.com/fatih/color v1.10.0
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/go-log/log v0.2.0
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
-	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
-	github.com/klauspost/compress v1.11.13 // indirect
 	github.com/kr/pty v1.1.8
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20210331164927-859973e32cca
-	github.com/opencontainers/runc v1.0.0-rc93 // indirect
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
 	github.com/opencontainers/selinux v1.8.0
 	github.com/opencontainers/umoci v0.4.7
@@ -56,10 +53,8 @@ require (
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
-	go.opencensus.io v0.22.2 // indirect
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
 	mvdan.cc/sh/v3 v3.2.4
