@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
@@ -411,4 +412,71 @@ func (t *Methods) WriteFile(arguments *args.WriteFileArgs, reply *int) error {
 		err = err1
 	}
 	return err
+}
+
+func (t *Methods) NVContainer(arguments *args.NVContainerArgs, reply *int) (err error) {
+	oldPath := os.Getenv("PATH")
+	os.Setenv("PATH", arguments.PathEnv)
+	defer os.Setenv("PATH", oldPath)
+
+	nccBin, err := exec.LookPath("nvidia-container-cli")
+	if err != nil {
+		return err
+	}
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	caps := defaultEffective
+	if arguments.RunAsRoot {
+		caps |= uint64(1 << capabilities.Map["CAP_CHOWN"].Value)
+	}
+
+	oldEffective, err := capabilities.SetProcessEffective(caps)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_, e := capabilities.SetProcessEffective(oldEffective)
+		if err == nil {
+			err = e
+		}
+	}()
+
+	nccArgs := []string{"--debug=/tmp/singularity-nvcli-debug", "--user", "configure"}
+	nccArgs = append(nccArgs, arguments.Flags...)
+	nccArgs = append(nccArgs, arguments.RootFsPath)
+
+	cmd := exec.Command(nccBin, nccArgs...)
+	cmd.Env = os.Environ()
+
+	// We need to run nvidia-container-cli as root when we are in the setuid flow
+	// without a usernamepace in play.
+	if arguments.RunAsRoot {
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+			Credential: &syscall.Credential{Uid: 0, Gid: 0},
+		}
+	} else {
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+	}
+	cmd.SysProcAttr.AmbientCaps = []uintptr{
+		uintptr(capabilities.Map["CAP_KILL"].Value),
+		uintptr(capabilities.Map["CAP_SETUID"].Value),
+		uintptr(capabilities.Map["CAP_SETGID"].Value),
+		uintptr(capabilities.Map["CAP_SYS_CHROOT"].Value),
+		uintptr(capabilities.Map["CAP_CHOWN"].Value),
+		uintptr(capabilities.Map["CAP_FOWNER"].Value),
+		uintptr(capabilities.Map["CAP_MKNOD"].Value),
+		uintptr(capabilities.Map["CAP_SYS_ADMIN"].Value),
+		uintptr(capabilities.Map["CAP_DAC_READ_SEARCH"].Value),
+		uintptr(capabilities.Map["CAP_SYS_PTRACE"].Value),
+		uintptr(capabilities.Map["CAP_DAC_OVERRIDE"].Value),
+		uintptr(capabilities.Map["CAP_SETPCAP"].Value),
+	}
+	stdoutStderr, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("nvidia-container-cli failed with %v: %s", err, stdoutStderr)
+	}
+	return nil
 }

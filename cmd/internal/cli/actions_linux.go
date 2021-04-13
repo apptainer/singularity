@@ -313,6 +313,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	var gpuConfFile, gpuPlatform string
 	userPath := os.Getenv("USER_PATH")
 
+	nvCli := gpu.HasNvidiaContainerCli()
+
 	if !NoNvidia && (Nvidia || engineConfig.File.AlwaysUseNv) {
 		gpuPlatform = "nv"
 		gpuConfFile = filepath.Join(buildcfg.SINGULARITY_CONFDIR, "nvliblist.conf")
@@ -320,12 +322,16 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if engineConfig.File.AlwaysUseNv {
 			Nvidia = true
 			sylog.Verbosef("'always use nv = yes' found in singularity.conf")
-			sylog.Verbosef("binding nvidia files into container")
 		}
 
 		// bind persistenced socket if found
 		ipcs = gpu.NvidiaIpcsPath(userPath)
-		libs, bins, err = gpu.NvidiaPaths(gpuConfFile, userPath)
+
+		if nvCli {
+			sylog.Infof("using nvidia-container-cli POC. Skipping direct binds")
+		} else {
+			libs, bins, err = gpu.NvidiaPaths(gpuConfFile, userPath)
+		}
 
 	} else if !NoRocm && (Rocm || engineConfig.File.AlwaysUseRocm) { // Mount rocm GPU
 		gpuPlatform = "rocm"
@@ -347,7 +353,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			files := make([]string, len(bins)+len(ipcs))
 
 			if len(files) == 0 {
-				sylog.Infof("Could not find any %s files on this host!", gpuPlatform)
+				if !nvCli {
+					sylog.Infof("Could not find any %s files on this host!", gpuPlatform)
+				}
 			} else {
 				if IsWritable {
 					sylog.Warningf("%s files may not be bound with --writable", gpuPlatform)
@@ -362,8 +370,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				engineConfig.SetFilesPath(files)
 			}
 			if len(libs) == 0 {
-				sylog.Warningf("Could not find any %s libraries on this host!", gpuPlatform)
-				sylog.Warningf("You may need to manually edit %s", gpuConfFile)
+				if !nvCli {
+					sylog.Warningf("Could not find any %s libraries on this host!", gpuPlatform)
+					sylog.Warningf("You may need to manually edit %s", gpuConfFile)
+				}
 			} else {
 				engineConfig.SetLibrariesPath(libs)
 			}
@@ -429,7 +439,24 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetWritableImage(IsWritable)
 	engineConfig.SetNoHome(NoHome)
 	setNoMountFlags(engineConfig)
-	engineConfig.SetNv(Nvidia)
+
+	if Nvidia {
+		if nvCli {
+			sylog.Infof("Using nvidia-container-cli for GPU setup")
+			engineConfig.SetNvContainer(true)
+			if UserNamespace && !IsWritable {
+				sylog.Fatalf("nvidia-container-cli requires --writable with user namespace/fakeroot")
+			}
+			if !IsWritable && !IsWritableTmpfs {
+				sylog.Infof("Setting --writable-tmpfs (required by nvidia-container-cli)")
+				IsWritableTmpfs = true
+			}
+		} else {
+			sylog.Infof("No nvidia-container-cli available. Using legacy NVIDIA GPU handling")
+			engineConfig.SetNv(true)
+		}
+	}
+
 	engineConfig.SetRocm(Rocm)
 	engineConfig.SetAddCaps(AddCaps)
 	engineConfig.SetDropCaps(DropCaps)

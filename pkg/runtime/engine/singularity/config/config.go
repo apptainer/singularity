@@ -137,6 +137,7 @@ type JSONConfig struct {
 	WritableTmpfs     bool              `json:"writableTmpfs,omitempty"`
 	Contain           bool              `json:"container,omitempty"`
 	Nv                bool              `json:"nv,omitempty"`
+	NvContainer       bool              `json:"nvContainer,omitempty"`
 	Rocm              bool              `json:"rocm,omitempty"`
 	CustomHome        bool              `json:"customHome,omitempty"`
 	Instance          bool              `json:"instance,omitempty"`
@@ -220,6 +221,16 @@ func (e *EngineConfig) SetNv(nv bool) {
 // GetNv returns if nv flag is set or not.
 func (e *EngineConfig) GetNv() bool {
 	return e.JSON.Nv
+}
+
+// SetNvContainer sets nvcontainer flag to use nvidia-container-cli for CUDA setup
+func (e *EngineConfig) SetNvContainer(nvContainer bool) {
+	e.JSON.NvContainer = nvContainer
+}
+
+// GetNvContainer returns if nv flag is set or not.
+func (e *EngineConfig) GetNvContainer() bool {
+	return e.JSON.NvContainer
 }
 
 // SetRocm sets rocm flag to bind rocm libraries into containee.JSON.

@@ -71,6 +71,12 @@ func NvidiaIpcsPath(envPath string) []string {
 	return nvidiaFiles
 }
 
+// HasNvidiaContainerCli returns true if `nvidia-container-cli` is available.
+func HasNvidiaContainerCli() bool {
+	_, err := exec.LookPath("nvidia-container-cli")
+	return err == nil
+}
+
 // nvidiaContainerCli runs `nvidia-container-cli list` and returns list of
 // libraries, ipcs and binaries for proper NVIDIA work. This may return duplicates!
 func nvidiaContainerCli(args ...string) ([]string, error) {
