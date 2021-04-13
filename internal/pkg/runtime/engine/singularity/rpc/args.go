@@ -130,6 +130,14 @@ type WriteFileArgs struct {
 	Perm     os.FileMode
 }
 
+// NvCCLIArgs defines the arguments to NvCCLI.
+type NvCCLIArgs struct {
+	NvCCLIPath string
+	Flags      []string
+	RootFsPath string
+	RunAsRoot  bool
+}
+
 // FileInfo returns FileInfo interface to be passed as RPC argument.
 func FileInfo(fi os.FileInfo) os.FileInfo {
 	return &fileInfo{

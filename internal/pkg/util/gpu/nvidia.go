@@ -6,111 +6,165 @@
 package gpu
 
 import (
-	"bufio"
-	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/hpcng/singularity/internal/pkg/util/bin"
+	"github.com/hpcng/singularity/internal/pkg/util/env"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/capabilities"
+	"github.com/hpcng/singularity/pkg/util/slice"
 )
 
-// NvidiaPaths returns a list of Nvidia libraries/binaries that should be
-// mounted into the container in order to use Nvidia GPUs
-func NvidiaPaths(configFilePath string) ([]string, []string, error) {
-	// Parse nvidia-container-cli for the necessary binaries/libs, fallback to a
-	// list of required binaries/libs if the nvidia-container-cli is unavailable
-	nvidiaFiles, err := nvidiaContainerCli("list", "--binaries", "--libraries")
-	if err != nil {
-		sylog.Verbosef("nvidiaContainerCli returned: %v", err)
-		sylog.Verbosef("Falling back to nvliblist.conf")
+var ErrNvCCLIInsecure = errors.New("nvidia-container-cli is not owned by root user")
 
-		nvidiaFiles, err = gpuliblist(configFilePath)
-		if err != nil {
-			return nil, nil, fmt.Errorf("could not read %s: %v", filepath.Base(configFilePath), err)
-		}
-	}
-
-	return paths(nvidiaFiles)
+// nVDriverCapabilities is the set of driver capabilities supported by nvidia-container-cli.
+// See: https://github.com/nvidia/nvidia-container-runtime#nvidia_driver_capabilities
+var nVDriverCapabilities = []string{
+	"compute",
+	"compat32",
+	"graphics",
+	"utility",
+	"video",
+	"display",
 }
 
-// NvidiaIpcsPath returns list of nvidia ipcs driver.
-func NvidiaIpcsPath() []string {
-	const persistencedSocket = "/var/run/nvidia-persistenced/socket"
+// nVDriverDefaultCapabilities is the default set of nvidia-container-cli driver capabilities.
+// It is used if NVIDIA_DRIVER_CAPABILITIES is not set.
+// See: https://github.com/nvidia/nvidia-container-runtime#nvidia_driver_capabilities
+var nVDriverDefaultCapabilities = []string{
+	"compute",
+	"utility",
+}
 
-	var nvidiaFiles []string
-	nvidiaFiles, err := nvidiaContainerCli("list", "--ipcs")
+// nVCLIAmbientCaps is the ambient capability set required by nvidia-container-cli.
+var nVCLIAmbientCaps = []uintptr{
+	uintptr(capabilities.Map["CAP_KILL"].Value),
+	uintptr(capabilities.Map["CAP_SETUID"].Value),
+	uintptr(capabilities.Map["CAP_SETGID"].Value),
+	uintptr(capabilities.Map["CAP_SYS_CHROOT"].Value),
+	uintptr(capabilities.Map["CAP_CHOWN"].Value),
+	uintptr(capabilities.Map["CAP_FOWNER"].Value),
+	uintptr(capabilities.Map["CAP_MKNOD"].Value),
+	uintptr(capabilities.Map["CAP_SYS_ADMIN"].Value),
+	uintptr(capabilities.Map["CAP_DAC_READ_SEARCH"].Value),
+	uintptr(capabilities.Map["CAP_SYS_PTRACE"].Value),
+	uintptr(capabilities.Map["CAP_DAC_OVERRIDE"].Value),
+	uintptr(capabilities.Map["CAP_SETPCAP"].Value),
+}
+
+// GetNvCCLIPath finds the path to nvidia-container-cli.
+// Returns ErrNvCCLIInsecure if it is not owned by root.
+func GetNvCCLIPath() (path string, err error) {
+	path, err = bin.FindBin("nvidia-container-cli")
 	if err != nil {
-		sylog.Verbosef("nvidiaContainerCli returned: %v", err)
-		sylog.Verbosef("Falling back to default path %s", persistencedSocket)
+		return "", err
+	}
 
-		// nvidia-container-cli may not be installed, check
-		// default path
-		_, err := os.Stat(persistencedSocket)
-		if os.IsNotExist(err) {
-			sylog.Verbosef("persistenced socket %s not found", persistencedSocket)
+	// The nvidia-container-cli binary must be owned by root, as it is called with broad
+	// capabilities, and as root in the setuid flow.
+	if !fs.IsOwner(path, 0) {
+		return "", ErrNvCCLIInsecure
+	}
+
+	return path, nil
+}
+
+// NVCLIConfigure calls out to the nvidia-container-cli configure operation.
+// This sets up the GPU with the container. Note that the ability to set a fairly broad set of
+// ambient capabilities is required. This function will error if the bounding set does not include
+// NvidiaContainerCLIAmbientCaps.
+func NVCLIConfigure(nvCCLIPath string, flags []string, rootfs string, runAsRoot bool) error {
+	nccArgs := []string{"configure"}
+
+	// If we will not run as root (i.e. we are in a user namespace), specify --user as a global
+	// flag, or nvidia-container-cli will fail.
+	if !runAsRoot {
+		nccArgs = []string{"--user", "configure"}
+	}
+
+	nccArgs = append(nccArgs, flags...)
+	nccArgs = append(nccArgs, rootfs)
+
+	sylog.Debugf("nvidia-container-cli binary: %q args: %q", nvCCLIPath, nccArgs)
+
+	cmd := exec.Command(nvCCLIPath, nccArgs...)
+	cmd.Env = os.Environ()
+	// We are called from the RPC server which has an empty PATH.
+	// nvidia-container-cli requires a default sensible PATH to work correctly.
+	cmd.Env = append(cmd.Env, "PATH="+env.DefaultPath)
+
+	// We need to run nvidia-container-cli as root when we are in the setuid flow
+	// without a user namespace in play.
+	if runAsRoot {
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+			Credential: &syscall.Credential{Uid: 0, Gid: 0},
+		}
+	} else {
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+	}
+	cmd.SysProcAttr.AmbientCaps = nVCLIAmbientCaps
+	stdoutStderr, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("nvidia-container-cli failed with %v: %s", err, stdoutStderr)
+	}
+	return nil
+}
+
+// NVCLIEnvToFlags reads the environment variables supported by nvidia-container-runtime
+// and converts them to flags for nvidia-container-cli.
+// See: https://github.com/nvidia/nvidia-container-runtime#environment-variables-oci-spec
+func NVCLIEnvToFlags() (flags []string, err error) {
+	// We don't support cgroups related usage yet.
+	flags = []string{"--no-cgroups"}
+
+	ldConfig, err := bin.FindBin("ldconfig")
+	if err != nil {
+		return nil, fmt.Errorf("could not lookup ldconfig: %v", err)
+	}
+	flags = append(flags, "--ldconfig=@"+ldConfig)
+
+	if val := os.Getenv("NVIDIA_VISIBLE_DEVICES"); val != "" {
+		flags = append(flags, "--device="+val)
+	}
+
+	if val := os.Getenv("NVIDIA_MIG_CONFIG_DEVICES"); val != "" {
+		flags = append(flags, "--mig-config="+val)
+	}
+
+	if val := os.Getenv("NVIDIA_MIG_MONITOR_DEVICES"); val != "" {
+		flags = append(flags, "--mig-monitor="+val)
+	}
+
+	// Driver capabilities have a default, but can be overridden.
+	caps := nVDriverDefaultCapabilities
+	if val := os.Getenv("NVIDIA_DRIVER_CAPABILITIES"); val != "" {
+		caps = strings.Split(val, ",")
+	}
+
+	for _, cap := range caps {
+		if slice.ContainsString(nVDriverCapabilities, cap) {
+			flags = append(flags, "--"+cap)
 		} else {
-			nvidiaFiles = append(nvidiaFiles, persistencedSocket)
+			return nil, fmt.Errorf("unknown NVIDIA_DRIVER_CAPABILITIES value: %s", cap)
 		}
 	}
 
-	return nvidiaFiles
-}
-
-// nvidiaContainerCli runs `nvidia-container-cli list` and returns list of
-// libraries, ipcs and binaries for proper NVIDIA work. This may return duplicates!
-func nvidiaContainerCli(args ...string) ([]string, error) {
-	nvidiaCLIPath, err := bin.FindBin("nvidia-container-cli")
-	if err != nil {
-		return nil, fmt.Errorf("could not find nvidia-container-cli: %v", err)
-	}
-
-	var out bytes.Buffer
-	cmd := exec.Command(nvidiaCLIPath, args...)
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err != nil {
-		return nil, fmt.Errorf("could not execute nvidia-container-cli list: %v", err)
-	}
-
-	var libs []string
-	scanner := bufio.NewScanner(&out)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			continue
-		}
-		if strings.Contains(line, ".so") {
-			// Handle the library reported by nvidia-container-cli
-			libs = append(libs, line)
-			// Look for and add any symlinks for this library
-			soPath := strings.SplitAfter(line, ".so")[0]
-			soPaths, err := soLinks(soPath)
-			if err != nil {
-				sylog.Errorf("while finding links for %s: %v", soPath, err)
+	// One --require flag for each NVIDIA_REQUIRE_* environment
+	// https://github.com/nvidia/nvidia-container-runtime#nvidia_require_
+	if val := os.Getenv("NVIDIA_DISABLE_REQUIRE"); val == "" {
+		for _, e := range os.Environ() {
+			if strings.HasPrefix(e, "NVIDIA_REQUIRE_") {
+				req := strings.SplitN(e, "=", 2)[1]
+				flags = append(flags, "--require="+req)
 			}
-			libs = append(libs, soPaths...)
-		} else {
-			// this is a binary -> need full path
-			libs = append(libs, line)
 		}
 	}
-	return libs, nil
-}
 
-// NvidiaDevices return list of all non-GPU nvidia devices present on host. If withGPU
-// is true all GPUs are included in the resulting list as well.
-func NvidiaDevices(withGPU bool) ([]string, error) {
-	nvidiaGlob := "/dev/nvidia*"
-	if !withGPU {
-		nvidiaGlob = "/dev/nvidia[^0-9]*"
-	}
-	devs, err := filepath.Glob(nvidiaGlob)
-	if err != nil {
-		return nil, fmt.Errorf("could not list nvidia devices: %v", err)
-	}
-	return devs, nil
+	return flags, nil
 }

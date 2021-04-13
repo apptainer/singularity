@@ -137,7 +137,10 @@ type JSONConfig struct {
 	WritableImage     bool              `json:"writableImage,omitempty"`
 	WritableTmpfs     bool              `json:"writableTmpfs,omitempty"`
 	Contain           bool              `json:"container,omitempty"`
-	Nv                bool              `json:"nv,omitempty"`
+	NvLegacy          bool              `json:"nvLegacy,omitempty"`
+	NvCCLI            bool              `json:"nvCCLI,omitempty"`
+	NvCCLIPath        string            `json:"nvCCLIPath,omitempty"`
+	NvCCLIFlags       []string          `json:"NvCCLIFlags,omitempty"`
 	Rocm              bool              `json:"rocm,omitempty"`
 	CustomHome        bool              `json:"customHome,omitempty"`
 	Instance          bool              `json:"instance,omitempty"`
@@ -223,14 +226,44 @@ func (e *EngineConfig) GetContain() bool {
 	return e.JSON.Contain
 }
 
-// SetNv sets nv flag to bind cuda libraries into containee.JSON.
-func (e *EngineConfig) SetNv(nv bool) {
-	e.JSON.Nv = nv
+// SetNvLegacy sets nvLegacy flag to bind cuda libraries into containee.JSON.
+func (e *EngineConfig) SetNvLegacy(nv bool) {
+	e.JSON.NvLegacy = nv
 }
 
-// GetNv returns if nv flag is set or not.
-func (e *EngineConfig) GetNv() bool {
-	return e.JSON.Nv
+// GetNvLegacy returns if nv flag is set or not.
+func (e *EngineConfig) GetNvLegacy() bool {
+	return e.JSON.NvLegacy
+}
+
+// SetNvCCLI sets nvcontainer flag to use nvidia-container-cli for CUDA setup
+func (e *EngineConfig) SetNvCCLI(nvCCLI bool) {
+	e.JSON.NvCCLI = nvCCLI
+}
+
+// GetNvCCLI returns if NvCCLI flag is set or not.
+func (e *EngineConfig) GetNvCCLI() bool {
+	return e.JSON.NvCCLI
+}
+
+// SetNvCCLIPath sets the path to nvidia-container-cli to use for GPU setup
+func (e *EngineConfig) SetNvCCLIPath(nvCCLIPath string) {
+	e.JSON.NvCCLIPath = nvCCLIPath
+}
+
+// GetNvCCLIPath returns the path to nvidia-container-cli to use for GPU setup
+func (e *EngineConfig) GetNvCCLIPath() string {
+	return e.JSON.NvCCLIPath
+}
+
+// SetNVCCLIFlags sets flags to call nvidia-container-cli with for CUDA setup
+func (e *EngineConfig) SetNvCCLIFlags(NvCCLIFlags []string) {
+	e.JSON.NvCCLIFlags = NvCCLIFlags
+}
+
+// GetNvCCLIFlags returns the flags to use in an nvidia-container-cli call
+func (e *EngineConfig) GetNvCCLIFlags() []string {
+	return e.JSON.NvCCLIFlags
 }
 
 // SetRocm sets rocm flag to bind rocm libraries into containee.JSON.

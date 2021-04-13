@@ -34,12 +34,12 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-func (c ctx) testNvidia(t *testing.T) {
+func (c ctx) testNvidiaLegacy(t *testing.T) {
 	require.Nvidia(t)
 	// Use Ubuntu 20.04 as this is a recent distro officially supported by Nvidia CUDA.
 	// We can't use our test image as it's alpine based and we need a compatible glibc.
 	imageURL := "docker://ubuntu:20.04"
-	imageFile, err := fs.MakeTmpFile("", "test-nvidia-", 0o755)
+	imageFile, err := fs.MakeTmpFile("", "test-nvidia-legacy-", 0o755)
 	if err != nil {
 		t.Fatalf("Could not create test file: %v", err)
 	}
@@ -60,6 +60,7 @@ func (c ctx) testNvidia(t *testing.T) {
 		name    string
 		profile e2e.Profile
 		args    []string
+		env     []string
 	}{
 		{
 			name:    "User",
@@ -95,7 +96,111 @@ func (c ctx) testNvidia(t *testing.T) {
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.args...),
+			e2e.WithEnv(tt.env),
 			e2e.ExpectExit(0),
+		)
+	}
+}
+
+func (c ctx) testNvCCLI(t *testing.T) {
+	require.Nvidia(t)
+	require.NvCCLI(t)
+	// Use Ubuntu 20.04 as this is a recent distro officially supported by Nvidia CUDA.
+	// We can't use our test image as it's alpine based and we need a compatible glibc.
+	imageURL := "docker://ubuntu:20.04"
+	imageFile, err := fs.MakeTmpFile("", "test-nvccli-", 0o755)
+	if err != nil {
+		t.Fatalf("Could not create test file: %v", err)
+	}
+	imageFile.Close()
+	imagePath := imageFile.Name()
+	defer os.Remove(imagePath)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("pull"),
+		e2e.WithArgs("--force", imagePath, imageURL),
+		e2e.ExpectExit(0),
+	)
+
+	// Basic test that we can run the bound in `nvidia-smi` which *should* be on the PATH
+	tests := []struct {
+		name        string
+		profile     e2e.Profile
+		args        []string
+		env         []string
+		expectExit  int
+		expectMatch e2e.SingularityCmdResultOp
+	}{
+		{
+			name:       "User",
+			profile:    e2e.UserProfile,
+			args:       []string{"--nv", "--nvccli", imagePath, "nvidia-smi"},
+			expectExit: 0,
+		},
+		{
+			// With --contain, we should only see NVIDIA_VISIBLE_DEVICES configured GPUs
+			name:        "UserContainNoDevices",
+			profile:     e2e.UserProfile,
+			args:        []string{"--contain", "--nv", "--nvccli", imagePath, "nvidia-smi"},
+			expectMatch: e2e.ExpectOutput(e2e.ContainMatch, "No devices were found"),
+			expectExit:  6,
+		},
+		{
+			name:       "UserContainAllDevices",
+			profile:    e2e.UserProfile,
+			args:       []string{"--contain", "--nv", "--nvccli", imagePath, "nvidia-smi"},
+			env:        []string{"NVIDIA_VISIBLE_DEVICES=all"},
+			expectExit: 0,
+		},
+		{
+			// If we only request compute, not utility, then nvidia-smi should not be present
+			name:        "UserNoUtility",
+			profile:     e2e.UserProfile,
+			args:        []string{"--nv", "--nvccli", imagePath, "nvidia-smi"},
+			env:         []string{"NVIDIA_DRIVER_CAPABILITIES=compute"},
+			expectMatch: e2e.ExpectError(e2e.ContainMatch, "\"nvidia-smi\": executable file not found in $PATH"),
+			expectExit:  255,
+		},
+		{
+			// Require CUDA version >8 should be fine!
+			name:       "UserValidRequire",
+			profile:    e2e.UserProfile,
+			args:       []string{"--nv", "--nvccli", imagePath, "nvidia-smi"},
+			env:        []string{"NVIDIA_REQUIRE_CUDA=cuda>8"},
+			expectExit: 0,
+		},
+		{
+			// Require CUDA version >999 should not be satisfied
+			name:        "UserInvalidRequire",
+			profile:     e2e.UserProfile,
+			args:        []string{"--nv", "--nvccli", imagePath, "nvidia-smi"},
+			env:         []string{"NVIDIA_REQUIRE_CUDA=cuda>999"},
+			expectMatch: e2e.ExpectError(e2e.ContainMatch, "requirement error: unsatisfied condition: cuda>99"),
+			expectExit:  255,
+		},
+		{
+			name:    "UserNamespace",
+			profile: e2e.UserNamespaceProfile,
+			args:    []string{"--nv", "--nvccli", imagePath, "nvidia-smi"},
+		},
+		{
+			name:    "Root",
+			profile: e2e.RootProfile,
+			args:    []string{"--nv", "--nvccli", imagePath, "nvidia-smi"},
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.args...),
+			e2e.WithEnv(tt.env),
+			e2e.ExpectExit(tt.expectExit, tt.expectMatch),
 		)
 	}
 }
@@ -166,7 +271,7 @@ func (c ctx) testRocm(t *testing.T) {
 	}
 }
 
-func (c ctx) testBuildNvidia(t *testing.T) {
+func (c ctx) testBuildNvidiaLegacy(t *testing.T) {
 	require.Nvidia(t)
 
 	// ignore the error as it's already done in the require call above
@@ -176,11 +281,10 @@ func (c ctx) testBuildNvidia(t *testing.T) {
 	// We can't use our test image as it's alpine based and we need a compatible glibc.
 	imageURL := "docker://ubuntu:20.04"
 
-	tmpdir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "build-nvidia-image", "build with nvidia")
+	tmpdir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "build-nvidia-legacy", "build with nvidia")
 	defer cleanup(t)
 
 	sourceImage := filepath.Join(tmpdir, "source")
-	sandboxImage := filepath.Join(tmpdir, "sandbox")
 
 	c.env.RunSingularity(
 		t,
@@ -198,25 +302,25 @@ func (c ctx) testBuildNvidia(t *testing.T) {
 		exit      int
 	}{
 		{
-			name:      "Build with nv and run nvidia-smi (root)",
+			name:      "WithNvRoot",
 			profile:   e2e.RootProfile,
 			setNvFlag: true,
 			exit:      0,
 		},
 		{
-			name:      "Build with nv and run nvidia-smi (fakeroot)",
+			name:      "WithNvFakeroot",
 			profile:   e2e.FakerootProfile,
 			setNvFlag: true,
 			exit:      0,
 		},
 		{
-			name:      "Build without nv and run nvidia-smi (root)",
+			name:      "WithoutNvRoot",
 			profile:   e2e.RootProfile,
 			setNvFlag: false,
 			exit:      255,
 		},
 		{
-			name:      "Build without nv and run nvidia-smi (fakeroot)",
+			name:      "WithoutNvFakeroot",
 			profile:   e2e.FakerootProfile,
 			setNvFlag: false,
 			exit:      255,
@@ -227,6 +331,7 @@ func (c ctx) testBuildNvidia(t *testing.T) {
 
 	for _, tt := range tests {
 		defFile := e2e.RawDefFile(t, tmpdir, strings.NewReader(rawDef))
+		sandboxImage := filepath.Join(tmpdir, "sandbox-"+tt.name)
 
 		args := []string{}
 		if tt.setNvFlag {
@@ -241,6 +346,86 @@ func (c ctx) testBuildNvidia(t *testing.T) {
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.ExpectExit(tt.exit),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					return
+				}
+				defer os.RemoveAll(sandboxImage)
+			}),
+		)
+	}
+}
+
+func (c ctx) testBuildNvCCLI(t *testing.T) {
+	require.Nvidia(t)
+	require.NvCCLI(t)
+
+	// ignore the error as it's already done in the require call above
+	nvsmi, _ := exec.LookPath("nvidia-smi")
+
+	// Use Ubuntu 20.04 as this is the most recent distro officially supported by Nvidia CUDA.
+	// We can't use our test image as it's alpine based and we need a compatible glibc.
+	imageURL := "docker://ubuntu:20.04"
+
+	tmpdir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "build-nvccli", "build with nvccli")
+	defer cleanup(t)
+
+	sourceImage := filepath.Join(tmpdir, "source")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--force", "--sandbox", sourceImage, imageURL),
+		e2e.ExpectExit(0),
+	)
+
+	// Basic test that we can run the bound in `rocminfo` which *should* be on the PATH
+	tests := []struct {
+		name      string
+		profile   e2e.Profile
+		setNvFlag bool
+		exit      int
+	}{
+		{
+			name:      "WithNvccliRoot",
+			profile:   e2e.RootProfile,
+			setNvFlag: true,
+			exit:      0,
+		},
+		{
+			name:      "WithoutNvccliRoot",
+			profile:   e2e.RootProfile,
+			setNvFlag: false,
+			exit:      255,
+		},
+	}
+
+	rawDef := fmt.Sprintf(buildDefinition, sourceImage, nvsmi, "nvidia-smi")
+
+	for _, tt := range tests {
+		defFile := e2e.RawDefFile(t, tmpdir, strings.NewReader(rawDef))
+		sandboxImage := filepath.Join(tmpdir, "sandbox-"+tt.name)
+
+		args := []string{}
+		if tt.setNvFlag {
+			args = append(args, "--nv", "--nvccli")
+		}
+		args = append(args, "-F", "--sandbox", sandboxImage, defFile)
+
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(args...),
+			e2e.ExpectExit(tt.exit),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					return
+				}
+				os.RemoveAll(sandboxImage)
+			}),
 		)
 	}
 }
@@ -259,7 +444,6 @@ func (c ctx) testBuildRocm(t *testing.T) {
 	defer cleanup(t)
 
 	sourceImage := filepath.Join(tmpdir, "source")
-	sandboxImage := filepath.Join(tmpdir, "sandbox")
 
 	c.env.RunSingularity(
 		t,
@@ -277,25 +461,25 @@ func (c ctx) testBuildRocm(t *testing.T) {
 		exit        int
 	}{
 		{
-			name:        "Build with rocm and run rocminfo (root)",
+			name:        "WithRocmRoot",
 			profile:     e2e.RootProfile,
 			setRocmFlag: true,
 			exit:        0,
 		},
 		{
-			name:        "Build with rocm and run rocminfo (fakeroot)",
+			name:        "WithRocmFakeroot",
 			profile:     e2e.FakerootProfile,
 			setRocmFlag: true,
 			exit:        0,
 		},
 		{
-			name:        "Build without rocm and run rocminfo (root)",
+			name:        "WithoutRocmRoot",
 			profile:     e2e.RootProfile,
 			setRocmFlag: false,
 			exit:        255,
 		},
 		{
-			name:        "Build without rocm and run rocminfo (fakeroot)",
+			name:        "WithoutRocmFakeroot",
 			profile:     e2e.FakerootProfile,
 			setRocmFlag: false,
 			exit:        255,
@@ -306,6 +490,7 @@ func (c ctx) testBuildRocm(t *testing.T) {
 
 	for _, tt := range tests {
 		defFile := e2e.RawDefFile(t, tmpdir, strings.NewReader(rawDef))
+		sandboxImage := filepath.Join(tmpdir, "sandbox-"+tt.name)
 
 		args := []string{}
 		if tt.setRocmFlag {
@@ -320,6 +505,12 @@ func (c ctx) testBuildRocm(t *testing.T) {
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.ExpectExit(tt.exit),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					return
+				}
+				defer os.RemoveAll(sandboxImage)
+			}),
 		)
 	}
 }
@@ -331,9 +522,11 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	}
 
 	return testhelper.Tests{
-		"nvidia":       c.testNvidia,
+		"nvidia":       c.testNvidiaLegacy,
+		"nvccli":       c.testNvCCLI,
 		"rocm":         c.testRocm,
-		"build nvidia": c.testBuildNvidia,
+		"build nvidia": c.testBuildNvidiaLegacy,
+		"build nvccli": c.testBuildNvCCLI,
 		"build rocm":   c.testBuildRocm,
 	}
 }

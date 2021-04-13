@@ -13,6 +13,18 @@
   network namespaces as these may not be supported on many installations.
 - `--no-https` now applies to connections made to library services specified
   in `--library://<hostname>/...` URIs.
+- The experimental `--nvccli` flag will use `nvidia-container-cli` to setup the
+  container for Nvidia GPU operation. Singularity will not bind GPU libraries
+  itself. Environment variables that are used with Nvidia's `docker-nvidia`
+  runtime to configure GPU visibility / driver capabilities & requirements are
+  parsed by the `--nvccli` flag from the environment of the calling user. By
+  default, the `compute` and `utility` GPU capabilities are configured. The `use
+  nvidia-container-cli` option in `singularity.conf` can be set to `yes` to
+  always use `nvidia-container-cli` when supported. Note that in a setuid
+  install, `nvidia-container-cli` will be run as root with required ambient
+  capabilities. `--nvccli` is not currently supported in the hybrid fakeroot
+  (setuid install + `--fakeroot`) workflow. Please see documentation for more
+  details.
 
 ### Changed defaults / behaviours
 
@@ -48,8 +60,13 @@
   is no longer included, as it is maintained as a separate plugin at:
   <https://github.com/flannel-io/cni-plugin>. If you use the flannel CNI plugin
   you should install it from this repository.
-
-### New features / functionalities
+- `--nv` will not call `nvidia-container-cli` to find host libraries, unless
+  the new experimental GPU setup flow that employs `nvidia-container-cli`
+  for all GPU related operations is enabled (see below).
+- If a container is run with `--nvcli` and `--contain`, only GPU devices
+  specified via the `NVIDIA_VISIBLE_DEVICES` environment variable will be
+  exposed within the container. Use `NVIDIA_VISIBLE_DEVICES=all` to access all
+  GPUs inside a container run with `--nvccli`.
 
 ## v3.8.3 - \[2021-09-07\]
 
