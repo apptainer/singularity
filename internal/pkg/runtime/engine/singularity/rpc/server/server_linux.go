@@ -17,6 +17,7 @@ import (
 	args "github.com/hpcng/singularity/internal/pkg/runtime/engine/singularity/rpc"
 	"github.com/hpcng/singularity/internal/pkg/util/crypt"
 	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/internal/pkg/util/gpu"
 	"github.com/hpcng/singularity/internal/pkg/util/mainthread"
 	"github.com/hpcng/singularity/internal/pkg/util/user"
 	"github.com/hpcng/singularity/pkg/sylog"
@@ -413,4 +414,29 @@ func (t *Methods) WriteFile(arguments *args.WriteFileArgs, reply *int) error {
 		err = err1
 	}
 	return err
+}
+
+// NvCCLI will call nvidia-container-cli to configure GPU(s) for the container.
+func (t *Methods) NvCCLI(arguments *args.NvCCLIArgs, reply *int) (err error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	// In the setuid flow we need CAP_CHOWN here to be able to start
+	// nvidia-container-cli successfully as root.
+	caps := defaultEffective
+	if arguments.RunAsRoot {
+		caps |= uint64(1 << capabilities.Map["CAP_CHOWN"].Value)
+	}
+	oldEffective, err := capabilities.SetProcessEffective(caps)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_, e := capabilities.SetProcessEffective(oldEffective)
+		if err == nil {
+			err = e
+		}
+	}()
+
+	return gpu.NVCLIConfigure(arguments.NvCCLIPath, arguments.Flags, arguments.RootFsPath, arguments.RunAsRoot)
 }

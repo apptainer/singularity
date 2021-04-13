@@ -259,6 +259,23 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		return err
 	}
 
+	if engine.EngineConfig.GetNvCCLI() {
+		// If a container has a CUDA install in it then nvidia-container-cli will bind mount
+		// from <session_dir>/final/usr/local/cuda/compat into the main container lib dir.
+		// This *requires* that the container rootfs is a private mount, as it is a bind source.
+		// By default, the rootfs will be mounted shared due to requirements of the FUSE mount
+		// handling, so make it private here just before calling nvidia-container-cli.
+		if err := c.rpcOps.Mount("", c.session.FinalPath(), "", syscall.MS_PRIVATE, ""); err != nil {
+			return err
+		}
+
+		sylog.Debugf("nvidia-container-cli")
+		runAsRoot := !c.userNS || c.engine.EngineConfig.GetFakeroot()
+		if err := c.rpcOps.NvCCLI(engine.EngineConfig.GetNvCCLIPath(), engine.EngineConfig.GetNvCCLIFlags(), c.session.FinalPath(), runAsRoot); err != nil {
+			return err
+		}
+	}
+
 	// chroot from RPC server current working directory since
 	// it's already in final directory after chdirFinal call
 	sylog.Debugf("Chroot into %s\n", c.session.FinalPath())
@@ -1398,7 +1415,7 @@ func (c *container) addDevMount(system *mount.System) error {
 		if err := c.addSessionDev("/dev/urandom", system); err != nil {
 			return err
 		}
-		if c.engine.EngineConfig.GetNv() {
+		if c.engine.EngineConfig.GetNvLegacy() {
 			devs, err := gpu.NvidiaDevices(true)
 			if err != nil {
 				return fmt.Errorf("failed to get nvidia devices: %v", err)

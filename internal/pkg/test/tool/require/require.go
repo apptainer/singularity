@@ -159,6 +159,14 @@ func Nvidia(t *testing.T) {
 	}
 }
 
+// NvCCLI checks that nvidia-container-cli is available
+func NvCCLI(t *testing.T) {
+	_, err := exec.LookPath("nvidia-container-cli")
+	if err != nil {
+		t.Skipf("nvidia-container-cli not found on PATH: %v", err)
+	}
+}
+
 // Rocm checks that a Rocm stack is available
 func Rocm(t *testing.T) {
 	rocminfo, err := exec.LookPath("rocminfo")

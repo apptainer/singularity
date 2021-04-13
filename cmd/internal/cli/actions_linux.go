@@ -313,66 +313,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
-	var libs, bins, ipcs []string
-	var gpuConfFile, gpuPlatform string
-
-	if !NoNvidia && (Nvidia || engineConfig.File.AlwaysUseNv) {
-		gpuPlatform = "nv"
-		gpuConfFile = filepath.Join(buildcfg.SINGULARITY_CONFDIR, "nvliblist.conf")
-
-		if engineConfig.File.AlwaysUseNv {
-			Nvidia = true
-			sylog.Verbosef("'always use nv = yes' found in singularity.conf")
-			sylog.Verbosef("binding nvidia files into container")
-		}
-
-		// bind persistenced socket if found
-		ipcs = gpu.NvidiaIpcsPath()
-		libs, bins, err = gpu.NvidiaPaths(gpuConfFile)
-
-	} else if !NoRocm && (Rocm || engineConfig.File.AlwaysUseRocm) { // Mount rocm GPU
-		gpuPlatform = "rocm"
-		gpuConfFile = filepath.Join(buildcfg.SINGULARITY_CONFDIR, "rocmliblist.conf")
-
-		if engineConfig.File.AlwaysUseRocm {
-			Rocm = true
-			sylog.Verbosef("'always use rocm = yes' found in singularity.conf")
-			sylog.Verbosef("binding rocm files into container")
-		}
-
-		libs, bins, err = gpu.RocmPaths(gpuConfFile)
-	}
-
-	if Nvidia || Rocm {
-		if err != nil {
-			sylog.Warningf("Unable to capture %s bind points: %v", gpuPlatform, err)
-		} else {
-			files := make([]string, len(bins)+len(ipcs))
-
-			if len(files) == 0 {
-				sylog.Infof("Could not find any %s files on this host!", gpuPlatform)
-			} else {
-				if IsWritable {
-					sylog.Warningf("%s files may not be bound with --writable", gpuPlatform)
-				}
-				for i, binary := range bins {
-					usrBinBinary := filepath.Join("/usr/bin", filepath.Base(binary))
-					files[i] = strings.Join([]string{binary, usrBinBinary}, ":")
-				}
-				for i, ipc := range ipcs {
-					files[i+len(bins)] = ipc
-				}
-				engineConfig.SetFilesPath(files)
-			}
-			if len(libs) == 0 {
-				sylog.Warningf("Could not find any %s libraries on this host!", gpuPlatform)
-				sylog.Warningf("You may need to manually edit %s", gpuConfFile)
-			} else {
-				engineConfig.SetLibrariesPath(libs)
-			}
-		}
-	}
-
 	// early check for key material before we start engine so we can fail fast if missing
 	// we do not need this check when joining a running instance, just for starting a container
 	if !engineConfig.GetInstanceJoin() {
@@ -432,8 +372,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetWritableImage(IsWritable)
 	engineConfig.SetNoHome(NoHome)
 	setNoMountFlags(engineConfig)
-	engineConfig.SetNv(Nvidia)
-	engineConfig.SetRocm(Rocm)
+
+	if err := SetGPUConfig(engineConfig); err != nil {
+		// We must fatal on error, as we are checking for correct ownership of nvidia-container-cli,
+		// which is important to maintain security.
+		sylog.Fatalf("while setting GPU configuration: %s", err)
+	}
+
 	engineConfig.SetAddCaps(AddCaps)
 	engineConfig.SetDropCaps(DropCaps)
 	engineConfig.SetConfigurationFile(configurationFile)
@@ -803,5 +748,131 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			starter.LoadOverlayModule(loadOverlay),
 		)
 		sylog.Fatalf("%s", err)
+	}
+}
+
+// SetGPUConfig sets up EngineConfig entries for NV / ROCm usage, if requested.
+func SetGPUConfig(engineConfig *singularityConfig.EngineConfig) error {
+	if engineConfig.File.AlwaysUseNv && !NoNvidia {
+		Nvidia = true
+		sylog.Verbosef("'always use nv = yes' found in singularity.conf")
+	}
+	if engineConfig.File.AlwaysUseRocm && !NoRocm {
+		Rocm = true
+		sylog.Verbosef("'always use rocm = yes' found in singularity.conf")
+	}
+
+	if Nvidia && Rocm {
+		sylog.Warningf("--nv and --rocm cannot be used together. Only --nv will be applied.")
+	}
+
+	if Nvidia {
+		// If nvccli was not enabled by flag or config, drop down to legacy binds immediately
+		if !engineConfig.File.UseNvCCLI && !NvCCLI {
+			return setNVLegacyConfig(engineConfig)
+		}
+
+		// TODO: In privileged fakeroot mode we don't have the correct namespace context to run nvidia-container-cli
+		// from  starter, so fall back to legacy NV handling until that workflow is refactored heavily.
+		fakeRootPriv := IsFakeroot && engineConfig.File.AllowSetuid && (buildcfg.SINGULARITY_SUID_INSTALL == 1)
+		if !fakeRootPriv {
+			nvCCLIPath, err := gpu.GetNvCCLIPath()
+			if err == nil {
+				return setNvCCLIConfig(engineConfig, nvCCLIPath)
+			}
+			sylog.Warningf("While looking for nividia-container-cli: %v", err)
+		}
+		sylog.Infof("nvidia-container-cli not available / not supported - using legacy GPU configuration")
+		return setNVLegacyConfig(engineConfig)
+	}
+
+	if Rocm {
+		return setRocmConfig(engineConfig)
+	}
+	return nil
+}
+
+// setNvCCLIConfig sets up EngineConfig entries for NVIDIA GPU configuration via nvidia-container-cli
+func setNvCCLIConfig(engineConfig *singularityConfig.EngineConfig, nvcCLIPath string) (err error) {
+	sylog.Debugf("Using nvidia-container-cli for GPU setup")
+	engineConfig.SetNvCCLI(true)
+	engineConfig.SetNvCCLIPath(nvcCLIPath)
+
+	// When we use --contain we don't mount the NV devices by default in the nvidia-container-cli flow,
+	// they must be mounted via specifying with`NVIDIA_VISIBLE_DEVICES`. This differs from the legacy
+	// flow which mounts all GPU devices, always.
+	if (IsContained || IsContainAll) && os.Getenv("NVIDIA_VISIBLE_DEVICES") == "" {
+		sylog.Warningf("When using nvidia-container-cli with --contain NVIDIA_VISIBLE_DEVICES must be set or no GPUs will be available in container.")
+	}
+
+	nvCCLIFlags, err := gpu.NVCLIEnvToFlags()
+	if err != nil {
+		return err
+	}
+	engineConfig.SetNvCCLIFlags(nvCCLIFlags)
+	if UserNamespace && !IsWritable {
+		return fmt.Errorf("nvidia-container-cli requires --writable with user namespace/fakeroot")
+	}
+	if !IsWritable && !IsWritableTmpfs {
+		sylog.Infof("Setting --writable-tmpfs (required by nvidia-container-cli)")
+		IsWritableTmpfs = true
+	}
+
+	return nil
+}
+
+// setNvLegacyConfig sets up EngineConfig entries for NVIDIA GPU configuration via direct binds of configured bins/libs.
+func setNVLegacyConfig(engineConfig *singularityConfig.EngineConfig) error {
+	sylog.Debugf("Using legacy binds for nv GPU setup")
+	engineConfig.SetNvLegacy(true)
+	gpuConfFile := filepath.Join(buildcfg.SINGULARITY_CONFDIR, "nvliblist.conf")
+	// bind persistenced socket if found
+	ipcs, err := gpu.NvidiaIpcsPath()
+	if err != nil {
+		sylog.Warningf("While finding nv ipcs: %v", err)
+	}
+	libs, bins, err := gpu.NvidiaPaths(gpuConfFile)
+	if err != nil {
+		sylog.Warningf("While finding nv bind points: %v", err)
+	}
+	setGPUBinds(engineConfig, libs, bins, ipcs, "nv")
+	return nil
+}
+
+// setRocmConfig sets up EngineConfig entries for ROCm GPU configuration via direct binds of configured bins/libs.
+func setRocmConfig(engineConfig *singularityConfig.EngineConfig) error {
+	sylog.Debugf("Using rocm GPU setup")
+	engineConfig.SetRocm(true)
+	gpuConfFile := filepath.Join(buildcfg.SINGULARITY_CONFDIR, "rocmliblist.conf")
+	libs, bins, err := gpu.RocmPaths(gpuConfFile)
+	if err != nil {
+		sylog.Warningf("While finding ROCm bind points: %v", err)
+	}
+	setGPUBinds(engineConfig, libs, bins, []string{}, "nv")
+	return nil
+}
+
+// setGPUBinds sets EngineConfig entries to bind the provided list of libs, bins, ipc files.
+func setGPUBinds(engineConfig *singularityConfig.EngineConfig, libs, bins, ipcs []string, gpuPlatform string) {
+	files := make([]string, len(bins)+len(ipcs))
+	if len(files) == 0 {
+		sylog.Warningf("Could not find any %s files on this host!", gpuPlatform)
+	} else {
+		if IsWritable {
+			sylog.Warningf("%s files may not be bound with --writable", gpuPlatform)
+		}
+		for i, binary := range bins {
+			usrBinBinary := filepath.Join("/usr/bin", filepath.Base(binary))
+			files[i] = strings.Join([]string{binary, usrBinBinary}, ":")
+		}
+		for i, ipc := range ipcs {
+			files[i+len(bins)] = ipc
+		}
+		engineConfig.SetFilesPath(files)
+	}
+	if len(libs) == 0 {
+		sylog.Warningf("Could not find any %s libraries on this host!", gpuPlatform)
+	} else {
+		engineConfig.SetLibrariesPath(libs)
 	}
 }

@@ -45,6 +45,7 @@ var (
 	IsWritable      bool
 	IsWritableTmpfs bool
 	Nvidia          bool
+	NvCCLI          bool
 	Rocm            bool
 	NoHome          bool
 	NoInit          bool
@@ -370,8 +371,18 @@ var actionNvidiaFlag = cmdline.Flag{
 	Value:        &Nvidia,
 	DefaultValue: false,
 	Name:         "nv",
-	Usage:        "enable experimental Nvidia support",
+	Usage:        "enable Nvidia support",
 	EnvKeys:      []string{"NV"},
+}
+
+// --nvccli
+var actionNvCCLIFlag = cmdline.Flag{
+	ID:           "actionNvCCLIFlag",
+	Value:        &NvCCLI,
+	DefaultValue: false,
+	Name:         "nvccli",
+	Usage:        "use nvidia-container-cli for GPU setup (experimental)",
+	EnvKeys:      []string{"NVCCLI"},
 }
 
 // --rocm flag to automatically bind
@@ -666,6 +677,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionNoRocmFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoPrivsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNvidiaFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionNvCCLIFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionRocmFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionOverlayFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&commonPromptForPassphraseFlag, actionsInstanceCmd...)

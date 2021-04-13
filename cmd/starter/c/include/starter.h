@@ -154,6 +154,9 @@ struct starter {
     bool masterPropagateMount;
     /* hybrid workflow where master process and container doesn't share user namespace */
     bool hybridWorkflow;
+
+    /* bounding capability set will include caps needed by nvidia-container-cli */
+    bool nvCCLICaps;
 };
 
 /* engine configuration */

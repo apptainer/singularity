@@ -356,9 +356,16 @@ if test "${host}" = "unix" ; then
    fi
 
    printf " checking: ldconfig... "
-   ldconfig_path=`PATH=${SBIN_PATH} command -v ldconfig || true`
+   # Look for ldconfig.real first, as we need the executable, not the
+   # wrapper script on Ubuntu.
+   ldconfig_path=`PATH=${SBIN_PATH} command -v ldconfig.real || true`
    if test -z "${ldconfig_path}" ; then
-      echo "no"
+      ldconfig_path=`PATH=${SBIN_PATH} command -v ldconfig || true`
+      if test -z "${ldconfig_path}" ; then
+         echo "no"
+      else
+         echo "yes (${ldconfig_path})"
+      fi
    else
       echo "yes (${ldconfig_path})"
    fi

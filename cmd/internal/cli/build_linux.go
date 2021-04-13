@@ -103,6 +103,12 @@ func runBuild(cmd *cobra.Command, args []string) {
 		}
 		os.Setenv("SINGULARITY_NV", "1")
 	}
+	if buildArgs.nvccli {
+		if buildArgs.remote {
+			sylog.Fatalf("--nvccli option is not supported for remote build")
+		}
+		os.Setenv("SINGULARITY_NVCCLI", "1")
+	}
 	if buildArgs.rocm {
 		if buildArgs.remote {
 			sylog.Fatalf("--rocm option is not supported for remote build")
