@@ -153,7 +153,9 @@ func Run(t *testing.T) {
 	// the Singularity instance directory we *must* now call it before we
 	// start running tests which could use instance and oci functionality.
 	// See: https://github.com/hpcng/singularity/issues/5744
-	e2e.PrepRegistry(t, testenv)
+	t.Run("PrepRegistry", func(t *testing.T) {
+		e2e.PrepRegistry(t, testenv)
+	})
 	// e2e.KillRegistry is called here to ensure that the registry
 	// is stopped after tests run.
 	defer e2e.KillRegistry(t, testenv)
