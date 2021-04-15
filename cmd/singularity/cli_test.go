@@ -17,7 +17,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 var (
@@ -26,23 +25,6 @@ var (
 )
 
 var runDisabled = flag.Bool("run_disabled", false, "run tests that have been temporarily disabled")
-
-func TestSelfTest(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
-	// We always prefer to run tests with a clean temporary image cache rather
-	// than using the cache of the user running the test.
-	// In order to unit test using the singularity cli that is thread-safe,
-	// we prepare a temporary cache that the process running the command will
-	// use.
-	cmd := exec.Command(cmdPath, "selftest")
-	setupCmdCache(t, cmd, "image-cache")
-	if b, err := cmd.CombinedOutput(); err == nil {
-		t.Log(string(b))
-		t.Fatal("unexpected success running selftest")
-	}
-}
 
 func run(m *testing.M) int {
 
