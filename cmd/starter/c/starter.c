@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2019, Sylabs, Inc. All rights reserved.
+  Copyright (c) 2018-2020, Sylabs, Inc. All rights reserved.
 
   This software is licensed under a 3-clause BSD license.  Please
   consult LICENSE.md file distributed with the sources of this project regarding
@@ -120,7 +120,18 @@ static void priv_escalate(bool keep_fsuid) {
     if ( keep_fsuid ) {
         /* Use setfsuid to address issue about root_squash filesystems option */
         verbosef("Change filesystem uid to %d\n", uid);
-        setfsuid(uid);
+        /*
+         * See BUGS section of recent man 2 setfsuid.
+         * First call will return the previous fsuid, on success or failure.
+         * Return <0 is an error possible on GLIBC <=2.15 only
+         */
+        if ( setfsuid(uid) < 0 ) {
+            fatalf("Failed to set filesystem uid to %d\n", uid);
+        }
+        /*
+         * Have to call again with an effective no-op to check if it really worked.
+         * If first call succeeded, return of second call is the required uid.
+         */
         if ( setfsuid(uid) != uid ) {
             fatalf("Failed to set filesystem uid to %d\n", uid);
         }
