@@ -1215,3 +1215,97 @@ func verifyAppLabels(t *testing.T, imagePath, appName string, labels map[string]
 
 	return nil
 }
+
+// WIP - Below are ported from the removed actions_test.go until build_test.go is removed at a later date
+type opts struct {
+	keepPrivs bool
+	contain   bool
+	noHome    bool
+	userns    bool
+	binds     []string
+	security  []string
+	dropCaps  string
+	home      string
+	workdir   string
+	pwd       string
+	app       string
+	overlay   []string
+}
+
+// imageExec can be used to run/exec/shell a Singularity image
+// it return the exitCode and err of the execution
+func imageExec(t *testing.T, action string, opts opts, imagePath string, command []string) (string, string, int, error) {
+	// action can be run/exec/shell
+	argv := []string{action}
+	for _, bind := range opts.binds {
+		argv = append(argv, "--bind", bind)
+	}
+	for _, sec := range opts.security {
+		argv = append(argv, "--security", sec)
+	}
+	if opts.keepPrivs {
+		argv = append(argv, "--keep-privs")
+	}
+	if opts.dropCaps != "" {
+		argv = append(argv, "--drop-caps", opts.dropCaps)
+	}
+	if opts.contain {
+		argv = append(argv, "--contain")
+	}
+	if opts.noHome {
+		argv = append(argv, "--no-home")
+	}
+	if opts.home != "" {
+		argv = append(argv, "--home", opts.home)
+	}
+	for _, fs := range opts.overlay {
+		argv = append(argv, "--overlay", fs)
+	}
+	if opts.workdir != "" {
+		argv = append(argv, "--workdir", opts.workdir)
+	}
+	if opts.pwd != "" {
+		argv = append(argv, "--pwd", opts.pwd)
+	}
+	if opts.app != "" {
+		argv = append(argv, "--app", opts.app)
+	}
+	if opts.userns {
+		argv = append(argv, "-u")
+	}
+	argv = append(argv, imagePath)
+	argv = append(argv, command...)
+
+	// We always prefer to run tests with a clean temporary image cache rather
+	// than using the cache of the user running the test.
+	// In order to unit test using the singularity cli that is thread-safe,
+	// we prepare a temporary cache that the process running the command will
+	// use.
+	var outbuf, errbuf bytes.Buffer
+	cmd := exec.Command(cmdPath, argv...)
+	setupCmdCache(t, cmd, "image-cache")
+	cmd.Stdout = &outbuf
+	cmd.Stderr = &errbuf
+
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("cmd.Start: %v", err)
+	}
+
+	exitCode := 0
+
+	// XXX(mem): should this code capture the error from cmd.Wait()
+	// and return it?
+
+	// retrieve exit code
+	if err := cmd.Wait(); err != nil {
+		if _, ok := err.(*exec.ExitError); ok {
+			// The program has exited with an exit code != 0
+			exitCode = 1
+		}
+	}
+
+	stdout := outbuf.String()
+	stderr := errbuf.String()
+
+	return stdout, stderr, exitCode, nil
+}
