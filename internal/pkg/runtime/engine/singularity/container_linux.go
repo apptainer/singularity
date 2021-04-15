@@ -2245,6 +2245,13 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 
 	fakeroot := c.engine.EngineConfig.GetFakeroot()
 	net := c.engine.EngineConfig.GetNetwork()
+
+	// If we haven't requested a network namespace, or we have but with no config, we are done here
+	if !c.netNS || net == noneNet {
+		return nil, nil
+	}
+
+	// Otherwise start checking what's permitted for the current user
 	euid := os.Geteuid()
 	allowedNetUnpriv := false
 	if euid != 0 {
@@ -2271,9 +2278,7 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 		allowedNetUnpriv = (allowedNetUser || allowedNetGroup) && allowedNetNetwork
 	}
 
-	if !c.netNS || net == noneNet {
-		return nil, nil
-	} else if (c.userNS || euid != 0) && !fakeroot && !allowedNetUnpriv {
+	if (c.userNS || euid != 0) && !fakeroot && !allowedNetUnpriv {
 		return nil, fmt.Errorf("network requires root or --fakeroot, non-root users can only use --network=%s unless permitted by the administrator", noneNet)
 	}
 
