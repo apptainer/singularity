@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,27 +6,27 @@
 package image
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 
 	imageSpecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
 )
+
+// We need a busybox SIF for these tests. We used to download it each time, but we have one
+// around for some e2e tests already.
+const busyboxSIF = "../../e2e/testdata/busybox.sif"
 
 type ownerGroupTest struct {
 	name       string
@@ -42,13 +42,8 @@ type groupTest struct {
 	shouldPass bool
 }
 
-func downloadImage(t *testing.T) string {
-	// Use singularity located at BUILDDIR, where the singularity
-	// binary should be found after building it.
-	sexec := filepath.Join(buildcfg.BUILDDIR, "singularity")
-	if _, err := exec.LookPath(sexec); err != nil {
-		t.Fatalf("cannot find singularity binary at %s", sexec)
-	}
+// Copy the test image to a temporary location so we don't accidentally clobber the original
+func copyImage(t *testing.T) string {
 	f, err := ioutil.TempFile("", "image-")
 	if err != nil {
 		t.Fatalf("cannot create temporary file: %s\n", err)
@@ -56,19 +51,8 @@ func downloadImage(t *testing.T) string {
 	name := f.Name()
 	f.Close()
 
-	// Create a clean image cache
-	imgCacheDir := testCache.MakeDir(t, "")
-	defer testCache.DeleteDir(t, imgCacheDir)
-	// We use SINGULARITY_CACHEDIR instead of cache.DirEnv to avoid a dependency cycle
-	cacheEnvStr := "SINGULARITY_CACHEDIR=" + imgCacheDir
-
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(sexec, "build", "-F", name, "docker://busybox")
-	cmd.Env = append(os.Environ(), cacheEnvStr)
-	cmd.Stderr = &stderr
-	cmd.Stdout = &stdout
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("cannot create image (cmd: %s build -F %s docker://busybox): %s - stdout: %s - stderr: %s\n", sexec, name, err, stdout.String(), stderr.String())
+	if err := fs.CopyFileAtomic(busyboxSIF, name, 0755); err != nil {
+		t.Fatalf("Could not copy test image: %v", err)
 	}
 	return name
 }
@@ -116,8 +100,7 @@ func TestReader(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	// XXX(mem): This is what makes the test slow
-	filename := downloadImage(t)
+	filename := copyImage(t)
 	defer os.Remove(filename)
 
 	for _, e := range []struct {
@@ -245,7 +228,7 @@ func TestAuthorizedPath(t *testing.T) {
 
 func createImage(t *testing.T) (*Image, string) {
 	// Create a temporary image
-	path := downloadImage(t)
+	path := copyImage(t)
 
 	// Now load the image which will be used next for a bunch of tests
 	img, err := Init(path, true)
