@@ -91,15 +91,6 @@ short-integration-test:
 		./pkg/network
 	@echo "       PASS"
 
-.PHONY: action-test
-action-test:
-	@echo " TEST sudo go test [action]"
-	$(V)cd $(SOURCEDIR) && \
-		scripts/go-test -sudo -v -tags 'integration_test' $(GO_RACE) \
-		-run TestSingularityActions ./cmd/singularity \
-		-args -skip-overlay
-	@echo "       PASS"
-
 .PHONY: test
 test:
 	@echo " TEST sudo go test [all]"
