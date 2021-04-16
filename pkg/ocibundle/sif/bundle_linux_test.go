@@ -8,27 +8,23 @@ package sifbundle
 import (
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/opencontainers/runtime-tools/validate"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
 
-func TestFromSif(t *testing.T) {
-	if testing.Short() {
-		t.SkipNow()
-	}
+// We need a busybox SIF for these tests. We used to download it each time, but we have one
+// around for some e2e tests already.
+const busyboxSIF = "../../../e2e/testdata/busybox.sif"
 
+func TestFromSif(t *testing.T) {
 	test.EnsurePrivilege(t)
 
-	// prepare bundle directory and download a SIF image
 	bundlePath, err := ioutil.TempDir("", "bundle")
 	if err != nil {
 		t.Fatal(err)
@@ -41,23 +37,8 @@ func TestFromSif(t *testing.T) {
 	f.Close()
 	defer os.Remove(sifFile)
 
-	// Use singularity located at BUILDDIR, where the singularity
-	// binary should be found after building it.
-	sing := filepath.Join(buildcfg.BUILDDIR, "singularity")
-	if _, err := exec.LookPath(sing); err != nil {
-		t.Fatalf("cannot find singularity binary at %s", sing)
-	}
-	args := []string{"build", "-F", sifFile, "docker://busybox"}
-
-	// create a clean image cache
-	imgCacheDir := testCache.MakeDir(t, "")
-	defer testCache.DeleteDir(t, imgCacheDir)
-
-	// build SIF image
-	cmd := exec.Command(sing, args...)
-	cmd.Env = append(os.Environ(), cache.DirEnv+"="+imgCacheDir)
-	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
+	if err := fs.CopyFileAtomic(busyboxSIF, sifFile, 0755); err != nil {
+		t.Fatalf("Could not copy test image: %v", err)
 	}
 
 	// test with a wrong image path
@@ -82,7 +63,7 @@ func TestFromSif(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			if tt.writable {
-				require.Filesystem(t, "overlay")
+				requireFilesystem(t, "overlay")
 			}
 
 			// create OCI bundle from SIF
@@ -104,13 +85,17 @@ func TestFromSif(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// execute oci run command
-			args = []string{"oci", "run", "-b", bundlePath, filepath.Base(sifFile)}
-			cmd = exec.Command(sing, args...)
-			if err := cmd.Run(); err != nil {
-				t.Error(err)
+			// Validate the bundle using OCI runtime-tools
+			// Run in non-host-specific mode. Our bundle is for the "linux" platform
+			v, err := validate.NewValidatorFromPath(bundlePath, false, "linux")
+			if err != nil {
+				t.Errorf("Could not create bundle validator: %v", err)
+			}
+			if err := v.CheckAll(); err != nil {
+				t.Errorf("Bundle not valid: %v", err)
 			}
 
+			// Clean up
 			if err := bundle.Delete(); err != nil {
 				t.Error(err)
 			}
@@ -118,4 +103,28 @@ func TestFromSif(t *testing.T) {
 		})
 	}
 
+}
+
+// TODO: This is a duplicate from internal/pkg/test/tool/require
+// in order avoid needing buildcfg for this unit test, such that
+// it can be run directly from the source tree without compilation.
+// This bundle code is in `pkg/` so *should not* depend on a compiled
+// Singularity (https://github.com/hpcng/singularity/issues/2316).
+//
+// Ideally we would refactor i/p/t/t/require so requirements that
+// don't need a compiled Singularity can be used without compiled
+// Singularity.
+//
+// Filesystem checks that the current test could use the
+// corresponding filesystem, if the filesystem is not
+// listed in /proc/filesystems, the current test is skipped
+// with a message.
+func requireFilesystem(t *testing.T, fs string) {
+	has, err := proc.HasFilesystem(fs)
+	if err != nil {
+		t.Fatalf("error while checking filesystem presence: %s", err)
+	}
+	if !has {
+		t.Skipf("%s filesystem seems not supported", fs)
+	}
 }
