@@ -30,40 +30,45 @@ all your interactions with the project members and users.
 3. Follow the existing code style precedent, especially for C. For Golang, you
    will mostly conform to the style and form enforced by the "go fmt" and
    "golint" tools for proper formatting.
-4. Ensure any install or build dependencies are removed before doing a build
-   to test your PR locally.
-5. For any new functionality, please write appropriate go tests that will run
-   as part of the Continuous Integration (Circle CI and Travis) systems.
-6. Make sure that the project's default copyright and header have been included 
+4. For any new functionality, please write appropriate go tests that will run
+   as part of the Continuous Integration (Circle CI) system.
+5. Make sure that the project's default copyright and header have been included 
    in any new source files.
-7. Make sure you have locally tested using `make test` and that all tests succeed
+6. Make sure your code passes linting, by running `make check` before submitting
+   the PR. We use `golangci-lint` as our linter. You may need to address linting
+   errors by:
+    - Running `go fmt ./...` to format all `.go` files.
+    - Leaving a function comment on **every** new exported function and package
+      that your PR has introduced. To learn about how to properly comment Golang
+      code, read [this post on golang.org](https://golang.org/doc/effective_go.html?#commentary)
+7. Make sure you have locally tested using `make -C builddir test` and that all
+   tests succeed
    before submitting the PR.
-8. To conform to the Golang standards and idioms, make sure you have done the 
-   following:
-    - Run `go fmt ./...` to format all `.go` files. We use `go1.11`'s 
-      formatting as our standard
-    - Left a function comment on **every** new exported function and package that
-      your PR has introduced. To learn about how to properly comment Golang code, read [this post on golang.org](https://golang.org/doc/effective_go.html?#commentary)
-    - Run `make check` to perform static analysis on the code
-9. Is the code human understandable? This can be accomplished via a clear code
-   style as well as documentation and/or comments.
+8. If possible, run `make -C builddir testall` locally, after setting the
+   environment variables `E2E_DOCKER_USERNAME` and `E2E_DOCKER_PASSWORD`
+   appropriately for an authorized Docker Hub account. This is required as
+   Singularity's end-to-end tests preform many tests that build from or execute
+   docker images. Our CI is authorized to run these tests if you cannot.
+9. Ask yourself is the code human understandable? This can be accomplished via a
+   clear code style as well as documentation and/or comments.
 10. The pull request will be reviewed by others, and finally merged when all
-   requirements are met.
+    requirements are met.
 11. The `CHANGELOG.md` must be updated for any of the following changes:
     - Renamed commands
     - Deprecated / removed commands
     - Changed defaults / behaviors
     - Backwards incompatible changes
     - New features / functionalities
-12. PRs which introduce a new Golang dependency to the project via `dep` must include a justification for introducing the dependency. Ideally, newly introduced dependencies should also be pinned to a specific version.
+12. PRs which introduce a new Golang dependency to the project via `go get` and
+    additions to `go.mod` should explain why the dependency is required.
 
 ## Documentation
-There are a few places where documentation for the Singularity project lives. The [changelog](CHANGELOG.md) is where PRs should include documentation if necessary. When a new release is tagged, the [user-docs](https://www.sylabs.io/guides/3.0/user-guide/) and [admin-docs](https://www.sylabs.io/guides/3.0/admin-guide/) will be updated using the contents of the `CHANGELOG.md` file as reference.
+There are a few places where documentation for the Singularity project lives. The [changelog](CHANGELOG.md) is where PRs should include documentation if necessary. When a new release is tagged, the [user-docs](https://www.sylabs.io/guides/latest/user-guide/) and [admin-docs](https://www.sylabs.io/guides/latest/admin-guide/) will be updated using the contents of the `CHANGELOG.md` file as reference.
 
 1. The [changelog](CHANGELOG.md) is a place to document **functional** differences between versions of Singularity. PRs which require documentation must update this file. This should be a document which can be used to explain what the new features of each version of Singularity are, and should **not** read like a commit log. Once a release is tagged (*e.g. v3.0.0*), a new top level section will be made titled **Changes Since vX.Y.Z** (*e.g. Changes Since v3.0.0*) where new changes will now be documented, leaving the previous section immutable.
 2. The [README](README.md) is a place to document critical information for new users of Singularity. It should typically not change, but in the case where a change is necessary a PR may update it.
-3. The [user-docs](https://www.github.com/sylabs/singularity-userdocs) should document anything pertinent to the usage of Singularity.
-4. The [admin-docs](https://www.github.com/sylabs/singularity-admindocs) document anything that is pertinent to a system administrator who manages a system with Singularity installed.
+3. The [user-docs](https://www.github.com/hpcng/singularity-userdocs) should document anything pertinent to the usage of Singularity.
+4. The [admin-docs](https://www.github.com/hpcng/singularity-admindocs) document anything that is pertinent to a system administrator who manages a system with Singularity installed.
 5. If necessary, changes to the message displayed when running `singularity help *` can be made by editing `docs/content.go`.
 
 

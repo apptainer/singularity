@@ -62,7 +62,7 @@ short-unit-test:
 integration-test:
 	@echo " TEST sudo go test [integration]"
 	$(V)cd $(SOURCEDIR) && \
-		scripts/go-test -sudo -v -tags=integration_test $(GO_RACE) \
+		scripts/go-test -sudo -v -tags 'integration_test' $(GO_RACE) \
 		./pkg/network
 	@echo "       PASS"
 
@@ -70,7 +70,7 @@ integration-test:
 short-integration-test:
 	@echo " TEST sudo go test [short-integration]"
 	$(V)cd $(SOURCEDIR) && \
-		scripts/go-test -sudo -v -short -tags=integration_test $(GO_RACE) \
+		scripts/go-test -sudo -v -short -tags 'integration_test' $(GO_RACE) \
 		./pkg/network
 	@echo "       PASS"
 
