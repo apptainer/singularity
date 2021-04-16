@@ -6,6 +6,7 @@
 package require
 
 import (
+	"bytes"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -67,5 +68,23 @@ func ArchIn(t *testing.T, archs []string) {
 			}
 		}
 		t.Skipf("test requires architecture %s", strings.Join(archs, "|"))
+	}
+}
+
+// MkfsExt3 checks that mkfs.ext3 is available and
+// support -d option to create writable overlay layout.
+func MkfsExt3(t *testing.T) {
+	mkfs, err := exec.LookPath("mkfs.ext3")
+	if err != nil {
+		t.Skipf("mkfs.ext3 not found in $PATH")
+	}
+
+	buf := new(bytes.Buffer)
+	cmd := exec.Command(mkfs, "--help")
+	cmd.Stderr = buf
+	_ = cmd.Run()
+
+	if !strings.Contains(buf.String(), "[-d ") {
+		t.Skipf("mkfs.ext3 is too old and doesn't support -d")
 	}
 }

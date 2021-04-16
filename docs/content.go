@@ -1039,4 +1039,26 @@ Enterprise Performance Computing (EPC)`
 
   To display the resulting configuration instead of writing it to file:
   $ singularity config global --dry-run --set "bind path" /etc/resolv.conf`
+
+	OverlayUse   string = `overlay`
+	OverlayShort string = `Manage an EXT3 writable overlay image`
+	OverlayLong  string = `
+  The overlay command allows management of EXT3 writable overlay images.`
+	OverlayExample string = `
+  All overlay commands have their own help output:
+
+  $ singularity help overlay create
+  $ singularity overlay create --help`
+
+	OverlayCreateUse   string = `create <options> image`
+	OverlayCreateShort string = `Create EXT3 writable overlay image`
+	OverlayCreateLong  string = `
+  The overlay create command allows to create EXT3 writable overlay image either
+  as a single EXT3 image or by adding it automatically to an existing SIF image.`
+	OverlayCreateExample string = `
+  To create and add a writable overlay to an existing SIF image:
+  $ singularity overlay create --size 1024 /tmp/image.sif
+
+  To create a single EXT3 writable overlay image:
+  $ singularity overlay create --size 1024 /tmp/my_overlay.img`
 )
