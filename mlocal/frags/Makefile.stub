@@ -52,12 +52,27 @@ unit-test:
 .PHONY: short-unit-test
 short-unit-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(BUILDDIR_ABSPATH)/unit-test.xml)
 short-unit-test:
-	@echo " TEST sudo go test [unit]"
+	@echo " TEST sudo go test [short-unit]"
 	$(V)cd $(SOURCEDIR) && \
 		scripts/go-test -sudo -v -short $(GO_RACE) $(EXTRA_FLAGS) \
 		./...
 	@echo "       PASS"
 
+.PHONY: integration-test
+integration-test:
+	@echo " TEST sudo go test [integration]"
+	$(V)cd $(SOURCEDIR) && \
+		scripts/go-test -sudo -v -tags=integration_test $(GO_RACE) \
+		./pkg/network
+	@echo "       PASS"
+
+.PHONY: short-integration-test
+short-integration-test:
+	@echo " TEST sudo go test [short-integration]"
+	$(V)cd $(SOURCEDIR) && \
+		scripts/go-test -sudo -v -short -tags=integration_test $(GO_RACE) \
+		./pkg/network
+	@echo "       PASS"
 
 .PHONY: e2e-test
 e2e-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(BUILDDIR_ABSPATH)/e2e-test.xml)
@@ -75,34 +90,15 @@ e2e-test:
 			-coverage $(BUILDDIR_ABSPATH)/e2e-cmd-coverage \
 			-report $(BUILDDIR_ABSPATH)/e2e-cmd-report.txt
 
-.PHONY: integration-test
-integration-test:
-	@echo " TEST sudo go test [integration]"
-	$(V)cd $(SOURCEDIR) && \
-		scripts/go-test -sudo -v -tags 'integration_test' $(GO_RACE) \
-		./cmd/singularity ./pkg/network
-	@echo "       PASS"
-
-.PHONY: short-integration-test
-short-integration-test:
-	@echo " TEST sudo go test [short-integration]"
-	$(V)cd $(SOURCEDIR) && \
-		scripts/go-test -sudo -v -tags 'integration_test' $(GO_RACE) \
-		./pkg/network
-	@echo "       PASS"
-
+# test runs only those tests that do not need any docker auth setup etc.
 .PHONY: test
-test:
-	@echo " TEST sudo go test [all]"
-	$(V)M=0; eval 'while [ $$M -le 20 ]; do sleep 60; M=`expr $$M + 1`; echo "Still testing ($$M) ..."; done &' ; \
-    	trap "kill $$! || true" 0; \
-		cd $(SOURCEDIR) && \
-		scripts/go-test -sudo -v -tags 'integration_test' $(GO_RACE) \
-		./...
-	@echo "       PASS"
+test: short-unit-test short-integration-test
 
+# testall will require docker auth to complete as the e2e-tests will hit dockerhub limits
+# We use short-unit-test here, until the non-short unit tests respect dockerhub auth, or
+# the requirement is eliminated by de-dpulication vs e2e tests.
 .PHONY: testall
-testall: check test
+testall: check short-unit-test integration-test e2e-test
 
 .PHONY: rpm
 rpm: dist

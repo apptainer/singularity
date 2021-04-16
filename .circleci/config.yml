@@ -194,7 +194,7 @@ jobs:
           command: |-
             make -C ./builddir short-unit-test
 
-  short_integration_tests:
+  integration_tests:
     <<: *vm_defaults
     steps:
       - checkout
@@ -211,10 +211,10 @@ jobs:
       - run:
           <<: *install_singularity
       - run:
-          name: Run short integration tests
+          name: Run integration tests
           no_output_timeout: 20m
           command: |-
-            make -C ./builddir short-integration-test
+            make -C ./builddir integration-test
 
   e2e_tests:
     <<: *vm_defaults
@@ -252,7 +252,7 @@ workflows:
       - go114-macos
       - check_go_mod
       - short_unit_tests
-      - short_integration_tests
+      - integration_tests
       - e2e_tests
   rpmbuild:
     jobs:
