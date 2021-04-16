@@ -34,5 +34,5 @@ su testuser -c '
   PATH=$GOPATH/bin:$PATH
 
   cd $GOPATH/src/github.com/sylabs/singularity
-  make -C builddir action-test
+  singularity exec library://alpine:3.11.5 /bin/true
 '
