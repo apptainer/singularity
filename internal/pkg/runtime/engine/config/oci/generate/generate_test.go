@@ -203,7 +203,7 @@ func TestSave(t *testing.T) {
 
 		d, err := ioutil.ReadAll(r)
 		if err != nil {
-			t.Fatalf("while reading pipe: %s", err)
+			t.Fatalf("while reading pipe: %s", err) // nolint
 		}
 		content := string(d)
 		if content != ociJSON {
