@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+	"time"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
@@ -299,6 +300,19 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 
 			return "", fmt.Errorf("cryptsetup open failed: %s: %v", string(out), err)
 		}
+
+		for attempt := 0; true; attempt++ {
+			_, err := os.Stat("/dev/mapper/" + nextCrypt)
+			if err == nil {
+				break
+			}
+			delay := 100 * (1 << attempt) * time.Millisecond
+			if delay > 12800*time.Millisecond {
+				return "", fmt.Errorf("device /dev/mapper/%s did not show up within %d seconds", nextCrypt, (delay-1)/time.Second)
+			}
+			time.Sleep(delay)
+		}
+
 		sylog.Debugf("Successfully opened encrypted device %s", path)
 		return nextCrypt, nil
 	}
