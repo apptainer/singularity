@@ -40,7 +40,11 @@ const (
 	SifDefaultTag = "latest"
 
 	// SifConfigMediaType is the config descriptor mediaType
-	SifConfigMediaTypeV1 = "application/vnd.sylabs.sif.config.v1+json"
+	// Since we only ever send a null config this should not have the
+	// format extension appended:
+	//   https://github.com/deislabs/oras/#pushing-artifacts-with-single-files
+	//   If a null config is passed, the config extension must be removed.
+	SifConfigMediaTypeV1 = "application/vnd.sylabs.sif.config.v1"
 
 	// SifLayerMediaTypeV1 is the mediaType for the "layer" which contains the actual SIF file
 	SifLayerMediaTypeV1 = "application/vnd.sylabs.sif.layer.v1.sif"
@@ -193,7 +197,18 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 
 	descriptors := []ocispec.Descriptor{desc}
 
-	if _, err := oras.Push(orasctx.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err != nil {
+	// First push with our null config of the SIF config type. This is the
+	// approach given in most oras CLI and code examples and works with the
+	// majority of registries.
+	if _, err := oras.Push(orasctx.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err == nil {
+		return nil
+	}
+
+	// If we fail, try to push without a config at all. This will work with e.g.
+	// Harbor 2.2. Unfortunately the error we get when we need to retry this way
+	// isn't useful to be more specific on when this is needed.
+	sylog.Debugf("ORAS push not accepted, retrying without config for registry compatibility")
+	if _, err := oras.Push(orasctx.Background(), resolver, spec.String(), store, descriptors); err != nil {
 		return fmt.Errorf("unable to push: %s", err)
 	}
 
