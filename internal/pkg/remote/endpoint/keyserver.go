@@ -213,7 +213,10 @@ var defaultClient = &http.Client{
 	Timeout: 5 * time.Second,
 	Transport: &http.Transport{
 		DisableKeepAlives: true,
-		TLSClientConfig:   &tls.Config{},
+		// Note - when overriding transport we need to explicitly setup the
+		// proxy parsing from env vars that http.DefaultTransport does.
+		Proxy:           http.ProxyFromEnvironment,
+		TLSClientConfig: &tls.Config{},
 	},
 }
 
