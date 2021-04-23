@@ -306,6 +306,9 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 			if err == nil {
 				break
 			}
+			if !errors.Is(err, os.ErrNotExist) {
+				return "", err
+			}
 			delay := 100 * (1 << attempt) * time.Millisecond
 			if delay > 12800*time.Millisecond {
 				return "", fmt.Errorf("device /dev/mapper/%s did not show up within %d seconds", nextCrypt, (delay-1)/time.Second)
