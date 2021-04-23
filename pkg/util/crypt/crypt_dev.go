@@ -309,11 +309,12 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 			if !errors.Is(err, os.ErrNotExist) {
 				return "", err
 			}
-			delay := 100 * (1 << attempt) * time.Millisecond
-			if delay > 12800*time.Millisecond {
-				return "", fmt.Errorf("device /dev/mapper/%s did not show up within %d seconds", nextCrypt, (delay-1)/time.Second)
+			delayNext := 100 * (1 << attempt) * time.Millisecond // power of two exponential back off means
+			delaySoFar := delayNext - 1                          // total delay so far is next delay - 1
+			if delaySoFar >= 25500*time.Millisecond {
+				return "", fmt.Errorf("device /dev/mapper/%s did not show up within %d seconds", nextCrypt, delaySoFar/time.Second)
 			}
-			time.Sleep(delay)
+			time.Sleep(delayNext)
 		}
 
 		sylog.Debugf("Successfully opened encrypted device %s", path)
