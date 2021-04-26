@@ -22,7 +22,7 @@ const (
 	defaultRegistry string = `https://singularity-hub.org`
 	shubAPIRoute    string = "/api/container/"
 	// URINotSupported if we are using a non default registry error out for now
-	URINotSupported string = "Only the default Singularity Hub registry is suported for now"
+	URINotSupported string = "Only the default Singularity Hub registry is supported for now"
 )
 
 // URI stores the various components of a singularityhub URI
