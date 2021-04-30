@@ -1,5 +1,5 @@
 _With the release of `v3.0.0`, we're introducing a new changelog format in an attempt to consolidate the information presented in the changelog. The new changelog is reduced in scope to only documenting functionality changes from version to version. This ensures that the changelog is as useful as it can be. Changes which should be documented include:_
-  
+
   - _Renamed commands_
   - _Deprecated / removed commands_
   - _Changed defaults / behaviors_
@@ -8,6 +8,48 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 
 _The old changelog can be found in the `release-2.6` branch_
+
+
+# Changes Since Last Release
+
+## New features / functionalities
+
+  - A new `overlay` command allows creation and addition of writable
+    overlays.
+  - Administrators can allow named users/groups to use specific CNI
+    network configurations. Managed by directives in
+    `singularity.conf`.
+  - The `build` command now honors `--nv`, `--rocm`, and `--bind`
+    flags, permitting builds that require GPU access or files bound in
+    from the host.
+  - A library service hostname can be specified as the first component of a
+    `library://` URL.
+  - Singularity is now relocatable for unprivileged installations
+    only.
+
+## Bug Fixes
+
+  - Respect http proxy server environment variables in key operations.
+  - When pushing SIF images to `oras://` endpoints, work around Harbor
+    & GitLab failure to accept the `SifConfigMediaType`.
+  - Avoid a `setfsuid` compilation warning on some gcc versions.
+  - Fix a crash when silent/quiet log levels used on pulls from
+    `shub://` and `http(s)://` URIs.
+  - Wait for dm device to appear when mounting an encrypted container
+    rootfs.
+
+## Testing / Development
+
+Testing changes are not generally itemized. However, developers and
+contributors should note that this release has modified the behavior
+of `make test` for ease of use:
+
+  - `make test` runs limited unit and integration tests that will not
+    require docker hub credentials.
+  - `make testall` runs the full unit/integration/e2e test suite that
+    requires docker credentials to be set with `E2E_DOCKER_USERNAME`
+    and `E2E_DOCKER_PASSWORD` environment variables.
+
 
 # v3.7.3 - [2021-04-06]
 
@@ -141,7 +183,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Don't initialize the cache for actions where it is not required.
   - Increase embedded shell interpreter timeout, to allow slow-running
     environment scripts to complete.
-  - Correct buffer handling for key import to allow import from STDIN. 
+  - Correct buffer handling for key import to allow import from STDIN.
   - Reset environment to avoid `LD_LIBRARY_PATH` issues when resolving
     dependencies for the `unsquashfs` sandbox.
   - Fall back to `/sbin/ldconfig` if `ldconfig` on `PATH` fails while
@@ -248,7 +290,7 @@ Singularity 3.6.3 addresses the following security issues.
   - Correct `--no-home` message for 3.6 CWD behavior.
   - Don't fail if parent of cache dir not accessible.
   - Fix tests for Go 1.15 Ctty handling.
-  - Fix additional issues with test images on ARM64. 
+  - Fix additional issues with test images on ARM64.
   - Fix FUSE e2e tests to use container ssh_config.
 
 
@@ -350,7 +392,7 @@ the signature implementation.
   - `--fusemount` with the `container:` default directive will foreground the FUSE
      process. Use `container-daemon:` for previous behavior.
   - Fixed spacing of `singularity instance list` to be dynamically changing based off of
-    input lengths instead of fixed number of spaces to account for long instance names. 
+    input lengths instead of fixed number of spaces to account for long instance names.
 
 ## Deprecated / removed commands
   - Removed `--name` flag for `cache clean`; replaced with `--days`.
@@ -409,7 +451,7 @@ image builds that was blocking use by build systems such as Spack:
   - Fix an issue causing user namespace to always be used when `allow-setuid=no`
     was configured in a setuid installation.
   - Always allow key IDs and fingerprints to be specified with or without a `0x`
-    prefix when using `singularity keys` 
+    prefix when using `singularity keys`
   - Fix an issue preventing joining an instance started with `--boot`.
   - Provide a useful error message if an invalid library:// path is provided.
   - Bring in multi-part upload client functionality that will address large
@@ -486,7 +528,7 @@ This point release addresses the following issues:
     from the CLI.
   - Introduced the `config fakeroot` command to setup `subuid` and `subgid`
     mappings for `--fakeroot` from the Singularity CLI.
-      
+
 ## Changed defaults / behaviours
 
   - Go 1.13 adopted.
@@ -539,7 +581,7 @@ This point release addresses the following issues:
 # v3.4.0 - [2019.08.30]
 
 ## New features / functionalities
-  
+
   - New support for building and running encrypted containers with RSA keys and passphrases
     - `--pem-path` option added to the `build` and action commands for RSA based encrypted containers
     - `--passphrase` option added to `build` and action commands for passphrase based encrypted containers
@@ -555,7 +597,7 @@ This point release addresses the following issues:
   - Added a `--dry-run` flag to `cache clean`
   - Added a `SINGULARITY_SYPGPDIR` environment variable to specify the location of PGP key data
   - Added a `--nonet` option to the action commands to disable networking when running with the `--vm` option
-  - Added a `--long-list` flag to the `key search` command to preserve 
+  - Added a `--long-list` flag to the `key search` command to preserve
   - Added experimental, hidden `--fusemount` flag to pass a command to mount a libfuse3 based file system within the container
 
 ## Changed defaults / behaviors
@@ -577,7 +619,7 @@ This point release addresses the following issues:
   - Remote login and status commands will now use the default remote if a remote name is not supplied
   - Added Singularity hub (`shub`) cache support when using the `pull` command
   - Clean cache in a safer way by only deleting the cache subdirectories
-  - Improvements to the `cache clean` command 
+  - Improvements to the `cache clean` command
 
 ## New features / functionalities
 
@@ -605,13 +647,13 @@ This point release addresses the following issues:
 # v3.2.0 - [2019.05.14]
 
 ## [Security related fix](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2019-11328)
-  - Instance files are now stored in user's home directory for privacy and many checks have been added to ensure that a user can't manipulate files to change `starter-suid` behavior when instances are joined (many thanks to Matthias Gerstner from the SUSE security team for finding and securely reporting this vulnerability) 
+  - Instance files are now stored in user's home directory for privacy and many checks have been added to ensure that a user can't manipulate files to change `starter-suid` behavior when instances are joined (many thanks to Matthias Gerstner from the SUSE security team for finding and securely reporting this vulnerability)
 
 ## New features / functionalities
   - Introduced a new basic framework for creating and managing plugins
   - Added the ability to create containers through multi-stage builds
     - Definitions now require `Bootstrap` be the first parameter of header
-  - Created the concept of a Sylabs Cloud "remote" endpoint and added the ability for users and admins to set them through CLI and conf files 
+  - Created the concept of a Sylabs Cloud "remote" endpoint and added the ability for users and admins to set them through CLI and conf files
   - Added caching for images from Singularity Hub
   - Made it possible to compile Singularity outside of `$GOPATH`
   - Added a json partition to SIF files for OCI configuration when building from an OCI source
@@ -655,13 +697,13 @@ This point release addresses the following issues:
 # v3.1.1 - [2019.04.02]
 
 ## New Commands
-  - New hidden `buildcfg` command to display compile-time parameters 
+  - New hidden `buildcfg` command to display compile-time parameters
   - Added support for `LDFLAGS`, `CFLAGS`, `CGO_` variables in build system
   - Added `--nocolor` flag to Singularity client to disable color in logging
 
 ## Removed Commands
   - `singularity capability <add/drop> --desc` has been removed
-  - `singularity capability list <--all/--group/--user>` flags have all been removed 
+  - `singularity capability list <--all/--group/--user>` flags have all been removed
 
 ## New features / functionalities
   - The `--builder` flag to the `build` command implicitly sets `--remote`
@@ -698,12 +740,12 @@ This point release addresses the following issues:
   - Added the ability to overwrite a new `singularity.conf` when building from RPM if desired
   - Fixed several regressions and omissions in [SCIF](https://sci-f.github.io/) support
   - Added caching for containers pulled/built from the [Container Library](https://cloud.sylabs.io/library)
-  - Changed `keys` command group to `key` (retained hidden `keys` command for backward compatibility)  
+  - Changed `keys` command group to `key` (retained hidden `keys` command for backward compatibility)
   - Created an `RPMPREFIX` variable to allow RPMs to be installed in custom locations
   - Greatly expanded CI unit and end-to-end testing
 
 # v3.0.3 - [2019.01.21]
-  
+
   - Bind paths in `singularity.conf` are properly parsed and applied at runtime
   - Singularity runtime will properly fail if `singularity.conf` file is not owned by the root user
   - Several improvements to RPM packaging including using golang from epel, improved support for Fedora, and avoiding overwriting conf file on new RPM install
@@ -742,7 +784,7 @@ This point release addresses the following issues:
   - Handling of `docker` & `oci` URIs/images now utilizes [containers/image](https://github.com/containers/image) to parse and convert those image types in a supported way
   - Replaced `singularity instance.*` command group with `singularity instance *`
   - The command `singularity help` now only provides help regarding the usage of the `singularity` command. To display an image's `help` message, use `singularity run-help <image path>` instead
- 
+
 ## Removed Deprecated Commands
   - Removed deprecated `singularity image.*` command group
   - Removed deprecated `singularity create` command
@@ -780,7 +822,7 @@ This point release addresses the following issues:
     - All image formats are mounted as read only by default
     - `--writable` only works on images which can be mounted in read/write [applicable to: `sandbox` and legacy `ext3` images]
     - `--writable-tmpfs` runs the container with a writable `tmpfs`-based overlay [applicable to: all image formats]
-    - `--overlay <string>` now specifies a list of `ext3`/`sandbox` images which are set as the containers overlay [applicable to: all image formats] 
+    - `--overlay <string>` now specifies a list of `ext3`/`sandbox` images which are set as the containers overlay [applicable to: all image formats]
 
 ### Build Command:
   - All images are now built as [Singularity Image Format (SIF)](https://www.sylabs.io/2018/03/sif-containing-your-containers/) images by default
