@@ -1,12 +1,8 @@
-# Project Lead:
-
-    - Gregory M. Kurtzer <gmk@resf.org>, <gmkurtzer@gmail.com>, <gmk@ctrliq.com>
-
 # Maintainers:
 
-    - Cedric Clerget <cedric@ctrliq.com>, <cedric.clerget@univ-fcomte.fr>
-    - David Trudgian <david.trudgian@utsouthwestern.edu>, <david.trudgian@sylabs.io>, <dave@trudgian.net>
-    - Ian Kaneshiro <ian@ctrliq.com>, <iankane@umich.edu>
+    - Adam Hughes <adam@sylabs.io>, <stickmanica@gmail.com>
+    - David Trudgian <david.trudgian@sylabs.io>, <dave@trudgian.net>
+    - Mike Frisch <michael.frisch@sylabs.io>
 
 # Contributors:
 
@@ -20,6 +16,7 @@
     - Bernard Li <bernardli@lbl.gov>
     - Brian Bockelman <bbockelm@cse.unl.edu>
     - Carl Madison <carl@sylabs.io>
+    - Cedric Clerget <cedric@ctrliq.com>, <cedric.clerget@univ-fcomte.fr>
     - Chris Burr <christopher.burr@cern.ch>
     - Chris Hollowell <hollowec@bnl.gov>
     - Christian Neyers <foss@neyers.org>
@@ -27,6 +24,7 @@
     - Dave Dykstra <dwd@fnal.gov>
     - Dave Godlove <d@sylabs.io>, <davidgodlove@gmail.com>
     - Dave Love <d.love@liverpool.ac.uk>
+    - David Trudgian <david.trudgian@sylabs.io>, <dave@trudgian.net>
     - Diana Langenbach <dcl@dcl.sh>
     - Divya Cote <divya.cote@gmail.com>
     - Eduardo Arango <eduardo@sylabs.io>, <arangogutierrez@gmail.com>
@@ -37,8 +35,10 @@
     - George Hartzell <hartzell@alerce.com>
     - Gert Hulselmans <gert.hulselmans@kuleuven.vib.be>
     - Götz Waschk <goetz.waschk@desy.de>
+    - Gregory M. Kurtzer <gmk@resf.org>, <gmkurtzer@gmail.com>, <gmk@ctrliq.com>
     - Hakon Enger <hakonenger@github.com>
     - Hugo Meiland <hugo.meiland@microsoft.com>
+    - Ian Kaneshiro <ian@ctrliq.com>, <iankane@umich.edu>
     - Jack Morrison <morrisonjc@ornl.gov>, <jack@rescale.com>
     - Jacob Chappell <chappellind@gmail.com>, <jacob.chappell@uky.edu>
     - Jarrod Johnson <jjohnson2@lenovo.com>
