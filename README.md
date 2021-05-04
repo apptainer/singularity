@@ -1,6 +1,6 @@
-# Singularity
+# SingularityCE
 
-[![CircleCI](https://circleci.com/gh/hpcng/singularity/tree/master.svg?style=svg)](https://circleci.com/gh/hpcng/singularity/tree/master)
+[![CircleCI](https://circleci.com/gh/sylabs/singularity/tree/master.svg?style=svg)](https://circleci.com/gh/sylabs/singularity/tree/master)
 
 - [Guidelines for Contributing](CONTRIBUTING.md)
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
@@ -8,22 +8,21 @@
 - [Documentation](https://www.sylabs.io/docs/)
 - [Citation](#citing-singularity)
 
-Singularity is an open source container platform designed to be simple, fast,
-and secure. Singularity is optimized for compute focused enterprise and HPC
-workloads, allowing untrusted users to run untrusted containers in a trusted
-way.
+SingularityCE is the Community Edition of Singularity, an open source container
+platform designed to be simple, fast, and secure. Singularity is optimized
+for compute focused enterprise and HPC workloads, allowing untrusted users
+to run untrusted containers in a trusted way.
 
 Check out [talks about Singularity](https://www.sylabs.io/videos) and some [use
 cases of Singularity](https://sylabs.io/case-studies) on our website.
 
+## Getting Started with SingularityCE
 
-## Getting Started with Singularity
-
-To install Singularity from source, see the [installation
+To install SingularityCE from source, see the [installation
 instructions](INSTALL.md). For other installation options, see [our
 guide](https://www.sylabs.io/guides/latest/admin-guide/).
 
-System administrators can learn how to configure Singularity, and get an
+System administrators can learn how to configure SingularityCE, and get an
 overview of its architecture and security features in the [administrator
 guide](https://www.sylabs.io/guides/latest/admin-guide/).
 
@@ -31,18 +30,18 @@ For users, see the [user
 guide](https://www.sylabs.io/guides/latest/user-guide/) for details on how to use
 and build Singularity containers.
 
-## Contributing to Singularity
+## Contributing to SingularityCE
 
 Community contributions are always greatly appreciated. To start developing
-Singularity, check out the [guidelines for contributing](CONTRIBUTING.md).
+SingularityCE, check out the [guidelines for contributing](CONTRIBUTING.md).
 
 We also welcome contributions to our [user
-guide](https://github.com/hpcng/singularity-userdocs) and [admin
-guide](https://github.com/hpcng/singularity-admindocs).
+guide](https://github.com/sylabs/singularity-userdocs) and [admin
+guide](https://github.com/sylabs/singularity-admindocs).
 
 ## Support
 
-To get help with Singularity, check out the [Community
+To get help with SingularityCE, check out the [Community
 Portal](https://www.sylabs.io/singularity/community/).
 
 For additional support, [contact us](https://www.sylabs.io/contact/) to receive

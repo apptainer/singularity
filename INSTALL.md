@@ -1,6 +1,6 @@
-# Installing Singularity
+# Installing SingularityCE
 
-Since you are reading this from the Singularity source code, it will be assumed
+Since you are reading this from the SingularityCE source code, it will be assumed
 that you are building/compiling from source.
 
 Singularity packages are available for various Linux distributions, but may not
@@ -87,15 +87,15 @@ $ mkdir -p ${GOPATH}/src/github.com/sylabs && \
   cd singularity
 ```
 
-To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
+To build a stable version of SingularityCE, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
 $ git checkout v3.7.1
 ```
 
-## Compiling Singularity
+## Compiling SingularityCE
 
-You can build Singularity using the following commands:
+You can build SingularityCE using the following commands:
 
 ```
 $ cd ${GOPATH}/src/github.com/sylabs/singularity && \
@@ -105,7 +105,7 @@ $ cd ${GOPATH}/src/github.com/sylabs/singularity && \
   sudo make install
 ```
 
-And that's it! Now you can check your Singularity version by running:
+And that's it! Now you can check your SingularityCE version by running:
 
 ```
 $ singularity version
@@ -160,4 +160,4 @@ $ make -C builddir rpm RPMPREFIX=/usr/local
 ```
 
 For more information on installing/updating/uninstalling the RPM, check out our 
-[admin docs](https://www.sylabs.io/guides/3.0/admin-guide/admin_quickstart.html).
+[admin docs](https://www.sylabs.io/guides/3.7/admin-guide/admin_quickstart.html).
