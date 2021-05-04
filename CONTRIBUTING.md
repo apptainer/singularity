@@ -31,7 +31,7 @@ all your interactions with the project members and users.
    "golint" tools for proper formatting.
 4. For any new functionality, please write appropriate go tests that will run
    as part of the Continuous Integration (Circle CI) system.
-5. Make sure that the project's default copyright and header have been included 
+5. Make sure that the project's default copyright and header have been included
    in any new source files.
 6. Make sure your code passes linting, by running `make check` before submitting
    the PR. We use `golangci-lint` as our linter. You may need to address linting
@@ -126,16 +126,16 @@ further defined and clarified by project maintainers.
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project leader (gmkurtzer@gmail.com). All
-complaints will be reviewed and investigated and will result in a response
-that is deemed necessary and appropriate to the circumstances. The project
-team is obligated to maintain confidentiality with regard to the reporter of
-an incident. Further details of specific enforcement policies may be posted
-separately.
+Instances of abusive, harassing, or otherwise unacceptable behavior
+may be reported by contacting Jason Tuschen (tusch@sylabs.io). All
+complaints will be reviewed and investigated and will result in a
+response that is deemed necessary and appropriate to the
+circumstances. The project team is obligated to maintain
+confidentiality with regard to the reporter of an incident. Further
+details of specific enforcement policies may be posted separately.
 
 Project maintainers, contributors and users who do not follow or enforce the
-Code of Conduct in good faith may face temporary or permanent repercussions 
+Code of Conduct in good faith may face temporary or permanent repercussions
 with their involvement in the project as determined by the project's leader(s).
 
 ## Attribution
