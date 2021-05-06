@@ -1,10 +1,10 @@
 #!/bin/sh -
-# Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+# Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be found
 # in the LICENSE file.
 set -e
 
-package_name=singularity
+package_name=singularity-ce
 
 if [ ! -f $package_name.spec ]; then
     echo "Run this from the top of the source tree after mconfig" >&2

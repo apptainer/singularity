@@ -1,5 +1,5 @@
 #!/bin/sh -
-# Copyright (c) 2019, Sylabs Inc. All rights reserved.
+# Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 # Copyright (c) 2015-2018, Yannick Cote <yhcote@gmail.com>. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be found
 # in the LICENSE file.
@@ -47,7 +47,7 @@ cflags_opts="-Wall -Werror -Wfatal-errors -Wno-unknown-warning-option \
 cflags="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
 ldflags=$LDFLAGS
 
-package_name=singularity
+package_name=singularity-ce
 package_version=`scripts/get-version`
 
 if test -z "${package_version}" ; then
@@ -846,7 +846,7 @@ cat $makeit_fragsdir/Makefile.stub | awk \
 #######################################################################
 
 if [ "$host" = "unix" ]; then
-	RPMSPEC=singularity.spec
+	RPMSPEC=singularity-ce.spec
 	echo "=> generating $RPMSPEC ..."
 	rm -f $sourcedir/$RPMSPEC
 

@@ -1,5 +1,5 @@
 # 
-# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
+# Copyright (c) 2017-2021, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -28,7 +28,7 @@
 %undefine _debugsource_packages
 
 Summary: Application and environment virtualization
-Name: singularity
+Name: singularity-ce
 Version: @PACKAGE_RPM_VERSION@
 Release: @PACKAGE_RELEASE@%{?dist}
 # https://spdx.org/licenses/BSD-3-Clause-LBNL.html
@@ -68,9 +68,10 @@ ExcludeArch: ppc64
 
 Provides: %{name}-runtime
 Obsoletes: %{name}-runtime
+Conflicts: singularity
 
 %description
-Singularity provides functionality to make portable
+SingularityCE provides functionality to make portable
 containers that can be used across host environments.
 
 %debug_package
@@ -93,12 +94,14 @@ mkdir %{name}-%{version}
 %build
 cd %{name}-%{version}
 
-mkdir -p gopath/%{singgopath}
-tar -C "gopath/src/github.com/sylabs/" -xf "%SOURCE0"
-
+# Setup an empty GOPATH for the build
+mkdir -p gopath
 export GOPATH=$PWD/gopath
 export PATH=$GOPATH/bin:$PATH
-cd $GOPATH/%{singgopath}
+
+# Perform the build outside of GOPATH as we are using go modules
+tar -xf "%SOURCE0"
+cd %{name}
 
 # Not all of these parameters currently have an effect, but they might be
 #  used someday.  They are the same parameters as in the configure macro.
@@ -123,10 +126,12 @@ make old_config=
 %install
 cd %{name}-%{version}
 
+# Setup an empty GOPATH for the build
 export GOPATH=$PWD/gopath
 export PATH=$GOPATH/bin:$PATH
-cd $GOPATH/%{singgopath}/builddir
 
+# Enter the source builddir for the install
+cd %{name}/builddir
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
 make DESTDIR=$RPM_BUILD_ROOT install man
 

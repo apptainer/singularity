@@ -9,7 +9,7 @@ config_add_header
 config_add_def PACKAGE_NAME \"$package_name\"
 config_add_def PACKAGE_TARNAME \"$package_name\"
 config_add_def PACKAGE_VERSION \"$package_version\"
-config_add_def PACKAGE_STRING \"singularity $package_version\"
+config_add_def PACKAGE_STRING \"singularity-ce $package_version\"
 config_add_def PACKAGE_BUGREPORT \"support@sylabs.io\"
 config_add_def PACKAGE_URL \"\"
 

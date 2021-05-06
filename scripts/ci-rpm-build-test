@@ -26,13 +26,12 @@ su testuser -c '
   set -x
   set -e
   ./mconfig
-  sudo yum-builddep -y singularity.spec
+  sudo yum-builddep -y singularity-ce.spec
   make -C builddir rpm
   sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
-  BLD=`echo $HOME/rpmbuild/BUILD/singularity-*`
+  BLD=`echo $HOME/rpmbuild/BUILD/singularity-ce-*`
   export GOPATH=$BLD/gopath
   PATH=$GOPATH/bin:$PATH
 
-  cd $GOPATH/src/github.com/sylabs/singularity
   singularity exec library://alpine:3.11.5 /bin/true
 '
