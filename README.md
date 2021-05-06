@@ -6,6 +6,7 @@
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
 - [Project License](LICENSE.md)
 - [Documentation](https://www.sylabs.io/docs/)
+- [Support](#support)
 - [Citation](#citing-singularity)
 
 SingularityCE is the Community Edition of Singularity, an open source container
@@ -41,8 +42,13 @@ guide](https://github.com/sylabs/singularity-admindocs).
 
 ## Support
 
-To get help with SingularityCE, check out the [Community
+To get help with SingularityCE, check out the community spaces
+detailed at our [Community
 Portal](https://www.sylabs.io/singularity/community/).
+
+See also our [Support Guidelines](SUPPORT.md) for further
+information about the best place, and how, to raise different kinds of
+issues and questions.
 
 For additional support, [contact us](https://www.sylabs.io/contact/) to receive
 more information.
