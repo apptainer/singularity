@@ -101,7 +101,7 @@ export PATH=$GOPATH/bin:$PATH
 
 # Perform the build outside of GOPATH as we are using go modules
 tar -xf "%SOURCE0"
-cd %{name}
+cd %{name}-@PACKAGE_VERSION@
 
 # Not all of these parameters currently have an effect, but they might be
 #  used someday.  They are the same parameters as in the configure macro.
@@ -131,7 +131,7 @@ export GOPATH=$PWD/gopath
 export PATH=$GOPATH/bin:$PATH
 
 # Enter the source builddir for the install
-cd %{name}/builddir
+cd %{name}-@PACKAGE_VERSION@/builddir
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
 make DESTDIR=$RPM_BUILD_ROOT install man
 

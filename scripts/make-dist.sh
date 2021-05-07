@@ -28,7 +28,7 @@ rmfiles="VERSION"
 tarball="${package_name}-${version}.tar.gz"
 echo " DIST create tarball: $tarball"
 rm -f $tarball
-pathtop="$package_name"
+pathtop="${package_name}-${version}"
 ln -sf .. builddir/$pathtop
 rmfiles="$rmfiles builddir/$pathtop"
 trap "rm -f $rmfiles" 0
