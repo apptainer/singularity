@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -41,12 +41,17 @@ type encryptionOptions struct {
 func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encryptionOptions, arch string) (err error) {
 	definition := b.Recipe.Raw
 
+	id, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
 		Launchstr:  sif.HdrLaunch,
 		Sifversion: sif.HdrVersion,
-		ID:         uuid.NewV4(),
+		ID:         id,
 	}
 
 	// data we need to create a definition file descriptor

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -246,8 +246,12 @@ func copyDeviceContents(source, dest string, size int64) error {
 	return nil
 }
 
-func getNextAvailableCryptDevice() string {
-	return (uuid.NewV4()).String()
+func getNextAvailableCryptDevice() (string, error) {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return "", err
+	}
+	return id.String(), nil
 }
 
 // Open opens the encrypted filesystem specified by path (usually a loop
@@ -269,9 +273,9 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 	}
 
 	for i := 0; i < maxRetries; i++ {
-		nextCrypt := getNextAvailableCryptDevice()
-		if nextCrypt == "" {
-			return "", errors.New("сrypt device not available")
+		nextCrypt, err := getNextAvailableCryptDevice()
+		if err != nil {
+			return "", err
 		}
 
 		cmd := exec.Command(cryptsetup, "open", "--batch-mode", "--type", "luks2", "--key-file", "-", path, nextCrypt)

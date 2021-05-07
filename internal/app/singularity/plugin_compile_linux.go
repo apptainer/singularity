@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -273,11 +273,16 @@ func generateManifest(sourceDir string, bTool buildToolchain) error {
 // makeSIF takes in two arguments: sourceDir, the path to the plugin source directory;
 // and sifPath, the path to the final .sif file which is ready to be used.
 func makeSIF(sourceDir, sifPath string) error {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
 	plCreateInfo := sif.CreateInfo{
 		Pathname:   sifPath,
 		Launchstr:  sif.HdrLaunch,
 		Sifversion: sif.HdrVersion,
-		ID:         uuid.NewV4(),
+		ID:         id,
 	}
 
 	// create plugin object file descriptor
