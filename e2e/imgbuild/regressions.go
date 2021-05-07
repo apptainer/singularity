@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -177,7 +177,7 @@ func (c *imgBuildTests) issue4583(t *testing.T) {
 }
 
 func (c imgBuildTests) issue4837(t *testing.T) {
-	id, err := uuid.NewRandom()
+	id, err := uuid.NewV4()
 	if err != nil {
 		t.Fatal(err)
 	}
