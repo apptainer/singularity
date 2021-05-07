@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -25,6 +25,17 @@ import (
 	"github.com/hpcng/singularity/e2e/internal/testhelper"
 	"github.com/pkg/errors"
 )
+
+// randomName generates a random name based on a UUID.
+func randomName(t *testing.T) string {
+	t.Helper()
+
+	id, err := uuid.NewV4()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return id.String()
+}
 
 type ctx struct {
 	env     e2e.TestEnv
@@ -234,7 +245,7 @@ func (c *ctx) testInstanceFromURI(t *testing.T) {
 // and try to start another instance with same name
 func (c *ctx) testGhostInstance(t *testing.T) {
 	// pick up a random name
-	instanceName := uuid.Must(uuid.NewV4()).String()
+	instanceName := randomName(t)
 	pidfile := filepath.Join(c.env.TestDir, instanceName)
 
 	postFn := func(t *testing.T) {
@@ -309,7 +320,7 @@ func (c *ctx) applyCgroupsInstance(t *testing.T) {
 	}
 
 	// pick up a random name
-	instanceName := uuid.Must(uuid.NewV4()).String()
+	instanceName := randomName(t)
 	joinName := fmt.Sprintf("instance://%s", instanceName)
 
 	c.env.RunSingularity(
