@@ -1,0 +1,96 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  check_go_mod:
+    name: check_go_mod
+    runs-on: ubuntu-20.04
+    container: golang:1.14
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check go.mod
+        run: ./scripts/check-go.mod
+
+  go114-stretch:
+    name: go114-stretch
+    runs-on: ubuntu-20.04
+    container: golang:1.14-stretch
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Fetch deps
+        run: apt-get -q update && apt-get -q install -y build-essential libssl-dev uuid-dev squashfs-tools cryptsetup-bin
+
+      - name: Build Singularity
+        run: |
+          ./mconfig -v -p /usr/local
+          make -C ./builddir all
+
+      - name: Check Singularity
+        run: make -C ./builddir check
+
+  go114-alpine:
+    name: go114-alpine
+    runs-on: ubuntu-20.04
+    container: golang:1.14-alpine
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Fetch deps
+        run: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
+
+      - name: Build Singularity
+        run: |
+          ./mconfig -v -p /usr/local
+          make -C ./builddir all
+
+      - name: Check Singularity
+        run: make -C ./builddir check
+
+  go114-macos:
+    name: go114-macos
+    runs-on: macos-10.15
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14.15
+
+      - name: Build Singularity
+        run: |
+          ./mconfig -v -p /usr/local
+          make -C ./builddir all
+
+      - name: Check code
+        run: make -C ./builddir check
+  
+  rpmbuild-centos7:
+    name: rpmbuild-centos7
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set OS type and version
+        env:
+          OS_TYPE: centos
+          OS_VERSION: 7
+        run: ./scripts/ci-docker-run
+
+  rpmbuild-centos8:
+    name: rpmbuild-centos8
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set OS type and version
+        env:
+          OS_TYPE: centos
+          OS_VERSION: 8
+        run: ./scripts/ci-docker-run
