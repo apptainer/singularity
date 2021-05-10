@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/hpcng/sif/pkg/sif"
 	"github.com/sylabs/singularity/pkg/image"
 	"golang.org/x/sys/unix"
 )

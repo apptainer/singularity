@@ -17,8 +17,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 
 	"github.com/fatih/color"
-	"github.com/sylabs/sif/pkg/integrity"
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/hpcng/sif/pkg/integrity"
+	"github.com/hpcng/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/sylog"

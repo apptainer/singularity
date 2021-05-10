@@ -19,8 +19,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/hpcng/sif/pkg/sif"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/pkg/cmdline"

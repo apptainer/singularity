@@ -19,7 +19,7 @@ func (c *ctx) issue5033(t *testing.T) {
 	c.profile = e2e.RootProfile
 
 	// pick up a random name
-	instanceName := uuid.NewV4().String()
+	instanceName := uuid.Must(uuid.NewV4()).String()
 	joinName := fmt.Sprintf("instance://%s", instanceName)
 
 	c.env.RunSingularity(
