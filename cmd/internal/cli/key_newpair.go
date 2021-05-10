@@ -110,7 +110,7 @@ func runNewPairCmd(cmd *cobra.Command, args []string) {
 	fmt.Printf("done\n")
 
 	if !opts.PushToKeyStore {
-		fmt.Printf("NOT pushing newly created key to: %s\n", keyServerURI)
+		fmt.Println("NOT pushing newly created key to keystore")
 		return
 	}
 
@@ -123,7 +123,7 @@ func runNewPairCmd(cmd *cobra.Command, args []string) {
 	if err := sypgp.PushPubkey(ctx, key, co...); err != nil {
 		fmt.Printf("Failed to push newly created key to keystore: %s\n", err)
 	} else {
-		fmt.Printf("Key successfully pushed to: %s\n", keyServerURI)
+		fmt.Println("Key successfully pushed to keystore")
 	}
 }
 
