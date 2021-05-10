@@ -81,8 +81,8 @@ Golang is a bit finicky about where things are placed. Here is the correct way
 to build Singularity from source:
 
 ```
-$ mkdir -p ${GOPATH}/src/github.com/sylabs && \
-  cd ${GOPATH}/src/github.com/sylabs && \
+$ mkdir -p ${GOPATH}/src/github.com/hpcng && \
+  cd ${GOPATH}/src/github.com/hpcng && \
   git clone https://github.com/hpcng/singularity.git && \
   cd singularity
 ```

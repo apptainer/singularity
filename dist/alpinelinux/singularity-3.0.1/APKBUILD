@@ -17,11 +17,11 @@ subpackages="$pkgname-doc $pkgname-examples"
 # https://github.com/hpcng/singularity/releases/download/v3.0.1/singularity-3.0.1.tar.gz
 source="${pkgname}-${pkgver}.tar.gz::https://github.com/hpcng/singularity/releases/download/v${pkgver}/${pkgname}-${pkgver}.tar.gz"
 options="suid !check" # no testsuite
-builddir="$srcdir/go/src/github.com/sylabs/${pkgname}"
+builddir="$srcdir/go/src/github.com/hpcng/${pkgname}"
 
 prepare() {
-	mkdir -p "$srcdir/go/src/github.com/sylabs/${pkgname}"
-	mv "$srcdir/$pkgname"  "$srcdir/go/src/github.com/sylabs"
+	mkdir -p "$srcdir/go/src/github.com/hpcng/${pkgname}"
+	mv "$srcdir/$pkgname"  "$srcdir/go/src/github.com/hpcng"
         cd "$builddir"
 	for i in $source; do
 		case $i in
