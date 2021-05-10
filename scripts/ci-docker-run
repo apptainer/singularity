@@ -1,13 +1,5 @@
 #!/bin/bash -e
 
-if [[ ! -z "$E2E_DOCKER_USERNAME" && ! -z "$E2E_DOCKER_PASSWORD" ]]; then
-    docker login --username $E2E_DOCKER_USERNAME --password $E2E_DOCKER_PASSWORD
-    function logout {
-        docker logout
-    }
-    trap logout EXIT
-fi
-
 # Run docker as shown at
 #  https://djw8605.github.io/2016/05/03/building-centos-packages-on-travisci/
 #
@@ -35,9 +27,7 @@ else
 fi
 DOCKER_CONTAINER_NAME="test_${OS_TYPE}_${OS_VERSION}"
 
-docker run --privileged -ti --network=host \
-  -e E2E_DOCKER_USERNAME=$E2E_DOCKER_USERNAME \
-  -e E2E_DOCKER_PASSWORD=$E2E_DOCKER_PASSWORD \
+docker run --privileged --network=host \
   -v "$(pwd):/build:rw"  \
   --name "$DOCKER_CONTAINER_NAME" "$DOCKER_HUB_URI" /bin/bash -exc \
 	"cd /build && scripts/ci-rpm-build-test $OS_TYPE $OS_VERSION"

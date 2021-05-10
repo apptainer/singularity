@@ -1,0 +1,181 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  check_go_mod:
+    name: check_go_mod
+    runs-on: ubuntu-20.04
+    container: golang:1.14
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check go.mod
+        run: ./scripts/check-go.mod
+
+  go114-stretch:
+    name: go114-stretch
+    runs-on: ubuntu-20.04
+    container: golang:1.14-stretch
+    steps:
+      - name: Fetch deps
+        run: |
+          apt-get -q update && apt-get -q install -y build-essential libssl-dev uuid-dev squashfs-tools cryptsetup-bin
+          echo "deb http://ftp.debian.org/debian stretch-backports main" >> /etc/apt/sources.list
+          apt-get -q update
+          apt-get -q remove -y --purge git
+          apt-get -q install -y -t stretch-backports git
+
+      - uses: actions/checkout@v2
+
+      - name: Build Singularity
+        run: |
+          ./mconfig -v -p /usr/local
+          make -C ./builddir all
+
+      - name: Check Singularity
+        run: make -C ./builddir check
+
+  go114-alpine:
+    name: go114-alpine
+    runs-on: ubuntu-20.04
+    container: golang:1.14-alpine
+    steps:
+      - name: Fetch deps
+        run: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
+
+      - uses: actions/checkout@v2
+
+      - name: Build Singularity
+        run: |
+          ./mconfig -v -p /usr/local
+          make -C ./builddir all
+
+      - name: Check Singularity
+        run: make -C ./builddir check
+
+  go114-macos:
+    name: go114-macos
+    runs-on: macos-10.15
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14.15
+
+      - name: Build Singularity
+        run: |
+          ./mconfig -v -p /usr/local
+          make -C ./builddir all
+
+      - name: Check code
+        run: make -C ./builddir check
+  
+  rpmbuild-centos7:
+    runs-on: ubuntu-20.04
+    name: rpmbuild-centos7
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build and test rpm under docker
+        env:
+          OS_TYPE: centos
+          OS_VERSION: 7
+        run: ./scripts/ci-docker-run
+
+  rpmbuild-centos8:
+    runs-on: ubuntu-20.04
+    name: rpmbuild-centos8
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build and test rpm under docker
+        env:
+          OS_TYPE: centos
+          OS_VERSION: 8
+        run: ./scripts/ci-docker-run
+
+  short_unit_tests:
+    name: short_unit_tests
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14.15
+
+      - name: Fetch deps
+        run: sudo apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup
+
+      - name: Build and install Singularity
+        run: |
+          ./mconfig -v -p /usr/local
+          make -C ./builddir all && sudo make -C ./builddir install
+
+      - name: Run unit tests
+        run: make -C ./builddir short-unit-test
+
+  integration_tests:
+    name: integration_tests
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14.15
+
+      - name: Fetch deps
+        run: sudo apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup
+
+      - name: Build and install Singularity
+        run: |
+          ./mconfig -v -p /usr/local
+          make -C ./builddir all && sudo make -C ./builddir install
+
+      - name: Run integration tests
+        run: make -C ./builddir integration-test
+
+  e2e_tests:
+    name: e2e_tests
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get git tags
+        run: git fetch --prune --unshallow --tags
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14.15
+
+      - name: Fetch deps
+        run: sudo apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup
+
+      - name: Build and install Singularity
+        run: |
+          ./mconfig -v -p /usr/local
+          make -C ./builddir all && sudo make -C ./builddir install
+
+      - name: Run E2E tests
+        env:
+          E2E_PARALLEL: 8
+        run: make -C ./builddir e2e-test
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: e2e-artifact
+          path: builddir/e2e-cmd-report.txt
+          retention-days: 7
