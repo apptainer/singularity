@@ -19,9 +19,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/hpcng/sif/pkg/integrity"
+	"github.com/hpcng/sif/pkg/sif"
 	toml "github.com/pelletier/go-toml"
-	"github.com/sylabs/sif/pkg/integrity"
-	"github.com/sylabs/sif/pkg/sif"
 	"golang.org/x/crypto/openpgp"
 )
 

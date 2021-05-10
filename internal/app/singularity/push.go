@@ -14,9 +14,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hpcng/sif/pkg/sif"
 	keyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/vbauerster/mpb/v4"

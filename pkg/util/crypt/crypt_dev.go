@@ -246,8 +246,13 @@ func copyDeviceContents(source, dest string, size int64) error {
 	return nil
 }
 
-func getNextAvailableCryptDevice() string {
-	return (uuid.NewV4()).String()
+func getNextAvailableCryptDevice() (string, error) {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return "", fmt.Errorf("id generation failed: %v", err)
+	}
+
+	return id.String(), nil
 }
 
 // Open opens the encrypted filesystem specified by path (usually a loop
@@ -269,7 +274,10 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 	}
 
 	for i := 0; i < maxRetries; i++ {
-		nextCrypt := getNextAvailableCryptDevice()
+		nextCrypt, err := getNextAvailableCryptDevice()
+		if err != nil {
+			return "", fmt.Errorf("while getting next device: %v", err)
+		}
 		if nextCrypt == "" {
 			return "", errors.New("сrypt device not available")
 		}

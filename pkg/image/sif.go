@@ -12,7 +12,7 @@ import (
 	"runtime"
 	"syscall"
 
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/hpcng/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/util/machine"
 )
 

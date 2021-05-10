@@ -11,8 +11,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/hpcng/sif/pkg/sif"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
@@ -35,7 +35,7 @@ func createSIF(t *testing.T, inputDesc []sif.DescriptorInput, corrupted bool) st
 		Pathname:   sifFile.Name(),
 		Launchstr:  sif.HdrLaunch,
 		Sifversion: sif.HdrVersion,
-		ID:         uuid.NewV4(),
+		ID:         uuid.Must(uuid.NewV4()),
 		InputDescr: inputDesc,
 	}
 

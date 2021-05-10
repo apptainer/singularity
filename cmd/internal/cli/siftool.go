@@ -6,7 +6,7 @@
 package cli
 
 import (
-	"github.com/sylabs/sif/pkg/siftool"
+	"github.com/hpcng/sif/pkg/siftool"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 

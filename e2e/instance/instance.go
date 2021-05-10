@@ -234,7 +234,7 @@ func (c *ctx) testInstanceFromURI(t *testing.T) {
 // and try to start another instance with same name
 func (c *ctx) testGhostInstance(t *testing.T) {
 	// pick up a random name
-	instanceName := uuid.NewV4().String()
+	instanceName := uuid.Must(uuid.NewV4()).String()
 	pidfile := filepath.Join(c.env.TestDir, instanceName)
 
 	postFn := func(t *testing.T) {
@@ -309,7 +309,7 @@ func (c *ctx) applyCgroupsInstance(t *testing.T) {
 	}
 
 	// pick up a random name
-	instanceName := uuid.NewV4().String()
+	instanceName := uuid.Must(uuid.NewV4()).String()
 	joinName := fmt.Sprintf("instance://%s", instanceName)
 
 	c.env.RunSingularity(

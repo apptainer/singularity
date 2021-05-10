@@ -16,8 +16,8 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/hpcng/sif/pkg/sif"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/util/machine"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image/packer"
@@ -41,12 +41,17 @@ type encryptionOptions struct {
 func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encryptionOptions, arch string) (err error) {
 	definition := b.Recipe.Raw
 
+	id, err := uuid.NewV4()
+	if err != nil {
+		return fmt.Errorf("sif id generation failed: %v", err)
+	}
+
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
 		Launchstr:  sif.HdrLaunch,
 		Sifversion: sif.HdrVersion,
-		ID:         uuid.NewV4(),
+		ID:         id,
 	}
 
 	// data we need to create a definition file descriptor

@@ -177,7 +177,7 @@ func (c *imgBuildTests) issue4583(t *testing.T) {
 }
 
 func (c imgBuildTests) issue4837(t *testing.T) {
-	sandboxName := uuid.NewV4().String()
+	sandboxName := uuid.Must(uuid.NewV4()).String()
 	u := e2e.FakerootProfile.HostUser(t)
 
 	def, err := filepath.Abs("testdata/Singularity")
