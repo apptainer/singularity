@@ -20,8 +20,6 @@ echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
 chown -R testuser .
 
-SINGULARITY_DOCKER_USERNAME=$E2E_DOCKER_USERNAME \
-SINGULARITY_DOCKER_PASSWORD=$E2E_DOCKER_PASSWORD \
 su testuser -c '
   set -x
   set -e
