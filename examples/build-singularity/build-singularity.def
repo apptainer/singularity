@@ -24,7 +24,7 @@ From: centos:8
     export EL_VERSION=8
     export VERSION=$*
     export TMP_DIR=$(mktemp -d -u -p .)
-    curl -L -o singularity-${VERSION}.tar.gz https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
+    curl -L -o singularity-${VERSION}.tar.gz https://github.com/hpcng/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
     rpmbuild --define "_topdir `pwd`/${TMP_DIR}" -tb singularity-${VERSION}.tar.gz
     cp ./${TMP_DIR}/RPMS/x86_64/singularity-${VERSION}-1.el${EL_VERSION}.x86_64.rpm .
     fakeroot alien singularity-${VERSION}-1.el${EL_VERSION}.x86_64.rpm
@@ -42,7 +42,7 @@ From: centos:8
     Some versions of singularity contain the character 'v', such as v3.0.0.
     The container will have to be rebuilt with the following statement modified:
 
-        curl -L -o singularity-${VERSION}.tar.gz https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
+        curl -L -o singularity-${VERSION}.tar.gz https://github.com/hpcng/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
 
     USAGE
 

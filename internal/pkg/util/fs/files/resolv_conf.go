@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // ResolvConf creates a resolv.conf content with provided dns list and returns it

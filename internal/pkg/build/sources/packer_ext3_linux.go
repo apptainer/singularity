@@ -14,10 +14,10 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/loop"
 )
 
 // Pack puts relevant objects in a Bundle!

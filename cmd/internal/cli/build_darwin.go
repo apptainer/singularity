@@ -9,9 +9,9 @@ package cli
 import (
 	"context"
 
+	"github.com/hpcng/singularity/internal/pkg/build/remotebuilder"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 func fakerootExec(cmdArgs []string) {

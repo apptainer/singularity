@@ -1,7 +1,7 @@
 # This file contains rules for building CNI plugins which can enable
 #   different networking functions between container(s) and the host
 
-singularity_REPO := github.com/sylabs/singularity
+singularity_REPO := github.com/hpcng/singularity
 
 cni_builddir := $(BUILDDIR_ABSPATH)/cni
 cni_install_DIR := $(DESTDIR)$(LIBEXECDIR)/singularity/cni

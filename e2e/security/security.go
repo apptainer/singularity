@@ -10,11 +10,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
-	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/e2e/internal/testhelper"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
+	"github.com/hpcng/singularity/pkg/util/capabilities"
 )
 
 type ctx struct {
@@ -39,7 +39,7 @@ func (c ctx) testSecurityUnpriv(t *testing.T) {
 			opts:       []string{"--security", "uid:99"},
 			expectExit: 255,
 			// TODO: add expect stderr for "uid security feature requires root privileges"
-			// pending issue: https://github.com/sylabs/singularity/issues/4280
+			// pending issue: https://github.com/hpcng/singularity/issues/4280
 		},
 		{
 			name:       "Set_gid",

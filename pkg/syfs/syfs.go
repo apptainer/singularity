@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 const (

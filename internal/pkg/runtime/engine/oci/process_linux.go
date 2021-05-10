@@ -20,16 +20,16 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/hpcng/singularity/internal/pkg/instance"
+	"github.com/hpcng/singularity/internal/pkg/security"
+	"github.com/hpcng/singularity/internal/pkg/util/exec"
+	"github.com/hpcng/singularity/pkg/ociruntime"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/copy"
+	"github.com/hpcng/singularity/pkg/util/rlimit"
+	"github.com/hpcng/singularity/pkg/util/unix"
 	"github.com/kr/pty"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/instance"
-	"github.com/sylabs/singularity/internal/pkg/security"
-	"github.com/sylabs/singularity/internal/pkg/util/exec"
-	"github.com/sylabs/singularity/pkg/ociruntime"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/copy"
-	"github.com/sylabs/singularity/pkg/util/rlimit"
-	"github.com/sylabs/singularity/pkg/util/unix"
 )
 
 // StartProcess is called during stage2 after RPC server finished

@@ -7,11 +7,11 @@
 package cli
 
 import (
+	"github.com/hpcng/singularity/docs"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/sypgp"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 // KeyRemoveCmd is `singularity key remove <fingerprint>' command

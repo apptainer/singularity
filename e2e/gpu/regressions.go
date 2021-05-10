@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
 )
 
 // Check that we fall back to system ldconfig if a non-working one is on PATH

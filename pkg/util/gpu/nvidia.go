@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // NvidiaPaths returns a list of Nvidia libraries/binaries that should be

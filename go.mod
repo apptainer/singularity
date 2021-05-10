@@ -1,4 +1,4 @@
-module github.com/sylabs/singularity
+module github.com/hpcng/singularity
 
 go 1.13
 

@@ -14,9 +14,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hpcng/singularity/cmd/internal/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/sylabs/singularity/cmd/internal/cli"
 )
 
 /*

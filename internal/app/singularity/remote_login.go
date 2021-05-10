@@ -11,11 +11,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
-	"github.com/sylabs/singularity/internal/pkg/util/auth"
-	"github.com/sylabs/singularity/internal/pkg/util/interactive"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/remote"
+	"github.com/hpcng/singularity/internal/pkg/remote/endpoint"
+	"github.com/hpcng/singularity/internal/pkg/util/auth"
+	"github.com/hpcng/singularity/internal/pkg/util/interactive"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 type LoginArgs struct {

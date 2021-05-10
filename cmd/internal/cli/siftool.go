@@ -7,7 +7,7 @@ package cli
 
 import (
 	"github.com/hpcng/sif/pkg/siftool"
-	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/hpcng/singularity/pkg/cmdline"
 )
 
 // SiftoolCmd is easily set since the sif repo allows the cobra.Command struct to be

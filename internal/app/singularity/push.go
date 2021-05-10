@@ -15,10 +15,10 @@ import (
 	"strings"
 
 	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/pkg/sylog"
 	keyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
 )

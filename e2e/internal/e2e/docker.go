@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
 const dockerInstanceName = "e2e-docker-instance"

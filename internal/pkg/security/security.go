@@ -9,11 +9,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hpcng/singularity/internal/pkg/security/apparmor"
+	"github.com/hpcng/singularity/internal/pkg/security/seccomp"
+	"github.com/hpcng/singularity/internal/pkg/security/selinux"
+	"github.com/hpcng/singularity/pkg/sylog"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/security/apparmor"
-	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
-	"github.com/sylabs/singularity/internal/pkg/security/selinux"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // Configure applies security related configuration to current process

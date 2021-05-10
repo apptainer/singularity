@@ -15,8 +15,8 @@ import (
 	"testing"
 
 	"github.com/containerd/cgroups"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/network"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/pkg/network"
 )
 
 var hasUserNamespace bool

@@ -11,13 +11,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/hpcng/singularity/docs"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/internal/pkg/remote/endpoint"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/sypgp"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-key-client/client"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 // KeyPullCmd is `singularity key pull' and fetches public keys from a key server

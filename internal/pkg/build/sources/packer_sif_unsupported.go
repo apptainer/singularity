@@ -11,7 +11,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/build/types"
 )
 
 // Pack puts relevant objects in a Bundle.

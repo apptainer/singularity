@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/util/bin"
-	"github.com/sylabs/singularity/pkg/util/crypt"
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
+	"github.com/hpcng/singularity/pkg/util/crypt"
 )
 
 const (

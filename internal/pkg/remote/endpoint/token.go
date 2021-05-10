@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sylabs/singularity/internal/pkg/remote/credential"
-	"github.com/sylabs/singularity/pkg/sylog"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/hpcng/singularity/internal/pkg/remote/credential"
+	"github.com/hpcng/singularity/pkg/sylog"
+	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
 )
 
 // VerifyToken returns an error if a token is not valid against an endpoint.

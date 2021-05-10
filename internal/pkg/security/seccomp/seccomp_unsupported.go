@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 )
 
 // Enabled returns whether seccomp is enabled or not

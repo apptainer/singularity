@@ -11,11 +11,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/e2e/internal/testhelper"
+	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/internal/pkg/util/user"
 )
 
 type configTests struct {

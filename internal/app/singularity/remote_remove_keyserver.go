@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
+	"github.com/hpcng/singularity/internal/pkg/remote"
+	"github.com/hpcng/singularity/internal/pkg/remote/endpoint"
 )
 
 func RemoteRemoveKeyserver(name, uri string) error {

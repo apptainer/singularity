@@ -6,10 +6,10 @@
 package main
 
 import (
-	"github.com/sylabs/singularity/cmd/internal/cli"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	_ "github.com/sylabs/singularity/internal/pkg/util/goversion"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/hpcng/singularity/cmd/internal/cli"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	_ "github.com/hpcng/singularity/internal/pkg/util/goversion"
+	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
 )
 
 func main() {

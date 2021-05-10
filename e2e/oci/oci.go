@@ -12,14 +12,14 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/e2e/internal/testhelper"
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
+	"github.com/hpcng/singularity/pkg/ociruntime"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
-	"github.com/sylabs/singularity/pkg/ociruntime"
 )
 
 type ctx struct {

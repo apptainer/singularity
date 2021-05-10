@@ -12,8 +12,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/fs/lock"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/fs/lock"
 )
 
 // AttachFromFile finds a free loop device, opens it, and stores file descriptor

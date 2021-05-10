@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // Lots of love from:

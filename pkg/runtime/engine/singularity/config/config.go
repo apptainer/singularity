@@ -11,9 +11,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/hpcng/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/util/singularityconf"
 )
 
 // Name is the name of the runtime.

@@ -12,9 +12,9 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/hpcng/singularity/internal/pkg/cgroups"
+	"github.com/hpcng/singularity/pkg/ociruntime"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/cgroups"
-	"github.com/sylabs/singularity/pkg/ociruntime"
 )
 
 // OciUpdate updates container cgroups resources

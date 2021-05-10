@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
 )
 
 func TestCryptsetup(t *testing.T) {

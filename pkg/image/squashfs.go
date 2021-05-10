@@ -12,7 +12,7 @@ import (
 	"os"
 	"unsafe"
 
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 const (

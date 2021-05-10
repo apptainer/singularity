@@ -8,10 +8,10 @@ package main
 import (
 	"fmt"
 
+	"github.com/hpcng/singularity/cmd/internal/cli"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
-	"github.com/sylabs/singularity/cmd/internal/cli"
-	"github.com/sylabs/singularity/pkg/sylog"
 	"golang.org/x/sys/unix"
 )
 

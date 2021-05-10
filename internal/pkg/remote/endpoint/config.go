@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/remote/credential"
-	"github.com/sylabs/singularity/pkg/syfs"
+	"github.com/hpcng/singularity/internal/pkg/remote/credential"
+	"github.com/hpcng/singularity/pkg/syfs"
 )
 
 var cacheDuration = 720 * time.Hour

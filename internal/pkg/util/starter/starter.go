@@ -13,9 +13,9 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/pkg/runtime/engine/config"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"golang.org/x/sys/unix"
 )
 

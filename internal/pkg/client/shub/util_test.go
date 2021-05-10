@@ -10,8 +10,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/hpcng/singularity/internal/pkg/test"
+	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
 )
 
 var (

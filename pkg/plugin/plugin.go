@@ -25,8 +25,8 @@ const PluginSymbol = "Plugin"
 //     package main
 //
 //     import (
-//             clicallback "github.com/sylabs/singularity/pkg/callback/cli"
-//	           pluginapi "github.com/sylabs/singularity/pkg/plugin"
+//             clicallback "github.com/hpcng/singularity/pkg/callback/cli"
+//	           pluginapi "github.com/hpcng/singularity/pkg/plugin"
 //     )
 //
 //     var Plugin = pluginapi.Plugin{

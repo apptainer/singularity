@@ -12,8 +12,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
+	"github.com/hpcng/singularity/internal/pkg/remote"
+	"github.com/hpcng/singularity/internal/pkg/remote/endpoint"
 )
 
 // RemoteAdd adds remote to configuration

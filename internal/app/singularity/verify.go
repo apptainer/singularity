@@ -14,9 +14,9 @@ import (
 
 	"github.com/hpcng/sif/pkg/integrity"
 	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/pkg/sypgp"
 	"github.com/sylabs/scs-key-client/client"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
 )
 

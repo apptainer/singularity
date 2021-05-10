@@ -11,7 +11,7 @@
     The container will have to be rebuilt with the following statement 
     modified:
 
-    curl -L -o singularity-${VERSION}.tar.gz https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
+    curl -L -o singularity-${VERSION}.tar.gz https://github.com/hpcng/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
 
 ## Usage
 

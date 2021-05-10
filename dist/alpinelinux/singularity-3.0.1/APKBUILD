@@ -14,8 +14,8 @@ makedepends="gawk go libc-dev linux-headers libressl-dev libuuid util-linux-dev 
 install=""
 subpackages="$pkgname-doc $pkgname-examples"
 #source="${pkgname}-${pkgver}.tar.gz"
-# https://github.com/sylabs/singularity/releases/download/v3.0.1/singularity-3.0.1.tar.gz
-source="${pkgname}-${pkgver}.tar.gz::https://github.com/sylabs/singularity/releases/download/v${pkgver}/${pkgname}-${pkgver}.tar.gz"
+# https://github.com/hpcng/singularity/releases/download/v3.0.1/singularity-3.0.1.tar.gz
+source="${pkgname}-${pkgver}.tar.gz::https://github.com/hpcng/singularity/releases/download/v${pkgver}/${pkgname}-${pkgver}.tar.gz"
 options="suid !check" # no testsuite
 builddir="$srcdir/go/src/github.com/sylabs/${pkgname}"
 

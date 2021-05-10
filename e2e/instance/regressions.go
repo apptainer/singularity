@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hpcng/singularity/e2e/internal/e2e"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
 func (c *ctx) issue5033(t *testing.T) {

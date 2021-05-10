@@ -17,9 +17,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/namespaces"
+	"github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/namespaces"
 )
 
 // DebootstrapConveyorPacker holds stuff that needs to be packed into the bundle

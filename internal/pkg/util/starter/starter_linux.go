@@ -8,8 +8,8 @@ package starter
 import (
 	"fmt"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/util/rlimit"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/pkg/util/rlimit"
 )
 
 // copyConfigToEnv checks that the current stack size is big enough

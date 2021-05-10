@@ -12,10 +12,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
-	"github.com/sylabs/singularity/internal/pkg/util/starter"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/oci"
+	"github.com/hpcng/singularity/internal/pkg/util/starter"
+	"github.com/hpcng/singularity/pkg/runtime/engine/config"
 )
 
 // OciCreate creates a container from an OCI bundle

@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/hpcng/sif/pkg/sif"
-	"github.com/sylabs/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/image"
 	"golang.org/x/sys/unix"
 )
 

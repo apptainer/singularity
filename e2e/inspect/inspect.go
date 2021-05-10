@@ -14,12 +14,12 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/inspect"
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/e2e/internal/testhelper"
+	"github.com/hpcng/singularity/internal/pkg/test/tool/exec"
+	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
+	"github.com/hpcng/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/inspect"
 )
 
 type ctx struct {

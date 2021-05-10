@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/hpcng/singularity/pkg/util/singularityconf"
 	"golang.org/x/sys/unix"
 )
 

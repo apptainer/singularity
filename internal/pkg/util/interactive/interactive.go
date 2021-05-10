@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"golang.org/x/crypto/ssh/terminal"
 )
 

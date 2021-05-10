@@ -10,12 +10,12 @@ import (
 	"os"
 
 	"github.com/containerd/cgroups"
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/starter"
+	"github.com/hpcng/singularity/pkg/ociruntime"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/capabilities"
 	"github.com/kr/pty"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
-	"github.com/sylabs/singularity/pkg/ociruntime"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
 // make master/slave as global variable to avoid GC close file descriptor

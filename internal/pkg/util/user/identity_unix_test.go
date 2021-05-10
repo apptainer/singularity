@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/hpcng/singularity/internal/pkg/test"
 )
 
 func TestGetPwUID(t *testing.T) {

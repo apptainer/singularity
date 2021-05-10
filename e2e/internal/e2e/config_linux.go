@@ -9,8 +9,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/pkg/util/singularityconf"
 	"golang.org/x/sys/unix"
 )
 

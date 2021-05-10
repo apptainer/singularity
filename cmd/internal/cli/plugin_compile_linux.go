@@ -8,13 +8,13 @@ package cli
 import (
 	"path/filepath"
 
+	"github.com/hpcng/singularity/docs"
+	"github.com/hpcng/singularity/internal/app/singularity"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/pkg/cmdline"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/app/singularity"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // -o|--out

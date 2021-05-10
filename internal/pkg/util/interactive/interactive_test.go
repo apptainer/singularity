@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/hpcng/singularity/internal/pkg/test"
 )
 
 func generateQuestionInput(t *testing.T, input string) (*os.File, *os.File) {

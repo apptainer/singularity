@@ -8,7 +8,7 @@ package cli
 import (
 	"os"
 
-	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/hpcng/singularity/pkg/cmdline"
 )
 
 // actionflags.go contains flag variables for action-like commands to draw from

@@ -19,11 +19,11 @@ import (
 
 	"github.com/kr/pty"
 
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/oci"
+	"github.com/hpcng/singularity/pkg/ociruntime"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/unix"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
-	"github.com/sylabs/singularity/pkg/ociruntime"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/unix"
 	"golang.org/x/crypto/ssh/terminal"
 )
 

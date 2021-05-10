@@ -13,10 +13,10 @@ import (
 
 	golog "github.com/go-log/log"
 
+	"github.com/hpcng/singularity/internal/pkg/client/library"
+	"github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/internal/pkg/client/library"
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // LibraryConveyorPacker only needs to hold a packer to pack the image it pulls

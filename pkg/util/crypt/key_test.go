@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hpcng/singularity/internal/pkg/test"
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 const (

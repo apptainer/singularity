@@ -6,9 +6,9 @@
 package cli
 
 import (
+	"github.com/hpcng/singularity/docs"
+	"github.com/hpcng/singularity/pkg/cmdline"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 // configCmd is the config command

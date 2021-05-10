@@ -11,23 +11,23 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 const goMod = `module %s
 
 go 1.13
 
-require github.com/sylabs/singularity v0.0.0
+require github.com/hpcng/singularity v0.0.0
 
-replace github.com/sylabs/singularity => ./singularity_source
+replace github.com/hpcng/singularity => ./singularity_source
 `
 
 const mainGo = `package main
 
 import (
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
+	pluginapi "github.com/hpcng/singularity/pkg/plugin"
 )
 
 // Plugin is the only variable which a plugin MUST export.

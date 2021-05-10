@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // Entry is a structure representing an entry in the cache. An entry is a file under the

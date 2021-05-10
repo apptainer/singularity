@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
+	"github.com/hpcng/singularity/internal/pkg/remote"
+	"github.com/hpcng/singularity/internal/pkg/remote/endpoint"
 )
 
 // RemoteLogout logs out from an endpoint or service.

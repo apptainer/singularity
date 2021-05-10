@@ -14,11 +14,11 @@ import (
 	"strings"
 
 	ocitypes "github.com/containers/image/v5/types"
-	"github.com/sylabs/singularity/internal/pkg/cache"
-	"github.com/sylabs/singularity/internal/pkg/util/env"
-	"github.com/sylabs/singularity/pkg/build/types"
-	buildtypes "github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/cache"
+	"github.com/hpcng/singularity/internal/pkg/util/env"
+	"github.com/hpcng/singularity/pkg/build/types"
+	buildtypes "github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"golang.org/x/sys/unix"
 )
 

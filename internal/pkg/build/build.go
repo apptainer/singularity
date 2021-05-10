@@ -16,20 +16,20 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/util/fs/proc"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/pkg/util/fs/proc"
+	"github.com/hpcng/singularity/pkg/util/singularityconf"
 
-	"github.com/sylabs/singularity/internal/pkg/build/apps"
-	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
-	"github.com/sylabs/singularity/internal/pkg/build/sources"
-	"github.com/sylabs/singularity/internal/pkg/util/fs/squashfs"
-	"github.com/sylabs/singularity/internal/pkg/util/uri"
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/build/types/parser"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/image/packer"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/build/apps"
+	"github.com/hpcng/singularity/internal/pkg/build/assemblers"
+	"github.com/hpcng/singularity/internal/pkg/build/sources"
+	"github.com/hpcng/singularity/internal/pkg/util/fs/squashfs"
+	"github.com/hpcng/singularity/internal/pkg/util/uri"
+	"github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/build/types/parser"
+	"github.com/hpcng/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/image/packer"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // Build is an abstracted way to look at the entire build process.

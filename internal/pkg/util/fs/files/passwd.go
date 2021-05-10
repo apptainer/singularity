@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/internal/pkg/util/user"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // Passwd creates a passwd template based on content of file provided in path,

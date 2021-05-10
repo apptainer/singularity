@@ -12,7 +12,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/hpcng/singularity/internal/pkg/test"
 )
 
 // createVirtualBlockDevice creates a virtual block device

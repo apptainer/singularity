@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/util/fs/mount"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 const rootFsDir = "/rootfs"

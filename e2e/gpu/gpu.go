@@ -13,10 +13,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/e2e/internal/testhelper"
+	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
 )
 
 var buildDefinition = `Bootstrap: localimage
@@ -335,6 +335,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"rocm":         c.testRocm,
 		"build nvidia": c.testBuildNvidia,
 		"build rocm":   c.testBuildRocm,
-		"issue 5002":   c.issue5002, // https://github.com/sylabs/singularity/issues/5002
+		"issue 5002":   c.issue5002, // https://github.com/hpcng/singularity/issues/5002
 	}
 }

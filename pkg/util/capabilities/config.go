@@ -11,7 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // Caplist defines a map of users/groups with associated list of capabilities

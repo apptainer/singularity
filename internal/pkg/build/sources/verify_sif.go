@@ -8,9 +8,9 @@ package sources
 import (
 	"context"
 
+	"github.com/hpcng/singularity/internal/app/singularity"
+	"github.com/hpcng/singularity/pkg/sylog"
 	scskeyclient "github.com/sylabs/scs-key-client/client"
-	"github.com/sylabs/singularity/internal/app/singularity"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // checkSIFFingerprint checks whether a bootstrap SIF image verifies, and was signed with a specified fingerprint

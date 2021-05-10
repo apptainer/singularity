@@ -15,20 +15,18 @@ _This file uses `v3.0.0` as an example release_
 
 ## Documentation
 Ensure that our documentation is up to date:
-  - [User Docs](https://www.sylabs.io/guides/3.0/user-guide/) can be edited [here](https://github.com/sylabs/singularity-userdocs)
-  - [Admin Docs](https://www.sylabs.io/guides/3.0/admin-guide/) can be edited [here](https://github.com/sylabs/singularity-admindocs)
+  - [User Docs](https://www.sylabs.io/guides/3.0/user-guide/) can be edited [here](https://github.com/hpcng/singularity-userdocs)
+  - [Admin Docs](https://www.sylabs.io/guides/3.0/admin-guide/) can be edited [here](https://github.com/hpcng/singularity-admindocs)
 
 
 ## Announcements
 Release announcements should be made on:
-  - GitHub [releases page](https://github.com/sylabs/singularity/releases)
+  - GitHub [releases page](https://github.com/hpcng/singularity/releases)
     - Run `make -C builddir/ dist` and attach the generated tarball as an asset to the release
     - **NOTE:** The GitHub release MUST contain a line about the proper installation procedure when installing from the GitHub generated tarballs. Namely, that you must build using `./mconfig [-V version]`
   - Singularity mailing list
-  - Singularity [Slack channel](https://www.sylabs.io/join-the-community/)
-  - Blog post on [sylabs.io](https://www.sylabs.io/category/labnotes/)
+  - Singularity [Slack channel](https://hpcng.slack.com)
   - Various twitter channels:
-    - [@SylabsIO](https://twitter.com/sylabsio)
     - [@SingularityApp](https://twitter.com/singularityapp)
     - etc...
   - LinkedIn

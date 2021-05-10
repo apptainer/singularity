@@ -8,7 +8,7 @@ package image
 import (
 	"fmt"
 
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
+	"github.com/hpcng/singularity/pkg/runtime/engine/config"
 )
 
 // DriverFeature defines a feature type that a driver is supporting.

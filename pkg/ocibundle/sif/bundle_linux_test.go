@@ -10,12 +10,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/hpcng/singularity/internal/pkg/test"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/pkg/ocibundle/tools"
+	"github.com/hpcng/singularity/pkg/util/fs/proc"
 	"github.com/opencontainers/runtime-tools/validate"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
-	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/ocibundle/tools"
-	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
 
 // We need a busybox SIF for these tests. We used to download it each time, but we have one

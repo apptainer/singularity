@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 const testSquash = "./testdata/squashfs.v4"

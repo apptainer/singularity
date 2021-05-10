@@ -6,8 +6,8 @@
 package sources
 
 import (
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/image"
 )
 
 // SIFPacker holds the locations of where to pack from and to.

@@ -20,13 +20,13 @@ import (
 	"strings"
 
 	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/singularity/docs"
+	"github.com/hpcng/singularity/internal/pkg/util/env"
+	"github.com/hpcng/singularity/pkg/cmdline"
+	"github.com/hpcng/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/inspect"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/util/env"
-	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/inspect"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 var errNoSIFMetadata = errors.New("no SIF metadata found")

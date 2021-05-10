@@ -13,7 +13,7 @@ makedepends="$depends_dev"
 install=""
 subpackages="$pkgname-doc $pkgname-examples"
 #source="${pkgname}-${pkgver}.tar.gz"
-source="${pkgname}-${pkgver}.tar.gz::https://github.com/sylabs/singularity/releases/download/${pkgver}/${pkgname}-${pkgver}.tar.gz"
+source="${pkgname}-${pkgver}.tar.gz::https://github.com/hpcng/singularity/releases/download/${pkgver}/${pkgname}-${pkgver}.tar.gz"
 options="suid"
 builddir=$srcdir/${pkgname}-${pkgver}
 build() {

@@ -12,11 +12,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/hpcng/singularity/internal/pkg/instance"
+	"github.com/hpcng/singularity/pkg/ociruntime"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/unix"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/instance"
-	"github.com/sylabs/singularity/pkg/ociruntime"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/unix"
 )
 
 // OciRun runs a container (equivalent to create/start/delete)

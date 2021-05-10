@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/hpcng/singularity/internal/pkg/test"
+	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
 	"github.com/sylabs/scs-key-client/client"
-	"github.com/sylabs/singularity/internal/pkg/test"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
