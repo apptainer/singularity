@@ -13,7 +13,7 @@ import (
 	"net/url"
 	"time"
 
-	auth "github.com/deislabs/oras/pkg/auth/docker"
+	auth "github.com/oras-project/oras-go/pkg/auth/docker"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/syfs"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
