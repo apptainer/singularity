@@ -136,7 +136,7 @@ and use it to install the RPM like this:
 $ export VERSION=3.8.0-rc.1  # this is the singularity version, change as you need
 
 $ wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz && \
-    rpmbuild -tb singularity-${VERSION}.tar.gz && \
+    rpmbuild -tb singularity-ce-${VERSION}.tar.gz && \
     sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-ce-${VERSION}-1.el7.x86_64.rpm && \
     rm -rf ~/rpmbuild singularity-ce-${VERSION}*.tar.gz
 ```
