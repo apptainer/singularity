@@ -1,9 +1,10 @@
 version: 2.1
 
-vm_defaults: &vm_defaults
-  working_directory: ~/go/singularity
-  machine:
-    image: ubuntu-2004:202008-01
+executors:
+  ubuntu-machine:
+    working_directory: ~/go/singularity
+    machine:
+      image: ubuntu-2004:202008-01
 
 x-run:
   setup_environment: &setup_environment
@@ -156,7 +157,7 @@ jobs:
             make -C ./builddir check
 
   rpmbuild-centos7:
-    <<: *vm_defaults
+    executor: ubuntu-machine
     steps:
       - checkout
       - run:
@@ -166,7 +167,7 @@ jobs:
           <<: *buildtest_rpm
 
   rpmbuild-centos8:
-    <<: *vm_defaults
+    executor: ubuntu-machine
     steps:
       - checkout
       - run:
@@ -176,7 +177,7 @@ jobs:
           <<: *buildtest_rpm
 
   short_unit_tests:
-    <<: *vm_defaults
+    executor: ubuntu-machine
     steps:
       - checkout
       - run:
@@ -195,7 +196,7 @@ jobs:
             make -C ./builddir short-unit-test
 
   integration_tests:
-    <<: *vm_defaults
+    executor: ubuntu-machine
     steps:
       - checkout
       - run:
@@ -217,7 +218,7 @@ jobs:
             make -C ./builddir integration-test
 
   e2e_tests:
-    <<: *vm_defaults
+    executor: ubuntu-machine
     steps:
       - checkout
       - run:
