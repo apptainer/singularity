@@ -8,7 +8,7 @@ usage() {
 
 	Usage:
 
-	    $0 {github_username} {github_reponame} {github_branch} [github_pr_url]
+	    $0 {github_repository} {github_branch} [github_pr_url]
 
 	If a {github_pr_url} is provided, it's used to obtain additional
 	information like the target branch and the labels. Otherwise it
@@ -26,15 +26,11 @@ fi
 # Skip e2e by default
 require_e2e=false
 
-GITHUB_USERNAME=$1
-GITHUB_REPONAME=$2
-GITHUB_BRANCH=$3
-GITHUB_PR_URL=$4
+GITHUB_REPOSITORY=$1
+GITHUB_BRANCH=$2
+GITHUB_PR_NUMBER=$3
 
-if test -z "${GITHUB_USERNAME}" ; then
-	usage "$0"
-	exit 2
-elif test -z "${GITHUB_REPONAME}" ; then
+if test -z "${GITHUB_REPOSITORY}" ; then
 	usage "$0"
 	exit 2
 elif test -z "${GITHUB_BRANCH}" ; then
@@ -42,7 +38,7 @@ elif test -z "${GITHUB_BRANCH}" ; then
 	exit 2
 fi
 
-if test -z "${GITHUB_PR_URL}" ; then
+if test -z "${GITHUB_PR_NUMBER}" ; then
 	echo "Running directly against branch ${GITHUB_BRANCH}"
 	TARGET_BRANCH="${GITHUB_BRANCH}"
 	BASE_COMMIT="HEAD~"
@@ -50,12 +46,10 @@ if test -z "${GITHUB_PR_URL}" ; then
 	# constrain this to specific branches.
 	require_e2e=true
 else
-	PR_NUMBER=$(echo "${GITHUB_PR_URL}" | sed -e 's,.*/,,')
-
 	pull_info_file=$(mktemp)
 	trap "rm -f ${pull_info_file}" EXIT
 
-	curl -s "https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPONAME}/pulls/${PR_NUMBER}" > "${pull_info_file}"
+	curl -s "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/${GITHUB_PR_NUMBER}" > "${pull_info_file}"
 
 	# Keep the matching lines instead of simply looking at the exit
 	# code for debugging purposes
