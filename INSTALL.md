@@ -1,14 +1,14 @@
 # Installing SingularityCE
 
+**NOTE:** *This installation guide has been updated for the release candidate of
+SingularityCE 3.8.0. The `3.8.0-rc1` version that will be installed is a
+pre-release of SingularityCE. To install the latest stable version,
+substitute the version `3.7.3` in the instructions below. See the `release-3.7` branch for the current stable codebase.*
+
 Since you are reading this from the SingularityCE source code, it will be assumed
 that you are building/compiling from source.
 
-Singularity packages are available for various Linux distributions, but may not
-always be up-to-date with the latest source release version.
-
-For full instructions on installation, including building RPMs,
-installing pre-built EPEL packages etc. please check the
-[installation section of the admin guide](https://sylabs.io/guides/latest/admin-guide/).
+For full instructions on installation, including building RPMs, please check the [installation section of the admin guide](https://sylabs.io/guides/latest/admin-guide/).
 
 ## Install system dependencies
 
@@ -41,7 +41,7 @@ _**NOTE:** if you are updating Go from a older version, make sure you remove `/u
 reinstalling it._
 
 ```
-$ export VERSION=1.15.8 OS=linux ARCH=amd64  # change this as you need
+$ export VERSION=1.16.4 OS=linux ARCH=amd64  # change this as you need
 
 $ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
   sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
@@ -69,11 +69,11 @@ In order to install golangci-lint, you can run:
 
 ```
 $ curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh |
-  sh -s -- -b $(go env GOPATH)/bin v1.21.0
+  sh -s -- -b $(go env GOPATH)/bin v1.31.0
 ```
 
 This will download and install golangci-lint from its Github releases
-page (using version v1.21.0 at the moment).
+page (using version v1.31.0 at the moment).
 
 ## Clone the repo
 
@@ -87,10 +87,10 @@ $ mkdir -p ${GOPATH}/src/github.com/sylabs && \
   cd singularity
 ```
 
-To build a stable version of SingularityCE, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
+To build a specific version of SingularityCE, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.7.1
+$ git checkout v3.8.0-rc.1
 ```
 
 ## Compiling SingularityCE
@@ -133,7 +133,7 @@ as shown above.  Then download the latest
 and use it to install the RPM like this: 
 
 ```
-$ export VERSION=3.7.3  # this is the singularity version, change as you need
+$ export VERSION=3.8.0-rc.1  # this is the singularity version, change as you need
 
 $ wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-${VERSION}.tar.gz && \
@@ -149,7 +149,7 @@ tarball and use it to install Singularity:
 $ cd $GOPATH/src/github.com/sylabs/singularity && \
   ./mconfig && \
   make -C builddir rpm && \
-  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-ce-3.7.3*.x86_64.rpm # or whatever version you built
+  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-ce-3.8.0*.x86_64.rpm # or whatever version you built
 ```
 
 To build an rpm with an alternative install prefix set RPMPREFIX on the
