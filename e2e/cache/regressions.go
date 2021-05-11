@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 // issue5097 - need to handle an existing directory entry present in the cache

@@ -13,9 +13,9 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/remote"
+	"github.com/hpcng/singularity/internal/pkg/remote/endpoint"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 const statusLine = "%s\t%s\t%s\t%s\n"

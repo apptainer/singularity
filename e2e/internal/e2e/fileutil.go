@@ -10,8 +10,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 // WriteTempFile creates and populates a temporary file in the specified

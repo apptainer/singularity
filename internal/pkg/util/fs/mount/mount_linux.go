@@ -12,7 +12,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"github.com/hpcng/singularity/pkg/util/fs/proc"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )

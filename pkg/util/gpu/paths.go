@@ -15,7 +15,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 const systemLdconfig = "/sbin/ldconfig"

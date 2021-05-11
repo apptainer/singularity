@@ -8,11 +8,11 @@ package cli
 import (
 	"fmt"
 
+	"github.com/hpcng/singularity/docs"
+	"github.com/hpcng/singularity/internal/app/singularity"
+	"github.com/hpcng/singularity/pkg/cmdline"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/app/singularity"
-	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // -a|--add

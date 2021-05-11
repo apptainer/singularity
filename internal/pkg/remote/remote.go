@@ -14,12 +14,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/remote/credential"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
-	remoteutil "github.com/sylabs/singularity/internal/pkg/remote/util"
-	"github.com/sylabs/singularity/pkg/syfs"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/internal/pkg/remote/credential"
+	"github.com/hpcng/singularity/internal/pkg/remote/endpoint"
+	remoteutil "github.com/hpcng/singularity/internal/pkg/remote/util"
+	"github.com/hpcng/singularity/pkg/syfs"
+	"github.com/hpcng/singularity/pkg/sylog"
 	yaml "gopkg.in/yaml.v2"
 )
 

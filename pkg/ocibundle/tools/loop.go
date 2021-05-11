@@ -10,7 +10,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/hpcng/singularity/pkg/util/loop"
 )
 
 // CreateLoop associates a file to loop device and returns

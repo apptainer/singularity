@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/sylabs/singularity/internal/pkg/plugin"
+	"github.com/hpcng/singularity/internal/pkg/plugin"
 )
 
 // ListPlugins lists the singularity plugins installed in the plugin

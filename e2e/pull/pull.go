@@ -20,12 +20,12 @@ import (
 	"github.com/deislabs/oras/pkg/content"
 	"github.com/deislabs/oras/pkg/context"
 	"github.com/deislabs/oras/pkg/oras"
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/e2e/internal/testhelper"
+	syoras "github.com/hpcng/singularity/internal/pkg/client/oras"
+	"github.com/hpcng/singularity/internal/pkg/util/uri"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
-	syoras "github.com/sylabs/singularity/internal/pkg/client/oras"
-	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"golang.org/x/sys/unix"
 )
 

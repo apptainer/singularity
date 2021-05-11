@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/hpcng/singularity/pkg/util/loop"
 )
 
 // MkdirArgs defines the arguments to mkdir.

@@ -22,13 +22,13 @@ import (
 
 	golog "github.com/go-log/log"
 	"github.com/gorilla/websocket"
+	"github.com/hpcng/singularity/internal/pkg/client/library"
+	"github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/sylog"
+	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
 	"github.com/pkg/errors"
 	buildclient "github.com/sylabs/scs-build-client/client"
 	client "github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/internal/pkg/client/library"
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/sylog"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 // RemoteBuilder contains the build request and response

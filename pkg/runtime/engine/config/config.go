@@ -8,7 +8,7 @@ package config
 import (
 	"encoding/json"
 
-	"github.com/sylabs/singularity/pkg/plugin"
+	"github.com/hpcng/singularity/pkg/plugin"
 )
 
 // Common provides the basis for all engine configs. Anything that can not be

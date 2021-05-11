@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/plugin"
+	"github.com/hpcng/singularity/internal/pkg/plugin"
 )
 
 var ErrPluginNotFound = errors.New("plugin not found")

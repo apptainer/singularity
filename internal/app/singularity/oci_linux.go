@@ -11,11 +11,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/instance"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
-	"github.com/sylabs/singularity/pkg/ociruntime"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/instance"
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/oci"
+	"github.com/hpcng/singularity/pkg/ociruntime"
+	"github.com/hpcng/singularity/pkg/runtime/engine/config"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // OciArgs contains CLI arguments

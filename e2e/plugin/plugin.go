@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/e2e/internal/testhelper"
 )
 
 type ctx struct {
@@ -19,7 +19,7 @@ type ctx struct {
 }
 
 func (c ctx) testPluginBasic(t *testing.T) {
-	pluginName := "github.com/sylabs/singularity/e2e-plugin"
+	pluginName := "github.com/hpcng/singularity/e2e-plugin"
 
 	// plugin code directory
 	pluginDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "plugin-dir-", "")
@@ -144,7 +144,7 @@ func (c ctx) testPluginBasic(t *testing.T) {
 
 func (c ctx) testCLICallbacks(t *testing.T) {
 	pluginDir := "./plugin/testdata/cli"
-	pluginName := "github.com/sylabs/singularity/e2e-cli-plugin"
+	pluginName := "github.com/hpcng/singularity/e2e-cli-plugin"
 
 	// plugin sif file
 	sifFile := filepath.Join(c.env.TestDir, "plugin.sif")
@@ -210,7 +210,7 @@ func (c ctx) testSingularityCallbacks(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	pluginDir := "./plugin/testdata/runtime_singularity"
-	pluginName := "github.com/sylabs/singularity/e2e-runtime-plugin"
+	pluginName := "github.com/hpcng/singularity/e2e-runtime-plugin"
 
 	// plugin sif file
 	sifFile := filepath.Join(c.env.TestDir, "plugin.sif")

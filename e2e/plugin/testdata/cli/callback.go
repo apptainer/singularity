@@ -9,18 +9,18 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/hpcng/singularity/pkg/cmdline"
+	pluginapi "github.com/hpcng/singularity/pkg/plugin"
+	clicallback "github.com/hpcng/singularity/pkg/plugin/callback/cli"
+	"github.com/hpcng/singularity/pkg/runtime/engine/config"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/pkg/cmdline"
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
-	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 )
 
 // Plugin is the only variable which a plugin MUST export.
 // This symbol is accessed by the plugin framework to initialize the plugin.
 var Plugin = pluginapi.Plugin{
 	Manifest: pluginapi.Manifest{
-		Name:        "github.com/sylabs/singularity/e2e-cli-plugin",
+		Name:        "github.com/hpcng/singularity/e2e-cli-plugin",
 		Author:      "Sylabs Team",
 		Version:     "0.1.0",
 		Description: "E2E CLI plugin",

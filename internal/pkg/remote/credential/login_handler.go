@@ -14,9 +14,9 @@ import (
 	"time"
 
 	auth "github.com/deislabs/oras/pkg/auth/docker"
-	"github.com/sylabs/singularity/internal/pkg/util/interactive"
-	"github.com/sylabs/singularity/pkg/syfs"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/hpcng/singularity/internal/pkg/util/interactive"
+	"github.com/hpcng/singularity/pkg/syfs"
+	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
 )
 
 // loginHandlers contains the registered handlers by scheme.

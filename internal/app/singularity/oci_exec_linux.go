@@ -10,9 +10,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
-	"github.com/sylabs/singularity/internal/pkg/util/starter"
-	"github.com/sylabs/singularity/pkg/ociruntime"
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/oci"
+	"github.com/hpcng/singularity/internal/pkg/util/starter"
+	"github.com/hpcng/singularity/pkg/ociruntime"
 )
 
 // OciExec executes a command in a container

@@ -11,10 +11,10 @@ import (
 	"testing"
 
 	"github.com/buger/jsonparser"
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/e2e/internal/testhelper"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 type ctx struct {

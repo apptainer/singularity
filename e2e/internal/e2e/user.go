@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/hpcng/singularity/internal/pkg/util/user"
 )
 
 // CurrentUser returns the current user account information. Use of user.Current is

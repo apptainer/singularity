@@ -18,13 +18,13 @@ import (
 
 	apexlog "github.com/apex/log"
 	"github.com/containers/image/v5/types"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	sytypes "github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/sylog"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/umoci"
 	umocilayer "github.com/opencontainers/umoci/oci/layer"
 	"github.com/opencontainers/umoci/pkg/idtools"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	sytypes "github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // unpackRootfs extracts all of the layers of the given image reference into the rootfs of the provided bundle
@@ -187,7 +187,7 @@ func checkPerms(rootfs string) (err error) {
 		sylog.Warningf("The sandbox will contain files/dirs that cannot be removed until permissions are modified")
 		sylog.Warningf("Use 'chmod -R u+rwX' to set permissions that allow removal")
 		sylog.Warningf("Use the '--fix-perms' option to 'singularity build' to modify permissions at build time")
-		sylog.Warningf("You can provide feedback about this change at https://github.com/sylabs/singularity/issues/4671")
+		sylog.Warningf("You can provide feedback about this change at https://github.com/hpcng/singularity/issues/4671")
 		// It's not an error any further up... the rootfs is still usable
 		return nil
 	}

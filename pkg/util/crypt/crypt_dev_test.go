@@ -12,9 +12,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/internal/pkg/util/fs/squashfs"
+	"github.com/hpcng/singularity/internal/pkg/test"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/internal/pkg/util/fs/squashfs"
 )
 
 func TestEncrypt(t *testing.T) {

@@ -12,22 +12,22 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	fakerootutil "github.com/hpcng/singularity/internal/pkg/fakeroot"
+	"github.com/hpcng/singularity/internal/pkg/plugin"
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine"
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/starter"
+	fakerootConfig "github.com/hpcng/singularity/internal/pkg/runtime/engine/fakeroot/config"
+	"github.com/hpcng/singularity/internal/pkg/security/seccomp"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	fakerootcallback "github.com/hpcng/singularity/pkg/plugin/callback/runtime/fakeroot"
+	"github.com/hpcng/singularity/pkg/runtime/engine/config"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/capabilities"
+	"github.com/hpcng/singularity/pkg/util/fs/proc"
+	"github.com/hpcng/singularity/pkg/util/singularityconf"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	fakerootutil "github.com/sylabs/singularity/internal/pkg/fakeroot"
-	"github.com/sylabs/singularity/internal/pkg/plugin"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
-	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
-	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	fakerootcallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/fakeroot"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/capabilities"
-	"github.com/sylabs/singularity/pkg/util/fs/proc"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // EngineOperations is a Singularity fakeroot runtime engine that implements engine.Operations.
@@ -213,7 +213,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 		return fmt.Errorf("failed to mount proc filesystem: %s", err)
 	}
 
-	// fix potential issue with SELinux (https://github.com/sylabs/singularity/issues/4038)
+	// fix potential issue with SELinux (https://github.com/hpcng/singularity/issues/4038)
 	mounts, err := proc.GetMountPointMap(mountInfo)
 	if err != nil {
 		return fmt.Errorf("while parsing %s: %s", mountInfo, err)

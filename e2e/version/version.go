@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/blang/semver/v4"
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/e2e/internal/testhelper"
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
 )
 
 type ctx struct {

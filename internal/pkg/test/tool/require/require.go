@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
-	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"github.com/hpcng/singularity/internal/pkg/security/seccomp"
+	"github.com/hpcng/singularity/pkg/util/fs/proc"
 )
 
 // Filesystem checks that the current test could use the

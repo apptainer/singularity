@@ -11,8 +11,8 @@ import (
 	"io"
 
 	"github.com/hpcng/sif/pkg/sif"
-	"github.com/sylabs/singularity/pkg/image"
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
+	"github.com/hpcng/singularity/pkg/image"
+	pluginapi "github.com/hpcng/singularity/pkg/plugin"
 )
 
 const (

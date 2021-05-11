@@ -13,19 +13,19 @@ import (
 	"runtime"
 
 	ocitypes "github.com/containers/image/v5/types"
+	"github.com/hpcng/singularity/docs"
+	"github.com/hpcng/singularity/internal/pkg/remote/endpoint"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/internal/pkg/util/interactive"
+	"github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/build/types/parser"
+	"github.com/hpcng/singularity/pkg/cmdline"
+	"github.com/hpcng/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/spf13/cobra"
 	scsbuildclient "github.com/sylabs/scs-build-client/client"
 	scskeyclient "github.com/sylabs/scs-key-client/client"
 	scslibclient "github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/internal/pkg/util/interactive"
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/build/types/parser"
-	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 var buildArgs struct {

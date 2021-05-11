@@ -13,11 +13,11 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/hpcng/singularity/pkg/sylog"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	cseccomp "github.com/seccomp/containers-golang"
 	lseccomp "github.com/seccomp/libseccomp-golang"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 var scmpArchMap = map[specs.Arch]lseccomp.ScmpArch{

@@ -11,7 +11,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/build/types"
 )
 
 // ScratchConveyor only needs to hold the conveyor to have the needed data to pack

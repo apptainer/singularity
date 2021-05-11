@@ -8,9 +8,9 @@ package oci
 import (
 	"sync"
 
-	"github.com/sylabs/singularity/internal/pkg/cgroups"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
-	"github.com/sylabs/singularity/pkg/ociruntime"
+	"github.com/hpcng/singularity/internal/pkg/cgroups"
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/hpcng/singularity/pkg/ociruntime"
 )
 
 // Name of the engine.

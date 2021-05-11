@@ -9,8 +9,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sylabs/singularity/internal/pkg/build/sources"
-	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/internal/pkg/build/sources"
+	"github.com/hpcng/singularity/pkg/build/types"
 )
 
 // Conveyor is responsible for downloading from remote sources (library, shub, docker...).

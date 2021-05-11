@@ -14,14 +14,14 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/instance"
-	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
-	"github.com/sylabs/singularity/internal/pkg/util/priv"
-	"github.com/sylabs/singularity/internal/pkg/util/starter"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/capabilities"
-	"github.com/sylabs/singularity/pkg/util/crypt"
+	"github.com/hpcng/singularity/internal/pkg/instance"
+	fakerootConfig "github.com/hpcng/singularity/internal/pkg/runtime/engine/fakeroot/config"
+	"github.com/hpcng/singularity/internal/pkg/util/priv"
+	"github.com/hpcng/singularity/internal/pkg/util/starter"
+	"github.com/hpcng/singularity/pkg/runtime/engine/config"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/capabilities"
+	"github.com/hpcng/singularity/pkg/util/crypt"
 )
 
 // CleanupContainer is called from master after the MonitorContainer returns.

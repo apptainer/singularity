@@ -13,13 +13,13 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	imageSpecs "github.com/opencontainers/image-spec/specs-go/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/ocibundle"
-	"github.com/sylabs/singularity/pkg/ocibundle/tools"
+	"github.com/hpcng/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/ocibundle"
+	"github.com/hpcng/singularity/pkg/ocibundle/tools"
 )
 
 type sifBundle struct {

@@ -11,9 +11,9 @@ import (
 	"io/ioutil"
 
 	ocitypes "github.com/containers/image/v5/types"
-	"github.com/sylabs/singularity/internal/pkg/cache"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/cache"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // pull will pull an oras image into the cache if directTo="", or a specific file if directTo is set.

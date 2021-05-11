@@ -17,7 +17,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/hpcng/singularity/internal/pkg/test"
 )
 
 func readIntFromFile(path string) (int64, error) {

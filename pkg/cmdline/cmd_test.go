@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/hpcng/singularity/internal/pkg/test"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 var rootCmd = &cobra.Command{Use: "root"}

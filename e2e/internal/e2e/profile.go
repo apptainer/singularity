@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/fakeroot"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/hpcng/singularity/internal/pkg/fakeroot"
+	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
+	"github.com/hpcng/singularity/internal/pkg/util/user"
 )
 
 const (

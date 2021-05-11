@@ -9,7 +9,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/vbauerster/mpb/v6"
 	"github.com/vbauerster/mpb/v6/decor"
 )

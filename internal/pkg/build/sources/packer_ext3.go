@@ -6,8 +6,8 @@
 package sources
 
 import (
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/image"
 )
 
 // Ext3Packer holds the locations of where to back from and to, aswell as image offset info

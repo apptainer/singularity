@@ -8,9 +8,9 @@ package cli
 import (
 	"fmt"
 
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/pkg/cmdline"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 func init() {

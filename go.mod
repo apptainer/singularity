@@ -1,4 +1,4 @@
-module github.com/sylabs/singularity
+module github.com/hpcng/singularity
 
 go 1.13
 
@@ -66,5 +66,5 @@ replace (
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
 	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
 
-	golang.org/x/crypto => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
+	golang.org/x/crypto => github.com/hpcng/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
 )

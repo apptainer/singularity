@@ -15,8 +15,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/namespaces"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/namespaces"
 	"golang.org/x/sys/unix"
 )
 

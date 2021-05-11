@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/remote/credential"
+	"github.com/hpcng/singularity/internal/pkg/remote/credential"
 )
 
 func TestAddRemoveKeyserver(t *testing.T) {

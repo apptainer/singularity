@@ -8,7 +8,7 @@ package singularity
 import (
 	"fmt"
 
-	"github.com/sylabs/singularity/internal/pkg/plugin"
+	"github.com/hpcng/singularity/internal/pkg/plugin"
 )
 
 // InspectPlugin inspects the named plugin.

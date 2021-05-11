@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/image/unpacker"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/image/unpacker"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // Pack puts relevant objects in a Bundle.

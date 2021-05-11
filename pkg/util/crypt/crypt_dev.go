@@ -16,11 +16,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/fs/lock"
+	"github.com/hpcng/singularity/pkg/util/loop"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/singularity/internal/pkg/util/bin"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/fs/lock"
-	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
 // Device describes a crypt device

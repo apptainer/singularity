@@ -23,9 +23,9 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/capabilities"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
 const searchPath = "/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin"

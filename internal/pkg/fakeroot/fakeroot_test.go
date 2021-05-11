@@ -13,10 +13,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hpcng/singularity/internal/pkg/test"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/internal/pkg/util/user"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
 
 type set struct {
@@ -110,7 +110,7 @@ func TestGetIDRangePath(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	// mock user database (https://github.com/sylabs/singularity/issues/3957)
+	// mock user database (https://github.com/hpcng/singularity/issues/3957)
 	getPwUID = getPwUIDMock
 	getPwNam = getPwNamMock
 	defer func() {

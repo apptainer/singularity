@@ -8,7 +8,7 @@ package singularity
 import (
 	"github.com/hpcng/sif/pkg/integrity"
 	"github.com/hpcng/sif/pkg/sif"
-	"github.com/sylabs/singularity/pkg/sypgp"
+	"github.com/hpcng/singularity/pkg/sypgp"
 )
 
 type signer struct {

@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hpcng/singularity/pkg/sypgp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/sylabs/singularity/pkg/sypgp"
 
 	"gotest.tools/v3/assert"
 )

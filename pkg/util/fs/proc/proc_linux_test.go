@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/hpcng/singularity/internal/pkg/test"
 )
 
 func TestHasFilesystem(t *testing.T) {

@@ -81,13 +81,13 @@ Golang is a bit finicky about where things are placed. Here is the correct way
 to build Singularity from source:
 
 ```
-$ mkdir -p ${GOPATH}/src/github.com/sylabs && \
-  cd ${GOPATH}/src/github.com/sylabs && \
-  git clone https://github.com/sylabs/singularity.git && \
+$ mkdir -p ${GOPATH}/src/github.com/hpcng && \
+  cd ${GOPATH}/src/github.com/hpcng && \
+  git clone https://github.com/hpcng/singularity.git && \
   cd singularity
 ```
 
-To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
+To build a stable version of Singularity, check out a [release tag](https://github.com/hpcng/singularity/tags) before compiling:
 
 ```
 $ git checkout v3.7.1
@@ -98,7 +98,7 @@ $ git checkout v3.7.1
 You can build Singularity using the following commands:
 
 ```
-$ cd ${GOPATH}/src/github.com/sylabs/singularity && \
+$ cd ${GOPATH}/src/github.com/hpcng/singularity && \
   ./mconfig && \
   cd ./builddir && \
   make && \
@@ -129,13 +129,13 @@ $ sudo yum -y update && sudo yum install -y rpm-build wget
 Make sure you have also 
 [installed the system dependencies](#install-system-dependencies)
 as shown above.  Then download the latest 
-[release tarball](https://github.com/sylabs/singularity/releases)
+[release tarball](https://github.com/hpcng/singularity/releases)
 and use it to install the RPM like this: 
 
 ```
 $ export VERSION=3.7.3  # this is the singularity version, change as you need
 
-$ wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
+$ wget https://github.com/hpcng/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-${VERSION}.tar.gz && \
     sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-${VERSION}-1.el7.x86_64.rpm && \
     rm -rf ~/rpmbuild singularity-${VERSION}*.tar.gz
@@ -146,7 +146,7 @@ Alternatively, to build an RPM from the latest master you can
 tarball and use it to install Singularity:
 
 ```
-$ cd $GOPATH/src/github.com/sylabs/singularity && \
+$ cd $GOPATH/src/github.com/hpcng/singularity && \
   ./mconfig && \
   make -C builddir rpm && \
   sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.7.3*.x86_64.rpm # or whatever version you built

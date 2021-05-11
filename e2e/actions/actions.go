@@ -18,12 +18,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/e2e/internal/testhelper"
+	"github.com/hpcng/singularity/internal/pkg/test/tool/exec"
+	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 type actionTests struct {
@@ -872,14 +872,14 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 			profile: e2e.RootProfile,
 		},
 		{
-			// https://github.com/sylabs/singularity/issues/4329
+			// https://github.com/hpcng/singularity/issues/4329
 			name:    "SIF_writable_without_overlay_partition_issue_4329",
 			argv:    []string{"--writable", c.env.ImagePath, "true"},
 			exit:    255,
 			profile: e2e.RootProfile,
 		},
 		{
-			// https://github.com/sylabs/singularity/issues/4270
+			// https://github.com/hpcng/singularity/issues/4270
 			name:    "overlay_dir_relative_path_issue_4270",
 			argv:    []string{"--overlay", filepath.Base(dir), sandboxImage, "test", "-f", "/dir_overlay"},
 			dir:     filepath.Dir(dir),
@@ -2206,23 +2206,23 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"shell":                 c.actionShell,         // shell interaction
 		"STDPIPE":               c.STDPipe,             // stdin/stdout pipe
 		"action basic profiles": c.actionBasicProfiles, // run basic action under different profiles
-		"issue 4488":            c.issue4488,           // https://github.com/sylabs/singularity/issues/4488
-		"issue 4587":            c.issue4587,           // https://github.com/sylabs/singularity/issues/4587
-		"issue 4755":            c.issue4755,           // https://github.com/sylabs/singularity/issues/4755
-		"issue 4768":            c.issue4768,           // https://github.com/sylabs/singularity/issues/4768
-		"issue 4797":            c.issue4797,           // https://github.com/sylabs/singularity/issues/4797
-		"issue 4823":            c.issue4823,           // https://github.com/sylabs/singularity/issues/4823
-		"issue 4836":            c.issue4836,           // https://github.com/sylabs/singularity/issues/4836
-		"issue 5211":            c.issue5211,           // https://github.com/sylabs/singularity/issues/5211
-		"issue 5228":            c.issue5228,           // https://github.com/sylabs/singularity/issues/5228
-		"issue 5271":            c.issue5271,           // https://github.com/sylabs/singularity/issues/5271
-		"issue 5307":            c.issue5307,           // https://github.com/sylabs/singularity/issues/5307
-		"issue 5399":            c.issue5399,           // https://github.com/sylabs/singularity/issues/5399
-		"issue 5455":            c.issue5455,           // https://github.com/sylabs/singularity/issues/5455
-		"issue 5465":            c.issue5465,           // https://github.com/sylabs/singularity/issues/5465
-		"issue 5599":            c.issue5599,           // https://github.com/sylabs/singularity/issues/5599
-		"issue 5631":            c.issue5631,           // https://github.com/sylabs/singularity/issues/5631
-		"issue 5690":            c.issue5690,           // https://github.com/sylabs/singularity/issues/5690
+		"issue 4488":            c.issue4488,           // https://github.com/hpcng/singularity/issues/4488
+		"issue 4587":            c.issue4587,           // https://github.com/hpcng/singularity/issues/4587
+		"issue 4755":            c.issue4755,           // https://github.com/hpcng/singularity/issues/4755
+		"issue 4768":            c.issue4768,           // https://github.com/hpcng/singularity/issues/4768
+		"issue 4797":            c.issue4797,           // https://github.com/hpcng/singularity/issues/4797
+		"issue 4823":            c.issue4823,           // https://github.com/hpcng/singularity/issues/4823
+		"issue 4836":            c.issue4836,           // https://github.com/hpcng/singularity/issues/4836
+		"issue 5211":            c.issue5211,           // https://github.com/hpcng/singularity/issues/5211
+		"issue 5228":            c.issue5228,           // https://github.com/hpcng/singularity/issues/5228
+		"issue 5271":            c.issue5271,           // https://github.com/hpcng/singularity/issues/5271
+		"issue 5307":            c.issue5307,           // https://github.com/hpcng/singularity/issues/5307
+		"issue 5399":            c.issue5399,           // https://github.com/hpcng/singularity/issues/5399
+		"issue 5455":            c.issue5455,           // https://github.com/hpcng/singularity/issues/5455
+		"issue 5465":            c.issue5465,           // https://github.com/hpcng/singularity/issues/5465
+		"issue 5599":            c.issue5599,           // https://github.com/hpcng/singularity/issues/5599
+		"issue 5631":            c.issue5631,           // https://github.com/hpcng/singularity/issues/5631
+		"issue 5690":            c.issue5690,           // https://github.com/hpcng/singularity/issues/5690
 		"network":               c.actionNetwork,       // test basic networking
 		"binds":                 c.actionBinds,         // test various binds
 		"exit and signals":      c.exitSignals,         // test exit and signals propagation

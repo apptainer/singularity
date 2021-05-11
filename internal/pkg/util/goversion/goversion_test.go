@@ -8,7 +8,7 @@ package goversion_test
 import (
 	"testing"
 
-	_ "github.com/sylabs/singularity/internal/pkg/util/goversion"
+	_ "github.com/hpcng/singularity/internal/pkg/util/goversion"
 )
 
 // TestVersion tests that a supported Go version is being used. The

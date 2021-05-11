@@ -16,9 +16,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/syfs"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/pkg/syfs"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 var (

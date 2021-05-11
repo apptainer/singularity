@@ -12,13 +12,13 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/hpcng/singularity/internal/app/singularity"
+	"github.com/hpcng/singularity/internal/pkg/cache"
+	"github.com/hpcng/singularity/internal/pkg/client"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/pkg/sylog"
 	keyclient "github.com/sylabs/scs-key-client/client"
 	libclient "github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/internal/app/singularity"
-	"github.com/sylabs/singularity/internal/pkg/cache"
-	"github.com/sylabs/singularity/internal/pkg/client"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // ErrLibraryPullUnsigned indicates that the interactive portion of the pull was aborted.

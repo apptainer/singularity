@@ -8,7 +8,7 @@ package endpoint
 import (
 	"testing"
 
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
 )
 
 func init() {

@@ -545,7 +545,7 @@ This point release addresses the following issues:
     modifying permissions.
     - `--fix-perms` option added to preserve old behaviour when
     building sandboxes.
-    - Discussion issue for this change at: https://github.com/sylabs/singularity/issues/4671
+    - Discussion issue for this change at: https://github.com/hpcng/singularity/issues/4671
   - `Singularity>` prompt is always set when entering shell in a container.
   - The current `umask` will be honored when building a SIF file.
   - `instance exec` processes acquire cgroups set on `instance start`

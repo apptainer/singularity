@@ -9,5 +9,5 @@ package engines
 
 import (
 	// register the oci runtime engine
-	_ "github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
+	_ "github.com/hpcng/singularity/internal/pkg/runtime/engine/oci"
 )

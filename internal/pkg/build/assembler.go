@@ -6,7 +6,7 @@
 package build
 
 import (
-	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/build/types"
 )
 
 // Assembler is responsible for assembling an image from a bundle.

@@ -12,10 +12,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/sylog"
 
+	"github.com/hpcng/singularity/internal/pkg/client"
 	scslibrary "github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/internal/pkg/client"
 )
 
 const defaultTag = "latest"

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/hpcng/singularity/pkg/util/capabilities"
 )
 
 // CapAvailConfig instructs CapabilityAvail on what capability to list/describe

@@ -9,10 +9,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sylabs/singularity/internal/pkg/instance"
-	"github.com/sylabs/singularity/internal/pkg/util/exec"
-	"github.com/sylabs/singularity/pkg/ociruntime"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/instance"
+	"github.com/hpcng/singularity/internal/pkg/util/exec"
+	"github.com/hpcng/singularity/pkg/ociruntime"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // OciDelete deletes container resources

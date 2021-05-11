@@ -15,11 +15,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/ecl"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/e2e/ecl"
+	"github.com/hpcng/singularity/e2e/internal/e2e"
+	"github.com/hpcng/singularity/e2e/internal/testhelper"
+	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
 )
 
 var testFileContent = "Test file content\n"
@@ -54,7 +54,7 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 
 	// use a trailing slash in tests for sandbox intentionally to make sure
 	// `singularity build -s /tmp/sand/ docker://alpine` works,
-	// see https://github.com/sylabs/singularity/issues/4407
+	// see https://github.com/hpcng/singularity/issues/4407
 	tt := []struct {
 		name        string
 		dependency  string
@@ -1375,19 +1375,19 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"fingerprint check":               c.buildWithFingerprint,      // definition file includes fingerprint check
 		"build with bind mount":           c.buildBindMount,            // build image with bind mount
 		"issue 3848":                      c.issue3848,                 // https://github.com/hpcng/singularity/issues/3848
-		"issue 4203":                      c.issue4203,                 // https://github.com/sylabs/singularity/issues/4203
-		"issue 4407":                      c.issue4407,                 // https://github.com/sylabs/singularity/issues/4407
-		"issue 4524":                      c.issue4524,                 // https://github.com/sylabs/singularity/issues/4524
-		"issue 4583":                      c.issue4583,                 // https://github.com/sylabs/singularity/issues/4583
-		"issue 4820":                      c.issue4820,                 // https://github.com/sylabs/singularity/issues/4820
-		"issue 4837":                      c.issue4837,                 // https://github.com/sylabs/singularity/issues/4837
-		"issue 4943":                      c.issue4943,                 // https://github.com/sylabs/singularity/issues/4943
-		"issue 4967":                      c.issue4967,                 // https://github.com/sylabs/singularity/issues/4967
-		"issue 4969":                      c.issue4969,                 // https://github.com/sylabs/singularity/issues/4969
-		"issue 5166":                      c.issue5166,                 // https://github.com/sylabs/singularity/issues/5166
-		"issue 5172":                      c.issue5172,                 // https://github.com/sylabs/singularity/issues/5172
-		"issue 5250":                      c.issue5250,                 // https://github.com/sylabs/singularity/issues/5250
-		"issue 5315":                      c.issue5315,                 // https://github.com/sylabs/singularity/issues/5315
+		"issue 4203":                      c.issue4203,                 // https://github.com/hpcng/singularity/issues/4203
+		"issue 4407":                      c.issue4407,                 // https://github.com/hpcng/singularity/issues/4407
+		"issue 4524":                      c.issue4524,                 // https://github.com/hpcng/singularity/issues/4524
+		"issue 4583":                      c.issue4583,                 // https://github.com/hpcng/singularity/issues/4583
+		"issue 4820":                      c.issue4820,                 // https://github.com/hpcng/singularity/issues/4820
+		"issue 4837":                      c.issue4837,                 // https://github.com/hpcng/singularity/issues/4837
+		"issue 4943":                      c.issue4943,                 // https://github.com/hpcng/singularity/issues/4943
+		"issue 4967":                      c.issue4967,                 // https://github.com/hpcng/singularity/issues/4967
+		"issue 4969":                      c.issue4969,                 // https://github.com/hpcng/singularity/issues/4969
+		"issue 5166":                      c.issue5166,                 // https://github.com/hpcng/singularity/issues/5166
+		"issue 5172":                      c.issue5172,                 // https://github.com/hpcng/singularity/issues/5172
+		"issue 5250":                      c.issue5250,                 // https://github.com/hpcng/singularity/issues/5250
+		"issue 5315":                      c.issue5315,                 // https://github.com/hpcng/singularity/issues/5315
 		"issue 5435":                      c.issue5435,                 // https://github.com/hpcng/singularity/issues/5435
 		"issue 5668":                      c.issue5668,                 // https://github.com/hpcng/singularity/issues/5435
 		"issue 5690":                      c.issue5690,                 // https://github.com/hpcng/singularity/issues/5690

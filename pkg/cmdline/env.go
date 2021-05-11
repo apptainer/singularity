@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/spf13/pflag"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 func setValue(flag *pflag.Flag, value string) error {

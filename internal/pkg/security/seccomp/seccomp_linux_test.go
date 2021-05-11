@@ -13,9 +13,9 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/hpcng/singularity/internal/pkg/test"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 func defaultProfile() *specs.LinuxSeccomp {

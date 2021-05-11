@@ -13,7 +13,7 @@ import (
 	"syscall"
 
 	"github.com/hpcng/sif/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/util/machine"
+	"github.com/hpcng/singularity/internal/pkg/util/machine"
 )
 
 const (

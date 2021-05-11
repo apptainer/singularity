@@ -8,7 +8,7 @@ package singularity
 import (
 	"fmt"
 
-	"github.com/sylabs/singularity/internal/pkg/fakeroot"
+	"github.com/hpcng/singularity/internal/pkg/fakeroot"
 )
 
 // FakerootConfigOp defines a type for a fakeroot

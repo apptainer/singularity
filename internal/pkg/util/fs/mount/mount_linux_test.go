@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/hpcng/singularity/internal/pkg/test"
+	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
 func TestImage(t *testing.T) {

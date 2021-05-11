@@ -138,7 +138,7 @@ if test -z "${PS1:-}"; then
 	export PS1="Singularity> "
 fi
 
-# See https://github.com/sylabs/singularity/issues/2721,
+# See https://github.com/hpcng/singularity/issues/2721,
 # as bash is often used as the current shell it may confuse
 # users if the provided command is /bin/bash implying to
 # override PS1 set by singularity, then we may end up

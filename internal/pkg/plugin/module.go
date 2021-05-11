@@ -14,8 +14,8 @@ import (
 	"path/filepath"
 
 	"github.com/blang/semver/v4"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // SingularitySource represents the symlink name which will

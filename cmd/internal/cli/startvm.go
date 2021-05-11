@@ -14,9 +14,9 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 func execVM(cmd *cobra.Command, image string, args []string) {

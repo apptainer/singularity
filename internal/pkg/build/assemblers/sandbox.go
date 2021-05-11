@@ -11,8 +11,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // SandboxAssembler assembles a sandbox image.

@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	auth "github.com/deislabs/oras/pkg/auth/docker"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
-	"github.com/sylabs/singularity/pkg/syfs"
+	"github.com/hpcng/singularity/internal/pkg/util/user"
+	"github.com/hpcng/singularity/pkg/syfs"
 )
 
 const dockerHub = "docker.io"

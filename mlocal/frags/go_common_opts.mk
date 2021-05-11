@@ -15,8 +15,8 @@ else
 GO_BUILDMODE := -buildmode=pie
 GO_RACE := -race
 endif
-GO_GCFLAGS := -gcflags=github.com/sylabs/singularity/...="-trimpath $(SOURCEDIR)=>github.com/sylabs/singularity@v0.0.0"
-GO_ASMFLAGS := -asmflags=github.com/sylabs/singularity/...="-trimpath $(SOURCEDIR)=>github.com/sylabs/singularity@v0.0.0"
+GO_GCFLAGS := -gcflags=github.com/hpcng/singularity/...="-trimpath $(SOURCEDIR)=>github.com/hpcng/singularity@v0.0.0"
+GO_ASMFLAGS := -asmflags=github.com/hpcng/singularity/...="-trimpath $(SOURCEDIR)=>github.com/hpcng/singularity@v0.0.0"
 GO_MODFLAGS := $(if $(wildcard $(SOURCEDIR)/vendor/modules.txt),-mod=vendor,-mod=readonly)
 GO_MODFILES := $(SOURCEDIR)/go.mod $(SOURCEDIR)/go.sum
 GOFLAGS := $(GO_MODFLAGS) -trimpath

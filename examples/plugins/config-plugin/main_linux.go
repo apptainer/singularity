@@ -9,19 +9,19 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/internal/pkg/cgroups"
-	"github.com/sylabs/singularity/pkg/sylog"
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
-	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
+	"github.com/hpcng/singularity/internal/pkg/cgroups"
+	pluginapi "github.com/hpcng/singularity/pkg/plugin"
+	clicallback "github.com/hpcng/singularity/pkg/plugin/callback/cli"
+	"github.com/hpcng/singularity/pkg/runtime/engine/config"
+	singularity "github.com/hpcng/singularity/pkg/runtime/engine/singularity/config"
+	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // Plugin is the only variable which a plugin MUST export.
 // This symbol is accessed by the plugin framework to initialize the plugin
 var Plugin = pluginapi.Plugin{
 	Manifest: pluginapi.Manifest{
-		Name:        "github.com/sylabs/singularity/config-example-plugin",
+		Name:        "github.com/hpcng/singularity/config-example-plugin",
 		Author:      "Sylabs Team",
 		Version:     "0.1.0",
 		Description: "This is a short example config plugin for Singularity",

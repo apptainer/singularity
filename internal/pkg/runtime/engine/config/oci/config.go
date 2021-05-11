@@ -9,10 +9,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/hpcng/singularity/internal/pkg/security/seccomp"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	cseccomp "github.com/seccomp/containers-golang"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
-	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 )
 
 // Config is the OCI runtime configuration.

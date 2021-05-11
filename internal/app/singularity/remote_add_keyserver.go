@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
+	"github.com/hpcng/singularity/internal/pkg/remote"
+	"github.com/hpcng/singularity/internal/pkg/remote/endpoint"
 )
 
 func RemoteAddKeyserver(name, uri string, order uint32, insecure bool) error {

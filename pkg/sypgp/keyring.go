@@ -13,8 +13,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/sylabs/scs-key-client/client"
-	"github.com/sylabs/singularity/pkg/sylog"
 	"golang.org/x/crypto/openpgp"
 )
 

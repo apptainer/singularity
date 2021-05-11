@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
 )
 
 // prepareFakerootEnv prepares a build environment to

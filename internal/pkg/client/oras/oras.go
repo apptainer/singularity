@@ -28,11 +28,11 @@ import (
 	"github.com/deislabs/oras/pkg/content"
 	orasctx "github.com/deislabs/oras/pkg/context"
 	"github.com/deislabs/oras/pkg/oras"
+	"github.com/hpcng/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/syfs"
+	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/syfs"
-	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 const (

@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/util/signal"
-	"github.com/sylabs/singularity/pkg/ociruntime"
-	"github.com/sylabs/singularity/pkg/util/unix"
+	"github.com/hpcng/singularity/internal/pkg/util/signal"
+	"github.com/hpcng/singularity/pkg/ociruntime"
+	"github.com/hpcng/singularity/pkg/util/unix"
 )
 
 // OciKill kills container process

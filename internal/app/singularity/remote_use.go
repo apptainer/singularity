@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/hpcng/singularity/internal/pkg/remote"
 )
 
 func syncSysConfig(cUsr *remote.Config) error {

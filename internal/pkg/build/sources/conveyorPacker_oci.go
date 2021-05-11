@@ -28,14 +28,14 @@ import (
 	ocilayout "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
+	"github.com/hpcng/singularity/internal/pkg/build/oci"
+	"github.com/hpcng/singularity/internal/pkg/util/shell"
+	sytypes "github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/syfs"
+	"github.com/hpcng/singularity/pkg/sylog"
+	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/sylabs/singularity/internal/pkg/build/oci"
-	"github.com/sylabs/singularity/internal/pkg/util/shell"
-	sytypes "github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/syfs"
-	"github.com/sylabs/singularity/pkg/sylog"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
@@ -63,7 +63,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
 	// can have three possible values true/false and undefined, so we left it as undefined instead
 	// of forcing it to false in order to delegate decision to /etc/containers/registries.conf:
-	// https://github.com/sylabs/singularity/issues/5172
+	// https://github.com/hpcng/singularity/issues/5172
 	cp.sysCtx = &types.SystemContext{
 		OCIInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
 		DockerAuthConfig:         cp.b.Opts.DockerAuthConfig,

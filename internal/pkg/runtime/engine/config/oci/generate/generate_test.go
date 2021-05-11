@@ -12,10 +12,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/hpcng/singularity/pkg/util/capabilities"
 
+	"github.com/hpcng/singularity/internal/pkg/test"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 func TestGenerate(t *testing.T) {

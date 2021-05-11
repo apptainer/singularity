@@ -21,7 +21,7 @@
 # 
 # 
 
-%define singgopath src/github.com/sylabs/singularity
+%define singgopath src/github.com/hpcng/singularity
 
 # Disable debugsource packages; otherwise it ends up with an empty %files
 #   file in debugsourcefiles.list on Fedora
@@ -94,7 +94,7 @@ mkdir %{name}-%{version}
 cd %{name}-%{version}
 
 mkdir -p gopath/%{singgopath}
-tar -C "gopath/src/github.com/sylabs/" -xf "%SOURCE0"
+tar -C "gopath/src/github.com/hpcng/" -xf "%SOURCE0"
 
 export GOPATH=$PWD/gopath
 export PATH=$GOPATH/bin:$PATH
