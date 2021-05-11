@@ -1,6 +1,17 @@
 version: 2.1
 
 executors:
+  golang:
+    parameters:
+      variant:
+        description: "variant (ex. alpine)"
+        default: ""
+        type: string
+    docker:
+      - image: golang:1.14<<# parameters.variant >>-<< parameters.variant >><</ parameters.variant >>
+        auth:
+          username: $CIRCLE_CI_DOCKER_USERNAME
+          password: $CIRCLE_CI_DOCKER_PASSWORD
   macos-machine:
     macos:
       xcode: "10.2.0"
@@ -86,11 +97,7 @@ x-run:
 
 jobs:
   check_go_mod:
-    docker:
-      - image: golang:1.14
-        auth:
-          username: $CIRCLE_CI_DOCKER_USERNAME
-          password: $CIRCLE_CI_DOCKER_PASSWORD
+    executor: golang
     steps:
       - checkout
       - run:
@@ -98,11 +105,9 @@ jobs:
           command: scripts/check-go.mod
 
   go114-stretch:
-    docker:
-      - image: golang:1.14-stretch
-        auth:
-          username: $CIRCLE_CI_DOCKER_USERNAME
-          password: $CIRCLE_CI_DOCKER_PASSWORD
+    executor:
+      name: golang
+      variant: stretch
     steps:
       - checkout
       - run:
@@ -114,11 +119,9 @@ jobs:
           <<: *check_singularity
 
   go114-alpine:
-    docker:
-      - image: golang:1.14-alpine
-        auth:
-          username: $CIRCLE_CI_DOCKER_USERNAME
-          password: $CIRCLE_CI_DOCKER_PASSWORD
+    executor:
+      name: golang
+      variant: alpine
     steps:
       - checkout
       - run:
