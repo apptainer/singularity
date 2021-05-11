@@ -1,6 +1,9 @@
 version: 2.1
 
 executors:
+  macos-machine:
+    macos:
+      xcode: "10.2.0"
   ubuntu-machine:
     working_directory: ~/go/singularity
     machine:
@@ -126,9 +129,8 @@ jobs:
       - run:
           <<: *check_singularity
 
-  go114-macos:
-    macos:
-      xcode: "10.2.0"
+  go114-darwin:
+    executor: macos-machine
     working_directory: /Users/distiller/go/src/github.com/sylabs/singularity
     steps:
       - checkout
@@ -250,7 +252,7 @@ workflows:
     jobs:
       - go114-stretch
       - go114-alpine
-      - go114-macos
+      - go114-darwin
       - check_go_mod
       - short_unit_tests
       - integration_tests
