@@ -3,6 +3,11 @@ version: 2.1
 orbs:
   go: circleci/go@1.6
 
+parameters:
+  go-version:
+    type: string
+    default: 1.14.9
+
 executors:
   golang:
     parameters:
@@ -11,7 +16,7 @@ executors:
         default: ""
         type: string
     docker:
-      - image: golang:1.14<<# parameters.variant >>-<< parameters.variant >><</ parameters.variant >>
+      - image: golang:<< pipeline.parameters.go-version >><<# parameters.variant >>-<< parameters.variant >><</ parameters.variant >>
         auth:
           username: $CIRCLE_CI_DOCKER_USERNAME
           password: $CIRCLE_CI_DOCKER_PASSWORD
@@ -121,7 +126,7 @@ jobs:
     steps:
       - checkout
       - go/install:
-          version: 1.14.9
+          version: << pipeline.parameters.go-version >>
       - run:
           name: Build Singularity
           command: |-
@@ -157,7 +162,7 @@ jobs:
     steps:
       - checkout
       - go/install:
-          version: 1.14.9
+          version: << pipeline.parameters.go-version >>
           cache: no
       - run:
           <<: *fetch_deb_deps
@@ -177,7 +182,7 @@ jobs:
       - run:
           <<: *check_changes
       - go/install:
-          version: 1.14.9
+          version: << pipeline.parameters.go-version >>
           cache: no
       - run:
           <<: *fetch_deb_deps
@@ -198,7 +203,7 @@ jobs:
       - run:
           <<: *check_changes
       - go/install:
-          version: 1.14.9
+          version: << pipeline.parameters.go-version >>
           cache: no
       - run:
           <<: *fetch_deb_deps
