@@ -36,7 +36,7 @@ require (
 	github.com/opencontainers/selinux v1.8.1
 	github.com/opencontainers/umoci v0.4.7
 	github.com/oras-project/oras-go v0.1.0
-	github.com/pelletier/go-toml v1.9.0
+	github.com/pelletier/go-toml v1.9.1
 	github.com/pkg/errors v0.9.1
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/satori/go.uuid v1.2.1-0.20180404165556-75cca531ea76
