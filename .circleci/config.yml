@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  go: circleci/go@1.6
+
 executors:
   golang:
     parameters:
@@ -21,26 +24,6 @@ executors:
       image: ubuntu-2004:202008-01
 
 x-run:
-  setup_environment: &setup_environment
-    name: Setup environment
-    command: |-
-      echo 'set -x' >> $BASH_ENV
-      echo 'export GOPATH=$HOME/go'           >> $BASH_ENV
-      echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
-      echo 'export GOBIN=$HOME/go/bin'        >> $BASH_ENV
-      echo 'export PATH=$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
-      env | sed -e 's,^,ENV: ,' | sort
-      test -e $BASH_ENV && sed -e 's,^,BASH_ENV: ,' < $BASH_ENV
-
-  update_go: &update_go
-    name: Update Go to 1.14.9
-    working_directory: /tmp
-    command: |-
-      wget https://dl.google.com/go/go1.14.9.linux-amd64.tar.gz
-      sudo rm -rf $GOROOT
-      sudo tar -C /usr/local -xzf go1.14.9.linux-amd64.tar.gz
-      sudo ln -s $GOROOT/bin/go /usr/local/bin/go
-
   fetch_deb_deps: &fetch_deb_deps
     name: Fetch deps
     working_directory: /tmp
@@ -137,20 +120,8 @@ jobs:
     working_directory: /Users/distiller/go/src/github.com/sylabs/singularity
     steps:
       - checkout
-      - run:
-          name: Setup environment
-          command: |-
-            echo 'export GOPATH=$HOME/go'      >> $BASH_ENV
-            echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
-            echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> $BASH_ENV
-      - run:
-          name: Update Go to 1.14.9
-          working_directory: /tmp
-          command: |-
-            curl -LO https://dl.google.com/go/go1.14.9.darwin-amd64.tar.gz
-            sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.14.9.darwin-amd64.tar.gz
-            sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
+      - go/install:
+          version: 1.14.9
       - run:
           name: Build Singularity
           command: |-
@@ -185,10 +156,9 @@ jobs:
     executor: ubuntu-machine
     steps:
       - checkout
-      - run:
-          <<: *setup_environment
-      - run:
-          <<: *update_go
+      - go/install:
+          version: 1.14.9
+          cache: no
       - run:
           <<: *fetch_deb_deps
       - run:
@@ -205,11 +175,10 @@ jobs:
     steps:
       - checkout
       - run:
-          <<: *setup_environment
-      - run:
           <<: *check_changes
-      - run:
-          <<: *update_go
+      - go/install:
+          version: 1.14.9
+          cache: no
       - run:
           <<: *fetch_deb_deps
       - run:
@@ -227,11 +196,10 @@ jobs:
     steps:
       - checkout
       - run:
-          <<: *setup_environment
-      - run:
           <<: *check_changes
-      - run:
-          <<: *update_go
+      - go/install:
+          version: 1.14.9
+          cache: no
       - run:
           <<: *fetch_deb_deps
       - run:
