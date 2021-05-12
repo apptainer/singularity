@@ -1,6 +1,6 @@
 # Singularity
 
-[![CircleCI](https://circleci.com/gh/hpcng/singularity/tree/master.svg?style=svg)](https://circleci.com/gh/hpcng/singularity/tree/master)
+[![CI](https://github.com/hpcng/singularity/actions/workflows/ci.yml/badge.svg)](https://github.com/hpcng/singularity/actions/workflows/ci.yml)
 
 - [Guidelines for Contributing](CONTRIBUTING.md)
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
