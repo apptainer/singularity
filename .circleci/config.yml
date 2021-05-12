@@ -28,16 +28,27 @@ executors:
     machine:
       image: ubuntu-2004:202008-01
 
-x-run:
-  fetch_deb_deps: &fetch_deb_deps
-    name: Fetch deps
-    working_directory: /tmp
-    command: |-
-      # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
-      sudo killall -9 apt-get || true && \
-      sudo apt-get update -y && \
-      sudo apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup
+commands:
+  stop-background-apt:
+    steps:
+      - run:
+          name: Stop background apt updates
+          # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
+          command: sudo killall -9 apt-get || true
+  install-deps-apt:
+    parameters:
+      sudo:
+        type: boolean
+        default: true
+    steps:
+      - run:
+          name: Update package indexes
+          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q update
+      - run:
+          name: Install dependencies
+          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin
 
+x-run:
   buildtest_rpm: &buildtest_rpm
     name: Build and test rpm under docker
     no_output_timeout: 10m
@@ -98,9 +109,8 @@ jobs:
       variant: stretch
     steps:
       - checkout
-      - run:
-          name: Fetch deps
-          command: apt-get -q update && apt-get -q install -y build-essential libssl-dev uuid-dev squashfs-tools cryptsetup-bin
+      - install-deps-apt:
+          sudo: false
       - run:
           <<: *build_singularity
       - run:
@@ -164,8 +174,8 @@ jobs:
       - go/install:
           version: << pipeline.parameters.go-version >>
           cache: no
-      - run:
-          <<: *fetch_deb_deps
+      - stop-background-apt
+      - install-deps-apt
       - run:
           <<: *build_singularity
       - run:
@@ -184,8 +194,8 @@ jobs:
       - go/install:
           version: << pipeline.parameters.go-version >>
           cache: no
-      - run:
-          <<: *fetch_deb_deps
+      - stop-background-apt
+      - install-deps-apt
       - run:
           <<: *build_singularity
       - run:
@@ -205,8 +215,8 @@ jobs:
       - go/install:
           version: << pipeline.parameters.go-version >>
           cache: no
-      - run:
-          <<: *fetch_deb_deps
+      - stop-background-apt
+      - install-deps-apt
       - run:
           <<: *build_singularity
       - run:
