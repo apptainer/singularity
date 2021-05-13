@@ -60,6 +60,11 @@ commands:
       - run:
           name: Install Singularity
           command: sudo make -C ./builddir install
+  check-singularity:
+    steps:
+      - run:
+          name: Check Singularity
+          command: make -C ./builddir check
 
 x-run:
   buildtest_rpm: &buildtest_rpm
@@ -69,11 +74,6 @@ x-run:
       export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
       export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
       scripts/ci-docker-run
-
-  check_singularity: &check_singularity
-    name: Check Singularity
-    command: |-
-      make -C ./builddir check
 
   check_changes: &check_changes
     name: Check changes
@@ -114,8 +114,7 @@ jobs:
       - install-deps-apt:
           sudo: false
       - build-singularity
-      - run:
-          <<: *check_singularity
+      - check-singularity
 
   go114-alpine:
     executor:
@@ -127,8 +126,7 @@ jobs:
           name: Fetch deps
           command: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
       - build-singularity
-      - run:
-          <<: *check_singularity
+      - check-singularity
 
   go114-darwin:
     executor: macos-machine
@@ -138,10 +136,7 @@ jobs:
       - go/install:
           version: << pipeline.parameters.go-version >>
       - build-singularity
-      - run:
-          name: Check code
-          command: |-
-            make -C ./builddir check
+      - check-singularity
 
   rpmbuild-centos7:
     executor: ubuntu-machine
