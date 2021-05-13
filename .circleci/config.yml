@@ -1,237 +1,198 @@
 version: 2.1
 
-vm_defaults: &vm_defaults
-  working_directory: ~/go/singularity
-  machine:
-    image: ubuntu-2004:202008-01
+orbs:
+  go: circleci/go@1.6
 
-x-run:
-  setup_environment: &setup_environment
-    name: Setup environment
-    command: |-
-      echo 'set -x' >> $BASH_ENV
-      echo 'export GOPATH=$HOME/go'           >> $BASH_ENV
-      echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
-      echo 'export GOBIN=$HOME/go/bin'        >> $BASH_ENV
-      echo 'export PATH=$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
-      env | sed -e 's,^,ENV: ,' | sort
-      test -e $BASH_ENV && sed -e 's,^,BASH_ENV: ,' < $BASH_ENV
+parameters:
+  go-version:
+    type: string
+    default: 1.14.9
 
-  update_go: &update_go
-    name: Update Go to 1.14.9
-    working_directory: /tmp
-    command: |-
-      wget https://dl.google.com/go/go1.14.9.linux-amd64.tar.gz
-      sudo rm -rf $GOROOT
-      sudo tar -C /usr/local -xzf go1.14.9.linux-amd64.tar.gz
-      sudo ln -s $GOROOT/bin/go /usr/local/bin/go
-
-  fetch_deb_deps: &fetch_deb_deps
-    name: Fetch deps
-    working_directory: /tmp
-    command: |-
-      # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
-      sudo killall -9 apt-get || true && \
-      sudo apt-get update -y && \
-      sudo apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup
-
-  buildtest_rpm: &buildtest_rpm
-    name: Build and test rpm under docker
-    no_output_timeout: 10m
-    command: |-
-      export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
-      export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
-      scripts/ci-docker-run
-
-  build_singularity: &build_singularity
-    name: Build Singularity
-    command: |-
-      ./mconfig -v -p /usr/local
-      make -C ./builddir all
-
-  check_singularity: &check_singularity
-    name: Check Singularity
-    command: |-
-      make -C ./builddir check
-
-  install_singularity: &install_singularity
-    name: Install Singularity
-    command: |-
-      sudo make -C ./builddir install
-
-  check_changes: &check_changes
-    name: Check changes
-    command: |-
-      rc=0
-      scripts/should-e2e-run "${CIRCLE_PROJECT_USERNAME}" "${CIRCLE_PROJECT_REPONAME}" "${CIRCLE_BRANCH}" "${CIRCLE_PULL_REQUEST}" || rc=$?
-      case $rc in
-        0)
-          echo "Verifying critical changes"
-          ;;
-
-        1)
-          echo "No critical changes, skipping tests"
-          circleci step halt
-          ;;
-
-        *)
-          echo "E: scripts/should-e2e-run returned with exit code $rc. Abort."
-          exit $rc
-          ;;
-      esac
-
-jobs:
-  check_go_mod:
+executors:
+  golang:
+    parameters:
+      variant:
+        description: "variant (ex. alpine)"
+        default: ""
+        type: string
     docker:
-      - image: golang:1.14
+      # Resolves to golang:<go-version> or golang:<go-version>-<variant> (if variant supplied)
+      - image: golang:<< pipeline.parameters.go-version >><<# parameters.variant >>-<< parameters.variant >><</ parameters.variant >>
         auth:
           username: $CIRCLE_CI_DOCKER_USERNAME
           password: $CIRCLE_CI_DOCKER_PASSWORD
+  macos-machine:
+    macos:
+      xcode: "10.2.0"
+  ubuntu-machine:
+    working_directory: ~/go/singularity
+    machine:
+      image: ubuntu-2004:202008-01
+
+commands:
+  check-changes:
+    steps:
+      - run:
+          name: Check changes
+          command: |-
+            rc=0
+            scripts/should-e2e-run "${CIRCLE_PROJECT_USERNAME}" "${CIRCLE_PROJECT_REPONAME}" "${CIRCLE_BRANCH}" "${CIRCLE_PULL_REQUEST}" || rc=$?
+            case $rc in
+              0)
+                echo "Verifying critical changes"
+                ;;
+
+              1)
+                echo "No critical changes, skipping tests"
+                circleci step halt
+                ;;
+
+              *)
+                echo "E: scripts/should-e2e-run returned with exit code $rc. Abort."
+                exit $rc
+                ;;
+            esac
+  stop-background-apt:
+    steps:
+      - run:
+          name: Stop background apt updates
+          # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
+          command: sudo killall -9 apt-get || true
+  install-deps-apt:
+    parameters:
+      sudo:
+        type: boolean
+        default: true
+    steps:
+      - run:
+          name: Update package indexes
+          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q update
+      - run:
+          name: Install dependencies
+          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin
+  build-singularity:
+    steps:
+      - run:
+          name: Configure Singularity
+          command: ./mconfig -v -p /usr/local
+      - run:
+          name: Build Singularity
+          command: make -C ./builddir all
+  install-singularity:
+    steps:
+      - run:
+          name: Install Singularity
+          command: sudo make -C ./builddir install
+  check-singularity:
+    steps:
+      - run:
+          name: Check Singularity
+          command: make -C ./builddir check
+  buildtest-rpm:
+    parameters:
+      os-type:
+        type: string
+        default: centos
+      os-version:
+        type: string
+    steps:
+      - run:
+          name: Build and Test RPM
+          no_output_timeout: 10m
+          environment:
+            OS_TYPE: << parameters.os-type >>
+            OS_VERSION: << parameters.os-version >>
+          command: |-
+            export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
+            export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
+            scripts/ci-docker-run
+
+jobs:
+  check-go-mod:
+    executor: golang
     steps:
       - checkout
       - run:
           name: Check go.mod
           command: scripts/check-go.mod
 
-  go114-stretch:
-    docker:
-      - image: golang:1.14-stretch
-        auth:
-          username: $CIRCLE_CI_DOCKER_USERNAME
-          password: $CIRCLE_CI_DOCKER_PASSWORD
+  check-stretch:
+    executor:
+      name: golang
+      variant: stretch
     steps:
       - checkout
-      - run:
-          name: Fetch deps
-          command: apt-get -q update && apt-get -q install -y build-essential libssl-dev uuid-dev squashfs-tools cryptsetup-bin
-      - run:
-          <<: *build_singularity
-      - run:
-          <<: *check_singularity
+      - install-deps-apt:
+          sudo: false
+      - build-singularity
+      - check-singularity
 
-  go114-alpine:
-    docker:
-      - image: golang:1.14-alpine
-        auth:
-          username: $CIRCLE_CI_DOCKER_USERNAME
-          password: $CIRCLE_CI_DOCKER_PASSWORD
+  check-alpine:
+    executor:
+      name: golang
+      variant: alpine
     steps:
       - checkout
       - run:
           name: Fetch deps
           command: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
-      - run:
-          <<: *build_singularity
-      - run:
-          <<: *check_singularity
+      - build-singularity
+      - check-singularity
 
-  go114-macos:
-    macos:
-      xcode: "10.2.0"
+  check-darwin:
+    executor: macos-machine
     working_directory: /Users/distiller/go/src/github.com/sylabs/singularity
     steps:
       - checkout
-      - run:
-          name: Setup environment
-          command: |-
-            echo 'export GOPATH=$HOME/go'      >> $BASH_ENV
-            echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
-            echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> $BASH_ENV
-      - run:
-          name: Update Go to 1.14.9
-          working_directory: /tmp
-          command: |-
-            curl -LO https://dl.google.com/go/go1.14.9.darwin-amd64.tar.gz
-            sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.14.9.darwin-amd64.tar.gz
-            sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
-      - run:
-          name: Build Singularity
-          command: |-
-            ./mconfig -v -p /usr/local
-            make -C ./builddir all
-      - run:
-          name: Check code
-          command: |-
-            make -C ./builddir check
+      - go/install:
+          version: << pipeline.parameters.go-version >>
+      - build-singularity
+      - check-singularity
 
-  rpmbuild-centos7:
-    <<: *vm_defaults
+  short-unit-tests:
+    executor: ubuntu-machine
     steps:
       - checkout
-      - run:
-          name: set OS type and version
-          command: echo 'export OS_TYPE=centos OS_VERSION=7' >> $BASH_ENV
-      - run:
-          <<: *buildtest_rpm
-
-  rpmbuild-centos8:
-    <<: *vm_defaults
-    steps:
-      - checkout
-      - run:
-          name: set OS type and version
-          command: echo 'export OS_TYPE=centos OS_VERSION=8' >> $BASH_ENV
-      - run:
-          <<: *buildtest_rpm
-
-  short_unit_tests:
-    <<: *vm_defaults
-    steps:
-      - checkout
-      - run:
-          <<: *setup_environment
-      - run:
-          <<: *update_go
-      - run:
-          <<: *fetch_deb_deps
-      - run:
-          <<: *build_singularity
-      - run:
-          <<: *install_singularity
+      - go/install:
+          version: << pipeline.parameters.go-version >>
+          cache: no
+      - stop-background-apt
+      - install-deps-apt
+      - build-singularity
+      - install-singularity
       - run:
           name: Run unit tests
-          command: |-
-            make -C ./builddir short-unit-test
+          command: make -C ./builddir short-unit-test
 
-  integration_tests:
-    <<: *vm_defaults
+  integration-tests:
+    executor: ubuntu-machine
     steps:
       - checkout
-      - run:
-          <<: *setup_environment
-      - run:
-          <<: *check_changes
-      - run:
-          <<: *update_go
-      - run:
-          <<: *fetch_deb_deps
-      - run:
-          <<: *build_singularity
-      - run:
-          <<: *install_singularity
+      - check-changes
+      - go/install:
+          version: << pipeline.parameters.go-version >>
+          cache: no
+      - stop-background-apt
+      - install-deps-apt
+      - build-singularity
+      - install-singularity
       - run:
           name: Run integration tests
           no_output_timeout: 20m
-          command: |-
-            make -C ./builddir integration-test
+          command: make -C ./builddir integration-test
 
-  e2e_tests:
-    <<: *vm_defaults
+  e2e-tests:
+    executor: ubuntu-machine
     steps:
       - checkout
-      - run:
-          <<: *setup_environment
-      - run:
-          <<: *check_changes
-      - run:
-          <<: *update_go
-      - run:
-          <<: *fetch_deb_deps
-      - run:
-          <<: *build_singularity
-      - run:
-          <<: *install_singularity
+      - check-changes
+      - go/install:
+          version: << pipeline.parameters.go-version >>
+          cache: no
+      - stop-background-apt
+      - install-deps-apt
+      - build-singularity
+      - install-singularity
       - run:
           name: Run E2E tests
           no_output_timeout: 35m
@@ -243,18 +204,30 @@ jobs:
       - store_artifacts:
           path: builddir/e2e-cmd-report.txt
 
+  rpmbuild-centos7:
+    executor: ubuntu-machine
+    steps:
+      - checkout
+      - buildtest-rpm:
+          os-version: '7'
+
+  rpmbuild-centos8:
+    executor: ubuntu-machine
+    steps:
+      - checkout
+      - buildtest-rpm:
+          os-version: '8'
+
 workflows:
   version: 2
   build_and_test:
     jobs:
-      - go114-stretch
-      - go114-alpine
-      - go114-macos
-      - check_go_mod
-      - short_unit_tests
-      - integration_tests
-      - e2e_tests
-  rpmbuild:
-    jobs:
+      - check-go-mod
+      - check-stretch
+      - check-alpine
+      - check-darwin
+      - short-unit-tests
+      - integration-tests
+      - e2e-tests
       - rpmbuild-centos7
       - rpmbuild-centos8
