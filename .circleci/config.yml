@@ -87,15 +87,24 @@ commands:
       - run:
           name: Check Singularity
           command: make -C ./builddir check
-
-x-run:
-  buildtest_rpm: &buildtest_rpm
-    name: Build and test rpm under docker
-    no_output_timeout: 10m
-    command: |-
-      export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
-      export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
-      scripts/ci-docker-run
+  buildtest-rpm:
+    parameters:
+      os-type:
+        type: string
+        default: centos
+      os-version:
+        type: string
+    steps:
+      - run:
+          name: Build and Test RPM
+          no_output_timeout: 10m
+          environment:
+            OS_TYPE: << parameters.os-type >>
+            OS_VERSION: << parameters.os-version >>
+          command: |-
+            export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
+            export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
+            scripts/ci-docker-run
 
 jobs:
   check_go_mod:
@@ -143,21 +152,15 @@ jobs:
     executor: ubuntu-machine
     steps:
       - checkout
-      - run:
-          name: set OS type and version
-          command: echo 'export OS_TYPE=centos OS_VERSION=7' >> $BASH_ENV
-      - run:
-          <<: *buildtest_rpm
+      - buildtest-rpm:
+          os-version: '7'
 
   rpmbuild-centos8:
     executor: ubuntu-machine
     steps:
       - checkout
-      - run:
-          name: set OS type and version
-          command: echo 'export OS_TYPE=centos OS_VERSION=8' >> $BASH_ENV
-      - run:
-          <<: *buildtest_rpm
+      - buildtest-rpm:
+          os-version: '8'
 
   short_unit_tests:
     executor: ubuntu-machine
