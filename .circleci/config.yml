@@ -55,6 +55,11 @@ commands:
       - run:
           name: Build Singularity
           command: make -C ./builddir all
+  install-singularity:
+    steps:
+      - run:
+          name: Install Singularity
+          command: sudo make -C ./builddir install
 
 x-run:
   buildtest_rpm: &buildtest_rpm
@@ -69,11 +74,6 @@ x-run:
     name: Check Singularity
     command: |-
       make -C ./builddir check
-
-  install_singularity: &install_singularity
-    name: Install Singularity
-    command: |-
-      sudo make -C ./builddir install
 
   check_changes: &check_changes
     name: Check changes
@@ -173,8 +173,7 @@ jobs:
       - stop-background-apt
       - install-deps-apt
       - build-singularity
-      - run:
-          <<: *install_singularity
+      - install-singularity
       - run:
           name: Run unit tests
           command: |-
@@ -192,8 +191,7 @@ jobs:
       - stop-background-apt
       - install-deps-apt
       - build-singularity
-      - run:
-          <<: *install_singularity
+      - install-singularity
       - run:
           name: Run integration tests
           no_output_timeout: 20m
@@ -212,8 +210,7 @@ jobs:
       - stop-background-apt
       - install-deps-apt
       - build-singularity
-      - run:
-          <<: *install_singularity
+      - install-singularity
       - run:
           name: Run E2E tests
           no_output_timeout: 35m
