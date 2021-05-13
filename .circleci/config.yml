@@ -228,7 +228,5 @@ workflows:
       - short-unit-tests
       - integration-tests
       - e2e-tests
-  rpmbuild:
-    jobs:
       - rpmbuild-centos7
       - rpmbuild-centos8
