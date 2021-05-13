@@ -16,6 +16,7 @@ executors:
         default: ""
         type: string
     docker:
+      # Resolves to golang:<go-version> or golang:<go-version>-<variant> (if variant supplied)
       - image: golang:<< pipeline.parameters.go-version >><<# parameters.variant >>-<< parameters.variant >><</ parameters.variant >>
         auth:
           username: $CIRCLE_CI_DOCKER_USERNAME
