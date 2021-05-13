@@ -29,6 +29,28 @@ executors:
       image: ubuntu-2004:202008-01
 
 commands:
+  check-changes:
+    steps:
+      - run:
+          name: Check changes
+          command: |-
+            rc=0
+            scripts/should-e2e-run "${CIRCLE_PROJECT_USERNAME}" "${CIRCLE_PROJECT_REPONAME}" "${CIRCLE_BRANCH}" "${CIRCLE_PULL_REQUEST}" || rc=$?
+            case $rc in
+              0)
+                echo "Verifying critical changes"
+                ;;
+
+              1)
+                echo "No critical changes, skipping tests"
+                circleci step halt
+                ;;
+
+              *)
+                echo "E: scripts/should-e2e-run returned with exit code $rc. Abort."
+                exit $rc
+                ;;
+            esac
   stop-background-apt:
     steps:
       - run:
@@ -74,27 +96,6 @@ x-run:
       export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
       export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
       scripts/ci-docker-run
-
-  check_changes: &check_changes
-    name: Check changes
-    command: |-
-      rc=0
-      scripts/should-e2e-run "${CIRCLE_PROJECT_USERNAME}" "${CIRCLE_PROJECT_REPONAME}" "${CIRCLE_BRANCH}" "${CIRCLE_PULL_REQUEST}" || rc=$?
-      case $rc in
-        0)
-          echo "Verifying critical changes"
-          ;;
-
-        1)
-          echo "No critical changes, skipping tests"
-          circleci step halt
-          ;;
-
-        *)
-          echo "E: scripts/should-e2e-run returned with exit code $rc. Abort."
-          exit $rc
-          ;;
-      esac
 
 jobs:
   check_go_mod:
@@ -178,8 +179,7 @@ jobs:
     executor: ubuntu-machine
     steps:
       - checkout
-      - run:
-          <<: *check_changes
+      - check-changes
       - go/install:
           version: << pipeline.parameters.go-version >>
           cache: no
@@ -197,8 +197,7 @@ jobs:
     executor: ubuntu-machine
     steps:
       - checkout
-      - run:
-          <<: *check_changes
+      - check-changes
       - go/install:
           version: << pipeline.parameters.go-version >>
           cache: no
