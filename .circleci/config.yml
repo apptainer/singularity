@@ -47,6 +47,14 @@ commands:
       - run:
           name: Install dependencies
           command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin
+  build-singularity:
+    steps:
+      - run:
+          name: Configure Singularity
+          command: ./mconfig -v -p /usr/local
+      - run:
+          name: Build Singularity
+          command: make -C ./builddir all
 
 x-run:
   buildtest_rpm: &buildtest_rpm
@@ -56,12 +64,6 @@ x-run:
       export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
       export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
       scripts/ci-docker-run
-
-  build_singularity: &build_singularity
-    name: Build Singularity
-    command: |-
-      ./mconfig -v -p /usr/local
-      make -C ./builddir all
 
   check_singularity: &check_singularity
     name: Check Singularity
@@ -111,8 +113,7 @@ jobs:
       - checkout
       - install-deps-apt:
           sudo: false
-      - run:
-          <<: *build_singularity
+      - build-singularity
       - run:
           <<: *check_singularity
 
@@ -125,8 +126,7 @@ jobs:
       - run:
           name: Fetch deps
           command: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
-      - run:
-          <<: *build_singularity
+      - build-singularity
       - run:
           <<: *check_singularity
 
@@ -137,11 +137,7 @@ jobs:
       - checkout
       - go/install:
           version: << pipeline.parameters.go-version >>
-      - run:
-          name: Build Singularity
-          command: |-
-            ./mconfig -v -p /usr/local
-            make -C ./builddir all
+      - build-singularity
       - run:
           name: Check code
           command: |-
@@ -176,8 +172,7 @@ jobs:
           cache: no
       - stop-background-apt
       - install-deps-apt
-      - run:
-          <<: *build_singularity
+      - build-singularity
       - run:
           <<: *install_singularity
       - run:
@@ -196,8 +191,7 @@ jobs:
           cache: no
       - stop-background-apt
       - install-deps-apt
-      - run:
-          <<: *build_singularity
+      - build-singularity
       - run:
           <<: *install_singularity
       - run:
@@ -217,8 +211,7 @@ jobs:
           cache: no
       - stop-background-apt
       - install-deps-apt
-      - run:
-          <<: *build_singularity
+      - build-singularity
       - run:
           <<: *install_singularity
       - run:
