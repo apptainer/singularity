@@ -59,21 +59,18 @@ $ echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
 
 This is an optional (but highly recommended!) step. To ensure
 consistency and to catch certain kinds of issues early, we provide a
-configuration file for golangci-lint. Every pull request must pass the
+configuration file for `golangci-lint`. Every pull request must pass the
 checks specified there, and these will be run automatically before
 attempting to merge the code. If you are modifying Singularity and
 contributing your changes to the repository, it's faster to run these
 checks locally before uploading your pull request.
 
-In order to install golangci-lint, you can run:
+In order to download and install the latest version of `golangci-lint`,
+you can run:
 
+```sh
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
 ```
-$ curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh |
-  sh -s -- -b $(go env GOPATH)/bin v1.31.0
-```
-
-This will download and install golangci-lint from its Github releases
-page (using version v1.31.0 at the moment).
 
 ## Clone the repo
 

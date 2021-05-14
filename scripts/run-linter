@@ -2,7 +2,7 @@
 
 set -e
 
-golangci_lint_version=1.31.0
+golangci_lint_version=1.40.1
 golangci_lint_install_url=https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
 
 info() {
