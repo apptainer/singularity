@@ -27,7 +27,7 @@ executors:
   ubuntu-machine:
     working_directory: ~/go/singularity
     machine:
-      image: ubuntu-2004:202008-01
+      image: ubuntu-2004:202104-01
 
 commands:
   check-changes:
