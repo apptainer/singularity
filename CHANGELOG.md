@@ -50,6 +50,24 @@ of `make test` for ease of use:
     requires docker credentials to be set with `E2E_DOCKER_USERNAME`
     and `E2E_DOCKER_PASSWORD` environment variables.
 
+# v3.8.0 - [2021-05-21]
+
+## New features / functionalities
+
+  - Updates to the Contributors document.
+  - Implement a copy-through ProgressCallback for silent loglevels.
+  - New overlay command to ease the creation of ext3 writable overlay.
+  - Accommodate ppc64le pageSize in TestCgroups and disable -race.
+  - Allow unprivileged users/groups to control CNI configuration using --net & --networks options.
+  - Allow use of --nv, --rocm, --bind flags with the build command.
+
+## Bug Fixes
+ 
+  - Properly wait for cryptsetup /dev/mapper device to appear.
+  - Work around harbor failure to accept SifConfigMediaType.
+  - Avoid setfsuid return warning on some gcc versions.
+  - Avoid spurious errors when network not requested.
+
 
 # v3.7.3 - [2021-04-06]
 
