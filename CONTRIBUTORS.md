@@ -89,3 +89,4 @@
     - Yaroslav Halchenko <debian@onerussian.com>
     - Onur Yılmaz <csonuryilmaz@gmail.com>
     - Pranathi Locula <locula@deshaw.com>
+    - Pedro Alves Batista <pedro.pesquisapb@gmail.com>
