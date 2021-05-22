@@ -5,8 +5,8 @@
 # Maintainers:
 
     - Cedric Clerget <cedric@ctrliq.com>, <cedric.clerget@univ-fcomte.fr>
-    - David Trudgian <david.trudgian@utsouthwestern.edu>, <david.trudgian@sylabs.io>, <dave@trudgian.net>
     - Ian Kaneshiro <ian@ctrliq.com>, <iankane@umich.edu>
+    - Krishna Muriki <kmuriki@lbl.gov>, <kmuriki@gmail.com>
 
 # Contributors:
 
@@ -27,6 +27,7 @@
     - Dave Dykstra <dwd@fnal.gov>
     - Dave Godlove <d@sylabs.io>, <davidgodlove@gmail.com>
     - Dave Love <d.love@liverpool.ac.uk>
+    - David Trudgian <david.trudgian@utsouthwestern.edu>, <david.trudgian@sylabs.io>, <dave@trudgian.net>
     - Diana Langenbach <dcl@dcl.sh>
     - Divya Cote <divya.cote@gmail.com>
     - Eduardo Arango <eduardo@sylabs.io>, <arangogutierrez@gmail.com>
