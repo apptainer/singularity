@@ -619,7 +619,9 @@ func (c actionTests) issue5690(t *testing.T) {
 
 // If an invalid remote is set, we should not pull a container from the default
 // library.
-// GHSA-5mv9-q7fq-9394
+// Github Security Advisories:
+// GHSA-jq42-hfch-42f3 (hpcng)
+// GHSA-5mv9-q7fq-9394 (sylabs)
 func (c actionTests) invalidRemote(t *testing.T) {
 	testEndpoint := "invalid"
 	testEndpointURI := "https://cloud.example.com"
