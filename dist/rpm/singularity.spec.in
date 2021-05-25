@@ -33,7 +33,7 @@ Version: @PACKAGE_RPM_VERSION@
 Release: @PACKAGE_RELEASE@%{?dist}
 # https://spdx.org/licenses/BSD-3-Clause-LBNL.html
 License: BSD-3-Clause-LBNL
-URL: https://www.sylabs.io/singularity/
+URL: https://singularity.hpcng.org
 Source: %{name}-@PACKAGE_VERSION@.tar.gz
 ExclusiveOS: linux
 # RPM_BUILD_ROOT wasn't being set ... for some reason
