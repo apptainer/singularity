@@ -10,7 +10,9 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 _The old changelog can be found in the `release-2.6` branch_
 
 
-# Changes Since Last Release
+# v3.8.0 - [2021-05-21]
+
+> :warning: Go module was renamed from `github.com/sylabs/singularity` to `github.com/hpcng/singularity`
 
 ## New features / functionalities
 
@@ -37,6 +39,7 @@ _The old changelog can be found in the `release-2.6` branch_
     `shub://` and `http(s)://` URIs.
   - Wait for dm device to appear when mounting an encrypted container
     rootfs.
+  - Accommodate ppc64le pageSize in TestCgroups and disable -race.
 
 ## Testing / Development
 
@@ -49,24 +52,6 @@ of `make test` for ease of use:
   - `make testall` runs the full unit/integration/e2e test suite that
     requires docker credentials to be set with `E2E_DOCKER_USERNAME`
     and `E2E_DOCKER_PASSWORD` environment variables.
-
-# v3.8.0 - [2021-05-21]
-
-## New features / functionalities
-
-  - Updates to the Contributors document.
-  - Implement a copy-through ProgressCallback for silent loglevels.
-  - New overlay command to ease the creation of ext3 writable overlay.
-  - Accommodate ppc64le pageSize in TestCgroups and disable -race.
-  - Allow unprivileged users/groups to control CNI configuration using --net & --networks options.
-  - Allow use of --nv, --rocm, --bind flags with the build command.
-
-## Bug Fixes
- 
-  - Properly wait for cryptsetup /dev/mapper device to appear.
-  - Work around harbor failure to accept SifConfigMediaType.
-  - Avoid setfsuid return warning on some gcc versions.
-  - Avoid spurious errors when network not requested.
 
 
 # v3.7.3 - [2021-04-06]
