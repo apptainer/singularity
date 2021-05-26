@@ -21,7 +21,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/internal/pkg/client/shub"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -75,7 +74,8 @@ func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command,
 }
 
 func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom string) (string, error) {
-	c, err := getLibraryClientConfig(endpoint.SCSDefaultLibraryURI)
+	// Pass uri="" to use current remote
+	c, err := getLibraryClientConfig("")
 	if err != nil {
 		return "", err
 	}

@@ -616,3 +616,69 @@ func (c actionTests) issue5690(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 }
+
+// If an invalid remote is set, we should not pull a container from the default
+// library.
+// GHSA-5mv9-q7fq-9394
+func (c actionTests) invalidRemote(t *testing.T) {
+	testEndpoint := "invalid"
+	testEndpointURI := "https://cloud.example.com"
+	testImage := "library://alpine"
+
+	// Exec library image from the default remote... ensure it succeeds
+	argv := []string{testImage, "/bin/true"}
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("exec default"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(argv...),
+		e2e.ExpectExit(0),
+	)
+
+	// Add another endpoint
+	argv = []string{"add", "--no-login", testEndpoint, testEndpointURI}
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("remote add"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("remote"),
+		e2e.WithArgs(argv...),
+		e2e.ExpectExit(0),
+	)
+	// Remove test remote when we are done here
+	defer func(t *testing.T) {
+		argv := []string{"remove", testEndpoint}
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest("remote remove"),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
+	}(t)
+
+	// Set as default
+	argv = []string{"use", testEndpoint}
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("remote use"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("remote"),
+		e2e.WithArgs(argv...),
+		e2e.ExpectExit(0),
+	)
+
+	// Exec library image from the invalid remote, should fail
+	argv = []string{testImage, "/bin/true"}
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("exec invalid"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(argv...),
+		e2e.ExpectExit(255),
+	)
+
+}
