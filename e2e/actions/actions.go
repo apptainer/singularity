@@ -2198,6 +2198,8 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		env: env,
 	}
 
+	np := testhelper.NoParallel
+
 	return testhelper.Tests{
 		"action URI":            c.RunFromURI,          // action_URI
 		"exec":                  c.actionExec,          // singularity exec
@@ -2230,5 +2232,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"bind image":            c.bindImage,           // test bind image
 		"umask":                 c.actionUmask,         // test umask propagation
 		"no-mount":              c.actionNoMount,       // test --no-mount
+		"invalidRemote":         np(c.invalidRemote),   // GHSA-5mv9-q7fq-9394
 	}
 }
