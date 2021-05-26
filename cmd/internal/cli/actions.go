@@ -20,7 +20,6 @@ import (
 	"github.com/hpcng/singularity/internal/pkg/client/oci"
 	"github.com/hpcng/singularity/internal/pkg/client/oras"
 	"github.com/hpcng/singularity/internal/pkg/client/shub"
-	"github.com/hpcng/singularity/internal/pkg/remote/endpoint"
 	"github.com/hpcng/singularity/internal/pkg/util/uri"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/spf13/cobra"
@@ -80,11 +79,10 @@ func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom string)
 		return "", err
 	}
 
+	// Default "" = use current remote endpoint
 	var libraryURI string
 	if r.Host != "" {
 		libraryURI = "https://" + r.Host
-	} else {
-		libraryURI = endpoint.SCSDefaultLibraryURI
 	}
 
 	c, err := getLibraryClientConfig(libraryURI)
