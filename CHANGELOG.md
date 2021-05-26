@@ -9,6 +9,20 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
+# v3.7.4 - [2021-05-26]
+
+## Security Related Fixes
+
+  - [CVE-2021-32635](https://github.com/hpcng/singularity/security/advisories/GHSA-jq42-hfch-42f3):
+    Due to incorrect use of a default URL, singularity action commands
+    (run/shell/exec) specifying a container using a library:// URI will
+    always attempt to retrieve the container from the default remote
+    endpoint (cloud.sylabs.io) rather than the configured remote
+    endpoint.  An attacker may be able to push a malicious container to
+    the default remote endpoint with a URI that is identical to the URI
+    used by a victim with a non-default remote endpoint, thus executing
+    the malicious container.
+
 # v3.7.3 - [2021-04-06]
 
 ## Security Related Fixes
