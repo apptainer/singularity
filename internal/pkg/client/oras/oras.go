@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -39,7 +39,7 @@ const (
 	// SifDefaultTag is the tag to use when a tag is not specified
 	SifDefaultTag = "latest"
 
-	// SifConfigMediaType is the config descriptor mediaType
+	// SifConfigMediaTypeV1 is the config descriptor mediaType
 	// Since we only ever send a null config this should not have the
 	// format extension appended:
 	//   https://github.com/deislabs/oras/#pushing-artifacts-with-single-files
@@ -55,7 +55,7 @@ const (
 	SifLayerMediaTypeProto = "appliciation/vnd.sylabs.sif.layer.tar"
 )
 
-var SifLayerMediaTypes = []string{SifLayerMediaTypeV1, SifLayerMediaTypeProto}
+var sifLayerMediaTypes = []string{SifLayerMediaTypeV1, SifLayerMediaTypeProto}
 
 func getResolver(ociAuth *ocitypes.DockerAuthConfig) (remotes.Resolver, error) {
 	opts := docker.ResolverOptions{Credentials: genCredfn(ociAuth)}
@@ -106,9 +106,9 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 	// so we have to allow an overwrite here.
 	store.DisableOverwrite = false
 
-	allowedMediaTypes := oras.WithAllowedMediaTypes(SifLayerMediaTypes)
+	allowedMediaTypes := oras.WithAllowedMediaTypes(sifLayerMediaTypes)
 	handlerFunc := func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
-		for _, mt := range SifLayerMediaTypes {
+		for _, mt := range sifLayerMediaTypes {
 			if desc.MediaType == mt {
 				// Ensure descriptor is of a single file
 				// AnnotationUnpack indicates that the descriptor is of a directory
@@ -277,7 +277,7 @@ func ImageSHA(ctx context.Context, uri string, ociAuth *ocitypes.DockerAuthConfi
 
 	// search image layers for sif image and return sha
 	for _, l := range man.Layers {
-		for _, t := range SifLayerMediaTypes {
+		for _, t := range sifLayerMediaTypes {
 			if l.MediaType == t {
 				// only allow sha256 digests
 				if l.Digest.Algorithm() != digest.SHA256 {

@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2017-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -71,11 +71,11 @@ func init() {
 		cmdManager.RegisterCmd(KeyCmd)
 
 		cmdManager.RegisterSubCmd(KeyCmd, KeyNewPairCmd)
-		cmdManager.RegisterFlagForCmd(KeyNewPairNameFlag, KeyNewPairCmd)
-		cmdManager.RegisterFlagForCmd(KeyNewPairEmailFlag, KeyNewPairCmd)
-		cmdManager.RegisterFlagForCmd(KeyNewPairCommentFlag, KeyNewPairCmd)
-		cmdManager.RegisterFlagForCmd(KeyNewPairPasswordFlag, KeyNewPairCmd)
-		cmdManager.RegisterFlagForCmd(KeyNewPairPushFlag, KeyNewPairCmd)
+		cmdManager.RegisterFlagForCmd(keyNewPairNameFlag, KeyNewPairCmd)
+		cmdManager.RegisterFlagForCmd(keyNewPairEmailFlag, KeyNewPairCmd)
+		cmdManager.RegisterFlagForCmd(keyNewPairCommentFlag, KeyNewPairCmd)
+		cmdManager.RegisterFlagForCmd(keyNewPairPasswordFlag, KeyNewPairCmd)
+		cmdManager.RegisterFlagForCmd(keyNewPairPushFlag, KeyNewPairCmd)
 
 		cmdManager.RegisterSubCmd(KeyCmd, KeyListCmd)
 		cmdManager.RegisterSubCmd(KeyCmd, KeySearchCmd)

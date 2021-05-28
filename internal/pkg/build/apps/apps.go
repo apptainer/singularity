@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the URIs of this project regarding your
 // rights to use or distribute this software.
@@ -272,11 +272,7 @@ func createAppRoot(b *types.Bundle, a *App) error {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Join(appData(b, a), "/output/"), 0755); err != nil {
-		return err
-	}
-
-	return nil
+	return os.MkdirAll(filepath.Join(appData(b, a), "/output/"), 0755)
 }
 
 // %appenv and 01-base.sh

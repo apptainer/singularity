@@ -1,4 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
+// Copyright (c) 2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,7 +17,9 @@ import (
 )
 
 const (
-	DefaultUsername  = "e2e"
+	// DefaultUsername is the default E2E username.
+	DefaultUsername = "e2e"
+	// DefaultPassword is the default E2E password.
 	DefaultPassword  = "e2e"
 	privateNamespace = "private"
 )

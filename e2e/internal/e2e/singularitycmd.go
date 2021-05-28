@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -45,7 +45,7 @@ const (
 	ContainMatch MatchType = iota
 	// ExactMatch is for exact match
 	ExactMatch
-	// UnwaantedContainMatch checks that output does not contain text
+	// UnwantedContainMatch checks that output does not contain text
 	UnwantedContainMatch
 	// UnwantedExactMatch checks that output does not exactly match text
 	UnwantedExactMatch

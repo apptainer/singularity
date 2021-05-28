@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -228,11 +228,8 @@ func (keyring *Handle) PathsCheck() error {
 	if err := fs.EnsureFileWithPermission(keyring.SecretPath(), 0600); err != nil {
 		return err
 	}
-	if err := fs.EnsureFileWithPermission(keyring.PublicPath(), 0600); err != nil {
-		return err
-	}
 
-	return nil
+	return fs.EnsureFileWithPermission(keyring.PublicPath(), 0600)
 }
 
 func loadKeyring(fn string) (openpgp.EntityList, error) {
@@ -939,11 +936,7 @@ func RecryptKey(k *openpgp.Entity, passphrase []byte) error {
 		return err
 	}
 
-	if err := k.PrivateKey.Encrypt(passphrase); err != nil {
-		return err
-	}
-
-	return nil
+	return k.PrivateKey.Encrypt(passphrase)
 }
 
 // ExportPrivateKey Will export a private key into a file (kpath).
@@ -1094,11 +1087,7 @@ func (keyring *Handle) importPrivateKey(entity *openpgp.Entity, setNewPassword b
 	}
 
 	// Store the private key
-	if err := keyring.appendPrivateKey(&newEntity); err != nil {
-		return err
-	}
-
-	return nil
+	return keyring.appendPrivateKey(&newEntity)
 }
 
 // importPublicKey imports the specified openpgp Entity, which should
@@ -1114,11 +1103,7 @@ func (keyring *Handle) importPublicKey(entity *openpgp.Entity) error {
 		return &KeyExistsError{fingerprint: entity.PrimaryKey.Fingerprint}
 	}
 
-	if err := keyring.appendPubKey(entity); err != nil {
-		return err
-	}
-
-	return nil
+	return keyring.appendPubKey(entity)
 }
 
 // ImportKey imports one or more keys from the specified file. The keys

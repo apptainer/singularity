@@ -12,6 +12,7 @@ import (
 	"runtime"
 )
 
+// ErrCapNotSupported indicates capabilities are not supported on the current operating system.
 var ErrCapNotSupported = fmt.Errorf("capabilities not supported on this OS: %s", runtime.GOOS)
 
 // GetProcessEffective returns effective capabilities for
