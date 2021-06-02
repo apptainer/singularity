@@ -284,10 +284,8 @@ func (e *EngineConfig) GetCustomHome() bool {
 
 // ParseBindPath parses a string and returns all encountered
 // bind paths as array.
-func ParseBindPath(bindpaths string) ([]BindPath, error) {
-	var bind string
+func ParseBindPath(paths []string) ([]BindPath, error) {
 	var binds []BindPath
-	var elem int
 
 	var validOptions = map[string]bool{
 		"ro":        true,
@@ -312,13 +310,16 @@ func ParseBindPath(bindpaths string) ([]BindPath, error) {
 	// - source1:destination1 -> [source1:, destination1]
 	// - source1:destination1:option1 -> [source1:, destination1:, option1]
 	// - source1:destination1:option1,option2 -> [source1:, destination1:, option1, option2]
-	for _, m := range re.FindAllString(bindpaths, -1) {
-		s := strings.TrimSpace(m)
-		isColon := bind != "" && bind[len(bind)-1] == ':'
 
-		// options are taken only if the bind has a source
-		// and a destination
-		if elem == 2 {
+	for _, path := range paths {
+		concatComma := false
+		concatColon := false
+		bind := ""
+		elem := 0
+
+		for _, m := range re.FindAllString(path, -1) {
+			s := strings.TrimSpace(m)
+
 			isOption := false
 
 			for option, flag := range validOptions {
@@ -334,44 +335,102 @@ func ParseBindPath(bindpaths string) ([]BindPath, error) {
 					}
 				}
 			}
-			if isOption {
+
+			if elem == 2 && !isOption {
+				bp, err := newBindPath(bind, validOptions)
+				if err != nil {
+					return nil, fmt.Errorf("while getting bind path: %s", err)
+				}
+				binds = append(binds, bp)
+				elem = 0
+				bind = ""
+			}
+
+			if elem == 0 {
+				// escaped commas and colons
+				if (len(s) > 0 && s[len(s)-1] == '\\') || concatComma {
+					if !concatComma {
+						bind += s[:len(s)-1] + ","
+					} else {
+						bind += s
+						elem++
+					}
+					concatComma = !concatComma
+					continue
+				} else if (len(s) >= 2 && s[len(s)-2] == '\\' && s[len(s)-1] == ':') || concatColon {
+					bind += s
+					if concatColon {
+						elem++
+					}
+					concatColon = !concatColon
+					continue
+				} else if bind == "" {
+					bind = s
+				}
+			}
+
+			isColon := bind != "" && bind[len(bind)-1] == ':'
+
+			// options are taken only if the bind has a source
+			// and a destination
+			if elem == 2 && isOption {
 				if !isColon {
 					bind += ","
 				}
 				bind += s
 				continue
+			} else if elem > 2 {
+				return nil, fmt.Errorf("wrong bind syntax: %s", bind)
 			}
-		} else if elem > 2 {
-			return nil, fmt.Errorf("wrong bind syntax: %s", bind)
+
+			if bind != "" {
+				if isColon {
+					if elem > 0 {
+						bind += s
+					}
+					elem++
+					continue
+				}
+				bp, err := newBindPath(bind, validOptions)
+				if err != nil {
+					return nil, fmt.Errorf("while getting bind path: %s", err)
+				}
+				binds = append(binds, bp)
+				elem = 0
+			}
+			// new bind path
+			bind = s
+			elem++
 		}
 
-		elem++
-
 		if bind != "" {
-			if isColon {
-				bind += s
-				continue
-			}
 			bp, err := newBindPath(bind, validOptions)
 			if err != nil {
 				return nil, fmt.Errorf("while getting bind path: %s", err)
 			}
 			binds = append(binds, bp)
-			elem = 1
 		}
-		// new bind path
-		bind = s
-	}
-
-	if bind != "" {
-		bp, err := newBindPath(bind, validOptions)
-		if err != nil {
-			return nil, fmt.Errorf("while getting bind path: %s", err)
-		}
-		binds = append(binds, bp)
 	}
 
 	return binds, nil
+}
+
+func splitBy(str string, sep byte) []string {
+	var list []string
+
+	re := regexp.MustCompile(fmt.Sprintf(`(?m)([^\\]%c)`, sep))
+	cursor := 0
+
+	indexes := re.FindAllStringIndex(str, -1)
+	for i, index := range indexes {
+		list = append(list, str[cursor:index[1]-1])
+		cursor = index[1]
+		if len(indexes)-1 == i {
+			return append(list, str[cursor:])
+		}
+	}
+
+	return append(list, str)
 }
 
 // newBindPath returns BindPath record based on the provided bind
@@ -379,9 +438,9 @@ func ParseBindPath(bindpaths string) ([]BindPath, error) {
 func newBindPath(bind string, validOptions map[string]bool) (BindPath, error) {
 	var bp BindPath
 
-	splitted := strings.SplitN(bind, ":", 3)
+	splitted := splitBy(bind, ':')
 
-	bp.Source = splitted[0]
+	bp.Source = strings.ReplaceAll(splitted[0], "\\:", ":")
 	if bp.Source == "" {
 		return bp, fmt.Errorf("empty bind source for bind path %q", bind)
 	}
