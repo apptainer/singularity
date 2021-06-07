@@ -1,5 +1,15 @@
 run:
   timeout: 3m
+  build-tags:
+    - apparmor
+    - containers_image_openpgp
+    - e2e_test
+    - fakeroot_engine
+    - oci_engine
+    - seccomp
+    - selinux
+    - singularity_engine
+    - sylog
 
 linters:
   disable-all: true
