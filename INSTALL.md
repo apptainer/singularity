@@ -8,7 +8,7 @@ always be up-to-date with the latest source release version.
 
 For full instructions on installation, including building RPMs,
 installing pre-built EPEL packages etc. please check the
-[installation section of the admin guide](https://sylabs.io/guides/latest/admin-guide/).
+[installation section of the admin guide](https://singularity.hpcng.org/admin-docs/master/installation.html).
 
 ## Install system dependencies
 
@@ -41,7 +41,7 @@ _**NOTE:** if you are updating Go from a older version, make sure you remove `/u
 reinstalling it._
 
 ```
-$ export VERSION=1.15.8 OS=linux ARCH=amd64  # change this as you need
+$ export VERSION=1.16.4 OS=linux ARCH=amd64  # change this as you need
 
 $ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
   sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
@@ -69,11 +69,11 @@ In order to install golangci-lint, you can run:
 
 ```
 $ curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh |
-  sh -s -- -b $(go env GOPATH)/bin v1.21.0
+  sh -s -- -b $(go env GOPATH)/bin v1.31.0
 ```
 
 This will download and install golangci-lint from its Github releases
-page (using version v1.21.0 at the moment).
+page (using version v1.31.0 at the moment).
 
 ## Clone the repo
 
@@ -160,4 +160,4 @@ $ make -C builddir rpm RPMPREFIX=/usr/local
 ```
 
 For more information on installing/updating/uninstalling the RPM, check out our 
-[admin docs](https://www.sylabs.io/guides/3.0/admin-guide/admin_quickstart.html).
+[admin docs](https://singularity.hpcng.org/admin-docs/master/admin_quickstart.html).
