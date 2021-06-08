@@ -77,7 +77,6 @@ var actionAppFlag = cmdline.Flag{
 	Name:         "app",
 	Usage:        "set an application to run inside a container",
 	EnvKeys:      []string{"APP", "APPNAME"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // -B|--bind
@@ -115,7 +114,6 @@ var actionOverlayFlag = cmdline.Flag{
 	Usage:        "use an overlayFS image for persistent data storage or as read-only layer of container",
 	EnvKeys:      []string{"OVERLAY", "OVERLAYIMAGE"},
 	Tag:          "<path>",
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // -S|--scratch
@@ -128,7 +126,6 @@ var actionScratchFlag = cmdline.Flag{
 	Usage:        "include a scratch directory within the container that is linked to a temporary dir (use -W to force location)",
 	EnvKeys:      []string{"SCRATCH", "SCRATCHDIR"},
 	Tag:          "<path>",
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // -W|--workdir
@@ -141,7 +138,6 @@ var actionWorkdirFlag = cmdline.Flag{
 	Usage:        "working directory to be used for /tmp, /var/tmp and $HOME (if -c/--contain was also used)",
 	EnvKeys:      []string{"WORKDIR"},
 	Tag:          "<path>",
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --disable-cache
@@ -164,7 +160,6 @@ var actionShellFlag = cmdline.Flag{
 	Usage:        "path to program to use for interactive shell",
 	EnvKeys:      []string{"SHELL"},
 	Tag:          "<path>",
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --pwd
@@ -176,7 +171,6 @@ var actionPwdFlag = cmdline.Flag{
 	Usage:        "initial working directory for payload process inside the container",
 	EnvKeys:      []string{"PWD", "TARGET_PWD"},
 	Tag:          "<path>",
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --hostname
@@ -188,7 +182,6 @@ var actionHostnameFlag = cmdline.Flag{
 	Usage:        "set container hostname",
 	EnvKeys:      []string{"HOSTNAME"},
 	Tag:          "<name>",
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --network
@@ -200,7 +193,6 @@ var actionNetworkFlag = cmdline.Flag{
 	Usage:        "specify desired network type separated by commas, each network will bring up a dedicated interface inside container",
 	EnvKeys:      []string{"NETWORK"},
 	Tag:          "<name>",
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --network-args
@@ -212,7 +204,6 @@ var actionNetworkArgsFlag = cmdline.Flag{
 	Usage:        "specify network arguments to pass to CNI plugins",
 	EnvKeys:      []string{"NETWORK_ARGS"},
 	Tag:          "<args>",
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --dns
@@ -223,7 +214,6 @@ var actionDNSFlag = cmdline.Flag{
 	Name:         "dns",
 	Usage:        "list of DNS server separated by commas to add in resolv.conf",
 	EnvKeys:      []string{"DNS"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --security
@@ -234,7 +224,6 @@ var actionSecurityFlag = cmdline.Flag{
 	Name:         "security",
 	Usage:        "enable security features (SELinux, Apparmor, Seccomp)",
 	EnvKeys:      []string{"SECURITY"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --apply-cgroups
@@ -245,7 +234,6 @@ var actionApplyCgroupsFlag = cmdline.Flag{
 	Name:         "apply-cgroups",
 	Usage:        "apply cgroups from file for container processes (root only)",
 	EnvKeys:      []string{"APPLY_CGROUPS"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --vm-ram
@@ -299,7 +287,6 @@ var actionContainLibsFlag = cmdline.Flag{
 	Name:         "containlibs",
 	Hidden:       true,
 	EnvKeys:      []string{"CONTAINLIBS"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --fusemount
@@ -310,7 +297,6 @@ var actionFuseMountFlag = cmdline.Flag{
 	Name:         "fusemount",
 	Usage:        "A FUSE filesystem mount specification of the form '<type>:<fuse command> <mountpoint>' - where <type> is 'container' or 'host', specifying where the mount will be performed ('container-daemon' or 'host-daemon' will run the FUSE process detached). <fuse command> is the path to the FUSE executable, plus options for the mount. <mountpoint> is the location in the container to which the FUSE mount will be attached. E.g. 'container:sshfs 10.0.0.1:/ /sshfs'. Implies --pid.",
 	EnvKeys:      []string{"FUSESPEC"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // hidden flag to handle SINGULARITY_TMPDIR environment variable
@@ -332,7 +318,6 @@ var actionBootFlag = cmdline.Flag{
 	Name:         "boot",
 	Usage:        "execute /sbin/init to boot container (root only)",
 	EnvKeys:      []string{"BOOT"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // -f|--fakeroot
@@ -344,7 +329,6 @@ var actionFakerootFlag = cmdline.Flag{
 	ShortHand:    "f",
 	Usage:        "run container in new user namespace as uid 0",
 	EnvKeys:      []string{"FAKEROOT"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // -e|--cleanenv
@@ -356,7 +340,6 @@ var actionCleanEnvFlag = cmdline.Flag{
 	ShortHand:    "e",
 	Usage:        "clean environment before running container",
 	EnvKeys:      []string{"CLEANENV"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // -c|--contain
@@ -368,7 +351,6 @@ var actionContainFlag = cmdline.Flag{
 	ShortHand:    "c",
 	Usage:        "use minimal /dev and empty other directories (e.g. /tmp and $HOME) instead of sharing filesystems from your host",
 	EnvKeys:      []string{"CONTAIN"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // -C|--containall
@@ -380,7 +362,6 @@ var actionContainAllFlag = cmdline.Flag{
 	ShortHand:    "C",
 	Usage:        "contain not only file systems, but also PID, IPC, and environment",
 	EnvKeys:      []string{"CONTAINALL"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --nv
@@ -391,7 +372,6 @@ var actionNvidiaFlag = cmdline.Flag{
 	Name:         "nv",
 	Usage:        "enable experimental Nvidia support",
 	EnvKeys:      []string{"NV"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --rocm flag to automatically bind
@@ -402,7 +382,6 @@ var actionRocmFlag = cmdline.Flag{
 	Name:         "rocm",
 	Usage:        "enable experimental Rocm support",
 	EnvKeys:      []string{"ROCM"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // -w|--writable
@@ -414,7 +393,6 @@ var actionWritableFlag = cmdline.Flag{
 	ShortHand:    "w",
 	Usage:        "by default all Singularity containers are available as read only. This option makes the file system accessible as read/write.",
 	EnvKeys:      []string{"WRITABLE"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --writable-tmpfs
@@ -425,7 +403,6 @@ var actionWritableTmpfsFlag = cmdline.Flag{
 	Name:         "writable-tmpfs",
 	Usage:        "makes the file system accessible as read-write with non persistent data (with overlay support only)",
 	EnvKeys:      []string{"WRITABLE_TMPFS"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --no-home
@@ -436,7 +413,6 @@ var actionNoHomeFlag = cmdline.Flag{
 	Name:         "no-home",
 	Usage:        "do NOT mount users home directory if /home is not the current working directory",
 	EnvKeys:      []string{"NO_HOME"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --no-mount
@@ -447,7 +423,6 @@ var actionNoMountFlag = cmdline.Flag{
 	Name:         "no-mount",
 	Usage:        "disable one or more mount xxx options set in singularity.conf",
 	EnvKeys:      []string{"NO_MOUNT"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --no-init
@@ -458,7 +433,6 @@ var actionNoInitFlag = cmdline.Flag{
 	Name:         "no-init",
 	Usage:        "do NOT start shim process with --pid",
 	EnvKeys:      []string{"NOSHIMINIT"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // hidden flag to disable nvidia bindings when 'always use nv = yes'
@@ -469,7 +443,6 @@ var actionNoNvidiaFlag = cmdline.Flag{
 	Name:         "no-nv",
 	Hidden:       true,
 	EnvKeys:      []string{"NV_OFF", "NO_NV"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // hidden flag to disable rocm bindings when 'always use rocm = yes'
@@ -480,7 +453,6 @@ var actionNoRocmFlag = cmdline.Flag{
 	Name:         "no-rocm",
 	Hidden:       true,
 	EnvKeys:      []string{"ROCM_OFF", "NO_ROCM"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --vm
@@ -523,7 +495,6 @@ var actionPidNamespaceFlag = cmdline.Flag{
 	ShortHand:    "p",
 	Usage:        "run container in a new PID namespace",
 	EnvKeys:      []string{"PID", "UNSHARE_PID"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // -i|--ipc
@@ -535,7 +506,6 @@ var actionIpcNamespaceFlag = cmdline.Flag{
 	ShortHand:    "i",
 	Usage:        "run container in a new IPC namespace",
 	EnvKeys:      []string{"IPC", "UNSHARE_IPC"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // -n|--net
@@ -547,7 +517,6 @@ var actionNetNamespaceFlag = cmdline.Flag{
 	ShortHand:    "n",
 	Usage:        "run container in a new network namespace (sets up a bridge network interface by default)",
 	EnvKeys:      []string{"NET", "UNSHARE_NET"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --uts
@@ -558,7 +527,6 @@ var actionUtsNamespaceFlag = cmdline.Flag{
 	Name:         "uts",
 	Usage:        "run container in a new UTS namespace",
 	EnvKeys:      []string{"UTS", "UNSHARE_UTS"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // -u|--userns
@@ -570,7 +538,6 @@ var actionUserNamespaceFlag = cmdline.Flag{
 	ShortHand:    "u",
 	Usage:        "run container in a new user namespace, allowing Singularity to run completely unprivileged on recent kernels. This disables some features of Singularity, for example it only works with sandbox images.",
 	EnvKeys:      []string{"USERNS", "UNSHARE_USERNS"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --keep-privs
@@ -581,7 +548,6 @@ var actionKeepPrivsFlag = cmdline.Flag{
 	Name:         "keep-privs",
 	Usage:        "let root user keep privileges in container (root only)",
 	EnvKeys:      []string{"KEEP_PRIVS"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --no-privs
@@ -592,7 +558,6 @@ var actionNoPrivsFlag = cmdline.Flag{
 	Name:         "no-privs",
 	Usage:        "drop all privileges from root user in container)",
 	EnvKeys:      []string{"NO_PRIVS"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --add-caps
@@ -603,7 +568,6 @@ var actionAddCapsFlag = cmdline.Flag{
 	Name:         "add-caps",
 	Usage:        "a comma separated capability list to add",
 	EnvKeys:      []string{"ADD_CAPS"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --drop-caps
@@ -614,7 +578,6 @@ var actionDropCapsFlag = cmdline.Flag{
 	Name:         "drop-caps",
 	Usage:        "a comma separated capability list to drop",
 	EnvKeys:      []string{"DROP_CAPS"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --allow-setuid
@@ -625,7 +588,6 @@ var actionAllowSetuidFlag = cmdline.Flag{
 	Name:         "allow-setuid",
 	Usage:        "allow setuid binaries in container (root only)",
 	EnvKeys:      []string{"ALLOW_SETUID"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --env
@@ -635,7 +597,6 @@ var actionEnvFlag = cmdline.Flag{
 	DefaultValue: []string{},
 	Name:         "env",
 	Usage:        "pass environment variable to contained process",
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --env-file
@@ -646,7 +607,6 @@ var actionEnvFileFlag = cmdline.Flag{
 	Name:         "env-file",
 	Usage:        "pass environment variables from file to contained process",
 	EnvKeys:      []string{"ENV_FILE"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --no-umask
@@ -657,7 +617,6 @@ var actionNoUmaskFlag = cmdline.Flag{
 	Name:         "no-umask",
 	Usage:        "do not propagate umask to the container, set default 0022 umask",
 	EnvKeys:      []string{"NO_UMASK"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 func init() {

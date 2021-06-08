@@ -49,18 +49,6 @@ var ttData = []struct {
 		expectedFailure: true,
 	},
 	{
-		desc: "excluded flag",
-		flag: &Flag{
-			ID:           "testStringFlag",
-			Value:        &testString,
-			DefaultValue: testString,
-			Name:         "string",
-			Usage:        "a string flag",
-			ExcludedOS:   []string{Linux, Darwin},
-		},
-		cmd: parentCmd,
-	},
-	{
 		desc: "string flag",
 		flag: &Flag{
 			ID:           "testStringFlag",

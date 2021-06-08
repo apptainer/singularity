@@ -215,7 +215,6 @@ var buildNvFlag = cmdline.Flag{
 	Name:         "nv",
 	Usage:        "inject host Nvidia libraries during build for post and test sections (not supported with remote build)",
 	EnvKeys:      []string{"NV"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // --rocm
@@ -226,7 +225,6 @@ var buildRocmFlag = cmdline.Flag{
 	Name:         "rocm",
 	Usage:        "inject host Rocm libraries during build for post and test sections (not supported with remote build)",
 	EnvKeys:      []string{"ROCM"},
-	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // -B|--bind
