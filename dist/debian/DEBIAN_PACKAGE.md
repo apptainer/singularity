@@ -1,0 +1,84 @@
+# creating the Debian package
+
+## Preparation
+As long as the debian directory is in the subdirectroy you need to link
+or copy it in the top directory.
+
+In the top directory do this:
+```
+ln -s dist/debian .
+```
+
+Make sure all the dependencies are met. See the `INSTALL.md` for this. 
+Otherwise `debuild` will complain and quit. 
+
+## Configuration
+To do some configuration for the build, some environment variables can
+be used.
+
+Due to the fact, that `debuild` filters out some variables, all the
+configuration variables need to be prefixed by `DEB_`
+
+### mconfig
+See `mconfig --help` for details about the configuration options.
+
+`export DEB_NOSUID=1`    adds --without-suid
+`export DEB_NONETWORK=1` adds --without-network
+`export DEB_NOSECCOMP=1` adds --without-seccomp
+`export DEB_NOALL=1`     adds all of the above
+
+To select a specific profile for `mconfig`.
+
+For real production environment us this configuration:
+```
+export DEB_SC_PROFILE=release-stripped
+```
+or if debuging is needed use this.
+```
+export DEB_SC_PROFILE=debug
+```
+
+In case a different build directory is needed:
+```
+export DEB_SC_BUILDDIR=builddir
+```
+
+### debchange
+One way to update the changelog would be that the developer of singularity 
+update the Debian changelog on every commit. As this is double work, because
+of the CHANGELOG.md in the top directory, the changelog is automatically 
+updated with the version of the source which is currently checked out.
+Which means you can easily build debian packages for all the different tagged
+versions of the software. See `INSTALL.md` on how to checkout a specific 
+version. 
+
+Be aware, that `debchange` will complain about a lower version as the top in
+the current changelog. Which means you have to cleanup the changelog if needed.
+
+Usually `debchange` is configured by the environment variables `DEBFULLNAME` and 
+`EMAIL`. As `debuild` creates a clean environment it filters out most of the 
+environment variables. To set `DEBFULLNAME` for the `debchange` command in the 
+makefile, you have to set `DEB_FULLNAME`. If these variables are not set, `debchange`
+will try to find appropriate values from the system config. Usually by using the
+login name and the domainname. 
+```
+export DEB_FULLNAME="Your Name"
+export EMAIL="you@example.org"
+```
+
+## Building
+As usual for creating a debian package you can use `dpkg-buildpackage` 
+or `debuild` which is a kind of wrapper for the first and includes the start
+of `lintian`, too. 
+
+```
+dpkg-buildpackage --build=binary --no-sign
+lintian --verbose --display-info --show-overrides
+```
+or all in one
+```
+debuild --build=binary --no-sign --lintian-opts --display-info --show-overrides
+```
+
+For details see the manpage of `debuild` and `dpkg-buildpackage` and `lintian`
+
