@@ -1,7 +1,7 @@
-# creating the Debian package
+# Creating the Debian package
 
 ## Preparation
-As long as the debian directory is in the subdirectroy you need to link
+As long as the debian directory is in the sub-directory you need to link
 or copy it in the top directory.
 
 In the top directory do this:
@@ -23,8 +23,11 @@ configuration variables need to be prefixed by `DEB_`
 See `mconfig --help` for details about the configuration options.
 
 `export DEB_NOSUID=1`    adds --without-suid
+
 `export DEB_NONETWORK=1` adds --without-network
+
 `export DEB_NOSECCOMP=1` adds --without-seccomp
+
 `export DEB_NOALL=1`     adds all of the above
 
 To select a specific profile for `mconfig`.
@@ -33,7 +36,7 @@ For real production environment us this configuration:
 ```
 export DEB_SC_PROFILE=release-stripped
 ```
-or if debuging is needed use this.
+or if debugging is needed use this.
 ```
 export DEB_SC_PROFILE=debug
 ```
@@ -59,8 +62,8 @@ Usually `debchange` is configured by the environment variables `DEBFULLNAME` and
 `EMAIL`. As `debuild` creates a clean environment it filters out most of the 
 environment variables. To set `DEBFULLNAME` for the `debchange` command in the 
 makefile, you have to set `DEB_FULLNAME`. If these variables are not set, `debchange`
-will try to find appropriate values from the system config. Usually by using the
-login name and the domainname. 
+will try to find appropriate values from the system configuration. Usually by using the
+login name and the domain-name. 
 ```
 export DEB_FULLNAME="Your Name"
 export EMAIL="you@example.org"
@@ -80,5 +83,5 @@ or all in one
 debuild --build=binary --no-sign --lintian-opts --display-info --show-overrides
 ```
 
-For details see the manpage of `debuild` and `dpkg-buildpackage` and `lintian`
+For details see the man-page of `debuild` and `dpkg-buildpackage` and `lintian`
 
