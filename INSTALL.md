@@ -164,6 +164,4 @@ For more information on installing/updating/uninstalling the RPM, check out our
 
 ## Debian Package
 
-Additional information on [how to build a Debian package](dist/debian/DEBIAN_PACKAGE.md) can be 
-found in `dist/debian`.
-
+Additional information on how to build a Debian package can be found in [dist/debian/DEBIAN_PACKAGE.md](dist/debian/DEBIAN_PACKAGE.md).
