@@ -85,5 +85,10 @@ debuild --build=binary --no-sign --lintian-opts --display-info --show-overrides
 
 After successful build the debian package can be found in the parent directory. 
 
+To clean up the temporary files created by `debuild` use the command:
+```
+dh clean
+```
+
 For details see the man-page of `debuild` and `dpkg-buildpackage` and `lintian`
 
