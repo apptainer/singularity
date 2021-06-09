@@ -23,7 +23,7 @@ Vcs-Browser: https://github.com/hpcng/singularity
 
 # "singularity" is a packaged game (but the contents don't clash)
 Package: singularity-container
-Architecture: amd64
+Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, python, squashfs-tools
 Description: container platform focused on supporting "Mobility of Compute"
  Mobility of Compute encapsulates the development to compute model
