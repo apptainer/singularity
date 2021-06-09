@@ -105,3 +105,5 @@ build/*
 runtime/cli
 
 pkg/library/client/test[0-9]*
+
+debian
