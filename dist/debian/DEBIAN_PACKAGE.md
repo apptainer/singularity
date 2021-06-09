@@ -83,5 +83,7 @@ or all in one
 debuild --build=binary --no-sign --lintian-opts --display-info --show-overrides
 ```
 
+After successful build the debian package can be found in the parent directory. 
+
 For details see the man-page of `debuild` and `dpkg-buildpackage` and `lintian`
 
