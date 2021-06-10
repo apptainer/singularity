@@ -161,7 +161,3 @@ $ make -C builddir rpm RPMPREFIX=/usr/local
 
 For more information on installing/updating/uninstalling the RPM, check out our 
 [admin docs](https://singularity.hpcng.org/admin-docs/master/admin_quickstart.html).
-
-## Debian Package
-
-Additional information on how to build a Debian package can be found in [dist/debian/DEBIAN_PACKAGE.md](dist/debian/DEBIAN_PACKAGE.md).
