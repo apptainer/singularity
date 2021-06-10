@@ -1,16 +1,39 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build !linux
-
 package e2e
 
-import "testing"
+import (
+	"os"
+	"testing"
+
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"golang.org/x/sys/unix"
+)
 
 func SetupDefaultConfig(t *testing.T, path string) {
-	// TODO - address unsupported tests on MacOS better
-	// This is a hack to avoid golangci-lint failures on non-Linux
-	t.Fatalf("Config tests only supported on Linux")
+	c, err := singularityconf.Parse("")
+	if err != nil {
+		t.Fatalf("while generating singularity configuration: %s", err)
+	}
+
+	Privileged(func(t *testing.T) {
+		f, err := os.Create(path)
+		if err != nil {
+			t.Fatalf("while creating singularity configuration: %s", err)
+		}
+
+		if err := singularityconf.Generate(f, "", c); err != nil {
+			t.Fatalf("while generating singularity configuration: %s", err)
+		}
+
+		f.Close()
+
+		if err := unix.Mount(path, buildcfg.SINGULARITY_CONF_FILE, "", unix.MS_BIND, ""); err != nil {
+			t.Fatalf("while mounting %s to %s: %s", path, buildcfg.SINGULARITY_CONF_FILE, err)
+		}
+	})(t)
 }
