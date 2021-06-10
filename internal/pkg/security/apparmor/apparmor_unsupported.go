@@ -1,22 +1,20 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build !linux OR !apparmor
+// +build !apparmor
 
 package apparmor
 
-import (
-	"fmt"
-)
+import "errors"
 
-// Enabled returns whether apparmor is enabled/supported or not
+// Enabled returns whether AppArmor is enabled.
 func Enabled() bool {
 	return false
 }
 
-// LoadProfile returns error for unsupported platform
+// LoadProfile loads the specified AppArmor profile.
 func LoadProfile(profile string) error {
-	return fmt.Errorf("apparmor is not supported by OS")
+	return errors.New("can't load AppArmor profile: not enabled at compilation time")
 }
