@@ -6,7 +6,8 @@ or copy it in the top directory.
 
 In the top directory do this:
 ```
-ln -s dist/debian .
+rm -rf debian
+cp -r dist/debian .
 ```
 
 Make sure all the dependencies are met. See the `INSTALL.md` for this. 
