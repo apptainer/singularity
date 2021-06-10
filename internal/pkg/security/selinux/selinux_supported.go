@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,16 +7,14 @@
 
 package selinux
 
-import (
-	goselinux "github.com/opencontainers/selinux/go-selinux"
-)
+import "github.com/opencontainers/selinux/go-selinux"
 
-// Enabled checks if SELinux is enabled or not
+// Enabled returns whether SELinux is enabled.
 func Enabled() bool {
-	return goselinux.GetEnabled()
+	return selinux.GetEnabled()
 }
 
-// SetExecLabel sets the SELinux label for current process
+// SetExecLabel sets the SELinux label for current process.
 func SetExecLabel(label string) error {
-	return goselinux.SetExecLabel(label)
+	return selinux.SetExecLabel(label)
 }
