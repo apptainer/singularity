@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,7 +15,6 @@ import (
 
 	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/hpcng/singularity/pkg/sylog"
-	specs "github.com/opencontainers/runtime-spec/specs-go"
 	cseccomp "github.com/seccomp/containers-golang"
 	lseccomp "github.com/seccomp/libseccomp-golang"
 )
@@ -68,12 +67,12 @@ func hasConditionSupport() bool {
 	return (major > 2) || (major == 2 && minor >= 2) || (major == 2 && minor == 2 && micro >= 1)
 }
 
-// Enabled returns whether seccomp is enabled or not
+// Enabled returns whether seccomp is enabled.
 func Enabled() bool {
 	return true
 }
 
-// LoadSeccompConfig loads seccomp configuration filter for the current process
+// LoadSeccompConfig loads seccomp configuration filter for the current process.
 func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool, errNo int16) error {
 	if err := prctl(syscall.PR_GET_SECCOMP, 0, 0, 0, 0); err == syscall.EINVAL {
 		return fmt.Errorf("can't load seccomp filter: not supported by kernel")
@@ -188,8 +187,7 @@ func addSyscallRuleContitions(args []specs.LinuxSeccompArg) ([]lseccomp.ScmpCond
 	return conditions, nil
 }
 
-// LoadProfileFromFile loads seccomp rules from json file and fill in
-// provided OCI configuration
+// LoadProfileFromFile loads seccomp rules from json file and fill in provided OCI configuration.
 func LoadProfileFromFile(profile string, generator *generate.Generator) error {
 	file, err := os.Open(profile)
 	if err != nil {
