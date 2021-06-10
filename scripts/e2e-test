@@ -15,8 +15,6 @@ if [ ! -z "$E2E_PARALLEL" ]; then
     procs=$E2E_PARALLEL
 elif [ "$os" = "Linux" ]; then
     procs=`nproc --all`
-elif [ "$os" = "Darwin" ]; then
-    procs=`sysctl -n hw.ncpu`
 else
     procs=`getconf _NPROCESSORS_ONLN`
 fi
