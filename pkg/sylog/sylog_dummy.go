@@ -61,8 +61,8 @@ func Writer() io.Writer {
 // as the scs-library-client
 type DebugLogger struct{}
 
-// Dummy of a log message via sylog.Debugf
+// Log is a dummy function doing nothing.
 func (t DebugLogger) Log(v ...interface{}) {}
 
-// Dummy of a formatted log message via sylog.Debugf
+// Logf is a dummy function doing nothing.
 func (t DebugLogger) Logf(format string, v ...interface{}) {}
