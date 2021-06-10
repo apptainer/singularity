@@ -31,6 +31,5 @@ su testuser -c '
   export GOPATH=$BLD/gopath
   PATH=$GOPATH/bin:$PATH
 
-  cd $GOPATH/src/github.com/hpcng/singularity
   singularity exec library://alpine:3.11.5 /bin/true
 '
