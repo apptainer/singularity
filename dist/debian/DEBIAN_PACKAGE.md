@@ -52,12 +52,17 @@ One way to update the changelog would be that the developer of singularity
 update the Debian changelog on every commit. As this is double work, because
 of the CHANGELOG.md in the top directory, the changelog is automatically 
 updated with the version of the source which is currently checked out.
-Which means you can easily build debian packages for all the different tagged
+Which means you can easily build Debian packages for all the different tagged
 versions of the software. See `INSTALL.md` on how to checkout a specific 
 version. 
 
 Be aware, that `debchange` will complain about a lower version as the top in
 the current changelog. Which means you have to cleanup the changelog if needed.
+If you did not change anything in the debian directory manually, it might be easiest
+to [start from scratch](#Preparation).
+Be aware, that the Debian install directory as you see it now, might not be available
+in older versions (branches, tags). Make sure you have a clean copy of the debian
+directory before you switch to (checkout) an older version.
 
 Usually `debchange` is configured by the environment variables `DEBFULLNAME` and 
 `EMAIL`. As `debuild` creates a clean environment it filters out most of the 
@@ -71,7 +76,7 @@ export EMAIL="you@example.org"
 ```
 
 ## Building
-As usual for creating a debian package you can use `dpkg-buildpackage` 
+As usual for creating a Debian package you can use `dpkg-buildpackage`
 or `debuild` which is a kind of wrapper for the first and includes the start
 of `lintian`, too. 
 
@@ -84,12 +89,25 @@ or all in one
 debuild --build=binary --no-sign --lintian-opts --display-info --show-overrides
 ```
 
-After successful build the debian package can be found in the parent directory. 
+After successful build the Debian package can be found in the parent directory.
 
 To clean up the temporary files created by `debuild` use the command:
 ```
 dh clean
 ```
+To cleanup the copy of the debian directory, make sure you saved your changes (if any) and remove it.
+```
+rm -rf debian
+```
 
-For details see the man-page of `debuild` and `dpkg-buildpackage` and `lintian`
+For details on Debian package building see the man-page of `debuild` and `dpkg-buildpackage` and `lintian`
+
+# Debian Repository
+In the current version this is by far not ready for using it in official Debian Repositories.
+
+This might change in future. I updated the old debian directory to make it just work, for people
+needing it.
+
+Any help is welcome to provide a Debian installer which can be used for building a Debian package,
+that can be used in official Debian Repositories.
 
