@@ -6,8 +6,8 @@
 package starter
 
 import (
-	"net"
 	"os"
+	"syscall"
 
 	"github.com/hpcng/singularity/internal/pkg/runtime/engine"
 	starterConfig "github.com/hpcng/singularity/internal/pkg/runtime/engine/config/starter"
@@ -42,23 +42,16 @@ func StageTwo(masterSocket int, e *engine.Engine) {
 	// master socket allows communications between
 	// stage 2 and master process, typically used for
 	// synchronization or for sending state
-	comm := os.NewFile(uintptr(masterSocket), "master-socket")
-	conn, err := net.FileConn(comm)
-	comm.Close()
-	if err != nil {
-		sylog.Fatalf("failed to copy master unix socket descriptor: %s", err)
-		return
-	}
 
 	// call engine operation StartProcess, at this stage
 	// we are in a container context, chroot was done.
 	// The privileges are those applied by the container
 	// configuration, in the case of Singularity engine
 	// and if run as a user, there is no privileges set
-	if err := e.StartProcess(conn); err != nil {
+	if err := e.StartProcess(masterSocket); err != nil {
 		// write data to just tell master to not execute PostStartProcess
 		// in case of failure
-		if _, err := conn.Write([]byte("f")); err != nil {
+		if _, err := syscall.Write(masterSocket, []byte("f")); err != nil {
 			sylog.Errorf("fail to send data to master: %s", err)
 		}
 		sylog.Fatalf("%s\n", err)

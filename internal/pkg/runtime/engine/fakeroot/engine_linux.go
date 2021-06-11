@@ -177,7 +177,7 @@ func fakerootSeccompProfile() *specs.LinuxSeccomp {
 //
 // This will be executed as a fake root user in a new user
 // namespace (PrepareConfig will set both).
-func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
+func (e *EngineOperations) StartProcess(masterConnFd int) error {
 	const (
 		mountInfo    = "/proc/self/mountinfo"
 		selinuxMount = "/sys/fs/selinux"
