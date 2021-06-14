@@ -6,6 +6,7 @@
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
 - [Project License](LICENSE.md)
 - [Documentation](https://singularity.hpcng.org/docs/)
+- [Support](#support)
 - [Citation](#citing-singularity)
 
 Singularity is an open source container platform designed to be simple, fast,

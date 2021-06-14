@@ -3,14 +3,12 @@
 Need help? We have several ways to reach us, depending on your preferences and needs.
 
 ## Documentation
-If you haven't already, read our [documentation](https://www.sylabs.io/docs/). These docs have common use cases, and might be helpful to browse before submitting an issue. You can contribute to our documentation by creating PRs against the [singularity-admindocs](https://github.com/hpcng/singularity-admindocs) and [singularity-userdocs](https://github.com/hpcng/singularity-userdocs) repositories.
+If you haven't already, read our [documentation](https://singularity.hpcng.org/docs/). These docs have common use cases, and might be helpful to browse before submitting an issue. You can contribute to our documentation by creating PRs against the [singularity-admindocs](https://github.com/hpcng/singularity-admindocs) and [singularity-userdocs](https://github.com/hpcng/singularity-userdocs) repositories.
 
 ## Github
 For issues with code (and especially if you need to share debug output) we recommend Github issues boards.
 
  - [Singularity Issues](https://github.com/hpcng/singularity/issues): is recommended for most issues with the Singularity software.
- - [Singularity Hub Issues](https://github.com/singularityhub/singularityhub.github.io/issues): is the board for issues relevant to Singularity Hub.
- - [Singularity Registry Issues](https://github.com/singularityhub/sregistry/issues): is the board for issues relevant to Singularity Registry
  - [User Documentation](https://github.com/hpcng/singularity-userdocs/issues) questions, feedback, and suggestions should go here. Feel free to create an issue on a board and additionally request updated content here.
  - [Admin Documentation](https://github.com/hpcng/singularity-admindocs/issues) questions, feedback, and suggestions should go here. Feel free to create an issue on a board and additionally request updated content here.
 
