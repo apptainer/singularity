@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -43,7 +43,11 @@ func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encrypt
 
 	id, err := uuid.NewV4()
 	if err != nil {
+<<<<<<< HEAD
 		return fmt.Errorf("sif id generation failed: %v", err)
+=======
+		return err
+>>>>>>> sylabs41-2
 	}
 
 	// general info for the new SIF file creation

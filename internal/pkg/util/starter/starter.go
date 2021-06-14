@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -89,6 +89,8 @@ func Exec(name string, config *config.Common, ops ...CommandOp) error {
 	if err := c.init(config, ops...); err != nil {
 		return fmt.Errorf("while initializing starter command: %s", err)
 	}
+	sylog.Debugf("Setting GOGC=off for starter")
+	c.env = append(c.env, "GOGC=off")
 	err := unix.Exec(c.path, []string{name}, c.env)
 	return fmt.Errorf("while executing %s: %s", c.path, err)
 }

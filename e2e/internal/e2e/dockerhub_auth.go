@@ -11,9 +11,15 @@ import (
 	"path/filepath"
 	"testing"
 
+<<<<<<< HEAD
 	"github.com/hpcng/singularity/internal/pkg/util/user"
 	"github.com/hpcng/singularity/pkg/syfs"
 	auth "github.com/oras-project/oras-go/pkg/auth/docker"
+=======
+	auth "github.com/oras-project/oras-go/pkg/auth/docker"
+	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/syfs"
+>>>>>>> sylabs41-2
 )
 
 const dockerHub = "docker.io"

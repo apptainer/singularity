@@ -1,0 +1,236 @@
+version: 2.1
+
+orbs:
+  go: circleci/go@1.6
+
+parameters:
+  go-version:
+    type: string
+    default: 1.14.9
+
+executors:
+  golang:
+    parameters:
+      variant:
+        description: "variant (ex. alpine)"
+        default: ""
+        type: string
+    docker:
+      # Resolves to golang:<go-version> or golang:<go-version>-<variant> (if variant supplied)
+      - image: golang:<< pipeline.parameters.go-version >><<# parameters.variant >>-<< parameters.variant >><</ parameters.variant >>
+        auth:
+          username: $CIRCLE_CI_DOCKER_USERNAME
+          password: $CIRCLE_CI_DOCKER_PASSWORD
+  macos-machine:
+    macos:
+      xcode: "10.2.0"
+  ubuntu-machine:
+    working_directory: ~/go/singularity
+    machine:
+      image: ubuntu-2004:202104-01
+
+commands:
+  check-changes:
+    steps:
+      - run:
+          name: Check changes
+          command: |-
+            rc=0
+            scripts/should-e2e-run "${CIRCLE_PROJECT_USERNAME}" "${CIRCLE_PROJECT_REPONAME}" "${CIRCLE_BRANCH}" "${CIRCLE_PULL_REQUEST}" || rc=$?
+            case $rc in
+              0)
+                echo "Verifying critical changes"
+                ;;
+
+              1)
+                echo "No critical changes, skipping tests"
+                circleci step halt
+                ;;
+
+              *)
+                echo "E: scripts/should-e2e-run returned with exit code $rc. Abort."
+                exit $rc
+                ;;
+            esac
+  stop-background-apt:
+    steps:
+      - run:
+          name: Stop background apt updates
+          # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
+          command: sudo killall -9 apt-get || true
+  install-deps-apt:
+    parameters:
+      sudo:
+        type: boolean
+        default: true
+    steps:
+      - run:
+          name: Update package indexes
+          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q update
+      - run:
+          name: Install dependencies
+          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin
+  build-singularity:
+    steps:
+      - run:
+          name: Configure Singularity
+          command: ./mconfig -v -p /usr/local
+      - run:
+          name: Build Singularity
+          command: make -C ./builddir all
+  install-singularity:
+    steps:
+      - run:
+          name: Install Singularity
+          command: sudo make -C ./builddir install
+  check-singularity:
+    steps:
+      - run:
+          name: Check Singularity
+          command: make -C ./builddir check
+  buildtest-rpm:
+    parameters:
+      os-type:
+        type: string
+        default: centos
+      os-version:
+        type: string
+    steps:
+      - run:
+          name: Build and Test RPM
+          no_output_timeout: 10m
+          environment:
+            OS_TYPE: << parameters.os-type >>
+            OS_VERSION: << parameters.os-version >>
+          command: |-
+            export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
+            export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
+            scripts/ci-docker-run
+
+jobs:
+  check-go-mod:
+    executor: golang
+    steps:
+      - checkout
+      - run:
+          name: Go Mod Tidy
+          command: go mod tidy
+      - run:
+          name: Check Module Tidiness
+          command: git diff --exit-code -- go.mod go.sum
+
+  check-stretch:
+    executor:
+      name: golang
+      variant: stretch
+    steps:
+      - checkout
+      - install-deps-apt:
+          sudo: false
+      - build-singularity
+      - check-singularity
+
+  check-alpine:
+    executor:
+      name: golang
+      variant: alpine
+    steps:
+      - checkout
+      - run:
+          name: Fetch deps
+          command: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
+      - build-singularity
+      - check-singularity
+
+  check-darwin:
+    executor: macos-machine
+    working_directory: /Users/distiller/go/src/github.com/sylabs/singularity
+    steps:
+      - checkout
+      - go/install:
+          version: << pipeline.parameters.go-version >>
+      - build-singularity
+      - check-singularity
+
+  short-unit-tests:
+    executor: ubuntu-machine
+    steps:
+      - checkout
+      - go/install:
+          version: << pipeline.parameters.go-version >>
+          cache: no
+      - stop-background-apt
+      - install-deps-apt
+      - build-singularity
+      - install-singularity
+      - run:
+          name: Run unit tests
+          command: make -C ./builddir short-unit-test
+
+  integration-tests:
+    executor: ubuntu-machine
+    steps:
+      - checkout
+      - check-changes
+      - go/install:
+          version: << pipeline.parameters.go-version >>
+          cache: no
+      - stop-background-apt
+      - install-deps-apt
+      - build-singularity
+      - install-singularity
+      - run:
+          name: Run integration tests
+          no_output_timeout: 20m
+          command: make -C ./builddir integration-test
+
+  e2e-tests:
+    executor: ubuntu-machine
+    steps:
+      - checkout
+      - check-changes
+      - go/install:
+          version: << pipeline.parameters.go-version >>
+          cache: no
+      - stop-background-apt
+      - install-deps-apt
+      - build-singularity
+      - install-singularity
+      - run:
+          name: Run E2E tests
+          no_output_timeout: 35m
+          command: |-
+            export E2E_PARALLEL=8 && \
+            export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
+            export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
+            make -C ./builddir e2e-test
+      - store_artifacts:
+          path: builddir/e2e-cmd-report.txt
+
+  rpmbuild-centos7:
+    executor: ubuntu-machine
+    steps:
+      - checkout
+      - buildtest-rpm:
+          os-version: '7'
+
+  rpmbuild-centos8:
+    executor: ubuntu-machine
+    steps:
+      - checkout
+      - buildtest-rpm:
+          os-version: '8'
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - check-go-mod
+      - check-stretch
+      - check-alpine
+      - check-darwin
+      - short-unit-tests
+      - integration-tests
+      - e2e-tests
+      - rpmbuild-centos7
+      - rpmbuild-centos8

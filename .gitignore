@@ -12,7 +12,7 @@ generate_docs
 .idea/
 builddir/
 internal/pkg/buildcfg/config.go
-singularity.spec
+singularity-ce.spec
 trash.lock
 Makefile.in
 autom4te.cache/

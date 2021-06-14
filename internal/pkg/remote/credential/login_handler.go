@@ -13,10 +13,17 @@ import (
 	"net/url"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/hpcng/singularity/internal/pkg/util/interactive"
 	"github.com/hpcng/singularity/pkg/syfs"
 	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
 	auth "github.com/oras-project/oras-go/pkg/auth/docker"
+=======
+	auth "github.com/oras-project/oras-go/pkg/auth/docker"
+	"github.com/sylabs/singularity/internal/pkg/util/interactive"
+	"github.com/sylabs/singularity/pkg/syfs"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+>>>>>>> sylabs41-2
 )
 
 // loginHandlers contains the registered handlers by scheme.

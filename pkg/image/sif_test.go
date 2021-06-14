@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -31,11 +31,20 @@ func createSIF(t *testing.T, inputDesc []sif.DescriptorInput, corrupted bool) st
 		}
 	}
 
+	id, err := uuid.NewV4()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	cinfo := sif.CreateInfo{
 		Pathname:   sifFile.Name(),
 		Launchstr:  sif.HdrLaunch,
 		Sifversion: sif.HdrVersion,
+<<<<<<< HEAD
 		ID:         uuid.Must(uuid.NewV4()),
+=======
+		ID:         id,
+>>>>>>> sylabs41-2
 		InputDescr: inputDesc,
 	}
 

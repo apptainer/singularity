@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -21,6 +21,16 @@ import (
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 )
+
+func randomContainerID(t *testing.T) string {
+	t.Helper()
+
+	id, err := uuid.NewV4()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return id.String()
+}
 
 type ctx struct {
 	env e2e.TestEnv
@@ -101,7 +111,11 @@ func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 func (c ctx) testOciRun(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
+<<<<<<< HEAD
 	containerID := uuid.Must(uuid.NewV4()).String()
+=======
+	containerID := randomContainerID(t)
+>>>>>>> sylabs41-2
 	bundleDir, umountFn := genericOciMount(t, &c)
 
 	// umount bundle
@@ -136,7 +150,11 @@ func (c ctx) testOciRun(t *testing.T) {
 func (c ctx) testOciAttach(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
+<<<<<<< HEAD
 	containerID := uuid.Must(uuid.NewV4()).String()
+=======
+	containerID := randomContainerID(t)
+>>>>>>> sylabs41-2
 	bundleDir, umountFn := genericOciMount(t, &c)
 
 	// umount bundle
@@ -203,7 +221,11 @@ func (c ctx) testOciAttach(t *testing.T) {
 func (c ctx) testOciBasic(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
+<<<<<<< HEAD
 	containerID := uuid.Must(uuid.NewV4()).String()
+=======
+	containerID := randomContainerID(t)
+>>>>>>> sylabs41-2
 	bundleDir, umountFn := genericOciMount(t, &c)
 
 	// umount bundle
