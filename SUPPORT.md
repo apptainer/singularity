@@ -9,8 +9,6 @@ If you haven't already, read our [documentation](https://singularity.hpcng.org/d
 For issues with code (and especially if you need to share debug output) we recommend Github issues boards.
 
  - [Singularity Issues](https://github.com/hpcng/singularity/issues): is recommended for most issues with the Singularity software.
- - [Singularity Hub Issues](https://github.com/singularityhub/singularityhub.github.io/issues): is the board for issues relevant to Singularity Hub.
- - [Singularity Registry Issues](https://github.com/singularityhub/sregistry/issues): is the board for issues relevant to Singularity Registry
  - [User Documentation](https://github.com/hpcng/singularity-userdocs/issues) questions, feedback, and suggestions should go here. Feel free to create an issue on a board and additionally request updated content here.
  - [Admin Documentation](https://github.com/hpcng/singularity-admindocs/issues) questions, feedback, and suggestions should go here. Feel free to create an issue on a board and additionally request updated content here.
 
