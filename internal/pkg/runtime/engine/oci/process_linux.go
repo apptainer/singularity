@@ -38,7 +38,7 @@ import (
 // No additional privileges can be gained during this call (unless container
 // is executed as root intentionally) as starter will set uid/euid/suid
 // to the targetUID (PrepareConfig will set it by calling starter.Config.SetTargetUID).
-func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
+func (e *EngineOperations) StartProcess(masterConnFd int) error {
 	cwd := e.EngineConfig.OciConfig.Process.Cwd
 
 	if cwd == "" {
@@ -55,6 +55,13 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	if err := setRlimit(e.EngineConfig.OciConfig.Process.Rlimits); err != nil {
 		return err
+	}
+
+	comm := os.NewFile(uintptr(masterConnFd), "master-socket")
+	masterConn, err := net.FileConn(comm)
+	comm.Close()
+	if err != nil {
+		return fmt.Errorf("failed to copy master unix socket descriptor: %s", err)
 	}
 
 	if e.EngineConfig.EmptyProcess {

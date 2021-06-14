@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -55,7 +54,7 @@ const defaultShell = "/bin/sh"
 // No additional privileges can be gained during this call (unless container
 // is executed as root intentionally) as starter will set uid/euid/suid
 // to the targetUID (PrepareConfig will set it by calling starter.Config.SetTargetUID).
-func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
+func (e *EngineOperations) StartProcess(masterConnFd int) error {
 	// Manage all signals.
 	// Queue them until they're ready to be handled below.
 	// Use a channel size of two here, since we may receive SIGURG, which is
@@ -233,7 +232,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 		return syscall.Errno(err)
 	}
 
-	masterConn.Close()
+	syscall.Close(masterConnFd)
 
 	for {
 		select {
