@@ -42,6 +42,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Wait for dm device to appear when mounting an encrypted container
     rootfs.
   - Accommodate ppc64le pageSize in TestCgroups and disable -race.
+  - Fix Debian packaging
 
 ## Testing / Development
 
