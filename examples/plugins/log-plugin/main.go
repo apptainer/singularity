@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/syslog"
 	"os"
+	"os/user"
 	"path/filepath"
 
 	pluginapi "github.com/hpcng/singularity/pkg/plugin"
@@ -42,12 +43,19 @@ func logCommand(common *config.Common, pid int) error {
 	}
 
 	image := cfg.GetImage()
+	container := cfg.GetContainer()
 	w, err := syslog.New(syslog.LOG_INFO, "singularity")
 	if err != nil {
 		return err
 	}
 	defer w.Close()
 
-	msg := fmt.Sprintf("UID=%d IMAGE=%s COMMAND=%s", os.Getuid(), image, command)
+	var username string
+	user, err := user.Current()
+	if err == nil {
+		username = user.Username
+	}
+
+	msg := fmt.Sprintf("UID=%d USER=\"%s\" IMAGE=\"%s\" CONTAINER=\"%s\" COMMAND=\"%s\"", os.Getuid(), username, image, container, command)
 	return w.Info(msg)
 }
