@@ -43,7 +43,7 @@ func logCommand(common *config.Common, pid int) error {
 	}
 
 	image := cfg.GetImage()
-	container := cfg.GetContainer()
+	container := cfg.GetContainerImage()
 	w, err := syslog.New(syslog.LOG_INFO, "singularity")
 	if err != nil {
 		return err
