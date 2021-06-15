@@ -10,7 +10,9 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 _The old changelog can be found in the `release-2.6` branch_
 
 
-# v3.8.0-rc.2 Release Candidate - [2021-05-26]
+# v3.8.0 - [2021-06-15]
+
+## Changed defaults / behaviours
 
 > :warning: Go module was renamed from `github.com/sylabs/singularity` to `github.com/hpcng/singularity`
 
@@ -40,6 +42,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Wait for dm device to appear when mounting an encrypted container
     rootfs.
   - Accommodate ppc64le pageSize in TestCgroups and disable -race.
+  - Fix Debian packaging
 
 ## Testing / Development
 
