@@ -48,6 +48,8 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 
 	os.Setenv("USER_PATH", userPath)
 
+	os.Setenv("IMAGE_ARG", args[0])
+
 	ctx := context.TODO()
 
 	replaceURIWithImage(ctx, cmd, args)
@@ -172,7 +174,9 @@ var ExecCmd = &cobra.Command{
 			execVM(cmd, args[0], a)
 			return
 		}
-		execStarter(cmd, args[0], a, "")
+		imageArg := os.Getenv("IMAGE_ARG")
+		os.Unsetenv("IMAGE_ARG")
+		execStarter(cmd, args[0], imageArg, a, "")
 	},
 
 	Use:     docs.ExecUse,
@@ -194,7 +198,9 @@ var ShellCmd = &cobra.Command{
 			execVM(cmd, args[0], a)
 			return
 		}
-		execStarter(cmd, args[0], a, "")
+		imageArg := os.Getenv("IMAGE_ARG")
+		os.Unsetenv("IMAGE_ARG")
+		execStarter(cmd, args[0], imageArg, a, "")
 	},
 
 	Use:     docs.ShellUse,
@@ -216,7 +222,9 @@ var RunCmd = &cobra.Command{
 			execVM(cmd, args[0], a)
 			return
 		}
-		execStarter(cmd, args[0], a, "")
+		imageArg := os.Getenv("IMAGE_ARG")
+		os.Unsetenv("IMAGE_ARG")
+		execStarter(cmd, args[0], imageArg, a, "")
 	},
 
 	Use:     docs.RunUse,
@@ -238,7 +246,9 @@ var TestCmd = &cobra.Command{
 			execVM(cmd, args[0], a)
 			return
 		}
-		execStarter(cmd, args[0], a, "")
+		imageArg := os.Getenv("IMAGE_ARG")
+		os.Unsetenv("IMAGE_ARG")
+		execStarter(cmd, args[0], imageArg, a, "")
 	},
 
 	Use:     docs.RunTestUse,

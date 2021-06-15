@@ -6,6 +6,8 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/hpcng/singularity/docs"
 	"github.com/hpcng/singularity/internal/app/singularity"
 	"github.com/hpcng/singularity/pkg/cmdline"
@@ -45,7 +47,9 @@ var instanceStartCmd = &cobra.Command{
 			execVM(cmd, image, a)
 			return
 		}
-		execStarter(cmd, image, a, name)
+		imageArg := os.Getenv("IMAGE_ARG")
+		os.Unsetenv("IMAGE_ARG")
+		execStarter(cmd, image, imageArg, a, name)
 
 		if instanceStartPidFile != "" {
 			err := singularity.WriteInstancePidFile(name, instanceStartPidFile)

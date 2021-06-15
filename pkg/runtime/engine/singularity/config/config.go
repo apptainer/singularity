@@ -116,7 +116,7 @@ type JSONConfig struct {
 	OpenFd            []int             `json:"openFd,omitempty"`
 	TargetGID         []int             `json:"targetGID,omitempty"`
 	Image             string            `json:"image"`
-	ContainerImage    string            `json:"containerImage"`
+	ImageArg	  string            `json:"imageArg"`
 	Workdir           string            `json:"workdir,omitempty"`
 	CgroupsPath       string            `json:"cgroupsPath,omitempty"`
 	HomeSource        string            `json:"homedir,omitempty"`
@@ -173,14 +173,14 @@ func (e *EngineConfig) GetImage() string {
 	return e.JSON.Image
 }
 
-// SetContainerImage sets the container image to be used by EngineConfig.JSON.
-func (e *EngineConfig) SetContainerImage(name string) {
-	e.JSON.ContainerImage = name
+// SetImageArg sets the container image argument to be used by EngineConfig.JSON.
+func (e *EngineConfig) SetImageArg(name string) {
+	e.JSON.ImageArg = name
 }
 
-// GetContainerImage retrieves the container image.
-func (e *EngineConfig) GetContainerImage() string {
-	return e.JSON.ContainerImage
+// GetImageArg retrieves the container image argument.
+func (e *EngineConfig) GetImageArg() string {
+	return e.JSON.ImageArg
 }
 
 // SetKey sets the key for the image's system partition.

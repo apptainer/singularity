@@ -166,7 +166,7 @@ func setNoMountFlags(c *singularityConfig.EngineConfig) {
 }
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
-func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
+func execStarter(cobraCmd *cobra.Command, image string, imageArg string, args []string, name string) {
 	var err error
 
 	targetUID := 0
@@ -194,7 +194,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	engineConfig := singularityConfig.NewConfig()
 
-	engineConfig.SetContainerImage(image)
+	engineConfig.SetImageArg(imageArg)
 	engineConfig.File = singularityconf.GetCurrentConfig()
 	if engineConfig.File == nil {
 		sylog.Fatalf("Unable to get singularity configuration")

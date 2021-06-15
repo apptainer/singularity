@@ -43,7 +43,7 @@ func logCommand(common *config.Common, pid int) error {
 	}
 
 	image := cfg.GetImage()
-	container := cfg.GetContainerImage()
+	imageArg := cfg.GetImageArg()
 	w, err := syslog.New(syslog.LOG_INFO, "singularity")
 	if err != nil {
 		return err
@@ -56,6 +56,6 @@ func logCommand(common *config.Common, pid int) error {
 		username = user.Username
 	}
 
-	msg := fmt.Sprintf("UID=%d USER=\"%s\" IMAGE=\"%s\" CONTAINER=\"%s\" COMMAND=\"%s\"", os.Getuid(), username, image, container, command)
+	msg := fmt.Sprintf("UID=%d USER=\"%s\" IMAGE=\"%s\" IMAGEARG=\"%s\" COMMAND=\"%s\"", os.Getuid(), username, image, imageArg, command)
 	return w.Info(msg)
 }
