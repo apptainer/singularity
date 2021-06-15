@@ -12,7 +12,6 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    - maligned
     - misspell
     - nakedret
     # we would like to add these
