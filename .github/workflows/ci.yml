@@ -21,15 +21,11 @@ jobs:
   debian:
     name: debian
     runs-on: ubuntu-20.04
-    container: golang:1.16-stretch
+    container: golang:1.16-buster
     steps:
       - name: Fetch deps
         run: |
           apt-get -q update && apt-get -q install -y build-essential libssl-dev uuid-dev squashfs-tools cryptsetup-bin
-          echo "deb http://ftp.debian.org/debian stretch-backports main" >> /etc/apt/sources.list
-          apt-get -q update
-          apt-get -q remove -y --purge git
-          apt-get -q install -y -t stretch-backports git
 
       - uses: actions/checkout@v2
 
