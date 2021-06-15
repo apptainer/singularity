@@ -24,15 +24,15 @@ import (
 	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/containerd/remotes/docker"
 	ocitypes "github.com/containers/image/v5/types"
-	auth "github.com/deislabs/oras/pkg/auth/docker"
-	"github.com/deislabs/oras/pkg/content"
-	orasctx "github.com/deislabs/oras/pkg/context"
-	"github.com/deislabs/oras/pkg/oras"
 	"github.com/hpcng/singularity/pkg/image"
 	"github.com/hpcng/singularity/pkg/syfs"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	auth "github.com/oras-project/oras-go/pkg/auth/docker"
+	"github.com/oras-project/oras-go/pkg/content"
+	orasctx "github.com/oras-project/oras-go/pkg/context"
+	"github.com/oras-project/oras-go/pkg/oras"
 )
 
 const (

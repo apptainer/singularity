@@ -8,7 +8,7 @@ always be up-to-date with the latest source release version.
 
 For full instructions on installation, including building RPMs,
 installing pre-built EPEL packages etc. please check the
-[installation section of the admin guide](https://sylabs.io/guides/latest/admin-guide/).
+[installation section of the admin guide](https://singularity.hpcng.org/admin-docs/master/installation.html).
 
 ## Install system dependencies
 
@@ -41,7 +41,7 @@ _**NOTE:** if you are updating Go from a older version, make sure you remove `/u
 reinstalling it._
 
 ```
-$ export VERSION=1.15.8 OS=linux ARCH=amd64  # change this as you need
+$ export VERSION=1.16.4 OS=linux ARCH=amd64  # change this as you need
 
 $ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
   sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
@@ -59,21 +59,18 @@ $ echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
 
 This is an optional (but highly recommended!) step. To ensure
 consistency and to catch certain kinds of issues early, we provide a
-configuration file for golangci-lint. Every pull request must pass the
+configuration file for `golangci-lint`. Every pull request must pass the
 checks specified there, and these will be run automatically before
 attempting to merge the code. If you are modifying Singularity and
 contributing your changes to the repository, it's faster to run these
 checks locally before uploading your pull request.
 
-In order to install golangci-lint, you can run:
+In order to download and install the latest version of `golangci-lint`,
+you can run:
 
+```sh
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
 ```
-$ curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh |
-  sh -s -- -b $(go env GOPATH)/bin v1.21.0
-```
-
-This will download and install golangci-lint from its Github releases
-page (using version v1.21.0 at the moment).
 
 ## Clone the repo
 
@@ -160,4 +157,8 @@ $ make -C builddir rpm RPMPREFIX=/usr/local
 ```
 
 For more information on installing/updating/uninstalling the RPM, check out our 
-[admin docs](https://www.sylabs.io/guides/3.0/admin-guide/admin_quickstart.html).
+[admin docs](https://singularity.hpcng.org/admin-docs/master/admin_quickstart.html).
+
+## Debian Package
+
+Additional information on how to build a Debian package can be found in [dist/debian/DEBIAN_PACKAGE.md](dist/debian/DEBIAN_PACKAGE.md).

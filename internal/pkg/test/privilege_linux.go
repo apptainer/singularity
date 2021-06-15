@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,8 +13,9 @@ import (
 	"os/user"
 	"runtime"
 	"strconv"
-	"syscall"
 	"testing"
+
+	"golang.org/x/sys/unix"
 )
 
 var origUID, origGID, unprivUID, unprivGID int
@@ -38,12 +39,12 @@ func DropPrivilege(t *testing.T) {
 	runtime.LockOSThread()
 
 	if os.Getgid() == 0 {
-		if err := syscall.Setresgid(unprivGID, unprivGID, origGID); err != nil {
+		if err := unix.Setresgid(unprivGID, unprivGID, origGID); err != nil {
 			t.Fatalf("failed to set group identity: %v", err)
 		}
 	}
 	if os.Getuid() == 0 {
-		if err := syscall.Setresuid(unprivUID, unprivUID, origUID); err != nil {
+		if err := unix.Setresuid(unprivUID, unprivUID, origUID); err != nil {
 			t.Fatalf("failed to set user identity: %v", err)
 		}
 
@@ -55,10 +56,10 @@ func DropPrivilege(t *testing.T) {
 
 // ResetPrivilege returns effective privilege to the original user.
 func ResetPrivilege(t *testing.T) {
-	if err := syscall.Setresuid(origUID, origUID, unprivUID); err != nil {
+	if err := unix.Setresuid(origUID, origUID, unprivUID); err != nil {
 		t.Fatalf("failed to reset user identity: %v", err)
 	}
-	if err := syscall.Setresgid(origGID, origGID, unprivGID); err != nil {
+	if err := unix.Setresgid(origGID, origGID, unprivGID); err != nil {
 		t.Fatalf("failed to reset group identity: %v", err)
 	}
 	if err := os.Setenv("HOME", origHome); err != nil {

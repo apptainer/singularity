@@ -5,7 +5,8 @@
 - [Guidelines for Contributing](CONTRIBUTING.md)
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
 - [Project License](LICENSE.md)
-- [Documentation](https://www.sylabs.io/docs/)
+- [Documentation](https://singularity.hpcng.org/docs/)
+- [Support](#support)
 - [Citation](#citing-singularity)
 
 Singularity is an open source container platform designed to be simple, fast,
@@ -13,22 +14,23 @@ and secure. Singularity is optimized for compute focused enterprise and HPC
 workloads, allowing untrusted users to run untrusted containers in a trusted
 way.
 
-Check out [talks about Singularity](https://www.sylabs.io/videos) and some [use
-cases of Singularity](https://sylabs.io/case-studies) on our website.
+Check out [talks about Singularity](https://singularity.hpcng.org/videos)
+and some [use cases of Singularity](https://singularity.hpcng.org/usecases)
+on our website.
 
 
 ## Getting Started with Singularity
 
 To install Singularity from source, see the [installation
 instructions](INSTALL.md). For other installation options, see [our
-guide](https://www.sylabs.io/guides/latest/admin-guide/).
+guide](https://singularity.hpcng.org/admin-docs/master/installation.html).
 
 System administrators can learn how to configure Singularity, and get an
 overview of its architecture and security features in the [administrator
-guide](https://www.sylabs.io/guides/latest/admin-guide/).
+guide](https://singularity.hpcng.org/admin-docs/master/).
 
 For users, see the [user
-guide](https://www.sylabs.io/guides/latest/user-guide/) for details on how to use
+guide](https://singularity.hpcng.org/user-docs/master/) for details on how to use
 and build Singularity containers.
 
 ## Contributing to Singularity
@@ -42,11 +44,8 @@ guide](https://github.com/hpcng/singularity-admindocs).
 
 ## Support
 
-To get help with Singularity, check out the [Community
-Portal](https://www.sylabs.io/singularity/community/).
-
-For additional support, [contact us](https://www.sylabs.io/contact/) to receive
-more information.
+To get help with Singularity, check out the [Singularity
+Help](https://singularity.hpcng.org/help) web page.
 
 ## Citing Singularity
 

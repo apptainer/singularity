@@ -63,7 +63,7 @@ type Operations interface {
 	// No additional privileges can be gained during this call (unless container
 	// is executed as root intentionally) as starter will set uid/euid/suid
 	// to the targetUID (PrepareConfig will set it by calling starter.Config.SetTargetUID).
-	StartProcess(net.Conn) error
+	StartProcess(int) error
 	// PostStartProcess is called from master after successful
 	// execution of the container process.
 	//

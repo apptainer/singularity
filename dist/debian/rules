@@ -1,37 +1,88 @@
 #!/usr/bin/make -f
 
-srcpkg = $(shell LC_ALL=C dpkg-parsechangelog | grep '^Source:' | cut -d ' ' -f 2,2)
-debver = $(shell LC_ALL=C dpkg-parsechangelog | grep '^Version:' | cut -d ' ' -f 2,2 )
-uver = $(shell echo $(debver) | cut -d '-' -f 1,1 )
+pkgsrc = $(shell LC_ALL=C dpkg-parsechangelog --show-field Source )
+pkgver = $(shell LC_ALL=C dpkg-parsechangelog --show-field Version )
 
+# Needed by debchange to set Name and EMAIL in changelog
+# DEBFULLNAME is filtered out by debuild
+# use DEB_FULLNAME instead, which will set DEBFULLNAME
+ifdef DEB_FULLNAME
+export DEBFULLNAME=$(DEB_FULLNAME)
+endif
+# DEBEMAIL is not filtered out by debuild 
+
+# request verbose debhelper here or from environment
 #DH_VERBOSE=1
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
-PKGDIR=debian/singularity-container
-export SINGULARITY_CACHEDIR=$(PKGDIR)/var/lib/singularity/cache
+# if verbose is requested do mconfig in verbose mode, too.
+ifdef DH_VERBOSE
+SC_VERBOSE = -v
+endif
+
+# get version via script
+SC_VERSION = $(shell scripts/get-version )
+NEW_VERSION = $(shell dpkg --compare-versions $(SC_VERSION) gt $(pkgver) && echo $(SC_VERSION) )
+
+# these can be overwritten by environment variables
+DEB_SC_PROFILE ?= release
+DEB_SC_BUILDDIR ?= builddir
+
+# see mconfig for options
+# set environemnt variables to disable options
+# NOALL, NOSUID, NONETWORK, NOSECCOMP
+SC_OPTIONS =
+ifdef DEB_NOALL
+SC_OPTIONS = --without-suid --without-network --without-seccomp
+else
+ifdef DEB_NOSUID
+SC_OPTIONS += --without-suid
+endif
+ifdef DEB_NONETWORK
+SC_OPTIONS += --without-network
+endif
+ifdef DEB_NOSECCOMP
+SC_OPTIONS += --without-seccomp
+endif
+endif
+
+MAKEPARALLEL = $(shell nproc --ignore=2 || echo 1 )
+override pkgdir = debian/$(pkgsrc)
+
+export SINGULARITY_CACHEDIR=$(pkgdir)/var/lib/singularity/cache
 
 %:
-	dh $@  --with autoreconf
+	dh $@  --with=autoreconf
 
 override_dh_auto_configure:
-	dh_auto_configure -- --localstatedir=/var/lib
+ifneq ($(NEW_VERSION),)
+	$(warning "Setting new version in debian changelog: $(NEW_VERSION)")
+	@debchange -v $(NEW_VERSION)$(VERSION_POSTFIX) "Version $(NEW_VERSION)" && debchange -m -r ""
+endif
+	@./mconfig $(SC_VERBOSE) -b $(DEB_SC_BUILDDIR) -P $(DEB_SC_PROFILE) $(SC_OPTIONS) \
+                --prefix=/usr --sysconfdir=/etc --localstatedir=/var/lib
+
+override_dh_auto_build:
+	@dh_auto_build -Smakefile --parallel --max-parallel=$(MAKEPARALLEL) -D$(DEB_SC_BUILDDIR)
 
 override_dh_auto_install:
-	dh_auto_install
-	: # move bash completions into now new standard location
-	mv $(PKGDIR)/etc/bash_completion.d $(PKGDIR)/usr/share/bash-completion/completions
+	@dh_auto_install -Smakefile -D$(DEB_SC_BUILDDIR)
+	@mv $(pkgdir)/etc/bash_completion.d $(pkgdir)/usr/share/bash-completion/completions
 
 override_dh_installman:
 	: # Very sloppy man pages for now
-	debian/generate_manpages $(PKGDIR) $(debver)
-	dh_installman
-
-override_dh_installdocs:
-	dh_installdocs README.md CONTRIBUTORS.md
+	@chmod 755 $(pkgdir)/usr/bin/run-singularity
+	@debian/generate_manpages $(pkgdir) $(pkgver)
+	@dh_installman
 
 override_dh_auto_test:
 
 override_dh_fixperms:
-	dh_fixperms
-	chown root.root $(PKGDIR)/usr/lib/*/singularity/bin/*
-	chmod 4755 $(PKGDIR)/usr/lib/*/singularity/bin/*-suid
+	@dh_fixperms
+	@chmod 4755 $(pkgdir)/usr/libexec/singularity/bin/*-suid
+
+override_dh_clean:
+	@rm -rf -- $(DEB_SC_BUILDDIR)
+	@dh_clean
+
+# vim:ft=make:noet:sts=0
