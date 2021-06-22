@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 
@@ -135,6 +136,18 @@ type Image struct {
 	Fd         uintptr   `json:"fd"`
 	Writable   bool      `json:"writable"`
 	Usage      Usage     `json:"usage"`
+}
+
+// Close closes the file descriptor of the underlying image file.
+func (i *Image) Close() error {
+	if i.File == nil || i.Fd == emptyFd {
+		return nil
+	}
+	defer func() {
+		i.File = nil
+		i.Fd = emptyFd
+	}()
+	return i.File.Close()
 }
 
 // AuthorizedPath checks if image is in a path supplied in paths
@@ -272,9 +285,12 @@ func (i *Image) initFile() error {
 	if i.Fd == emptyFd || i.Source == "" {
 		return fmt.Errorf("%s is not open", i.Path)
 	}
-	if err := os.NewFile(i.Fd, i.Path); err == nil {
+	if i.File = os.NewFile(i.Fd, i.Path); i.File == nil {
 		return fmt.Errorf("image file descriptor for %s is not valid", i.Path)
 	}
+	// override the finalizer to prevent the file descriptor
+	// from being closed by a garbage collection
+	runtime.SetFinalizer(i.File, func(_ *os.File) {})
 	return nil
 }
 
