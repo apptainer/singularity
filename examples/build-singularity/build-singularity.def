@@ -1,5 +1,5 @@
 BootStrap: docker
-From: centos:8
+From: rockylinux/rockylinux:8.4
 
 %post
     # Set build time env variable
@@ -48,9 +48,12 @@ From: centos:8
 
         ./build-singularity.sif {version}
 
-    	./build-singularity.sif 3.7.2
+    	./build-singularity.sif 3.8.0
 
     CHANGELOG
+
+    v1.0.2
+    changed CentOS to RockyLinux
     
     v1.0.1
     changed PowerTools -> powertools
@@ -61,4 +64,4 @@ From: centos:8
 
 %labels
     Author chrismmaggio
-    Version 1.0.1
+    Version 1.0.2
