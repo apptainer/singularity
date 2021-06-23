@@ -16,13 +16,11 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
-	"github.com/hpcng/singularity/pkg/util/fs/proc"
-
-	uuid "github.com/satori/go.uuid"
-
+	"github.com/google/uuid"
 	"github.com/hpcng/singularity/e2e/internal/e2e"
 	"github.com/hpcng/singularity/e2e/internal/testhelper"
+	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
+	"github.com/hpcng/singularity/pkg/util/fs/proc"
 	"github.com/pkg/errors"
 )
 
@@ -30,7 +28,7 @@ import (
 func randomName(t *testing.T) string {
 	t.Helper()
 
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		t.Fatal(err)
 	}

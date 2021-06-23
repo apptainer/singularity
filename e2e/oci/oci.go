@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/hpcng/singularity/e2e/internal/e2e"
 	"github.com/hpcng/singularity/e2e/internal/testhelper"
 	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci"
@@ -19,13 +20,12 @@ import (
 	"github.com/hpcng/singularity/pkg/ociruntime"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 func randomContainerID(t *testing.T) string {
 	t.Helper()
 
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		t.Fatal(err)
 	}
