@@ -1,5 +1,5 @@
 BootStrap: docker
-From: rockylinux/rockylinux
+From: rockylinux/rockylinux:8.4
 
 %post
     # Set build time env variable
