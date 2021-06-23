@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,7 +14,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/hpcng/singularity/pkg/sylog"
 	keyclient "github.com/sylabs/scs-key-client/client"
@@ -138,11 +138,13 @@ func LibraryPush(ctx context.Context, pushSpec LibraryPushSpec, libraryConfig *c
 }
 
 func sifArch(filename string) (string, error) {
-	fimg, err := sif.LoadContainer(filename, true)
+	f, err := sif.LoadContainerFromPath(filename, sif.OptLoadWithFlag(os.O_RDONLY))
 	if err != nil {
-		return "", fmt.Errorf("unable to open: %v: %v", filename, err)
+		return "", fmt.Errorf("unable to open: %v: %w", filename, err)
 	}
-	arch := sif.GetGoArch(string(fimg.Header.Arch[:sif.HdrArchLen-1]))
+	defer f.UnloadContainer()
+
+	arch := f.PrimaryArch()
 	if arch == "unknown" {
 		return arch, fmt.Errorf("unknown architecture in SIF file")
 	}

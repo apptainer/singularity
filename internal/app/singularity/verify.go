@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -10,14 +10,15 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"os"
 	"strings"
 
-	"github.com/hpcng/sif/pkg/integrity"
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/hpcng/sif/v2/pkg/integrity"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
 	"github.com/hpcng/singularity/pkg/sypgp"
 	"github.com/sylabs/scs-key-client/client"
-	"golang.org/x/crypto/openpgp"
 )
 
 // TODO - error overlaps with ECL - should probably become part of a common errors package at some point.
@@ -150,11 +151,11 @@ func (v verifier) getOpts(ctx context.Context, f *sif.FileImage) ([]integrity.Ve
 
 			// If no objects explicitly selected, select system partition.
 			if len(v.groupIDs) == 0 && len(v.objectIDs) == 0 {
-				od, _, err := f.GetPartPrimSys()
+				od, err := f.GetDescriptor(sif.WithPartitionType(sif.PartPrimSys))
 				if err != nil {
 					return nil, err
 				}
-				iopts = append(iopts, integrity.OptVerifyObject(od.ID))
+				iopts = append(iopts, integrity.OptVerifyObject(od.ID()))
 			}
 		}
 	}
@@ -184,20 +185,20 @@ func Verify(ctx context.Context, path string, opts ...VerifyOpt) error {
 	}
 
 	// Load container.
-	f, err := sif.LoadContainer(path, true)
+	f, err := sif.LoadContainerFromPath(path, sif.OptLoadWithFlag(os.O_RDONLY))
 	if err != nil {
 		return err
 	}
 	defer f.UnloadContainer()
 
 	// Get options to validate f.
-	vopts, err := v.getOpts(ctx, &f)
+	vopts, err := v.getOpts(ctx, f)
 	if err != nil {
 		return err
 	}
 
 	// Verify signature(s).
-	iv, err := integrity.NewVerifier(&f, vopts...)
+	iv, err := integrity.NewVerifier(f, vopts...)
 	if err != nil {
 		return err
 	}
@@ -218,20 +219,20 @@ func VerifyFingerprints(ctx context.Context, path string, fingerprints []string,
 	}
 
 	// Load container.
-	f, err := sif.LoadContainer(path, true)
+	f, err := sif.LoadContainerFromPath(path, sif.OptLoadWithFlag(os.O_RDONLY))
 	if err != nil {
 		return err
 	}
 	defer f.UnloadContainer()
 
 	// Get options to validate f.
-	vopts, err := v.getOpts(ctx, &f)
+	vopts, err := v.getOpts(ctx, f)
 	if err != nil {
 		return err
 	}
 
 	// Verify signature(s).
-	iv, err := integrity.NewVerifier(&f, vopts...)
+	iv, err := integrity.NewVerifier(f, vopts...)
 	if err != nil {
 		return err
 	}

@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -19,10 +19,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/hpcng/sif/pkg/integrity"
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/hpcng/sif/v2/pkg/integrity"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	toml "github.com/pelletier/go-toml"
-	"golang.org/x/crypto/openpgp"
 )
 
 var (
@@ -210,22 +210,26 @@ func shouldRun(ecl *EclConfig, fp *os.File, kr openpgp.KeyRing) (ok bool, err er
 		return false, fmt.Errorf("%s not part of any execgroup", fp.Name())
 	}
 
-	f, err := sif.LoadContainerFp(fp, true)
+	f, err := sif.LoadContainer(fp,
+		sif.OptLoadWithFlag(os.O_RDONLY),
+		sif.OptLoadWithCloseOnUnload(false),
+	)
 	if err != nil {
 		return false, err
 	}
+	defer f.UnloadContainer()
 
 	opts := []integrity.VerifierOpt{integrity.OptVerifyWithKeyRing(kr)}
 	if ecl.Legacy {
 		// Legacy behavior is to verify the primary partition only.
-		od, _, err := f.GetPartPrimSys()
+		od, err := f.GetDescriptor(sif.WithPartitionType(sif.PartPrimSys))
 		if err != nil {
 			return false, fmt.Errorf("get primary system partition: %v", err)
 		}
-		opts = append(opts, integrity.OptVerifyLegacy(), integrity.OptVerifyObject(od.ID))
+		opts = append(opts, integrity.OptVerifyLegacy(), integrity.OptVerifyObject(od.ID()))
 	}
 
-	v, err := integrity.NewVerifier(&f, opts...)
+	v, err := integrity.NewVerifier(f, opts...)
 	if err != nil {
 		return false, err
 	}

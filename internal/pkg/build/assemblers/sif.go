@@ -6,7 +6,7 @@
 package assemblers
 
 import (
-	"encoding/binary"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -16,14 +16,13 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/hpcng/singularity/internal/pkg/image/packer"
 	"github.com/hpcng/singularity/internal/pkg/util/crypt"
 	"github.com/hpcng/singularity/internal/pkg/util/machine"
 	"github.com/hpcng/singularity/pkg/build/types"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/hpcng/singularity/pkg/util/cryptkey"
-	uuid "github.com/satori/go.uuid"
 )
 
 // SIFAssembler doesn't store anything.
@@ -40,32 +39,16 @@ type encryptionOptions struct {
 }
 
 func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encryptionOptions, arch string) (err error) {
-	definition := b.Recipe.Raw
+	var dis []sif.DescriptorInput
 
-	id, err := uuid.NewV4()
+	// data we need to create a definition file descriptor
+	definput, err := sif.NewDescriptorInput(sif.DataDeffile, bytes.NewReader(b.Recipe.Raw))
 	if err != nil {
 		return fmt.Errorf("sif id generation failed: %v", err)
 	}
 
-	// general info for the new SIF file creation
-	cinfo := sif.CreateInfo{
-		Pathname:   path,
-		Launchstr:  sif.HdrLaunch,
-		Sifversion: sif.HdrVersion,
-		ID:         id,
-	}
-
-	// data we need to create a definition file descriptor
-	definput := sif.DescriptorInput{
-		Datatype: sif.DataDeffile,
-		Groupid:  sif.DescrDefaultGroup,
-		Link:     sif.DescrUnusedLink,
-		Data:     definition,
-	}
-	definput.Size = int64(binary.Size(definput.Data))
-
 	// add this descriptor input element to creation descriptor slice
-	cinfo.InputDescr = append(cinfo.InputDescr, definput)
+	dis = append(dis, definput)
 
 	// add all JSON data object within SIF by alphabetical order
 	sorted := make([]string, 0, len(b.JSONObjects))
@@ -77,56 +60,40 @@ func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encrypt
 	for _, name := range sorted {
 		if len(b.JSONObjects[name]) > 0 {
 			// data we need to create a definition file descriptor
-			in := sif.DescriptorInput{
-				Datatype: sif.DataGenericJSON,
-				Groupid:  sif.DescrDefaultGroup,
-				Link:     sif.DescrUnusedLink,
-				Data:     b.JSONObjects[name],
-				Fname:    name,
+			in, err := sif.NewDescriptorInput(sif.DataGenericJSON, bytes.NewReader(b.JSONObjects[name]),
+				sif.OptObjectName(name),
+			)
+			if err != nil {
+				return err
 			}
-			in.Size = int64(binary.Size(in.Data))
 
 			// add this descriptor input element to creation descriptor slice
-			cinfo.InputDescr = append(cinfo.InputDescr, in)
+			dis = append(dis, in)
 		}
 	}
 
-	// data we need to create a system partition descriptor
-	parinput := sif.DescriptorInput{
-		Datatype: sif.DataPartition,
-		Groupid:  sif.DescrDefaultGroup,
-		Link:     sif.DescrUnusedLink,
-		Fname:    squashfile,
-	}
 	// open up the data object file for this descriptor
-	fp, err := os.Open(parinput.Fname)
+	fp, err := os.Open(squashfile)
 	if err != nil {
 		return fmt.Errorf("while opening partition file: %s", err)
 	}
-
 	defer fp.Close()
 
-	fi, err := fp.Stat()
-	if err != nil {
-		return fmt.Errorf("while calling stat on partition file: %s", err)
-	}
-
-	parinput.Fp = fp
-	parinput.Size = fi.Size()
-
-	sifType := sif.FsSquash
-
+	fs := sif.FsSquash
 	if encOpts != nil {
-		sifType = sif.FsEncryptedSquashfs
+		fs = sif.FsEncryptedSquashfs
 	}
 
-	err = parinput.SetPartExtra(sifType, sif.PartPrimSys, sif.GetSIFArch(arch))
+	// data we need to create a system partition descriptor
+	parinput, err := sif.NewDescriptorInput(sif.DataPartition, fp,
+		sif.OptPartitionMetadata(fs, sif.PartPrimSys, arch),
+	)
 	if err != nil {
-		return
+		return err
 	}
 
 	// add this descriptor input element to the list
-	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
+	dis = append(dis, parinput)
 
 	if encOpts != nil {
 		data, err := cryptkey.EncryptKey(encOpts.keyInfo, encOpts.plaintext)
@@ -135,22 +102,16 @@ func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encrypt
 		}
 
 		if data != nil {
-			syspartID := uint32(len(cinfo.InputDescr))
-			part := sif.DescriptorInput{
-				Datatype: sif.DataCryptoMessage,
-				Groupid:  sif.DescrDefaultGroup,
-				Link:     syspartID,
-				Data:     data,
-				Size:     int64(len(data)),
-			}
-
-			// extra data needed for the creation of a signature descriptor
-			err := part.SetCryptoMsgExtra(sif.FormatPEM, sif.MessageRSAOAEP)
+			syspartID := uint32(len(dis))
+			part, err := sif.NewDescriptorInput(sif.DataCryptoMessage, bytes.NewReader(data),
+				sif.OptLinkedID(syspartID),
+				sif.OptCryptoMessageMetadata(sif.FormatPEM, sif.MessageRSAOAEP),
+			)
 			if err != nil {
 				return err
 			}
 
-			cinfo.InputDescr = append(cinfo.InputDescr, part)
+			dis = append(dis, part)
 		}
 	}
 
@@ -158,9 +119,9 @@ func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encrypt
 	os.RemoveAll(path)
 
 	// test container creation with two partition input descriptors
-	f, err := sif.CreateContainer(cinfo)
+	f, err := sif.CreateContainerAtPath(path, sif.OptCreateWithDescriptors(dis...))
 	if err != nil {
-		return fmt.Errorf("while creating container: %s", err)
+		return fmt.Errorf("while creating container: %w", err)
 	}
 
 	if err := f.UnloadContainer(); err != nil {

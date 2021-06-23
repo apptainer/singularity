@@ -17,8 +17,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 )
 
 var (
@@ -201,31 +202,29 @@ func savePEMMessage(w io.Writer, msg []byte) error {
 }
 
 func getEncryptionKeyFromImage(fn string) ([]byte, error) {
-	img, err := sif.LoadContainer(fn, true)
+	img, err := sif.LoadContainerFromPath(fn, sif.OptLoadWithFlag(os.O_RDONLY))
 	if err != nil {
-		return nil, fmt.Errorf("could not load container: %v", err)
+		return nil, fmt.Errorf("could not load container: %w", err)
 	}
 	defer img.UnloadContainer()
 
-	primDescr, _, err := img.GetPartPrimSys()
+	primDescr, err := img.GetDescriptor(sif.WithPartitionType(sif.PartPrimSys))
 	if err != nil {
-		return nil, fmt.Errorf("could not retrieve primary system partition from '%s'", fn)
+		return nil, fmt.Errorf("could not retrieve primary system partition from '%s': %w", fn, err)
 	}
 
-	descr, _, err := img.GetLinkedDescrsByType(primDescr.ID, sif.DataCryptoMessage)
+	descr, err := img.GetDescriptors(
+		sif.WithLinkedID(primDescr.ID()),
+		sif.WithDataType(sif.DataCryptoMessage),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("could not retrieve linked descriptors for primary system partition from %s", fn)
+		return nil, fmt.Errorf("could not retrieve linked descriptors for primary system partition from %s: %w", fn, err)
 	}
 
 	for _, d := range descr {
-		format, err := d.GetFormatType()
+		format, message, err := d.CryptoMessageMetadata()
 		if err != nil {
-			return nil, fmt.Errorf("could not get descriptor format type: %v", err)
-		}
-
-		message, err := d.GetMessageType()
-		if err != nil {
-			return nil, fmt.Errorf("could not get descriptor message type: %v", err)
+			return nil, fmt.Errorf("could not get crypto message metadata: %w", err)
 		}
 
 		// currently only support one type of message
@@ -236,8 +235,8 @@ func getEncryptionKeyFromImage(fn string) ([]byte, error) {
 		// TODO(ian): For now, assume the first linked message is what we
 		// are looking for. We should consider what we want to do in the
 		// case of multiple linked messages
-		key := make([]byte, d.Filelen)
-		if _, err := io.ReadFull(d.GetReader(&img), key); err != nil {
+		key, err := d.GetData()
+		if err != nil {
 			return nil, fmt.Errorf("could not retrieve LUKS key data from %s: %w", fn, err)
 		}
 

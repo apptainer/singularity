@@ -11,7 +11,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/hpcng/singularity/internal/pkg/util/machine"
 )
 
@@ -24,7 +24,7 @@ const (
 
 type sifFormat struct{}
 
-func checkPartitionType(img *Image, fstype sif.Fstype, offset int64) (uint32, error) {
+func checkPartitionType(img *Image, fstype sif.FSType, offset int64) (uint32, error) {
 	header := make([]byte, bufferSize)
 
 	if _, err := img.File.ReadAt(header, offset); err != nil {
@@ -59,42 +59,36 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 	if n, err := img.File.Read(b); err != nil || n != bufferSize {
 		return debugErrorf("can't read first %d bytes: %v", bufferSize, err)
 	}
-	if !bytes.Contains(b, []byte(sif.HdrMagic)) {
+	if !bytes.Contains(b, []byte("SIF_MAGIC")) {
 		return debugError("SIF magic not found")
 	}
 
+	flag := os.O_RDONLY
+	if img.Writable {
+		flag = os.O_RDWR
+	}
+
 	// Load the SIF file
-	fimg, err := sif.LoadContainerFp(img.File, !img.Writable)
+	fimg, err := sif.LoadContainer(img.File,
+		sif.OptLoadWithFlag(flag),
+		sif.OptLoadWithCloseOnUnload(false),
+	)
 	if err != nil {
 		return err
 	}
+	defer fimg.UnloadContainer()
 
-	groupID := -1
+	var groupID uint32
 
 	// Get the default system partition image
-	for _, desc := range fimg.DescrArr {
-		if !desc.Used {
-			continue
-		}
-		ptype, err := desc.GetPartType()
+	desc, err := fimg.GetDescriptor(sif.WithPartitionType(sif.PartPrimSys))
+	if err == nil {
+		fstype, _, goArch, err := desc.PartitionMetadata()
 		if err != nil {
-			continue
-		}
-		if ptype != sif.PartPrimSys {
-			continue
-		}
-		fstype, err := desc.GetFsType()
-		if err != nil {
-			continue
+			return err
 		}
 
-		// checks if the partition length is greater that the file
-		// size which may reveal a corrupted image (see issue #3996)
-		if fimg.Filesize < desc.Filelen+desc.Fileoff {
-			return fmt.Errorf("SIF image %s is corrupted: wrong partition size", img.File.Name())
-		}
-
-		htype, err := checkPartitionType(img, fstype, desc.Fileoff)
+		htype, err := checkPartitionType(img, fstype, desc.Offset())
 		if err != nil {
 			return fmt.Errorf("while checking system partition header: %s", err)
 		}
@@ -103,52 +97,38 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 		// CompatibleWith call will also check that the current machine
 		// has persistent emulation enabled in /proc/sys/fs/binfmt_misc to
 		// be able to execute container process correctly
-		sifArch := string(fimg.Header.Arch[:sif.HdrArchLen-1])
-		goArch := sif.GetGoArch(sifArch)
-		if sifArch != sif.HdrArchUnknown && !machine.CompatibleWith(goArch) {
+		if goArch != "unknown" && !machine.CompatibleWith(goArch) {
 			return fmt.Errorf("the image's architecture (%s) could not run on the host's (%s)", goArch, runtime.GOARCH)
 		}
 
+		groupID = desc.GroupID()
+
 		img.Partitions = []Section{
 			{
-				Offset:       uint64(desc.Fileoff),
-				Size:         uint64(desc.Filelen),
-				ID:           desc.ID,
+				Offset:       uint64(desc.Offset()),
+				Size:         uint64(desc.Size()),
+				ID:           desc.ID(),
 				Name:         RootFs,
 				Type:         htype,
 				AllowedUsage: RootFsUsage,
 			},
 		}
-
-		groupID = int(desc.Groupid)
-		break
 	}
 
-	for _, desc := range fimg.DescrArr {
-		if !desc.Used {
-			continue
-		}
-		if ptype, err := desc.GetPartType(); err == nil {
+	fimg.WithDescriptors(func(desc sif.Descriptor) bool {
+		if fstype, ptype, _, err := desc.PartitionMetadata(); err == nil {
 			// exclude partitions that are not types data or overlay
 			if ptype != sif.PartData && ptype != sif.PartOverlay {
-				continue
+				return false
 			}
 			// ignore overlay partitions not associated to root filesystem group ID if any
-			if ptype == sif.PartOverlay && groupID > 0 && groupID != int(desc.Groupid) {
-				continue
-			}
-			fstype, err := desc.GetFsType()
-			if err != nil {
-				continue
+			if ptype == sif.PartOverlay && groupID > 0 && groupID != desc.GroupID() {
+				return false
 			}
 
-			if fimg.Filesize < desc.Filelen+desc.Fileoff {
-				return fmt.Errorf("SIF image %s is corrupted: wrong partition size", img.File.Name())
-			}
-
-			htype, err := checkPartitionType(img, fstype, desc.Fileoff)
+			htype, err := checkPartitionType(img, fstype, desc.Offset())
 			if err != nil {
-				return fmt.Errorf("while checking data partition header: %s", err)
+				return false
 			}
 
 			var usage Usage
@@ -160,27 +140,28 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 			}
 
 			partition := Section{
-				Offset:       uint64(desc.Fileoff),
-				Size:         uint64(desc.Filelen),
-				ID:           desc.ID,
-				Name:         desc.GetName(),
+				Offset:       uint64(desc.Offset()),
+				Size:         uint64(desc.Size()),
+				ID:           desc.ID(),
+				Name:         desc.Name(),
 				Type:         htype,
 				AllowedUsage: usage,
 			}
 			img.Partitions = append(img.Partitions, partition)
 			img.Usage |= usage
-		} else if desc.Datatype != 0 {
+		} else if desc.DataType() != 0 {
 			data := Section{
-				Offset:       uint64(desc.Fileoff),
-				Size:         uint64(desc.Filelen),
-				ID:           desc.ID,
-				Type:         uint32(desc.Datatype),
-				Name:         desc.GetName(),
+				Offset:       uint64(desc.Offset()),
+				Size:         uint64(desc.Size()),
+				ID:           desc.ID(),
+				Type:         uint32(desc.DataType()),
+				Name:         desc.Name(),
 				AllowedUsage: DataUsage,
 			}
 			img.Sections = append(img.Sections, data)
 		}
-	}
+		return false
+	})
 
 	img.Type = SIF
 

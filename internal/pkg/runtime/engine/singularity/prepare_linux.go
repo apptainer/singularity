@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,6 +18,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/containerd/cgroups"
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
 	"github.com/hpcng/singularity/internal/pkg/cgroups"
 	fakerootutil "github.com/hpcng/singularity/internal/pkg/fakeroot"
@@ -42,7 +44,6 @@ import (
 	"github.com/hpcng/singularity/pkg/util/namespaces"
 	"github.com/hpcng/singularity/pkg/util/singularityconf"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"golang.org/x/crypto/openpgp"
 	"golang.org/x/sys/unix"
 )
 

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	pgppacket "golang.org/x/crypto/openpgp/packet"
+	pgppacket "github.com/ProtonMail/go-crypto/openpgp/packet"
 )
 
 var pubKeyTests = []struct {

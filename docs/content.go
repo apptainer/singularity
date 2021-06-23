@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -1061,4 +1061,20 @@ Enterprise Performance Computing (EPC)`
 
   To create a single EXT3 writable overlay image:
   $ singularity overlay create --size 1024 /tmp/my_overlay.img`
+)
+
+// Documentation for sif/siftool command.
+const (
+	SIFUse   string = `sif`
+	SIFAlias string = `siftool`
+	SIFShort string = `Manipulate Singularity Image Format (SIF) images`
+	SIFLong  string = `
+  A set of commands are provided to display elements such as the SIF global
+  header, the data object descriptors and to dump data objects. It is also
+  possible to modify a SIF file via this tool via the add/del commands.`
+	SIFExample string = `
+  All sif commands have their own help output:
+
+  $ singularity help sif list
+  $ singularity sif list --help`
 )

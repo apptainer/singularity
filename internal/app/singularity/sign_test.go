@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -14,9 +14,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hpcng/sif/pkg/integrity"
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/hpcng/sif/v2/pkg/integrity"
 	"github.com/hpcng/singularity/pkg/sypgp"
-	"golang.org/x/crypto/openpgp"
 )
 
 // tempFileFrom copies the file at path to a temporary file, and returns a reference to it.

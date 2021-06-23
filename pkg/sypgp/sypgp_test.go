@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,12 +18,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp/armor"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/hpcng/singularity/internal/pkg/test"
 	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
 	"github.com/sylabs/scs-key-client/client"
-	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/armor"
-	"golang.org/x/crypto/openpgp/packet"
 )
 
 const (
@@ -144,7 +144,7 @@ func TestFetchPubkey(t *testing.T) {
 					t.Fatalf("unexpected number of entities returned: %v", len(el))
 				}
 				for i := range tt.el {
-					if fp := el[i].PrimaryKey.Fingerprint; fp != tt.el[i].PrimaryKey.Fingerprint {
+					if fp := el[i].PrimaryKey.Fingerprint; !bytes.Equal(fp, tt.el[i].PrimaryKey.Fingerprint) {
 						t.Errorf("fingerprint mismatch: %v / %v", fp, tt.el[i].PrimaryKey.Fingerprint)
 					}
 				}
@@ -318,19 +318,6 @@ func TestPrintEntity(t *testing.T) {
 		expected string
 	}{
 		{
-			name:  "zero value",
-			index: 0,
-			entity: &openpgp.Entity{
-				PrimaryKey: &packet.PublicKey{},
-				Identities: map[string]*openpgp.Identity{
-					"": {
-						UserId: &packet.UserId{},
-					},
-				},
-			},
-			expected: "0) U:  () <>\n   C: 0001-01-01 00:00:00 +0000 UTC\n   F: 0000000000000000000000000000000000000000\n   L: 0\n",
-		},
-		{
 			name:  "RSA key",
 			index: 1,
 			entity: &openpgp.Entity{
@@ -379,7 +366,7 @@ func TestPrintEntity(t *testing.T) {
 					},
 				},
 			},
-			expected: "3) U: name 3 (comment 3) <email.3@example.org>\n   C: 2012-10-07 17:57:40 +0000 UTC\n   F: 9892270B38B8980B05C8D56D43FE956C542CA00B\n   L: 0\n",
+			expected: "3) U: name 3 (comment 3) <email.3@example.org>\n   C: 2012-10-07 17:57:40 +0000 UTC\n   F: 9892270B38B8980B05C8D56D43FE956C542CA00B\n   L: 1059\n",
 		},
 	}
 
@@ -442,7 +429,7 @@ func TestPrintEntities(t *testing.T) {
 		"   --------\n" +
 		"1) U: name 2 (comment 2) <email.2@example.org>\n   C: 2011-01-28 21:05:13 +0000 UTC\n   F: EECE4C094DB002103714C63C8E8FBE54062F19ED\n   L: 1024\n" +
 		"   --------\n" +
-		"2) U: name 3 (comment 3) <email.3@example.org>\n   C: 2012-10-07 17:57:40 +0000 UTC\n   F: 9892270B38B8980B05C8D56D43FE956C542CA00B\n   L: 0\n" +
+		"2) U: name 3 (comment 3) <email.3@example.org>\n   C: 2012-10-07 17:57:40 +0000 UTC\n   F: 9892270B38B8980B05C8D56D43FE956C542CA00B\n   L: 1059\n" +
 		"   --------\n"
 
 	var b bytes.Buffer

@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -16,15 +16,15 @@ import (
 
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/fatih/color"
-	"github.com/hpcng/sif/pkg/integrity"
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/integrity"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/hpcng/singularity/internal/app/singularity"
 	"github.com/hpcng/singularity/internal/pkg/util/interactive"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/hpcng/singularity/pkg/sypgp"
-	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/packet"
 )
 
 var (
@@ -175,28 +175,22 @@ func outputVerify(f *sif.FileImage, r integrity.VerifyResult) bool {
 		fmt.Printf("%-4s|%-8s|%-8s|%s\n", "ID", "GROUP", "LINK", "TYPE")
 		fmt.Print("------------------------------------------------\n")
 	}
-	for _, id := range r.Verified() {
-		od, _, err := f.GetFromDescrID(id)
-		if err != nil {
-			sylog.Errorf("failed to get descriptor: %v", err)
-			return false
-		}
-
+	for _, od := range r.Verified() {
 		group := "NONE"
-		if gid := od.Groupid; gid != sif.DescrUnusedGroup {
-			group = fmt.Sprintf("%d", gid&^sif.DescrGroupMask)
+		if gid := od.GroupID(); gid != 0 {
+			group = fmt.Sprintf("%d", gid)
 		}
 
 		link := "NONE"
-		if l := od.Link; l != sif.DescrUnusedLink {
-			if l&sif.DescrGroupMask == sif.DescrGroupMask {
-				link = fmt.Sprintf("%d (G)", l&^sif.DescrGroupMask)
+		if l, isGroup := od.LinkedID(); l != 0 {
+			if isGroup {
+				link = fmt.Sprintf("%d (G)", l)
 			} else {
 				link = fmt.Sprintf("%d", l)
 			}
 		}
 
-		fmt.Printf("%-4d|%-8s|%-8s|%s\n", id, group, link, od.Datatype)
+		fmt.Printf("%-4d|%-8s|%-8s|%s\n", od.ID(), group, link, od.DataType())
 	}
 
 	if err := r.Error(); err != nil {
@@ -246,15 +240,9 @@ func getJSONCallback(kl *keyList) singularity.VerifyCallback {
 		}
 
 		// For each verified object, append an entry to the list.
-		for _, id := range r.Verified() {
-			od, _, err := f.GetFromDescrID(id)
-			if err != nil {
-				sylog.Errorf("failed to get descriptor: %v", err)
-				continue
-			}
-
+		for _, od := range r.Verified() {
 			ke := keyEntity{
-				Partition:   od.Datatype.String(),
+				Partition:   od.DataType().String(),
 				Name:        name,
 				Fingerprint: fp,
 				KeyLocal:    keyLocal,
@@ -266,14 +254,14 @@ func getJSONCallback(kl *keyList) singularity.VerifyCallback {
 
 		var integrityError *integrity.ObjectIntegrityError
 		if errors.As(r.Error(), &integrityError) {
-			od, _, err := f.GetFromDescrID(integrityError.ID)
+			od, err := f.GetDescriptor(sif.WithID(integrityError.ID))
 			if err != nil {
 				sylog.Errorf("failed to get descriptor: %v", err)
 				return false
 			}
 
 			ke := keyEntity{
-				Partition:   od.Datatype.String(),
+				Partition:   od.DataType().String(),
 				Name:        name,
 				Fingerprint: fp,
 				KeyLocal:    keyLocal,
