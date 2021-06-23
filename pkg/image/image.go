@@ -137,12 +137,16 @@ type Image struct {
 	Usage      Usage     `json:"usage"`
 }
 
+// Init fills in the File object if needed, because it is not passed
+//   between stages
+func (i *Image) Init() {
+	if i.File == nil && i.Path != "" {
+		i.File = os.NewFile(i.Fd, i.Path)
+	}
+}
+
 // AuthorizedPath checks if image is in a path supplied in paths
 func (i *Image) AuthorizedPath(paths []string) (bool, error) {
-	if err := i.initFile(); err != nil {
-		return false, err
-	}
-
 	authorized := false
 	dirname := i.Path
 
@@ -161,10 +165,6 @@ func (i *Image) AuthorizedPath(paths []string) (bool, error) {
 
 // AuthorizedOwner checks whether the image is owned by any user from the supplied users list.
 func (i *Image) AuthorizedOwner(owners []string) (bool, error) {
-	if err := i.initFile(); err != nil {
-		return false, err
-	}
-
 	fileinfo, err := i.File.Stat()
 	if err != nil {
 		return false, fmt.Errorf("failed to get stat for %s", i.Path)
@@ -185,10 +185,6 @@ func (i *Image) AuthorizedOwner(owners []string) (bool, error) {
 
 // AuthorizedGroup checks whether the image is owned by any group from the supplied groups list.
 func (i *Image) AuthorizedGroup(groups []string) (bool, error) {
-	if err := i.initFile(); err != nil {
-		return false, err
-	}
-
 	fileinfo, err := i.File.Stat()
 	if err != nil {
 		return false, fmt.Errorf("failed to get stat for %s", i.Path)
@@ -213,10 +209,6 @@ func (i *Image) getPartitions(usage Usage) ([]Section, error) {
 
 	if i.Usage&usage == 0 {
 		return sections, nil
-	}
-
-	if err := i.initFile(); err != nil {
-		return nil, err
 	}
 
 	for _, p := range i.Partitions {
@@ -259,23 +251,6 @@ func (i *Image) GetOverlayPartitions() ([]Section, error) {
 // GetDataPartitions returns data partitions found in the image.
 func (i *Image) GetDataPartitions() ([]Section, error) {
 	return i.getPartitions(DataUsage)
-}
-
-// initFile ensures file descriptor is associated to a file handle.
-func (i *Image) initFile() error {
-	if i.File != nil {
-		return nil
-	}
-	if i.Path == "" {
-		return fmt.Errorf("no image path")
-	}
-	if i.Fd == emptyFd || i.Source == "" {
-		return fmt.Errorf("%s is not open", i.Path)
-	}
-	if err := os.NewFile(i.Fd, i.Path); err == nil {
-		return fmt.Errorf("image file descriptor for %s is not valid", i.Path)
-	}
-	return nil
 }
 
 // writeLocks tracks write locks for the current process.
