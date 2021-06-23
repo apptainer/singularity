@@ -19,8 +19,18 @@ import (
 	"github.com/hpcng/singularity/pkg/ociruntime"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
+
+func randomContainerID(t *testing.T) string {
+	t.Helper()
+
+	id, err := uuid.NewRandom()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return id.String()
+}
 
 type ctx struct {
 	env e2e.TestEnv

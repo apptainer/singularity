@@ -20,7 +20,7 @@ import (
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/hpcng/singularity/pkg/util/fs/lock"
 	"github.com/hpcng/singularity/pkg/util/loop"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 // Device describes a crypt device
@@ -247,7 +247,7 @@ func copyDeviceContents(source, dest string, size int64) error {
 }
 
 func getNextAvailableCryptDevice() (string, error) {
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		return "", fmt.Errorf("id generation failed: %v", err)
 	}

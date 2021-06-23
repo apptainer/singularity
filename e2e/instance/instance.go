@@ -16,16 +16,26 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
 	"github.com/hpcng/singularity/pkg/util/fs/proc"
-
-	uuid "github.com/satori/go.uuid"
-
 	"github.com/hpcng/singularity/e2e/internal/e2e"
 	"github.com/hpcng/singularity/e2e/internal/testhelper"
-	"github.com/pkg/errors"
 )
 
+// randomName generates a random name based on a UUID.
+func randomName(t *testing.T) string {
+	t.Helper()
+
+	id, err := uuid.NewRandom()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return id.String()
+}
+
+>>>>>>> 4f1cdf9... fix: partially replace UUID module
 type ctx struct {
 	env     e2e.TestEnv
 	profile e2e.Profile
