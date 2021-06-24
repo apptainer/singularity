@@ -674,7 +674,13 @@ func (e *EngineConfig) SetImageList(list []image.Image) {
 
 // GetImageList returns image list containing opened images.
 func (e *EngineConfig) GetImageList() []image.Image {
-	return e.JSON.ImageList
+	list := e.JSON.ImageList
+	// Image objects are not fully passed between stages, reinitialize them
+	for idx := range list {
+		img := &list[idx]
+		img.ReInit()
+	}
+	return list
 }
 
 // SetCwd sets current working directory.
