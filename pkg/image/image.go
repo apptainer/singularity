@@ -137,9 +137,9 @@ type Image struct {
 	Usage      Usage     `json:"usage"`
 }
 
-// Init fills in the File object if needed, because it is not passed
-//   between stages
-func (i *Image) Init() {
+// ReInit fills in the File object if needed.  This function should be
+//   called after passing an image object between processes using JSON
+func (i *Image) ReInit() {
 	if i.File == nil && i.Path != "" {
 		i.File = os.NewFile(i.Fd, i.Path)
 	}

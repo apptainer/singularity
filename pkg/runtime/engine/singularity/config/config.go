@@ -675,10 +675,10 @@ func (e *EngineConfig) SetImageList(list []image.Image) {
 // GetImageList returns image list containing opened images.
 func (e *EngineConfig) GetImageList() []image.Image {
 	list := e.JSON.ImageList
-	// The Image object is not fully passed between stages, so Init it
+	// Image objects are not fully passed between stages, reinitialize them
 	for idx := range list {
 		img := &list[idx]
-		img.Init()
+		img.ReInit()
 	}
 	return list
 }
