@@ -116,7 +116,7 @@ type JSONConfig struct {
 	OpenFd            []int             `json:"openFd,omitempty"`
 	TargetGID         []int             `json:"targetGID,omitempty"`
 	Image             string            `json:"image"`
-	ImageArg	  string            `json:"imageArg"`
+	ImageArg          string            `json:"imageArg"`
 	Workdir           string            `json:"workdir,omitempty"`
 	CgroupsPath       string            `json:"cgroupsPath,omitempty"`
 	HomeSource        string            `json:"homedir,omitempty"`
