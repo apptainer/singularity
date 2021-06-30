@@ -19,4 +19,4 @@ Examples:
   $ singularity oci kill mycontainer -s INT
 
 
-For additional help or support, please visit https://www.sylabs.io/docs/
+For additional help or support, please visit https://singularity.hpcng.org/help/
