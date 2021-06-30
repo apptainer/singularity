@@ -174,9 +174,7 @@ var ExecCmd = &cobra.Command{
 			execVM(cmd, args[0], a)
 			return
 		}
-		imageArg := os.Getenv("IMAGE_ARG")
-		os.Unsetenv("IMAGE_ARG")
-		execStarter(cmd, args[0], imageArg, a, "")
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.ExecUse,
@@ -198,9 +196,7 @@ var ShellCmd = &cobra.Command{
 			execVM(cmd, args[0], a)
 			return
 		}
-		imageArg := os.Getenv("IMAGE_ARG")
-		os.Unsetenv("IMAGE_ARG")
-		execStarter(cmd, args[0], imageArg, a, "")
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.ShellUse,
@@ -222,9 +218,7 @@ var RunCmd = &cobra.Command{
 			execVM(cmd, args[0], a)
 			return
 		}
-		imageArg := os.Getenv("IMAGE_ARG")
-		os.Unsetenv("IMAGE_ARG")
-		execStarter(cmd, args[0], imageArg, a, "")
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.RunUse,
@@ -246,9 +240,7 @@ var TestCmd = &cobra.Command{
 			execVM(cmd, args[0], a)
 			return
 		}
-		imageArg := os.Getenv("IMAGE_ARG")
-		os.Unsetenv("IMAGE_ARG")
-		execStarter(cmd, args[0], imageArg, a, "")
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.RunTestUse,

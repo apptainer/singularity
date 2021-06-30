@@ -12,6 +12,6 @@ import (
 )
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
-func execStarter(cobraCmd *cobra.Command, image string, imageArg string, args []string, name string) {
+func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
 	panic("starter is unsupported on this platform")
 }
