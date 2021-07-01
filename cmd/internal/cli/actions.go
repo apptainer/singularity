@@ -48,6 +48,8 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 
 	os.Setenv("USER_PATH", userPath)
 
+	os.Setenv("IMAGE_ARG", args[0])
+
 	ctx := context.TODO()
 
 	replaceURIWithImage(ctx, cmd, args)

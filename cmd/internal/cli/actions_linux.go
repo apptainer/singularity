@@ -194,6 +194,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	engineConfig := singularityConfig.NewConfig()
 
+	imageArg := os.Getenv("IMAGE_ARG")
+	os.Unsetenv("IMAGE_ARG")
+	engineConfig.SetImageArg(imageArg)
 	engineConfig.File = singularityconf.GetCurrentConfig()
 	if engineConfig.File == nil {
 		sylog.Fatalf("Unable to get singularity configuration")
