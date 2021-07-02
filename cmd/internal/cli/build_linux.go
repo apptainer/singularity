@@ -115,6 +115,15 @@ func runBuild(cmd *cobra.Command, args []string) {
 		}
 		os.Setenv("SINGULARITY_BINDPATH", strings.Join(buildArgs.bindPaths, ","))
 	}
+	if buildArgs.writableTmpfs {
+		if buildArgs.remote {
+			sylog.Fatalf("--writable-tmpfs option is not supported for remote build")
+		}
+		if buildArgs.fakeroot {
+			sylog.Fatalf("--writable-tmpfs option is not supported for fakeroot build")
+		}
+		os.Setenv("SINGULARITY_WRITABLE_TMPFS", "1")
+	}
 
 	if buildArgs.arch != runtime.GOARCH && !buildArgs.remote {
 		sylog.Fatalf("Requested architecture (%s) does not match host (%s). Cannot build locally.", buildArgs.arch, runtime.GOARCH)

@@ -29,25 +29,26 @@ import (
 )
 
 var buildArgs struct {
-	sections     []string
-	bindPaths    []string
-	arch         string
-	builderURL   string
-	libraryURL   string
-	keyServerURL string
-	webURL       string
-	detached     bool
-	encrypt      bool
-	fakeroot     bool
-	fixPerms     bool
-	isJSON       bool
-	noCleanUp    bool
-	noTest       bool
-	remote       bool
-	sandbox      bool
-	update       bool
-	nvidia       bool
-	rocm         bool
+	sections      []string
+	bindPaths     []string
+	arch          string
+	builderURL    string
+	libraryURL    string
+	keyServerURL  string
+	webURL        string
+	detached      bool
+	encrypt       bool
+	fakeroot      bool
+	fixPerms      bool
+	isJSON        bool
+	noCleanUp     bool
+	noTest        bool
+	remote        bool
+	sandbox       bool
+	update        bool
+	nvidia        bool
+	rocm          bool
+	writableTmpfs bool // For test section only
 }
 
 // -s|--sandbox
@@ -243,6 +244,16 @@ var buildBindFlag = cmdline.Flag{
 	EnvHandler: cmdline.EnvAppendValue,
 }
 
+// --writable-tmpfs
+var buildWritableTmpfsFlag = cmdline.Flag{
+	ID:           "buildWritableTmpfsFlag",
+	Value:        &buildArgs.writableTmpfs,
+	DefaultValue: false,
+	Name:         "writable-tmpfs",
+	Usage:        "during the %test section, makes the file system accessible as read-write with non persistent data (with overlay support only)",
+	EnvKeys:      []string{"WRITABLE_TMPFS"},
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(buildCmd)
@@ -276,6 +287,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&buildNvFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildRocmFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildBindFlag, buildCmd)
+		cmdManager.RegisterFlagForCmd(&buildWritableTmpfsFlag, buildCmd)
 	})
 }
 
