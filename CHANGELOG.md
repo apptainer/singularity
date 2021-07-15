@@ -24,6 +24,11 @@ _The old changelog can be found in the `release-2.6` branch_
   - Allow escaped `\$` in a SINGULARITYENV_ var to set a literal `$` in
     a container env var.
 
+### Bug Fixes
+
+  - Allow escaped `\$` in a SINGULARITYENV_ var to set a literal `$` in
+    a container env var.
+
 ## v3.8.0 [2021-05-26]
 >>>>>>> 724490cc2... fix: Allow env vars with literal $ via \\\$ in SINGULARITYENV_
 
