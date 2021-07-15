@@ -6,6 +6,14 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
   - _Migration guidance_
   - _New features / functionalities_
 
+### Changed defaults / behaviours
+
+  - LABELs from Docker/OCI images are now inherited. This fixes a longstanding
+    regression from Singularity 2.x. Note that you will now need to use
+    `--force` in a build to override a label that already exists in the source
+    Docker/OCI container.
+
+### New features / functionalities
 
 _The old changelog can be found in the `release-2.6` branch_
 

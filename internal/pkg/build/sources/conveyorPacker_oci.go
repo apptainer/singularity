@@ -185,6 +185,11 @@ func (cp *OCIConveyorPacker) Pack(ctx context.Context) (*sytypes.Bundle, error) 
 		return nil, fmt.Errorf("while inserting oci config: %v", err)
 	}
 
+	err = cp.insertOCILabels()
+	if err != nil {
+		return nil, fmt.Errorf("while inserting oci labels: %v", err)
+	}
+
 	return cp.b, nil
 }
 
@@ -208,7 +213,6 @@ func (cp *OCIConveyorPacker) getConfig(ctx context.Context) (imgspecv1.ImageConf
 	if err != nil {
 		return imgspecv1.ImageConfig{}, err
 	}
-
 	return imgSpec.Config, nil
 }
 
@@ -438,6 +442,20 @@ func (cp *OCIConveyorPacker) insertEnv() (err error) {
 	}
 
 	return nil
+}
+
+func (cp *OCIConveyorPacker) insertOCILabels() (err error) {
+	labels := cp.imgConfig.Labels
+	var text []byte
+
+	// make new map into json
+	text, err = json.MarshalIndent(labels, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/labels.json"), []byte(text), 0644)
+	return err
 }
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
