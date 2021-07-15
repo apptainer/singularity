@@ -51,3 +51,24 @@ func TestEscape(t *testing.T) {
 	}
 
 }
+
+func TestEscapeQuotes(t *testing.T) {
+	var escapeQuotesTests = []struct {
+		input    string
+		expected string
+	}{
+		{`Hello`, `Hello`},
+		{`"Hello"`, `\"Hello\"`},
+		{`Hell"o`, `Hell\"o`},
+	}
+
+	for _, test := range escapeQuotesTests {
+		t.Run(test.input, func(t *testing.T) {
+			escaped := EscapeQuotes(test.input)
+			if escaped != test.expected {
+				t.Errorf("got %s, expected %s", escaped, test.expected)
+			}
+		})
+	}
+
+}
