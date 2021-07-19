@@ -58,7 +58,7 @@ require (
 	golang.org/x/sys v0.0.0-20210603125802-9665404d3644
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
-	mvdan.cc/sh/v3 v3.2.4
+	mvdan.cc/sh/v3 v3.3.0
 	oras.land/oras-go v0.4.0
 )
 
