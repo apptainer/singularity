@@ -13,7 +13,7 @@ import (
 
 	"github.com/hpcng/singularity/internal/pkg/util/user"
 	"github.com/hpcng/singularity/pkg/syfs"
-	auth "github.com/oras-project/oras-go/pkg/auth/docker"
+	auth "oras.land/oras-go/pkg/auth/docker"
 )
 
 const dockerHub = "docker.io"

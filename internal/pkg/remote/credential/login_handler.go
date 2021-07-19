@@ -16,7 +16,7 @@ import (
 	"github.com/hpcng/singularity/internal/pkg/util/interactive"
 	"github.com/hpcng/singularity/pkg/syfs"
 	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
-	auth "github.com/oras-project/oras-go/pkg/auth/docker"
+	auth "oras.land/oras-go/pkg/auth/docker"
 )
 
 // loginHandlers contains the registered handlers by scheme.
