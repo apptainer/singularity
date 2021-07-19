@@ -29,10 +29,10 @@ import (
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	auth "github.com/oras-project/oras-go/pkg/auth/docker"
-	"github.com/oras-project/oras-go/pkg/content"
-	orasctx "github.com/oras-project/oras-go/pkg/context"
-	"github.com/oras-project/oras-go/pkg/oras"
+	auth "oras.land/oras-go/pkg/auth/docker"
+	"oras.land/oras-go/pkg/content"
+	orasctx "oras.land/oras-go/pkg/context"
+	"oras.land/oras-go/pkg/oras"
 )
 
 const (
