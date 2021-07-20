@@ -157,8 +157,13 @@ func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encrypt
 	os.RemoveAll(path)
 
 	// test container creation with two partition input descriptors
-	if _, err := sif.CreateContainer(cinfo); err != nil {
+	f, err := sif.CreateContainer(cinfo)
+	if err != nil {
 		return fmt.Errorf("while creating container: %s", err)
+	}
+
+	if err := f.UnloadContainer(); err != nil {
+		return fmt.Errorf("while unloading container: %w", err)
 	}
 
 	// chown the sif file to the calling user
