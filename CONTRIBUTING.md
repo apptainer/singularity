@@ -27,7 +27,7 @@ your interactions with the project members and users.
 
 1. Essential bug fix PRs should be sent to both master and release branches.
 1. Small bug fix and feature enhancement PRs should be sent to master only.
-1. Follow the existing code style precedent, especially for C. For Golang, you
+1. Follow the existing code style precedent, especially for C. For Go, you
    will mostly conform to the style and form enforced by the "go fmt" and
    "golint" tools for proper formatting.
 1. For any new functionality, please write appropriate go tests that will run as
@@ -39,7 +39,7 @@ your interactions with the project members and users.
    errors by:
    - Running `go fmt ./...` to format all `.go` files.
    - Leaving a function comment on **every** new exported function and package
-     that your PR has introduced. To learn about how to properly comment Golang
+     that your PR has introduced. To learn about how to properly comment Go
      code, read
      [this post on golang.org](https://golang.org/doc/effective_go.html#commentary)
 1. Make sure you have locally tested using `make -C builddir test` and that all
@@ -59,7 +59,7 @@ your interactions with the project members and users.
    - Changed defaults / behaviors
    - Backwards incompatible changes
    - New features / functionalities
-1. PRs which introduce a new Golang dependency to the project via `go get` and
+1. PRs which introduce a new Go dependency to the project via `go get` and
    additions to `go.mod` should explain why the dependency is required.
 
 ## Documentation
