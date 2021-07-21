@@ -1,0 +1,5 @@
+# Allow repeated headers (changelog sections)
+MD024: false
+# Allow hard tabs (go snippets in e2e)
+MD010: false
+

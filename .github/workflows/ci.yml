@@ -18,6 +18,19 @@ jobs:
       - name: Check go.mod
         run: ./scripts/check-go.mod
 
+  lint_markdown:
+    name: lint_markdown
+    runs-on: ubuntu-20.04
+    container: node:16-slim
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli
+
+      - name: Check for Lint
+        run: markdownlint .
+
   debian:
     name: debian
     runs-on: ubuntu-20.04

@@ -19,7 +19,6 @@ Check out [talks about Singularity](https://singularity.hpcng.org/talks)
 and some [use cases of Singularity](https://singularity.hpcng.org/usecases)
 on our website.
 
-
 ## Getting Started with Singularity
 
 To install Singularity from source, see the [installation
@@ -53,22 +52,18 @@ Help](https://singularity.hpcng.org/help) web page.
 
 ## Citing Singularity
 
-```
-Kurtzer GM, Sochat V, Bauer MW (2017) Singularity: Scientific containers for mobility of compute. PLoS ONE 12(5): e0177459. https://doi.org/10.1371/journal.pone.0177459
-```
+> Kurtzer GM, Sochat V, Bauer MW (2017) Singularity: Scientific containers for
+> mobility of compute. PLoS ONE 12(5): e0177459.
+> <https://doi.org/10.1371/journal.pone.0177459>
 
 We also have a Zenodo citation:
 
-```
-Kurtzer, Gregory M. et. al. Singularity - Linux application and environment
-containers for science. 10.5281/zenodo.1310023
-```
+> Kurtzer, Gregory M. et. al. Singularity - Linux application and environment
+> containers for science. 10.5281/zenodo.1310023
+> <https://doi.org/10.5281/zenodo.1310023>
 
-https://doi.org/10.5281/zenodo.1310023
-
-This is an 'all versions' DOI. Follow the link to Zenodo to obtain a DOI specific
-to a particular version of Singularity.
-
+This is an 'all versions' DOI. Follow the link to Zenodo to obtain a DOI
+specific to a particular version of Singularity.
 
 ## License
 
