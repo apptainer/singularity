@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -1065,6 +1066,8 @@ func (c actionTests) actionBinds(t *testing.T) {
 
 	contCanaryFile := "/canary/file"
 	hostCanaryFile := filepath.Join(hostCanaryDir, "file")
+	hostCanaryFileWithComma := filepath.Join(hostCanaryDir, "file,comma")
+	hostCanaryFileWithColon := filepath.Join(hostCanaryDir, "file:colon")
 
 	canaryFileBind := hostCanaryFile + ":" + contCanaryFile
 	canaryDirBind := hostCanaryDir + ":" + contCanaryDir
@@ -1090,6 +1093,12 @@ func (c actionTests) actionBinds(t *testing.T) {
 		}
 		if err := fs.Touch(hostCanaryFile); err != nil {
 			t.Fatalf("failed to create canary_file: %s", err)
+		}
+		if err := fs.Touch(hostCanaryFileWithComma); err != nil {
+			t.Fatalf("failed to create canary_file_comma: %s", err)
+		}
+		if err := fs.Touch(hostCanaryFileWithColon); err != nil {
+			t.Fatalf("failed to create canary_file_colon: %s", err)
 		}
 		if err := os.Chmod(hostCanaryFile, 0777); err != nil {
 			t.Fatalf("failed to apply permissions on canary_file: %s", err)
@@ -1466,6 +1475,42 @@ func (c actionTests) actionBinds(t *testing.T) {
 			},
 			postRun: checkHostDir(filepath.Join(hostWorkDir, "scratch/scratch", "dir")),
 			exit:    0,
+		},
+		{
+			name: "BindFileWithCommaOK",
+			args: []string{
+				"--bind", strings.ReplaceAll(hostCanaryFileWithComma, ",", "\\,") + ":" + contCanaryFile,
+				sandbox,
+				"test", "-f", contCanaryFile,
+			},
+			exit: 0,
+		},
+		{
+			name: "BindFileWithCommaKO",
+			args: []string{
+				"--bind", hostCanaryFileWithComma + ":" + contCanaryFile,
+				sandbox,
+				"test", "-f", contCanaryFile,
+			},
+			exit: 255,
+		},
+		{
+			name: "BindFileWithColonOK",
+			args: []string{
+				"--bind", strings.ReplaceAll(hostCanaryFileWithColon, ":", "\\:") + ":" + contCanaryFile,
+				sandbox,
+				"test", "-f", contCanaryFile,
+			},
+			exit: 0,
+		},
+		{
+			name: "BindFileWithColonKO",
+			args: []string{
+				"--bind", hostCanaryFileWithColon + ":" + contCanaryFile,
+				sandbox,
+				"test", "-f", contCanaryFile,
+			},
+			exit: 255,
 		},
 	}
 
