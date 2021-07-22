@@ -146,7 +146,7 @@ func (c ctx) testOciRun(t *testing.T) {
 func (c ctx) testOciAttach(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-        containerID := randomContainerID(t)
+	containerID := randomContainerID(t)
 	bundleDir, umountFn := genericOciMount(t, &c)
 
 	// umount bundle
