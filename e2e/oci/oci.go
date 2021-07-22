@@ -111,7 +111,7 @@ func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 func (c ctx) testOciRun(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	containerID := uuid.Must(uuid.NewV4()).String()
+	containerID := randomContainerID(t)
 	bundleDir, umountFn := genericOciMount(t, &c)
 
 	// umount bundle
@@ -146,7 +146,7 @@ func (c ctx) testOciRun(t *testing.T) {
 func (c ctx) testOciAttach(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	containerID := uuid.Must(uuid.NewV4()).String()
+        containerID := randomContainerID(t)
 	bundleDir, umountFn := genericOciMount(t, &c)
 
 	// umount bundle
@@ -213,7 +213,7 @@ func (c ctx) testOciAttach(t *testing.T) {
 func (c ctx) testOciBasic(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	containerID := uuid.Must(uuid.NewV4()).String()
+	containerID := randomContainerID(t)
 	bundleDir, umountFn := genericOciMount(t, &c)
 
 	// umount bundle
