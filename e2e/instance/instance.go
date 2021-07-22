@@ -35,7 +35,6 @@ func randomName(t *testing.T) string {
 	return id.String()
 }
 
->>>>>>> 4f1cdf9... fix: partially replace UUID module
 type ctx struct {
 	env     e2e.TestEnv
 	profile e2e.Profile
