@@ -318,11 +318,7 @@ func (c *ctx) applyCgroupsInstance(t *testing.T) {
 	}
 
 	// pick up a random name
-<<<<<<< HEAD
-	instanceName := uuid.Must(uuid.NewV4()).String()
-=======
 	instanceName := randomName(t)
->>>>>>> 78f8778... fix: update code to account for uuid module breaking changes
 	joinName := fmt.Sprintf("instance://%s", instanceName)
 
 	c.env.RunSingularity(
