@@ -9,6 +9,7 @@
 - [Community Meetings / Minutes / Roadmap](https://drive.google.com/drive/u/0/folders/1npfBhIDxqeJIUHZ0tMeuHPvc_iB4T2B6)
 - [Support](#support)
 - [Citation](#citing-singularity)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
 
 Singularity is an open source container platform designed to be simple, fast,
 and secure. Singularity is optimized for compute focused enterprise and HPC
@@ -37,6 +38,9 @@ and build Singularity containers.
 
 Community contributions are always greatly appreciated. To start developing
 Singularity, check out the [guidelines for contributing](CONTRIBUTING.md).
+
+Please note we have a [code of conduct](CODE_OF_CONDUCT.md). Please follow it in
+all your interactions with the project members and users.
 
 Our roadmap, other documents, and user/developer meeting information can be
 found in the [singularity community page](https://singularity.hpcng.org/help).
