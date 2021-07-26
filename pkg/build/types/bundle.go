@@ -16,7 +16,7 @@ import (
 	"github.com/hpcng/singularity/internal/pkg/cache"
 	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/hpcng/singularity/pkg/sylog"
-	"github.com/hpcng/singularity/pkg/util/crypt"
+	"github.com/hpcng/singularity/pkg/util/cryptkey"
 	scskeyclient "github.com/sylabs/scs-key-client/client"
 	"golang.org/x/sys/unix"
 )
@@ -52,7 +52,7 @@ type Options struct {
 	// EncryptionKeyInfo specifies the key used for filesystem
 	// encryption if applicable.
 	// A nil value indicates encryption should not occur.
-	EncryptionKeyInfo *crypt.KeyInfo
+	EncryptionKeyInfo *cryptkey.KeyInfo
 	// ImgCache stores a pointer to the image cache to use.
 	ImgCache *cache.Handle
 	// NoTest indicates if build should skip running the test script.
@@ -78,7 +78,7 @@ type Options struct {
 }
 
 // NewEncryptedBundle creates an Encrypted Bundle environment.
-func NewEncryptedBundle(parentPath, tempDir string, keyInfo *crypt.KeyInfo) (b *Bundle, err error) {
+func NewEncryptedBundle(parentPath, tempDir string, keyInfo *cryptkey.KeyInfo) (b *Bundle, err error) {
 	return newBundle(parentPath, tempDir, keyInfo)
 }
 
@@ -157,7 +157,7 @@ func cleanupDir(path string) {
 // build level, rather than the bundle level, to avoid repetition during multi-stage builds, and
 // clarify responsibility for cleanup of the various directories that are created during the build
 // process.
-func newBundle(parentPath, tempDir string, keyInfo *crypt.KeyInfo) (*Bundle, error) {
+func newBundle(parentPath, tempDir string, keyInfo *cryptkey.KeyInfo) (*Bundle, error) {
 	rootfsPath := filepath.Join(parentPath, "rootfs")
 
 	tmpPath, err := ioutil.TempDir(tempDir, "bundle-temp-")

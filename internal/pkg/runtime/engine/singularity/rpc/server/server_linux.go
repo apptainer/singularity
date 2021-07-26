@@ -15,12 +15,12 @@ import (
 	"syscall"
 
 	args "github.com/hpcng/singularity/internal/pkg/runtime/engine/singularity/rpc"
+	"github.com/hpcng/singularity/internal/pkg/util/crypt"
 	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/hpcng/singularity/internal/pkg/util/mainthread"
 	"github.com/hpcng/singularity/internal/pkg/util/user"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/hpcng/singularity/pkg/util/capabilities"
-	"github.com/hpcng/singularity/pkg/util/crypt"
 	"github.com/hpcng/singularity/pkg/util/loop"
 	"github.com/hpcng/singularity/pkg/util/namespaces"
 	"golang.org/x/sys/unix"
