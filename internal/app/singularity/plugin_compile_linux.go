@@ -24,6 +24,7 @@ import (
 	"github.com/hpcng/singularity/internal/pkg/plugin"
 	pluginapi "github.com/hpcng/singularity/pkg/plugin"
 	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/archive"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -149,8 +150,9 @@ func CompilePlugin(sourceDir, destSif, buildTags string, disableMinorCheck bool)
 	}
 
 	pluginDir := filepath.Join(d, "src")
-	cmd := exec.Command("cp", "-a", sourceDir, pluginDir)
-	if err := cmd.Run(); err != nil {
+
+	err = archive.CopyWithTar(sourceDir, pluginDir)
+	if err != nil {
 		return err
 	}
 
@@ -183,7 +185,7 @@ func CompilePlugin(sourceDir, destSif, buildTags string, disableMinorCheck bool)
 
 	// running go mod tidy for plugin go.sum and cleanup
 	var e bytes.Buffer
-	cmd = exec.Command(goPath, "mod", "tidy")
+	cmd := exec.Command(goPath, "mod", "tidy")
 	cmd.Stderr = &e
 	cmd.Dir = pluginDir
 	if err := cmd.Run(); err != nil {
