@@ -620,14 +620,14 @@ func TestCopyFromStage(t *testing.T) {
 		{
 			name:   "dstRestricted",
 			srcRel: "srcFile",
-			// Will be restricted to `/` in the dst rootfs and should copy to there OK
+			// Will be cleaned to `/` in the dst rootfs and should copy to there OK
 			dstRel:     "../../../../",
 			expectPath: "srcFile",
 			expectFile: true,
 		},
 		{
 			name: "srcRestricted",
-			// Will be restricted to `/srcFile` in the src rootfs and should copy from there OK
+			// Will be cleaned to `/srcFile` in the src rootfs and should copy from there OK
 			srcRel:     "../../../../srcFile",
 			dstRel:     "",
 			expectPath: "srcFile",

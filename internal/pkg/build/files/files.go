@@ -6,43 +6,11 @@
 package files
 
 import (
-	"bytes"
-	"fmt"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
 )
-
-const filenameExpansionScript = `for n in %[1]s ; do
-	printf "$n\0"
-done
-`
-
-func expandPath(path string) ([]string, error) {
-	var output, stderr bytes.Buffer
-
-	// Escape spaces for glob pattern
-	path = strings.Replace(path, " ", "\\ ", -1)
-	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf(filenameExpansionScript, path))
-	cmd.Stdout = &output
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("%s: %s", err, stderr.String())
-	}
-
-	// parse expanded output and ignore empty strings from consecutive null bytes
-	var paths []string
-	for _, s := range strings.Split(output.String(), "\x00") {
-		if s == "" {
-			continue
-		}
-		paths = append(paths, s)
-	}
-
-	return paths, nil
-}
 
 // joinKeepSlash joins path to prefix, ensuring that if path ends with a "/" it
 // is preserved in the result, as may be required when calling out to commands
@@ -72,3 +40,4 @@ func secureJoinKeepSlash(prefix, path string) (string, error) {
 	}
 	return fullPath, nil
 }
+

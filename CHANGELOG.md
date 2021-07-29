@@ -14,6 +14,12 @@
   regression from Singularity 2.x. Note that you will now need to use
   `--force` in a build to override a label that already exists in the source
   Docker/OCI container.
+- The source paths for `%files` lines in a definition file are no longer
+  interpreted by a shell. This means that environment variable substitution is
+  not performed. Previously, environment variables were substituted for source
+  paths, but not destination paths, leading to unexpected copy behaviour.
+  Globbing for source files will now follow the Go `filepath.Match` pattern
+  syntax.
 
 ## v3.8.2 - \[2021-08-31\]
 
