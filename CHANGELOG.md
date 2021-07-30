@@ -16,6 +16,7 @@
     as this is not supported.
   - Ensure repeated `remote login` to same URI does not create duplicate entries
     in `~/.singularity/remote.yaml`.
+  - Avoid panic when mountinfo line has a blank field.
 
 ## v3.8.1 - [2021-08-12]
 
