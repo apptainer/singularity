@@ -1,5 +1,12 @@
 # Singularity Changelog
 
+### Changes since last release
+
+### Bug fixes
+
+  - Call `debootstrap` with correct Debian arch when it is not identical to the
+    value of `runtime.GOARCH`. E.g. `ppc64el -> ppc64le`.
+
 ## v3.8.1 - [2021-08-12]
 
 ### Bug Fixes
