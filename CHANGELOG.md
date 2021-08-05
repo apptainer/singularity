@@ -12,6 +12,8 @@
     globbed files are copied to correct resolved path.
   - Return an error if `--tokenfile` used for `remote login` to an OCI registry,
     as this is not supported.
+  - Ensure repeated `remote login` to same URI does not create duplicate entries
+    in `~/.singularity/remote.yaml`.
 
 ## v3.8.1 - [2021-08-12]
 

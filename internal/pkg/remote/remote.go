@@ -257,6 +257,18 @@ func (c *Config) Login(uri, username, password string, insecure bool) error {
 	if err != nil {
 		return err
 	}
+
+	// Remove any existing remote.yaml entry for the same URI.
+	// Older versions of Singularity can create duplicate entries with same URI,
+	// so loop must handle removing multiple matches (#214).
+	for i := 0; i < len(c.Credentials); i++ {
+		cred := c.Credentials[i]
+		if remoteutil.SameURI(cred.URI, uri) {
+			c.Credentials = append(c.Credentials[:i], c.Credentials[i+1:]...)
+			i = -1
+		}
+	}
+
 	c.Credentials = append(c.Credentials, credConfig)
 	return nil
 }
@@ -266,13 +278,16 @@ func (c *Config) Logout(uri string) error {
 	if err := credential.Manager.Logout(uri); err != nil {
 		return err
 	}
-	for i, cred := range c.Credentials {
+	// Older versions of Singularity can create duplicate entries with same URI,
+	// so loop must handle removing multiple matches (#214).
+	for i := 0; i < len(c.Credentials); i++ {
+		cred := c.Credentials[i]
 		if remoteutil.SameURI(cred.URI, uri) {
 			c.Credentials = append(c.Credentials[:i], c.Credentials[i+1:]...)
-			return nil
+			i = -1
 		}
 	}
-	return fmt.Errorf("%s is not configured", uri)
+	return nil
 }
 
 // Rename an existing remote
