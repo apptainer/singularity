@@ -26,7 +26,7 @@ from: registry:2.7.1
     # wait until docker registry is up
     while ! wget -q -O /dev/null 127.0.0.1:5000 ; do sleep 0.5; done
 
-    skopeo --dest-tls-verify=false --insecure-policy copy docker://busybox docker://localhost:5000/my-busybox
+    skopeo --insecure-policy copy --dest-tls-verify=false docker://busybox docker://localhost:5000/my-busybox
 
     # e2e PrepRegistry will repeatedly trying to connect to this port
     # giving indication that it can start
