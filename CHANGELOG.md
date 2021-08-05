@@ -10,6 +10,8 @@
     value of `runtime.GOARCH`. E.g. `ppc64el -> ppc64le`.
   - When destination is ommitted in `%files` entry in definition file, ensure
     globbed files are copied to correct resolved path.
+  - Return an error if `--tokenfile` used for `remote login` to an OCI registry,
+    as this is not supported.
 
 ## v3.8.1 - [2021-08-12]
 
