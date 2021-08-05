@@ -1,0 +1,93 @@
+#!/bin/sh
+
+set -e
+
+golangci_lint_version=1.40.1
+golangci_lint_install_url=https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
+
+info() {
+	printf 'I: %s\n' "$*"
+}
+
+warn() {
+	printf 'W: %s\n' "$*"
+}
+
+error() {
+	printf 'E: %s\n' "$*"
+}
+
+cd_to_toplevel() {
+	local toplevel="$(git rev-parse --show-toplevel 2> /dev/null)"
+
+	if test -n "${toplevel}" ; then
+		cd "${toplevel}"
+		return
+	fi
+
+	# failed to get toplevel directory, we are not inside a git
+	# repo? Fall back to current directory.
+
+	toplevel=$PWD
+
+	if test ! -f "${toplevel}/VERSION" ; then
+		# No VERSION file found, we are not looking at a release
+		# tarball ether? Bail out.
+		error 'Cannot identify toplevel directory. Abort.'
+		exit 1
+	fi
+
+	# already in the top level directory, return
+}
+
+check_golangci_lint() {
+	bindir=$1
+
+	if ! command -v golangci-lint >/dev/null 2>&1 ; then
+		warn 'golangci-lint not found in $PATH. Downloading...'
+		mkdir -p "${bindir}"
+		curl -sfL "${golangci_lint_install_url}" |
+			sh -s -- -b "${bindir}" "v${golangci_lint_version}"
+	fi
+
+	if ! command -v golangci-lint >/dev/null 2>&1 ; then
+		error 'golangci-lint not found in $PATH even after trying to install it. Abort.'
+		info ''
+		info 'Looked in the following directories, in order:'
+		info ''
+		IFS=:
+		for dir in ${PATH} ; do
+			info "    ${dir}"
+		done
+		exit 1
+	elif golangci-lint version 2>&1 | grep -q -F "golangci-lint has version ${golangci_lint_version} " ; then
+		# Found expected golangci-lint version
+		return
+	elif golangci-lint version 2>&1 | grep -q -F 'golangci-lint has version (devel) ' ; then
+		warn 'Using development version of golangci-lint.'
+	else
+        warn ''
+        warn '********************************************************************************************'
+        warn "Singularity's CI checks will use version ${golangci_lint_version} of golangci-lint."
+        warn "Your installed version differs. Please use ${golangci_lint_version} if you experience issues."
+		info ''
+		info 'The output of "golangci-lint version" is:'
+		info ''
+		info "    $(golangci-lint version 2>&1)"
+		info ''
+		info 'It was found in the following location:'
+		info ''
+		info "    $(command -v golangci-lint)"
+        info '********************************************************************************************'
+        info ''
+	fi
+}
+
+cd_to_toplevel
+
+bindir=$PWD/builddir/bin
+PATH=${bindir}:$PATH
+
+check_golangci_lint "${bindir}"
+
+exec golangci-lint "$@"
