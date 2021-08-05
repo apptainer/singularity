@@ -67,7 +67,7 @@ var remoteTokenFileFlag = cmdline.Flag{
 	Value:        &loginTokenFile,
 	DefaultValue: "",
 	Name:         "tokenfile",
-	Usage:        "path to the file holding token",
+	Usage:        "path to the file holding auth token for login (remote endpoints only)",
 }
 
 // --no-login
@@ -86,7 +86,7 @@ var remoteLoginUsernameFlag = cmdline.Flag{
 	DefaultValue: "",
 	Name:         "username",
 	ShortHand:    "u",
-	Usage:        "username to authenticate with (leave it empty for token authentication)",
+	Usage:        "username to authenticate with (required for Docker/OCI registry login)",
 	EnvKeys:      []string{"LOGIN_USERNAME"},
 }
 
@@ -97,7 +97,7 @@ var remoteLoginPasswordFlag = cmdline.Flag{
 	DefaultValue: "",
 	Name:         "password",
 	ShortHand:    "p",
-	Usage:        "password to authenticate with",
+	Usage:        "password / token to authenticate with",
 	EnvKeys:      []string{"LOGIN_PASSWORD"},
 }
 
