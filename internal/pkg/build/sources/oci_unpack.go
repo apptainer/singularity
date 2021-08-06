@@ -183,11 +183,9 @@ func checkPerms(rootfs string) (err error) {
 	})
 
 	if errors.Is(err, errRestrictivePerm) {
-		sylog.Warningf("Permission handling has changed in Singularity 3.5 for improved OCI compatibility")
-		sylog.Warningf("The sandbox will contain files/dirs that cannot be removed until permissions are modified")
-		sylog.Warningf("Use 'chmod -R u+rwX' to set permissions that allow removal")
-		sylog.Warningf("Use the '--fix-perms' option to 'singularity build' to modify permissions at build time")
-		sylog.Warningf("You can provide feedback about this change at https://github.com/hpcng/singularity/issues/4671")
+		sylog.Warningf("The sandbox contain files/dirs that cannot be removed with 'rm'.")
+		sylog.Warningf("Use 'chmod -R u+rwX' to set permissions that allow removal.")
+		sylog.Warningf("Use the '--fix-perms' option to 'singularity build' to modify permissions at build time.")
 		// It's not an error any further up... the rootfs is still usable
 		return nil
 	}
