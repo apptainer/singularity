@@ -34,7 +34,7 @@ require (
 	github.com/opencontainers/runc v1.0.0-rc94 // indirect
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
 	github.com/opencontainers/runtime-tools v0.9.1-0.20210326182921-59cdde06764b
-	github.com/opencontainers/selinux v1.8.1
+	github.com/opencontainers/selinux v1.8.3
 	github.com/opencontainers/umoci v0.4.7
 	github.com/oras-project/oras-go v0.1.0
 	github.com/pelletier/go-toml v1.9.1
