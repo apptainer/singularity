@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -22,7 +22,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// ConvertOciToSIf will convert an OCI source into a SIF using the build routines
+// ConvertOciToSIF will convert an OCI source into a SIF using the build routines
 func ConvertOciToSIF(ctx context.Context, imgCache *cache.Handle, image, cachedImgPath, tmpDir string, noHTTPS, noCleanUp bool, authConf *ocitypes.DockerAuthConfig) error {
 	if imgCache == nil {
 		return fmt.Errorf("image cache is undefined")

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,6 +7,7 @@ package sylog
 
 type messageLevel int
 
+// Log levels.
 const (
 	FatalLevel    messageLevel = iota - 4 // FatalLevel    : -4
 	ErrorLevel                            // ErrorLevel    : -3

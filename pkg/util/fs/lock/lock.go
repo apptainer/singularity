@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -30,10 +30,7 @@ func Exclusive(path string) (fd int, err error) {
 // Release removes a lock on path referenced by fd
 func Release(fd int) error {
 	defer unix.Close(fd)
-	if err := unix.Flock(fd, unix.LOCK_UN); err != nil {
-		return err
-	}
-	return nil
+	return unix.Flock(fd, unix.LOCK_UN)
 }
 
 // ErrByteRangeAcquired corresponds to the error returned

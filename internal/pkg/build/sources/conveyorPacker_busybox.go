@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -85,11 +85,7 @@ func (c *BusyBoxConveyor) insertBaseFiles() error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(c.b.RootfsPath, "/etc/hosts"), []byte("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"), 0664); err != nil {
-		return err
-	}
-
-	return nil
+	return ioutil.WriteFile(filepath.Join(c.b.RootfsPath, "/etc/hosts"), []byte("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"), 0664)
 }
 
 func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, err error) {
@@ -133,11 +129,7 @@ func (c *BusyBoxConveyor) insertBaseEnv() (err error) {
 }
 
 func (cp *BusyBoxConveyorPacker) insertRunScript() error {
-	if err := ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755); err != nil {
-		return err
-	}
-
-	return nil
+	return ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
 }
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem

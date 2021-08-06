@@ -1,4 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
+// Copyright (c) 2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,6 +16,7 @@ import (
 	"github.com/hpcng/singularity/internal/pkg/syecl"
 )
 
+// KeyMap contains test keys.
 var KeyMap = map[string]string{
 	"key1": "0C5B8C9A5FFC44E2A0AC79851CD6FA281D476DD1",
 	"key2": "78F8AD36B0DCB84B707F23853D608DAE21C8CA10",

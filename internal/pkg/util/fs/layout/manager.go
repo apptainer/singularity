@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -111,6 +111,7 @@ func (v *defaultVFS) WriteFile(filename string, data []byte, perm os.FileMode) e
 	return err
 }
 
+// DefaultVFS is the default VFS.
 var DefaultVFS VFS = &defaultVFS{}
 
 // Manager manages a filesystem layout in a given path

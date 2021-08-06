@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -22,15 +22,22 @@ import (
 )
 
 var (
+	// ErrEncryptedKeyNotFound indicates the encrypted key is not found.
 	ErrEncryptedKeyNotFound = errors.New("encrypted key not found")
-	ErrUnsupportedKeyURI    = errors.New("unsupported key URI")
-	ErrNoEncryptedKeyData   = errors.New("no encrypted key data")
-	ErrNoPEMData            = errors.New("No PEM data")
+	// ErrUnsupportedKeyURI indicates the key URI is not supported.
+	ErrUnsupportedKeyURI = errors.New("unsupported key URI")
+	// ErrNoEncryptedKeyData indicates there is no encrypted key data.
+	ErrNoEncryptedKeyData = errors.New("no encrypted key data")
+	// ErrNoPEMData indicates there is no PEM data.
+	ErrNoPEMData = errors.New("No PEM data")
 )
 
 const (
+	// Unknown indicates the key material format is not known.
 	Unknown = iota
+	// Passphrase indicates the key material is formatted as a passphrase.
 	Passphrase
+	// PEM indicates the key material is formatted as a PEM file.
 	PEM
 )
 

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -171,7 +171,7 @@ func (g *Generator) SetProcessTerminal(b bool) {
 	g.Config.Process.Terminal = b
 }
 
-// SetProcessCwd sets container root filesystem path.
+// SetRootPath sets container root filesystem path.
 func (g *Generator) SetRootPath(path string) {
 	g.initRoot()
 	g.Config.Root.Path = path

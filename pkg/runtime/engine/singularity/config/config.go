@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -86,7 +86,7 @@ func (b *BindPath) ImageSrc() string {
 	return ""
 }
 
-// ImageSrc returns the value of option id or an empty
+// ID returns the value of option id or an empty
 // string if the option wasn't set.
 func (b *BindPath) ID() string {
 	if b.Options != nil && b.Options["id"] != nil {
@@ -183,12 +183,12 @@ func (e *EngineConfig) GetImageArg() string {
 	return e.JSON.ImageArg
 }
 
-// SetKey sets the key for the image's system partition.
+// SetEncryptionKey sets the key for the image's system partition.
 func (e *EngineConfig) SetEncryptionKey(key []byte) {
 	e.JSON.EncryptionKey = key
 }
 
-// GetKey retrieves the key for image's system partition.
+// GetEncryptionKey retrieves the key for image's system partition.
 func (e *EngineConfig) GetEncryptionKey() []byte {
 	return e.JSON.EncryptionKey
 }
@@ -677,12 +677,12 @@ func (e *EngineConfig) GetNoTmp() bool {
 	return e.JSON.NoTmp
 }
 
-// SetNoHostFs set flag to not mount all host mounts.
+// SetNoHostfs set flag to not mount all host mounts.
 func (e *EngineConfig) SetNoHostfs(val bool) {
 	e.JSON.NoHostfs = val
 }
 
-// SetNoHostfs returns if no-hostfs flag is set or not.
+// GetNoHostfs returns if no-hostfs flag is set or not.
 func (e *EngineConfig) GetNoHostfs() bool {
 	return e.JSON.NoHostfs
 }
@@ -692,7 +692,7 @@ func (e *EngineConfig) SetNoCwd(val bool) {
 	e.JSON.NoCwd = val
 }
 
-// SetNoCwd returns if no-cwd flag is set or not.
+// GetNoCwd returns if no-cwd flag is set or not.
 func (e *EngineConfig) GetNoCwd() bool {
 	return e.JSON.NoCwd
 }
@@ -1002,7 +1002,7 @@ func (e *EngineConfig) SetUmask(umask int) {
 	e.JSON.Umask = umask
 }
 
-// SetUmask returns the umask to be used in the container launched process.
+// GetUmask returns the umask to be used in the container launched process.
 func (e *EngineConfig) GetUmask() int {
 	return e.JSON.Umask
 }
