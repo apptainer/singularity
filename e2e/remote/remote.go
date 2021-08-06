@@ -412,17 +412,17 @@ func (c ctx) remoteTestFlag(t *testing.T) {
 		{
 			name:           "add help",
 			cmdArgs:        []string{"add", "--help"},
-			expectedOutput: "Create a new singularity remote endpoint",
+			expectedOutput: "Add a new singularity remote endpoint",
 		},
 		{
 			name:           "list help",
 			cmdArgs:        []string{"list", "--help"},
-			expectedOutput: "List all singularity remote endpoints and services that are configured",
+			expectedOutput: "List all singularity remote endpoints, keyservers, and OCI credentials that are configured",
 		},
 		{
 			name:           "login help",
 			cmdArgs:        []string{"login", "--help"},
-			expectedOutput: "Log into a singularity remote endpoint, an OCI/Docker registry or a keyserver using credentials",
+			expectedOutput: "Login to a singularity remote endpoint, an OCI/Docker registry or a keyserver using credentials",
 		},
 		{
 			name:           "remove help",
