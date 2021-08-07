@@ -34,7 +34,7 @@ import (
 	"github.com/hpcng/singularity/internal/pkg/util/env"
 	"github.com/hpcng/singularity/internal/pkg/util/fs/files"
 	"github.com/hpcng/singularity/internal/pkg/util/machine"
-	"github.com/sylabs/singularity/internal/pkg/util/shell"
+	"github.com/hpcng/singularity/internal/pkg/util/shell"
 	"github.com/hpcng/singularity/internal/pkg/util/shell/interpreter"
 	"github.com/hpcng/singularity/internal/pkg/util/user"
 	singularitycallback "github.com/hpcng/singularity/pkg/plugin/callback/runtime/engine/singularity"
