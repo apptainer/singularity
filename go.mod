@@ -4,7 +4,6 @@ go 1.13
 
 require (
 	github.com/AdamKorcz/go-fuzz-headers v0.0.0-20210319161527-f761c2329661 // indirect
-	github.com/Microsoft/go-winio v0.5.0 // indirect
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
 	github.com/adigunhammedolalekan/registry-auth v0.0.0-20200730122110-8cde180a3a60
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
@@ -17,7 +16,7 @@ require (
 	github.com/containerd/containerd v1.5.2
 	github.com/containernetworking/cni v0.8.1
 	github.com/containernetworking/plugins v0.9.1
-	github.com/containers/image/v5 v5.12.0
+	github.com/containers/image/v5 v5.15.0
 	github.com/fatih/color v1.12.0
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/go-log/log v0.2.0
@@ -31,10 +30,9 @@ require (
 	github.com/kr/pty v1.1.8
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20210331164927-859973e32cca
-	github.com/opencontainers/runc v1.0.0-rc94 // indirect
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
 	github.com/opencontainers/runtime-tools v0.9.1-0.20210326182921-59cdde06764b
-	github.com/opencontainers/selinux v1.8.1
+	github.com/opencontainers/selinux v1.8.2
 	github.com/opencontainers/umoci v0.4.7
 	github.com/oras-project/oras-go v0.1.0
 	github.com/pelletier/go-toml v1.9.1
@@ -60,7 +58,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210503195802-e9a32991a82e
 	golang.org/x/net v0.0.0-20210510120150-4163338589ed // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20210514084401-e8d321eab015
+	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22
 	google.golang.org/genproto v0.0.0-20210510173355-fb37daa5cd7a // indirect
 	google.golang.org/grpc v1.37.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
