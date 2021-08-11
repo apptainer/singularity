@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/hpcng/singularity/e2e/internal/e2e"
-	uuid "github.com/satori/go.uuid"
 )
 
 func (c *ctx) issue5033(t *testing.T) {
@@ -19,7 +18,7 @@ func (c *ctx) issue5033(t *testing.T) {
 	c.profile = e2e.RootProfile
 
 	// pick up a random name
-	instanceName := uuid.Must(uuid.NewV4()).String()
+	instanceName := randomName(t)
 	joinName := fmt.Sprintf("instance://%s", instanceName)
 
 	c.env.RunSingularity(
