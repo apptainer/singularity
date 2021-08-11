@@ -57,6 +57,16 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	// set PATH after pulling images to be able to find potential
 	// docker credential helpers outside of standard paths
 	os.Setenv("PATH", defaultPath)
+
+	// --compat infers other options that give increased OCI / Docker compatibility
+	// Excludes uts/user/net namespaces as these are restrictive for many Singularity
+	// installs.
+	if IsCompat {
+		IsContainAll = true
+		IsWritableTmpfs = true
+		NoInit = true
+		NoUmask = true
+	}
 }
 
 func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, pullFrom string) (string, error) {

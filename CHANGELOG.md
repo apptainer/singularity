@@ -7,6 +7,10 @@
 - `--writable-tmpfs` can be used with `singularity build` to run
   the `%test` section of the build with a ephemeral tmpfs overlay,
   permitting tests that write to the container filesystem.
+- `--compat` flag for actions is a new short-hand to enable a number of
+  options that increase OCI/Docker compatibility. Infers `--containall,
+  --no-init, --no-umask, --writable-tmpfs`. Does not use user, uts, or
+  network namespaces as these may not be supported on many installations.
 
 ### Changed defaults / behaviours
 
