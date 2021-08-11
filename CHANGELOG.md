@@ -17,6 +17,10 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
+### Bug Fixes
+
+  - Allow escaped `\$` in a SINGULARITYENV_ var to set a literal `$` in
+    a container env var.
 
 # v3.8.0 - [2021-06-15]
 

@@ -99,3 +99,26 @@ func (c ctx) issue5057(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 }
+
+// https://github.com/sylabs/singularity/issues/43
+// If a $ in a SINGULARITYENV_ env var is escaped, it should become a
+// literal $ in the container env var.
+// This allows setting e.g. LD_PRELOAD=/foo/bar/$LIB/baz.so
+func (c ctx) issue43(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	env := []string{`SINGULARITYENV_LD_PRELOAD=/foo/bar/\$LIB/baz.so`}
+	args := []string{c.env.ImagePath, "/bin/sh", "-c", "echo \"${LD_PRELOAD}\""}
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithEnv(env),
+		e2e.WithArgs(args...),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ExactMatch, `/foo/bar/$LIB/baz.so`),
+		),
+	)
+}
