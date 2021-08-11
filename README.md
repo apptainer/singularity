@@ -15,7 +15,7 @@ and secure. Singularity is optimized for compute focused enterprise and HPC
 workloads, allowing untrusted users to run untrusted containers in a trusted
 way.
 
-Check out [talks about Singularity](https://singularity.hpcng.org/videos)
+Check out [talks about Singularity](https://singularity.hpcng.org/talks)
 and some [use cases of Singularity](https://singularity.hpcng.org/usecases)
 on our website.
 
