@@ -313,8 +313,13 @@ func makeSIF(sourceDir, sifPath string) error {
 	os.RemoveAll(sifPath)
 
 	// create sif file
-	if _, err := sif.CreateContainer(plCreateInfo); err != nil {
+	f, err := sif.CreateContainer(plCreateInfo)
+	if err != nil {
 		return fmt.Errorf("while creating sif file: %s", err)
+	}
+
+	if err := f.UnloadContainer(); err != nil {
+		return fmt.Errorf("while unloading sif file: %w", err)
 	}
 
 	return nil
