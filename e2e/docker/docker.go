@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/hpcng/singularity/e2e/internal/e2e"
@@ -398,46 +397,6 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 	}
 }
 
-func (c ctx) testDockerLabels(t *testing.T) {
-	imageDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "labels-", "")
-	defer cleanup(t)
-	imagePath := filepath.Join(imageDir, "container")
-
-	// Test container & set labels
-	// See: https://github.com/sylabs/singularity-test-containers/pull/1
-	imgSrc := "docker://sylabsio/labels"
-	label1 := "LABEL1: 1"
-	label2 := "LABEL2: TWO"
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("build"),
-		e2e.WithProfile(e2e.RootProfile),
-		e2e.WithCommand("build"),
-		e2e.WithArgs(imagePath, imgSrc),
-		e2e.ExpectExit(0),
-	)
-
-	verifyOutput := func(t *testing.T, r *e2e.SingularityCmdResult) {
-		output := string(r.Stdout)
-		for _, l := range []string{label1, label2} {
-			if !strings.Contains(output, l) {
-				t.Errorf("Did not find expected label %s in inspect output", l)
-			}
-		}
-	}
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("inspect"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("inspect"),
-		e2e.WithArgs([]string{"--labels", imagePath}...),
-		e2e.ExpectExit(0, verifyOutput),
-	)
-
-}
-
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -451,6 +410,5 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"pulls":            c.testDockerPulls,
 		"registry":         c.testDockerRegistry,
 		"whiteout symlink": c.testDockerWhiteoutSymlink,
-		"labels":           c.testDockerLabels,
 	}
 }
