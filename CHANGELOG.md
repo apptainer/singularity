@@ -11,6 +11,8 @@
   options that increase OCI/Docker compatibility. Infers `--containall,
   --no-init, --no-umask, --writable-tmpfs`. Does not use user, uts, or
   network namespaces as these may not be supported on many installations.
+- `--no-https` now applies to connections made to library services specified
+  in `--library://<hostname>/...` URIs.
 
 ### Changed defaults / behaviours
 

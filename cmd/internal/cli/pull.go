@@ -217,7 +217,11 @@ func pullRun(cmd *cobra.Command, args []string) {
 			libraryURI = pullLibraryURI
 		} else if ref.Host != "" {
 			// override libraryURI if ref contains host name
-			libraryURI = "https://" + ref.Host
+			if noHTTPS {
+				libraryURI = "http://" + ref.Host
+			} else {
+				libraryURI = "https://" + ref.Host
+			}
 		}
 
 		lc, err := getLibraryClientConfig(libraryURI)
