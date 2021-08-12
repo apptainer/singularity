@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"syscall"
 
 	"github.com/hpcng/sif/pkg/sif"
 	"github.com/hpcng/singularity/internal/pkg/util/machine"
@@ -184,14 +183,6 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 	}
 
 	img.Type = SIF
-
-	// UnloadContainer close image, just want to unmap image
-	// from memory
-	if !fimg.Amodebuf {
-		if err := syscall.Munmap(fimg.Filedata); err != nil {
-			return fmt.Errorf("while calling unmapping SIF file")
-		}
-	}
 
 	return nil
 }

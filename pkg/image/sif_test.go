@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -31,11 +31,16 @@ func createSIF(t *testing.T, inputDesc []sif.DescriptorInput, corrupted bool) st
 		}
 	}
 
+	id, err := uuid.NewV4()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	cinfo := sif.CreateInfo{
 		Pathname:   sifFile.Name(),
 		Launchstr:  sif.HdrLaunch,
 		Sifversion: sif.HdrVersion,
-		ID:         uuid.Must(uuid.NewV4()),
+		ID:         id,
 		InputDescr: inputDesc,
 	}
 
@@ -146,7 +151,7 @@ func TestSIFInitializer(t *testing.T) {
 			name:               "NoPartitionSIF",
 			path:               createSIF(t, nil, false),
 			writable:           false,
-			expectedSuccess:    false,
+			expectedSuccess:    true,
 			expectedPartitions: 0,
 			expectedSections:   0,
 		},
@@ -209,40 +214,40 @@ func TestSIFInitializer(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		var err error
+		t.Run(tt.name, func(t *testing.T) {
+			var err error
 
-		sifFmt := new(sifFormat)
-		mode := sifFmt.openMode(tt.writable)
+			sifFmt := new(sifFormat)
+			mode := sifFmt.openMode(tt.writable)
 
-		img := &Image{
-			Path: tt.path,
-			Name: tt.path,
-		}
+			img := &Image{
+				Path: tt.path,
+				Name: tt.path,
+			}
 
-		img.Writable = true
-		img.File, err = os.OpenFile(tt.path, mode, 0)
-		if err != nil {
-			t.Fatalf("cannot open image's file: %s\n", err)
-		}
-		defer img.File.Close()
+			img.Writable = tt.writable
+			img.File, err = os.OpenFile(tt.path, mode, 0)
+			if err != nil {
+				t.Fatalf("cannot open image's file: %s\n", err)
+			}
+			defer img.File.Close()
 
-		fileinfo, err := img.File.Stat()
-		if err != nil {
-			t.Fatalf("cannot stat the image file: %s\n", err)
-		}
+			fileinfo, err := img.File.Stat()
+			if err != nil {
+				t.Fatalf("cannot stat the image file: %s\n", err)
+			}
 
-		err = sifFmt.initializer(img, fileinfo)
-		os.Remove(tt.path)
+			err = sifFmt.initializer(img, fileinfo)
+			os.Remove(tt.path)
 
-		if err != nil && tt.expectedSuccess {
-			t.Fatalf("unexpected error for %q: %s\n", tt.name, err)
-		} else if err == nil && !tt.expectedSuccess {
-			t.Fatalf("unexpected success for %q", tt.name)
-		} else if tt.expectedPartitions != len(img.Partitions) {
-			t.Fatalf("unexpected partitions number: %d instead of %d", len(img.Partitions), tt.expectedPartitions)
-		} else if tt.expectedSections != len(img.Sections) {
-			t.Fatalf("unexpected sections number: %d instead of %d", len(img.Sections), tt.expectedSections)
-		}
+			if (err == nil) != tt.expectedSuccess {
+				t.Fatalf("got error %v, expect success %v", err, tt.expectedSuccess)
+			} else if tt.expectedPartitions != len(img.Partitions) {
+				t.Fatalf("unexpected partitions number: %d instead of %d", len(img.Partitions), tt.expectedPartitions)
+			} else if tt.expectedSections != len(img.Sections) {
+				t.Fatalf("unexpected sections number: %d instead of %d", len(img.Sections), tt.expectedSections)
+			}
+		})
 	}
 }
 

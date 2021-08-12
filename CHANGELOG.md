@@ -4,7 +4,7 @@
 
 ### Changed defauls / behaviours
 
-  - build-singularity example pulls the base image from Docker/RockyLinux 
+  - `build-singularity` example pulls the base image from Docker/RockyLinux 
     instead of Docker/CentOS
   - Set LABELs properly in the container when pulling from Docker/OCI source.
     Use --force in a build to override a label that already exists in source.
