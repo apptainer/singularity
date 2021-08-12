@@ -382,7 +382,7 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 			t,
 			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
-			e2e.WithArgs("--nohttps", imagePath, defFile),
+			e2e.WithArgs("--no-https", imagePath, defFile),
 			e2e.PostRun(func(t *testing.T) {
 				defer os.Remove(imagePath)
 				defer os.Remove(defFile)
