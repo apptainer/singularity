@@ -37,7 +37,9 @@ all your interactions with the project members and users.
 1. Make sure your code passes linting, by running `make check` before submitting
    the PR. We use `golangci-lint` as our linter. You may need to address linting
    errors by:
-   - Running `go fmt ./...` to format all `.go` files.
+   - Running `gofumpt .` to format all `.go` files. We use
+     [gofumpt](https://github.com/mvdan/gofumpt) instead of `gofmt` as it adds
+     additional formatting rules which are helpful for clarity.
    - Leaving a function comment on **every** new exported function and package
      that your PR has introduced. To learn about how to properly comment Go
      code, read
