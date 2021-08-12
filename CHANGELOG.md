@@ -2,18 +2,11 @@
 
 ## v3.8.1 - [2021-08-12]
 
-### Changed defauls / behaviours
-
-  - `build-singularity` example pulls the base image from Docker/RockyLinux 
-    instead of Docker/CentOS
-  - Set LABELs properly in the container when pulling from Docker/OCI source.
-    Use --force in a build to override a label that already exists in source.
-  - Partially replace the github.com/satori/go.uuid module.
-
 ### Bug Fixes
 
   - Allow escaped `\$` in a SINGULARITYENV_ var to set a literal `$` in
-    a container env var.
+    a container env var. Also allow escaped commas and colons in the 
+    source bind path. 
   - Handle absolute symlinks correctly in multi-stage build `%copy from`
     blocks.
   - Fix incorrect reference in sandbox restrictive permissions warning.
