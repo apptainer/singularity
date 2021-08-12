@@ -53,7 +53,6 @@ var (
 	NoUmask         bool
 	VM              bool
 	VMErr           bool
-	NoNet           bool
 	IsSyOS          bool
 	disableCache    bool
 
@@ -268,16 +267,6 @@ var actionVMIPFlag = cmdline.Flag{
 	Usage:        "IP Address to assign for container usage. Defaults to DHCP within bridge network.",
 	Tag:          "<IP Address>",
 	EnvKeys:      []string{"VM_IP"},
-}
-
-// --nonet
-var actionNONETFlag = cmdline.Flag{
-	ID:           "actionNONETFlag",
-	Value:        &NoNet,
-	DefaultValue: false,
-	Name:         "nonet",
-	Usage:        "disable VM network handling",
-	EnvKeys:      []string{"VM_NONET"},
 }
 
 // hidden flag to handle SINGULARITY_CONTAINLIBS environment variable
@@ -673,7 +662,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionNoHomeFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoMountFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoInitFlag, actionsInstanceCmd...)
-		cmdManager.RegisterFlagForCmd(&actionNONETFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoNvidiaFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoRocmFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoPrivsFlag, actionsInstanceCmd...)
