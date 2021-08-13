@@ -83,7 +83,7 @@ type MountInfoEntry struct {
 // a MountInfoEntry containing parsed fields associated
 // to the line.
 func parseMountInfoLine(line string) MountInfoEntry {
-	fields := strings.Fields(line)
+	fields := strings.Split(line, " ")
 	entry := MountInfoEntry{}
 
 	// ID field

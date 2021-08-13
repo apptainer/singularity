@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -105,11 +105,7 @@ func (m *Meta) install(img *image.Image) error {
 		return err
 	}
 
-	if err := m.installMeta(); err != nil {
-		return err
-	}
-
-	return nil
+	return m.installMeta()
 }
 
 func (m *Meta) installBinary(img *image.Image) error {

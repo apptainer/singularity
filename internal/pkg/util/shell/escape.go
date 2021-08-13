@@ -24,3 +24,8 @@ func Escape(s string) string {
 	escaped = strings.Replace(escaped, `$`, `\$`, -1)
 	return escaped
 }
+
+// EscapeQuotes performs escaping of double quotes only
+func EscapeQuotes(s string) string {
+	return strings.Replace(s, `"`, `\"`, -1)
+}

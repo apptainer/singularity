@@ -162,6 +162,9 @@ func (s *stage) copyFilesFrom(b *Build) error {
 			return err
 		}
 
+		srcRootfsPath := b.stages[stageIndex].b.RootfsPath
+		dstRootfsPath := s.b.RootfsPath
+
 		sylog.Debugf("Copying files from stage: %s", args[1])
 
 		// iterate through filetransfers
@@ -177,12 +180,8 @@ func (s *stage) copyFilesFrom(b *Build) error {
 			}
 
 			// copy each file into bundle rootfs
-			// prepend appropriate bundle path to supplied paths
-			// copying between stages should not follow symlinks
-			transfer.Src = files.AddPrefix(b.stages[stageIndex].b.RootfsPath, transfer.Src)
-			transfer.Dst = files.AddPrefix(s.b.RootfsPath, transfer.Dst)
 			sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
-			if err := files.Copy(transfer.Src, transfer.Dst, false); err != nil {
+			if err := files.CopyFromStage(transfer.Src, transfer.Dst, srcRootfsPath, dstRootfsPath); err != nil {
 				return err
 			}
 		}
@@ -213,10 +212,8 @@ func (s *stage) copyFiles() error {
 			transfer.Dst = transfer.Src
 		}
 		// copy each file into bundle rootfs
-		// copying from host to container should follow symlinks
-		transfer.Dst = files.AddPrefix(s.b.RootfsPath, transfer.Dst)
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
-		if err := files.Copy(transfer.Src, transfer.Dst, true); err != nil {
+		if err := files.CopyFromHost(transfer.Src, transfer.Dst, s.b.RootfsPath); err != nil {
 			return err
 		}
 	}

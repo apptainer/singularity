@@ -81,6 +81,9 @@ bug(s), and well covered by tests.
 
 1. Create and merge a PR from the `release-3.x` branch into `master`,
    so that history from the RC process etc. is captured on `master`.
-2. If the release is a new major version, move the prior `release-3.x`
-   branch to `vault/release-3.x`.
-3. Start scheduling / setting up milestones etc. to track the next release!
+2. If the release is a new major/minor version, move the prior
+   `release-3.x` branch to `vault/release-3.x`.
+3. If the release is a new major/minor version, update the
+   `.github/dependabot.yml` configuration so that dependabot is tracking
+   the new stable release branch.
+4. Start scheduling / setting up milestones etc. to track the next release!

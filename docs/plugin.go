@@ -1,14 +1,12 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package docs
 
+// Plugin command usage.
 const (
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// plugin command
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	PluginUse   string = `plugin [plugin options...]`
 	PluginShort string = `Manage Singularity plugins`
 	PluginLong  string = `
@@ -19,10 +17,10 @@ const (
 
   $ singularity help plugin compile
   $ singularity plugin list --help`
+)
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// plugin compile command
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Plugin compile command usage.
+const (
 	PluginCompileUse   string = `compile [compile options...] <host_path>`
 	PluginCompileShort string = `Compile a Singularity plugin`
 	PluginCompileLong  string = `
@@ -31,10 +29,10 @@ const (
   location of the plugin's source code. A compiled plugin is packed into a SIF file.`
 	PluginCompileExample string = `
   $ singularity plugin compile $HOME/singularity/test-plugin`
+)
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// plugin install command
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Plugin install command usage.
+const (
 	PluginInstallUse   string = `install <plugin_path>`
 	PluginInstallShort string = `Install a compiled Singularity plugin`
 	PluginInstallLong  string = `
@@ -42,20 +40,20 @@ const (
   into the appropriate directory on the host.`
 	PluginInstallExample string = `
   $ singularity plugin install $HOME/singularity/test-plugin/test-plugin.sif`
+)
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// plugin uninstall command
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Plugin uninstall command usage.
+const (
 	PluginUninstallUse   string = `uninstall <name>`
 	PluginUninstallShort string = `Uninstall removes the named plugin from the system`
 	PluginUninstallLong  string = `
   The 'plugin uninstall' command removes the named plugin from the system`
 	PluginUninstallExample string = `
   $ singularity plugin uninstall example.org/plugin`
+)
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// plugin list command
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Plugin list command usage.
+const (
 	PluginListUse   string = `list [list options...]`
 	PluginListShort string = `List installed Singularity plugins`
 	PluginListLong  string = `
@@ -64,10 +62,10 @@ const (
   $ singularity plugin list
   ENABLED  NAME
       yes  example.org/plugin`
+)
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// plugin enable command
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Plugin enable command usage.
+const (
 	PluginEnableUse   string = `enable <name>`
 	PluginEnableShort string = `Enable an installed Singularity plugin`
 	PluginEnableLong  string = `
@@ -75,10 +73,10 @@ const (
   installed in the system and which has been previously disabled.`
 	PluginEnableExample string = `
   $ singularity plugin enable example.org/plugin`
+)
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// plugin disable command
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Plugin disable command usage.
+const (
 	PluginDisableUse   string = `disable <name>`
 	PluginDisableShort string = `disable an installed Singularity plugin`
 	PluginDisableLong  string = `
@@ -86,10 +84,10 @@ const (
   installed in the system and which has been previously enabled.`
 	PluginDisableExample string = `
   $ singularity plugin disable example.org/plugin`
+)
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// plugin inspect command
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Plugin inspect command usage.
+const (
 	PluginInspectUse   string = `inspect (<name>|<image>)`
 	PluginInspectShort string = `Inspect a singularity plugin (either an installed one or an image)`
 	PluginInspectLong  string = `
@@ -101,10 +99,10 @@ const (
   Description: A test Singularity plugin.
   Author: Sylabs
   Version: 0.1.0`
+)
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// plugin create command
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Plugin create command usage.
+const (
 	PluginCreateUse   string = `create <host_path> <name>`
 	PluginCreateShort string = `Create a plugin skeleton directory`
 	PluginCreateLong  string = `

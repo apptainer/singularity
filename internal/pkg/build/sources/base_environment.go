@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -309,10 +309,7 @@ func makeDirs(rootPath string) error {
 	if err := os.MkdirAll(filepath.Join(rootPath, "sys"), 0755); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Join(rootPath, "home"), 0755); err != nil {
-		return err
-	}
-	return nil
+	return os.MkdirAll(filepath.Join(rootPath, "home"), 0755)
 }
 
 func makeSymlinks(rootPath string) error {
@@ -410,10 +407,7 @@ func makeFiles(rootPath string) error {
 	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "runscript"), 0755, runscriptFileContent); err != nil {
 		return err
 	}
-	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "startscript"), 0755, startscriptFileContent); err != nil {
-		return err
-	}
-	return nil
+	return makeFile(filepath.Join(rootPath, ".singularity.d", "startscript"), 0755, startscriptFileContent)
 }
 
 func makeBaseEnv(rootPath string) (err error) {

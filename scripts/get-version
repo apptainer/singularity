@@ -28,7 +28,7 @@ fi
 # gitdesc extracts the closest version tag, removing the leading "v" and
 # returning the rest
 gitdesc() {
-	git describe --match='v[0-9]*' --always "$@" 2>/dev/null |
+	git describe --match='v[0-9]*' --always --candidates=1 "$@" 2>/dev/null |
 	sed -e 's,^v,,'
 }
 

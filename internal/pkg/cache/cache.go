@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -21,16 +21,13 @@ import (
 	"github.com/hpcng/singularity/pkg/sylog"
 )
 
-var (
-	ErrBadChecksum      = errors.New("hash does not match")
-	ErrInvalidCacheType = errors.New("invalid cache type")
-)
+var errInvalidCacheType = errors.New("invalid cache type")
 
 const (
 	// DirEnv specifies the environment variable which can set the directory
 	// for image downloads to be cached in
 	DirEnv = "SINGULARITY_CACHEDIR"
-	// DisableCacheEnv specifies whether the image should be used
+	// DisableEnv specifies whether the image should be used
 	DisableEnv = "SINGULARITY_DISABLE_CACHE"
 	// SubDirName specifies the name of the directory relative to the
 	// ParentDir specified when the cache is created.
@@ -38,21 +35,22 @@ const (
 	// will not clash with any 2.x cache directory.
 	SubDirName = "cache"
 
-	// The Library cache holds SIF images pulled from the library
+	// LibraryCacheType specifies the cache holds SIF images pulled from the library
 	LibraryCacheType = "library"
-	// The OCITemp cache holds SIF images created from OCI sources
+	// OciTempCacheType specifies the cache holds SIF images created from OCI sources
 	OciTempCacheType = "oci-tmp"
-	// The OCIBlob cache holds OCI blobs (layers) pulled from OCI sources
+	// OciBlobCacheType specifies the cache holds OCI blobs (layers) pulled from OCI sources
 	OciBlobCacheType = "blob"
-	// The Shub cache holds images pulled from Singularity Hub
+	// ShubCacheType specifies the cache holds images pulled from Singularity Hub
 	ShubCacheType = "shub"
-	// The Oras cache holds SIF images pulled from Oras sources
+	// OrasCacheType specifies the cache holds SIF images pulled from Oras sources
 	OrasCacheType = "oras"
-	// The Net cache holds images pulled from http(s) internet sources
+	// NetCacheType specifies the cache holds images pulled from http(s) internet sources
 	NetCacheType = "net"
 )
 
 var (
+	// FileCacheTypes specifies the file cache types.
 	FileCacheTypes = []string{
 		LibraryCacheType,
 		OciTempCacheType,
@@ -60,6 +58,7 @@ var (
 		OrasCacheType,
 		NetCacheType,
 	}
+	// OciCacheTypes specifies the OCI cache types.
 	OciCacheTypes = []string{
 		OciBlobCacheType,
 	}
@@ -90,14 +89,14 @@ type Handle struct {
 
 func (h *Handle) GetFileCacheDir(cacheType string) (cacheDir string, err error) {
 	if !stringInSlice(cacheType, FileCacheTypes) {
-		return "", ErrInvalidCacheType
+		return "", errInvalidCacheType
 	}
 	return h.getCacheTypeDir(cacheType), nil
 }
 
 func (h *Handle) GetOciCacheDir(cacheType string) (cacheDir string, err error) {
 	if !stringInSlice(cacheType, OciCacheTypes) {
-		return "", ErrInvalidCacheType
+		return "", errInvalidCacheType
 	}
 	return h.getCacheTypeDir(cacheType), nil
 }

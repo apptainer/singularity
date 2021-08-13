@@ -84,7 +84,7 @@ var actionAppFlag = cmdline.Flag{
 var actionBindFlag = cmdline.Flag{
 	ID:           "actionBindFlag",
 	Value:        &BindPaths,
-	DefaultValue: []string{},
+	DefaultValue: cmdline.StringArray{}, // to allow commas in bind path
 	Name:         "bind",
 	ShortHand:    "B",
 	Usage:        "a user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.",

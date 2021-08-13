@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -507,11 +507,7 @@ func (c *container) setPropagationMount(system *mount.System) error {
 		pflags |= syscall.MS_PRIVATE
 	}
 
-	if err := c.rpcOps.Mount("", "/", "", pflags, ""); err != nil {
-		return err
-	}
-
-	return nil
+	return c.rpcOps.Mount("", "/", "", pflags, "")
 }
 
 // addMountinfo handles the case where hidepid is set on /proc mount

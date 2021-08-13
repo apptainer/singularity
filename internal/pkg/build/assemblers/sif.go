@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -157,8 +157,13 @@ func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encrypt
 	os.RemoveAll(path)
 
 	// test container creation with two partition input descriptors
-	if _, err := sif.CreateContainer(cinfo); err != nil {
+	f, err := sif.CreateContainer(cinfo)
+	if err != nil {
 		return fmt.Errorf("while creating container: %s", err)
+	}
+
+	if err := f.UnloadContainer(); err != nil {
+		return fmt.Errorf("while unloading container: %w", err)
 	}
 
 	// chown the sif file to the calling user

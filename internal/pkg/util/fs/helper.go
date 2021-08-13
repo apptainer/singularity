@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,10 +20,10 @@ import (
 )
 
 const (
-	KiB = 1024
-	MiB = KiB * 1024
-	GiB = MiB * 1024
-	TiB = GiB * 1024
+	kiB = 1024
+	miB = kiB * 1024
+	giB = miB * 1024
+	tiB = giB * 1024
 )
 
 // Abs resolves a path to an absolute path.
@@ -588,17 +588,17 @@ func FindSize(size int64) string {
 	var factor float64
 	var unit string
 	switch {
-	case size < MiB:
-		factor = KiB
+	case size < miB:
+		factor = kiB
 		unit = "KiB"
-	case size < GiB:
-		factor = MiB
+	case size < giB:
+		factor = miB
 		unit = "MiB"
-	case size < TiB:
-		factor = GiB
+	case size < tiB:
+		factor = giB
 		unit = "GiB"
 	default:
-		factor = TiB
+		factor = tiB
 		unit = "TiB"
 	}
 	return fmt.Sprintf("%.2f %s", float64(size)/factor, unit)

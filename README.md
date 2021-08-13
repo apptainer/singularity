@@ -6,6 +6,7 @@
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
 - [Project License](LICENSE.md)
 - [Documentation](https://singularity.hpcng.org/docs/)
+- [Community Meetings / Minutes / Roadmap](https://drive.google.com/drive/u/0/folders/1npfBhIDxqeJIUHZ0tMeuHPvc_iB4T2B6)
 - [Support](#support)
 - [Citation](#citing-singularity)
 
@@ -14,7 +15,7 @@ and secure. Singularity is optimized for compute focused enterprise and HPC
 workloads, allowing untrusted users to run untrusted containers in a trusted
 way.
 
-Check out [talks about Singularity](https://singularity.hpcng.org/videos)
+Check out [talks about Singularity](https://singularity.hpcng.org/talks)
 and some [use cases of Singularity](https://singularity.hpcng.org/usecases)
 on our website.
 
@@ -37,6 +38,9 @@ and build Singularity containers.
 
 Community contributions are always greatly appreciated. To start developing
 Singularity, check out the [guidelines for contributing](CONTRIBUTING.md).
+
+Our roadmap, other documents, and user/developer meeting information can be
+found in the [singularity community page](https://singularity.hpcng.org/help).
 
 We also welcome contributions to our [user
 guide](https://github.com/hpcng/singularity-userdocs) and [admin

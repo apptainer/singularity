@@ -8,12 +8,12 @@ linters:
     - deadcode
     - gofmt
     - goimports
-    - golint
     - gosimple
     - govet
     - ineffassign
     - misspell
     - nakedret
+    - revive
     # we would like to add these
     # - dupl
     # - staticcheck

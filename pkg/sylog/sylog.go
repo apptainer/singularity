@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -165,12 +165,12 @@ func Writer() io.Writer {
 // as the scs-library-client
 type DebugLogger struct{}
 
-// Output a log message via sylog.Debugf
+// Log outputs a log message via sylog.Debugf
 func (t DebugLogger) Log(v ...interface{}) {
 	writef(DebugLevel, "%s", fmt.Sprint(v...))
 }
 
-// Output a formatted log message via sylog.Debugf
+// Logf outputs a formatted log message via sylog.Debugf
 func (t DebugLogger) Logf(format string, v ...interface{}) {
 	writef(DebugLevel, format, v...)
 }

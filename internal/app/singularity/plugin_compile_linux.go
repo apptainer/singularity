@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -313,8 +313,13 @@ func makeSIF(sourceDir, sifPath string) error {
 	os.RemoveAll(sifPath)
 
 	// create sif file
-	if _, err := sif.CreateContainer(plCreateInfo); err != nil {
+	f, err := sif.CreateContainer(plCreateInfo)
+	if err != nil {
 		return fmt.Errorf("while creating sif file: %s", err)
+	}
+
+	if err := f.UnloadContainer(); err != nil {
+		return fmt.Errorf("while unloading sif file: %w", err)
 	}
 
 	return nil

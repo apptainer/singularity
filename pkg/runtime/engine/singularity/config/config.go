@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -86,7 +86,7 @@ func (b *BindPath) ImageSrc() string {
 	return ""
 }
 
-// ImageSrc returns the value of option id or an empty
+// ID returns the value of option id or an empty
 // string if the option wasn't set.
 func (b *BindPath) ID() string {
 	if b.Options != nil && b.Options["id"] != nil {
@@ -116,6 +116,7 @@ type JSONConfig struct {
 	OpenFd            []int             `json:"openFd,omitempty"`
 	TargetGID         []int             `json:"targetGID,omitempty"`
 	Image             string            `json:"image"`
+	ImageArg          string            `json:"imageArg"`
 	Workdir           string            `json:"workdir,omitempty"`
 	CgroupsPath       string            `json:"cgroupsPath,omitempty"`
 	HomeSource        string            `json:"homedir,omitempty"`
@@ -172,12 +173,22 @@ func (e *EngineConfig) GetImage() string {
 	return e.JSON.Image
 }
 
-// SetKey sets the key for the image's system partition.
+// SetImageArg sets the container image argument to be used by EngineConfig.JSON.
+func (e *EngineConfig) SetImageArg(name string) {
+	e.JSON.ImageArg = name
+}
+
+// GetImageArg retrieves the container image argument.
+func (e *EngineConfig) GetImageArg() string {
+	return e.JSON.ImageArg
+}
+
+// SetEncryptionKey sets the key for the image's system partition.
 func (e *EngineConfig) SetEncryptionKey(key []byte) {
 	e.JSON.EncryptionKey = key
 }
 
-// GetKey retrieves the key for image's system partition.
+// GetEncryptionKey retrieves the key for image's system partition.
 func (e *EngineConfig) GetEncryptionKey() []byte {
 	return e.JSON.EncryptionKey
 }
@@ -284,10 +295,8 @@ func (e *EngineConfig) GetCustomHome() bool {
 
 // ParseBindPath parses a string and returns all encountered
 // bind paths as array.
-func ParseBindPath(bindpaths string) ([]BindPath, error) {
-	var bind string
+func ParseBindPath(paths []string) ([]BindPath, error) {
 	var binds []BindPath
-	var elem int
 
 	var validOptions = map[string]bool{
 		"ro":        true,
@@ -312,13 +321,16 @@ func ParseBindPath(bindpaths string) ([]BindPath, error) {
 	// - source1:destination1 -> [source1:, destination1]
 	// - source1:destination1:option1 -> [source1:, destination1:, option1]
 	// - source1:destination1:option1,option2 -> [source1:, destination1:, option1, option2]
-	for _, m := range re.FindAllString(bindpaths, -1) {
-		s := strings.TrimSpace(m)
-		isColon := bind != "" && bind[len(bind)-1] == ':'
 
-		// options are taken only if the bind has a source
-		// and a destination
-		if elem == 2 {
+	for _, path := range paths {
+		concatComma := false
+		concatColon := false
+		bind := ""
+		elem := 0
+
+		for _, m := range re.FindAllString(path, -1) {
+			s := strings.TrimSpace(m)
+
 			isOption := false
 
 			for option, flag := range validOptions {
@@ -334,44 +346,102 @@ func ParseBindPath(bindpaths string) ([]BindPath, error) {
 					}
 				}
 			}
-			if isOption {
+
+			if elem == 2 && !isOption {
+				bp, err := newBindPath(bind, validOptions)
+				if err != nil {
+					return nil, fmt.Errorf("while getting bind path: %s", err)
+				}
+				binds = append(binds, bp)
+				elem = 0
+				bind = ""
+			}
+
+			if elem == 0 {
+				// escaped commas and colons
+				if (len(s) > 0 && s[len(s)-1] == '\\') || concatComma {
+					if !concatComma {
+						bind += s[:len(s)-1] + ","
+					} else {
+						bind += s
+						elem++
+					}
+					concatComma = !concatComma
+					continue
+				} else if (len(s) >= 2 && s[len(s)-2] == '\\' && s[len(s)-1] == ':') || concatColon {
+					bind += s
+					if concatColon {
+						elem++
+					}
+					concatColon = !concatColon
+					continue
+				} else if bind == "" {
+					bind = s
+				}
+			}
+
+			isColon := bind != "" && bind[len(bind)-1] == ':'
+
+			// options are taken only if the bind has a source
+			// and a destination
+			if elem == 2 && isOption {
 				if !isColon {
 					bind += ","
 				}
 				bind += s
 				continue
+			} else if elem > 2 {
+				return nil, fmt.Errorf("wrong bind syntax: %s", bind)
 			}
-		} else if elem > 2 {
-			return nil, fmt.Errorf("wrong bind syntax: %s", bind)
+
+			if bind != "" {
+				if isColon {
+					if elem > 0 {
+						bind += s
+					}
+					elem++
+					continue
+				}
+				bp, err := newBindPath(bind, validOptions)
+				if err != nil {
+					return nil, fmt.Errorf("while getting bind path: %s", err)
+				}
+				binds = append(binds, bp)
+				elem = 0
+			}
+			// new bind path
+			bind = s
+			elem++
 		}
 
-		elem++
-
 		if bind != "" {
-			if isColon {
-				bind += s
-				continue
-			}
 			bp, err := newBindPath(bind, validOptions)
 			if err != nil {
 				return nil, fmt.Errorf("while getting bind path: %s", err)
 			}
 			binds = append(binds, bp)
-			elem = 1
 		}
-		// new bind path
-		bind = s
-	}
-
-	if bind != "" {
-		bp, err := newBindPath(bind, validOptions)
-		if err != nil {
-			return nil, fmt.Errorf("while getting bind path: %s", err)
-		}
-		binds = append(binds, bp)
 	}
 
 	return binds, nil
+}
+
+func splitBy(str string, sep byte) []string {
+	var list []string
+
+	re := regexp.MustCompile(fmt.Sprintf(`(?m)([^\\]%c)`, sep))
+	cursor := 0
+
+	indexes := re.FindAllStringIndex(str, -1)
+	for i, index := range indexes {
+		list = append(list, str[cursor:index[1]-1])
+		cursor = index[1]
+		if len(indexes)-1 == i {
+			return append(list, str[cursor:])
+		}
+	}
+
+	return append(list, str)
 }
 
 // newBindPath returns BindPath record based on the provided bind
@@ -379,9 +449,9 @@ func ParseBindPath(bindpaths string) ([]BindPath, error) {
 func newBindPath(bind string, validOptions map[string]bool) (BindPath, error) {
 	var bp BindPath
 
-	splitted := strings.SplitN(bind, ":", 3)
+	splitted := splitBy(bind, ':')
 
-	bp.Source = splitted[0]
+	bp.Source = strings.ReplaceAll(splitted[0], "\\:", ":")
 	if bp.Source == "" {
 		return bp, fmt.Errorf("empty bind source for bind path %q", bind)
 	}
@@ -607,12 +677,12 @@ func (e *EngineConfig) GetNoTmp() bool {
 	return e.JSON.NoTmp
 }
 
-// SetNoHostFs set flag to not mount all host mounts.
+// SetNoHostfs set flag to not mount all host mounts.
 func (e *EngineConfig) SetNoHostfs(val bool) {
 	e.JSON.NoHostfs = val
 }
 
-// SetNoHostfs returns if no-hostfs flag is set or not.
+// GetNoHostfs returns if no-hostfs flag is set or not.
 func (e *EngineConfig) GetNoHostfs() bool {
 	return e.JSON.NoHostfs
 }
@@ -622,7 +692,7 @@ func (e *EngineConfig) SetNoCwd(val bool) {
 	e.JSON.NoCwd = val
 }
 
-// SetNoCwd returns if no-cwd flag is set or not.
+// GetNoCwd returns if no-cwd flag is set or not.
 func (e *EngineConfig) GetNoCwd() bool {
 	return e.JSON.NoCwd
 }
@@ -674,7 +744,13 @@ func (e *EngineConfig) SetImageList(list []image.Image) {
 
 // GetImageList returns image list containing opened images.
 func (e *EngineConfig) GetImageList() []image.Image {
-	return e.JSON.ImageList
+	list := e.JSON.ImageList
+	// Image objects are not fully passed between stages, reinitialize them
+	for idx := range list {
+		img := &list[idx]
+		img.ReInit()
+	}
+	return list
 }
 
 // SetCwd sets current working directory.
@@ -926,7 +1002,7 @@ func (e *EngineConfig) SetUmask(umask int) {
 	e.JSON.Umask = umask
 }
 
-// SetUmask returns the umask to be used in the container launched process.
+// GetUmask returns the umask to be used in the container launched process.
 func (e *EngineConfig) GetUmask() int {
 	return e.JSON.Umask
 }

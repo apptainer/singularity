@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,11 +16,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/hpcng/singularity/pkg/util/fs/lock"
 	"github.com/hpcng/singularity/pkg/util/loop"
-	uuid "github.com/satori/go.uuid"
 )
 
 // Device describes a crypt device
@@ -247,7 +247,7 @@ func copyDeviceContents(source, dest string, size int64) error {
 }
 
 func getNextAvailableCryptDevice() (string, error) {
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		return "", fmt.Errorf("id generation failed: %v", err)
 	}

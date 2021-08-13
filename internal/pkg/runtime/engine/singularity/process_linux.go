@@ -34,6 +34,7 @@ import (
 	"github.com/hpcng/singularity/internal/pkg/util/env"
 	"github.com/hpcng/singularity/internal/pkg/util/fs/files"
 	"github.com/hpcng/singularity/internal/pkg/util/machine"
+	"github.com/hpcng/singularity/internal/pkg/util/shell"
 	"github.com/hpcng/singularity/internal/pkg/util/shell/interpreter"
 	"github.com/hpcng/singularity/internal/pkg/util/user"
 	singularitycallback "github.com/hpcng/singularity/pkg/plugin/callback/runtime/engine/singularity"
@@ -631,18 +632,21 @@ func injectEnvHandler(senv map[string]string) interpreter.OpenHandler {
 			`
 			b.WriteString(fmt.Sprintf(defaultPathSnippet, env.DefaultPath))
 
+			// We wrap the value of the export in double quotes manually, and do not use
+			// go's %q format string as it prevents passing an escaped literal $ in
+			// a SINGULARITYENV_ as \$
 			snippet := `
 			if test -v %[1]s; then
 				sylog debug "Overriding %[1]s environment variable"
 			fi
-			export %[1]s=%[2]q
+			export %[1]s="%[2]s"
 			`
 			for key, value := range senv {
 				if key == "LD_LIBRARY_PATH" && value != "" {
 					b.WriteString(fmt.Sprintf(snippet, key, value+":/.singularity.d/libs"))
 					continue
 				}
-				b.WriteString(fmt.Sprintf(snippet, key, value))
+				b.WriteString(fmt.Sprintf(snippet, key, shell.EscapeQuotes(value)))
 			}
 		})
 

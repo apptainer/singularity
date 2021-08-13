@@ -19,4 +19,4 @@
 
     ./build-singularity.sif {version}
 
-    ./build-singularity.sif 3.6.2
+    ./build-singularity.sif 3.8.0

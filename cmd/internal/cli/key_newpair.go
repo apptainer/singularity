@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2017-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -23,7 +23,7 @@ import (
 
 var (
 	keyNewPairName     string
-	KeyNewPairNameFlag = &cmdline.Flag{
+	keyNewPairNameFlag = &cmdline.Flag{
 		ID:           "KeyNewPairNameFlag",
 		Value:        &keyNewPairName,
 		DefaultValue: "",
@@ -33,7 +33,7 @@ var (
 	}
 
 	keyNewPairEmail     string
-	KeyNewPairEmailFlag = &cmdline.Flag{
+	keyNewPairEmailFlag = &cmdline.Flag{
 		ID:           "KeyNewPairEmailFlag",
 		Value:        &keyNewPairEmail,
 		DefaultValue: "",
@@ -43,7 +43,7 @@ var (
 	}
 
 	keyNewPairComment     string
-	KeyNewPairCommentFlag = &cmdline.Flag{
+	keyNewPairCommentFlag = &cmdline.Flag{
 		ID:           "KeyNewPairCommentFlag",
 		Value:        &keyNewPairComment,
 		DefaultValue: "",
@@ -53,7 +53,7 @@ var (
 	}
 
 	keyNewPairPassword     string
-	KeyNewPairPasswordFlag = &cmdline.Flag{
+	keyNewPairPasswordFlag = &cmdline.Flag{
 		ID:           "KeyNewPairPasswordFlag",
 		Value:        &keyNewPairPassword,
 		DefaultValue: "",
@@ -63,7 +63,7 @@ var (
 	}
 
 	keyNewPairPush     bool
-	KeyNewPairPushFlag = &cmdline.Flag{
+	keyNewPairPushFlag = &cmdline.Flag{
 		ID:           "KeyNewPairPushFlag",
 		Value:        &keyNewPairPush,
 		DefaultValue: false,
@@ -132,7 +132,7 @@ func collectInput(cmd *cobra.Command) (*keyNewPairOptions, error) {
 	var genOpts keyNewPairOptions
 
 	// check flags
-	if cmd.Flags().Changed(KeyNewPairNameFlag.Name) {
+	if cmd.Flags().Changed(keyNewPairNameFlag.Name) {
 		genOpts.Name = keyNewPairName
 	} else {
 		n, err := interactive.AskQuestion("Enter your name (e.g., John Doe) : ")
@@ -143,7 +143,7 @@ func collectInput(cmd *cobra.Command) (*keyNewPairOptions, error) {
 		genOpts.Name = n
 	}
 
-	if cmd.Flags().Changed(KeyNewPairEmailFlag.Name) {
+	if cmd.Flags().Changed(keyNewPairEmailFlag.Name) {
 		genOpts.Email = keyNewPairEmail
 	} else {
 		e, err := interactive.AskQuestion("Enter your email address (e.g., john.doe@example.com) : ")
@@ -153,7 +153,7 @@ func collectInput(cmd *cobra.Command) (*keyNewPairOptions, error) {
 		genOpts.Email = e
 	}
 
-	if cmd.Flags().Changed(KeyNewPairCommentFlag.Name) {
+	if cmd.Flags().Changed(keyNewPairCommentFlag.Name) {
 		genOpts.Comment = keyNewPairComment
 	} else {
 		c, err := interactive.AskQuestion("Enter optional comment (e.g., development keys) : ")
@@ -163,7 +163,7 @@ func collectInput(cmd *cobra.Command) (*keyNewPairOptions, error) {
 		genOpts.Comment = c
 	}
 
-	if cmd.Flags().Changed(KeyNewPairPasswordFlag.Name) {
+	if cmd.Flags().Changed(keyNewPairPasswordFlag.Name) {
 		genOpts.Password = keyNewPairPassword
 	} else {
 		// get a password
@@ -186,7 +186,7 @@ func collectInput(cmd *cobra.Command) (*keyNewPairOptions, error) {
 		genOpts.Password = p
 	}
 
-	if cmd.Flags().Changed(KeyNewPairPushFlag.Name) {
+	if cmd.Flags().Changed(keyNewPairPushFlag.Name) {
 		genOpts.PushToKeyStore = keyNewPairPush
 	} else {
 		a, err := interactive.AskYNQuestion("y", "Would you like to push it to the keystore? [Y,n] ")

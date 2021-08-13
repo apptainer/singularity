@@ -1,3 +1,8 @@
+// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE.md file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package cli
 
 import (
@@ -22,11 +27,11 @@ const (
 )
 
 func Test_collectInput_flags(t *testing.T) {
-	nameF := pflag.Flag{Name: KeyNewPairNameFlag.Name, Changed: true}
-	emailF := pflag.Flag{Name: KeyNewPairEmailFlag.Name, Changed: true}
-	commentF := pflag.Flag{Name: KeyNewPairCommentFlag.Name, Changed: true}
-	passwordF := pflag.Flag{Name: KeyNewPairPasswordFlag.Name, Changed: true}
-	pushF := pflag.Flag{Name: KeyNewPairPushFlag.Name, Changed: true}
+	nameF := pflag.Flag{Name: keyNewPairNameFlag.Name, Changed: true}
+	emailF := pflag.Flag{Name: keyNewPairEmailFlag.Name, Changed: true}
+	commentF := pflag.Flag{Name: keyNewPairCommentFlag.Name, Changed: true}
+	passwordF := pflag.Flag{Name: keyNewPairPasswordFlag.Name, Changed: true}
+	pushF := pflag.Flag{Name: keyNewPairPushFlag.Name, Changed: true}
 
 	c := cobra.Command{}
 	c.Flags().AddFlag(&nameF)
