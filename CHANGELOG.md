@@ -12,6 +12,7 @@
   - Fix incorrect reference in sandbox restrictive permissions warning.
   - Prevent garbage collection from closing the container image file
     descriptor.
+  - Update to Arch Linux pacman.conf URL and remove file size verification.
 
 ## v3.8.0 - [2021-06-15]
 
