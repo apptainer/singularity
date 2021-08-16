@@ -1,27 +1,26 @@
-_With the release of `v3.0.0`, we're introducing a new changelog format in an attempt to consolidate the information presented in the changelog. The new changelog is reduced in scope to only documenting functionality changes from version to version. This ensures that the changelog is as useful as it can be. Changes which should be documented include:_
+# Singularity Changelog
 
-  - _Renamed commands_
-  - _Deprecated / removed commands_
-  - _Changed defaults / behaviors_
-  - _Migration guidance_
-  - _New features / functionalities_
-
-### New features / functionalities
-
-_The old changelog can be found in the `release-2.6` branch_
+## v3.8.1 - [2021-08-12]
 
 ### Bug Fixes
 
   - Allow escaped `\$` in a SINGULARITYENV_ var to set a literal `$` in
-    a container env var.
+    a container env var. Also allow escaped commas and colons in the 
+    source bind path. 
+  - Handle absolute symlinks correctly in multi-stage build `%copy from`
+    blocks.
+  - Fix incorrect reference in sandbox restrictive permissions warning.
+  - Prevent garbage collection from closing the container image file
+    descriptor.
+  - Update to Arch Linux pacman.conf URL and remove file size verification.
 
-# v3.8.0 - [2021-06-15]
+## v3.8.0 - [2021-06-15]
 
-## Changed defaults / behaviours
+### Changed defaults / behaviours
 
 > :warning: Go module was renamed from `github.com/sylabs/singularity` to `github.com/hpcng/singularity`
 
-## New features / functionalities
+### New features / functionalities
 
   - A new `overlay` command allows creation and addition of writable
     overlays.
@@ -36,7 +35,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Singularity is now relocatable for unprivileged installations
     only.
 
-## Bug Fixes
+### Bug Fixes
 
   - Respect http proxy server environment variables in key operations.
   - When pushing SIF images to `oras://` endpoints, work around Harbor
@@ -49,7 +48,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Accommodate ppc64le pageSize in TestCgroups and disable -race.
   - Fix Debian packaging
 
-## Testing / Development
+### Testing / Development
 
 Testing changes are not generally itemized. However, developers and
 contributors should note that this release has modified the behavior
@@ -62,9 +61,9 @@ of `make test` for ease of use:
     and `E2E_DOCKER_PASSWORD` environment variables.
 
 
-# v3.7.4 - [2021-05-26]
+## v3.7.4 - [2021-05-26]
 
-## Security Related Fixes
+### Security Related Fixes
 
   - [CVE-2021-32635](https://github.com/hpcng/singularity/security/advisories/GHSA-jq42-hfch-42f3):
     Due to incorrect use of a default URL, singularity action commands
@@ -76,9 +75,9 @@ of `make test` for ease of use:
     used by a victim with a non-default remote endpoint, thus executing
     the malicious container.
 
-# v3.7.3 - [2021-04-06]
+## v3.7.3 - [2021-04-06]
 
-## Security Related Fixes
+### Security Related Fixes
 
   - [CVE-2021-29136](https://github.com/opencontainers/umoci/security/advisories/GHSA-9m95-8hx6-7p9v):
    A dependency used by Singularity to extract docker/OCI image layers
@@ -88,9 +87,9 @@ of `make test` for ease of use:
    `singularity pull` as root, from a docker or OCI source.
 
 
-# v3.7.2 - [2021-03-09]
+## v3.7.2 - [2021-03-09]
 
-## Bug Fixes
+### Bug Fixes
 
   - Fix progress bar display when source image size is unknown.
   - Fix a memory usage / leak issue when building from an existing
@@ -101,9 +100,9 @@ of `make test` for ease of use:
     setup issue.
 
 
-# v3.7.1 - [2021-01-12]
+## v3.7.1 - [2021-01-12]
 
-## Bug Fixes
+### Bug Fixes
 
   - Accommodate /sys/fs/selinux mount changes on kernel 5.9+.
   - Fix loop devices file descriptor leak when shared loop devices is
@@ -116,15 +115,15 @@ of `make test` for ease of use:
   - e2e test fixes for new kernels, new unsquashfs version.
   - Show correct web URI for detached builds against alternate remotes.
 
-## New features / functionalities
+### New features / functionalities
 
   - The singularity binary is now relocatable when built without setuid
     support
 
 
-# v3.7.0 - [2020-11-24]
+## v3.7.0 - [2020-11-24]
 
-## New features / functionalities
+### New features / functionalities
 
   - Allow configuration of global custom keyservers, separate from
     remote endpoints.
@@ -150,7 +149,7 @@ of `make test` for ease of use:
     proc/sys/dev/devpts/home/tmp/hostfs/cwd mounts, even if they are
     enabled in `singularity.conf`.
 
-## Changed defaults / behaviours
+### Changed defaults / behaviours
 
   - When actions (run/shell/exec...) are used without `--fakeroot` the
     umask from the calling environment will be propagated into the
@@ -183,7 +182,7 @@ of `make test` for ease of use:
     gives more detail about container image results, while users and
     collections are no longer returned.
 
-## Bug Fixes
+### Bug Fixes
 
   - Support larger definition files, environments etc. by passing
     engine configuration in the environment vs. via socket buffer.
@@ -221,16 +220,16 @@ of `make test` for ease of use:
   - Tolerate comments on `%files` sections in build definition files.
   - Fix a loop device file descriptor leak.
 
-## Known Issues
+### Known Issues
 
   - A change in Linux kernel 5.9 causes `--fakeroot` builds to fail with a
     `/sys/fs/selinux` remount error. This will be addressed in Singularity
     v3.7.1.
 
 
-# v3.6.4 - [2020-10-13]
+## v3.6.4 - [2020-10-13]
 
-## Security related fixes
+### Security related fixes
 
 Singularity 3.6.4 addresses the following security issue.
 
@@ -242,16 +241,16 @@ Singularity 3.6.4 addresses the following security issue.
     filesystem. Affects unprivileged execution of SIF / SquashFS
     images, and image builds from SIF / SquashFS images.
 
-## Bug Fixes
+### Bug Fixes
 
   - Update scs-library-client to support `library://` backends using an
     3rd party S3 object store that does not strictly conform to v4
     signature spec.
 
 
-# v3.6.3 - [2020-09-15]
+## v3.6.3 - [2020-09-15]
 
-## Security related fixes
+### Security related fixes
 
 Singularity 3.6.3 addresses the following security issues.
 
@@ -280,7 +279,7 @@ Singularity 3.6.3 addresses the following security issues.
   - The value for maximum number of loop devices in the config file is now used everywhere
     instead of redefining this value
 
-## Bug Fixes
+### Bug Fixes
 
   - Add CAP_MKNOD in capability bounding set of RPC to fix issue with
     cryptsetup when decrypting image from within a docker container.
@@ -291,18 +290,18 @@ Singularity 3.6.3 addresses the following security issues.
   - Ensure sandbox option overrides remote build destination.
 
 
-# v3.6.2 - [2020-08-25]
+## v3.6.2 - [2020-08-25]
 
-## New features / functionalities
+### New features / functionalities
 
   - Add --force option to `singularity delete` for non-interactive
     workflows.
 
-## Change defaults / behaviours
+### Change defaults / behaviours
 
   - Default to current architecture for `singularity delete`.
 
-## Bug Fixes
+### Bug Fixes
 
   - Respect current remote for `singularity delete` command.
   - Allow `rw` as a (noop) bind option.
@@ -319,14 +318,14 @@ Singularity 3.6.3 addresses the following security issues.
   - Fix FUSE e2e tests to use container ssh_config.
 
 
-# v3.6.1 - [2020-07-21]
+## v3.6.1 - [2020-07-21]
 
-## New features / functionalities
+### New features / functionalities
 
   - Support compilation with `FORTIFY_SOURCE=2` and build in `pie`
     mode with `fstack-protector` enabled (#5433).
 
-## Bug Fixes
+### Bug Fixes
 
   - Provide advisory message r.e. need for `upper` and `work` to
     exist in overlay images.
@@ -336,9 +335,9 @@ Singularity 3.6.3 addresses the following security issues.
   - Don't unset PATH when interpreting legacy /environment files.
 
 
-# v3.6.0 - [2020-07-14]
+## v3.6.0 - [2020-07-14]
 
-## Security related fixes
+### Security related fixes
 
 Singularity 3.6.0 introduces a new signature format for SIF images,
 and changes to the signing / verification code to address:
@@ -369,7 +368,7 @@ signed by 3.6.0.
 We thank Tru Huynh for a report that led to the review of, and changes to,
 the signature implementation.
 
-## New features / functionalities
+### New features / functionalities
   - Singularity now supports the execution of minimal Docker/OCI
     containers that do not contain `/bin/sh`, e.g. `docker://hello-world`.
   - A new cache structure is used that is concurrency safe on a filesystem that
@@ -401,7 +400,7 @@ the signature implementation.
   - The `--json` output of `instance list` now include paths to STDERR
     / STDOUT log files.
 
-## Changed defaults / behaviours
+### Changed defaults / behaviours
   - New signature format (see security fixes above).
   - Environment variables prefixed with `SINGULARITYENV_` always take
     precedence over variables without `SINGULARITYENV_` prefix.
@@ -419,12 +418,12 @@ the signature implementation.
   - Fixed spacing of `singularity instance list` to be dynamically changing based off of
     input lengths instead of fixed number of spaces to account for long instance names.
 
-## Deprecated / removed commands
+### Deprecated / removed commands
   - Removed `--name` flag for `cache clean`; replaced with `--days`.
   - Deprecate `-a / --all` option to `sign/verify` as new signature
     behavior makes this the default.
 
-## Bug Fixes
+### Bug Fixes
   - Don't try to mount `$HOME` when it is `/` (e.g. `nobody` user).
   - Process `%appinstall` sections in order when building from a definition file.
   - Ensure `SINGULARITY_CONTAINER`, `SINGULARITY_ENVIRONMENT` and the custom
@@ -442,9 +441,9 @@ the signature implementation.
   - Fix Ctrl-Z handling - propagation of signal.
 
 
-# v3.5.3 - [2020.02.18]
+## v3.5.3 - [2020.02.18]
 
-## Changed defaults / behaviours
+### Changed defaults / behaviours
 
 The following minor behaviour changes have been made in 3.5.3 to allow
 correct operation on CRAY CLE6, and correct an issue with multi-stage
@@ -457,7 +456,7 @@ image builds that was blocking use by build systems such as Spack:
     resolve identically in later stages. Copying `%files` from the host will
     still maintain previous behavior of following links.
 
-## Bug Fixes
+### Bug Fixes
 
   - Bind additional CUDA 10.2 libs when using the `--nv` option without
     `nvidia-container-cli`.
@@ -487,13 +486,13 @@ them to pass cleanly on a range of kernel versions and distributions that are
 not covered by the open-source CI runs.
 
 
-# v3.5.2 - [2019.12.17]
+## v3.5.2 - [2019.12.17]
 
-## [Security related fix](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2019-19724)
+### [Security related fix](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2019-19724)
   - 700 permissions are enforced on `$HOME/.singularity` and `SINGULARITY_CACHEDIR`
   directories (CVE-2019-19724). Many thanks to Stuart Barkley for reporting this issue.
 
-## Bug Fixes
+### Bug Fixes
 
   - Fixes an issue preventing use of `.docker/config` for docker registry
     authentication.
@@ -512,9 +511,9 @@ not covered by the open-source CI runs.
  - Deprecated `--groupid` flag for `sign` and `verify`; replaced with `--group-id`.
  - Removed useless flag `--url` for `sign`.
 
-# v3.5.1 - [2019.12.05]
+## v3.5.1 - [2019.12.05]
 
-## New features / functionalities
+### New features / functionalities
 
 A single feature has been added in the bugfix release, with specific
 functionality:
@@ -522,7 +521,7 @@ functionality:
   - A new option `allow container encrypted` can be set to `no` in
       `singularity.conf` to prevent execution of encrypted containers.
 
-## Bug Fixes
+### Bug Fixes
 
 This point release addresses the following issues:
 
@@ -541,9 +540,9 @@ This point release addresses the following issues:
   - Fixes an underlay fallback problem, which prevented use of sandboxes on
     lustre filesystems.
 
-# v3.5.0 - [2019.11.13]
+## v3.5.0 - [2019.11.13]
 
-## New features / functionalities
+### New features / functionalities
 
   - New support for AMD GPUs via `--rocm` option added to bind ROCm devices and
     libraries into containers.
@@ -554,7 +553,7 @@ This point release addresses the following issues:
   - Introduced the `config fakeroot` command to setup `subuid` and `subgid`
     mappings for `--fakeroot` from the Singularity CLI.
 
-## Changed defaults / behaviours
+### Changed defaults / behaviours
 
   - Go 1.13 adopted.
   - Vendored modules removed from the Git tree, will be included in release tarballs.
@@ -578,11 +577,11 @@ This point release addresses the following issues:
   - `singularity version` now reports semver compliant version
       information.
 
-## Deprecated / removed commands
+### Deprecated / removed commands
 
   - Deprecated `--id` flag for `sign` and `verify`; replaced with `--sif-id`.
 
-# v3.4.2 - [2019.10.08]
+## v3.4.2 - [2019.10.08]
 
   - This point release addresses the following issues:
     - Sets workable permissions on OCI -> sandbox rootless builds
@@ -591,7 +590,7 @@ This point release addresses the following issues:
     - Creates CACHEDIR if it doesn't exist
     - Set apex loglevel for umoci to match singularity loglevel
 
-# v3.4.1 - [2019.09.17]
+## v3.4.1 - [2019.09.17]
 
   - This point release addresses the following issues:
     - Fixes an issue where a PID namespace was always being used
@@ -603,9 +602,9 @@ This point release addresses the following issues:
     - Handles temporary EAGAIN failures when setting up loop devices on recent kernels
     - Fixes excessive memory usage in singularity push
 
-# v3.4.0 - [2019.08.30]
+## v3.4.0 - [2019.08.30]
 
-## New features / functionalities
+### New features / functionalities
 
   - New support for building and running encrypted containers with RSA keys and passphrases
     - `--pem-path` option added to the `build` and action commands for RSA based encrypted containers
@@ -625,7 +624,7 @@ This point release addresses the following issues:
   - Added a `--long-list` flag to the `key search` command to preserve
   - Added experimental, hidden `--fusemount` flag to pass a command to mount a libfuse3 based file system within the container
 
-## Changed defaults / behaviors
+### Changed defaults / behaviors
 
   - Runtime now properly honors `SINGULARITY_DISABLE_CACHE` environment variable
   - `remote add` command now automatically attempts to login and a `--no-login` flag is added to disable this behavior
@@ -633,20 +632,20 @@ This point release addresses the following issues:
   - `cache clean` command now prompts user before cleaning when run without `--force` option and is more verbose
   - Shortened the default output of the `key search` command
 
-## Deprecated / removed commands
+### Deprecated / removed commands
 
   - The `--allow-unsigned` flag to `pull` has been deprecated and will be removed in the future
 
-# v3.3.0 - [2019.06.17]
+## v3.3.0 - [2019.06.17]
 
-## Changed defaults / behaviors
+### Changed defaults / behaviors
 
   - Remote login and status commands will now use the default remote if a remote name is not supplied
   - Added Singularity hub (`shub`) cache support when using the `pull` command
   - Clean cache in a safer way by only deleting the cache subdirectories
   - Improvements to the `cache clean` command
 
-## New features / functionalities
+### New features / functionalities
 
   - new `oras` URI for pushing and pulling SIF files to and from supported OCI registries
   - added the `--fakeroot` option to `build`, `exec`, `run`, `shell`, `test`, and `instance start` commands to run container in a new user namespace as uid 0
@@ -661,7 +660,7 @@ This point release addresses the following issues:
     - `new`      Create a new empty SIF image file
     - `setprim`  Set primary system partition
 
-# v3.2.1 - [2019.05.28]
+## v3.2.1 - [2019.05.28]
 
   - This point release fixes the following bugs:
     - Allows users to join instances with non-suid workflow
@@ -669,12 +668,12 @@ This point release addresses the following issues:
     - Fixes an issue in the terminal when piping output to commands
     - Binds NVIDIA persistenced socket when `--nv` is invoked
 
-# v3.2.0 - [2019.05.14]
+## v3.2.0 - [2019.05.14]
 
-## [Security related fix](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2019-11328)
+### [Security related fix](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2019-11328)
   - Instance files are now stored in user's home directory for privacy and many checks have been added to ensure that a user can't manipulate files to change `starter-suid` behavior when instances are joined (many thanks to Matthias Gerstner from the SUSE security team for finding and securely reporting this vulnerability)
 
-## New features / functionalities
+### New features / functionalities
   - Introduced a new basic framework for creating and managing plugins
   - Added the ability to create containers through multi-stage builds
     - Definitions now require `Bootstrap` be the first parameter of header
@@ -684,7 +683,7 @@ This point release addresses the following issues:
   - Added a json partition to SIF files for OCI configuration when building from an OCI source
   - Full integration with Singularity desktop for MacOS code base
 
-## New Commands
+### New Commands
  - Introduced the `plugin` command group for creating and managing plugins
     - `compile`   Compile a singularity plugin
     - `disable`   disable an installed singularity plugin
@@ -709,37 +708,37 @@ This point release addresses the following issues:
 
   - Added the `Stage: <name>` keyword to the definition file header and the `from <stage name>` option/argument pair to the `%files` section to support multistage builds
 
-## Deprecated / removed commands
+### Deprecated / removed commands
   - The `--token/-t` option has been deprecated in favor of the `singularity remote` command group
 
-## Changed defaults / behaviors
+### Changed defaults / behaviors
   - Ask to confirm password on a newly generated PGP key
   - Prompt to push a key to the KeyStore when generated
   - Refuse to push an unsigned container unless overridden with `--allow-unauthenticated/-U` option
   - Warn and prompt when pulling an unsigned container without the `--allow-unauthenticated/-U` option
   - `Bootstrap` must now be the first field of every header because of parser requirements for multi-stage builds
 
-# v3.1.1 - [2019.04.02]
+## v3.1.1 - [2019.04.02]
 
-## New Commands
+### New Commands
   - New hidden `buildcfg` command to display compile-time parameters
   - Added support for `LDFLAGS`, `CFLAGS`, `CGO_` variables in build system
   - Added `--nocolor` flag to Singularity client to disable color in logging
 
-## Removed Commands
+### Removed Commands
   - `singularity capability <add/drop> --desc` has been removed
   - `singularity capability list <--all/--group/--user>` flags have all been removed
 
-## New features / functionalities
+### New features / functionalities
   - The `--builder` flag to the `build` command implicitly sets `--remote`
   - Repeated binds no longer cause Singularity to exit and fail, just warn instead
   - Corrected typos and improved docstrings throughout
   - Removed warning when CWD does not exist on the host system
   - Added support to spec file for RPM building on SLES 11
 
-# v3.1.0 - [2019.02.22]
+## v3.1.0 - [2019.02.22]
 
-## New Commands
+### New Commands
   - Introduced the `oci` command group to support a new OCI compliant variant of the Singularity runtime:
     - `attach` Attach console to a running container process
     - `create` Create a container from a bundle directory
@@ -758,7 +757,7 @@ This point release addresses the following issues:
     - `clean` Clean your local Singularity cache
     - `list`  List your local Singularity cache
 
-## New features / functionalities
+### New features / functionalities
   - Can now build CLI on darwin for limited functionality on Mac
   - Added the `scratch` bootstrap agent to build from anything
   - Reintroduced support for zypper bootstrap agent
@@ -769,7 +768,7 @@ This point release addresses the following issues:
   - Created an `RPMPREFIX` variable to allow RPMs to be installed in custom locations
   - Greatly expanded CI unit and end-to-end testing
 
-# v3.0.3 - [2019.01.21]
+## v3.0.3 - [2019.01.21]
 
   - Bind paths in `singularity.conf` are properly parsed and applied at runtime
   - Singularity runtime will properly fail if `singularity.conf` file is not owned by the root user
@@ -780,7 +779,7 @@ This point release addresses the following issues:
   - Update to SIF 1.0.2
   - Add _noPrompt_ parameter to `pkg/signing/Verify` function to enable silent verification
 
-# v3.0.2 - [2019.01.04]
+## v3.0.2 - [2019.01.04]
 
   - Added the `--docker-login` flag to enable interactive authentication with docker registries
   - Added support for pulling directly from HTTP and HTTPS
@@ -792,12 +791,12 @@ This point release addresses the following issues:
   - Progress bars no longer incorrectly display when running with `--quiet` or `--silent`
   - Contents of `91-environment.sh` file are now displayed if appropriate when running `inspect --environment`
 
-# v3.0.1 - [2018.10.31]
+## v3.0.1 - [2018.10.31]
 
   - Improved RPM packaging procedure via makeit
   - Enhanced general stability of runtime
 
-# v3.0.0 - [2018.10.08]
+## v3.0.0 - [2018.10.08]
 
   - Singularity is now written primarily in Go to bring better integration with the existing container ecosystem
   - Added support for new URIs (`build` & `run/exec/shell/start`):
@@ -810,14 +809,14 @@ This point release addresses the following issues:
   - Replaced `singularity instance.*` command group with `singularity instance *`
   - The command `singularity help` now only provides help regarding the usage of the `singularity` command. To display an image's `help` message, use `singularity run-help <image path>` instead
 
-## Removed Deprecated Commands
+### Removed Deprecated Commands
   - Removed deprecated `singularity image.*` command group
   - Removed deprecated `singularity create` command
   - Removed deprecated `singularity bootstrap` command
   - Removed deprecated `singularity mount` command
   - Removed deprecated `singularity check` command
 
-## New Commands
+### New Commands
   - Added `singularity run-help <image path>` command to output an image's `help` message
   - Added `singularity sign <image path>` command to allow a user to cryptographically sign a SIF image
   - Added `singularity verify <image path>` command to allow a user to verify a SIF image's cryptographic signatures
@@ -825,9 +824,9 @@ This point release addresses the following issues:
   - Added `singularity capability` command to allow fine grained control over the capabilities of running containers
   - Added `singularity push` command to push images to the [Sylabs.io Cloud Library](https://cloud.sylabs.io/library)
 
-## Changed Commands
+### Changed Commands
 
-### Action Command Group (`run/shell/exec/instance start`)
+#### Action Command Group (`run/shell/exec/instance start`)
   - Added flags:
     - `--add-caps <string>`: Run the contained process with the specified capability set (requires root)
     - `--allow-setuid`: Allows setuid binaries to be mounted into the container (requires root)
@@ -849,7 +848,7 @@ This point release addresses the following issues:
     - `--writable-tmpfs` runs the container with a writable `tmpfs`-based overlay [applicable to: all image formats]
     - `--overlay <string>` now specifies a list of `ext3`/`sandbox` images which are set as the containers overlay [applicable to: all image formats]
 
-### Build Command:
+#### Build Command:
   - All images are now built as [Singularity Image Format (SIF)](https://www.sylabs.io/2018/03/sif-containing-your-containers/) images by default
   - When building to a path that already exists, `singularity build` will now prompt the user if they wish to overwrite the file existing at the specified location
   - The `-w|--writable` flag has been removed

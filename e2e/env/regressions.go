@@ -100,7 +100,6 @@ func (c ctx) issue5057(t *testing.T) {
 	)
 }
 
-// https://github.com/sylabs/singularity/issues/43
 // If a $ in a SINGULARITYENV_ env var is escaped, it should become a
 // literal $ in the container env var.
 // This allows setting e.g. LD_PRELOAD=/foo/bar/$LIB/baz.so
