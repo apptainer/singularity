@@ -54,7 +54,7 @@ func IsValid(source string) (valid bool, err error) {
 }
 
 // GetName turns a transport:ref URI into a name containing the top-level identifier
-// of the image. For example, docker://godlovedc/lolcow returns lolcow
+// of the image. For example, docker://sylabsio/lolcow returns lolcow
 //
 // Returns "" when not in transport:ref format
 func GetName(uri string) string {
