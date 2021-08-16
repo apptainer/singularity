@@ -632,7 +632,6 @@ func injectEnvHandler(senv map[string]string) interpreter.OpenHandler {
 			`
 			b.WriteString(fmt.Sprintf(defaultPathSnippet, env.DefaultPath))
 
-			// https://github.com/sylabs/singularity/issues/43
 			// We wrap the value of the export in double quotes manually, and do not use
 			// go's %q format string as it prevents passing an escaped literal $ in
 			// a SINGULARITYENV_ as \$
