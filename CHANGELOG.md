@@ -16,6 +16,7 @@
     as this is not supported.
   - Ensure repeated `remote login` to same URI does not create duplicate entries
     in `~/.singularity/remote.yaml`.
+  - Properly escape single quotes in Docker `CMD` / `ENTRYPOINT` translation.
 
 ## v3.8.1 - [2021-08-12]
 

@@ -216,7 +216,7 @@ func TestGetMountInfo(t *testing.T) {
 			Fields:       "",
 			FSType:       "tmpfs",
 			Source:       "",
-			SuperOptions: []string{"rw","rw,mode=750,uid=174988"},
+			SuperOptions: []string{"rw", "rw,mode=750,uid=174988"},
 			Options:      []string{"rw", "relatime"},
 		},
 	}
