@@ -56,14 +56,15 @@ func CopyFromHost(src, dstRel, dstRootfs string) error {
 
 	for _, srcGlobbed := range paths {
 		// If the dstRel is "" then we are copying to the full source path, appended to the rootfs prefix
+		dstRelGlobbed := dstRel
 		if dstRel == "" {
-			dstRel = srcGlobbed
+			dstRelGlobbed = srcGlobbed
 		}
 
 		// Resolve our destination within the container rootfs
-		dstResolved, err := secureJoinKeepSlash(dstRootfs, dstRel)
+		dstResolved, err := secureJoinKeepSlash(dstRootfs, dstRelGlobbed)
 		if err != nil {
-			return fmt.Errorf("while resolving destination: %s: %s", dstRel, err)
+			return fmt.Errorf("while resolving destination: %s: %s", dstRelGlobbed, err)
 		}
 
 		// Create any parent dirs for dst that don't already exist
@@ -114,13 +115,14 @@ func CopyFromStage(src, dst, srcRootfs, dstRootfs string) error {
 		}
 
 		// If the dst is "" then we are copying to the same path in dstRootfs, as src is in srcRootfs.
+		dstGlobbed := dst
 		if dst == "" {
-			dst = srcGlobbedRel
+			dstGlobbed = srcGlobbedRel
 		}
 		// Resolve the destination path, keeping any final slash
-		dstResolved, err := secureJoinKeepSlash(dstRootfs, dst)
+		dstResolved, err := secureJoinKeepSlash(dstRootfs, dstGlobbed)
 		if err != nil {
-			return fmt.Errorf("while resolving destination: %s: %s", dst, err)
+			return fmt.Errorf("while resolving destination: %s: %s", dstGlobbed, err)
 		}
 		// Create any parent dirs for dstResolved that don't already exist.
 		if err := makeParentDir(dstResolved); err != nil {
