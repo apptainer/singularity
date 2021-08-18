@@ -87,7 +87,7 @@ $ mkdir -p ${GOPATH}/src/github.com/hpcng && \
 To build a stable version of Singularity, check out a [release tag](https://github.com/hpcng/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.8.1
+$ git checkout v3.8.2
 ```
 
 ## Compiling Singularity
@@ -130,7 +130,7 @@ as shown above.  Then download the latest
 and use it to install the RPM like this: 
 
 ```
-$ export VERSION=3.8.1  # this is the singularity version, change as you need
+$ export VERSION=3.8.2  # this is the singularity version, change as you need
 
 $ wget https://github.com/hpcng/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-${VERSION}.tar.gz && \
@@ -146,7 +146,7 @@ tarball and use it to install Singularity:
 $ cd $GOPATH/src/github.com/hpcng/singularity && \
   ./mconfig && \
   make -C builddir rpm && \
-  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.1*.x86_64.rpm # or whatever version you built
+  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.2*.x86_64.rpm # or whatever version you built
 ```
 
 To build an rpm with an alternative install prefix set RPMPREFIX on the
