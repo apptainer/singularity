@@ -110,6 +110,7 @@ func TestCopyFromHost(t *testing.T) {
 	if err := os.Mkdir(srcSpaceDir, 0755); err != nil {
 		t.Fatal(err)
 	}
+	srcGlob := filepath.Join(dir, "src*")
 	// Nested File (to test multi level glob)
 	srcFileNested := filepath.Join(dir, "srcDir/srcFileNested")
 	if err := ioutil.WriteFile(srcFileNested, []byte(sourceFileContent), 0644); err != nil {
@@ -310,6 +311,22 @@ func TestCopyFromHost(t *testing.T) {
 			expectPath: "srcDirLinkAbs",
 			// Copied the dir, not the link itself
 			expectDir: true,
+		},
+		// issue 261 - multiple globbed sources, with no dest
+		// both srcfile and srcdir should be copied for glob of "src*"
+		{
+			name:       "srcDirGlobNoDestMulti1",
+			src:        srcGlob,
+			dst:        "",
+			expectPath: srcDir,
+			expectDir:  true,
+		},
+		{
+			name:       "srcDirGlobNoDestMulti2",
+			src:        srcGlob,
+			dst:        "",
+			expectPath: srcFile,
+			expectFile: true,
 		},
 	}
 
@@ -705,6 +722,22 @@ func TestCopyFromStage(t *testing.T) {
 			expectPath: "srcDirLinkAbs",
 			// Copied the dir, not the link itself
 			expectDir: true,
+		},
+		// issue 261 - multiple globbed sources, with no dest
+		// both srcfile and srcdir should be copied for glob of "src*"
+		{
+			name:       "srcDirGlobNoDestMulti1",
+			srcRel:     "src*",
+			dstRel:     "",
+			expectPath: "srcDir",
+			expectDir:  true,
+		},
+		{
+			name:       "srcDirGlobNoDestMulti2",
+			srcRel:     "src*",
+			dstRel:     "",
+			expectPath: "srcFile",
+			expectFile: true,
 		},
 	}
 
