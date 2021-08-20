@@ -335,6 +335,5 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"rocm":         c.testRocm,
 		"build nvidia": c.testBuildNvidia,
 		"build rocm":   c.testBuildRocm,
-		"issue 5002":   c.issue5002, // https://github.com/hpcng/singularity/issues/5002
 	}
 }

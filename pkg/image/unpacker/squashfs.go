@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/hpcng/singularity/pkg/util/namespaces"
 	"golang.org/x/sys/unix"
@@ -62,7 +63,7 @@ type Squashfs struct {
 // NewSquashfs initializes and returns a Squahfs unpacker instance
 func NewSquashfs() *Squashfs {
 	s := &Squashfs{}
-	s.UnsquashfsPath, _ = exec.LookPath("unsquashfs")
+	s.UnsquashfsPath, _ = bin.FindBin("unsquashfs")
 	return s
 }
 

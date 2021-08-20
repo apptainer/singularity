@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,6 +9,8 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
+
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 )
 
 // Squashfs represents a squashfs packer
@@ -19,7 +21,7 @@ type Squashfs struct {
 // NewSquashfs initializes and returns a Squashfs packer instance
 func NewSquashfs() *Squashfs {
 	s := &Squashfs{}
-	s.MksquashfsPath, _ = exec.LookPath("mksquashfs")
+	s.MksquashfsPath, _ = bin.FindBin("mksquashfs")
 	return s
 }
 

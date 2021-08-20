@@ -1,10 +1,6 @@
 package cli
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/hpcng/singularity/docs"
 	"github.com/hpcng/singularity/internal/app/singularity"
 	"github.com/hpcng/singularity/pkg/cmdline"
@@ -36,19 +32,9 @@ var overlayCreateDirFlag = cmdline.Flag{
 	Usage:        "directory to create as part of the overlay layout",
 }
 
-func setPath(cmd *cobra.Command, args []string) {
-	userPath := os.Getenv("PATH")
-	path := []string{defaultPath}
-	if userPath != "" {
-		path = append(path, userPath)
-	}
-	os.Setenv("PATH", strings.Join(path, string(filepath.ListSeparator)))
-}
-
 // OverlayCreateCmd is the 'overlay create' command that allows to create writable overlay.
 var OverlayCreateCmd = &cobra.Command{
-	Args:   cobra.ExactArgs(1),
-	PreRun: setPath,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := singularity.OverlayCreate(overlaySize, args[0], overlayDirs...); err != nil {
 			sylog.Fatalf(err.Error())

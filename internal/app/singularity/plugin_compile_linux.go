@@ -22,6 +22,7 @@ import (
 	"github.com/hpcng/sif/pkg/sif"
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
 	"github.com/hpcng/singularity/internal/pkg/plugin"
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	pluginapi "github.com/hpcng/singularity/pkg/plugin"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/hpcng/singularity/pkg/util/archive"
@@ -131,7 +132,7 @@ func CompilePlugin(sourceDir, destSif, buildTags string, disableMinorCheck bool)
 	if err != nil {
 		return errors.New("singularity source directory not found")
 	}
-	goPath, err := exec.LookPath("go")
+	goPath, err := bin.FindBin("go")
 	if err != nil {
 		return errors.New("go compiler not found")
 	}

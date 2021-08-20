@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,6 +15,7 @@ import (
 
 	"github.com/blang/semver/v4"
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/pkg/sylog"
 )
 
@@ -120,7 +121,7 @@ func GetModules(dir string) (*GoMod, error) {
 		return nil, fmt.Errorf("while getting information for %s: %s", goMod, err)
 	}
 
-	goPath, err := exec.LookPath("go")
+	goPath, err := bin.FindBin("go")
 	if err != nil {
 		return nil, fmt.Errorf("while retrieving go command path: %s", err)
 	}

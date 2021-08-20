@@ -316,26 +316,86 @@ if [ "$with_seccomp_check" = "1" ];then
     fi
 fi
 
-########################
-# cryptsetup dev
-########################
+################################
+# Configurable external programs
+################################
+
+# Find external programs that Singularity will call, and are configurable
+# in singularity.conf. The build-time path will be set in the installed
+# singularity.conf, and can be customized by the user.
+#
+# Note that Singularity will fall back to looking on PATH if the conf file
+# path is empty.
+
+echo
+echo "Finding paths to external executables."
+echo "These paths are written into singularity.conf and can be overridden there."
+echo
+
+# PATH including sbin locations for tools expected to be there
+SBIN_PATH=${PATH}:${sbindir}:${bindir}:/usr/local/sbin:/sbin:/usr/sbin
+
 if test "${host}" = "unix" ; then
    printf " checking: cryptsetup... "
-   TMP_PATH=${sbindir}:${bindir}:/usr/local/sbin:/sbin:/usr/sbin:${PATH}
-   cryptsetup_path=`PATH=${TMP_PATH} command -v cryptsetup || true`
+   cryptsetup_path=`PATH=${SBIN_PATH} command -v cryptsetup || true`
    if test -z "${cryptsetup_path}" ; then
       echo "no"
       echo
       echo "unable to find the cryptsetup program, is the package cryptsetup-bin installed?"
       echo
    else
-      echo "yes"
+      echo "yes (${cryptsetup_path})"
    fi
+
+   printf " checking: go... "
+   go_path=`command -v go || true`
+   if test -z "${go_path}" ; then
+      echo "no"
+   else
+      echo "yes (${go_path})"
+   fi
+
+   printf " checking: ldconfig... "
+   ldconfig_path=`PATH=${SBIN_PATH} command -v ldconfig || true`
+   if test -z "${ldconfig_path}" ; then
+      echo "no"
+   else
+      echo "yes (${ldconfig_path})"
+   fi
+
+   printf " checking: mksquashfs... "
+   mksquashfs_path=`command -v mksquashfs || true`
+   if test -z "${mksquashfs_path}" ; then
+      echo "no"
+   else
+      echo "yes (${mksquashfs_path})"
+   fi
+
+   printf " checking: nvidia-container-cli... "
+   nvidia_container_cli_path=`command -v nvidia-container-cli || true`
+   if test -z "${nvidia_container_cli_path}" ; then
+      echo "no"
+   else
+      echo "yes (${nvidia_container_cli_path})"
+   fi
+
+   printf " checking: unsquashfs... "
+   unsquashfs_path=`command -v unsquashfs || true`
+   if test -z "${unsquashfs_path}" ; then
+      echo "no"
+   else
+      echo "yes (${unsquashfs_path})"
+   fi
+
 fi
 
-# Add this even if it's not available, that way we can test for an empty
-# CRYPTSETUP_PATH at runtime.
 config_add_def CRYPTSETUP_PATH \"${cryptsetup_path}\"
+config_add_def GO_PATH \"${go_path}\"
+config_add_def LDCONFIG_PATH \"${ldconfig_path}\"
+config_add_def MKSQUASHFS_PATH \"${mksquashfs_path}\"
+config_add_def NVIDIA_CONTAINER_CLI_PATH \"${nvidia_container_cli_path}\"
+config_add_def UNSQUASHFS_PATH \"${unsquashfs_path}\"
+
+echo
 
 config_add_footer
-

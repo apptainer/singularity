@@ -20,6 +20,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/pkg/build/types"
 	"github.com/hpcng/singularity/pkg/sylog"
 )
@@ -424,8 +425,13 @@ func appData(b *types.Bundle, a *App) string {
 }
 
 func copy(src, dst string) error {
+	cp, err := bin.FindBin("cp")
+	if err != nil {
+		return err
+	}
+
 	var stderr bytes.Buffer
-	copy := exec.Command("cp", "-fLr", src, dst)
+	copy := exec.Command(cp, "-fLr", src, dst)
 	copy.Stderr = &stderr
 	sylog.Debugf("Copying %v to %v", src, dst)
 	if err := copy.Run(); err != nil {

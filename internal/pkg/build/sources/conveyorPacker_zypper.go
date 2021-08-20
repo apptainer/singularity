@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,6 +20,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/pkg/build/types"
 	"github.com/hpcng/singularity/pkg/sylog"
 )
@@ -35,7 +36,7 @@ type ZypperConveyorPacker struct {
 
 func machine() (string, error) {
 	var stdout bytes.Buffer
-	unamePath, err := exec.LookPath("uname")
+	unamePath, err := bin.FindBin("uname")
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +59,7 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err e
 	cp.b = b
 
 	// check for zypper on system
-	zypperPath, err := exec.LookPath("zypper")
+	zypperPath, err := bin.FindBin("zypper")
 	if err != nil {
 		return fmt.Errorf("zypper is not in PATH: %v", err)
 	}
@@ -121,7 +122,7 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err e
 		if !slepgpOk && !mirrorurlOk {
 			return fmt.Errorf("no 'ProductPGP' and no 'InstallURL' defined in bootstrap definition")
 		}
-		suseconnectPath, err = exec.LookPath("SUSEConnect")
+		suseconnectPath, err = bin.FindBin("SUSEConnect")
 		if err != nil {
 			return fmt.Errorf("SUSEConnect is not in PATH: %v", err)
 		}

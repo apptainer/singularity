@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,6 +14,7 @@ import (
 
 	"github.com/hpcng/singularity/internal/pkg/test"
 	"github.com/hpcng/singularity/internal/pkg/test/tool/require"
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/pkg/build/types"
 	"github.com/hpcng/singularity/pkg/build/types/parser"
 )
@@ -29,8 +30,8 @@ func TestYumConveyor(t *testing.T) {
 		t.SkipNow()
 	}
 
-	_, dnfErr := exec.LookPath("dnf")
-	_, yumErr := exec.LookPath("yum")
+	_, dnfErr := bin.FindBin("dnf")
+	_, yumErr := bin.FindBin("yum")
 	if dnfErr != nil && yumErr != nil {
 		t.Skip("skipping test, neither dnf nor yum found")
 	}

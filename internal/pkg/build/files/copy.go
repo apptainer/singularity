@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/hpcng/singularity/pkg/util/archive"
 )
@@ -76,7 +77,11 @@ func CopyFromHost(src, dstRel, dstRootfs string) error {
 		args := []string{"-fLr", srcGlobbed, dstResolved}
 		var output, stderr bytes.Buffer
 		// copy each file into bundle rootfs
-		copy := exec.Command("/bin/cp", args...)
+		cp, err := bin.FindBin("cp")
+		if err != nil {
+			return err
+		}
+		copy := exec.Command(cp, args...)
 		copy.Stdout = &output
 		copy.Stderr = &stderr
 		if err := copy.Run(); err != nil {

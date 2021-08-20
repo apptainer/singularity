@@ -17,6 +17,7 @@ import (
 	"runtime"
 	"syscall"
 
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/hpcng/singularity/pkg/build/types"
 	"github.com/hpcng/singularity/pkg/sylog"
@@ -40,15 +41,15 @@ type ArchConveyorPacker struct {
 // prepareFakerootEnv prepares a build environment to
 // make fakeroot working with pacstrap.
 func (cp *ArchConveyorPacker) prepareFakerootEnv(ctx context.Context) (func(), error) {
-	truePath, err := exec.LookPath("true")
+	truePath, err := bin.FindBin("true")
 	if err != nil {
 		return nil, fmt.Errorf("while searching true command: %s", err)
 	}
-	mountPath, err := exec.LookPath("mount")
+	mountPath, err := bin.FindBin("mount")
 	if err != nil {
 		return nil, fmt.Errorf("while searching mount command: %s", err)
 	}
-	umountPath, err := exec.LookPath("umount")
+	umountPath, err := bin.FindBin("umount")
 	if err != nil {
 		return nil, fmt.Errorf("while searching umount command: %s", err)
 	}
@@ -111,7 +112,7 @@ func (cp *ArchConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 	cp.b = b
 
 	// check for pacstrap on system
-	pacstrapPath, err := exec.LookPath("pacstrap")
+	pacstrapPath, err := bin.FindBin("pacstrap")
 	if err != nil {
 		return fmt.Errorf("pacstrap is not in PATH: %v", err)
 	}

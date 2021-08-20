@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -24,7 +24,7 @@ const (
 // CheckCryptsetupVersion checks the version of cryptsetup and returns
 // an error if the version is not compatible; nil otherwise
 func CheckCryptsetupVersion() error {
-	cryptsetup, err := bin.Cryptsetup()
+	cryptsetup, err := bin.FindBin("cryptsetup")
 	if err != nil {
 		return err
 	}
