@@ -26,7 +26,7 @@ func Escape(s string) string {
 	return escaped
 }
 
-// EscapeQuotes performs shell escaping of double quotes only
+// EscapeDoubleQuotes performs shell escaping of double quotes only
 func EscapeDoubleQuotes(s string) string {
 	return strings.Replace(s, `"`, `\"`, -1)
 }
