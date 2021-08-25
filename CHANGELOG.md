@@ -16,7 +16,6 @@
     as this is not supported.
   - Ensure repeated `remote login` to same URI does not create duplicate entries
     in `~/.singularity/remote.yaml`.
-  - Avoid panic when mountinfo line has a blank field.
 
 ## v3.8.1 - [2021-08-12]
 
@@ -31,6 +30,7 @@
   - Prevent garbage collection from closing the container image file
     descriptor.
   - Update to Arch Linux pacman.conf URL and remove file size verification.
+  - Avoid panic when mountinfo line has a blank field.
 
 ## v3.8.0 - [2021-06-15]
 
