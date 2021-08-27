@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,6 +10,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -66,7 +67,7 @@ func askQuestionUsingGenericDescr(f *os.File) (string, error) {
 	// Note that we do not check for errors since some cases (e.g., pipes)
 	// will actually not allow to perform a Seek(). This is intended and
 	// will not create a problem.
-	f.Seek(pos+int64(strLen), os.SEEK_SET)
+	f.Seek(pos+int64(strLen), io.SeekStart)
 
 	return response, nil
 }

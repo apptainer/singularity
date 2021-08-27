@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -29,7 +29,7 @@ func TestCreateConfDir(t *testing.T) {
 		t.Errorf("failed to create directory %s", dir)
 	} else {
 		// stick something in the directory and make sure it isn't deleted
-		ioutil.WriteFile(dir+"/foo", []byte(""), 655)
+		ioutil.WriteFile(dir+"/foo", []byte(""), 0o655)
 		handleConfDir(dir)
 		if _, err := os.Stat(dir + "/foo"); os.IsNotExist(err) {
 			t.Errorf("inadvertently overwrote existing directory %s", dir)

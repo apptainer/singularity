@@ -2428,13 +2428,12 @@ func (c *container) openFuseFdFromRPC() (int, int, error) {
 
 	fuseFd := -1
 
-	for _, msg := range msgs {
-		fds, err := unix.ParseUnixRights(&msg)
+	if len(msgs) > 0 {
+		fds, err := unix.ParseUnixRights(&msgs[0])
 		if err != nil {
 			return -1, -1, fmt.Errorf("while getting file descriptor: %s", err)
 		}
 		fuseFd = fds[0]
-		break
 	}
 
 	return fuseFd, fuseRPCFd, nil

@@ -18,7 +18,7 @@ import (
 
 const (
 	dirMode  os.FileMode = 0o755
-	fileMode             = 0o644
+	fileMode os.FileMode = 0o644
 )
 
 type file struct {

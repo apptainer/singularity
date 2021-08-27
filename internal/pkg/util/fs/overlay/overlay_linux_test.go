@@ -190,8 +190,6 @@ func TestCheckLowerUpper(t *testing.T) {
 				}
 			}
 			t.Errorf("unexpected error for %q: %q instead of %q", tt.name, err, expectedError)
-		} else if err == nil && tt.expectedSuccess {
-			// test PASS without error
 		}
 	}
 }

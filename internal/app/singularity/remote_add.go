@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"path"
@@ -26,8 +27,6 @@ func RemoteAdd(configFile, name, uri string, global bool) (err error) {
 		return fmt.Errorf("invalid URI: cannot have empty URI")
 	}
 
-	c := &remote.Config{}
-
 	// system config should be world readable
 	perm := os.FileMode(0o600)
 	if global {
@@ -42,7 +41,7 @@ func RemoteAdd(configFile, name, uri string, global bool) (err error) {
 	defer file.Close()
 
 	// read file contents to config struct
-	c, err = remote.ReadFrom(file)
+	c, err := remote.ReadFrom(file)
 	if err != nil {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
@@ -62,7 +61,7 @@ func RemoteAdd(configFile, name, uri string, global bool) (err error) {
 		return fmt.Errorf("while truncating remote config file: %s", err)
 	}
 
-	if n, err := file.Seek(0, os.SEEK_SET); err != nil || n != 0 {
+	if n, err := file.Seek(0, io.SeekStart); err != nil || n != 0 {
 		return fmt.Errorf("failed to reset %s cursor: %s", file.Name(), err)
 	}
 
