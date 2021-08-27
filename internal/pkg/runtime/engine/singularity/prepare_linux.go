@@ -18,8 +18,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/containerd/cgroups"
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/internal/pkg/cgroups"
 	fakerootutil "github.com/hpcng/singularity/internal/pkg/fakeroot"
 	"github.com/hpcng/singularity/internal/pkg/instance"
 	"github.com/hpcng/singularity/internal/pkg/plugin"
@@ -905,14 +905,15 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		e.EngineConfig.OciConfig.Linux.Seccomp = instanceEngineConfig.OciConfig.Linux.Seccomp
 	}
 
-	if uid == 0 && !file.UserNs {
-		pid := os.Getppid()
-		path := fmt.Sprintf("/singularity/%d", file.Pid)
-		control, err := cgroups.Load(cgroups.V1, cgroups.StaticPath(path))
-		if err == nil {
-			if err := control.Add(cgroups.Process{Pid: pid}); err != nil {
-				return fmt.Errorf("while adding process to instance cgroups: %s", err)
-			}
+	if file.Cgroup {
+		sylog.Debugf("Adding process to instance cgroup")
+		ppid := os.Getppid()
+		manager, err := cgroups.GetManagerFromPid(file.Pid)
+		if err != nil {
+			return fmt.Errorf("couldn't create cgroup manager: %v", err)
+		}
+		if err := manager.AddProc(ppid); err != nil {
+			return fmt.Errorf("couldn't add process to instance cgroup: %v", err)
 		}
 	}
 

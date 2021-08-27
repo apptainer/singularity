@@ -11,13 +11,13 @@
 # - cpus: CPUs to use within the cpuset. Default is to use any CPU available.
 # - mems: list of memory nodes in the cpuset. Default is to use any available memory node
 [cpu]
-#  shares = 512
 #  quotas = 0
 #  period = 0
 #  realtimeRuntime = 0
 #  realtimePeriod = 0
   cpus = "0"
   mems = "0"
+  shares = 1024
 
 
 # Memory restriction configuration

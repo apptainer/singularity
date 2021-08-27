@@ -18,6 +18,7 @@
 #  realtimePeriod = 0
   cpus = "0"
   mems = "0"
+  shares = 1024
 
 
 # Memory restriction configuration

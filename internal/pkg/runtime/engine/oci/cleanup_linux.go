@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -29,7 +29,9 @@ import (
 // command set requires privileged execution.
 func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, status syscall.WaitStatus) error {
 	if e.EngineConfig.Cgroups != nil {
-		e.EngineConfig.Cgroups.Remove()
+		if err := e.EngineConfig.Cgroups.Remove(); err != nil {
+			sylog.Warningf("failed to remove cgroup configuration: %v", err)
+		}
 	}
 
 	pidFile := e.EngineConfig.GetPidFile()

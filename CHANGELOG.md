@@ -82,6 +82,8 @@
 
 - Fix regression when files `source`d from `%environment` contain `\` escaped
   shell builtins (fixes issue with `source` of conda profile.d script).
+- The `oci` commands will operate on systems that use the v2 unified cgroups
+  hierarchy.
 - `singularity delete` will use the correct library service when the hostname
   is specified in the `library://` URI.
 - `singularity build` will use the correct library service when the hostname

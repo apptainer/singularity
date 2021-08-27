@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,20 +18,20 @@ const Name = "oci"
 
 // EngineConfig is the config for the OCI engine.
 type EngineConfig struct {
-	BundlePath    string           `json:"bundlePath"`
-	LogPath       string           `json:"logPath"`
-	LogFormat     string           `json:"logFormat"`
-	PidFile       string           `json:"pidFile"`
-	OciConfig     *oci.Config      `json:"ociConfig"`
-	MasterPts     int              `json:"masterPts"`
-	SlavePts      int              `json:"slavePts"`
-	OutputStreams [2]int           `json:"outputStreams"`
-	ErrorStreams  [2]int           `json:"errorStreams"`
-	InputStreams  [2]int           `json:"inputStreams"`
-	SyncSocket    string           `json:"syncSocket"`
-	EmptyProcess  bool             `json:"emptyProcess"`
-	Exec          bool             `json:"exec"`
-	Cgroups       *cgroups.Manager `json:"-"`
+	BundlePath    string          `json:"bundlePath"`
+	LogPath       string          `json:"logPath"`
+	LogFormat     string          `json:"logFormat"`
+	PidFile       string          `json:"pidFile"`
+	OciConfig     *oci.Config     `json:"ociConfig"`
+	MasterPts     int             `json:"masterPts"`
+	SlavePts      int             `json:"slavePts"`
+	OutputStreams [2]int          `json:"outputStreams"`
+	ErrorStreams  [2]int          `json:"errorStreams"`
+	InputStreams  [2]int          `json:"inputStreams"`
+	SyncSocket    string          `json:"syncSocket"`
+	EmptyProcess  bool            `json:"emptyProcess"`
+	Exec          bool            `json:"exec"`
+	Cgroups       cgroups.Manager `json:"-"`
 
 	sync.Mutex `json:"-"`
 	State      ociruntime.State `json:"state"`
