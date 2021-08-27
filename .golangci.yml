@@ -19,13 +19,9 @@ linters:
     # - staticcheck
 
 linters-settings:
-  gofmt:
-    simplify: true
   govet:
     # we would like to enable this eventually
     check-shadowing: false
-  maligned:
-    suggest-new: true
   misspell:
     locale: US
 
