@@ -28,12 +28,3 @@ linters-settings:
 issues:
   max-per-linter: 0
   max-same-issues: 0
-
-  exclude-rules:
-    - path: internal/pkg/util/fs/overlay/
-      linters:
-        - misspell
-
-    - path: internal/pkg/util/user/cgo_lookup_unix.go
-      linters:
-        - deadcode
