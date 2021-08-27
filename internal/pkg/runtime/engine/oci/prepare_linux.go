@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/containerd/cgroups"
+	"github.com/hpcng/singularity/internal/pkg/cgroups"
 	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/starter"
 	"github.com/hpcng/singularity/pkg/ociruntime"
 	"github.com/hpcng/singularity/pkg/sylog"
@@ -208,16 +208,15 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		if cPath == "" {
 			return nil
 		}
-
-		// add executed process to container cgroups
 		ppid := os.Getppid()
-		staticPath := cgroups.StaticPath(cPath)
-		control, err := cgroups.Load(cgroups.V1, staticPath)
+
+		sylog.Debugf("Adding process %d to instance cgroup %q", ppid, cPath)
+		manager, err := cgroups.GetManager(cPath)
 		if err != nil {
-			return fmt.Errorf("failed to load cgroups: %s", err)
+			return fmt.Errorf("couldn't create cgroup manager: %v", err)
 		}
-		if err := control.Add(cgroups.Process{Pid: ppid}); err != nil {
-			return fmt.Errorf("failed to add exec process to cgroups %s: %s", cPath, err)
+		if err := manager.AddProc(ppid); err != nil {
+			return fmt.Errorf("couldn't add process to instance cgroup: %v", err)
 		}
 	}
 

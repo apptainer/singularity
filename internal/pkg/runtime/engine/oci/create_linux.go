@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -62,86 +62,82 @@ var devices = []device{
 	{1, 5, "/dev/zero", syscall.S_IFCHR | 0o666, 0, 0},
 }
 
-func int64ptr(i int) *int64 {
-	t := int64(i)
-	return &t
-}
-
 var cgroupDevices = []specs.LinuxDeviceCgroup{
 	{
 		Allow:  true,
 		Type:   "c",
-		Major:  int64ptr(1),
-		Minor:  int64ptr(7),
+		Major:  cgroups.Int64ptr(1),
+		Minor:  cgroups.Int64ptr(7),
 		Access: "rw",
 	},
 	{
 		Allow:  true,
 		Type:   "c",
-		Major:  int64ptr(1),
-		Minor:  int64ptr(3),
+		Major:  cgroups.Int64ptr(1),
+		Minor:  cgroups.Int64ptr(3),
 		Access: "rw",
 	},
 	{
 		Allow:  true,
 		Type:   "c",
-		Major:  int64ptr(1),
-		Minor:  int64ptr(8),
+		Major:  cgroups.Int64ptr(1),
+		Minor:  cgroups.Int64ptr(8),
 		Access: "rw",
 	},
 	{
 		Allow:  true,
 		Type:   "c",
-		Major:  int64ptr(5),
-		Minor:  int64ptr(0),
+		Major:  cgroups.Int64ptr(5),
+		Minor:  cgroups.Int64ptr(0),
 		Access: "rw",
 	},
 	{
 		Allow:  true,
 		Type:   "c",
-		Major:  int64ptr(1),
-		Minor:  int64ptr(9),
+		Major:  cgroups.Int64ptr(1),
+		Minor:  cgroups.Int64ptr(9),
 		Access: "rw",
 	},
 	{
 		Allow:  true,
 		Type:   "c",
-		Major:  int64ptr(1),
-		Minor:  int64ptr(5),
+		Major:  cgroups.Int64ptr(1),
+		Minor:  cgroups.Int64ptr(5),
 		Access: "rw",
 	},
 	{
 		Allow:  true,
 		Type:   "c",
-		Major:  int64ptr(136),
+		Major:  cgroups.Int64ptr(136),
+		Minor:  cgroups.Int64ptr(-1),
 		Access: "rwm",
 	},
 	{
 		Allow:  true,
 		Type:   "c",
-		Major:  int64ptr(5),
-		Minor:  int64ptr(1),
+		Major:  cgroups.Int64ptr(5),
+		Minor:  cgroups.Int64ptr(1),
 		Access: "rw",
 	},
 	{
 		Allow:  true,
 		Type:   "c",
-		Major:  int64ptr(5),
-		Minor:  int64ptr(2),
+		Major:  cgroups.Int64ptr(5),
+		Minor:  cgroups.Int64ptr(2),
 		Access: "rw",
 	},
 }
 
 type container struct {
-	engine      *EngineOperations
-	rpcOps      *client.RPC
-	rootfs      string
-	rpcRoot     string
-	userNS      bool
-	utsNS       bool
-	mntNS       bool
-	devIndex    int
-	cgroupIndex int
+	engine             *EngineOperations
+	rpcOps             *client.RPC
+	rootfs             string
+	rpcRoot            string
+	userNS             bool
+	utsNS              bool
+	mntNS              bool
+	devIndex           int
+	cgroupV1MountIndex int
 }
 
 var statusChan = make(chan string, 1)
@@ -191,12 +187,12 @@ func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn
 	}
 
 	c := &container{
-		engine:      e,
-		rpcOps:      rpcOps,
-		rootfs:      resolvedRootfs,
-		rpcRoot:     fmt.Sprintf("/proc/%d/root", pid),
-		cgroupIndex: -1,
-		devIndex:    -1,
+		engine:             e,
+		rpcOps:             rpcOps,
+		rootfs:             resolvedRootfs,
+		rpcRoot:            fmt.Sprintf("/proc/%d/root", pid),
+		cgroupV1MountIndex: -1,
+		devIndex:           -1,
 	}
 
 	for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
@@ -220,9 +216,9 @@ func (e *EngineOperations) CreateContainer(ctx context.Context, pid int, rpcConn
 	system := &mount.System{Points: p, Mount: c.mount}
 
 	for i, point := range e.EngineConfig.OciConfig.Config.Mounts {
-		// cgroup creation
+		// A cgroup v1 mount point will be intercepted and handled separately in c.addCgroups(...)
 		if point.Type == "cgroup" {
-			c.cgroupIndex = i
+			c.cgroupV1MountIndex = i
 			continue
 		}
 		// dev creation
@@ -498,17 +494,18 @@ func (c *container) addCgroups(pid int, system *mount.System) error {
 
 	c.engine.EngineConfig.OciConfig.Linux.CgroupsPath = cgroupsPath
 
-	manager := &cgroups.Manager{Path: cgroupsPath, Pid: pid}
-
-	if err := manager.ApplyFromSpec(c.engine.EngineConfig.OciConfig.Linux.Resources); err != nil {
+	manager, err := cgroups.NewManagerFromSpec(c.engine.EngineConfig.OciConfig.Linux.Resources, pid, cgroupsPath)
+	if err != nil {
 		return fmt.Errorf("failed to apply cgroups resources restriction: %s", err)
 	}
 
-	if c.cgroupIndex >= 0 {
-		m := c.engine.EngineConfig.OciConfig.Config.Mounts[c.cgroupIndex]
+	// If a mount point exists for a cgroup v1 hierarchy we will handle it here.
+	// This is not necessary for cgroups v2 - as the unified hierarchy will be handled with a simple bind.
+	if c.cgroupV1MountIndex >= 0 {
+		m := c.engine.EngineConfig.OciConfig.Config.Mounts[c.cgroupV1MountIndex]
 		c.engine.EngineConfig.OciConfig.Config.Mounts = append(
-			c.engine.EngineConfig.OciConfig.Config.Mounts[:c.cgroupIndex],
-			c.engine.EngineConfig.OciConfig.Config.Mounts[c.cgroupIndex+1:]...,
+			c.engine.EngineConfig.OciConfig.Config.Mounts[:c.cgroupV1MountIndex],
+			c.engine.EngineConfig.OciConfig.Config.Mounts[c.cgroupV1MountIndex+1:]...,
 		)
 
 		cgroupRootPath := manager.GetCgroupRootPath()
@@ -807,7 +804,11 @@ func (c *container) addDevices(system *mount.System) error {
 			c.engine.EngineConfig.OciConfig.Linux.Resources = &specs.LinuxResources{}
 		}
 
-		c.engine.EngineConfig.OciConfig.Linux.Resources.Devices = append(c.engine.EngineConfig.OciConfig.Linux.Resources.Devices, cgroupDevices...)
+		// cgroupDevices are essential for operation, so must be allowed *prior* to a configured wildcard deny.
+		// containerd/cgroups/v2 device filtering via eBPF is written such that it stops at the wildcard.
+		// See: https://github.com/containerd/cgroups/blob/ddda8a174e9ae86b31366812ae2d0f9f9570a7f1/v2/devicefilter.go#L93
+		//      https://github.com/containerd/cgroups/blob/ddda8a174e9ae86b31366812ae2d0f9f9570a7f1/v2/devicefilter.go#L164
+		c.engine.EngineConfig.OciConfig.Linux.Resources.Devices = append(cgroupDevices, c.engine.EngineConfig.OciConfig.Linux.Resources.Devices...)
 	}
 
 	return nil

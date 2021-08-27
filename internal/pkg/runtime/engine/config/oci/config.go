@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/containerd/cgroups"
 	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/hpcng/singularity/internal/pkg/security/seccomp"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -36,8 +37,17 @@ func (c *Config) UnmarshalJSON(b []byte) error {
 }
 
 // DefaultConfig returns an OCI config generator with a
-// default OCI configuration.
+// default OCI configuration for cgroups v1 or v2 dependent on the current host.
 func DefaultConfig() (*generate.Generator, error) {
+	if cgroups.Mode() == cgroups.Unified {
+		return DefaultConfigV2()
+	}
+	return DefaultConfigV1()
+}
+
+// DefaultConfigV1 returns an OCI config generator with a
+// default OCI configuration for cgroups v1.
+func DefaultConfigV1() (*generate.Generator, error) {
 	var err error
 
 	config := specs.Spec{
@@ -193,6 +203,8 @@ func DefaultConfig() (*generate.Generator, error) {
 	config.Linux = &specs.Linux{
 		Resources: &specs.LinuxResources{
 			Devices: []specs.LinuxDeviceCgroup{
+				// Wildcard blocking access to all devices by default.
+				// Note that essential cgroupDevices allow rules are inserted ahead of this.
 				{
 					Allow:  false,
 					Access: "rwm",
@@ -226,4 +238,31 @@ func DefaultConfig() (*generate.Generator, error) {
 	}
 
 	return &generate.Generator{Config: &config}, nil
+}
+
+// DefaultConfigV2 returns an OCI config generator with a default OCI configuration for cgroups v2.
+// This is identical to v1 except that we use a cgroup namespace, and mount the namespaced
+// cgroup fs into the container.
+func DefaultConfigV2() (*generate.Generator, error) {
+	gen, err := DefaultConfigV1()
+	if err != nil {
+		return nil, err
+	}
+	c := gen.Config
+
+	// TODO: Enter a cgroup namespace
+	// See https://github.com/sylabs/singularity/issues/298
+	// We need to be unsharing the namespace at an appropriate point before we can enable this.
+	//
+	// c.Linux.Namespaces = append(c.Linux.Namespaces, specs.LinuxNamespace{Type: "cgroup"})
+
+	// Mount the unified cgroup v2 hierarchy
+	c.Mounts = append(c.Mounts, specs.Mount{
+		Destination: "/sys/fs/cgroup",
+		Type:        "cgroup2",
+		Source:      "cgroup2",
+		Options:     []string{"nosuid", "noexec", "nodev", "ro"},
+	})
+
+	return &generate.Generator{Config: c}, nil
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,6 +11,13 @@ import (
 
 	"github.com/pelletier/go-toml"
 )
+
+func Int64ptr(i int) *int64 {
+	t := int64(i)
+	return &t
+}
+
+var wildcard = Int64ptr(-1)
 
 // LinuxHugepageLimit structure corresponds to limiting kernel hugepages
 type LinuxHugepageLimit struct {
@@ -160,6 +167,8 @@ type Config struct {
 	// Limits are a set of key value pairs that define RDMA resource limits,
 	// where the key is device name and value is resource limits.
 	Rdma map[string]LinuxRdma `toml:"rdma" json:"rdma,omitempty"`
+	// TODO: Enable support for native cgroup v2 resource specifications
+	// Unified map[string]string `toml:"unified" json:"unified,omitempty"`
 }
 
 // LoadConfig opens cgroups controls config file and unmarshals it into structures

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -35,7 +35,10 @@ func OciUpdate(containerID string, args *OciArgs) error {
 	}
 
 	resources := &specs.LinuxResources{}
-	manager := &cgroups.Manager{Pid: state.State.Pid}
+	manager, err := cgroups.GetManagerFromPid(state.State.Pid)
+	if err != nil {
+		return fmt.Errorf("failed to get cgroups manager: %v", err)
+	}
 
 	if args.FromFile == "-" {
 		reader = os.Stdin

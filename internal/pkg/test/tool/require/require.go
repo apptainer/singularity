@@ -122,12 +122,30 @@ func Network(t *testing.T) {
 	}
 }
 
-// Cgroups checks that cgroups is enabled, if not the
+// Cgroups checks that any cgroups version is enabled, if not the
 // current test is skipped with a message.
 func Cgroups(t *testing.T) {
-	_, err := cgroups.V1()
-	if err != nil {
-		t.Skipf("cgroups disabled")
+	mode := cgroups.Mode()
+	if mode == cgroups.Unavailable {
+		t.Skipf("cgroups not available")
+	}
+}
+
+// CgroupsV1 checks that cgroups v1 is enabled, if not the
+// current test is skipped with a message.
+func CgroupsV1(t *testing.T) {
+	mode := cgroups.Mode()
+	if mode != cgroups.Legacy && mode != cgroups.Hybrid {
+		t.Skipf("cgroups v1 not available")
+	}
+}
+
+// CgroupsV2 checks that cgroups v2 is enabled, if not the
+// current test is skipped with a message.
+func CgroupsV2(t *testing.T) {
+	mode := cgroups.Mode()
+	if mode != cgroups.Unified {
+		t.Skipf("cgroups v2 unified mode not available")
 	}
 }
 
@@ -135,6 +153,10 @@ func Cgroups(t *testing.T) {
 // available, if not the current test is skipped with a
 // message
 func CgroupsFreezer(t *testing.T) {
+	if cgroups.Mode() == cgroups.Unified {
+		return
+	}
+
 	subSys, err := cgroups.V1()
 	if err != nil {
 		t.Skipf("cgroups disabled")
