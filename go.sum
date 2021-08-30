@@ -847,8 +847,9 @@ github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
-github.com/sylabs/json-resp v0.7.1 h1:tYxJer8FqLNIWx3mEbYQgrwLL7HR4gyPAfzyeUwEznM=
 github.com/sylabs/json-resp v0.7.1/go.mod h1:3O9ze5PoYxia6106m5x+5G5ohnW1AJX/FURjCNovtzA=
+github.com/sylabs/json-resp v0.8.0 h1:bZ932uaF220aPqT0+x/vakoaGCGNbpLCjUFm1f+JKlY=
+github.com/sylabs/json-resp v0.8.0/go.mod h1:bUGV9cqShOyxz7RxBq03Yt9raKGfELKrfN6Yac3lfiw=
 github.com/sylabs/scs-build-client v0.1.6 h1:ZzcS8trPF+jFNovh9o6aeiJnMtClKNyrby9DPEkrAAQ=
 github.com/sylabs/scs-build-client v0.1.6/go.mod h1:XFO5Aq0NXsO1A41JBNMt3tWwxmddV8UrId4wmmoLrIU=
 github.com/sylabs/scs-key-client v0.6.2 h1:PTdmkE50rFMrSty9usl8wnzaW+JPK0rjXF4cdIQ3MEo=
