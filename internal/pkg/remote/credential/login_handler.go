@@ -44,7 +44,7 @@ func init() {
 // function just return the password provided as argument.
 func ensurePassword(password string) (string, error) {
 	if password == "" {
-		question := "Password (or token when username is empty): "
+		question := "Password / Token: "
 		input, err := interactive.AskQuestionNoEcho(question)
 		if err != nil {
 			return "", fmt.Errorf("failed to read password: %s", err)

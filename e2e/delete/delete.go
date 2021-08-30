@@ -23,6 +23,7 @@ func (c ctx) testDeleteCmd(t *testing.T) {
 		args       []string
 		agree      string
 		expectExit int
+		expect     e2e.SingularityCmdResultOp
 	}{
 		{
 			name:       "delete unauthorized arch",
@@ -66,6 +67,13 @@ func (c ctx) testDeleteCmd(t *testing.T) {
 			agree:      "y",
 			expectExit: 255,
 		},
+		{
+			name:       "delete host in uri",
+			args:       []string{"library://library.example.com/test/default/test:v0.0.3"},
+			agree:      "y",
+			expectExit: 255,
+			expect:     e2e.ExpectError(e2e.ContainMatch, "dial tcp: lookup library.example.com: no such host"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -76,7 +84,7 @@ func (c ctx) testDeleteCmd(t *testing.T) {
 			e2e.WithCommand("delete"),
 			e2e.WithArgs(tt.args...),
 			e2e.WithStdin(bytes.NewBufferString(tt.agree)),
-			e2e.ExpectExit(tt.expectExit),
+			e2e.ExpectExit(tt.expectExit, tt.expect),
 		)
 	}
 }

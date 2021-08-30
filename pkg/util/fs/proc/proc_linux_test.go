@@ -72,7 +72,8 @@ var mountInfoData = `22 28 0:21 / /sys rw,nosuid,nodev,noexec,relatime shared:7 
 90 47 0:47 / /proc/sys/fs/binfmt_misc rw,relatime shared:34 - binfmt_misc binfmt_misc rw
 381 26 0:54 / /run/user/1000 rw,nosuid,nodev,relatime shared:245 - tmpfs tmpfs rw,size=1635868k,mode=700,uid=1000,gid=1000
 363 381 0:52 / /run/user/1000/gvfs rw,nosuid,nodev,relatime shared:233 - fuse.gvfsd-fuse gvfsd-fuse rw,user_id=1000,group_id=1000
-579 28 0:65 / /tmp/squashfs rw,relatime - squashfs /dev/loop0 rw`
+579 28 0:65 / /tmp/squashfs rw,relatime - squashfs /dev/loop0 rw
+377 314 0:80 / /dev/shm rw,relatime - tmpfs  rw,mode=750,uid=174988`
 
 var expectedMap = map[string][]string{
 	"/": {
@@ -203,6 +204,19 @@ func TestGetMountInfo(t *testing.T) {
 			FSType:       "squashfs",
 			Source:       "/dev/loop0",
 			SuperOptions: []string{"rw"},
+			Options:      []string{"rw", "relatime"},
+		},
+		// github.com/hpcng/singularity/issues/6048
+		// Empty 9th field (source) in mountinfo line
+		{
+			ParentID:     "314",
+			ID:           "377",
+			Dev:          "0:80",
+			Root:         "/",
+			Fields:       "",
+			FSType:       "tmpfs",
+			Source:       "",
+			SuperOptions: []string{"rw", "rw,mode=750,uid=174988"},
 			Options:      []string{"rw", "relatime"},
 		},
 	}

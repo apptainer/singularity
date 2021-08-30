@@ -50,13 +50,22 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 		libraryURL = customLib
 	}
 
-	sylog.Debugf("LibraryURL: %v", libraryURL)
-	sylog.Debugf("LibraryRef: %v", b.Recipe.Header["from"])
-
 	imageRef, err := library.NormalizeLibraryRef(b.Recipe.Header["from"])
 	if err != nil {
 		return fmt.Errorf("error parsing libraryRef: %v", err)
 	}
+
+	if imageRef.Host != "" {
+		if b.Opts.NoHTTPS {
+			libraryURL = "http://" + imageRef.Host
+		} else {
+			libraryURL = "https://" + imageRef.Host
+		}
+	}
+
+	sylog.Debugf("LibraryURL: %v", libraryURL)
+	sylog.Debugf("LibraryRef: %v", imageRef.String())
+
 	libraryConfig := &client.Config{
 		BaseURL:   libraryURL,
 		AuthToken: authToken,

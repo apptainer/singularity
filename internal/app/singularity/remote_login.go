@@ -70,6 +70,9 @@ func RemoteLogin(usrConfigFile string, args *LoginArgs) (err error) {
 		}
 	} else {
 		// services (oci registry, single keyserver etc.)
+		if args.Tokenfile != "" {
+			return fmt.Errorf("--tokenfile is only supported for login to a remote endpoint, not OCI (docker/oras) or keyservers")
+		}
 		if err := c.Login(args.Name, args.Username, args.Password, args.Insecure); err != nil {
 			return fmt.Errorf("while login to %s: %s", args.Name, err)
 		}

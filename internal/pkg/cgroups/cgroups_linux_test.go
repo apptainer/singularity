@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -55,9 +54,12 @@ func TestCgroups(t *testing.T) {
 	manager := &Manager{Pid: pid, Path: path}
 
 	cgroupsToml := "example/cgroups.toml"
-	// A different pageSize is needed on pp64le
-	if runtime.GOARCH == "ppc64le" {
-		cgroupsToml = "example/cgroups-ppc64le.toml"
+	// Some systems, e.g. ppc64le may not have a 2MB page size, so don't
+	// apply a 2MB hugetlb limit if that's the case.
+	_, err = os.Stat("/sys/fs/cgroup/hugetlb/hugetlb.2MB.limit_in_bytes")
+	if os.IsNotExist(err) {
+		t.Log("No hugetlb.2MB.limit_in_bytes - using alternate cgroups test file")
+		cgroupsToml = "example/cgroups-no-hugetlb.toml"
 	}
 
 	if err := manager.ApplyFromFile(cgroupsToml); err != nil {
