@@ -172,7 +172,7 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		s.b.Opts = conf.Opts
 		// dont need to get cp if we're skipping bootstrap
 		if !conf.Opts.Update || conf.Opts.Force {
-			if c, err := conveyorPacker(d); err == nil {
+			if c, err := NewConveyorPacker(d); err == nil {
 				s.c = c
 			} else {
 				return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)

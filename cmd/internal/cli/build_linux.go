@@ -178,6 +178,14 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		sylog.Fatalf("Unable to build from %s: %v", spec, err)
 	}
 
+	// Ensure that the definition bootstrap source is valid before we submit a remote build
+	if _, err := build.NewConveyorPacker(def); err != nil {
+		sylog.Fatalf("Unable to build from %s: %v", spec, err)
+	}
+	if bs, ok := def.Header["bootstrap"]; ok && bs == "localimage" {
+		sylog.Fatalf("Building from a \"localimage\" source with the remote builder is not supported.")
+	}
+
 	// path SIF from remote builder should be placed
 	rbDst := dst
 	if buildArgs.sandbox {

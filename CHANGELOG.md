@@ -41,6 +41,8 @@
   Guix/Nix on environment on top of a standard host distribution you *must* set
   `ldconfig path = /sbin/ldconfig` to use the host distribution `ldconfig` to
   find GPU libraries.
+- An invalid remote build source (bootstrap) will be identified before
+  attempting to submit the build.
 
 ## v3.8.2 - \[2021-08-31\]
 

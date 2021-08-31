@@ -30,9 +30,14 @@ type ConveyorPacker interface {
 	Packer
 }
 
-// conveyorPacker returns a valid ConveyorPacker for the given image definition.
-func conveyorPacker(def types.Definition) (ConveyorPacker, error) {
-	switch def.Header["bootstrap"] {
+// NewConveyorPacker returns a valid ConveyorPacker for the given image definition.
+func NewConveyorPacker(def types.Definition) (ConveyorPacker, error) {
+	bs, ok := def.Header["bootstrap"]
+	if !ok {
+		return nil, fmt.Errorf("no bootstrap specification found")
+	}
+
+	switch bs {
 	case "library":
 		return &sources.LibraryConveyorPacker{}, nil
 	case "oras":
@@ -58,6 +63,6 @@ func conveyorPacker(def types.Definition) (ConveyorPacker, error) {
 	case "":
 		return nil, fmt.Errorf("no bootstrap specification found")
 	default:
-		return nil, fmt.Errorf("invalid build source %s", def.Header["bootstrap"])
+		return nil, fmt.Errorf("invalid build source %q", def.Header["bootstrap"])
 	}
 }
