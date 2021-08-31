@@ -35,7 +35,7 @@ import (
 	scsbuildclient "github.com/sylabs/scs-build-client/client"
 	scskeyclient "github.com/sylabs/scs-key-client/client"
 	scslibclient "github.com/sylabs/scs-library-client/client"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 // cmdInits holds all the init function to be called
@@ -254,7 +254,7 @@ func setSylogMessageLevel() {
 	}
 
 	color := true
-	if nocolor || !terminal.IsTerminal(2) {
+	if nocolor || !term.IsTerminal(2) {
 		color = false
 	}
 
