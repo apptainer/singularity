@@ -4,6 +4,8 @@
 
 ### Bug fixes
 
+  - Fix regression when files `source`d from `%environment` contain `\` escaped
+    shell builtins (fixes issue with `source` of conda profile.d script).
   - `singularity delete` will use the correct library service when the hostname
     is specified in the `library://` URI.
   - `singularity build` will use the correct library service when the hostname
