@@ -21,6 +21,8 @@
   - Properly escape single quotes in Docker `CMD` / `ENTRYPOINT` translation.
   - Use host uid when choosing unsquashfs flags, to avoid selinux xattr errors
     with `--fakeroot` on non-EL/Fedora distributions with recent squashfs-tools.
+  - Updated the modified golang-x-crypto module with the latest upstream 
+    version.
 
 ## v3.8.1 - [2021-08-12]
 
