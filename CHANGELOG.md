@@ -1,5 +1,29 @@
 # Singularity Changelog
 
+## v3.8.2 - [2021-08-31]
+
+### Bug fixes
+
+  - Fix regression when files `source`d from `%environment` contain `\` escaped
+    shell builtins (fixes issue with `source` of conda profile.d script).
+  - `singularity delete` will use the correct library service when the hostname
+    is specified in the `library://` URI.
+  - `singularity build` will use the correct library service when the hostname
+    is specified in the `library://` URI / definition file.
+  - Call `debootstrap` with correct Debian arch when it is not identical to the
+    value of `runtime.GOARCH`. E.g. `ppc64el -> ppc64le`.
+  - When destination is ommitted in `%files` entry in definition file, ensure
+    globbed files are copied to correct resolved path.
+  - Return an error if `--tokenfile` used for `remote login` to an OCI registry,
+    as this is not supported.
+  - Ensure repeated `remote login` to same URI does not create duplicate entries
+    in `~/.singularity/remote.yaml`.
+  - Properly escape single quotes in Docker `CMD` / `ENTRYPOINT` translation.
+  - Use host uid when choosing unsquashfs flags, to avoid selinux xattr errors
+    with `--fakeroot` on non-EL/Fedora distributions with recent squashfs-tools.
+  - Updated the modified golang-x-crypto module with the latest upstream 
+    version.
+
 ## v3.8.1 - [2021-08-12]
 
 ### Bug Fixes
@@ -13,6 +37,7 @@
   - Prevent garbage collection from closing the container image file
     descriptor.
   - Update to Arch Linux pacman.conf URL and remove file size verification.
+  - Avoid panic when mountinfo line has a blank field.
 
 ## v3.8.0 - [2021-06-15]
 

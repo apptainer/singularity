@@ -40,8 +40,8 @@ First, download the Golang archive to `/tmp`, then extract the archive to `/usr/
 _**NOTE:** if you are updating Go from a older version, make sure you remove `/usr/local/go` before
 reinstalling it._
 
-```
-$ export VERSION=1.16.6 OS=linux ARCH=amd64  # change this as you need
+```sh
+$ export VERSION=1.16.7 OS=linux ARCH=amd64  # change this as you need
 
 $ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
   sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
@@ -87,7 +87,7 @@ $ mkdir -p ${GOPATH}/src/github.com/hpcng && \
 To build a stable version of Singularity, check out a [release tag](https://github.com/hpcng/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.8.1
+$ git checkout v3.8.2
 ```
 
 ## Compiling Singularity
@@ -130,7 +130,7 @@ as shown above.  Then download the latest
 and use it to install the RPM like this: 
 
 ```
-$ export VERSION=3.8.1  # this is the singularity version, change as you need
+$ export VERSION=3.8.2  # this is the singularity version, change as you need
 
 $ wget https://github.com/hpcng/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-${VERSION}.tar.gz && \
@@ -146,7 +146,7 @@ tarball and use it to install Singularity:
 $ cd $GOPATH/src/github.com/hpcng/singularity && \
   ./mconfig && \
   make -C builddir rpm && \
-  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.1*.x86_64.rpm # or whatever version you built
+  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.2*.x86_64.rpm # or whatever version you built
 ```
 
 To build an rpm with an alternative install prefix set RPMPREFIX on the

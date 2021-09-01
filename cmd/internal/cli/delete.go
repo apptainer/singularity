@@ -97,6 +97,18 @@ var deleteImageCmd = &cobra.Command{
 			sylog.Fatalf("Error parsing library ref: %v", err)
 		}
 
+		if deleteLibraryURI != "" && imageRef.Host != "" {
+			sylog.Fatalf("Conflicting arguments; do not use --library with a library URI containing host name")
+		}
+
+		var libraryURI string
+		if deleteLibraryURI != "" {
+			libraryURI = deleteLibraryURI
+		} else if imageRef.Host != "" {
+			// override libraryURI if ref contains host name
+			libraryURI = "https://" + imageRef.Host
+		}
+
 		r := fmt.Sprintf("%s:%s", imageRef.Path, imageRef.Tags[0])
 
 		if !deleteForce {
@@ -109,7 +121,7 @@ var deleteImageCmd = &cobra.Command{
 			}
 		}
 
-		libraryConfig, err := getLibraryClientConfig(deleteLibraryURI)
+		libraryConfig, err := getLibraryClientConfig(libraryURI)
 		if err != nil {
 			sylog.Fatalf("Error while getting library client config: %v", err)
 		}

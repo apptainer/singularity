@@ -27,7 +27,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/websocket v1.4.2
-	github.com/hpcng/sif v1.5.1
+	github.com/hpcng/sif v1.6.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/pty v1.1.8
 	github.com/opencontainers/go-digest v1.0.0
@@ -45,7 +45,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.8.0
-	github.com/sylabs/scs-build-client v0.1.6
+	github.com/sylabs/scs-build-client v0.2.1
 	github.com/sylabs/scs-key-client v0.6.2
 	github.com/sylabs/scs-library-client v1.0.5
 	github.com/urfave/cli v1.22.5 // indirect
@@ -55,7 +55,7 @@ require (
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
-	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
+	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	golang.org/x/net v0.0.0-20210510120150-4163338589ed // indirect
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
 	gopkg.in/yaml.v2 v2.4.0
@@ -69,5 +69,5 @@ replace (
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
 	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
 
-	golang.org/x/crypto => github.com/hpcng/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
+	golang.org/x/crypto => github.com/hpcng/golang-x-crypto v0.0.0-20210830200829-e6b35e3fb874
 )

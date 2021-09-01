@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -1356,6 +1356,32 @@ func (c imgBuildTests) buildBindMount(t *testing.T) {
 	}
 }
 
+func (c imgBuildTests) buildLibraryHost(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	tmpdir, cleanup := c.tempDir(t, "build-libraryhost-test")
+	defer cleanup()
+
+	// Library hostname in the From URI
+	// The hostname is invalid, and we should get an error to that effect.
+	definition := "Bootstrap: library\nFrom: library.example.com/test/test/test:latest\n"
+
+	defFile := e2e.RawDefFile(t, tmpdir, strings.NewReader(definition))
+	imagePath := filepath.Join(tmpdir, "image-libaryhost")
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("-F", imagePath, defFile),
+		e2e.PostRun(func(t *testing.T) {
+			os.Remove(defFile)
+		}),
+		e2e.ExpectExit(255,
+			e2e.ExpectError(e2e.ContainMatch, "dial tcp: lookup library.example.com: no such host"),
+		),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := imgBuildTests{
@@ -1374,6 +1400,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"build and update sandbox":        c.buildUpdateSandbox,        // build/update sandbox
 		"fingerprint check":               c.buildWithFingerprint,      // definition file includes fingerprint check
 		"build with bind mount":           c.buildBindMount,            // build image with bind mount
+		"library host":                    c.buildLibraryHost,          // build image with hostname in library URI
 		"issue 3848":                      c.issue3848,                 // https://github.com/hpcng/singularity/issues/3848
 		"issue 4203":                      c.issue4203,                 // https://github.com/hpcng/singularity/issues/4203
 		"issue 4407":                      c.issue4407,                 // https://github.com/hpcng/singularity/issues/4407

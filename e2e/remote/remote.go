@@ -412,17 +412,17 @@ func (c ctx) remoteTestFlag(t *testing.T) {
 		{
 			name:           "add help",
 			cmdArgs:        []string{"add", "--help"},
-			expectedOutput: "Create a new singularity remote endpoint",
+			expectedOutput: "Add a new singularity remote endpoint",
 		},
 		{
 			name:           "list help",
 			cmdArgs:        []string{"list", "--help"},
-			expectedOutput: "List all singularity remote endpoints and services that are configured",
+			expectedOutput: "List all singularity remote endpoints, keyservers, and OCI credentials that are configured",
 		},
 		{
 			name:           "login help",
 			cmdArgs:        []string{"login", "--help"},
-			expectedOutput: "Log into a singularity remote endpoint, an OCI/Docker registry or a keyserver using credentials",
+			expectedOutput: "Login to a singularity remote endpoint, an OCI/Docker registry or a keyserver using credentials",
 		},
 		{
 			name:           "remove help",
@@ -597,6 +597,62 @@ func (c ctx) remoteLoginPushPrivate(t *testing.T) {
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.args...),
 			e2e.ExpectExit(tt.expectExit),
+		)
+	}
+}
+
+// Repeated logins with same URI should not create duplicate remote.yaml entries.
+// If we login twice, and logout once we should not see the URI in list.
+// See https://github.com/sylabs/singularity/issues/214
+func (c ctx) remoteLoginRepeated(t *testing.T) {
+	e2e.EnsureRegistry(t)
+	e2e.EnsureImage(t, c.env)
+
+	var (
+		registry = fmt.Sprintf("oras://%s", c.env.TestRegistry)
+	)
+
+	tests := []struct {
+		name       string
+		command    string
+		args       []string
+		expectExit int
+		resultOp   e2e.SingularityCmdResultOp
+	}{
+		{
+			name:       "FirstLogin",
+			command:    "remote login",
+			args:       []string{"-u", e2e.DefaultUsername, "-p", e2e.DefaultPassword, registry},
+			expectExit: 0,
+		},
+		{
+			name:       "SecondLogin",
+			command:    "remote login",
+			args:       []string{"-u", e2e.DefaultUsername, "-p", e2e.DefaultPassword, registry},
+			expectExit: 0,
+		},
+		{
+			name:       "logout",
+			command:    "remote logout",
+			args:       []string{registry},
+			expectExit: 0,
+		},
+		{
+			name:       "list",
+			command:    "remote list",
+			expectExit: 0,
+			resultOp:   e2e.ExpectOutput(e2e.UnwantedContainMatch, registry),
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand(tt.command),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(tt.expectExit, tt.resultOp),
 		)
 	}
 }
@@ -897,6 +953,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"use":                    c.remoteUse,
 		"oci login basic":        np(c.remoteBasicLogin),
 		"oci login push private": np(c.remoteLoginPushPrivate),
+		"oci login repeated":     np(c.remoteLoginRepeated),
 		"keyserver":              np(c.remoteKeyserver),
 		"use exclusive":          np(c.remoteUseExclusive),
 	}

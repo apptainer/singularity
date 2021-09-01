@@ -166,7 +166,16 @@ func (s *Shell) internalExecHandler() interp.ExecHandlerFunc {
 				if err != nil {
 					return err
 				}
-				return s.runner.Run(ctx, node)
+
+				// We run individual syntax.Stmt rather than the parsed syntax.File as the latter
+				// implies an `exit`, and causes https://github.com/sylabs/singularity/issues/274
+				// with the exit/trap changes in https://github.com/mvdan/sh/commit/fb5052e7a0109c9ef5553a310c05f3b8c04cca5f
+				for _, stmt := range node.Stmts {
+					if err := s.runner.Run(ctx, stmt); err != nil {
+						return err
+					}
+				}
+				return nil
 			}
 		}
 		return defaultExecHandler(ctx, args)

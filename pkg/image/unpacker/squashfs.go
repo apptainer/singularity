@@ -110,7 +110,11 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) (err e
 	//  2. Must check (user) xattrs are supported on the FS as unsquashfs >=4.4 will give a non-zero error code if
 	//	   it cannot set them, e.g. on tmpfs (#5668)
 	opts := []string{}
-	rootless := os.Geteuid() != 0
+	hostuid, err := namespaces.HostUID()
+	if err != nil {
+		return fmt.Errorf("could not get host UID: %s", err)
+	}
+	rootless := hostuid != 0
 
 	// Do we support user xattrs?
 	ok, err := TestUserXattr(filepath.Dir(dest))
@@ -129,15 +133,11 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) (err e
 
 	// non real root users could not create pseudo devices so we compare
 	// the host UID (to include fake root user) and apply a filter at extraction (#5690)
-	hostuid, err := namespaces.HostUID()
-	if err != nil {
-		return fmt.Errorf("could not get host UID: %s", err)
-	}
 	filter := ""
 
 	// exclude dev directory only if there no specific files provided for extraction
 	// as globbing won't work with POSIX regex enabled
-	if hostuid != 0 && len(files) == 0 {
+	if rootless && len(files) == 0 {
 		sylog.Debugf("Excluding /dev directory during root filesystem extraction (non root user)")
 		// filter requires POSIX regex
 		opts = append(opts, "-r")

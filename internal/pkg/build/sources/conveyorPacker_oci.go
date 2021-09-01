@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -324,7 +324,9 @@ func (cp *OCIConveyorPacker) insertRunScript() (err error) {
 	}
 
 	if len(cp.imgConfig.Entrypoint) > 0 {
-		_, err = f.WriteString("OCI_ENTRYPOINT='" + shell.ArgsQuoted(cp.imgConfig.Entrypoint) + "'\n")
+		_, err = f.WriteString("OCI_ENTRYPOINT='" +
+			shell.EscapeSingleQuotes(shell.ArgsQuoted(cp.imgConfig.Entrypoint)) +
+			"'\n")
 		if err != nil {
 			return
 		}
@@ -336,7 +338,9 @@ func (cp *OCIConveyorPacker) insertRunScript() (err error) {
 	}
 
 	if len(cp.imgConfig.Cmd) > 0 {
-		_, err = f.WriteString("OCI_CMD='" + shell.ArgsQuoted(cp.imgConfig.Cmd) + "'\n")
+		_, err = f.WriteString("OCI_CMD='" +
+			shell.EscapeSingleQuotes(shell.ArgsQuoted(cp.imgConfig.Cmd)) +
+			"'\n")
 		if err != nil {
 			return
 		}

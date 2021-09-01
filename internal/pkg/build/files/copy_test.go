@@ -25,37 +25,16 @@ func TestMakeParentDir(t *testing.T) {
 	}{
 		{
 			name:   "basic",
-			srcNum: 1,
 			path:   "basic/path",
 			parent: true,
 		},
 		{
 			name:   "trailing slash",
-			srcNum: 1,
 			path:   "trailing/slash/",
 			parent: false,
 		},
 		{
-			name:   "multiple",
-			srcNum: 2,
-			path:   "multiple/files",
-			parent: false,
-		},
-		{
-			name:   "multiple trailing slash",
-			srcNum: 2,
-			path:   "multiple/trailing/slash/",
-			parent: false,
-		},
-		{
 			name:   "exists",
-			srcNum: 1,
-			path:   "", // this will create a path of just the testdir, which will always exist
-			parent: false,
-		},
-		{
-			name:   "exists multiple",
-			srcNum: 2,
 			path:   "", // this will create a path of just the testdir, which will always exist
 			parent: false,
 		},
@@ -73,7 +52,7 @@ func TestMakeParentDir(t *testing.T) {
 
 			// concatenate test path with directory, do not use a join function so that we do not remove a trailing slash
 			path := dir + "/" + tt.path
-			if err := makeParentDir(path, tt.srcNum); err != nil {
+			if err := makeParentDir(path); err != nil {
 				t.Errorf("")
 			}
 
@@ -131,6 +110,13 @@ func TestCopyFromHost(t *testing.T) {
 	if err := os.Mkdir(srcSpaceDir, 0755); err != nil {
 		t.Fatal(err)
 	}
+	srcGlob := filepath.Join(dir, "src*")
+	// Nested File (to test multi level glob)
+	srcFileNested := filepath.Join(dir, "srcDir/srcFileNested")
+	if err := ioutil.WriteFile(srcFileNested, []byte(sourceFileContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+	srcFileNestedGlob := filepath.Join(dir, "srcDi?/srcFil?Nested")
 	// Source Symlinks
 	srcFileLinkAbs := filepath.Join(dir, "srcFileLinkAbs")
 	if err := os.Symlink(srcFile, srcFileLinkAbs); err != nil {
@@ -162,7 +148,7 @@ func TestCopyFromHost(t *testing.T) {
 			name:       "SrcFileNoDest",
 			src:        srcFile,
 			dst:        "",
-			expectPath: "srcFile",
+			expectPath: srcFile,
 			expectFile: true,
 		},
 		{
@@ -189,7 +175,7 @@ func TestCopyFromHost(t *testing.T) {
 		{
 			name:       "srcFileSpace",
 			src:        srcSpaceFile,
-			dst:        "",
+			dst:        "src File",
 			expectPath: "src File",
 			expectFile: true,
 		},
@@ -208,8 +194,29 @@ func TestCopyFromHost(t *testing.T) {
 			expectFile: true,
 		},
 		{
+			name:       "srcFileGlobNoDest",
+			src:        srcFileGlob,
+			dst:        "",
+			expectPath: srcFile,
+			expectFile: true,
+		},
+		{
+			name:       "srcFileNestedGlob",
+			src:        srcFileNestedGlob,
+			dst:        "dstDir/",
+			expectPath: "dstDir/srcFileNested",
+			expectFile: true,
+		},
+		{
+			name:       "srcFileNestedGlobNoDest",
+			src:        srcFileNestedGlob,
+			dst:        "",
+			expectPath: srcFileNested,
+			expectFile: true,
+		},
+		{
 			name: "dstRestricted",
-			src:  srcFileGlob,
+			src:  srcFile,
 			// Will be restricted to `/` in the rootfs and should copy to there OK
 			dst:        "../../../../",
 			expectPath: "srcFile",
@@ -220,7 +227,7 @@ func TestCopyFromHost(t *testing.T) {
 			name:       "SrcDirNoDest",
 			src:        srcDir,
 			dst:        "",
-			expectPath: "srcDir",
+			expectPath: srcDir,
 			expectDir:  true,
 		},
 		{
@@ -247,7 +254,7 @@ func TestCopyFromHost(t *testing.T) {
 		{
 			name:       "srcDirSpace",
 			src:        srcSpaceDir,
-			dst:        "",
+			dst:        "src Dir",
 			expectPath: "src Dir",
 			expectDir:  true,
 		},
@@ -265,11 +272,18 @@ func TestCopyFromHost(t *testing.T) {
 			expectPath: "dstDir/srcDir",
 			expectDir:  true,
 		},
+		{
+			name:       "srcDirGlobNoDest",
+			src:        srcDirGlob,
+			dst:        "",
+			expectPath: srcDir,
+			expectDir:  true,
+		},
 		// Source is a Symlink
 		{
 			name:       "srcFileLinkRel",
 			src:        srcFileLinkRel,
-			dst:        "",
+			dst:        "srcFileLinkRel",
 			expectPath: "srcFileLinkRel",
 			// Copied the file, not the link itself
 			expectFile: true,
@@ -277,7 +291,7 @@ func TestCopyFromHost(t *testing.T) {
 		{
 			name:       "srcFileLinkAbs",
 			src:        srcFileLinkAbs,
-			dst:        "",
+			dst:        "srcFileLinkAbs",
 			expectPath: "srcFileLinkAbs",
 			// Copied the file, not the link itself
 			expectFile: true,
@@ -285,7 +299,7 @@ func TestCopyFromHost(t *testing.T) {
 		{
 			name:       "srcDirLinkRel",
 			src:        srcDirLinkRel,
-			dst:        "",
+			dst:        "srcDirLinkRel",
 			expectPath: "srcDirLinkRel",
 			// Copied the dir, not the link itself
 			expectDir: true,
@@ -293,10 +307,26 @@ func TestCopyFromHost(t *testing.T) {
 		{
 			name:       "srcDirLinkAbs",
 			src:        srcDirLinkAbs,
-			dst:        "",
+			dst:        "srcDirLinkAbs",
 			expectPath: "srcDirLinkAbs",
 			// Copied the dir, not the link itself
 			expectDir: true,
+		},
+		// issue 261 - multiple globbed sources, with no dest
+		// both srcfile and srcdir should be copied for glob of "src*"
+		{
+			name:       "srcDirGlobNoDestMulti1",
+			src:        srcGlob,
+			dst:        "",
+			expectPath: srcDir,
+			expectDir:  true,
+		},
+		{
+			name:       "srcDirGlobNoDestMulti2",
+			src:        srcGlob,
+			dst:        "",
+			expectPath: srcFile,
+			expectFile: true,
 		},
 	}
 
@@ -390,7 +420,7 @@ func TestCopyFromHostNested(t *testing.T) {
 	defer os.RemoveAll(dstDir)
 
 	// Copy our source innerDir over into the destination dir
-	if err := CopyFromHost(innerDir, "", dstDir); err != nil {
+	if err := CopyFromHost(innerDir, "innerDir", dstDir); err != nil {
 		t.Errorf("unexpected failure copying directory: %s", err)
 	}
 
@@ -475,6 +505,11 @@ func TestCopyFromStage(t *testing.T) {
 	}
 	srcSpaceDir := filepath.Join(srcRoot, "src Dir")
 	if err := os.Mkdir(srcSpaceDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	// Nested File (to test multi level glob)
+	srcFileNested := filepath.Join(srcRoot, "srcDir/srcFileNested")
+	if err := ioutil.WriteFile(srcFileNested, []byte(sourceFileContent), 0644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Symlinks
@@ -562,6 +597,27 @@ func TestCopyFromStage(t *testing.T) {
 			expectFile: true,
 		},
 		{
+			name:       "srcFileGlobNoDest",
+			srcRel:     "srcF?*",
+			dstRel:     "",
+			expectPath: "srcFile",
+			expectFile: true,
+		},
+		{
+			name:       "srcFileNestedGlob",
+			srcRel:     "srcDi?/srcFil?Nested",
+			dstRel:     "dstDir/",
+			expectPath: "dstDir/srcFileNested",
+			expectFile: true,
+		},
+		{
+			name:       "srcFileNestedGlobNoDest",
+			srcRel:     "srcDi?/srcFil?Nested",
+			dstRel:     "",
+			expectPath: "srcDir/srcFileNested",
+			expectFile: true,
+		},
+		{
 			name:   "dstRestricted",
 			srcRel: "srcFile",
 			// Will be restricted to `/` in the dst rootfs and should copy to there OK
@@ -627,6 +683,13 @@ func TestCopyFromStage(t *testing.T) {
 			expectPath: "dstDir/srcDir",
 			expectDir:  true,
 		},
+		{
+			name:       "srcDirGlobNoDest",
+			srcRel:     "srcD?*",
+			dstRel:     "",
+			expectPath: "srcDir",
+			expectDir:  true,
+		},
 		// Source is a Symlink
 		{
 			name:       "srcFileLinkRel",
@@ -659,6 +722,22 @@ func TestCopyFromStage(t *testing.T) {
 			expectPath: "srcDirLinkAbs",
 			// Copied the dir, not the link itself
 			expectDir: true,
+		},
+		// issue 261 - multiple globbed sources, with no dest
+		// both srcfile and srcdir should be copied for glob of "src*"
+		{
+			name:       "srcDirGlobNoDestMulti1",
+			srcRel:     "src*",
+			dstRel:     "",
+			expectPath: "srcDir",
+			expectDir:  true,
+		},
+		{
+			name:       "srcDirGlobNoDestMulti2",
+			srcRel:     "src*",
+			dstRel:     "",
+			expectPath: "srcFile",
+			expectFile: true,
 		},
 	}
 

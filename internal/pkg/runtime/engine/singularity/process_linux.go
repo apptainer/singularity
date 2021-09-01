@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -646,7 +646,7 @@ func injectEnvHandler(senv map[string]string) interpreter.OpenHandler {
 					b.WriteString(fmt.Sprintf(snippet, key, value+":/.singularity.d/libs"))
 					continue
 				}
-				b.WriteString(fmt.Sprintf(snippet, key, shell.EscapeQuotes(value)))
+				b.WriteString(fmt.Sprintf(snippet, key, shell.EscapeDoubleQuotes(value)))
 			}
 		})
 

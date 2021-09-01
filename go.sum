@@ -522,10 +522,10 @@ github.com/hashicorp/mdns v1.0.0/go.mod h1:tL+uN++7HEJ6SQLQ2/p+z2pH24WQKWjBPkE0m
 github.com/hashicorp/memberlist v0.1.3/go.mod h1:ajVTdAv/9Im8oMAAj5G31PhhMCZJV2pPBoIllUwCN7I=
 github.com/hashicorp/serf v0.8.2/go.mod h1:6hOLApaqBFA1NXqRQAsxw9QxuDEvNxSQRwA/JwenrHc=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
-github.com/hpcng/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9 h1:t8KUun6NE+Kv500O2sNQ6LIFvUz7QX+RJGOVoJFlyHM=
-github.com/hpcng/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9/go.mod h1:YRpvuFxEV8iMqW8qf0+X+dTRn3labfXfykTzp8hRkSg=
-github.com/hpcng/sif v1.5.1 h1:ZKsjRc4Wykos3pB3ASiKXK9iep9+k78Fmo2r79xHbDE=
-github.com/hpcng/sif v1.5.1/go.mod h1:Zm0L455Vvf9YZv6QyuTmQUgl9fcf/ST9r3/v9FbGLYo=
+github.com/hpcng/golang-x-crypto v0.0.0-20210830200829-e6b35e3fb874 h1:mGKQ3LEDpGH3MVbBWPXw/m2xJ7s9XEnga1q5fYgK/RY=
+github.com/hpcng/golang-x-crypto v0.0.0-20210830200829-e6b35e3fb874/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
+github.com/hpcng/sif v1.6.0 h1:CEYAU+PY0AFmg+G8SwJJmNA4Ixs6DOcgf/pIkVd8QBA=
+github.com/hpcng/sif v1.6.0/go.mod h1:czlq6ECeYaGHAYmZdKjAXB0S5VrfQXcT3Momvszz2qY=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
@@ -850,8 +850,8 @@ github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69
 github.com/sylabs/json-resp v0.7.1/go.mod h1:3O9ze5PoYxia6106m5x+5G5ohnW1AJX/FURjCNovtzA=
 github.com/sylabs/json-resp v0.8.0 h1:bZ932uaF220aPqT0+x/vakoaGCGNbpLCjUFm1f+JKlY=
 github.com/sylabs/json-resp v0.8.0/go.mod h1:bUGV9cqShOyxz7RxBq03Yt9raKGfELKrfN6Yac3lfiw=
-github.com/sylabs/scs-build-client v0.1.6 h1:ZzcS8trPF+jFNovh9o6aeiJnMtClKNyrby9DPEkrAAQ=
-github.com/sylabs/scs-build-client v0.1.6/go.mod h1:XFO5Aq0NXsO1A41JBNMt3tWwxmddV8UrId4wmmoLrIU=
+github.com/sylabs/scs-build-client v0.2.1 h1:/Hk9SI+hNPPjuacNk0aFvi6u7tFdNVtPzz+ZdO3NMQc=
+github.com/sylabs/scs-build-client v0.2.1/go.mod h1:/kuKpMv3JnFd2IXCmX1+OCYxBxv+zUUWv92Az3QvwfE=
 github.com/sylabs/scs-key-client v0.6.2 h1:PTdmkE50rFMrSty9usl8wnzaW+JPK0rjXF4cdIQ3MEo=
 github.com/sylabs/scs-key-client v0.6.2/go.mod h1:WoTk47nNRrk0uLfblxUFekxDIIVPY4l2/9evME5fgX0=
 github.com/sylabs/scs-library-client v1.0.5 h1:u8ueCIQaa38/B0axtKUzdWSQ6uLXL9HvLQGNkB69Oe0=

@@ -17,8 +17,8 @@ func Test_GetName(t *testing.T) {
 	}{
 		{"docker basic", "docker://ubuntu", "ubuntu_latest.sif"},
 		{"docker scoped", "docker://user/image", "image_latest.sif"},
-		{"dave's magical lolcow", "docker://godlovedc/lolcow", "lolcow_latest.sif"},
-		{"docker w/ tags", "docker://godlovedc/lolcow:3.7", "lolcow_3.7.sif"},
+		{"dave's magical lolcow", "docker://sylabs.io/lolcow", "lolcow_latest.sif"},
+		{"docker w/ tags", "docker://sylabs.io/lolcow:3.7", "lolcow_3.7.sif"},
 	}
 
 	for _, tt := range tests {
@@ -39,8 +39,8 @@ func Test_Split(t *testing.T) {
 	}{
 		{"docker basic", "docker://ubuntu", "docker", "//ubuntu"},
 		{"docker scoped", "docker://user/image", "docker", "//user/image"},
-		{"dave's magical lolcow", "docker://godlovedc/lolcow", "docker", "//godlovedc/lolcow"},
-		{"docker with tags", "docker://godlovedc/lolcow:latest", "docker", "//godlovedc/lolcow:latest"},
+		{"dave's magical lolcow", "docker://sylabs.io/lolcow", "docker", "//sylabs.io/lolcow"},
+		{"docker with tags", "docker://sylabs.io/lolcow:latest", "docker", "//sylabs.io/lolcow:latest"},
 		{"library basic", "library://image", "library", "//image"},
 		{"library scoped", "library://collection/image", "library", "//collection/image"},
 		{"without transport", "ubuntu", "", "ubuntu"},

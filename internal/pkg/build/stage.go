@@ -174,11 +174,6 @@ func (s *stage) copyFilesFrom(b *Build) error {
 				sylog.Warningf("Attempt to copy file with no name, skipping.")
 				continue
 			}
-			// dest = source if not specified
-			if transfer.Dst == "" {
-				transfer.Dst = transfer.Src
-			}
-
 			// copy each file into bundle rootfs
 			sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
 			if err := files.CopyFromStage(transfer.Src, transfer.Dst, srcRootfsPath, dstRootfsPath); err != nil {
@@ -206,10 +201,6 @@ func (s *stage) copyFiles() error {
 		if transfer.Src == "" {
 			sylog.Warningf("Attempt to copy file with no name, skipping.")
 			continue
-		}
-		// dest = source if not specified
-		if transfer.Dst == "" {
-			transfer.Dst = transfer.Src
 		}
 		// copy each file into bundle rootfs
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)

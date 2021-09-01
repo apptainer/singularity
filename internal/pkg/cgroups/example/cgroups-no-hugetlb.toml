@@ -102,9 +102,9 @@
 # Hugetlb limit (in bytes)
 # - pagesize: the hugepage size
 # - limit: the limit of "hugepagesize" hugetlb usage
-[[hugepageLimits]]
-  limit = 9223372036854771712
-  pageSize = "16MB"
+# [[hugepageLimits]]
+#   limit = 9223372036854771712
+#   pageSize = "16MB"
 
 
 # Network restriction configuration
