@@ -684,3 +684,36 @@ func (c actionTests) invalidRemote(t *testing.T) {
 	)
 
 }
+
+// Check that a bind mount without a destination is not added two times.
+func (c actionTests) issue6165(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	workspace, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue6165-", "")
+	defer e2e.Privileged(cleanup)
+
+	hostCanaryFile := filepath.Join(workspace, "file")
+
+	if err := fs.Touch(hostCanaryFile); err != nil {
+		t.Fatalf("failed to create canary_file: %s", err)
+	}
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(
+			"--contain",
+			"--bind", hostCanaryFile,
+			c.env.ImagePath,
+			"test", "-f", hostCanaryFile,
+		),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectError(
+				e2e.UnwantedContainMatch,
+				"destination is already in the mount point list",
+			),
+		),
+	)
+}
