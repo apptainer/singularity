@@ -1,5 +1,11 @@
 # Singularity Changelog
 
+## v3.8.3 - [2021-09-07]
+
+### Bug fixes
+
+  - Fix the display of false warning and avoid repeated bind mounts.
+
 ## v3.8.2 - [2021-08-31]
 
 ### Bug fixes
