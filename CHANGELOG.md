@@ -4,7 +4,7 @@
 
 ### Bug fixes
 
-  - Fix the display of false warning and avoid repeated bind mounts.
+  - Fix regression introduced in 3.8.1 that caused bind mounts without a destination to be added twice.
 
 ## v3.8.2 - [2021-08-31]
 
