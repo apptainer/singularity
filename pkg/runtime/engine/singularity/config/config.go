@@ -408,8 +408,6 @@ func ParseBindPath(paths []string) ([]BindPath, error) {
 				}
 				binds = append(binds, bp)
 				elem = 0
-				bind = ""
-				continue
 			}
 			// new bind path
 			bind = s
