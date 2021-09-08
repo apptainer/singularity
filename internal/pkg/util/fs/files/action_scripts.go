@@ -136,7 +136,7 @@ restore_env
 # If we were called through a script and PS1 is empty this
 # gives a confusing silent prompt. Force a PS1 if it's empty.
 if test -z "${PS1:-}"; then
-	export PS1="Singularity> "
+	export PS1="\u@\h/$SINGULARITY_NAME:\w > "
 fi
 
 # See https://github.com/hpcng/singularity/issues/2721,
