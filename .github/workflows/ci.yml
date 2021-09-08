@@ -11,7 +11,7 @@ jobs:
   check_go_mod:
     name: check_go_mod
     runs-on: ubuntu-20.04
-    container: golang:1.16
+    container: golang:1.17
     steps:
       - uses: actions/checkout@v2
 
@@ -21,7 +21,7 @@ jobs:
   debian:
     name: debian
     runs-on: ubuntu-20.04
-    container: golang:1.16-buster
+    container: golang:1.17-buster
     steps:
       - name: Fetch deps
         run: |
@@ -40,7 +40,7 @@ jobs:
   alpine:
     name: alpine
     runs-on: ubuntu-20.04
-    container: golang:1.16-alpine
+    container: golang:1.17-alpine
     steps:
       - name: Fetch deps
         run: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
@@ -59,7 +59,7 @@ jobs:
     name: oldgo
     runs-on: ubuntu-20.04
     # match the minimum version required by mconfig
-    container: golang:1.13-alpine
+    container: golang:1.16-alpine
     steps:
       - name: Fetch deps
         run: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
@@ -83,7 +83,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16.7
+          go-version: 1.17
 
       - name: Build Singularity
         run: |
@@ -126,7 +126,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16.7
+          go-version: 1.17
 
       - name: Fetch deps
         run: sudo apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup
@@ -148,7 +148,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16.7
+          go-version: 1.17
 
       - name: Fetch deps
         run: sudo apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup
@@ -192,7 +192,7 @@ jobs:
         if: env.run_tests
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16.7
+          go-version: 1.17
 
       - name: Fetch deps
         if: env.run_tests
