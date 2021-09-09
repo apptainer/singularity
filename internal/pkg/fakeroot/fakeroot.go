@@ -141,7 +141,7 @@ func (c *Config) parseEntry(line string) {
 		e.disabled = true
 	}
 
-	uid, err := strconv.Atoi(username)
+	uid, err := strconv.ParseUint(username, 10, 32)
 	if err == nil {
 		e.UID = uint32(uid)
 	} else {
