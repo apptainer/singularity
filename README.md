@@ -1,6 +1,6 @@
 # Singularity
 
-[![CI](https://github.com/hpcng/singularity/actions/workflows/ci.yml/badge.svg)](https://github.com/hpcng/singularity/actions/workflows/ci.yml)
+[![CI](https://github.com/polarfoxcloud/singularity/actions/workflows/ci.yml/badge.svg)](https://github.com/polarfoxcloud/singularity/actions/workflows/ci.yml)
 
 - [Guidelines for Contributing](CONTRIBUTING.md)
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
