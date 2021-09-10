@@ -25,6 +25,11 @@
   and it requires being used in combination with `--writable` in user
   namespace mode.
   Please see documentation for more details.
+- A new `--mount` flag and `SINGULARITY_MOUNT` environment variable can be used
+  to specify bind mounts in
+  `type=bind,source=<src>,destination=<dst>[,options...]` format. This improves
+  CLI compatibility with other runtimes, and allows binding paths containing
+  `:` and `,` characters (using CSV style escaping).
 
 ### Changed defaults / behaviours
 
