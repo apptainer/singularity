@@ -124,6 +124,12 @@ func runBuild(cmd *cobra.Command, args []string) {
 		}
 		os.Setenv("SINGULARITY_BINDPATH", strings.Join(buildArgs.bindPaths, ","))
 	}
+	if len(buildArgs.mounts) > 0 {
+		if buildArgs.remote {
+			sylog.Fatalf("--mount option is not supported for remote build")
+		}
+		os.Setenv("SINGULARITY_MOUNT", strings.Join(buildArgs.mounts, "\n"))
+	}
 	if buildArgs.writableTmpfs {
 		if buildArgs.remote {
 			sylog.Fatalf("--writable-tmpfs option is not supported for remote build")
