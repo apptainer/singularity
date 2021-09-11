@@ -96,7 +96,7 @@ func TestCurrentOriginal(t *testing.T) {
 
 	// to fully test CurrentOriginal, we would need
 	// to execute it from a user namespace, actually
-	// we just ensure that current user informations
+	// we just ensure that current user information
 	// are returned
 	testCurrent(t, CurrentOriginal)
 

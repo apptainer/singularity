@@ -249,7 +249,7 @@ static void apply_privileges(struct privileges *privileges, struct capabilities 
     int last_cap = get_last_cap();
     int caps_index;
 
-    /* adjust capabilities based on the lastest capability supported by the system */
+    /* adjust capabilities based on the latest capability supported by the system */
     for ( caps_index = last_cap + 1; caps_index <= CAPSET_MAX; caps_index++ ) {
         privileges->capabilities.effective &= ~capflag(caps_index);
         privileges->capabilities.permitted &= ~capflag(caps_index);

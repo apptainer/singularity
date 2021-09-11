@@ -169,7 +169,7 @@ func populateRaw(d *Definition, w io.Writer) {
 	}
 
 	for k, v := range d.Header {
-		// filter out bootsrap parameter since it should already be added
+		// filter out bootstrap parameter since it should already be added
 		if k == "bootstrap" {
 			continue
 		}

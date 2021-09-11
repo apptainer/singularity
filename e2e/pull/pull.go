@@ -220,7 +220,7 @@ var tests = []testStruct{
 
 func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 	// We use a string rather than a slice of strings to avoid having an empty
-	// element in the slice, which would cause the command to fail, wihtout
+	// element in the slice, which would cause the command to fail, without
 	// over-complicating the code.
 	argv := ""
 
@@ -559,24 +559,24 @@ func (c ctx) testPullUmask(t *testing.T) {
 			expectPerm: 0o750,
 		},
 
-		// With the force flag, and overide the image. The permission will
+		// With the force flag, and override the image. The permission will
 		// reset to 0666 after every test.
 		{
-			name:       "0022 umask pull overide",
+			name:       "0022 umask pull override",
 			imagePath:  filepath.Join(c.env.TestDir, umask22Image),
 			umask:      0o022,
 			expectPerm: 0o755,
 			force:      true,
 		},
 		{
-			name:       "0077 umask pull overide",
+			name:       "0077 umask pull override",
 			imagePath:  filepath.Join(c.env.TestDir, umask77Image),
 			umask:      0o077,
 			expectPerm: 0o700,
 			force:      true,
 		},
 		{
-			name:       "0027 umask pull overide",
+			name:       "0027 umask pull override",
 			imagePath:  filepath.Join(c.env.TestDir, umask27Image),
 			umask:      0o027,
 			expectPerm: 0o750,

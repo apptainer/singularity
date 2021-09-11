@@ -58,7 +58,7 @@ func TestYumConveyor(t *testing.T) {
 	yc := &YumConveyor{}
 
 	err = yc.Get(context.Background(), b)
-	// clean up bundle since assembler isnt called
+	// clean up bundle since assembler isn't called
 	defer yc.b.Remove()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", yumDef, err)
@@ -102,7 +102,7 @@ func TestYumPacker(t *testing.T) {
 	ycp := &YumConveyorPacker{}
 
 	err = ycp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer ycp.b.Remove()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", yumDef, err)

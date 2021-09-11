@@ -24,7 +24,7 @@ import (
 // This test will build an image from a multi-stage definition
 // file, the first stage compile a bad NSS library containing
 // a constructor forcing program to exit with code 255 when loaded,
-// the second stage will copy the bad NSS library in its root filesytem
+// the second stage will copy the bad NSS library in its root filesystem
 // to check that the post section executed by the build engine doesn't
 // load the bad NSS library from container image.
 // Most if not all NSS services point to the bad NSS library in

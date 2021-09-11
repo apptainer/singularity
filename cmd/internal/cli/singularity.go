@@ -170,7 +170,7 @@ var commonPEMFlag = cmdline.Flag{
 	Value:        &encryptionPEMPath,
 	DefaultValue: "",
 	Name:         "pem-path",
-	Usage:        "enter an path to a PEM formated RSA key for an encrypted container",
+	Usage:        "enter an path to a PEM formatted RSA key for an encrypted container",
 }
 
 // -F|--force
@@ -262,7 +262,7 @@ func setSylogMessageLevel() {
 }
 
 // handleRemoteConf will make sure your 'remote.yaml' config file
-// is the correct permission.
+// has the correct permission.
 func handleRemoteConf(remoteConfFile string) {
 	// Only check the permission if it exists.
 	if fs.IsFile(remoteConfFile) {

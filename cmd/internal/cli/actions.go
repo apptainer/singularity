@@ -166,7 +166,7 @@ func setVM(cmd *cobra.Command) {
 
 	// since --syos is a boolean, it cannot be added to the above list
 	if IsSyOS && !VM {
-		// let the user know that passing --syos implictly enables --vm
+		// let the user know that passing --syos implicitly enables --vm
 		sylog.Warningf("The --syos option requires a virtual machine, automatically enabling --vm option.")
 		cmd.Flags().Set("vm", "true")
 	}

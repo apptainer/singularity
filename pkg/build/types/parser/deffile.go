@@ -54,7 +54,7 @@ func IsInvalidSectionError(err error) bool {
 //
 // Scanner behavior:
 //     1. The *first* time `s.Text()` is non-nil (which can be after infinitely many calls to
-//        `s.Scan()`), that text is *guaranteed* to be the header, unless the header doesnt exist.
+//        `s.Scan()`), that text is *guaranteed* to be the header, unless the header doesn't exist.
 //		  In that case it returns the first section it finds.
 //     2. The next `n` times that `s.Text()` is non-nil (again, each could take many calls to
 //        `s.Scan()`), that text is guaranteed to be one specific section of the definition file.

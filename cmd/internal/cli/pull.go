@@ -45,7 +45,7 @@ var (
 	pullLibraryURI string
 	// pullImageName holds the name to be given to the pulled image.
 	pullImageName string
-	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it.
+	// unauthenticatedPull when true; won't ask to keep a unsigned container after pulling it.
 	unauthenticatedPull bool
 	// pullDir is the path that the containers will be pulled to, if set.
 	pullDir string

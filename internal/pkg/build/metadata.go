@@ -173,7 +173,7 @@ func insertDefinition(b *types.Bundle) error {
 	// if update, check for existing definition and move it to bootstrap history
 	if b.Opts.Update {
 		if _, err := os.Stat(filepath.Join(b.RootfsPath, "/.singularity.d/Singularity")); err == nil {
-			// make bootstrap_history directory if it doesnt exist
+			// make bootstrap_history directory if it doesn't exist
 			if _, err := os.Stat(filepath.Join(b.RootfsPath, "/.singularity.d/bootstrap_history")); err != nil {
 				err = os.Mkdir(filepath.Join(b.RootfsPath, "/.singularity.d/bootstrap_history"), 0o755)
 				if err != nil {
@@ -246,7 +246,7 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 					sylog.Warningf("Label: %s already exists and force option is false, not overwriting", key)
 				}
 			} else {
-				// set if it doesnt
+				// set if it doesn't
 				labels[key] = value
 			}
 		}

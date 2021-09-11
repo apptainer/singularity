@@ -40,7 +40,7 @@ func TestMakeParentDir(t *testing.T) {
 		},
 	}
 
-	// while running tests, make sure to remove everything past the tmp dir created so tests to accidentially collide
+	// while running tests, make sure to remove everything past the tmp dir created so tests to accidentally collide
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// create tmpdir for each test

@@ -14,7 +14,7 @@ import (
 	"github.com/hpcng/singularity/pkg/image"
 )
 
-// SquashfsPacker holds the locations of where to pack from and to, aswell as image offset info
+// SquashfsPacker holds the locations of where to pack from and to, as well as image offset info
 type SquashfsPacker struct {
 	srcfile string
 	b       *types.Bundle

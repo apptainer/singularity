@@ -288,7 +288,7 @@ func (e *EngineOperations) StartProcess(masterConnFd int) error {
 				statusChan <- status
 			} else if e, ok := err.(*os.SyscallError); ok {
 				// handle possible race with Wait4 call above by ignoring ECHILD
-				// error because child process was already catched
+				// error because child process was already caught
 				if e.Err.(syscall.Errno) != syscall.ECHILD {
 					sylog.Fatalf("error while waiting container process: %s", e.Error())
 				}

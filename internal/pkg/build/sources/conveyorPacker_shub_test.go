@@ -45,7 +45,7 @@ func TestShubConveyor(t *testing.T) {
 	cp := &sources.ShubConveyorPacker{}
 
 	err = cp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
@@ -72,7 +72,7 @@ func TestShubPacker(t *testing.T) {
 	scp := &sources.ShubConveyorPacker{}
 
 	err = scp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer scp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)

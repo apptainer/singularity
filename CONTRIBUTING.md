@@ -49,7 +49,7 @@ all your interactions with the project members and users.
 1. If possible, run `make -C builddir testall` locally, after setting the
    environment variables `E2E_DOCKER_USERNAME` and `E2E_DOCKER_PASSWORD`
    appropriately for an authorized Docker Hub account. This is required as
-   Singularity's end-to-end tests preform many tests that build from or execute
+   Singularity's end-to-end tests perform many tests that build from or execute
    docker images. Our CI is authorized to run these tests if you cannot.
 1. Ask yourself is the code human understandable? This can be accomplished via a
    clear code style as well as documentation and/or comments.

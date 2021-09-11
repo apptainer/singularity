@@ -165,7 +165,7 @@ func (m *Manager) createParentDir(path string) {
 				d := &dir{mode: m.DirMode, uid: uid, gid: gid}
 				m.entries[p] = d
 				m.dirs = append(m.dirs, d)
-				// check if the parent directory is part of the overrided
+				// check if the parent directory is part of the overridden
 				// directories to force the creation of the destination
 				// directory in the right parent directory (nested binds)
 				if ovDirs, ok := m.ovDirs[filepath.Dir(p)]; ok {

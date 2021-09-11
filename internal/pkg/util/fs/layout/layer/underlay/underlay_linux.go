@@ -135,12 +135,12 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 						return err
 					}
 				}
-				// if the directory is overrided by a bind mount we won't
+				// if the directory is overridden by a bind mount we won't
 				// need to duplicate the container image directory
 				if _, ok := destinations[p]; ok {
 					continue
 				}
-				// directory not overrided, duplicate it
+				// directory not overridden, duplicate it
 				if err := u.duplicateDir(p, system, pl.path); err != nil {
 					return err
 				}

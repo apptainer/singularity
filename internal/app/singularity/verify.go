@@ -47,7 +47,7 @@ func OptVerifyUseKeyServer(opts ...client.Option) VerifyOpt {
 }
 
 // OptVerifyGroup adds a verification task for the group with the specified groupID. This may be
-// called multliple times to request verification of more than one group.
+// called multiple times to request verification of more than one group.
 func OptVerifyGroup(groupID uint32) VerifyOpt {
 	return func(v *verifier) error {
 		v.groupIDs = append(v.groupIDs, groupID)
@@ -56,7 +56,7 @@ func OptVerifyGroup(groupID uint32) VerifyOpt {
 }
 
 // OptVerifyObject adds a verification task for the object with the specified id. This may be
-// called multliple times to request verification of more than one object.
+// called multiple times to request verification of more than one object.
 func OptVerifyObject(id uint32) VerifyOpt {
 	return func(v *verifier) error {
 		v.objectIDs = append(v.objectIDs, id)

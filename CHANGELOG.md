@@ -42,7 +42,7 @@
   `ldconfig path = /sbin/ldconfig` to use the host distribution `ldconfig` to
   find GPU libraries.
 - Example log-plugin rewritten as a CLI callback that can log all commands
-  executed, intead of only container execution, and has access to command
+  executed, instead of only container execution, and has access to command
   arguments.
 
 ## v3.8.3 - \[2021-09-07\]
@@ -192,7 +192,7 @@ of use:
 - Allow configuration of global custom keyservers, separate from remote
   endpoints.
 - Add a new global keyring, for public keys only (used for ECL).
-- The `remote login` commmand now supports authentication to Docker/OCI
+- The `remote login` command now supports authentication to Docker/OCI
   registries and custom keyservers.
 - New `--exclusive` option for `remote use` allows admin to lock usage to a
   specific remote.

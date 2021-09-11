@@ -53,7 +53,7 @@ func TestBusyBoxConveyor(t *testing.T) {
 	c := &sources.BusyBoxConveyor{}
 
 	err = c.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer c.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", busyBoxDef, err)
@@ -86,7 +86,7 @@ func TestBusyBoxPacker(t *testing.T) {
 	cp := &sources.BusyBoxConveyorPacker{}
 
 	err = cp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", busyBoxDef, err)

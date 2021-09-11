@@ -69,7 +69,7 @@ func TestLoadSeccompConfig(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	if err := LoadSeccompConfig(nil, false, 1); err == nil {
-		t.Errorf("shoud have failed with an empty config")
+		t.Errorf("should have failed with an empty config")
 	}
 	if err := LoadSeccompConfig(defaultProfile(), true, 1); err != nil {
 		t.Errorf("%s", err)
@@ -85,7 +85,7 @@ func TestLoadProfileFromFile(t *testing.T) {
 	gen := generate.New(nil)
 
 	if err := LoadProfileFromFile("test_profile/fake.json", gen); err == nil {
-		t.Errorf("shoud have failed with inexistent file")
+		t.Errorf("should have failed with inexistent file")
 	}
 
 	if err := LoadProfileFromFile("test_profile/test.json", gen); err != nil {

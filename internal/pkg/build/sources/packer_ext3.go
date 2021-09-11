@@ -19,7 +19,7 @@ import (
 	"github.com/hpcng/singularity/pkg/util/loop"
 )
 
-// Ext3Packer holds the locations of where to back from and to, aswell as image offset info
+// Ext3Packer holds the locations of where to back from and to, as well as image offset info
 type Ext3Packer struct {
 	srcfile string
 	b       *types.Bundle
