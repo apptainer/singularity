@@ -55,25 +55,6 @@ jobs:
       - name: Check Singularity
         run: make -C ./builddir check
 
-  oldgo:
-    name: oldgo
-    runs-on: ubuntu-20.04
-    # match the minimum version required by mconfig
-    container: golang:1.16-alpine
-    steps:
-      - name: Fetch deps
-        run: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
-
-      - uses: actions/checkout@v2
-
-      - name: Build Singularity
-        run: |
-          ./mconfig -v -p /usr/local
-          make -C ./builddir all
-
-      - name: Check Singularity
-        run: make -C ./builddir check
-
   macos:
     name: macos
     runs-on: macos-10.15
