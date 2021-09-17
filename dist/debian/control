@@ -13,9 +13,7 @@ Build-Depends:
  help2man,
  libarchive-dev,
  libssl-dev,
- python,
  uuid-dev,
- golang-go (>= 2:1.13)
 Standards-Version: 3.9.8
 Homepage: http://gmkurtzer.github.io/singularity
 Vcs-Git: https://github.com/hpcng/singularity.git

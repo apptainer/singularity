@@ -20,7 +20,7 @@ hstld=
 hstranlib=
 hstobjcopy=
 hstgo=
-hstgo_version="1.13"
+hstgo_version="1.17"
 hstgo_opts="go"
 
 tgtcc=
