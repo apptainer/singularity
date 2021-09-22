@@ -61,6 +61,9 @@ func TestBusyBoxConveyor(t *testing.T) {
 }
 
 func TestBusyBoxPacker(t *testing.T) {
+	// 2021-09-22 - Always skip due to frequent download failures
+	t.SkipNow()
+
 	// TODO - busybox example has arch hard coded
 	require.Arch(t, "amd64")
 
