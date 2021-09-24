@@ -26,8 +26,6 @@ var ErrLibraryPullUnsigned = errors.New("failed to verify container")
 
 // pull will pull a library image into the cache if directTo="", or a specific file if directTo is set.
 func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef *libclient.Ref, arch string, libraryConfig *libclient.Config) (imagePath string, err error) {
-	sylog.GetLevel()
-
 	c, err := libclient.NewClient(libraryConfig)
 	if err != nil {
 		return "", fmt.Errorf("unable to initialize client library: %v", err)
@@ -45,7 +43,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef
 
 	if directTo != "" {
 		sylog.Infof("Downloading library image")
-		if err = DownloadImage(ctx, c, directTo, arch, imageRef, client.ProgressBarCallback(ctx)); err != nil {
+		if err = DownloadImage(ctx, c, directTo, arch, imageRef, &client.DownloadProgressBar{}); err != nil {
 			return "", fmt.Errorf("unable to download image: %v", err)
 		}
 		imagePath = directTo
@@ -59,7 +57,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef
 		if !cacheEntry.Exists {
 			sylog.Infof("Downloading library image")
 
-			if err := DownloadImage(ctx, c, cacheEntry.TmpPath, arch, imageRef, client.ProgressBarCallback(ctx)); err != nil {
+			if err := DownloadImage(ctx, c, cacheEntry.TmpPath, arch, imageRef, &client.DownloadProgressBar{}); err != nil {
 				return "", fmt.Errorf("unable to download image: %v", err)
 			}
 

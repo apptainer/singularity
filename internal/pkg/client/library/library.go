@@ -10,11 +10,13 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
 	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/singularityconf"
 
-	"github.com/hpcng/singularity/internal/pkg/client"
 	scslibrary "github.com/sylabs/scs-library-client/client"
 )
 
@@ -53,8 +55,51 @@ func NormalizeLibraryRef(ref string) (*scslibrary.Ref, error) {
 	return &scslibrary.Ref{Host: host, Path: elem[0], Tags: tags}, nil
 }
 
+func getEnvInt(key string, defval int64) int64 {
+	if env := os.Getenv(key); env != "" {
+		if n, err := strconv.ParseInt(env, 10, 0); err == nil {
+			return n
+		}
+		sylog.Warningf("Error parsing %s; using default (%d)", key, defval)
+	}
+	return defval
+}
+
+func getDownloadConfig() (scslibrary.Downloader, error) {
+	// get downloader parameters from config
+	conf := singularityconf.GetCurrentConfig()
+	if conf == nil {
+		// sylog.Fatalf("Unable to get singularity configuration")
+		var err error
+		conf, err = singularityconf.Parse(buildcfg.SINGULARITY_CONF_FILE)
+		if err != nil {
+			sylog.Fatalf("unable to parse singularity.conf file: %s", err)
+		}
+	}
+
+	concurrency := int64(getEnvInt("SINGULARITY_DOWNLOAD_CONCURRENCY", int64(conf.DownloadConcurrency)))
+	partSize := int64(getEnvInt("SINGULARITY_DOWNLOAD_PART_SIZE", int64(conf.DownloadPartSize)))
+	bufferSize := int64(getEnvInt("SINGULARITY_DOWNLOAD_BUFFER_SIZE", int64(conf.DownloadBufferSize)))
+
+	if concurrency < 1 {
+		return scslibrary.Downloader{}, fmt.Errorf("invalid download concurrency value (%v)", concurrency)
+	}
+	if partSize < 1 {
+		return scslibrary.Downloader{}, fmt.Errorf("invalid concurrent download part size (%v)", partSize)
+	}
+	if bufferSize < 1 {
+		return scslibrary.Downloader{}, fmt.Errorf("invalid concurrent download buffer size (%v)", bufferSize)
+	}
+
+	return scslibrary.Downloader{
+		Concurrency: uint(concurrency),
+		PartSize:    partSize,
+		BufferSize:  bufferSize,
+	}, nil
+}
+
 // DownloadImage is a helper function to wrap library image download operation
-func DownloadImage(ctx context.Context, c *scslibrary.Client, imagePath, arch string, libraryRef *scslibrary.Ref, callback client.ProgressCallback) error {
+func DownloadImage(ctx context.Context, c *scslibrary.Client, imagePath, arch string, libraryRef *scslibrary.Ref, pb scslibrary.ProgressBar) error {
 	// open destination file for writing
 	f, err := os.OpenFile(imagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o777)
 	if err != nil {
@@ -67,9 +112,13 @@ func DownloadImage(ctx context.Context, c *scslibrary.Client, imagePath, arch st
 		tag = libraryRef.Tags[0]
 	}
 
-	// call library client to download image
-	err = c.DownloadImage(ctx, f, arch, libraryRef.Path, tag, callback)
+	spec, err := getDownloadConfig()
 	if err != nil {
+		return err
+	}
+
+	// call library client to download image
+	if err := c.ConcurrentDownloadImage(ctx, f, arch, libraryRef.Path, tag, &spec, pb); err != nil {
 		// Delete incomplete image file in the event of failure
 		// we get here e.g. if the context is canceled by Ctrl-C
 		sylog.Debugf("Cleaning up incomplete download: %s", imagePath)
