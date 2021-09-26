@@ -186,18 +186,5 @@ func collectInput(cmd *cobra.Command) (*keyNewPairOptions, error) {
 		genOpts.Password = p
 	}
 
-	if cmd.Flags().Changed(keyNewPairPushFlag.Name) {
-		genOpts.PushToKeyStore = keyNewPairPush
-	} else {
-		a, err := interactive.AskYNQuestion("y", "Would you like to push it to the keystore? [Y,n] ")
-		if err != nil {
-			return nil, err
-		}
-
-		if a == "y" {
-			genOpts.PushToKeyStore = true
-		}
-	}
-
 	return &genOpts, nil
 }
