@@ -36,7 +36,7 @@ var confFiles = []struct {
 		name: "test-bridge",
 		file: "00_test-bridge.conflist",
 		content: `{
-			"cniVersion": "0.4.0",
+			"cniVersion": "1.0.0",
 			"name": "test-bridge",
 			"plugins": [
 				{
@@ -67,7 +67,7 @@ var confFiles = []struct {
 		name: "test-badbridge",
 		file: "10_badbridge.conflist",
 		content: `{
-			"cniVersion": "0.4.0",
+			"cniVersion": "1.0.0",
 			"name": "test-badbridge",
 			"plugins": [
 				{
@@ -81,7 +81,7 @@ var confFiles = []struct {
 		name: "test-bridge-iprange",
 		file: "20_bridge_iprange.conflist",
 		content: `{
-			"cniVersion": "0.4.0",
+			"cniVersion": "1.0.0",
 			"name": "test-bridge-iprange",
 			"plugins": [
 				{
@@ -480,7 +480,7 @@ func testHTTPPortmap(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdo
 	if eth != "eth0" {
 		return fmt.Errorf("unexpected interface %s", eth)
 	}
-	conn, err := net.Dial("tcp", ":31080")
+	conn, err := net.Dial("tcp", "127.0.0.1:31080")
 	if err != nil {
 		return err
 	}

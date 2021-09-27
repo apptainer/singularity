@@ -10,8 +10,8 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/containerd/cgroups v1.0.2
 	github.com/containerd/containerd v1.5.7
-	github.com/containernetworking/cni v0.8.1
-	github.com/containernetworking/plugins v0.9.1
+	github.com/containernetworking/cni v1.0.1
+	github.com/containernetworking/plugins v1.0.1
 	github.com/containers/image/v5 v5.16.1
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/docker/docker v20.10.10+incompatible

@@ -42,8 +42,14 @@
   `ldconfig path = /sbin/ldconfig` to use the host distribution `ldconfig` to
   find GPU libraries.
 - Example log-plugin rewritten as a CLI callback that can log all commands
-  executed, intead of only container execution, and has access to command
+  executed, instead of only container execution, and has access to command
   arguments.
+- The bundled reference CNI plugins are updated to v1.0.1. The `flannel` plugin
+  is no longer included, as it is maintained as a separate plugin at:
+  <https://github.com/flannel-io/cni-plugin>. If you use the flannel CNI plugin
+  you should install it from this repository.
+
+### New features / functionalities
 
 ## v3.8.3 - \[2021-09-07\]
 
