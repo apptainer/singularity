@@ -13,9 +13,9 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/internal/pkg/util/user"
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
 
 // rpmMacrosContent contains required content to

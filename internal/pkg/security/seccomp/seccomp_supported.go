@@ -15,6 +15,7 @@ import (
 
 	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/opencontainers/runtime-spec/specs-go"
 	cseccomp "github.com/seccomp/containers-golang"
 	lseccomp "github.com/seccomp/libseccomp-golang"
 )
