@@ -67,7 +67,7 @@ func GetProcs() (uint, error) {
 	if procEnv != "" {
 		procEnvint, err := strconv.Atoi(procEnv)
 		if err != nil {
-			return 0, fmt.Errorf("failed to convert SINGULARITY_MKSQUASHFS_PROCS env %d to uint: %s", procEnv, err)
+			return 0, fmt.Errorf("failed to convert SINGULARITY_MKSQUASHFS_PROCS env %s to uint: %s", procEnv, err)
 		}
 		proc = uint(procEnvint)
 	}
