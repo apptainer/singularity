@@ -18,6 +18,18 @@ jobs:
       - name: Check go.mod
         run: ./scripts/check-go.mod
 
+  check_source:
+    name: check_source
+    runs-on: ubuntu-20.04
+    container: golangci/golangci-lint:v1.40
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check singularity source
+        run: |
+          ./mconfig -v -p /usr/local
+          make -C ./builddir check
+
   debian:
     name: debian
     runs-on: ubuntu-20.04
@@ -34,9 +46,6 @@ jobs:
           ./mconfig -v -p /usr/local
           make -C ./builddir all
 
-      - name: Check Singularity
-        run: make -C ./builddir check
-
   alpine:
     name: alpine
     runs-on: ubuntu-20.04
@@ -51,9 +60,6 @@ jobs:
         run: |
           ./mconfig -v -p /usr/local
           make -C ./builddir all
-
-      - name: Check Singularity
-        run: make -C ./builddir check
 
   oldgo:
     name: oldgo
@@ -70,9 +76,6 @@ jobs:
         run: |
           ./mconfig -v -p /usr/local
           make -C ./builddir all
-
-      - name: Check Singularity
-        run: make -C ./builddir check
 
   rpmbuild-centos7:
     runs-on: ubuntu-20.04
