@@ -8,18 +8,9 @@ package cmdline
 import (
 	"fmt"
 	"os"
-	"runtime"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-)
-
-// Supported operating systems
-const (
-	// Darwin OS
-	Darwin = "darwin"
-	// Linux OS
-	Linux = "linux"
 )
 
 type StringArray []string
@@ -38,7 +29,6 @@ type Flag struct {
 	Required     bool
 	EnvKeys      []string
 	EnvHandler   EnvHandler
-	ExcludedOS   []string
 }
 
 // flagManager manages cobra command flags and store them
@@ -80,11 +70,6 @@ func (m *flagManager) registerFlagForCmd(flag *Flag, cmds ...*cobra.Command) err
 	}
 	if flag == nil {
 		return fmt.Errorf("nil flag provided")
-	}
-	for _, os := range flag.ExcludedOS {
-		if os == runtime.GOOS {
-			return nil
-		}
 	}
 	if flag.EnvHandler == nil {
 		flag.EnvHandler = EnvSetValue
