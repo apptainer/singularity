@@ -2,6 +2,10 @@
 
 ## v3.8.2 - [2021-08-31]
 
+### New features / functionalities
+
+   - Add SINGULARITY_MKSQUASHFS_PROCS and SINGULARITY_MKSQUASHFS_MEM to override
+     mksquashfs options.
 ### Bug fixes
 
   - Fix regression when files `source`d from `%environment` contain `\` escaped
