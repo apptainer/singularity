@@ -7,8 +7,10 @@ package squashfs
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
@@ -44,8 +46,8 @@ func GetPath() (string, error) {
 	p := c.MksquashfsPath
 
 	// If the path contains the binary name use it as is, otherwise add mksquashfs via filepath.Join
-	if !strings.HasSuffix(c.MksquashfsPath, "mksquashfs") {
-		p = filepath.Join(c.MksquashfsPath, "mksquashfs")
+	if !strings.HasSuffix(p, "mksquashfs") {
+		p = filepath.Join(p, "mksquashfs")
 	}
 
 	// exec.LookPath functions on absolute paths (ignoring $PATH) as well
@@ -60,6 +62,16 @@ func GetProcs() (uint, error) {
 	// proc is either "" or the string value in the conf file
 	proc := c.MksquashfsProcs
 
+	// let user override via ENV
+	procEnv := os.Getenv("SINGULARITY_MKSQUASHFS_PROCS")
+	if procEnv != "" {
+		procEnvint, err := strconv.Atoi(procEnv)
+		if err != nil {
+			return 0, fmt.Errorf("failed to convert SINGULARITY_MKSQUASHFS_PROCS env %d to uint: %s\n", procEnv, err)
+		}
+		proc = uint(procEnvint)
+	}
+
 	return proc, err
 }
 
@@ -70,6 +82,12 @@ func GetMem() (string, error) {
 	}
 	// mem is either "" or the string value in the conf file
 	mem := c.MksquashfsMem
+
+	// let user override via ENV
+	memEnv := os.Getenv("SINGULARITY_MKSQUASHFS_MEM")
+	if memEnv != "" {
+		mem = memEnv
+	}
 
 	return mem, err
 }

@@ -153,7 +153,7 @@ mount home = {{ if eq .MountHome true }}yes{{ else }}no{{ end }}
 # DEFAULT: yes
 # Should we automatically bind mount /tmp and /var/tmp into the container? If
 # the --contain option is used, both tmp locations will be created in the
-# session directory or can be specified via the  SINGULARITY_WORKDIR
+# session directory or can be specified via the SINGULARITY_WORKDIR
 # environment variable (or the --workingdir command line option).
 mount tmp = {{ if eq .MountTmp true }}yes{{ else }}no{{ end }}
 
@@ -342,7 +342,7 @@ memory fs type = {{ .MemoryFSType }}
 # MKSQUASHFS PATH: [STRING]
 # DEFAULT: Undefined
 # This allows the administrator to specify the location for mksquashfs if it is not
-# installed in a standard system location
+# installed in a standard system location.
 # mksquashfs path =
 {{ if ne .MksquashfsPath "" }}mksquashfs path = {{ .MksquashfsPath }}{{ end }}
 
@@ -350,7 +350,8 @@ memory fs type = {{ .MemoryFSType }}
 # DEFAULT: 0 (All CPUs)
 # This allows the administrator to specify the number of CPUs for mksquashfs 
 # to use when building an image.  The fewer processors the longer it takes.
-# To enable it to use all available CPU's set this to 0.
+# To enable it to use all available CPU's set this to 0. This can be overridden at 
+# runtime by setting SINGULARITY_MKSQUASHFS_PROCS environment parameter.
 # mksquashfs procs = 0
 mksquashfs procs = {{ .MksquashfsProcs }}
 
@@ -359,6 +360,8 @@ mksquashfs procs = {{ .MksquashfsProcs }}
 # This allows the administrator to set the maximum amount of memory for mkswapfs
 # to use when building an image.  e.g. 1G for 1gb or 500M for 500mb. Restricting memory
 # can have a major impact on the time it takes mksquashfs to create the image.
+# This can be overridden at runtime by setting SINGULARITY_MKSQUASHFS_MEM environment
+# parameter.
 # NOTE: This fuctionality did not exist in squashfs-tools prior to version 4.3
 # If using an earlier version you should not set this.
 # mksquashfs mem = 1G
