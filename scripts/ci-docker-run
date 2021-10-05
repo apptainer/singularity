@@ -25,7 +25,7 @@ if [[ "$OS_TYPE" = "opensuse" ]]; then
 else
     DOCKER_HUB_URI="${OS_TYPE}:$OS_VERSION"
 fi
-DOCKER_CONTAINER_NAME="test_${OS_TYPE}_${OS_VERSION}"
+DOCKER_CONTAINER_NAME="test_${OS_TYPE#*/}_${OS_VERSION}"
 
 docker run --privileged --network=host \
   -v "$(pwd):/build:rw"  \
