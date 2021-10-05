@@ -26,7 +26,7 @@ collect:
 check: codegen
 	@echo " CHECK golangci-lint"
 	$(V) cd $(SOURCEDIR) && \
-		scripts/run-linter run --verbose --build-tags "$(GO_TAGS)" ./...
+		golangci-lint run --verbose --build-tags "$(GO_TAGS)"
 	@echo "       PASS"
 
 .PHONY: dist
