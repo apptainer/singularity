@@ -1,5 +1,13 @@
 # Singularity Changelog
 
+## Changes since last release
+
+### New features / functionalities
+
+  - `--writable-tmpfs` can be used with `singularity build` to run
+    the `%test` section of the build with a ephemeral tmpfs overlay,
+    permitting tests that write to the container filesystem.
+
 ## v3.8.2 - [2021-08-31]
 
 ### Bug fixes

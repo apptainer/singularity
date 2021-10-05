@@ -109,7 +109,7 @@ func (s *stage) runPostScript(configFile, sessionResolv, sessionHosts string) er
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Dir = "/"
-		cmd.Env = currentEnvNoSingularity()
+		cmd.Env = currentEnvNoSingularity([]string{"NV", "ROCM", "BINDPATH"})
 
 		sylog.Infof("Running post scriptlet")
 		return cmd.Run()
@@ -135,7 +135,7 @@ func (s *stage) runTestScript(configFile, sessionResolv, sessionHosts string) er
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Dir = "/"
-		cmd.Env = currentEnvNoSingularity()
+		cmd.Env = currentEnvNoSingularity([]string{"NV", "ROCM", "BINDPATH", "WRITABLE_TMPFS"})
 
 		sylog.Infof("Running testscript")
 		return cmd.Run()

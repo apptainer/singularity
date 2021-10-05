@@ -1382,6 +1382,31 @@ func (c imgBuildTests) buildLibraryHost(t *testing.T) {
 	)
 }
 
+// testWritableTmpfs checks that we can run the build using a writeable tmpfs in the %test step
+func (c imgBuildTests) testWritableTmpfs(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	tmpdir, cleanup := c.tempDir(t, "build-writabletmpfs-test")
+	defer cleanup()
+
+	// Definition will attempt to touch a file in /var/test during %test.
+	// This would fail without a writable tmpfs.
+	definition := fmt.Sprintf("Bootstrap: localimage\nFrom: %s\n%%test\ntouch /var/test\n", c.env.ImagePath)
+
+	defFile := e2e.RawDefFile(t, tmpdir, strings.NewReader(definition))
+	imagePath := filepath.Join(tmpdir, "image-writabletmpfs")
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("-F", "--writable-tmpfs", imagePath, defFile),
+		e2e.PostRun(func(t *testing.T) {
+			os.Remove(defFile)
+		}),
+		e2e.ExpectExit(0),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := imgBuildTests{
@@ -1401,6 +1426,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"fingerprint check":               c.buildWithFingerprint,      // definition file includes fingerprint check
 		"build with bind mount":           c.buildBindMount,            // build image with bind mount
 		"library host":                    c.buildLibraryHost,          // build image with hostname in library URI
+		"test with writable tmpfs":        c.testWritableTmpfs,         // build image, using writable tmpfs in the test step
 		"issue 3848":                      c.issue3848,                 // https://github.com/hpcng/singularity/issues/3848
 		"issue 4203":                      c.issue4203,                 // https://github.com/hpcng/singularity/issues/4203
 		"issue 4407":                      c.issue4407,                 // https://github.com/hpcng/singularity/issues/4407
