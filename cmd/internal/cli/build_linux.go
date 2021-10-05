@@ -31,7 +31,7 @@ import (
 	"github.com/hpcng/singularity/pkg/image"
 	"github.com/hpcng/singularity/pkg/runtime/engine/config"
 	"github.com/hpcng/singularity/pkg/sylog"
-	"github.com/hpcng/singularity/pkg/util/crypt"
+	"github.com/hpcng/singularity/pkg/util/cryptkey"
 	"github.com/spf13/cobra"
 )
 
@@ -248,7 +248,7 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 }
 
 func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
-	var keyInfo *crypt.KeyInfo
+	var keyInfo *cryptkey.KeyInfo
 	if buildArgs.encrypt || promptForPassphrase || cmd.Flags().Lookup("pem-path").Changed {
 		if os.Getuid() != 0 {
 			sylog.Fatalf("You must be root to build an encrypted container")
@@ -392,7 +392,7 @@ func isImage(spec string) bool {
 // passed to the crypt package for handling.
 // This handles the SINGULARITY_ENCRYPTION_PASSPHRASE/PEM_PATH envvars outside of cobra in order to
 // enforce the unique flag/env precidence for the encryption flow
-func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
+func getEncryptionMaterial(cmd *cobra.Command) (cryptkey.KeyInfo, error) {
 	passphraseFlag := cmd.Flags().Lookup("passphrase")
 	PEMFlag := cmd.Flags().Lookup("pem-path")
 	passphraseEnv, passphraseEnvOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PASSPHRASE")
@@ -423,29 +423,29 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 
 		// Check it's a valid PEM public key we can load, before starting the build (#4173)
 		if cmd.Name() == "build" {
-			if _, err := crypt.LoadPEMPublicKey(encryptionPEMPath); err != nil {
+			if _, err := cryptkey.LoadPEMPublicKey(encryptionPEMPath); err != nil {
 				sylog.Fatalf("Invalid encryption public key: %v", err)
 			}
 			// or a valid private key before launching the engine for actions on a container (#5221)
 		} else {
-			if _, err := crypt.LoadPEMPrivateKey(encryptionPEMPath); err != nil {
+			if _, err := cryptkey.LoadPEMPrivateKey(encryptionPEMPath); err != nil {
 				sylog.Fatalf("Invalid encryption private key: %v", err)
 			}
 		}
 
-		return crypt.KeyInfo{Format: crypt.PEM, Path: encryptionPEMPath}, nil
+		return cryptkey.KeyInfo{Format: cryptkey.PEM, Path: encryptionPEMPath}, nil
 	}
 
 	if passphraseFlag.Changed {
 		sylog.Verbosef("Using interactive passphrase entry for encrypted container")
 		passphrase, err := interactive.AskQuestionNoEcho("Enter encryption passphrase: ")
 		if err != nil {
-			return crypt.KeyInfo{}, err
+			return cryptkey.KeyInfo{}, err
 		}
 		if passphrase == "" {
 			sylog.Fatalf("Cannot encrypt container with empty passphrase")
 		}
-		return crypt.KeyInfo{Format: crypt.Passphrase, Material: passphrase}, nil
+		return cryptkey.KeyInfo{Format: cryptkey.Passphrase, Material: passphrase}, nil
 	}
 
 	if pemPathEnvOK {
@@ -459,13 +459,13 @@ func getEncryptionMaterial(cmd *cobra.Command) (crypt.KeyInfo, error) {
 		}
 
 		sylog.Verbosef("Using pem path environment variable for encrypted container")
-		return crypt.KeyInfo{Format: crypt.PEM, Path: pemPathEnv}, nil
+		return cryptkey.KeyInfo{Format: cryptkey.PEM, Path: pemPathEnv}, nil
 	}
 
 	if passphraseEnvOK {
 		sylog.Verbosef("Using passphrase environment variable for encrypted container")
-		return crypt.KeyInfo{Format: crypt.Passphrase, Material: passphraseEnv}, nil
+		return cryptkey.KeyInfo{Format: cryptkey.Passphrase, Material: passphraseEnv}, nil
 	}
 
-	return crypt.KeyInfo{}, nil
+	return cryptkey.KeyInfo{}, nil
 }

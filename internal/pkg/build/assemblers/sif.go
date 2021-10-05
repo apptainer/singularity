@@ -17,11 +17,12 @@ import (
 	"syscall"
 
 	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/singularity/internal/pkg/util/crypt"
 	"github.com/hpcng/singularity/internal/pkg/util/machine"
 	"github.com/hpcng/singularity/pkg/build/types"
 	"github.com/hpcng/singularity/pkg/image/packer"
 	"github.com/hpcng/singularity/pkg/sylog"
-	"github.com/hpcng/singularity/pkg/util/crypt"
+	"github.com/hpcng/singularity/pkg/util/cryptkey"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -34,7 +35,7 @@ type SIFAssembler struct {
 }
 
 type encryptionOptions struct {
-	keyInfo   crypt.KeyInfo
+	keyInfo   cryptkey.KeyInfo
 	plaintext []byte
 }
 
@@ -128,7 +129,7 @@ func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encrypt
 	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
 
 	if encOpts != nil {
-		data, err := crypt.EncryptKey(encOpts.keyInfo, encOpts.plaintext)
+		data, err := cryptkey.EncryptKey(encOpts.keyInfo, encOpts.plaintext)
 		if err != nil {
 			return fmt.Errorf("while encrypting filesystem key: %s", err)
 		}
@@ -221,7 +222,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	var encOpts *encryptionOptions
 
 	if b.Opts.EncryptionKeyInfo != nil {
-		plaintext, err := crypt.NewPlaintextKey(*b.Opts.EncryptionKeyInfo)
+		plaintext, err := cryptkey.NewPlaintextKey(*b.Opts.EncryptionKeyInfo)
 		if err != nil {
 			return fmt.Errorf("unable to obtain encryption key: %+v", err)
 		}
