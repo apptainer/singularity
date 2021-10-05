@@ -665,7 +665,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionFuseMountFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionHomeFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionHostnameFlag, actionsInstanceCmd...)
-		cmdManager.RegisterFlagForCmd(&actionIpcNamespaceFlag, actionsCmd...)
+		cmdManager.RegisterFlagForCmd(&actionIpcNamespaceFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionKeepPrivsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNetNamespaceFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNetworkArgsFlag, actionsInstanceCmd...)
