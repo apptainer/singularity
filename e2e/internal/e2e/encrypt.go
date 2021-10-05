@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/hpcng/singularity/internal/pkg/util/bin"
-	"github.com/hpcng/singularity/pkg/util/crypt"
+	"github.com/hpcng/singularity/pkg/util/cryptkey"
 )
 
 const (
@@ -58,17 +58,17 @@ func GeneratePemFiles(t *testing.T, basedir string) (string, string) {
 	}
 	tempPemPrivFile.Close()
 
-	rsaKey, err := crypt.GenerateRSAKey(2048)
+	rsaKey, err := cryptkey.GenerateRSAKey(2048)
 	if err != nil {
 		t.Fatalf("failed to generate RSA key: %s", err)
 	}
 
-	err = crypt.SavePublicPEM(tempPemPubFile.Name(), rsaKey)
+	err = cryptkey.SavePublicPEM(tempPemPubFile.Name(), rsaKey)
 	if err != nil {
 		t.Fatalf("failed to generate PEM public file: %s", err)
 	}
 
-	err = crypt.SavePrivatePEM(tempPemPrivFile.Name(), rsaKey)
+	err = cryptkey.SavePrivatePEM(tempPemPrivFile.Name(), rsaKey)
 	if err != nil {
 		t.Fatalf("failed to generate PEM private file: %s", err)
 	}

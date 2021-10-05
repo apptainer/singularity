@@ -1,5 +1,20 @@
 # Singularity Changelog
 
+## Changes since last release
+
+### New features / functionalities
+
+- `--writable-tmpfs` can be used with `singularity build` to run
+  the `%test` section of the build with a ephemeral tmpfs overlay,
+  permitting tests that write to the container filesystem.
+
+### Changed defaults / behaviours
+
+- LABELs from Docker/OCI images are now inherited. This fixes a longstanding
+  regression from Singularity 2.x. Note that you will now need to use
+  `--force` in a build to override a label that already exists in the source
+  Docker/OCI container.
+
 ## v3.8.2 - \[2021-08-31\]
 
 ### Bug fixes

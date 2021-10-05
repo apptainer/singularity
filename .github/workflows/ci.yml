@@ -31,6 +31,18 @@ jobs:
       - name: Check for Lint
         run: markdownlint .
 
+  check_source:
+    name: check_source
+    runs-on: ubuntu-20.04
+    container: golangci/golangci-lint:v1.41
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check singularity source
+        run: |
+          ./mconfig -v -p /usr/local
+          make -C ./builddir check
+
   debian:
     name: debian
     runs-on: ubuntu-20.04
@@ -47,9 +59,6 @@ jobs:
           ./mconfig -v -p /usr/local
           make -C ./builddir all
 
-      - name: Check Singularity
-        run: make -C ./builddir check
-
   alpine:
     name: alpine
     runs-on: ubuntu-20.04
@@ -64,9 +73,6 @@ jobs:
         run: |
           ./mconfig -v -p /usr/local
           make -C ./builddir all
-
-      - name: Check Singularity
-        run: make -C ./builddir check
 
   oldgo:
     name: oldgo
@@ -83,9 +89,6 @@ jobs:
         run: |
           ./mconfig -v -p /usr/local
           make -C ./builddir all
-
-      - name: Check Singularity
-        run: make -C ./builddir check
 
   rpmbuild-centos7:
     runs-on: ubuntu-20.04
@@ -211,3 +214,24 @@ jobs:
           name: e2e-artifact
           path: builddir/e2e-cmd-report.txt
           retention-days: 7
+
+  check_pkg_no_buildcfg:
+    name: check_pkg_no_buildcfg
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.7
+
+      - name: Check pkg/... doesn't depend on buildcfg
+        run: |
+          if go list -f '{{.Deps}}' ./pkg/... | grep -q buildcfg
+          then
+            echo "Prohibited buildcfg dependency found in pkg/:"
+            echo
+            go list -f '{{.ImportPath}} - {{.Deps}}' ./pkg/... | grep buildcfg
+            exit 1
+          fi

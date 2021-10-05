@@ -19,6 +19,7 @@ import (
 	"github.com/hpcng/singularity/pkg/build/types"
 	buildtypes "github.com/hpcng/singularity/pkg/build/types"
 	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/slice"
 	"golang.org/x/sys/unix"
 )
 
@@ -137,7 +138,10 @@ func getSectionScriptArgs(name string, script string, s types.Script) ([]string,
 	return args, nil
 }
 
-func currentEnvNoSingularity() []string {
+// currentEnvNoSingularity returns the current environment, minus any SINGULARITY_ vars,
+// but allowing those specified in the permitted slice. E.g. 'NV' in the permitted slice
+// will pass through `SINGULARITY_NV`, but strip out `SINGULARITY_OTHERVAR`.
+func currentEnvNoSingularity(permitted []string) []string {
 	envs := make([]string, 0)
 
 	for _, e := range os.Environ() {
@@ -145,8 +149,8 @@ func currentEnvNoSingularity() []string {
 			envs = append(envs, e)
 		} else {
 			envKey := strings.SplitN(e, "=", 2)
-			switch strings.TrimPrefix(envKey[0], env.SingularityPrefix) {
-			case "NV", "ROCM", "BINDPATH":
+			if slice.ContainsString(permitted, strings.TrimPrefix(envKey[0], env.SingularityPrefix)) {
+				sylog.Debugf("Passing through env var %s to singularity", e)
 				envs = append(envs, e)
 			}
 		}

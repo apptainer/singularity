@@ -17,10 +17,10 @@ import (
 	"syscall"
 
 	"github.com/hpcng/singularity/internal/pkg/runtime/engine"
+	"github.com/hpcng/singularity/internal/pkg/util/crypt"
 	"github.com/hpcng/singularity/internal/pkg/util/mainthread"
 	signalutil "github.com/hpcng/singularity/internal/pkg/util/signal"
 	"github.com/hpcng/singularity/pkg/sylog"
-	"github.com/hpcng/singularity/pkg/util/crypt"
 )
 
 func createContainer(ctx context.Context, rpcSocket int, containerPid int, e *engine.Engine, fatalChan chan error) {
