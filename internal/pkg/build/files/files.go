@@ -40,4 +40,3 @@ func secureJoinKeepSlash(prefix, path string) (string, error) {
 	}
 	return fullPath, nil
 }
-
