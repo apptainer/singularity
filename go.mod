@@ -12,7 +12,7 @@ require (
 	github.com/containerd/containerd v1.5.6
 	github.com/containernetworking/cni v0.8.1
 	github.com/containernetworking/plugins v0.9.1
-	github.com/containers/image/v5 v5.16.0
+	github.com/containers/image/v5 v5.16.1
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/fatih/color v1.13.0
 	github.com/go-log/log v0.2.0
@@ -40,7 +40,7 @@ require (
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vbauerster/mpb/v6 v6.0.4
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
-	golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55
+	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
 	mvdan.cc/sh/v3 v3.3.1
