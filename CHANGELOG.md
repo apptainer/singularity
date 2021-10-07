@@ -20,6 +20,11 @@
   Docker/OCI container.
 - Instances are no longer created with an IPC namespace by default. An IPC
   namespace can be specified with the `-i|--ipc` flag.
+- `--bind`, `--nv` and `--rocm` options for `build` command can't be set through
+  environment variables `SINGULARITY_BIND`, `SINGULARITY_BINDPATH`, `SINGULARITY_NV`,
+  `SINGULARITY_ROCM` anymore due to side effects reported by users in this
+  [issue](https://github.com/hpcng/singularity/pull/6211), they must be explicitely
+  requested via command line.
 
 ## v3.8.2 - \[2021-08-31\]
 
