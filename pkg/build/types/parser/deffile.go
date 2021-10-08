@@ -62,7 +62,6 @@ func IsInvalidSectionError(err error) bool {
 //        (in which case `s.Text()` contains the last section found of the input buffer) *and*
 //        `s.Err()` will be non-nil with an `bufio.ErrFinalToken` returned. This is where scanning can completely halt.
 //
-// If there are any Golang devs reading this, please improve your documentation for this. It's awful.
 func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	inSection := false
 	var retbuf bytes.Buffer

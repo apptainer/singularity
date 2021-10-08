@@ -1,94 +1,103 @@
-# Project Lead:
+# Contributors to Singularity
 
-    - Gregory M. Kurtzer <gmk@resf.org>, <gmkurtzer@gmail.com>, <gmk@ctrliq.com>
+## Project Lead
 
-# Maintainers:
+```text
+- Gregory M. Kurtzer <gmk@resf.org>, <gmkurtzer@gmail.com>, <gmk@ctrliq.com>
+```
 
-    - Cedric Clerget <cedric@ctrliq.com>, <cedric.clerget@univ-fcomte.fr>
-    - Ian Kaneshiro <ian@ctrliq.com>, <iankane@umich.edu>
-    - Krishna Muriki <kmuriki@lbl.gov>, <kmuriki@gmail.com>
+## Maintainers
 
-# Contributors:
+```text
+- Cedric Clerget <cedric@ctrliq.com>, <cedric.clerget@univ-fcomte.fr>
+- Ian Kaneshiro <ian@ctrliq.com>, <iankane@umich.edu>
+- Krishna Muriki <kmuriki@lbl.gov>, <kmuriki@gmail.com>
+- Dave Dykstra <dwd@fnal.gov>
+```
 
-    - Adam Hughes <adam@sylabs.io>, <stickmanica@gmail.com>
-    - Adam Simpson <asimpson@nvidia.com>, <adambsimpson@gmail.com>
-    - Afif Elghraoui <afif.elghraoui@nih.gov>
-    - Amanda Duffy <aduffy@lenovo.com>
-    - Ana Guerrero Lopez <aguerrero@suse.com>
-    - Ángel Bejarano <abejarano@ontropos.com>
-    - Apuã Paquola <apuapaquola@gmail.com>
-    - Aron Öfjörð Jóhannesson <aron1991@gmail.com>
-    - Bernard Li <bernardli@lbl.gov>
-    - Brian Bockelman <bbockelm@cse.unl.edu>
-    - Carl Madison <carl@sylabs.io>
-    - Chris Burr <christopher.burr@cern.ch>
-    - Chris Hollowell <hollowec@bnl.gov>
-    - Christian Neyers <foss@neyers.org>
-    - Daniele Tamino <daniele.tamino@gmail.com>
-    - Dave Dykstra <dwd@fnal.gov>
-    - Dave Godlove <d@sylabs.io>, <davidgodlove@gmail.com>
-    - Dave Love <d.love@liverpool.ac.uk>
-    - David Trudgian <david.trudgian@utsouthwestern.edu>, <david.trudgian@sylabs.io>, <dave@trudgian.net>
-    - Diana Langenbach <dcl@dcl.sh>
-    - Divya Cote <divya.cote@gmail.com>
-    - Eduardo Arango <eduardo@sylabs.io>, <arangogutierrez@gmail.com>
-    - Egbert Eich <eich@suse.com>
-    - Eric Müller <mueller@kip.uni-heidelberg.de>
-    - Felix Abecassis <fabecassis@nvidia.com>
-    - Geoffroy Vallee <geoffroy@sylabs.io>, <geoffroy.vallee@gmail.com>
-    - George Hartzell <hartzell@alerce.com>
-    - Gert Hulselmans <gert.hulselmans@kuleuven.vib.be>
-    - Götz Waschk <goetz.waschk@desy.de>
-    - Hakon Enger <hakonenger@github.com>
-    - Hugo Meiland <hugo.meiland@microsoft.com>
-    - Jack Morrison <morrisonjc@ornl.gov>, <jack@rescale.com>
-    - Jacob Chappell <chappellind@gmail.com>, <jacob.chappell@uky.edu>
-    - Jarrod Johnson <jjohnson2@lenovo.com>
-    - Jason Stover <jms@sylabs.io>, <jason.stover@gmail.com>
-    - Jeff Kriske <jekriske@gmail.com>
-    - Jia Li <jiali@sylabs.io>
-    - Joana Chavez <joana@sylabs.io>, <j.chavezlavalle@gmail.com>
-    - Josef Hrabal <josef.hrabal@vsb.cz>
-    - Justin Cook <justin@sylabs.io>
-    - Justin Riley <justin_riley@harvard.edu>
-    - Krishna Muriki <kmuriki@lbl.gov>
-    - Kumar Sukhani <kumarsukhani@gmail.com>
-    - Kundan Kumar <iamkundankumar28@gmail.com>
-    - Maciej Sieczka <msieczka@sieczka.org>
-    - Marcelo Magallon <marcelo@sylabs.io>
-    - Mark Egan-Fuller <markeganfuller@googlemail.com>
-    - Matt Wiens <mwiens91@gmail.com>
-    - Michael Bauer <m@sylabs.io>, <bauerm@umich.edu>
-    - Michael Herzberg <michael@mherzberg.de>
-    - Michael Milton <ttmigueltt@gmail.com>
-    - Michael Moore <michael.moore@nuance.com>
-    - Mike Frisch <michael.frisch@sylabs.io>
-    - Mike Gray <mike@sylabs.io>
-    - Nathan Chou <nathan.chou@sylabs.io>, <choun@berkeley.edu>
-    - Nathan Lin <nathan.lin@yale.edu>
-    - Oleksandr Moskalenko <om@rc.ufl.edu>
-    - Oliver Breitwieser <obreitwi@kip.uni-heidelberg.de>, <oliver@breitwieser.eu>
-    - Oliver Freyermuth <freyermuth@physik.uni-bonn.de>
-    - Olivier Sallou <olivier.sallou@irisa.fr>
-    - Peter Steinbach <steinbach@scionics.de>
-    - Petr Votava <votava.petr@gene.com>
-    - Rafal Gumienny <rafal.gumienny@gmail.com>
-    - Ralph Castain <rhc@open-mpi.org>
-    - Rémy Dernat <remy.dernat@umontpellier.fr>
-    - Richard Neuboeck <hawk@tbi.univie.ac.at>
-    - Sasha Yakovtseva <sasha@sylabs.io>, <sashayakovtseva@gmail.com>
-    - Satish Chebrolu  <satish@sylabs.io>
-    - Shane Loretz <sloretz@openrobotics.org>, <shane.loretz@gmail.com>
-    - Shengjing Zhu <i@zhsj.me>
-    - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
-    - Thomas Hamel <hmlth@t-hamel.fr>
-    - Tim Wright <7im.Wright@protonmail.com>
-    - Tru Huynh <tru@pasteur.fr>
-    - Tyson Whitehead <twhitehead@gmail.com>
-    - Vanessa Sochat <vsochat@stanford.edu>
-    - Westley Kurtzer <westley@sylabs.io>, <westleyk@nym.hush.com>
-    - Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>
-    - Yaroslav Halchenko <debian@onerussian.com>
-    - Onur Yılmaz <csonuryilmaz@gmail.com>
-    - Pranathi Locula <locula@deshaw.com>
-    - Pedro Alves Batista <pedro.pesquisapb@gmail.com>
+## Contributors
+
+```text
+- Adam Hughes <adam@sylabs.io>, <stickmanica@gmail.com>
+- Adam Simpson <asimpson@nvidia.com>, <adambsimpson@gmail.com>
+- Afif Elghraoui <afif.elghraoui@nih.gov>
+- Amanda Duffy <aduffy@lenovo.com>
+- Ana Guerrero Lopez <aguerrero@suse.com>
+- Ángel Bejarano <abejarano@ontropos.com>
+- Apuã Paquola <apuapaquola@gmail.com>
+- Aron Öfjörð Jóhannesson <aron1991@gmail.com>
+- Bernard Li <bernardli@lbl.gov>
+- Brian Bockelman <bbockelm@cse.unl.edu>
+- Carl Madison <carl@sylabs.io>
+- Chris Burr <christopher.burr@cern.ch>
+- Chris Hollowell <hollowec@bnl.gov>
+- Christian Neyers <foss@neyers.org>
+- Daniele Tamino <daniele.tamino@gmail.com>
+- Dave Godlove <d@sylabs.io>, <davidgodlove@gmail.com>
+- Dave Love <d.love@liverpool.ac.uk>
+- David Trudgian <david.trudgian@utsouthwestern.edu>,
+  <david.trudgian@sylabs.io>, <dave@trudgian.net>
+- Diana Langenbach <dcl@dcl.sh>
+- Divya Cote <divya.cote@gmail.com>
+- Eduardo Arango <eduardo@sylabs.io>, <arangogutierrez@gmail.com>
+- Egbert Eich <eich@suse.com>
+- Eric Müller <mueller@kip.uni-heidelberg.de>
+- Felix Abecassis <fabecassis@nvidia.com>
+- Geoffroy Vallee <geoffroy@sylabs.io>, <geoffroy.vallee@gmail.com>
+- George Hartzell <hartzell@alerce.com>
+- Gert Hulselmans <gert.hulselmans@kuleuven.vib.be>
+- Götz Waschk <goetz.waschk@desy.de>
+- Hakon Enger <hakonenger@github.com>
+- Hugo Meiland <hugo.meiland@microsoft.com>
+- Jack Morrison <morrisonjc@ornl.gov>, <jack@rescale.com>
+- Jacob Chappell <chappellind@gmail.com>, <jacob.chappell@uky.edu>
+- Jarrod Johnson <jjohnson2@lenovo.com>
+- Jason Stover <jms@sylabs.io>, <jason.stover@gmail.com>
+- Jeff Kriske <jekriske@gmail.com>
+- Jia Li <jiali@sylabs.io>
+- Joana Chavez <joana@sylabs.io>, <j.chavezlavalle@gmail.com>
+- Josef Hrabal <josef.hrabal@vsb.cz>
+- Justin Cook <justin@sylabs.io>
+- Justin Riley <justin_riley@harvard.edu>
+- Krishna Muriki <kmuriki@lbl.gov>
+- Kumar Sukhani <kumarsukhani@gmail.com>
+- Kundan Kumar <iamkundankumar28@gmail.com>
+- Maciej Sieczka <msieczka@sieczka.org>
+- Marcelo Magallon <marcelo@sylabs.io>
+- Mark Egan-Fuller <markeganfuller@googlemail.com>
+- Matt Wiens <mwiens91@gmail.com>
+- Michael Bauer <m@sylabs.io>, <bauerm@umich.edu>
+- Michael Herzberg <michael@mherzberg.de>
+- Michael Milton <ttmigueltt@gmail.com>
+- Michael Moore <michael.moore@nuance.com>
+- Mike Frisch <michael.frisch@sylabs.io>
+- Mike Gray <mike@sylabs.io>
+- Nathan Chou <nathan.chou@sylabs.io>, <choun@berkeley.edu>
+- Nathan Lin <nathan.lin@yale.edu>
+- Oleksandr Moskalenko <om@rc.ufl.edu>
+- Oliver Breitwieser <obreitwi@kip.uni-heidelberg.de>, <oliver@breitwieser.eu>
+- Oliver Freyermuth <freyermuth@physik.uni-bonn.de>
+- Olivier Sallou <olivier.sallou@irisa.fr>
+- Peter Steinbach <steinbach@scionics.de>
+- Petr Votava <votava.petr@gene.com>
+- Rafal Gumienny <rafal.gumienny@gmail.com>
+- Ralph Castain <rhc@open-mpi.org>
+- Rémy Dernat <remy.dernat@umontpellier.fr>
+- Richard Neuboeck <hawk@tbi.univie.ac.at>
+- Sasha Yakovtseva <sasha@sylabs.io>, <sashayakovtseva@gmail.com>
+- Satish Chebrolu  <satish@sylabs.io>
+- Shane Loretz <sloretz@openrobotics.org>, <shane.loretz@gmail.com>
+- Shengjing Zhu <i@zhsj.me>
+- Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
+- Thomas Hamel <hmlth@t-hamel.fr>
+- Tim Wright <7im.Wright@protonmail.com>
+- Tru Huynh <tru@pasteur.fr>
+- Tyson Whitehead <twhitehead@gmail.com>
+- Vanessa Sochat <vsochat@stanford.edu>
+- Westley Kurtzer <westley@sylabs.io>, <westleyk@nym.hush.com>
+- Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>
+- Yaroslav Halchenko <debian@onerussian.com>
+- Onur Yılmaz <csonuryilmaz@gmail.com>
+- Pranathi Locula <locula@deshaw.com>
+- Pedro Alves Batista <pedro.pesquisapb@gmail.com>
+```
