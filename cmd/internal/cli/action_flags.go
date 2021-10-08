@@ -39,6 +39,7 @@ var (
 	IsBoot          bool
 	IsFakeroot      bool
 	IsCleanEnv      bool
+	IsCompat        bool
 	IsContained     bool
 	IsContainAll    bool
 	IsWritable      bool
@@ -342,6 +343,16 @@ var actionCleanEnvFlag = cmdline.Flag{
 	EnvKeys:      []string{"CLEANENV"},
 }
 
+// --compat
+var actionCompatFlag = cmdline.Flag{
+	ID:           "actionCompatFlag",
+	Value:        &IsCompat,
+	DefaultValue: false,
+	Name:         "compat",
+	Usage:        "apply settings for increased OCI/Docker compatibility. Infers --containall, --no-init, --no-umask, --writable-tmpfs.",
+	EnvKeys:      []string{"COMPAT"},
+}
+
 // -c|--contain
 var actionContainFlag = cmdline.Flag{
 	ID:           "actionContainFlag",
@@ -643,6 +654,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionApplyCgroupsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionBindFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionCleanEnvFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionCompatFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionContainAllFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionContainFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionContainLibsFlag, actionsInstanceCmd...)

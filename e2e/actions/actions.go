@@ -86,19 +86,19 @@ func (c actionTests) actionExec(t *testing.T) {
 	user := e2e.CurrentUser(t)
 
 	// Create a temp testfile
-	testdata, err := fs.MakeTmpDir(c.env.TestDir, "testdata", 0755)
+	testdata, err := fs.MakeTmpDir(c.env.TestDir, "testdata", 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(testdata)
 
 	testdataTmp := filepath.Join(testdata, "tmp")
-	if err := os.Mkdir(testdataTmp, 0755); err != nil {
+	if err := os.Mkdir(testdataTmp, 0o755); err != nil {
 		t.Fatal(err)
 	}
 
 	// Create a temp testfile
-	tmpfile, err := fs.MakeTmpFile(testdataTmp, "testSingularityExec.", 0644)
+	tmpfile, err := fs.MakeTmpFile(testdataTmp, "testSingularityExec.", 0o644)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1088,7 +1088,7 @@ func (c actionTests) actionBinds(t *testing.T) {
 			}
 		})(t)
 
-		if err := fs.Mkdir(hostCanaryDir, 0777); err != nil {
+		if err := fs.Mkdir(hostCanaryDir, 0o777); err != nil {
 			t.Fatalf("failed to create canary_dir: %s", err)
 		}
 		if err := fs.Touch(hostCanaryFile); err != nil {
@@ -1100,13 +1100,13 @@ func (c actionTests) actionBinds(t *testing.T) {
 		if err := fs.Touch(hostCanaryFileWithColon); err != nil {
 			t.Fatalf("failed to create canary_file_colon: %s", err)
 		}
-		if err := os.Chmod(hostCanaryFile, 0777); err != nil {
+		if err := os.Chmod(hostCanaryFile, 0o777); err != nil {
 			t.Fatalf("failed to apply permissions on canary_file: %s", err)
 		}
-		if err := fs.Mkdir(hostHomeDir, 0777); err != nil {
+		if err := fs.Mkdir(hostHomeDir, 0o777); err != nil {
 			t.Fatalf("failed to create workspace home directory: %s", err)
 		}
-		if err := fs.Mkdir(hostWorkDir, 0777); err != nil {
+		if err := fs.Mkdir(hostWorkDir, 0o777); err != nil {
 			t.Fatalf("failed to create workspace work directory: %s", err)
 		}
 	}
@@ -1607,7 +1607,7 @@ func (c actionTests) fuseMount(t *testing.T) {
 				t.Errorf("could not read ssh private key: %s", err)
 				return
 			}
-			if err := ioutil.WriteFile(userPrivKey, content, 0600); err != nil {
+			if err := ioutil.WriteFile(userPrivKey, content, 0o600); err != nil {
 				t.Errorf("could not write ssh user private key: %s", err)
 				return
 			}
@@ -1813,7 +1813,7 @@ func (c actionTests) bindImage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Chmod(squashDir, 0755); err != nil {
+	if err := os.Chmod(squashDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2118,7 +2118,6 @@ func (c actionTests) actionUmask(t *testing.T) {
 			e2e.ExpectOutput(e2e.ExactMatch, "0022"),
 		),
 	)
-
 }
 
 func (c actionTests) actionNoMount(t *testing.T) {
@@ -2237,6 +2236,62 @@ func (c actionTests) actionNoMount(t *testing.T) {
 	}
 }
 
+// actionCompat checks that the --compat flag sets up the expected environment
+// for improved oci/docker compatibility
+func (c actionTests) actionCompat(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	type test struct {
+		name     string
+		args     []string
+		exitCode int
+		expect   e2e.SingularityCmdResultOp
+	}
+
+	tests := []test{
+		{
+			name:     "containall",
+			args:     []string{"--compat", c.env.ImagePath, "sh", "-c", "ls -lah $HOME"},
+			exitCode: 0,
+			expect:   e2e.ExpectOutput(e2e.ContainMatch, "total 0"),
+		},
+		{
+			name:     "writable-tmpfs",
+			args:     []string{"--compat", c.env.ImagePath, "sh", "-c", "touch /test"},
+			exitCode: 0,
+		},
+		{
+			name:     "no-init",
+			args:     []string{"--compat", c.env.ImagePath, "sh", "-c", "ps"},
+			exitCode: 0,
+			expect:   e2e.ExpectOutput(e2e.UnwantedContainMatch, "sinit"),
+		},
+		{
+			name:     "no-umask",
+			args:     []string{"--compat", c.env.ImagePath, "sh", "-c", "umask"},
+			exitCode: 0,
+			expect:   e2e.ExpectOutput(e2e.ContainMatch, "0022"),
+		},
+	}
+
+	oldUmask := syscall.Umask(0)
+	defer syscall.Umask(oldUmask)
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(
+				tt.exitCode,
+				tt.expect,
+			),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := actionTests{
@@ -2278,6 +2333,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"bind image":            c.bindImage,           // test bind image
 		"umask":                 c.actionUmask,         // test umask propagation
 		"no-mount":              c.actionNoMount,       // test --no-mount
+		"compat":                c.actionCompat,        // test --compat
 		"invalidRemote":         np(c.invalidRemote),   // GHSA-5mv9-q7fq-9394
 	}
 }
