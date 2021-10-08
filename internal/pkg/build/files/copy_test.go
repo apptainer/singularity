@@ -763,20 +763,20 @@ func TestCopyFromStage(t *testing.T) {
 				t.Fatalf("while checking for destination file: %s", err)
 			}
 			if os.IsNotExist(err) {
-				t.Errorf("expected destination %s does not exist", tt.expectPath)
+				t.Errorf("expected destination %s does not exist", dstFinal)
 			}
 
 			// File when expected?
 			if tt.expectFile && !fs.IsFile(dstFinal) {
-				t.Errorf("destination should be a file, but isn't")
+				t.Errorf("destination %s should be a file, but isn't", dstFinal)
 			}
 			// Dir when expected?
 			if tt.expectDir && !fs.IsDir(dstFinal) {
-				t.Errorf("destination should be a directory, but isn't")
+				t.Errorf("destination %s should be a directory, but isn't", dstFinal)
 			}
 			// None of these test cases should result in dst being a symlink
 			if fs.IsLink(dstFinal) {
-				t.Errorf("destination should not be a symlink, but is")
+				t.Errorf("destination %s should not be a symlink, but is", dstFinal)
 			}
 		})
 	}

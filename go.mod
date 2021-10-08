@@ -14,12 +14,15 @@ require (
 	github.com/containernetworking/plugins v0.9.1
 	github.com/containers/image/v5 v5.16.1
 	github.com/cyphar/filepath-securejoin v0.2.3
+	github.com/docker/docker v20.10.8+incompatible
 	github.com/fatih/color v1.13.0
+	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/go-log/log v0.2.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/hpcng/sif v1.6.0
 	github.com/kr/pty v1.1.8
+	github.com/moby/sys/mount v0.2.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20210819154149-5ad6f50d6283
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
@@ -39,18 +42,17 @@ require (
 	github.com/sylabs/scs-library-client v1.0.5
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vbauerster/mpb/v6 v6.0.4
+	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
+	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
+	github.com/yvasiyarov/gorelic v0.0.6 // indirect
+	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
 	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
 	mvdan.cc/sh/v3 v3.3.1
 	oras.land/oras-go v0.4.0
+	rsc.io/letsencrypt v0.0.3 // indirect
 )
 
-replace (
-	// These are required for oras.land/oras-go
-	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
-	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
-
-	golang.org/x/crypto => github.com/hpcng/golang-x-crypto v0.0.0-20210830200829-e6b35e3fb874
-)
+replace golang.org/x/crypto => github.com/hpcng/golang-x-crypto v0.0.0-20210830200829-e6b35e3fb874

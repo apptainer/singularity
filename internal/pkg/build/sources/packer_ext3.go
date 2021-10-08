@@ -9,14 +9,13 @@ import (
 	"github.com/hpcng/singularity/pkg/build/types"
 	"github.com/hpcng/singularity/pkg/image"
 	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/archive"
 	"github.com/hpcng/singularity/pkg/util/loop"
 
-	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"syscall"
 )
 
@@ -71,11 +70,10 @@ func unpackExt3(b *types.Bundle, img *image.Image) error {
 
 	// copy filesystem into bundle rootfs
 	sylog.Debugf("Copying filesystem from %s to %s in Bundle\n", tmpmnt, b.RootfsPath)
-	var stderr bytes.Buffer
-	cmd := exec.Command("cp", "-a", tmpmnt+`/.`, b.RootfsPath)
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("while copying files: %v: %v", err, stderr.String())
+
+	err = archive.CopyWithTar(tmpmnt+`/.`, b.RootfsPath)
+	if err != nil {
+		return fmt.Errorf("copy Failed: %v", err)
 	}
 
 	return nil

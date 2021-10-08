@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/hpcng/singularity/internal/pkg/util/fs"
+	"github.com/hpcng/singularity/pkg/util/archive"
 )
 
 // makeParentDir ensures existence of the expected destination directory for the cp command
@@ -138,15 +139,11 @@ func CopyFromStage(src, dst, srcRootfs, dstRootfs string) error {
 			dstResolved = path.Join(dstResolved, srcName)
 		}
 
-		// Set flags for cp to perform a recursive copy without further symlink dereference.
-		args := []string{"-fr", srcResolved, dstResolved}
-		var output, stderr bytes.Buffer
-		copy := exec.Command("/bin/cp", args...)
-		copy.Stdout = &output
-		copy.Stderr = &stderr
-		if err := copy.Run(); err != nil {
-			return fmt.Errorf("while copying %s to %s: %s: %s", paths, dstResolved, err, stderr.String())
+		err = archive.CopyWithTar(srcResolved, dstResolved)
+		if err != nil {
+			return fmt.Errorf("while copying %s to %s: %s", paths, dstResolved, err)
 		}
+
 	}
 	return nil
 }
