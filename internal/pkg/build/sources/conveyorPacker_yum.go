@@ -246,12 +246,12 @@ func (c *YumConveyor) genYumConfig() (err error) {
 		fileContent += "\n"
 	}
 
-	err = os.Mkdir(filepath.Join(c.b.RootfsPath, "/etc"), 0775)
+	err = os.Mkdir(filepath.Join(c.b.RootfsPath, "/etc"), 0o775)
 	if err != nil {
 		return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.RootfsPath, "/etc"), err)
 	}
 
-	err = ioutil.WriteFile(filepath.Join(c.b.RootfsPath, yumConf), []byte(fileContent), 0664)
+	err = ioutil.WriteFile(filepath.Join(c.b.RootfsPath, yumConf), []byte(fileContent), 0o664)
 	if err != nil {
 		return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.RootfsPath, yumConf), err)
 	}
@@ -303,7 +303,7 @@ func (c *YumConveyor) importGPGKey() (err error) {
 
 func (c *YumConveyor) makePseudoDevices() (err error) {
 	devPath := filepath.Join(c.b.RootfsPath, "dev")
-	err = os.Mkdir(devPath, 0775)
+	err = os.Mkdir(devPath, 0o775)
 	if err != nil {
 		return fmt.Errorf("while creating %v: %v", devPath, err)
 	}
@@ -314,10 +314,10 @@ func (c *YumConveyor) makePseudoDevices() (err error) {
 		path  string
 		mode  uint32
 	}{
-		{1, 3, "/dev/null", syscall.S_IFCHR | 0666},
-		{1, 8, "/dev/random", syscall.S_IFCHR | 0666},
-		{1, 9, "/dev/urandom", syscall.S_IFCHR | 0666},
-		{1, 5, "/dev/zero", syscall.S_IFCHR | 0666},
+		{1, 3, "/dev/null", syscall.S_IFCHR | 0o666},
+		{1, 8, "/dev/random", syscall.S_IFCHR | 0o666},
+		{1, 9, "/dev/urandom", syscall.S_IFCHR | 0o666},
+		{1, 5, "/dev/zero", syscall.S_IFCHR | 0o666},
 	}
 
 	for _, dev := range devs {
@@ -340,7 +340,7 @@ func (cp *YumConveyorPacker) insertBaseEnv() (err error) {
 }
 
 func (cp *YumConveyorPacker) insertRunScript() (err error) {
-	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
+	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0o755)
 	if err != nil {
 		return
 	}

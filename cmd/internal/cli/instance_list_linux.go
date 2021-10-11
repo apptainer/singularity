@@ -25,6 +25,7 @@ func init() {
 
 // -u|--user
 var instanceListUser string
+
 var instanceListUserFlag = cmdline.Flag{
 	ID:           "instanceListUserFlag",
 	Value:        &instanceListUser,
@@ -38,6 +39,7 @@ var instanceListUserFlag = cmdline.Flag{
 
 // -j|--json
 var instanceListJSON bool
+
 var instanceListJSONFlag = cmdline.Flag{
 	ID:           "instanceListJSONFlag",
 	Value:        &instanceListJSON,
@@ -50,6 +52,7 @@ var instanceListJSONFlag = cmdline.Flag{
 
 // -l|--logs
 var instanceListLogs bool
+
 var instanceListLogsFlag = cmdline.Flag{
 	ID:           "instanceListLogsFlag",
 	Value:        &instanceListLogs,

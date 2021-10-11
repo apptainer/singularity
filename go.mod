@@ -50,6 +50,7 @@ require (
 	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
+	mvdan.cc/gofumpt v0.1.1 // indirect
 	mvdan.cc/sh/v3 v3.3.1
 	oras.land/oras-go v0.4.0
 	rsc.io/letsencrypt v0.0.3 // indirect

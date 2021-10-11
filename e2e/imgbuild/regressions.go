@@ -71,7 +71,7 @@ func (c *imgBuildTests) issue4407(t *testing.T) {
 			log.Fatalf("failed to create temporary directory for sandbox: %v", err)
 		}
 
-		if err := os.Chmod(name, 0755); err != nil {
+		if err := os.Chmod(name, 0o755); err != nil {
 			log.Fatalf("failed to chmod temporary directory for sandbox: %v", err)
 		}
 
@@ -125,7 +125,6 @@ func (c *imgBuildTests) issue4524(t *testing.T) {
 		e2e.WithCommand("build"),
 		e2e.WithArgs("--fix-perms", "--sandbox", sandbox, "docker://sylabsio/issue4524"),
 		e2e.PostRun(func(t *testing.T) {
-
 			// If we failed to build the sandbox completely, leave what we have for
 			// investigation.
 			if t.Failed() {
@@ -133,10 +132,10 @@ func (c *imgBuildTests) issue4524(t *testing.T) {
 				return
 			}
 
-			if !e2e.PathPerms(t, path.Join(sandbox, "directory"), 0700) {
+			if !e2e.PathPerms(t, path.Join(sandbox, "directory"), 0o700) {
 				t.Error("Expected 0700 permissions on 000 test directory in rootless sandbox")
 			}
-			if !e2e.PathPerms(t, path.Join(sandbox, "file"), 0600) {
+			if !e2e.PathPerms(t, path.Join(sandbox, "file"), 0o600) {
 				t.Error("Expected 0600 permissions on 000 test file in rootless sandbox")
 			}
 
@@ -151,7 +150,6 @@ func (c *imgBuildTests) issue4524(t *testing.T) {
 			if err != nil {
 				t.Logf("Cannot remove sandbox directory: %#v", err)
 			}
-
 		}),
 		e2e.ExpectExit(0),
 	)
@@ -206,7 +204,6 @@ func (c imgBuildTests) issue4837(t *testing.T) {
 }
 
 func (c *imgBuildTests) issue4943(t *testing.T) {
-
 	require.Arch(t, "amd64")
 
 	const (
@@ -220,7 +217,6 @@ func (c *imgBuildTests) issue4943(t *testing.T) {
 		e2e.WithArgs("--force", "/dev/null", image),
 		e2e.ExpectExit(0),
 	)
-
 }
 
 // Test -c section parameter is correctly handled.
@@ -267,7 +263,7 @@ func (c *imgBuildTests) issue5166(t *testing.T) {
 	sensibleDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "sensible-dir-", "")
 
 	secret := filepath.Join(sensibleDir, "secret")
-	if err := ioutil.WriteFile(secret, []byte("secret"), 0644); err != nil {
+	if err := ioutil.WriteFile(secret, []byte("secret"), 0o644); err != nil {
 		t.Fatalf("could not create %s: %s", secret, err)
 	}
 
@@ -323,14 +319,14 @@ func (c *imgBuildTests) issue5172(t *testing.T) {
 	regFile := filepath.Join(regDir, "registries.conf")
 	imagePath := filepath.Join(c.env.TestDir, "issue-5172")
 
-	if err := os.MkdirAll(regDir, 0755); err != nil {
+	if err := os.MkdirAll(regDir, 0o755); err != nil {
 		t.Fatalf("can't create directory %s: %s", regDir, err)
 	}
 
 	// add our test registry as insecure and test build/pull
 	b := new(bytes.Buffer)
 	b.WriteString("[registries.insecure]\nregistries = ['localhost']")
-	if err := ioutil.WriteFile(regFile, b.Bytes(), 0644); err != nil {
+	if err := ioutil.WriteFile(regFile, b.Bytes(), 0o644); err != nil {
 		t.Fatalf("can't create %s: %s", regFile, err)
 	}
 	defer os.RemoveAll(regDir)

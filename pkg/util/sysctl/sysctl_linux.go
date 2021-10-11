@@ -53,5 +53,5 @@ func Set(key string, value string) error {
 		return fmt.Errorf("can't retrieve key %s: %s", key, err)
 	}
 
-	return ioutil.WriteFile(path, []byte(value), 0000)
+	return ioutil.WriteFile(path, []byte(value), 0o000)
 }

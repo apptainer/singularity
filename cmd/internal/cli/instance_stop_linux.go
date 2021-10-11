@@ -31,6 +31,7 @@ func init() {
 
 // -u|--user
 var instanceStopUser string
+
 var instanceStopUserFlag = cmdline.Flag{
 	ID:           "instanceStopUserFlag",
 	Value:        &instanceStopUser,
@@ -44,6 +45,7 @@ var instanceStopUserFlag = cmdline.Flag{
 
 // -a|--all
 var instanceStopAll bool
+
 var instanceStopAllFlag = cmdline.Flag{
 	ID:           "instanceStopAllFlag",
 	Value:        &instanceStopAll,
@@ -56,6 +58,7 @@ var instanceStopAllFlag = cmdline.Flag{
 
 // -f|--force
 var instanceStopForce bool
+
 var instanceStopForceFlag = cmdline.Flag{
 	ID:           "instanceStopForceFlag",
 	Value:        &instanceStopForce,
@@ -68,6 +71,7 @@ var instanceStopForceFlag = cmdline.Flag{
 
 // -s|--signal
 var instanceStopSignal string
+
 var instanceStopSignalFlag = cmdline.Flag{
 	ID:           "instanceStopSignalFlag",
 	Value:        &instanceStopSignal,
@@ -81,6 +85,7 @@ var instanceStopSignalFlag = cmdline.Flag{
 
 // -t|--timeout
 var instanceStopTimeout int
+
 var instanceStopTimeoutFlag = cmdline.Flag{
 	ID:           "instanceStopTimeoutFlag",
 	Value:        &instanceStopTimeout,

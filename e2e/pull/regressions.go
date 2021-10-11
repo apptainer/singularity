@@ -68,5 +68,4 @@ func (c ctx) issue5808(t *testing.T) {
 		e2e.WithArgs(argv...),
 		e2e.ExpectExit(0),
 	)
-
 }

@@ -22,7 +22,7 @@ func RemoteList(usrConfigFile string) (err error) {
 	c := &remote.Config{}
 
 	// opening config file
-	file, err := os.OpenFile(usrConfigFile, os.O_RDONLY|os.O_CREATE, 0600)
+	file, err := os.OpenFile(usrConfigFile, os.O_RDONLY|os.O_CREATE, 0o600)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("no remote configurations")

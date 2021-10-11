@@ -307,7 +307,7 @@ func (g *Generator) Save(w io.Writer) (err error) {
 func (g *Generator) SaveToFile(path string) error {
 	flags := os.O_RDWR | os.O_CREATE | os.O_TRUNC | unix.O_NOFOLLOW
 
-	f, err := os.OpenFile(path, flags, 0600)
+	f, err := os.OpenFile(path, flags, 0o600)
 	if err != nil {
 		return err
 	}

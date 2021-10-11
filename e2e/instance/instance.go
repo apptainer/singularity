@@ -111,7 +111,7 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 
 	// Create and populate a temporary file.
 	tempFile := filepath.Join(dir, fileName)
-	err = ioutil.WriteFile(tempFile, fileContents, 0644)
+	err = ioutil.WriteFile(tempFile, fileContents, 0o644)
 	err = errors.Wrapf(err, "creating temporary test file %s", tempFile)
 	if err != nil {
 		t.Fatalf("Failed to create file: %+v", err)

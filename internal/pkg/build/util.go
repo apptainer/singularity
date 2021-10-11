@@ -90,7 +90,7 @@ func createStageFile(source string, b *types.Bundle, warnMsg string) (string, er
 }
 
 func createScript(path string, content []byte) error {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0755)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o755)
 	if err != nil {
 		return fmt.Errorf("failed to create script: %s", err)
 	}

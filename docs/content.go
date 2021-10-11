@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-//TODO Provide some guidelines for writing these docs
+// TODO Provide some guidelines for writing these docs
 
 package docs
 

@@ -453,7 +453,6 @@ func (c ctx) remoteTestFlag(t *testing.T) {
 				e2e.ExpectOutput(e2e.RegexMatch, `^`+tt.expectedOutput),
 			),
 		)
-
 	}
 }
 
@@ -608,9 +607,7 @@ func (c ctx) remoteLoginRepeated(t *testing.T) {
 	e2e.EnsureRegistry(t)
 	e2e.EnsureImage(t, c.env)
 
-	var (
-		registry = fmt.Sprintf("oras://%s", c.env.TestRegistry)
-	)
+	registry := fmt.Sprintf("oras://%s", c.env.TestRegistry)
 
 	tests := []struct {
 		name       string

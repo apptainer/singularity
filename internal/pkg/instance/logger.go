@@ -84,7 +84,7 @@ func (l *Logger) openFile(path string) (err error) {
 	oldmask := syscall.Umask(0)
 	defer syscall.Umask(oldmask)
 
-	l.file, err = os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0640)
+	l.file, err = os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0o640)
 	return err
 }
 

@@ -56,7 +56,6 @@ func ConvertReference(ctx context.Context, imgCache *cache.Handle, src types.Ima
 		source:         src,
 		ImageReference: c,
 	}, nil
-
 }
 
 // NewImageSource wraps the cache's oci-layout ref to first download the real source image to the cache

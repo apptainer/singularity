@@ -87,7 +87,6 @@ var SearchCmd = &cobra.Command{
 		if err := library.SearchLibrary(ctx, libraryClient, args[0], SearchArch, SearchSigned); err != nil {
 			sylog.Fatalf("Couldn't search library: %v", err)
 		}
-
 	},
 
 	Use:     docs.SearchUse,

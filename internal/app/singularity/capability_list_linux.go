@@ -30,7 +30,7 @@ func CapabilityList(capFile string, c CapListConfig) error {
 	oldmask := syscall.Umask(0)
 	defer syscall.Umask(oldmask)
 
-	file, err := os.OpenFile(capFile, os.O_RDONLY, 0644)
+	file, err := os.OpenFile(capFile, os.O_RDONLY, 0o644)
 	if err != nil {
 		return fmt.Errorf("while opening capability config file: %s", err)
 	}

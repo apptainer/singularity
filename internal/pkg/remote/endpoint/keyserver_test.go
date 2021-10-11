@@ -23,7 +23,7 @@ func TestAddRemoveKeyserver(t *testing.T) {
 	)
 
 	var testErr error
-	var token = "test"
+	token := "test"
 
 	scsDefaultCredential := &credential.Config{
 		URI:  SCSDefaultKeyserverURI,

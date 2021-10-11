@@ -23,7 +23,7 @@ func (c ctx) issue5002(t *testing.T) {
 	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-5631-", "")
 	defer e2e.Privileged(cleanup)(t)
 	fakeLdconfig := filepath.Join(tmpDir, "ldconfig")
-	err := fs.EnsureFileWithPermission(fakeLdconfig, 0755)
+	err := fs.EnsureFileWithPermission(fakeLdconfig, 0o755)
 	if err != nil {
 		t.Fatalf("Could not create fake ldconfig: %s", err)
 	}

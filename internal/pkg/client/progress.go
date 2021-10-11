@@ -24,7 +24,6 @@ type ProgressCallback func(int64, io.Reader, io.Writer) error
 
 // ProgressBarCallback returns a progress bar callback unless e.g. --quiet or lower loglevel is set
 func ProgressBarCallback(ctx context.Context) ProgressCallback {
-
 	if sylog.GetLevel() <= -1 {
 		// If we don't need a bar visible, we just copy data through the callback func
 		return func(totalSize int64, r io.Reader, w io.Writer) error {

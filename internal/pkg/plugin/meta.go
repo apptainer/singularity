@@ -88,7 +88,7 @@ func metaPath(name string) string {
 // install installs the plugin represented by m into the plugin installation
 // directory. This should normally only be called in InstallFromSIF.
 func (m *Meta) install(img *image.Image) error {
-	if err := os.MkdirAll(m.path(), 0755); err != nil {
+	if err := os.MkdirAll(m.path(), 0o755); err != nil {
 		return err
 	}
 

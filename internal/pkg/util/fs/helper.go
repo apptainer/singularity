@@ -266,7 +266,7 @@ func EvalRelative(path string, root string) string {
 
 // Touch behaves like touch command.
 func Touch(path string) error {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}
@@ -358,7 +358,6 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 // file has permission bits set to the mode prior to umask. To honor umask
 // correctly the resulting file must not exist.
 func CopyFileAtomic(from, to string, mode os.FileMode) (err error) {
-
 	// MakeTmpFile forces mode with chmod, so manually apply umask to mode so we
 	// act like other file copy functions that respect umask
 	oldmask := syscall.Umask(0)
@@ -451,7 +450,7 @@ func ForceRemoveAll(path string) error {
 		// Directories must have the owner 'rx' bits to allow traversal, reading content, and the 'w' bit
 		// so their content can be deleted by the user when the bundle is deleted
 		if f.Mode().IsDir() {
-			if err := os.Chmod(path, f.Mode().Perm()|0700); err != nil {
+			if err := os.Chmod(path, f.Mode().Perm()|0o700); err != nil {
 				sylog.Errorf("Error setting permissions to remove %s: %s", path, err)
 				errors++
 			}

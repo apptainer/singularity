@@ -44,7 +44,7 @@ func generateConfig(path string, directives singularityconf.Directives, dry bool
 		unix.Umask(0)
 
 		flags := os.O_CREATE | os.O_TRUNC | unix.O_NOFOLLOW | os.O_RDWR
-		nf, err := os.OpenFile(path, flags, 0644)
+		nf, err := os.OpenFile(path, flags, 0o644)
 		if err != nil {
 			return fmt.Errorf("while creating configuration file %s: %s", path, err)
 		}
@@ -81,7 +81,7 @@ func GlobalConfig(args []string, configFile string, dry bool, op GlobalConfigOp)
 		return fmt.Errorf("%q is not a valid configuration directive", directive)
 	}
 
-	f, err := os.OpenFile(configFile, os.O_RDONLY, 0644)
+	f, err := os.OpenFile(configFile, os.O_RDONLY, 0o644)
 	if err != nil {
 		return fmt.Errorf("while opening configuration file %s: %s", configFile, err)
 	}

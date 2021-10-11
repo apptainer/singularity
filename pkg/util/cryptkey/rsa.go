@@ -32,7 +32,6 @@ func GenerateRSAKey(keySize int) (*rsa.PrivateKey, error) {
 	}
 
 	key, err := rsa.GenerateKey(reader, keySize)
-
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate RSA key: %v", err)
 	}
@@ -58,7 +57,7 @@ func publicPEM(key *rsa.PrivateKey) (string, error) {
 		return "", fmt.Errorf("unable to encode public key: %v", err)
 	}
 
-	var pemkey = &pem.Block{
+	pemkey := &pem.Block{
 		Type:  "RSA PUBLIC KEY",
 		Bytes: asn1Bytes,
 	}
@@ -110,7 +109,7 @@ func SavePrivatePEM(fileName string, key *rsa.PrivateKey) error {
 
 	defer outFile.Close()
 
-	var privateKey = &pem.Block{
+	privateKey := &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	}

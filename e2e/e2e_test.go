@@ -27,7 +27,7 @@ import (
 func TestE2E(t *testing.T) {
 	targetCoverageFilePath := os.Getenv("SINGULARITY_E2E_COVERAGE")
 	if targetCoverageFilePath != "" {
-		logFile, err := os.OpenFile(targetCoverageFilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		logFile, err := os.OpenFile(targetCoverageFilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o666)
 		if err != nil {
 			log.Fatalf("failed to create log file: %s", err)
 		}

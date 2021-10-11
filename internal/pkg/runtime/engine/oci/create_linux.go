@@ -54,12 +54,12 @@ type device struct {
 }
 
 var devices = []device{
-	{1, 7, "/dev/full", syscall.S_IFCHR | 0666, 0, 0},
-	{1, 3, "/dev/null", syscall.S_IFCHR | 0666, 0, 0},
-	{1, 8, "/dev/random", syscall.S_IFCHR | 0666, 0, 0},
-	{5, 0, "/dev/tty", syscall.S_IFCHR | 0666, 0, 0},
-	{1, 9, "/dev/urandom", syscall.S_IFCHR | 0666, 0, 0},
-	{1, 5, "/dev/zero", syscall.S_IFCHR | 0666, 0, 0},
+	{1, 7, "/dev/full", syscall.S_IFCHR | 0o666, 0, 0},
+	{1, 3, "/dev/null", syscall.S_IFCHR | 0o666, 0, 0},
+	{1, 8, "/dev/random", syscall.S_IFCHR | 0o666, 0, 0},
+	{5, 0, "/dev/tty", syscall.S_IFCHR | 0o666, 0, 0},
+	{1, 9, "/dev/urandom", syscall.S_IFCHR | 0o666, 0, 0},
+	{1, 5, "/dev/zero", syscall.S_IFCHR | 0o666, 0, 0},
 }
 
 func int64ptr(i int) *int64 {
@@ -661,7 +661,7 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 
 	devPath := filepath.Join(rootfsPath, fs.EvalRelative("/dev", rootfsPath))
 	if _, err := os.Lstat(devPath); os.IsNotExist(err) {
-		if err := os.Mkdir(devPath, 0755); err != nil {
+		if err := os.Mkdir(devPath, 0o755); err != nil {
 			return err
 		}
 	}
@@ -716,7 +716,7 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 					continue
 				}
 				dirpath := filepath.Dir(path)
-				if _, err := c.rpcOps.MkdirAll(dirpath, 0755); err != nil {
+				if _, err := c.rpcOps.MkdirAll(dirpath, 0o755); err != nil {
 					return fmt.Errorf("could not create parent directory %s: %s", dirpath, err)
 				}
 				if _, err := c.rpcOps.Touch(path); err != nil {
@@ -727,7 +727,7 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 				}
 			} else {
 				dirpath := filepath.Dir(path)
-				if err := os.MkdirAll(dirpath, 0755); err != nil {
+				if err := os.MkdirAll(dirpath, 0o755); err != nil {
 					return fmt.Errorf("could not create parent directory %s: %s", dirpath, err)
 				}
 				if err := syscall.Mknod(path, uint32(device.mode), dev); err != nil {
@@ -757,7 +757,7 @@ func (c *container) addDevices(system *mount.System) error {
 		if d.FileMode != nil {
 			dev.mode = *d.FileMode
 		} else {
-			dev.mode = 0644
+			dev.mode = 0o644
 		}
 
 		switch d.Type {
@@ -826,7 +826,7 @@ func (c *container) addMaskedPathsMount(system *mount.System) error {
 		oldmask := syscall.Umask(0)
 		defer syscall.Umask(oldmask)
 
-		if err := os.Mkdir(nullPath, 0755); err != nil {
+		if err := os.Mkdir(nullPath, 0o755); err != nil {
 			return err
 		}
 	}
@@ -897,11 +897,11 @@ func (c *container) mount(point *mount.Point, system *mount.System) error {
 			if point.Type != "" {
 				sylog.Debugf("Creating %s", procDest)
 				if c.userNS {
-					if _, err := c.rpcOps.MkdirAll(dest, 0755); err != nil {
+					if _, err := c.rpcOps.MkdirAll(dest, 0o755); err != nil {
 						return err
 					}
 				} else {
-					if err := os.MkdirAll(procDest, 0755); err != nil {
+					if err := os.MkdirAll(procDest, 0o755); err != nil {
 						return err
 					}
 				}
@@ -912,11 +912,11 @@ func (c *container) mount(point *mount.Point, system *mount.System) error {
 				if _, err := os.Stat(dir); os.IsNotExist(err) {
 					sylog.Debugf("Creating parent %s", dir)
 					if c.userNS {
-						if err := c.rpcOps.Mkdir(filepath.Dir(dest), 0755); err != nil {
+						if err := c.rpcOps.Mkdir(filepath.Dir(dest), 0o755); err != nil {
 							return err
 						}
 					} else {
-						if err := os.MkdirAll(dir, 0755); err != nil {
+						if err := os.MkdirAll(dir, 0o755); err != nil {
 							return err
 						}
 					}
@@ -930,11 +930,11 @@ func (c *container) mount(point *mount.Point, system *mount.System) error {
 				case syscall.S_IFDIR:
 					sylog.Debugf("Creating dir %s", filepath.Base(procDest))
 					if c.userNS {
-						if err := c.rpcOps.Mkdir(dest, 0755); err != nil {
+						if err := c.rpcOps.Mkdir(dest, 0o755); err != nil {
 							return err
 						}
 					} else {
-						if err := os.Mkdir(procDest, 0755); err != nil {
+						if err := os.Mkdir(procDest, 0o755); err != nil {
 							return err
 						}
 					}

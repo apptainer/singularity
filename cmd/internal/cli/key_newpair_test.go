@@ -89,7 +89,8 @@ func TestCollectInput(t *testing.T) {
 					Comment:  testComment,
 					Password: testPassword,
 				},
-				PushToKeyStore: true},
+				PushToKeyStore: true,
+			},
 			Error: nil,
 		},
 		{
@@ -102,7 +103,8 @@ func TestCollectInput(t *testing.T) {
 					Comment:  testComment,
 					Password: "",
 				},
-				PushToKeyStore: true},
+				PushToKeyStore: true,
+			},
 			Error: nil,
 		},
 		{

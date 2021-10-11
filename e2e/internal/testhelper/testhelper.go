@@ -46,7 +46,7 @@ func (s *Suite) AddGroup(name string, group Group) {
 }
 
 func (s *Suite) Run() {
-	var tests = make(map[string]Tests)
+	tests := make(map[string]Tests)
 
 	for name, gr := range s.groups {
 		env := s.env

@@ -18,7 +18,6 @@ import (
 )
 
 func TestDebootstrapConveyor(t *testing.T) {
-
 	if testing.Short() {
 		t.SkipNow()
 	}

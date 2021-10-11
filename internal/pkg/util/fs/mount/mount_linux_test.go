@@ -601,7 +601,6 @@ func TestImport(t *testing.T) {
 	if len(points.GetByTag(UserbindsTag)) != 3 {
 		t.Errorf("returned a wrong number of mount kernel mount points %d instead of 3", len(points.GetByTag(UserbindsTag)))
 	}
-
 }
 
 func TestTag(t *testing.T) {

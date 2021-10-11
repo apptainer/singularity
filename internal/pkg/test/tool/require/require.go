@@ -24,8 +24,10 @@ import (
 	"github.com/hpcng/singularity/pkg/util/fs/proc"
 )
 
-var hasUserNamespace bool
-var hasUserNamespaceOnce sync.Once
+var (
+	hasUserNamespace     bool
+	hasUserNamespaceOnce sync.Once
+)
 
 // UserNamespace checks that the current test could use
 // user namespace, if user namespaces are not enabled or
@@ -54,8 +56,10 @@ func UserNamespace(t *testing.T) {
 	}
 }
 
-var supportNetwork bool
-var supportNetworkOnce sync.Once
+var (
+	supportNetwork     bool
+	supportNetworkOnce sync.Once
+)
 
 // Network check that bridge network is supported by
 // system, if not the current test is skipped with a
@@ -205,7 +209,6 @@ func Arch(t *testing.T, arch string) {
 	if arch != "" && runtime.GOARCH != arch {
 		t.Skipf("test requires architecture %s", arch)
 	}
-
 }
 
 // ArchIn checks the test machine is one of the specified archs.

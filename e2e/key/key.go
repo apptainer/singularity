@@ -492,7 +492,7 @@ func (c *ctx) checkKeyLength(t *testing.T, expectedKeyLength int) {
 }
 
 func (c *ctx) globalKeyring(t *testing.T) {
-	var keyMap = map[string]string{
+	keyMap := map[string]string{
 		"key1": "0C5B8C9A5FFC44E2A0AC79851CD6FA281D476DD1",
 		"key2": "78F8AD36B0DCB84B707F23853D608DAE21C8CA10",
 	}

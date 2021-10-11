@@ -41,7 +41,7 @@ func genConf(tmpl, in, out string) {
 		os.Exit(1)
 	}
 
-	newOutFile, err := os.OpenFile(out, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	newOutFile, err := os.OpenFile(out, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		fmt.Printf("Unable to create file %s: %v\n", out, err)
 	}

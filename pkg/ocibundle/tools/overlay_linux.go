@@ -20,7 +20,7 @@ func CreateOverlay(bundlePath string) error {
 	defer syscall.Umask(oldumask)
 
 	overlayDir := filepath.Join(bundlePath, "overlay")
-	if err = os.Mkdir(overlayDir, 0700); err != nil {
+	if err = os.Mkdir(overlayDir, 0o700); err != nil {
 		return fmt.Errorf("failed to create %s: %s", overlayDir, err)
 	}
 	// delete overlay directory in case of error
@@ -46,11 +46,11 @@ func CreateOverlay(bundlePath string) error {
 	}
 
 	upperDir := filepath.Join(overlayDir, "upper")
-	if err = os.Mkdir(upperDir, 0755); err != nil {
+	if err = os.Mkdir(upperDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create %s: %s", upperDir, err)
 	}
 	workDir := filepath.Join(overlayDir, "work")
-	if err = os.Mkdir(workDir, 0700); err != nil {
+	if err = os.Mkdir(workDir, 0o700); err != nil {
 		return fmt.Errorf("failed to create %s: %s", workDir, err)
 	}
 	rootFsDir := RootFs(bundlePath).Path()

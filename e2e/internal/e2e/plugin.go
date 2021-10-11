@@ -18,11 +18,11 @@ func SetupPluginDir(t *testing.T, testDir string) {
 	Privileged(func(t *testing.T) {
 		path := buildcfg.PLUGIN_ROOTDIR
 
-		if err := os.Mkdir(path, 0755); err != nil && !os.IsExist(err) {
+		if err := os.Mkdir(path, 0o755); err != nil && !os.IsExist(err) {
 			t.Fatalf("while creating plugin directory %s: %s", path, err)
 		}
 		dir := filepath.Join(testDir, "plugin-install")
-		if err := os.Mkdir(dir, 0755); err != nil {
+		if err := os.Mkdir(dir, 0o755); err != nil {
 			t.Fatalf("while creating plugin temporary directory %s: %s", dir, err)
 		}
 		if err := unix.Mount(dir, path, "", unix.MS_BIND, ""); err != nil {

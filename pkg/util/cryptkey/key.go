@@ -192,7 +192,7 @@ func savePEMMessage(w io.Writer, msg []byte) error {
 		return err
 	}
 
-	var b = &pem.Block{
+	b := &pem.Block{
 		Type:  "MESSAGE",
 		Bytes: asn1Bytes,
 	}

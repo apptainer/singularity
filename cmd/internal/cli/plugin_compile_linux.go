@@ -19,6 +19,7 @@ import (
 
 // -o|--out
 var out string
+
 var pluginCompileOutFlag = cmdline.Flag{
 	ID:           "pluginCompileOutFlag",
 	Value:        &out,
@@ -30,6 +31,7 @@ var pluginCompileOutFlag = cmdline.Flag{
 
 // --disable-minor-check
 var disableMinorCheck bool
+
 var pluginCompileDisableMinorCheckFlag = cmdline.Flag{
 	ID:           "pluginCompileDisableMinorCheckFlag",
 	Value:        &disableMinorCheck,

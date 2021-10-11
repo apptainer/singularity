@@ -137,7 +137,7 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 	}
 
 	// ensure container is executable
-	if err := os.Chmod(imagePath, 0755); err != nil {
+	if err := os.Chmod(imagePath, 0o755); err != nil {
 		return fmt.Errorf("unable to set image perms: %s", err)
 	}
 

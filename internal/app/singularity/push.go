@@ -23,11 +23,9 @@ import (
 	"github.com/vbauerster/mpb/v4/decor"
 )
 
-var (
-	// ErrLibraryUnsigned indicated that the image intended to be used is
-	// not signed, nor has an override for requiring a signature been provided
-	ErrLibraryUnsigned = errors.New("image is not signed")
-)
+// ErrLibraryUnsigned indicated that the image intended to be used is
+// not signed, nor has an override for requiring a signature been provided
+var ErrLibraryUnsigned = errors.New("image is not signed")
 
 // LibraryPushSpec describes how a source image file should be pushed to a library server
 type LibraryPushSpec struct {

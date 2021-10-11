@@ -639,7 +639,7 @@ func (c configTests) configFile(t *testing.T) {
 	}
 
 	// Create a temp testfile
-	f, err := fs.MakeTmpFile(c.env.TestDir, "config-", 0644)
+	f, err := fs.MakeTmpFile(c.env.TestDir, "config-", 0o644)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -654,7 +654,7 @@ func (c configTests) configFile(t *testing.T) {
 			e2e.WithGlobalOptions("--config", configFile),
 			e2e.WithProfile(tt.profile),
 			e2e.PreRun(func(t *testing.T) {
-				if err := ioutil.WriteFile(configFile, []byte(tt.conf), 0644); err != nil {
+				if err := ioutil.WriteFile(configFile, []byte(tt.conf), 0o644); err != nil {
 					t.Errorf("could not write configuration file %s: %s", configFile, err)
 				}
 			}),

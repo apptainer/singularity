@@ -27,12 +27,10 @@ const (
 	pacmanConfURL = "https://github.com/archlinux/svntogit-packages/raw/master/pacman/trunk/pacman.conf"
 )
 
-var (
-	// Default list of packages to install when bootstrapping arch
-	// As of 2019-10-06 there is a base metapackage instead of a base group
-	// https://www.archlinux.org/news/base-group-replaced-by-mandatory-base-package-manual-intervention-required/
-	instList = []string{"base"}
-)
+// Default list of packages to install when bootstrapping arch
+// As of 2019-10-06 there is a base metapackage instead of a base group
+// https://www.archlinux.org/news/base-group-replaced-by-mandatory-base-package-manual-intervention-required/
+var instList = []string{"base"}
 
 // ArchConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ArchConveyorPacker struct {
@@ -63,11 +61,11 @@ func (cp *ArchConveyorPacker) prepareFakerootEnv(ctx context.Context) (func(), e
 	}
 
 	devPath := filepath.Join(cp.b.RootfsPath, "dev")
-	if err := os.Mkdir(devPath, 0755); err != nil {
+	if err := os.Mkdir(devPath, 0o755); err != nil {
 		return nil, fmt.Errorf("while creating %s: %s", devPath, err)
 	}
 	procPath := filepath.Join(cp.b.RootfsPath, "proc")
-	if err := os.Mkdir(procPath, 0755); err != nil {
+	if err := os.Mkdir(procPath, 0o755); err != nil {
 		return nil, fmt.Errorf("while creating %s: %s", procPath, err)
 	}
 
@@ -112,13 +110,13 @@ func (cp *ArchConveyorPacker) prepareFakerootEnv(ctx context.Context) (func(), e
 func (cp *ArchConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	cp.b = b
 
-	//check for pacstrap on system
+	// check for pacstrap on system
 	pacstrapPath, err := exec.LookPath("pacstrap")
 	if err != nil {
 		return fmt.Errorf("pacstrap is not in PATH: %v", err)
 	}
 
-	//make sure architecture is supported
+	// make sure architecture is supported
 	if arch := runtime.GOARCH; arch != `amd64` {
 		return fmt.Errorf("%v architecture is not supported", arch)
 	}
@@ -151,7 +149,7 @@ func (cp *ArchConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 		return fmt.Errorf("while pacstrapping: %v", err)
 	}
 
-	//Pacman package signing setup
+	// Pacman package signing setup
 	cmd := exec.Command("arch-chroot", cp.b.RootfsPath, "/bin/sh", "-c", "haveged -w 1024; pacman-key --init; pacman-key --populate archlinux")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -159,7 +157,7 @@ func (cp *ArchConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 		return fmt.Errorf("while setting up package signing: %v", err)
 	}
 
-	//Clean up haveged
+	// Clean up haveged
 	cmd = exec.Command("arch-chroot", cp.b.RootfsPath, "pacman", "-Rs", "--noconfirm", "haveged")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -213,7 +211,7 @@ func (cp *ArchConveyorPacker) insertBaseEnv() (err error) {
 }
 
 func (cp *ArchConveyorPacker) insertRunScript() (err error) {
-	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
+	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0o755)
 	if err != nil {
 		return
 	}

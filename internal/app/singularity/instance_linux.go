@@ -104,13 +104,12 @@ func WriteInstancePidFile(name, pidFile string) error {
 	inst, err := instance.List("", name, instance.SingSubDir)
 	if err != nil {
 		return fmt.Errorf("could not retrieve instance list: %v", err)
-
 	}
 	if len(inst) != 1 {
 		return fmt.Errorf("unexpected instance count: %d", len(inst))
 	}
 
-	f, err := os.OpenFile(pidFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|syscall.O_NOFOLLOW, 0644)
+	f, err := os.OpenFile(pidFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|syscall.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return fmt.Errorf("could not create pid file: %v", err)
 	}

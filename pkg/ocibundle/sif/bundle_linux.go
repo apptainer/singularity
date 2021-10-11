@@ -73,7 +73,7 @@ func (s *sifBundle) writeConfig(img *image.Image, g *generate.Generator) error {
 	for dst := range imgConfig.Volumes {
 		replacer := strings.NewReplacer(string(os.PathSeparator), "_")
 		src := filepath.Join(volumes, replacer.Replace(dst))
-		if err := os.MkdirAll(src, 0755); err != nil {
+		if err := os.MkdirAll(src, 0o755); err != nil {
 			return fmt.Errorf("failed to create volume directory %s: %s", src, err)
 		}
 		g.AddMount(specs.Mount{

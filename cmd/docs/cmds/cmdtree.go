@@ -124,7 +124,7 @@ func analyseData(singularityCmds string, e2eCmds string, report string, verbose 
 	if report == "" {
 		resultFile, err = ioutil.TempFile("", "singularity-cmd-coverage-")
 	} else {
-		resultFile, err = os.OpenFile(report, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+		resultFile, err = os.OpenFile(report, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
 	}
 	if err != nil {
 		return "", fmt.Errorf("failed to create file to store coverage results: %s", err)

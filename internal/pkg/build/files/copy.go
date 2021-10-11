@@ -29,14 +29,14 @@ func makeParentDir(path string) error {
 	// if path ends with a trailing '/' always ensure the full path exists as a directory
 	// because 'cp' is expecting a dir in these cases
 	if strings.HasSuffix(path, "/") {
-		if err := os.MkdirAll(filepath.Clean(path), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Clean(path), 0o755); err != nil {
 			return fmt.Errorf("while creating full path: %s", err)
 		}
 		return nil
 	}
 
 	// only make parent directory
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("while creating parent of path: %s", err)
 	}
 

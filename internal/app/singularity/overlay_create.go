@@ -129,7 +129,7 @@ func OverlayCreate(size int, imgPath string, overlayDirs ...string) error {
 	}
 	errBuf.Reset()
 
-	if err := os.Chmod(tmpFile, 0600); err != nil {
+	if err := os.Chmod(tmpFile, 0o600); err != nil {
 		return fmt.Errorf("while setting 0600 permission on %s: %s", tmpFile, err)
 	}
 
@@ -141,10 +141,10 @@ func OverlayCreate(size int, imgPath string, overlayDirs ...string) error {
 		_ = os.RemoveAll(tmpDir)
 	}()
 
-	perm := os.FileMode(0755)
+	perm := os.FileMode(0o755)
 
 	if os.Getuid() > 65535 || os.Getgid() > 65535 {
-		perm = 0777
+		perm = 0o777
 	}
 
 	upperDir := filepath.Join(tmpDir, "upper")

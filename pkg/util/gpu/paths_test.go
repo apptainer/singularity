@@ -109,7 +109,6 @@ func TestSoLinks(t *testing.T) {
 	if !reflect.DeepEqual(gotLinks, expectedLinks) {
 		t.Errorf("soList() gave unexpected results, got: %v expected: %v", gotLinks, expectedLinks)
 	}
-
 }
 
 func TestPaths(t *testing.T) {

@@ -17,6 +17,7 @@ import (
 
 // -s|--set
 var globalConfigSet bool
+
 var globalConfigSetFlag = cmdline.Flag{
 	ID:           "globalConfigSetFlag",
 	Value:        &globalConfigSet,
@@ -28,6 +29,7 @@ var globalConfigSetFlag = cmdline.Flag{
 
 // -u|--unset
 var globalConfigUnset bool
+
 var globalConfigUnsetFlag = cmdline.Flag{
 	ID:           "globalConfigUnsetFlag",
 	Value:        &globalConfigUnset,
@@ -39,6 +41,7 @@ var globalConfigUnsetFlag = cmdline.Flag{
 
 // -g|--get
 var globalConfigGet bool
+
 var globalConfigGetFlag = cmdline.Flag{
 	ID:           "globalConfigGetFlag",
 	Value:        &globalConfigGet,
@@ -50,6 +53,7 @@ var globalConfigGetFlag = cmdline.Flag{
 
 // -r|--reset
 var globalConfigReset bool
+
 var globalConfigResetFlag = cmdline.Flag{
 	ID:           "globalConfigResetFlag",
 	Value:        &globalConfigReset,
@@ -61,6 +65,7 @@ var globalConfigResetFlag = cmdline.Flag{
 
 // -d|--dry-run
 var globalConfigDryRun bool
+
 var globalConfigDryRunFlag = cmdline.Flag{
 	ID:           "globalConfigDryRunFlag",
 	Value:        &globalConfigDryRun,
