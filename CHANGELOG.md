@@ -18,6 +18,8 @@
   regression from Singularity 2.x. Note that you will now need to use
   `--force` in a build to override a label that already exists in the source
   Docker/OCI container.
+- Instances are no longer created with an IPC namespace by default. An IPC
+  namespace can be specified with the `-i|--ipc` flag.
 
 ## v3.8.2 - \[2021-08-31\]
 
