@@ -22,8 +22,10 @@ type ctx struct {
 	passphraseInput []e2e.SingularityConsoleOp
 }
 
-const imgURL = "library://sylabs/tests/unsigned:1.0.0"
-const imgName = "testImage.sif"
+const (
+	imgURL  = "library://sylabs/tests/unsigned:1.0.0"
+	imgName = "testImage.sif"
+)
 
 func (c ctx) singularitySignHelpOption(t *testing.T) {
 	c.env.KeyringDir = c.keyringDir

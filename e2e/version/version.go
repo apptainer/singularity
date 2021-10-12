@@ -27,7 +27,7 @@ var tests = []struct {
 	{"version flag", []string{"--version"}},
 }
 
-//Test that this version uses the semantic version format
+// Test that this version uses the semantic version format
 func (c ctx) testSemanticVersion(t *testing.T) {
 	for _, tt := range tests {
 
@@ -54,10 +54,10 @@ func (c ctx) testSemanticVersion(t *testing.T) {
 	}
 }
 
-//Test that both versions when running: singularity --version and
+// Test that both versions when running: singularity --version and
 // singularity version give the same result
 func (c ctx) testEqualVersion(t *testing.T) {
-	var tmpVersion = ""
+	tmpVersion := ""
 	for _, tt := range tests {
 
 		checkEqualVersionFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
@@ -74,7 +74,7 @@ func (c ctx) testEqualVersion(t *testing.T) {
 					err = errors.Wrapf(err, "creating semver version from %q", tmpVersion)
 					t.Fatalf("Creating semver version: %+v", err)
 				}
-				//compare versions and see if they are equal
+				// compare versions and see if they are equal
 				if semanticVersion.Compare(versionTmp) != 0 {
 					err = errors.Wrapf(err, "comparing versions %q and %q", outputVer, tmpVersion)
 					t.Fatalf("singularity version command and singularity --version give a non-matching version result: %+v", err)

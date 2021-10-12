@@ -95,7 +95,7 @@ func createTestDirLayout(t *testing.T) string {
 	}
 
 	for _, d := range dirList {
-		if err := os.Mkdir(filepath.Join(testDirName, d), 0755); err != nil {
+		if err := os.Mkdir(filepath.Join(testDirName, d), 0o755); err != nil {
 			t.Fatalf("while making directory %s: %s", d, err)
 		}
 	}

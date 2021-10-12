@@ -55,7 +55,7 @@ type ServiceConfig struct {
 func cacheDir() string {
 	cacheDir := syfs.RemoteCacheDir()
 	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
-		if err := os.Mkdir(cacheDir, 0700); err != nil {
+		if err := os.Mkdir(cacheDir, 0o700); err != nil {
 			return ""
 		}
 	}
@@ -87,5 +87,5 @@ func updateCachedConfig(uri string, data []byte) {
 		return
 	}
 	config := filepath.Join(dir, uri+".json")
-	ioutil.WriteFile(config, data, 0600)
+	ioutil.WriteFile(config, data, 0o600)
 }

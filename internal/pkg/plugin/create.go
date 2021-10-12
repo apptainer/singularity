@@ -68,27 +68,27 @@ func Create(path, name string) error {
 		return fmt.Errorf("could not determine absolute path for %s: %s", path, err)
 	}
 
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("while creating plugin directory %s: %s", dir, err)
 	}
 
 	// create go.mod skeleton
 	filename := filepath.Join(dir, "go.mod")
 	content := fmt.Sprintf(goMod, name)
-	if err := ioutil.WriteFile(filename, []byte(content), 0644); err != nil {
+	if err := ioutil.WriteFile(filename, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("while creating plugin %s: %s", filename, err)
 	}
 
 	// create main.go skeleton
 	filename = filepath.Join(dir, "main.go")
 	content = fmt.Sprintf(mainGo, name)
-	if err := ioutil.WriteFile(filename, []byte(content), 0644); err != nil {
+	if err := ioutil.WriteFile(filename, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("while creating plugin %s: %s", filename, err)
 	}
 
 	// create .gitignore skeleton
 	filename = filepath.Join(dir, ".gitignore")
-	if err := ioutil.WriteFile(filename, []byte(gitIgnore), 0644); err != nil {
+	if err := ioutil.WriteFile(filename, []byte(gitIgnore), 0o644); err != nil {
 		return fmt.Errorf("while creating plugin %s: %s", filename, err)
 	}
 

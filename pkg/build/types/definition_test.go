@@ -19,7 +19,8 @@ func TestNewDefinitionFromURI(t *testing.T) {
 		{uri: "test", shouldPass: false},
 		{uri: "//test", shouldPass: false},
 		{uri: "://test", shouldPass: true},
-		{uri: ":test", shouldPass: true}}
+		{uri: ":test", shouldPass: true},
+	}
 
 	for _, testCase := range cases {
 		_, myerr := NewDefinitionFromURI(testCase.uri)
@@ -38,7 +39,8 @@ func TestNewDefinitionFromJSON(t *testing.T) {
 		shouldPass bool
 	}{
 		{JSON: `{"test"}`, shouldPass: false},
-		{JSON: `{"Key1": "Value1", "Key2": "Value2."}`, shouldPass: true}}
+		{JSON: `{"Key1": "Value1", "Key2": "Value2."}`, shouldPass: true},
+	}
 
 	const singularityJSON = "parser/testdata_good/docker/docker.json"
 	// We do not have a valid example file that we can use to reach the corner cases, so we define a fake JSON

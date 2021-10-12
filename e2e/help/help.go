@@ -149,7 +149,6 @@ func (c ctx) testCommands(t *testing.T) {
 		}
 
 	}
-
 }
 
 func (c ctx) testFailure(t *testing.T) {
@@ -168,7 +167,6 @@ func (c ctx) testFailure(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
@@ -181,7 +179,6 @@ func (c ctx) testFailure(t *testing.T) {
 			}),
 			e2e.ExpectExit(0))
 	}
-
 }
 
 // Expected first lines of the help command output based on what options is used
@@ -256,7 +253,6 @@ func (c ctx) testSingularity(t *testing.T) {
 			),
 		)
 	}
-
 }
 
 // E2ETests is the main func to trigger the test suite

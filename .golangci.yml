@@ -6,7 +6,7 @@ linters:
   enable-all: false
   enable:
     - deadcode
-    - gofmt
+    - gofumpt
     - goimports
     - gosimple
     - govet

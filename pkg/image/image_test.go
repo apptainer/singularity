@@ -51,7 +51,7 @@ func copyImage(t *testing.T) string {
 	name := f.Name()
 	f.Close()
 
-	if err := fs.CopyFileAtomic(busyboxSIF, name, 0755); err != nil {
+	if err := fs.CopyFileAtomic(busyboxSIF, name, 0o755); err != nil {
 		t.Fatalf("Could not copy test image: %v", err)
 	}
 	return name
@@ -202,7 +202,8 @@ func TestAuthorizedPath(t *testing.T) {
 		{
 			name:       "valid path",
 			path:       []string{"/"},
-			shouldPass: true},
+			shouldPass: true,
+		},
 	}
 
 	// XXX(mem): This is what makes this test slow

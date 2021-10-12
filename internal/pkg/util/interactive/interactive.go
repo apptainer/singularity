@@ -18,9 +18,11 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-var errInvalidChoice = errors.New("invalid choice")
-var errPassphraseMismatch = errors.New("passphrases do not match")
-var errTooManyRetries = errors.New("too many retries while getting a passphrase")
+var (
+	errInvalidChoice      = errors.New("invalid choice")
+	errPassphraseMismatch = errors.New("passphrases do not match")
+	errTooManyRetries     = errors.New("too many retries while getting a passphrase")
+)
 
 // askQuestionUsingGenericDescr reads from a file descriptor (more precisely
 // from a *os.File object) one line at a time. The file can be a normal file or

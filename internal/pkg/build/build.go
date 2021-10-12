@@ -75,7 +75,7 @@ func New(defs []types.Definition, conf Config) (*Build, error) {
 
 func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 	sandboxCopy := false
-	oldumask := syscall.Umask(0002)
+	oldumask := syscall.Umask(0o002)
 	defer syscall.Umask(oldumask)
 
 	dest, err := fs.Abs(conf.Dest)
@@ -338,7 +338,7 @@ func (b *Build) Full(ctx context.Context) error {
 	// clean up build normally
 	defer b.cleanUp()
 
-	oldumask := syscall.Umask(0002)
+	oldumask := syscall.Umask(0o002)
 
 	// generate the default configuration
 	config, err := singularityconf.Parse("")
@@ -439,7 +439,7 @@ func (b *Build) Full(ctx context.Context) error {
 
 		// write the build configuration used for %post and %test sections
 		configFile := filepath.Join(stage.b.TmpDir, "singularity.conf")
-		if err := ioutil.WriteFile(configFile, configData, 0644); err != nil {
+		if err := ioutil.WriteFile(configFile, configData, 0o644); err != nil {
 			return fmt.Errorf("while creating %s: %s", configFile, err)
 		}
 		defer os.Remove(configFile)

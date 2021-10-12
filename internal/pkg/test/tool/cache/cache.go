@@ -24,7 +24,7 @@ import (
 func MakeDir(t *testing.T, basedir string) string {
 	// We create a unique temporary directory for the image cache since Go run
 	// tests concurrently.
-	dir, err := fs.MakeTmpDir(basedir, "image_cache-", 0755)
+	dir, err := fs.MakeTmpDir(basedir, "image_cache-", 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}

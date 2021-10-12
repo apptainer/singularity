@@ -30,14 +30,16 @@ var KeyImportCmd = &cobra.Command{
 	Example: docs.KeyImportExample,
 }
 
-var keyImportWithNewPassword bool
-var keyImportWithNewPasswordFlag = cmdline.Flag{
-	ID:           "keyImportWithNewPasswordFlag",
-	Value:        &keyImportWithNewPassword,
-	DefaultValue: false,
-	Name:         "new-password",
-	Usage:        `set a new password to the private key`,
-}
+var (
+	keyImportWithNewPassword     bool
+	keyImportWithNewPasswordFlag = cmdline.Flag{
+		ID:           "keyImportWithNewPasswordFlag",
+		Value:        &keyImportWithNewPassword,
+		DefaultValue: false,
+		Name:         "new-password",
+		Usage:        `set a new password to the private key`,
+	}
+)
 
 func importRun(cmd *cobra.Command, args []string) {
 	var opts []sypgp.HandleOpt
@@ -53,5 +55,4 @@ func importRun(cmd *cobra.Command, args []string) {
 		sylog.Errorf("key import command failed: %s", err)
 		os.Exit(2)
 	}
-
 }

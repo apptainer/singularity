@@ -283,7 +283,6 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 			}
 		}
 	}
-
 }
 
 func verifyFile(t *testing.T, original, copy string) error {
@@ -329,7 +328,7 @@ func verifyHelp(t *testing.T, fileName string, contents []string) error {
 	}
 
 	// do perm check
-	if fi.Mode().Perm() != 0644 {
+	if fi.Mode().Perm() != 0o644 {
 		return fmt.Errorf("Incorrect help script perms: %v", fi.Mode().Perm())
 	}
 
@@ -355,7 +354,7 @@ func verifyScript(t *testing.T, fileName string, contents []string) error {
 	}
 
 	// do perm check
-	if fi.Mode().Perm() != 0755 {
+	if fi.Mode().Perm() != 0o755 {
 		return fmt.Errorf("Incorrect script perms: %v", fi.Mode().Perm())
 	}
 

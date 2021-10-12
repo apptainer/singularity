@@ -257,7 +257,7 @@ func handleRemoteConf(remoteConfFile string) {
 	// Only check the permission if it exists.
 	if fs.IsFile(remoteConfFile) {
 		sylog.Debugf("Ensuring file permission of 0600 on %s", remoteConfFile)
-		if err := fs.EnsureFileWithPermission(remoteConfFile, 0600); err != nil {
+		if err := fs.EnsureFileWithPermission(remoteConfFile, 0o600); err != nil {
 			sylog.Fatalf("Unable to correct the permission on %s: %s", remoteConfFile, err)
 		}
 	}
@@ -266,17 +266,17 @@ func handleRemoteConf(remoteConfFile string) {
 // handleConfDir tries to create the user's configuration directory and handles
 // messages and/or errors.
 func handleConfDir(confDir string) {
-	if err := fs.Mkdir(confDir, 0700); err != nil {
+	if err := fs.Mkdir(confDir, 0o700); err != nil {
 		if os.IsExist(err) {
 			sylog.Debugf("%s already exists. Not creating.", confDir)
 			fi, err := os.Stat(confDir)
 			if err != nil {
 				sylog.Fatalf("Failed to retrieve information for %s: %s", confDir, err)
 			}
-			if fi.Mode().Perm() != 0700 {
+			if fi.Mode().Perm() != 0o700 {
 				sylog.Debugf("Enforce permission 0700 on %s", confDir)
 				// enforce permission on user configuration directory
-				if err := os.Chmod(confDir, 0700); err != nil {
+				if err := os.Chmod(confDir, 0o700); err != nil {
 					// best effort as chmod could fail for various reasons (eg: readonly FS)
 					sylog.Warningf("Couldn't enforce permission 0700 on %s: %s", confDir, err)
 				}
@@ -482,7 +482,7 @@ var VersionCmd = &cobra.Command{
 }
 
 func loadRemoteConf(filepath string) (*remote.Config, error) {
-	f, err := os.OpenFile(filepath, os.O_RDONLY, 0600)
+	f, err := os.OpenFile(filepath, os.O_RDONLY, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("while opening remote config file: %s", err)
 	}

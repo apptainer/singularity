@@ -54,11 +54,11 @@ func GenerateBundleConfig(bundlePath string, config *specs.Spec) (*generate.Gene
 	defer syscall.Umask(oldumask)
 
 	rootFsDir := RootFs(bundlePath).Path()
-	if err := os.MkdirAll(rootFsDir, 0700); err != nil {
+	if err := os.MkdirAll(rootFsDir, 0o700); err != nil {
 		return nil, fmt.Errorf("failed to create %s: %s", rootFsDir, err)
 	}
 	volumesDir := Volumes(bundlePath).Path()
-	if err := os.MkdirAll(volumesDir, 0755); err != nil {
+	if err := os.MkdirAll(volumesDir, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create %s: %s", volumesDir, err)
 	}
 	defer func() {

@@ -94,7 +94,7 @@ func Run(t *testing.T) {
 		os.RemoveAll(name)
 	})(t)
 
-	if err := os.Chmod(name, 0755); err != nil {
+	if err := os.Chmod(name, 0o755); err != nil {
 		log.Fatalf("failed to chmod temporary directory: %v", err)
 	}
 	testenv.TestDir = name

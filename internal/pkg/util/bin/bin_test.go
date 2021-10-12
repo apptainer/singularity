@@ -60,7 +60,7 @@ func TestCryptsetup(t *testing.T) {
 			defer os.Remove(f.Name())
 
 			cfg := fmt.Sprintf("cryptsetup path = %s\n", tc.config)
-			ioutil.WriteFile(f.Name(), []byte(cfg), 0644)
+			ioutil.WriteFile(f.Name(), []byte(cfg), 0o644)
 
 			path, err := cryptsetup(f.Name())
 

@@ -239,10 +239,10 @@ func (i *File) Update() error {
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
 
-	if err := os.MkdirAll(path, 0700); err != nil {
+	if err := os.MkdirAll(path, 0o700); err != nil {
 		return err
 	}
-	file, err := os.OpenFile(i.Path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY|syscall.O_NOFOLLOW, 0644)
+	file, err := os.OpenFile(i.Path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY|syscall.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return err
 	}
@@ -281,19 +281,19 @@ func SetLogFile(name string, uid int, subDir string) (*os.File, *os.File, error)
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
 
-	if err := os.MkdirAll(filepath.Dir(stderrPath), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(stderrPath), 0o700); err != nil {
 		return nil, nil, err
 	}
-	if err := os.MkdirAll(filepath.Dir(stdoutPath), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(stdoutPath), 0o700); err != nil {
 		return nil, nil, err
 	}
 
-	stderr, err := os.OpenFile(stderrPath, os.O_RDWR|os.O_CREATE|os.O_APPEND|syscall.O_NOFOLLOW, 0644)
+	stderr, err := os.OpenFile(stderrPath, os.O_RDWR|os.O_CREATE|os.O_APPEND|syscall.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	stdout, err := os.OpenFile(stdoutPath, os.O_RDWR|os.O_CREATE|os.O_APPEND|syscall.O_NOFOLLOW, 0644)
+	stdout, err := os.OpenFile(stdoutPath, os.O_RDWR|os.O_CREATE|os.O_APPEND|syscall.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return nil, nil, err
 	}

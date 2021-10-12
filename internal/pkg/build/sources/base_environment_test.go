@@ -66,7 +66,7 @@ func TestMakeFiles(t *testing.T) {
 		if err := makeDirs(d); err != nil {
 			return err
 		}
-		err := fs.EnsureFileWithPermission(filepath.Join(d, "etc", "hosts"), 0400)
+		err := fs.EnsureFileWithPermission(filepath.Join(d, "etc", "hosts"), 0o400)
 		if err != nil {
 			t.Fatalf("Failed to make test hosts file: %s", err)
 		}

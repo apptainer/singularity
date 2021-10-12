@@ -43,7 +43,7 @@ func (c ctx) issue5426(t *testing.T) {
 	}
 	// Copy in the test environment file
 	testEnvironment := path.Join("testdata", "regressions", "legacy-environment")
-	if err := fs.CopyFile(testEnvironment, path.Join(sandboxDir, "environment"), 0755); err != nil {
+	if err := fs.CopyFile(testEnvironment, path.Join(sandboxDir, "environment"), 0o755); err != nil {
 		t.Fatalf("Could not add legacy /environment to sandbox: %s", err)
 	}
 

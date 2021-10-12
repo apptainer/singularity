@@ -33,7 +33,6 @@ var KeyRemoveCmd = &cobra.Command{
 		if err != nil {
 			sylog.Fatalf("Unable to remove public key: %s", err)
 		}
-
 	},
 
 	Use:     docs.KeyRemoveUse,

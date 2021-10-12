@@ -122,7 +122,6 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 	}
 
 	return advance, retbuf.Bytes(), nil
-
 }
 
 func getSectionName(line string) string {

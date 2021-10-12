@@ -87,7 +87,7 @@ func DownloadImage(ctx context.Context, manifest APIResponse, filePath, shubRef 
 	}
 
 	// Perms are 777 *prior* to umask
-	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o777)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,6 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 // Pull will pull a shub image to the cache or direct to a temporary file if cache is disabled
 func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, noHTTPS bool) (imagePath string, err error) {
-
 	directTo := ""
 
 	if imgCache.IsDisabled() {
@@ -191,12 +190,10 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, 
 	}
 
 	return pull(ctx, imgCache, directTo, pullFrom, noHTTPS)
-
 }
 
 // PullToFile will pull a shub image to the specified location, through the cache, or directly if cache is disabled
 func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, tmpDir string, noHTTPS bool) (imagePath string, err error) {
-
 	directTo := ""
 	if imgCache.IsDisabled() {
 		directTo = pullTo
@@ -210,7 +207,7 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, t
 
 	if directTo == "" {
 		// mode is before umask if pullTo doesn't exist
-		err = fs.CopyFileAtomic(src, pullTo, 0777)
+		err = fs.CopyFileAtomic(src, pullTo, 0o777)
 		if err != nil {
 			return "", fmt.Errorf("error copying image out of cache: %v", err)
 		}

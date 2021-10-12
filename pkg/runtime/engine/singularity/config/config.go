@@ -298,7 +298,7 @@ func (e *EngineConfig) GetCustomHome() bool {
 func ParseBindPath(paths []string) ([]BindPath, error) {
 	var binds []BindPath
 
-	var validOptions = map[string]bool{
+	validOptions := map[string]bool{
 		"ro":        true,
 		"rw":        true,
 		"image-src": false,

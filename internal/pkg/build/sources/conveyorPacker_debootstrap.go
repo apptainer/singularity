@@ -72,7 +72,7 @@ func (cp *DebootstrapConveyorPacker) prepareFakerootEnv(ctx context.Context) (fu
 	}
 
 	devPath := filepath.Join(cp.b.RootfsPath, "dev")
-	if err := os.Mkdir(devPath, 0755); err != nil {
+	if err := os.Mkdir(devPath, 0o755); err != nil {
 		return nil, fmt.Errorf("while creating %s: %s", devPath, err)
 	}
 
@@ -220,9 +220,8 @@ func (cp *DebootstrapConveyorPacker) Get(ctx context.Context, b *types.Bundle) (
 
 // Pack puts relevant objects in a Bundle!
 func (cp *DebootstrapConveyorPacker) Pack(context.Context) (*types.Bundle, error) {
-
-	//change root directory permissions to 0755
-	if err := os.Chmod(cp.b.RootfsPath, 0755); err != nil {
+	// change root directory permissions to 0755
+	if err := os.Chmod(cp.b.RootfsPath, 0o755); err != nil {
 		return nil, fmt.Errorf("while changing bundle rootfs perms: %v", err)
 	}
 
@@ -242,7 +241,7 @@ func (cp *DebootstrapConveyorPacker) Pack(context.Context) (*types.Bundle, error
 func (cp *DebootstrapConveyorPacker) getRecipeHeaderInfo() (err error) {
 	var ok bool
 
-	//get mirrorURL, OSVerison, and Includes components to definition
+	// get mirrorURL, OSVerison, and Includes components to definition
 	cp.mirrorurl, ok = cp.b.Recipe.Header["mirrorurl"]
 	if !ok {
 		return fmt.Errorf("invalid debootstrap header, no mirrorurl specified")
@@ -255,13 +254,13 @@ func (cp *DebootstrapConveyorPacker) getRecipeHeaderInfo() (err error) {
 
 	include := cp.b.Recipe.Header["include"]
 
-	//check for include environment variable and add it to requires string
+	// check for include environment variable and add it to requires string
 	include += ` ` + os.Getenv("INCLUDE")
 
-	//trim leading and trailing whitespace
+	// trim leading and trailing whitespace
 	include = strings.TrimSpace(include)
 
-	//convert Requires string to comma separated list
+	// convert Requires string to comma separated list
 	cp.include = strings.Replace(include, ` `, `,`, -1)
 
 	return nil
@@ -293,7 +292,7 @@ func (cp *DebootstrapConveyorPacker) insertRunScript(b *types.Bundle) (err error
 
 	f.Sync()
 
-	err = os.Chmod(b.RootfsPath+"/.singularity.d/runscript", 0755)
+	err = os.Chmod(b.RootfsPath+"/.singularity.d/runscript", 0o755)
 	if err != nil {
 		return
 	}

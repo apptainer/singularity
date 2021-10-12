@@ -20,7 +20,6 @@ import (
 const scratchDef = "../../../../pkg/build/types/parser/testdata_good/scratch/scratch"
 
 func TestScratchConveyor(t *testing.T) {
-
 	if testing.Short() {
 		t.SkipNow()
 	}

@@ -14,6 +14,7 @@ package starter
 */
 // #cgo CFLAGS: -I../../../../../../cmd/starter/c/include
 import "C"
+
 import (
 	"encoding/json"
 	"fmt"

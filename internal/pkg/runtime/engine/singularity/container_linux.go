@@ -49,11 +49,13 @@ import (
 // - setup
 // - cleanup
 // - post start process
-var cryptDev string
-var networkSetup *network.Setup
-var cgroupManager *cgroups.Manager
-var imageDriver image.Driver
-var umountPoints []string
+var (
+	cryptDev      string
+	networkSetup  *network.Setup
+	cgroupManager *cgroups.Manager
+	imageDriver   image.Driver
+	umountPoints  []string
+)
 
 // defaultCNIConfPath is the default directory to CNI network configuration files.
 var defaultCNIConfPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", "network")
@@ -869,7 +871,7 @@ func (c *container) overlayUpperWork(system *mount.System) error {
 	createUpperWork := func(path, label string) error {
 		fi, err := c.rpcOps.Lstat(path)
 		if os.IsNotExist(err) {
-			if err := c.rpcOps.Mkdir(path, 0755); err != nil {
+			if err := c.rpcOps.Mkdir(path, 0o755); err != nil {
 				return fmt.Errorf("failed to create %s directory: %s", path, err)
 			}
 		} else if err == nil && !fi.IsDir() {
@@ -1808,10 +1810,10 @@ func (c *container) addTmpMount(system *mount.System) error {
 			tmpSource = filepath.Join(workdir, tmpSource)
 			vartmpSource = filepath.Join(workdir, vartmpSource)
 
-			if err := fs.Mkdir(tmpSource, os.ModeSticky|0777); err != nil && !os.IsExist(err) {
+			if err := fs.Mkdir(tmpSource, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
 				return fmt.Errorf("failed to create %s: %s", tmpSource, err)
 			}
-			if err := fs.Mkdir(vartmpSource, os.ModeSticky|0777); err != nil && !os.IsExist(err) {
+			if err := fs.Mkdir(vartmpSource, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
 				return fmt.Errorf("failed to create %s: %s", vartmpSource, err)
 			}
 		} else {
@@ -1819,7 +1821,7 @@ func (c *container) addTmpMount(system *mount.System) error {
 				if err := c.session.AddDir(tmpSource); err != nil {
 					return err
 				}
-				if err := c.session.Chmod(tmpSource, os.ModeSticky|0777); err != nil {
+				if err := c.session.Chmod(tmpSource, os.ModeSticky|0o777); err != nil {
 					return err
 				}
 			}
@@ -1827,7 +1829,7 @@ func (c *container) addTmpMount(system *mount.System) error {
 				if err := c.session.AddDir(vartmpSource); err != nil {
 					return err
 				}
-				if err := c.session.Chmod(vartmpSource, os.ModeSticky|0777); err != nil {
+				if err := c.session.Chmod(vartmpSource, os.ModeSticky|0o777); err != nil {
 					return err
 				}
 			}
@@ -1878,7 +1880,7 @@ func (c *container) addScratchMount(system *mount.System) error {
 	if hasWorkdir {
 		workdir = filepath.Clean(workdir)
 		sourceDir := filepath.Join(workdir, scratchSessionDir)
-		if err := fs.MkdirAll(sourceDir, 0750); err != nil {
+		if err := fs.MkdirAll(sourceDir, 0o750); err != nil {
 			return fmt.Errorf("could not create scratch working directory %s: %s", sourceDir, err)
 		}
 	}
@@ -1891,7 +1893,7 @@ func (c *container) addScratchMount(system *mount.System) error {
 		fullSourceDir, _ := c.session.GetPath(src)
 		if hasWorkdir {
 			fullSourceDir = filepath.Join(workdir, scratchSessionDir, dir)
-			if err := fs.MkdirAll(fullSourceDir, 0750); err != nil {
+			if err := fs.MkdirAll(fullSourceDir, 0o750); err != nil {
 				return fmt.Errorf("could not create scratch working directory %s: %s", fullSourceDir, err)
 			}
 		}

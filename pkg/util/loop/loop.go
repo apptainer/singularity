@@ -121,7 +121,7 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 		path = fmt.Sprintf("/dev/loop%d", device)
 		if fi, err := os.Stat(path); err != nil {
 			dev := int((7 << 8) | (device & 0xff) | ((device & 0xfff00) << 12))
-			esys := syscall.Mknod(path, syscall.S_IFBLK|0660, dev)
+			esys := syscall.Mknod(path, syscall.S_IFBLK|0o660, dev)
 			if errno, ok := esys.(syscall.Errno); ok {
 				if errno != syscall.EEXIST {
 					return esys
@@ -131,7 +131,7 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 			return fmt.Errorf("%s is not a block device", path)
 		}
 
-		if loopFd, err = syscall.Open(path, mode, 0600); err != nil {
+		if loopFd, err = syscall.Open(path, mode, 0o600); err != nil {
 			continue
 		}
 		if loop.Shared {
@@ -201,7 +201,7 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 // AttachFromPath finds a free loop device, opens it, and stores file descriptor
 // of opened image path
 func (loop *Device) AttachFromPath(image string, mode int, number *int) error {
-	file, err := os.OpenFile(image, mode, 0600)
+	file, err := os.OpenFile(image, mode, 0o600)
 	if err != nil {
 		return err
 	}

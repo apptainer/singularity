@@ -119,7 +119,7 @@ func PrepareMultiStageDefFile(dfd []DefFileDetails) (outputPath string) {
 }
 
 func RawDefFile(t *testing.T, dir string, r io.Reader) (outputPath string) {
-	f, err := fs.MakeTmpFile(dir, "raw-deffile", 0644)
+	f, err := fs.MakeTmpFile(dir, "raw-deffile", 0o644)
 	if err != nil {
 		t.Fatalf("while making temporal definition file: %v", err)
 	}

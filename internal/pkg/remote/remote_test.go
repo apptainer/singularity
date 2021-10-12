@@ -19,7 +19,7 @@ import (
 
 const testToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM"
 
-//NOTE: VerifyToken() cannot be fully tested unless we have a dummy token for the token service to authenticate, so we basically only test a few error cases.
+// NOTE: VerifyToken() cannot be fully tested unless we have a dummy token for the token service to authenticate, so we basically only test a few error cases.
 func TestVerifyToken(t *testing.T) {
 	ep := new(endpoint.Config)
 
@@ -123,11 +123,9 @@ func TestWriteToReadFrom(t *testing.T) {
 		var r bytes.Buffer
 
 		_, err := ReadFrom(&r)
-
 		if err != nil {
 			t.Errorf("unexpected failure running %s test: %s", t.Name(), err)
 		}
-
 	})
 }
 
@@ -1064,7 +1062,6 @@ func TestGetServiceURI(t *testing.T) {
 		},
 	}
 	for _, test := range testsFail {
-
 		t.Run(test.name, func(t *testing.T) {
 			var ep *endpoint.Config
 			ep, err := test.old.GetRemote(test.id)

@@ -19,7 +19,7 @@ import (
 const testSquash = "./testdata/squashfs.v4"
 
 func createSIF(t *testing.T, inputDesc []sif.DescriptorInput, corrupted bool) string {
-	sifFile, err := fs.MakeTmpFile("", "sif-", 0644)
+	sifFile, err := fs.MakeTmpFile("", "sif-", 0o644)
 	if err != nil {
 		t.Fatalf("failed to create temporary file: %s", err)
 	}

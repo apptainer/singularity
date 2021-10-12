@@ -165,7 +165,6 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 
 	cmd := exec.Command(cryptsetup, "luksFormat", "--batch-mode", "--type", "luks2", "--key-file", "-", loop)
 	stdin, err := cmd.StdinPipe()
-
 	if err != nil {
 		return "", err
 	}
@@ -211,13 +210,13 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 func copyDeviceContents(source, dest string, size int64) error {
 	sylog.Debugf("Copying %s to %s, size %d", source, dest, size)
 
-	sourceFd, err := syscall.Open(source, syscall.O_RDONLY, 0000)
+	sourceFd, err := syscall.Open(source, syscall.O_RDONLY, 0o000)
 	if err != nil {
 		return fmt.Errorf("unable to open the file %s", source)
 	}
 	defer syscall.Close(sourceFd)
 
-	destFd, err := syscall.Open(dest, syscall.O_WRONLY, 0666)
+	destFd, err := syscall.Open(dest, syscall.O_WRONLY, 0o666)
 	if err != nil {
 		return fmt.Errorf("unable to open the file: %s", dest)
 	}

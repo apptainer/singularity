@@ -17,7 +17,6 @@ import (
 )
 
 func TestCopyWithTar(t *testing.T) {
-
 	t.Run("privileged", func(t *testing.T) {
 		test.EnsurePrivilege(t)
 		testCopyWithTar(t)
@@ -28,7 +27,6 @@ func TestCopyWithTar(t *testing.T) {
 		defer test.ResetPrivilege(t)
 		testCopyWithTar(t)
 	})
-
 }
 
 func testCopyWithTar(t *testing.T) {
@@ -40,12 +38,12 @@ func testCopyWithTar(t *testing.T) {
 
 	// Source Files
 	srcFile := filepath.Join(srcRoot, "srcFile")
-	if err := ioutil.WriteFile(srcFile, []byte("test"), 0644); err != nil {
+	if err := ioutil.WriteFile(srcFile, []byte("test"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
 	srcDir := filepath.Join(srcRoot, "srcDir")
-	if err := os.Mkdir(srcDir, 0755); err != nil {
+	if err := os.Mkdir(srcDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	// Source Symlink

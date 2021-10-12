@@ -29,9 +29,9 @@ func RemoteAdd(configFile, name, uri string, global bool) (err error) {
 	c := &remote.Config{}
 
 	// system config should be world readable
-	perm := os.FileMode(0600)
+	perm := os.FileMode(0o600)
 	if global {
-		perm = os.FileMode(0644)
+		perm = os.FileMode(0o644)
 	}
 
 	// opening config file

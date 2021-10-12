@@ -26,7 +26,7 @@ func defaultProfile() *specs.LinuxSeccomp {
 			Args: []specs.LinuxSeccompArg{
 				{
 					Index: 1,
-					Value: 0777,
+					Value: 0o777,
 					Op:    specs.OpEqualTo,
 				},
 			},
@@ -50,14 +50,14 @@ func testFchmod(t *testing.T) {
 
 	if hasConditionSupport() {
 		// all modes except 0777 are permitted
-		if err := syscall.Fchmod(int(tmpfile.Fd()), 0755); err != nil {
+		if err := syscall.Fchmod(int(tmpfile.Fd()), 0o755); err != nil {
 			t.Errorf("fchmod syscall failed: %s", err)
 		}
-		if err := syscall.Fchmod(int(tmpfile.Fd()), 0777); err == nil {
+		if err := syscall.Fchmod(int(tmpfile.Fd()), 0o777); err == nil {
 			t.Errorf("fchmod syscall didn't return operation not permitted")
 		}
 	} else {
-		if err := syscall.Fchmod(int(tmpfile.Fd()), 0755); err == nil {
+		if err := syscall.Fchmod(int(tmpfile.Fd()), 0o755); err == nil {
 			t.Errorf("fchmod syscall didn't return operation not permitted")
 		}
 	}

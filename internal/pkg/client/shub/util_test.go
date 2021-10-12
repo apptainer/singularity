@@ -14,21 +14,19 @@ import (
 	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
 )
 
-var (
-	validShubURIs = []string{
-		`shub://username/container`,
-		`shub://username/container:tag`,
-		`shub://username/container@00000000000000000000000000000000`,
-		`shub://registry/username/container`,
-		`shub://registry/with/levels/username/container`,
-		`shub://registry/user-name/container-with-dash`,
-		`shub://registry/username/container.with.period`,
-		`shub://username/container:tag-with-dash`,
-		`shub://username/container:tag_wtih_underscore`,
-		`shub://username/container:tag.with.period`,
-		`shub://myprivateregistry.sylabs.io/sylabs/container:latest`,
-	}
-)
+var validShubURIs = []string{
+	`shub://username/container`,
+	`shub://username/container:tag`,
+	`shub://username/container@00000000000000000000000000000000`,
+	`shub://registry/username/container`,
+	`shub://registry/with/levels/username/container`,
+	`shub://registry/user-name/container-with-dash`,
+	`shub://registry/username/container.with.period`,
+	`shub://username/container:tag-with-dash`,
+	`shub://username/container:tag_wtih_underscore`,
+	`shub://username/container:tag.with.period`,
+	`shub://myprivateregistry.sylabs.io/sylabs/container:latest`,
+}
 
 func TestMain(m *testing.M) {
 	useragent.InitValue("singularity", "3.0.0-alpha.1-303-gaed8d30-dirty")

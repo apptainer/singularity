@@ -6,14 +6,14 @@
 package sources
 
 import (
+	"context"
+	"fmt"
+	"io/ioutil"
+
 	"github.com/hpcng/singularity/pkg/build/types"
 	"github.com/hpcng/singularity/pkg/image"
 	"github.com/hpcng/singularity/pkg/image/unpacker"
 	"github.com/hpcng/singularity/pkg/sylog"
-
-	"context"
-	"fmt"
-	"io/ioutil"
 )
 
 // SIFPacker holds the locations of where to pack from and to.

@@ -84,10 +84,10 @@ func TestLayout(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err := session.Chmod("/etc", 0777); err != nil {
+	if err := session.Chmod("/etc", 0o777); err != nil {
 		t.Error(err)
 	}
-	if err := session.Chmod("/etcd", 0777); err == nil {
+	if err := session.Chmod("/etcd", 0o777); err == nil {
 		t.Error("should have failed with non existent path")
 	}
 
@@ -98,7 +98,7 @@ func TestLayout(t *testing.T) {
 		t.Error("should have failed with non existent path")
 	}
 
-	if err := session.Chmod("/etc/passwd", 0600); err != nil {
+	if err := session.Chmod("/etc/passwd", 0o600); err != nil {
 		t.Error(err)
 	}
 	if err := session.Chown("/etc/passwd", uid, gid); err != nil {

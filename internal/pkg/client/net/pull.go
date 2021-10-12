@@ -38,7 +38,6 @@ func IsNetPullRef(netRef string) bool {
 // DownloadImage will retrieve an image from an http(s) URI,
 // saving it into the specified file
 func DownloadImage(ctx context.Context, filePath string, netURL string) error {
-
 	if !IsNetPullRef(netURL) {
 		return fmt.Errorf("not a valid url reference: %s", netURL)
 	}
@@ -83,7 +82,7 @@ func DownloadImage(ctx context.Context, filePath string, netURL string) error {
 	sylog.Debugf("OK response received, beginning body download\n")
 
 	// Perms are 777 *prior* to umask
-	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o777)
 	if err != nil {
 		return err
 	}
@@ -176,7 +175,6 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 
 // Pull will pull a http(s) image to the cache or direct to a temporary file if cache is disabled
 func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, tmpDir string) (imagePath string, err error) {
-
 	directTo := ""
 
 	if imgCache.IsDisabled() {
@@ -193,7 +191,6 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, tmpDir s
 
 // PullToFile will pull an http(s) image to the specified location, through the cache, or directly if cache is disabled
 func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, tmpDir string) (imagePath string, err error) {
-
 	directTo := ""
 	if imgCache.IsDisabled() {
 		directTo = pullTo
@@ -207,7 +204,7 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, t
 
 	if directTo == "" {
 		// mode is before umask if pullTo doesn't exist
-		err = fs.CopyFileAtomic(src, pullTo, 0777)
+		err = fs.CopyFileAtomic(src, pullTo, 0o777)
 		if err != nil {
 			return "", fmt.Errorf("error copying image out of cache: %v", err)
 		}

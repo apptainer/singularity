@@ -246,10 +246,10 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err e
 			rpmsys = "/usr/lib/sysimage"
 			rpmrel = "../../.."
 		}
-		if err = os.MkdirAll(cp.b.RootfsPath+rpmbase+`/rpm`, 0755); err != nil {
+		if err = os.MkdirAll(cp.b.RootfsPath+rpmbase+`/rpm`, 0o755); err != nil {
 			return fmt.Errorf("cannot recreate rpm directories: %v", err)
 		}
-		if err = os.MkdirAll(cp.b.RootfsPath+rpmsys, 0755); err != nil {
+		if err = os.MkdirAll(cp.b.RootfsPath+rpmsys, 0o755); err != nil {
 			return fmt.Errorf("cannot recreate rpm directories: %v", err)
 		}
 		if err = os.RemoveAll(cp.b.RootfsPath + rpmsys + `/rpm`); err != nil {
@@ -270,10 +270,12 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err e
 	}
 
 	if suseconnectPath != "" {
-		args := []string{`--root`, cp.b.RootfsPath,
+		args := []string{
+			`--root`, cp.b.RootfsPath,
 			`--product`, suseconnectProduct,
 			`--email`, sleuser,
-			`--regcode`, sleregcode}
+			`--regcode`, sleregcode,
+		}
 		if sleurlOk {
 			args = append(args, `--url`, sleurl)
 		}
@@ -374,7 +376,7 @@ func (cp *ZypperConveyorPacker) insertRunScript() (err error) {
 
 	f.Sync()
 
-	err = os.Chmod(cp.b.RootfsPath+"/.singularity.d/runscript", 0755)
+	err = os.Chmod(cp.b.RootfsPath+"/.singularity.d/runscript", 0o755)
 	if err != nil {
 		return
 	}
@@ -383,12 +385,12 @@ func (cp *ZypperConveyorPacker) insertRunScript() (err error) {
 }
 
 func (cp *ZypperConveyorPacker) genZypperConfig() (err error) {
-	err = os.MkdirAll(filepath.Join(cp.b.RootfsPath, "/etc/zypp"), 0775)
+	err = os.MkdirAll(filepath.Join(cp.b.RootfsPath, "/etc/zypp"), 0o775)
 	if err != nil {
 		return fmt.Errorf("while creating %v: %v", filepath.Join(cp.b.RootfsPath, "/etc/zypp"), err)
 	}
 
-	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, zypperConf), []byte("[main]\ncachedir=/val/cache/zypp-bootstrap\n\n"), 0664)
+	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, zypperConf), []byte("[main]\ncachedir=/val/cache/zypp-bootstrap\n\n"), 0o664)
 	if err != nil {
 		return
 	}
@@ -398,7 +400,7 @@ func (cp *ZypperConveyorPacker) genZypperConfig() (err error) {
 
 func (cp *ZypperConveyorPacker) copyPseudoDevices() (err error) {
 	devPath := filepath.Join(cp.b.RootfsPath, "dev")
-	err = os.Mkdir(devPath, 0775)
+	err = os.Mkdir(devPath, 0o775)
 	if err != nil {
 		return fmt.Errorf("while creating %v: %v", devPath, err)
 	}
@@ -409,10 +411,10 @@ func (cp *ZypperConveyorPacker) copyPseudoDevices() (err error) {
 		path  string
 		mode  uint32
 	}{
-		{1, 3, "/dev/null", syscall.S_IFCHR | 0666},
-		{1, 8, "/dev/random", syscall.S_IFCHR | 0666},
-		{1, 9, "/dev/urandom", syscall.S_IFCHR | 0666},
-		{1, 5, "/dev/zero", syscall.S_IFCHR | 0666},
+		{1, 3, "/dev/null", syscall.S_IFCHR | 0o666},
+		{1, 8, "/dev/random", syscall.S_IFCHR | 0o666},
+		{1, 9, "/dev/urandom", syscall.S_IFCHR | 0o666},
+		{1, 5, "/dev/zero", syscall.S_IFCHR | 0o666},
 	}
 
 	for _, dev := range devs {

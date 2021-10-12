@@ -118,13 +118,13 @@ func TestGetIDRangePath(t *testing.T) {
 		getPwNam = user.GetPwNam
 	}()
 
-	f, err := fs.MakeTmpFile("", "subid-", 0700)
+	f, err := fs.MakeTmpFile("", "subid-", 0o700)
 	if err != nil {
 		t.Fatalf("failed to create temporary file")
 	}
 	defer os.Remove(f.Name())
 
-	var subIDContent = `
+	subIDContent := `
 root:100000:65536
 1:165536:1
 1:165536:165536
@@ -231,7 +231,7 @@ func getUserFn(username string) (*user.User, error) {
 }
 
 func createConfig(t *testing.T) string {
-	f, err := fs.MakeTmpFile("", "subid-", 0644)
+	f, err := fs.MakeTmpFile("", "subid-", 0o644)
 	if err != nil {
 		t.Fatalf("failed to create temporary config: %s", err)
 	}

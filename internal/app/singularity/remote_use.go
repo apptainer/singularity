@@ -15,7 +15,7 @@ import (
 
 func syncSysConfig(cUsr *remote.Config) error {
 	// opening system config file
-	f, err := os.OpenFile(remote.SystemConfigPath, os.O_RDONLY, 0600)
+	f, err := os.OpenFile(remote.SystemConfigPath, os.O_RDONLY, 0o600)
 	if err != nil && os.IsNotExist(err) {
 		return nil
 	} else if err != nil {
@@ -31,7 +31,6 @@ func syncSysConfig(cUsr *remote.Config) error {
 
 	// sync cUsr with system config cSys
 	return cUsr.SyncFrom(cSys)
-
 }
 
 // RemoteUse sets remote to use
@@ -47,9 +46,9 @@ func RemoteUse(usrConfigFile, name string, global, exclusive bool) (err error) {
 	}
 
 	// system config should be world readable
-	perm := os.FileMode(0600)
+	perm := os.FileMode(0o600)
 	if global {
-		perm = os.FileMode(0644)
+		perm = os.FileMode(0o644)
 	}
 
 	// opening config file

@@ -57,7 +57,7 @@ func rstDocs(rootCmd *cobra.Command, outDir string) {
 
 func main() {
 	var dir string
-	var rootCmd = &cobra.Command{
+	rootCmd := &cobra.Command{
 		ValidArgs: []string{"markdown", "man", "rst"},
 		Args:      cobra.ExactArgs(1),
 		Use:       "makeDocs {markdown | man | rst}",

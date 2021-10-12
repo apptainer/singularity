@@ -45,11 +45,9 @@ var errorCodeMap = map[int]string{
 	500: "Internal Server Error",
 }
 
-var (
-	// ErrStatusNotSupported represents the error returned by
-	// a service which doesn't support SCS status check.
-	ErrStatusNotSupported = errors.New("status not supported")
-)
+// ErrStatusNotSupported represents the error returned by
+// a service which doesn't support SCS status check.
+var ErrStatusNotSupported = errors.New("status not supported")
 
 // Service defines a simple service interface which can be exposed
 // to retrieve service URI and check the service status.

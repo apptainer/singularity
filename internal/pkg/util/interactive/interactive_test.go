@@ -117,7 +117,6 @@ func TestAskNYQuestion(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestAskNumberInRange(t *testing.T) {

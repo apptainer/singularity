@@ -105,7 +105,7 @@ func convertImage(filename string, unsquashfsPath string) (tempDir, imageDir str
 
 	// create an inner dir to extract to, so we don't clobber the secure permissions on the tmpDir.
 	imageDir = filepath.Join(tempDir, "root")
-	if err := os.Mkdir(imageDir, 0755); err != nil {
+	if err := os.Mkdir(imageDir, 0o755); err != nil {
 		return "", "", fmt.Errorf("could not create root directory: %s", err)
 	}
 
@@ -209,7 +209,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	generator.SetProcessArgs(args)
 
-	currMask := syscall.Umask(0022)
+	currMask := syscall.Umask(0o022)
 	if !NoUmask {
 		// Save the current umask, to be set for the process run in the container
 		// https://github.com/hpcng/singularity/issues/5214

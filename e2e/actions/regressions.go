@@ -86,7 +86,7 @@ func (c actionTests) issue4755(t *testing.T) {
 	// create a file in image /tmp in order to trigger the issue
 	// with underlay layer
 	baseDir := filepath.Join(sandbox, filepath.Dir(c.env.TestDir))
-	if err := os.MkdirAll(baseDir, 0700); err != nil {
+	if err := os.MkdirAll(baseDir, 0o700); err != nil {
 		t.Fatalf("can't create image directory %s: %s", baseDir, err)
 	}
 	path := filepath.Join(baseDir, "underlay-test")
@@ -191,7 +191,7 @@ func (c actionTests) issue4836(t *testing.T) {
 
 	// $TMPDIR/issue-4836-XXXX/dir/child directory
 	dir := filepath.Join(issueDir, "dir", "child")
-	if err := os.MkdirAll(filepath.Join(issueDir, "dir", "child"), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(issueDir, "dir", "child"), 0o755); err != nil {
 		t.Fatalf("failed to create dir %s: %s", dir, err)
 	}
 
@@ -232,7 +232,7 @@ func (c actionTests) issue4823(t *testing.T) {
 	issueDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-4823-", "")
 	defer cleanup(t)
 	issueImage := path.Join(issueDir, "test.sif")
-	if err := fs.CopyFile(c.env.ImagePath, issueImage, 0755); err != nil {
+	if err := fs.CopyFile(c.env.ImagePath, issueImage, 0o755); err != nil {
 		t.Fatalf("Could not copy test image file: %v", err)
 	}
 
@@ -372,7 +372,6 @@ func (c actionTests) issue5211(t *testing.T) {
 			e2e.ExpectOutput(e2e.ExactMatch, "/root"),
 		),
 	)
-
 }
 
 // Check that we can create a directory in container image with --writable-tmpfs.
@@ -409,7 +408,6 @@ func (c actionTests) issue5307(t *testing.T) {
 // Check we can fakeroot exec an image containing a system xattr, which we may
 // not be able to set in the SIF -> sandbox extraction.
 func (c actionTests) issue5399(t *testing.T) {
-
 	dir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue5399-", "")
 	defer e2e.Privileged(cleanup)(t)
 	image := filepath.Join(dir, "issue_5399.sif")
@@ -456,10 +454,10 @@ func (c actionTests) issue5455(t *testing.T) {
 				return
 			}
 			permDir := filepath.Join(dir, "perm")
-			if err := os.Mkdir(permDir, 0777); err != nil {
+			if err := os.Mkdir(permDir, 0o777); err != nil {
 				t.Errorf("while creating %s: %s", permDir, err)
 			}
-			if err := os.Chmod(permDir, 0777); err != nil {
+			if err := os.Chmod(permDir, 0o777); err != nil {
 				t.Errorf("while setting permission on %s: %s", permDir, err)
 			}
 		}),
@@ -490,7 +488,7 @@ func (c actionTests) issue5631(t *testing.T) {
 		e2e.PreRun(
 			// Custom config file must exist and be root owned with tight permissions
 			func(t *testing.T) {
-				err := fs.EnsureFileWithPermission(tmpConfig, 0600)
+				err := fs.EnsureFileWithPermission(tmpConfig, 0o600)
 				if err != nil {
 					t.Fatalf("while creating temporary config file: %s", err)
 				}
@@ -682,7 +680,6 @@ func (c actionTests) invalidRemote(t *testing.T) {
 		e2e.WithArgs(argv...),
 		e2e.ExpectExit(255),
 	)
-
 }
 
 // Check that a bind mount without a destination is not added two times.

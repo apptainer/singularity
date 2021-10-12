@@ -146,7 +146,7 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 	}
 
 	for _, d := range rootfsDirs {
-		if err := os.Mkdir(d, 0700); err != nil {
+		if err := os.Mkdir(d, 0o700); err != nil {
 			return nil, fmt.Errorf("while creating %s: %s", d, err)
 		}
 	}
@@ -203,10 +203,10 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 	for _, b := range roFiles {
 		file := filepath.Join(rootfs, b)
 		dir := filepath.Dir(file)
-		if err := os.MkdirAll(dir, 0700); err != nil {
+		if err := os.MkdirAll(dir, 0o700); err != nil {
 			return nil, fmt.Errorf("while creating %s: %s", dir, err)
 		}
-		if err := ioutil.WriteFile(file, []byte(""), 0600); err != nil {
+		if err := ioutil.WriteFile(file, []byte(""), 0o600); err != nil {
 			return nil, fmt.Errorf("while creating %s: %s", file, err)
 		}
 		args = append(args, "-B", fmt.Sprintf("%s:%s:ro", b, b))

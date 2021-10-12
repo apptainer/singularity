@@ -14,9 +14,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var rootCmd = &cobra.Command{Use: "root"}
-var parentCmd = &cobra.Command{Use: "parent"}
-var childCmd = &cobra.Command{Use: "child"}
+var (
+	rootCmd   = &cobra.Command{Use: "root"}
+	parentCmd = &cobra.Command{Use: "parent"}
+	childCmd  = &cobra.Command{Use: "child"}
+)
 
 func newCommandManager(cmd *cobra.Command) (cm *CommandManager, err error) {
 	defer func() {

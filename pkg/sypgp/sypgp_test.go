@@ -32,9 +32,7 @@ const (
 	testEmail   = "test@test.com"
 )
 
-var (
-	testEntity *openpgp.Entity
-)
+var testEntity *openpgp.Entity
 
 type mockPKSLookup struct {
 	code int
@@ -249,10 +247,10 @@ func TestEnsureDirPrivate(t *testing.T) {
 			entry:       "d2",
 			expectError: false,
 			preFunc: func(d string) error {
-				if err := os.MkdirAll(d, 0777); err != nil {
+				if err := os.MkdirAll(d, 0o777); err != nil {
 					return err
 				}
-				return os.Chmod(d, 0777)
+				return os.Chmod(d, 0o777)
 			},
 		},
 	}
@@ -291,7 +289,7 @@ func TestEnsureDirPrivate(t *testing.T) {
 				t.Errorf("Expecting a directory after calling ensureDirPrivate(%q), found something else", testEntry)
 			}
 
-			if actual, expected := fi.Mode() & ^os.ModeDir, os.FileMode(0700); actual != expected {
+			if actual, expected := fi.Mode() & ^os.ModeDir, os.FileMode(0o700); actual != expected {
 				t.Errorf("Expecting mode %o, got %o after calling ensureDirPrivate(%q)", expected, actual, testEntry)
 			}
 		}
@@ -313,7 +311,6 @@ func getPublicKey(data string) *packet.PublicKey {
 }
 
 func TestPrintEntity(t *testing.T) {
-
 	cases := []struct {
 		name     string
 		index    int

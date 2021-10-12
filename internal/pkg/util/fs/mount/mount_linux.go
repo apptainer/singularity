@@ -349,7 +349,7 @@ func (p *Points) init() {
 }
 
 func (p *Points) add(tag AuthorizedTag, source string, dest string, fstype string, flags uintptr, options string) error {
-	var bind = false
+	bind := false
 
 	p.init()
 

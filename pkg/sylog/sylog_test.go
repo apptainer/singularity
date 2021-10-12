@@ -294,7 +294,6 @@ const testStr = "test message"
 type fnOut func(format string, a ...interface{})
 
 func runTestLogFn(t *testing.T, errFd *os.File, fn fnOut) {
-
 	if errFd != nil {
 		fn("%s", testStr)
 		return
@@ -336,7 +335,6 @@ func runTestLogFn(t *testing.T, errFd *os.File, fn fnOut) {
 }
 
 func TestStderrOutput(t *testing.T) {
-
 	tests := []struct {
 		name string
 		out  *os.File

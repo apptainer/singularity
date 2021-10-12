@@ -34,19 +34,19 @@ func (c ctx) singularityEnv(t *testing.T) {
 	c.env.ImgCacheDir = imgCacheDir
 
 	// Singularity defines a path by default. See singularityware/singularity/etc/init.
-	var defaultImage = "docker://alpine:3.8"
+	defaultImage := "docker://alpine:3.8"
 
 	// This image sets a custom path.
-	var customImage = "docker://sylabsio/lolcow"
-	var customPath = "/usr/games:" + defaultPath
+	customImage := "docker://sylabsio/lolcow"
+	customPath := "/usr/games:" + defaultPath
 
 	// Append or prepend this path.
-	var partialPath = "/foo"
+	partialPath := "/foo"
 
 	// Overwrite the path with this one.
-	var overwrittenPath = "/usr/bin:/bin"
+	overwrittenPath := "/usr/bin:/bin"
 
-	var tests = []struct {
+	tests := []struct {
 		name  string
 		image string
 		path  string
@@ -127,7 +127,7 @@ func (c ctx) singularityEnvOption(t *testing.T) {
 	defer cleanCache(t)
 	c.env.ImgCacheDir = imgCacheDir
 
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		image    string
 		envOpt   []string
@@ -333,7 +333,7 @@ func (c ctx) singularityEnvFile(t *testing.T) {
 	defer cleanCache(t)
 	c.env.ImgCacheDir = imgCacheDir
 
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		image    string
 		envFile  string
@@ -414,7 +414,7 @@ func (c ctx) singularityEnvFile(t *testing.T) {
 			args = append(args, "--env", strings.Join(tt.envOpt, ","))
 		}
 		if tt.envFile != "" {
-			ioutil.WriteFile(p, []byte(tt.envFile), 0644)
+			ioutil.WriteFile(p, []byte(tt.envFile), 0o644)
 			args = append(args, "--env-file", p)
 		}
 		args = append(args, tt.image, "/bin/sh", "-c", "echo $"+tt.matchEnv)

@@ -13,11 +13,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var testString string
-var testBool bool
-var testStringSlice []string
-var testInt int
-var testUint32 uint32
+var (
+	testString      string
+	testBool        bool
+	testStringSlice []string
+	testInt         int
+	testUint32      uint32
+)
 
 var ttData = []struct {
 	desc            string

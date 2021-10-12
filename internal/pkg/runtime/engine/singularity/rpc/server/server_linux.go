@@ -26,8 +26,10 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var diskGID = -1
-var defaultEffective = uint64(0)
+var (
+	diskGID          = -1
+	defaultEffective = uint64(0)
+)
 
 func init() {
 	defaultEffective |= uint64(1 << capabilities.Map["CAP_SETUID"].Value)
@@ -254,7 +256,7 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) (err error) {
 		image = os.NewFile(uintptr(fd), "")
 	} else {
 		var err error
-		image, err = os.OpenFile(arguments.Image, arguments.Mode, 0600)
+		image, err = os.OpenFile(arguments.Image, arguments.Mode, 0o600)
 		if err != nil {
 			return fmt.Errorf("could not open image file: %v", err)
 		}

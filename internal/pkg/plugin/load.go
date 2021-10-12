@@ -156,5 +156,4 @@ func getPluginObject(pl *plugin.Plugin) (*pluginapi.Plugin, error) {
 	}
 
 	return p, nil
-
 }
