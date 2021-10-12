@@ -184,14 +184,24 @@ var commonForceFlag = cmdline.Flag{
 	EnvKeys:      []string{"FORCE"},
 }
 
-// --nohttps
+// --no-https
 var commonNoHTTPSFlag = cmdline.Flag{
 	ID:           "commonNoHTTPSFlag",
 	Value:        &noHTTPS,
 	DefaultValue: false,
+	Name:         "no-https",
+	Usage:        "use http instead of https for docker:// oras:// and library://<hostname>/... URIs",
+	EnvKeys:      []string{"NOHTTPS", "NO_HTTPS"},
+}
+
+// --nohttps (deprecated)
+var commonOldNoHTTPSFlag = cmdline.Flag{
+	ID:           "commonOldNoHTTPSFlag",
+	Value:        &noHTTPS,
+	DefaultValue: false,
 	Name:         "nohttps",
-	Usage:        "do NOT use HTTPS with the docker:// transport (useful for local docker registries without a certificate)",
-	EnvKeys:      []string{"NOHTTPS"},
+	Deprecated:   "use --no-https",
+	Usage:        "use http instead of https for docker:// oras:// and library://<hostname>/... URIs",
 }
 
 // --tmpdir

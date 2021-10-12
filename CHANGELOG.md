@@ -11,6 +11,8 @@
   options that increase OCI/Docker compatibility. Infers `--containall,
   --no-init, --no-umask, --writable-tmpfs`. Does not use user, uts, or
   network namespaces as these may not be supported on many installations.
+- `--no-https` now applies to connections made to library services specified
+  in `--library://<hostname>/...` URIs.
 
 ### Changed defaults / behaviours
 
@@ -20,6 +22,8 @@
   Docker/OCI container.
 - Instances are no longer created with an IPC namespace by default. An IPC
   namespace can be specified with the `-i|--ipc` flag.
+- `--nohttps` flag has been deprecated in favour of `--no-https`. The old flag
+  is still accepted, but will display a deprecation warning.
 
 ## v3.8.2 - \[2021-08-31\]
 

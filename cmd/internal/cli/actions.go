@@ -94,7 +94,11 @@ func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom string)
 	// Default "" = use current remote endpoint
 	var libraryURI string
 	if r.Host != "" {
-		libraryURI = "https://" + r.Host
+		if noHTTPS {
+			libraryURI = "http://" + r.Host
+		} else {
+			libraryURI = "https://" + r.Host
+		}
 	}
 
 	c, err := getLibraryClientConfig(libraryURI)
