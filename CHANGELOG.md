@@ -24,6 +24,8 @@
   namespace can be specified with the `-i|--ipc` flag.
 - `--nohttps` flag has been deprecated in favour of `--no-https`. The old flag
   is still accepted, but will display a deprecation warning.
+- Removed `--nonet` flag, which was intended to disable networking for in-VM
+  execution, but has no effect.
 
 ## v3.8.2 - \[2021-08-31\]
 
