@@ -215,7 +215,6 @@ var buildNvFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "nv",
 	Usage:        "inject host Nvidia libraries during build for post and test sections (not supported with remote build)",
-	EnvKeys:      []string{"NV"},
 }
 
 // --rocm
@@ -225,7 +224,6 @@ var buildRocmFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "rocm",
 	Usage:        "inject host Rocm libraries during build for post and test sections (not supported with remote build)",
-	EnvKeys:      []string{"ROCM"},
 }
 
 // -B|--bind
@@ -240,8 +238,6 @@ var buildBindFlag = cmdline.Flag{
 		"it is set equal to src. Mount options ('opts') may be specified as 'ro'" +
 		"(read-only) or 'rw' (read/write, which is the default)." +
 		"Multiple bind paths can be given by a comma separated list. (not supported with remote build)",
-	EnvKeys:    []string{"BIND", "BINDPATH"},
-	EnvHandler: cmdline.EnvAppendValue,
 }
 
 // --writable-tmpfs
