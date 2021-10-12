@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,7 +15,7 @@ import (
 	"github.com/hpcng/singularity/internal/pkg/remote"
 )
 
-const listLine = "%s\t%s\t%s\t%s\t%s\n"
+const listLine = "%s\t%s\t%s\t%s\t%s\t%s\n"
 
 // RemoteList prints information about remote configurations
 func RemoteList(usrConfigFile string) (err error) {
@@ -64,7 +64,7 @@ func RemoteList(usrConfigFile string) (err error) {
 	fmt.Println()
 
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(tw, listLine, "NAME", "URI", "ACTIVE", "GLOBAL", "EXCLUSIVE")
+	fmt.Fprintf(tw, listLine, "NAME", "URI", "ACTIVE", "GLOBAL", "EXCLUSIVE", "INSECURE")
 	for _, n := range names {
 		sys := "NO"
 		if c.Remotes[n].System {
@@ -74,11 +74,16 @@ func RemoteList(usrConfigFile string) (err error) {
 		if c.Remotes[n].Exclusive {
 			excl = "YES"
 		}
+		insec := "NO"
+		if c.Remotes[n].Insecure {
+			insec = "YES"
+		}
 		active := "NO"
 		if c.DefaultRemote != "" && c.DefaultRemote == n {
 			active = "YES"
 		}
-		fmt.Fprintf(tw, listLine, n, c.Remotes[n].URI, active, sys, excl)
+
+		fmt.Fprintf(tw, listLine, n, c.Remotes[n].URI, active, sys, excl, insec)
 	}
 	tw.Flush()
 

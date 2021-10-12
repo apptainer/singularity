@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -106,12 +106,17 @@ var PushCmd = &cobra.Command{
 				sylog.Fatalf("Unable to get keyserver client configuration: %v", err)
 			}
 
+			feURL, err := currentRemoteEndpoint.GetURL()
+			if err != nil {
+				sylog.Fatalf("Unable to find remote web URI %v", err)
+			}
+
 			pushSpec := singularity.LibraryPushSpec{
 				SourceFile:    file,
 				DestRef:       dest,
 				Description:   pushDescription,
 				AllowUnsigned: unsignedPush,
-				FrontendURI:   URI(),
+				FrontendURI:   feURL,
 			}
 
 			err = singularity.LibraryPush(ctx, pushSpec, lc, co)

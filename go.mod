@@ -20,6 +20,7 @@ require (
 	github.com/go-log/log v0.2.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.4.2
+	github.com/gosimple/slug v1.10.0
 	github.com/hpcng/sif v1.6.0
 	github.com/kr/pty v1.1.8
 	github.com/moby/sys/mount v0.2.0 // indirect

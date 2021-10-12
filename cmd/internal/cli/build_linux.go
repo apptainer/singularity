@@ -165,7 +165,11 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	// service URLs, since there is no straightforward foolproof way to work back from them to a
 	// matching frontend URL.
 	if !cmd.Flag("builder").Changed && !cmd.Flag("library").Changed {
-		buildArgs.webURL = URI()
+		webURL, err := currentRemoteEndpoint.GetURL()
+		if err != nil {
+			sylog.Fatalf("Unable to find remote web URI %v", err)
+		}
+		buildArgs.webURL = webURL
 	}
 
 	// submitting a remote build requires a valid authToken

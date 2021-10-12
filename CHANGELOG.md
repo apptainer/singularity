@@ -13,6 +13,8 @@
   network namespaces as these may not be supported on many installations.
 - `--no-https` now applies to connections made to library services specified
   in `--library://<hostname>/...` URIs.
+- `remote add --insecure` may be used to configure endpoints that are only
+  accessible via http.
 
 ### Changed defaults / behaviours
 

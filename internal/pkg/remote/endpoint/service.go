@@ -120,16 +120,21 @@ func (ep *Config) GetAllServices() (map[string][]Service, error) {
 		Timeout: defaultTimeout,
 	}
 
-	url := "https://" + ep.URI + "/assets/config/config.prod.json"
+	epURL, err := ep.GetURL()
+	if err != nil {
+		return nil, err
+	}
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	configURL := epURL + "/assets/config/config.prod.json"
+
+	req, err := http.NewRequest(http.MethodGet, configURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("User-Agent", useragent.Value())
 
-	cacheReader := getCachedConfig(ep.URI)
+	cacheReader := getCachedConfig(epURL)
 	reader := cacheReader
 
 	if cacheReader == nil {
@@ -155,7 +160,7 @@ func (ep *Config) GetAllServices() (map[string][]Service, error) {
 	}
 
 	if reader != cacheReader {
-		updateCachedConfig(ep.URI, b)
+		updateCachedConfig(epURL, b)
 	}
 
 	for k, v := range a {
@@ -188,19 +193,6 @@ func (ep *Config) GetAllServices() (map[string][]Service, error) {
 // GetServiceURI returns the URI for the service at the specified SCS endpoint
 // Examples of services: consent, build, library, key, token
 func (ep *Config) GetServiceURI(service string) (string, error) {
-	// don't grab remote URI if the endpoint is the
-	// default public Sylabs Cloud Service
-	if ep.URI == SCSDefaultCloudURI {
-		switch service {
-		case Library:
-			return SCSDefaultLibraryURI, nil
-		case Builder:
-			return SCSDefaultBuilderURI, nil
-		case Keyserver:
-			return SCSDefaultKeyserverURI, nil
-		}
-	}
-
 	services, err := ep.GetAllServices()
 	if err != nil {
 		return "", err

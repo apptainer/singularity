@@ -125,7 +125,12 @@ func endPointLogin(ep *endpoint.Config, args *LoginArgs) error {
 			}
 		}
 
-		fmt.Printf("Generate an access token at https://%s/auth/tokens, and paste it here.\n", ep.URI)
+		webURL, err := ep.GetURL()
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Generate an access token at %s/auth/tokens, and paste it here.\n", webURL)
 		fmt.Println("Token entered will be hidden for security.")
 		token, err = interactive.AskQuestionNoEcho("Access Token: ")
 		if err != nil {

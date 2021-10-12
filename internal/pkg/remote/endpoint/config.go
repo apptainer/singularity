@@ -7,12 +7,15 @@
 package endpoint
 
 import (
+	"errors"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/gosimple/slug"
 	"github.com/hpcng/singularity/internal/pkg/remote/credential"
 	"github.com/hpcng/singularity/pkg/syfs"
 )
@@ -25,12 +28,15 @@ var DefaultEndpointConfig = &Config{
 	System: true,
 }
 
+var ErrNoURI = errors.New("no URI set for endpoint")
+
 // Config describes a single remote endpoint.
 type Config struct {
-	URI        string           `yaml:"URI,omitempty"`
+	URI        string           `yaml:"URI,omitempty"` // hostname/path - no protocol expected
 	Token      string           `yaml:"Token,omitempty"`
-	System     bool             `yaml:"System"`    // Was this EndPoint set from system config file
-	Exclusive  bool             `yaml:"Exclusive"` // true if the endpoint must be used exclusively
+	System     bool             `yaml:"System"`             // Was this EndPoint set from system config file
+	Exclusive  bool             `yaml:"Exclusive"`          // true if the endpoint must be used exclusively
+	Insecure   bool             `yaml:"Insecure,omitempty"` // Allow use of http for service discovery
 	Keyservers []*ServiceConfig `yaml:"Keyservers,omitempty"`
 
 	// for internal purpose
@@ -40,6 +46,27 @@ type Config struct {
 
 func (e *Config) SetCredentials(creds []*credential.Config) {
 	e.credentials = creds
+}
+
+// GetUrl returns a URL with the correct https or http protocol for the endpoint.
+// The protocol depends on whether the endpoint is set 'Insecure'.
+func (e *Config) GetURL() (string, error) {
+	if e.URI == "" {
+		return "", ErrNoURI
+	}
+
+	u, err := url.Parse(e.URI)
+	if err != nil {
+		return "", err
+	}
+
+	if e.Insecure {
+		u.Scheme = "http"
+	} else {
+		u.Scheme = "https"
+	}
+
+	return u.String(), nil
 }
 
 type ServiceConfig struct {
@@ -67,7 +94,8 @@ func getCachedConfig(uri string) io.ReadCloser {
 	if dir == "" {
 		return nil
 	}
-	config := filepath.Join(dir, uri+".json")
+	uriSlug := slug.Make(uri)
+	config := filepath.Join(dir, uriSlug+".json")
 	fi, err := os.Stat(config)
 	if err != nil {
 		return nil

@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/hpcng/singularity/internal/pkg/remote/endpoint"
@@ -1002,6 +1003,59 @@ func TestSetDefaultRemote(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			if err := test.old.SetDefault(test.id, false); err == nil {
 				t.Error("unexpected success setting default remote")
+			}
+		})
+	}
+}
+
+func TestGetURL(t *testing.T) {
+	tests := []remoteTest{
+		{
+			name: "get uri https",
+			old: Config{
+				DefaultRemote: "cloud",
+				Remotes: map[string]*endpoint.Config{
+					"cloud": {
+						URI: "cloud.example.com",
+					},
+				},
+			},
+			id: "cloud",
+		},
+		{
+			name: "get uri http",
+			old: Config{
+				DefaultRemote: "cloud",
+				Remotes: map[string]*endpoint.Config{
+					"cloud": {
+						URI:      "cloud.example.com",
+						Insecure: true,
+					},
+				},
+			},
+			id: "cloud",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var ep *endpoint.Config
+			ep, err := test.old.GetRemote(test.id)
+			if err != nil {
+				t.Fatal("failed to get endpoint from config")
+			}
+
+			u, err := ep.GetURL()
+			if err != nil {
+				t.Errorf("unexpected error from GetURL: %v", err)
+			}
+
+			if ep.Insecure && !strings.HasPrefix(u, "http://") {
+				t.Errorf("insecure GetURL scheme must be http, but found %s", u)
+			}
+
+			if !ep.Insecure && !strings.HasPrefix(u, "https://") {
+				t.Errorf("secure GetURL scheme must be https, but found %s", u)
 			}
 		})
 	}

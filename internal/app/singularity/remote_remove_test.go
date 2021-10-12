@@ -48,7 +48,7 @@ func TestRemoteRemove(t *testing.T) {
 	}
 
 	// Add remotes based on our config file
-	err := RemoteAdd(validCfgFile, "cloud_testing", "cloud.random.io", false)
+	err := RemoteAdd(validCfgFile, "cloud_testing", "cloud.random.io", false, false)
 	if err != nil {
 		t.Fatalf("cannot add remote \"cloud\" for testing: %s\n", err)
 	}

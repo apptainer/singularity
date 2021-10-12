@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -17,7 +17,7 @@ import (
 )
 
 // RemoteAdd adds remote to configuration
-func RemoteAdd(configFile, name, uri string, global bool) (err error) {
+func RemoteAdd(configFile, name, uri string, global, insecure bool) (err error) {
 	// Explicit handling of corner cases: name and uri must be valid strings
 	if strings.TrimSpace(name) == "" {
 		return fmt.Errorf("invalid name: cannot have empty name")
@@ -51,7 +51,7 @@ func RemoteAdd(configFile, name, uri string, global bool) (err error) {
 	if err != nil {
 		return err
 	}
-	e := endpoint.Config{URI: path.Join(u.Host + u.Path), System: global}
+	e := endpoint.Config{URI: path.Join(u.Host + u.Path), System: global, Insecure: insecure}
 
 	if err := c.Add(name, &e); err != nil {
 		return err

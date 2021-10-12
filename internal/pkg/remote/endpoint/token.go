@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -19,10 +19,6 @@ import (
 // If token is provided as an argument, it will verify the provided token.
 // If token is "", it will attempt to verify the configured token for the endpoint.
 func (ep *Config) VerifyToken(token string) (err error) {
-	if ep.URI == "" {
-		return fmt.Errorf("no endpoint URI")
-	}
-
 	defer func() {
 		if err == nil {
 			sylog.Infof("Access Token Verified!")
