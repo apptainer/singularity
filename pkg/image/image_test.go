@@ -17,10 +17,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hpcng/singularity/internal/pkg/image/unpacker"
 	"github.com/hpcng/singularity/internal/pkg/test"
 	"github.com/hpcng/singularity/internal/pkg/util/fs"
 
-	"github.com/hpcng/singularity/pkg/image/unpacker"
 	imageSpecs "github.com/opencontainers/image-spec/specs-go/v1"
 )
 

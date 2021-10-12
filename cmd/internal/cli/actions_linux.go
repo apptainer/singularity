@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/internal/pkg/image/unpacker"
 	"github.com/hpcng/singularity/internal/pkg/instance"
 	"github.com/hpcng/singularity/internal/pkg/plugin"
 	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci"
@@ -29,7 +30,6 @@ import (
 	"github.com/hpcng/singularity/internal/pkg/util/starter"
 	"github.com/hpcng/singularity/internal/pkg/util/user"
 	imgutil "github.com/hpcng/singularity/pkg/image"
-	"github.com/hpcng/singularity/pkg/image/unpacker"
 	clicallback "github.com/hpcng/singularity/pkg/plugin/callback/cli"
 	singularitycallback "github.com/hpcng/singularity/pkg/plugin/callback/runtime/engine/singularity"
 	"github.com/hpcng/singularity/pkg/runtime/engine/config"
