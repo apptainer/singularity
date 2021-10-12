@@ -642,11 +642,15 @@ func injectEnvHandler(senv map[string]string) interpreter.OpenHandler {
 			export %[1]s="%[2]s"
 			`
 			for key, value := range senv {
-				if key == "LD_LIBRARY_PATH" && value != "" {
-					b.WriteString(fmt.Sprintf(snippet, key, value+":/.singularity.d/libs"))
-					continue
+				switch key {
+				case "UID", "GID":
+				case "LD_LIBRARY_PATH":
+					if value != "" {
+						b.WriteString(fmt.Sprintf(snippet, key, value+":/.singularity.d/libs"))
+					}
+				default:
+					b.WriteString(fmt.Sprintf(snippet, key, shell.EscapeDoubleQuotes(value)))
 				}
-				b.WriteString(fmt.Sprintf(snippet, key, shell.EscapeDoubleQuotes(value)))
 			}
 		})
 
