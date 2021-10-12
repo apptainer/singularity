@@ -11,6 +11,8 @@
   options that increase OCI/Docker compatibility. Infers `--containall,
   --no-init, --no-umask, --writable-tmpfs`. Does not use user, uts, or
   network namespaces as these may not be supported on many installations.
+- `--no-https` now applies to connections made to library services specified
+  in `--library://<hostname>/...` URIs.
 
 ### Changed defaults / behaviours
 
@@ -25,6 +27,10 @@
   `SINGULARITY_ROCM` anymore due to side effects reported by users in this
   [issue](https://github.com/hpcng/singularity/pull/6211), they must be explicitely
   requested via command line.
+- `--nohttps` flag has been deprecated in favour of `--no-https`. The old flag
+  is still accepted, but will display a deprecation warning.
+- Removed `--nonet` flag, which was intended to disable networking for in-VM
+  execution, but has no effect.
 
 ## v3.8.2 - \[2021-08-31\]
 

@@ -18,8 +18,10 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var origUID, origGID, unprivUID, unprivGID int
-var origHome, unprivHome string
+var (
+	origUID, origGID, unprivUID, unprivGID int
+	origHome, unprivHome                   string
+)
 
 // EnsurePrivilege ensures elevated privileges are available during a test.
 func EnsurePrivilege(t *testing.T) {
@@ -33,7 +35,6 @@ func EnsurePrivilege(t *testing.T) {
 // not require elevated privileges. A matching call to ResetPrivilege must
 // occur before the test completes (a defer statement is recommended.)
 func DropPrivilege(t *testing.T) {
-
 	// setresuid/setresgid modifies the current thread only. To ensure our new
 	// uid/gid sticks, we need to lock ourselves to the current OS thread.
 	runtime.LockOSThread()
@@ -137,7 +138,6 @@ func init() {
 	origUID = os.Getuid()
 	origGID = os.Getgid()
 	origUser, err := user.LookupId(strconv.Itoa(origUID))
-
 	if err != nil {
 		log.Fatalf("err: %s", err)
 	}
@@ -146,7 +146,6 @@ func init() {
 
 	unprivUID, unprivGID = getUnprivIDs(os.Getpid())
 	unprivUser, err := user.LookupId(strconv.Itoa(unprivUID))
-
 	if err != nil {
 		log.Fatalf("err: %s", err)
 	}

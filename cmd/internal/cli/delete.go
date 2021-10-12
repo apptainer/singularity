@@ -28,6 +28,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&deleteImageArchFlag, deleteImageCmd)
 		cmdManager.RegisterFlagForCmd(&deleteImageTimeoutFlag, deleteImageCmd)
 		cmdManager.RegisterFlagForCmd(&deleteLibraryURIFlag, deleteImageCmd)
+		cmdManager.RegisterFlagForCmd(&commonNoHTTPSFlag, deleteImageCmd)
 	})
 }
 
@@ -90,8 +91,6 @@ var deleteImageCmd = &cobra.Command{
 	Example: docs.DeleteExample,
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		sylog.Debugf("Using library service URI: %s", deleteLibraryURI)
-
 		imageRef, err := library.NormalizeLibraryRef(args[0])
 		if err != nil {
 			sylog.Fatalf("Error parsing library ref: %v", err)
@@ -106,8 +105,14 @@ var deleteImageCmd = &cobra.Command{
 			libraryURI = deleteLibraryURI
 		} else if imageRef.Host != "" {
 			// override libraryURI if ref contains host name
-			libraryURI = "https://" + imageRef.Host
+			if noHTTPS {
+				libraryURI = "http://" + imageRef.Host
+			} else {
+				libraryURI = "https://" + imageRef.Host
+			}
 		}
+
+		sylog.Debugf("Using library service URI: %s", libraryURI)
 
 		r := fmt.Sprintf("%s:%s", imageRef.Path, imageRef.Tags[0])
 

@@ -17,6 +17,7 @@ import (
 
 // -a|--add
 var fakerootConfigAdd bool
+
 var fakerootConfigAddFlag = cmdline.Flag{
 	ID:           "fakerootConfigAddFlag",
 	Value:        &fakerootConfigAdd,
@@ -28,6 +29,7 @@ var fakerootConfigAddFlag = cmdline.Flag{
 
 // -r|--remove
 var fakerootConfigRemove bool
+
 var fakerootConfigRemoveFlag = cmdline.Flag{
 	ID:           "fakerootConfigRemoveFlag",
 	Value:        &fakerootConfigRemove,
@@ -39,6 +41,7 @@ var fakerootConfigRemoveFlag = cmdline.Flag{
 
 // -e|--enable
 var fakerootConfigEnable bool
+
 var fakerootConfigEnableFlag = cmdline.Flag{
 	ID:           "fakerootConfigEnableFlag",
 	Value:        &fakerootConfigEnable,
@@ -50,6 +53,7 @@ var fakerootConfigEnableFlag = cmdline.Flag{
 
 // -d|--disable
 var fakerootConfigDisable bool
+
 var fakerootConfigDisableFlag = cmdline.Flag{
 	ID:           "fakerootConfigDisableFlag",
 	Value:        &fakerootConfigDisable,

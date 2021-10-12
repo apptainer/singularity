@@ -33,13 +33,13 @@ func TestEnsureFileWithPermission(t *testing.T) {
 	existFile := filepath.Join(tmpDir, "already-exists")
 
 	// Create the test file.
-	fp, err := os.OpenFile(existFile, os.O_CREATE, 0755)
+	fp, err := os.OpenFile(existFile, os.O_CREATE, 0o755)
 	if err != nil {
 		t.Errorf("Unable to create test file: %s", err)
 	}
 
 	// Ensure the test file is the currect permission.
-	err = fp.Chmod(0755)
+	err = fp.Chmod(0o755)
 	if err != nil {
 		t.Errorf("Unable to change file permission: %s", err)
 	}
@@ -51,12 +51,12 @@ func TestEnsureFileWithPermission(t *testing.T) {
 	}
 
 	// Double check the permission is what we expect.
-	if currentMode := finfo.Mode(); currentMode != 0755 {
+	if currentMode := finfo.Mode(); currentMode != 0o755 {
 		t.Errorf("Unexpect file permission: expecting 755, got %o", currentMode)
 	}
 
 	// Now the actral test!
-	err = EnsureFileWithPermission(existFile, 0655)
+	err = EnsureFileWithPermission(existFile, 0o655)
 	if err != nil {
 		t.Errorf("Failed to ensure file permission: %s", err)
 	}
@@ -68,12 +68,12 @@ func TestEnsureFileWithPermission(t *testing.T) {
 	}
 
 	// Finally, check the file permission.
-	if currentMode := finfo.Mode(); currentMode != 0655 {
+	if currentMode := finfo.Mode(); currentMode != 0o655 {
 		t.Errorf("Unexpect file permission: expecting 655, got %o", currentMode)
 	}
 
 	// Test again with another permission.
-	err = EnsureFileWithPermission(existFile, 0777)
+	err = EnsureFileWithPermission(existFile, 0o777)
 	if err != nil {
 		t.Errorf("Failed to ensure file permission: %s", err)
 	}
@@ -85,7 +85,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 	}
 
 	// Finally, check the file permission.
-	if currentMode := finfo.Mode(); currentMode != 0777 {
+	if currentMode := finfo.Mode(); currentMode != 0o777 {
 		t.Errorf("Unexpect file permission: expecting 777, got %o", currentMode)
 	}
 
@@ -101,7 +101,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 
 	// This test, EnsureFileWithPermission will need to create
 	// this file, with the correct permission.
-	err = EnsureFileWithPermission(nonExistFile, 0755)
+	err = EnsureFileWithPermission(nonExistFile, 0o755)
 	if err != nil {
 		t.Errorf("Failed to create/ensure file permission: %s", err)
 	}
@@ -113,12 +113,12 @@ func TestEnsureFileWithPermission(t *testing.T) {
 	}
 
 	// Finally, check the file permission.
-	if currentMode := einfo.Mode(); currentMode != 0755 {
+	if currentMode := einfo.Mode(); currentMode != 0o755 {
 		t.Errorf("Unexpect file permission: expecting 755, got %o", currentMode)
 	}
 
 	// Test again with another permission.
-	err = EnsureFileWithPermission(nonExistFile, 0544)
+	err = EnsureFileWithPermission(nonExistFile, 0o544)
 	if err != nil {
 		t.Errorf("Failed to ensure file permission: %s", err)
 	}
@@ -130,7 +130,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 	}
 
 	// Finally, check the file permission.
-	if currentMode := einfo.Mode(); currentMode != 0544 {
+	if currentMode := einfo.Mode(); currentMode != 0o544 {
 		t.Errorf("Unexpect file permission: expecting 544, got %o", currentMode)
 	}
 
@@ -199,7 +199,7 @@ func TestRootDir(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	var tests = []struct {
+	tests := []struct {
 		path     string
 		expected string
 	}{
@@ -235,20 +235,20 @@ func TestMkdirAll(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpdir)
 
-	if err := MkdirAll(filepath.Join(tmpdir, "test"), 0777); err != nil {
+	if err := MkdirAll(filepath.Join(tmpdir, "test"), 0o777); err != nil {
 		t.Error(err)
 	}
-	if err := MkdirAll(filepath.Join(tmpdir, "test/test"), 0000); err != nil {
+	if err := MkdirAll(filepath.Join(tmpdir, "test/test"), 0o000); err != nil {
 		t.Error(err)
 	}
-	if err := MkdirAll(filepath.Join(tmpdir, "test/test/test"), 0755); err == nil {
+	if err := MkdirAll(filepath.Join(tmpdir, "test/test/test"), 0o755); err == nil {
 		t.Errorf("should have failed with a permission denied")
 	}
 	fi, err := os.Stat(filepath.Join(tmpdir, "test"))
 	if err != nil {
 		t.Error(err)
 	}
-	if fi.Mode().Perm() != 0777 {
+	if fi.Mode().Perm() != 0o777 {
 		t.Errorf("bad mode applied on %s, got %v", filepath.Join(tmpdir, "test"), fi.Mode().Perm())
 	}
 }
@@ -264,14 +264,14 @@ func TestMkdir(t *testing.T) {
 	defer os.RemoveAll(tmpdir)
 
 	test := filepath.Join(tmpdir, "test")
-	if err := Mkdir(test, 0777); err != nil {
+	if err := Mkdir(test, 0o777); err != nil {
 		t.Error(err)
 	}
 	fi, err := os.Stat(test)
 	if err != nil {
 		t.Error(err)
 	}
-	if fi.Mode().Perm() != 0777 {
+	if fi.Mode().Perm() != 0o777 {
 		t.Errorf("bad mode applied on %s, got %v", test, fi.Mode().Perm())
 	}
 }
@@ -301,9 +301,9 @@ func TestEvalRelative(t *testing.T) {
 	os.Symlink("usr/sbin", filepath.Join(tmpdir, "sbin"))
 
 	// directory $TMP/usr/bin
-	MkdirAll(filepath.Join(tmpdir, "usr", "bin"), 0755)
+	MkdirAll(filepath.Join(tmpdir, "usr", "bin"), 0o755)
 	// directory $TMP/usr/sbin
-	MkdirAll(filepath.Join(tmpdir, "usr", "sbin"), 0755)
+	MkdirAll(filepath.Join(tmpdir, "usr", "sbin"), 0o755)
 
 	// symlink $TMP/usr/bin/bin -> /bin
 	os.Symlink("/bin", filepath.Join(tmpdir, "bin", "bin"))
@@ -391,11 +391,11 @@ func TestMakeTempDir(t *testing.T) {
 		mode          os.FileMode
 		expectSuccess bool
 	}{
-		{"tmp directory with 0700", "", "atmp-", 0700, true},
-		{"tmp directory with 0755", "", "btmp-", 0755, true},
-		{"root directory 0700", "/", "bad-", 0700, false},
-		{"with non-existent basedir", "/tmp/__utest__", "ctmp-", 0700, false},
-		{"with existent basedir", "/var/tmp", "dtmp-", 0700, true},
+		{"tmp directory with 0700", "", "atmp-", 0o700, true},
+		{"tmp directory with 0755", "", "btmp-", 0o755, true},
+		{"root directory 0700", "/", "bad-", 0o700, false},
+		{"with non-existent basedir", "/tmp/__utest__", "ctmp-", 0o700, false},
+		{"with existent basedir", "/var/tmp", "dtmp-", 0o700, true},
 	}
 	for _, tt := range tests {
 		d, err := MakeTmpDir(tt.basedir, tt.pattern, tt.mode)
@@ -441,11 +441,11 @@ func TestMakeTempFile(t *testing.T) {
 		mode          os.FileMode
 		expectSuccess bool
 	}{
-		{"tmp file with 0700", "", "atmp-", 0700, true},
-		{"tmp file with 0755", "", "btmp-", 0755, true},
-		{"root directory tmp file 0700", "/", "bad-", 0700, false},
-		{"with non-existent basedir", "/tmp/__utest__", "ctmp-", 0700, false},
-		{"with existent basedir", "/var/tmp", "dtmp-", 0700, true},
+		{"tmp file with 0700", "", "atmp-", 0o700, true},
+		{"tmp file with 0755", "", "btmp-", 0o755, true},
+		{"root directory tmp file 0700", "/", "bad-", 0o700, false},
+		{"with non-existent basedir", "/tmp/__utest__", "ctmp-", 0o700, false},
+		{"with existent basedir", "/var/tmp", "dtmp-", 0o700, true},
 	}
 	for _, tt := range tests {
 		f, err := MakeTmpFile(tt.basedir, tt.pattern, tt.mode)
@@ -498,7 +498,7 @@ func testCopyFileFunc(t *testing.T, fn copyFileFunc) {
 	defer os.RemoveAll(tmpDir)
 
 	source := filepath.Join(tmpDir, "source")
-	err = ioutil.WriteFile(source, testData, 0644)
+	err = ioutil.WriteFile(source, testData, 0o644)
 	if err != nil {
 		t.Fatalf("failed to create test source file: %v", err)
 	}
@@ -514,27 +514,27 @@ func testCopyFileFunc(t *testing.T, fn copyFileFunc) {
 			name:        "non existent source",
 			from:        filepath.Join(tmpDir, "not-there"),
 			to:          filepath.Join(tmpDir, "invalid"),
-			mode:        0644,
+			mode:        0o644,
 			expectError: "no such file or directory",
 		},
 		{
 			name:        "non existent target",
 			from:        source,
 			to:          filepath.Join(os.TempDir(), "not-there", "invalid"),
-			mode:        0644,
+			mode:        0o644,
 			expectError: "no such file or directory",
 		},
 		{
 			name: "change mode",
 			from: source,
 			to:   filepath.Join(tmpDir, "executable"),
-			mode: 0755,
+			mode: 0o755,
 		},
 		{
 			name: "simple copy",
 			from: source,
 			to:   filepath.Join(tmpDir, "copy"),
-			mode: 0644,
+			mode: 0o644,
 		},
 	}
 
@@ -583,13 +583,13 @@ func TestIsWritable(t *testing.T) {
 	test.EnsurePrivilege(t)
 
 	// Directories owned by root, we will check later if the unprivileged user can access it.
-	validRoot755Dir, err := MakeTmpDir("", "", 0755)
+	validRoot755Dir, err := MakeTmpDir("", "", 0o755)
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s: %s", validRoot755Dir, err)
 	}
 	defer os.RemoveAll(validRoot755Dir)
 
-	validRoot777Dir, err := MakeTmpDir("", "", 0777)
+	validRoot777Dir, err := MakeTmpDir("", "", 0o777)
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s: %s", validRoot777Dir, err)
 	}
@@ -612,19 +612,19 @@ func TestIsWritable(t *testing.T) {
 	validNotWritablePath := filepath.Join(tempDir, "notWritableDir")
 	valid700Dir := filepath.Join(tempDir, "700Dir")
 	valid555Dir := filepath.Join(tempDir, "555Dir")
-	err = os.MkdirAll(validWritablePath, 0755)
+	err = os.MkdirAll(validWritablePath, 0o755)
 	if err != nil {
 		t.Fatalf("failed to create directory %s: %s", validWritablePath, err)
 	}
-	err = os.MkdirAll(validNotWritablePath, 0444)
+	err = os.MkdirAll(validNotWritablePath, 0o444)
 	if err != nil {
 		t.Fatalf("failed to create directory %s: %s", validNotWritablePath, err)
 	}
-	err = os.MkdirAll(valid700Dir, 0700)
+	err = os.MkdirAll(valid700Dir, 0o700)
 	if err != nil {
 		t.Fatalf("failed to create directory %s: %s", valid700Dir, err)
 	}
-	err = os.MkdirAll(valid555Dir, 0555)
+	err = os.MkdirAll(valid555Dir, 0o555)
 	if err != nil {
 		t.Fatalf("failed to create directory %s: %s", valid555Dir, err)
 	}
@@ -680,17 +680,16 @@ func TestIsWritable(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestFirstExistingParent(t *testing.T) {
-	testDir, err := MakeTmpDir("", "dir", 0755)
+	testDir, err := MakeTmpDir("", "dir", 0o755)
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s: %s", testDir, err)
 	}
 	defer os.RemoveAll(testDir)
 
-	testFile, err := MakeTmpFile(testDir, "file", 0644)
+	testFile, err := MakeTmpFile(testDir, "file", 0o644)
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s: %s", testFile.Name(), err)
 	}
@@ -752,17 +751,17 @@ func TestForceRemoveAll(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 	// Setup a structure that os.RemoveAll should fail to remove
-	testDir, err := MakeTmpDir("", "dir", 0755)
+	testDir, err := MakeTmpDir("", "dir", 0o755)
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s: %s", testDir, err)
 	}
-	testFile, err := MakeTmpFile(testDir, "file", 0644)
+	testFile, err := MakeTmpFile(testDir, "file", 0o644)
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s: %s", testFile.Name(), err)
 	}
 	testFile.Close()
 	// Change the perm on testDir so that RemoveAll should fail
-	err = os.Chmod(testDir, 000)
+	err = os.Chmod(testDir, 0o00)
 	if err != nil {
 		t.Fatalf("failed to set permissions on temporary directory %s: %s", testDir, err)
 	}

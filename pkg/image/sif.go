@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	//SIFDescOCIConfigJSON is the name of the SIF descriptor holding the OCI configuration.
+	// SIFDescOCIConfigJSON is the name of the SIF descriptor holding the OCI configuration.
 	SIFDescOCIConfigJSON = "oci-config.json"
 	// SIFDescInspectMetadataJSON is the name of the SIF descriptor holding the container metadata.
 	SIFDescInspectMetadataJSON = "inspect-metadata.json"

@@ -22,7 +22,6 @@ import (
 const archDef = "../../../../examples/arch/Singularity"
 
 func TestArchConveyor(t *testing.T) {
-
 	if testing.Short() {
 		t.SkipNow()
 	}

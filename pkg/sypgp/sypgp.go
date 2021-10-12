@@ -154,9 +154,9 @@ func (keyring *Handle) PublicPath() string {
 //
 // TODO(mem): move this function to a common location
 func ensureDirPrivate(dn string) error {
-	mode := os.FileMode(0700)
+	mode := os.FileMode(0o700)
 
-	oldumask := syscall.Umask(0077)
+	oldumask := syscall.Umask(0o077)
 
 	err := os.MkdirAll(dn, mode)
 
@@ -225,11 +225,11 @@ func (keyring *Handle) PathsCheck() error {
 	if err := ensureDirPrivate(keyring.path); err != nil {
 		return err
 	}
-	if err := fs.EnsureFileWithPermission(keyring.SecretPath(), 0600); err != nil {
+	if err := fs.EnsureFileWithPermission(keyring.SecretPath(), 0o600); err != nil {
 		return err
 	}
 
-	return fs.EnsureFileWithPermission(keyring.PublicPath(), 0600)
+	return fs.EnsureFileWithPermission(keyring.PublicPath(), 0o600)
 }
 
 func loadKeyring(fn string) (openpgp.EntityList, error) {
@@ -303,7 +303,6 @@ func printEntity(w io.Writer, index int, e *openpgp.Entity) {
 	fmt.Fprintf(w, "   F: %0X\n", e.PrimaryKey.Fingerprint)
 	bits, _ := e.PrimaryKey.BitLength()
 	fmt.Fprintf(w, "   L: %d\n", bits)
-
 }
 
 func printEntities(w io.Writer, entities openpgp.EntityList) {
@@ -359,7 +358,7 @@ func (keyring *Handle) appendPrivateKey(e *openpgp.Entity) error {
 		return fmt.Errorf("global keyring can't contain private keys")
 	}
 
-	f, err := createOrAppendFile(keyring.SecretPath(), 0600)
+	f, err := createOrAppendFile(keyring.SecretPath(), 0o600)
 	if err != nil {
 		return err
 	}
@@ -381,9 +380,9 @@ func storePubKeys(w io.Writer, list openpgp.EntityList) error {
 
 // appendPubKey appends a public key entity to the local keyring
 func (keyring *Handle) appendPubKey(e *openpgp.Entity) error {
-	mode := os.FileMode(0600)
+	mode := os.FileMode(0o600)
 	if keyring.global {
-		mode = os.FileMode(0644)
+		mode = os.FileMode(0o644)
 	}
 
 	f, err := createOrAppendFile(keyring.PublicPath(), mode)
@@ -397,9 +396,9 @@ func (keyring *Handle) appendPubKey(e *openpgp.Entity) error {
 
 // storePubKeyring overwrites the public keyring with the listed keys
 func (keyring *Handle) storePubKeyring(keys openpgp.EntityList) error {
-	mode := os.FileMode(0600)
+	mode := os.FileMode(0o600)
 	if keyring.global {
-		mode = os.FileMode(0644)
+		mode = os.FileMode(0o644)
 	}
 
 	f, err := createOrTruncateFile(keyring.PublicPath(), mode)
@@ -649,7 +648,7 @@ func formatMROutput(mrString string) (int, []byte, error) {
 func SearchPubkey(ctx context.Context, search string, longOutput bool, opts ...client.Option) error {
 	// If the search term is 8+ hex chars then it's a fingerprint, and
 	// we need to prefix with 0x for the search.
-	var IsFingerprint = regexp.MustCompile(`^[0-9A-F]{8,}$`).MatchString
+	IsFingerprint := regexp.MustCompile(`^[0-9A-F]{8,}$`).MatchString
 	if IsFingerprint(search) {
 		search = "0x" + search
 	}
@@ -667,7 +666,7 @@ func SearchPubkey(ctx context.Context, search string, longOutput bool, opts ...c
 	}
 
 	// set the machine readable output on
-	var options = []string{client.OptionMachineReadable}
+	options := []string{client.OptionMachineReadable}
 	// Retrieve first page of search results from Key Service.
 	keyText, err := c.PKSLookup(ctx, &pd, search, client.OperationIndex, true, false, options)
 	if err != nil {
@@ -730,7 +729,7 @@ func getEncryptionAlgorithmName(n string) (string, error) {
 	return algorithmName, nil
 }
 
-//function to obtain a date format from linux epoch time
+// function to obtain a date format from linux epoch time
 func date(s string) string {
 	if s == "" {
 		return "[ultimate]"
@@ -844,7 +843,6 @@ func formatMROutputLongList(mrString string) (int, []byte, error) {
 
 // FetchPubkey pulls a public key from the Key Service.
 func FetchPubkey(ctx context.Context, fingerprint string, noPrompt bool, opts ...client.Option) (openpgp.EntityList, error) {
-
 	// Decode fingerprint and ensure proper length.
 	var fp []byte
 	fp, err := hex.DecodeString(fingerprint)

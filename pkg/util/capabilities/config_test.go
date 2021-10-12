@@ -61,13 +61,10 @@ func TestReadFromWriteTo(t *testing.T) {
 		var r bytes.Buffer
 
 		_, err := ReadFrom(&r)
-
 		if err != nil {
 			t.Errorf("unexpected failure running %s test: %s", t.Name(), err)
 		}
-
 	})
-
 }
 
 type capTest struct {
@@ -600,8 +597,6 @@ func TestCheckCaps(t *testing.T) {
 			if !reflect.DeepEqual(uGroup, test.unauthorized) {
 				t.Errorf("returned incorrect unauthorized group caps:\n\thave: %v\n\twant: %v", test.unauthorized, uGroup)
 			}
-
 		})
 	}
-
 }

@@ -37,7 +37,7 @@ func TestFromSif(t *testing.T) {
 	f.Close()
 	defer os.Remove(sifFile)
 
-	if err := fs.CopyFileAtomic(busyboxSIF, sifFile, 0755); err != nil {
+	if err := fs.CopyFileAtomic(busyboxSIF, sifFile, 0o755); err != nil {
 		t.Fatalf("Could not copy test image: %v", err)
 	}
 
@@ -61,7 +61,6 @@ func TestFromSif(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			if tt.writable {
 				requireFilesystem(t, "overlay")
 			}
@@ -99,10 +98,8 @@ func TestFromSif(t *testing.T) {
 			if err := bundle.Delete(); err != nil {
 				t.Error(err)
 			}
-
 		})
 	}
-
 }
 
 // TODO: This is a duplicate from internal/pkg/test/tool/require

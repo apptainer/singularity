@@ -149,7 +149,7 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) (err e
 		}
 		// create $rootfs/dev as it has been excluded
 		rootfsDev := filepath.Join(dest, "dev")
-		devErr := os.Mkdir(rootfsDev, 0755)
+		devErr := os.Mkdir(rootfsDev, 0o755)
 		if devErr != nil && !os.IsExist(devErr) {
 			err = fmt.Errorf("could not create %s: %s", rootfsDev, devErr)
 		}

@@ -33,9 +33,7 @@ func listTypeCache(printList bool, name, cachePath string) (int, int64, error) {
 		return 0, 0, fmt.Errorf("unable to open cache %s at directory %s: %v", name, cachePath, err)
 	}
 
-	var (
-		totalSize int64
-	)
+	var totalSize int64
 
 	for _, entry := range cacheEntries {
 

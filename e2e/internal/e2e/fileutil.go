@@ -40,7 +40,7 @@ func WriteTempFile(dir, pattern, content string) (string, error) {
 // This function shall not set the environment variable to specify the
 // image cache location since it would create thread safety problems.
 func MakeTempDir(t *testing.T, baseDir string, prefix string, context string) (string, func(t *testing.T)) {
-	dir, err := fs.MakeTmpDir(baseDir, prefix, 0755)
+	dir, err := fs.MakeTmpDir(baseDir, prefix, 0o755)
 	err = errors.Wrapf(err, "creating temporary %s at %s", context, baseDir)
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %+v", err)
@@ -86,7 +86,6 @@ func PathExists(t *testing.T, path string) bool {
 // PathPerms return true if the path (file or directory) has specified permissions, false otherwise.
 func PathPerms(t *testing.T, path string, perms os.FileMode) bool {
 	s, err := os.Stat(path)
-
 	if err != nil {
 		t.Fatalf("While stating file: %v", err)
 	}

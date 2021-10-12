@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	dirMode  os.FileMode = 0755
-	fileMode             = 0644
+	dirMode  os.FileMode = 0o755
+	fileMode             = 0o644
 )
 
 type file struct {
@@ -193,10 +193,10 @@ func (m *Manager) SetRootPath(path string) error {
 	if m.dirs == nil {
 		m.dirs = make([]*dir, 0)
 	}
-	if m.DirMode == 0000 {
+	if m.DirMode == 0o000 {
 		m.DirMode = dirMode
 	}
-	if m.FileMode == 0000 {
+	if m.FileMode == 0o000 {
 		m.FileMode = fileMode
 	}
 	d := &dir{mode: m.DirMode, uid: os.Getuid(), gid: os.Getgid()}

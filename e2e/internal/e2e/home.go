@@ -72,7 +72,7 @@ func SetupHomeDirectories(t *testing.T) {
 		oldUmask := syscall.Umask(0)
 		defer syscall.Umask(oldUmask)
 
-		if err := os.Mkdir(unprivSessionHome, 0700); err != nil {
+		if err := os.Mkdir(unprivSessionHome, 0o700); err != nil {
 			err = errors.Wrapf(err, "creating temporary home directory at %s", unprivSessionHome)
 			t.Fatalf("failed to create temporary home: %+v", err)
 		}
@@ -80,7 +80,7 @@ func SetupHomeDirectories(t *testing.T) {
 			err = errors.Wrapf(err, "changing temporary home directory ownership at %s", unprivSessionHome)
 			t.Fatalf("failed to set temporary home owner: %+v", err)
 		}
-		if err := os.Mkdir(privSessionHome, 0700); err != nil {
+		if err := os.Mkdir(privSessionHome, 0o700); err != nil {
 			err = errors.Wrapf(err, "changing temporary home directory %s", privSessionHome)
 			t.Fatalf("failed to create temporary home: %+v", err)
 		}
@@ -93,7 +93,7 @@ func SetupHomeDirectories(t *testing.T) {
 		if strings.HasPrefix(sourceDir, unprivResolvedHome) {
 			trimmedSourceDir := strings.TrimPrefix(sourceDir, unprivResolvedHome)
 			sessionSourceDir := filepath.Join(unprivSessionHome, trimmedSourceDir)
-			if err := os.MkdirAll(sessionSourceDir, 0755); err != nil {
+			if err := os.MkdirAll(sessionSourceDir, 0o755); err != nil {
 				err = errors.Wrapf(err, "creating temporary source directory at %q", sessionSourceDir)
 				t.Fatalf("failed to create temporary home source directory: %+v", err)
 			}
@@ -131,12 +131,12 @@ func SetupHomeDirectories(t *testing.T) {
 
 		// create .rpmmacros files for yum bootstrap builds
 		macrosFile := filepath.Join(unprivSessionHome, ".rpmmacros")
-		if err := ioutil.WriteFile(macrosFile, []byte(rpmMacrosContent), 0444); err != nil {
+		if err := ioutil.WriteFile(macrosFile, []byte(rpmMacrosContent), 0o444); err != nil {
 			err = errors.Wrapf(err, "writing macros file at %s", macrosFile)
 			t.Fatalf("could not write macros file: %+v", err)
 		}
 		macrosFile = filepath.Join(privSessionHome, ".rpmmacros")
-		if err := ioutil.WriteFile(macrosFile, []byte(rpmMacrosContent), 0444); err != nil {
+		if err := ioutil.WriteFile(macrosFile, []byte(rpmMacrosContent), 0o444); err != nil {
 			err = errors.Wrapf(err, "writing macros file at %s", macrosFile)
 			t.Fatalf("could not write macros file: %+v", err)
 		}
@@ -155,7 +155,7 @@ func shadowInstanceDirectory(t *testing.T, env TestEnv) func(t *testing.T) {
 	fakeInstanceSymlink := filepath.Join(fakeSingularityDir, "instances")
 
 	// create directory $TESTDIR/.singularity
-	if err := os.Mkdir(fakeSingularityDir, 0755); err != nil && !os.IsExist(err) {
+	if err := os.Mkdir(fakeSingularityDir, 0o755); err != nil && !os.IsExist(err) {
 		err = errors.Wrapf(err, "create temporary singularity data directory at %q", fakeSingularityDir)
 		t.Fatalf("failed to create fake singularity directory: %+v", err)
 	}

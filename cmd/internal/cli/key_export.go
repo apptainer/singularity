@@ -17,8 +17,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var secretExport bool
-var armor bool
+var (
+	secretExport bool
+	armor        bool
+)
 
 // -s|--secret
 var keyExportSecretFlag = cmdline.Flag{

@@ -39,7 +39,6 @@ var validURIs = map[string]bool{
 
 // IsValid returns whether or not the given source is valid
 func IsValid(source string) (valid bool, err error) {
-
 	u := strings.SplitN(source, ":", 2)
 
 	if len(u) != 2 {

@@ -21,6 +21,7 @@ func init() {
 
 // --pid-file
 var instanceStartPidFile string
+
 var instanceStartPidFileFlag = cmdline.Flag{
 	ID:           "instanceStartPidFileFlag",
 	Value:        &instanceStartPidFile,

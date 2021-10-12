@@ -126,7 +126,7 @@ func canChown(rootfs string) (bool, error) {
 
 	chownFile := filepath.Join(rootfs, ".chownTest")
 
-	f, err := os.OpenFile(chownFile, os.O_CREATE|os.O_EXCL|unix.O_NOFOLLOW, 0600)
+	f, err := os.OpenFile(chownFile, os.O_CREATE|os.O_EXCL|unix.O_NOFOLLOW, 0o600)
 	if err != nil {
 		return false, fmt.Errorf("could not create %q: %v", chownFile, err)
 	}
@@ -166,7 +166,7 @@ func newBundle(parentPath, tempDir string, keyInfo *cryptkey.KeyInfo) (*Bundle, 
 	}
 	sylog.Debugf("Created temporary directory %q for the bundle", tmpPath)
 
-	if err := os.MkdirAll(rootfsPath, 0755); err != nil {
+	if err := os.MkdirAll(rootfsPath, 0o755); err != nil {
 		cleanupDir(tmpPath)
 		cleanupDir(parentPath)
 		return nil, fmt.Errorf("could not create %q: %v", rootfsPath, err)
@@ -194,7 +194,7 @@ func newBundle(parentPath, tempDir string, keyInfo *cryptkey.KeyInfo) (*Bundle, 
 			}
 			// Create an inner dir, so we don't clobber the secure permissions on the surrounding dir.
 			rootfsNewPath := filepath.Join(parentPath, "rootfs")
-			if err := os.Mkdir(rootfsNewPath, 0755); err != nil {
+			if err := os.Mkdir(rootfsNewPath, 0o755); err != nil {
 				cleanupDir(tmpPath)
 				cleanupDir(parentPath)
 				return nil, fmt.Errorf("could not create rootfs dir in %q: %v", rootfsNewPath, err)

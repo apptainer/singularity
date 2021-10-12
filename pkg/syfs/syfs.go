@@ -44,7 +44,6 @@ func ConfigDir() string {
 
 func configDir() string {
 	user, err := user.Current()
-
 	if err != nil {
 		sylog.Warningf("Could not lookup the current user's information: %s", err)
 
@@ -76,7 +75,6 @@ func DockerConf() string {
 // configuration and data for the specified username is located.
 func ConfigDirForUsername(username string) (string, error) {
 	u, err := user.Lookup(username)
-
 	if err != nil {
 		return "", err
 	}

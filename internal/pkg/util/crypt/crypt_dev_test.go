@@ -43,7 +43,7 @@ func TestEncrypt(t *testing.T) {
 	// We create a few more sub-directories; note that they will be
 	// removed when the top-directory (dummyDir) will be removed.
 	dummyRootDir := filepath.Join(dummyDir, "root")
-	err = os.MkdirAll(dummyRootDir, 0755)
+	err = os.MkdirAll(dummyRootDir, 0o755)
 	if err != nil {
 		t.Fatalf("failed to create %s: %s", dummyRootDir, err)
 	}

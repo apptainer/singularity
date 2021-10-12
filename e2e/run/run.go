@@ -28,7 +28,7 @@ func (c ctx) testRun555Cache(t *testing.T) {
 	tempDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
 	defer cleanup(t)
 	cacheDir := filepath.Join(tempDir, "image-cache")
-	err := os.Mkdir(cacheDir, 0555)
+	err := os.Mkdir(cacheDir, 0o555)
 	if err != nil {
 		t.Fatalf("failed to create a temporary image cache: %s", err)
 	}

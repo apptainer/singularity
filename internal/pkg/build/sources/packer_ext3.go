@@ -6,17 +6,17 @@
 package sources
 
 import (
-	"github.com/hpcng/singularity/pkg/build/types"
-	"github.com/hpcng/singularity/pkg/image"
-	"github.com/hpcng/singularity/pkg/sylog"
-	"github.com/hpcng/singularity/pkg/util/archive"
-	"github.com/hpcng/singularity/pkg/util/loop"
-
 	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"syscall"
+
+	"github.com/hpcng/singularity/pkg/build/types"
+	"github.com/hpcng/singularity/pkg/image"
+	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/hpcng/singularity/pkg/util/archive"
+	"github.com/hpcng/singularity/pkg/util/loop"
 )
 
 // Ext3Packer holds the locations of where to back from and to, aswell as image offset info

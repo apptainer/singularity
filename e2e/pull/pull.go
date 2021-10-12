@@ -543,20 +543,20 @@ func (c ctx) testPullUmask(t *testing.T) {
 		{
 			name:       "0022 umask pull",
 			imagePath:  filepath.Join(c.env.TestDir, umask22Image),
-			umask:      0022,
-			expectPerm: 0755,
+			umask:      0o022,
+			expectPerm: 0o755,
 		},
 		{
 			name:       "0077 umask pull",
 			imagePath:  filepath.Join(c.env.TestDir, umask77Image),
-			umask:      0077,
-			expectPerm: 0700,
+			umask:      0o077,
+			expectPerm: 0o700,
 		},
 		{
 			name:       "0027 umask pull",
 			imagePath:  filepath.Join(c.env.TestDir, umask27Image),
-			umask:      0027,
-			expectPerm: 0750,
+			umask:      0o027,
+			expectPerm: 0o750,
 		},
 
 		// With the force flag, and overide the image. The permission will
@@ -564,22 +564,22 @@ func (c ctx) testPullUmask(t *testing.T) {
 		{
 			name:       "0022 umask pull overide",
 			imagePath:  filepath.Join(c.env.TestDir, umask22Image),
-			umask:      0022,
-			expectPerm: 0755,
+			umask:      0o022,
+			expectPerm: 0o755,
 			force:      true,
 		},
 		{
 			name:       "0077 umask pull overide",
 			imagePath:  filepath.Join(c.env.TestDir, umask77Image),
-			umask:      0077,
-			expectPerm: 0700,
+			umask:      0o077,
+			expectPerm: 0o700,
 			force:      true,
 		},
 		{
 			name:       "0027 umask pull overide",
 			imagePath:  filepath.Join(c.env.TestDir, umask27Image),
-			umask:      0027,
-			expectPerm: 0750,
+			umask:      0o027,
+			expectPerm: 0o750,
 			force:      true,
 		},
 	}
@@ -594,7 +594,7 @@ func (c ctx) testPullUmask(t *testing.T) {
 	}
 
 	// Set a common umask, then reset it back later.
-	oldUmask := unix.Umask(0022)
+	oldUmask := unix.Umask(0o022)
 	defer unix.Umask(oldUmask)
 
 	// TODO: should also check the cache umask.
@@ -610,7 +610,7 @@ func (c ctx) testPullUmask(t *testing.T) {
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.PreRun(func(t *testing.T) {
 				// Reset the file permission after every pull.
-				err := os.Chmod(tc.imagePath, 0666)
+				err := os.Chmod(tc.imagePath, 0o666)
 				if !os.IsNotExist(err) && err != nil {
 					t.Fatalf("failed chmod-ing file: %s", err)
 				}

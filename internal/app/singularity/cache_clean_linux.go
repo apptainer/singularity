@@ -14,9 +14,7 @@ import (
 	"github.com/hpcng/singularity/pkg/util/slice"
 )
 
-var (
-	errInvalidCacheHandle = errors.New("invalid cache handle")
-)
+var errInvalidCacheHandle = errors.New("invalid cache handle")
 
 // cleanCache cleans the given type of cache cacheType. It will return a
 // error if one occurs.

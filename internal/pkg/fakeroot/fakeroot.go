@@ -87,7 +87,7 @@ func GetConfig(filename string, edit bool, getUserFn GetUserFn) (*Config, error)
 		defer syscall.Umask(umask)
 	}
 
-	config.file, err = os.OpenFile(filename, flags, 0644)
+	config.file, err = os.OpenFile(filename, flags, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open: %s: %s", filename, err)
 	}
@@ -336,8 +336,10 @@ func (c *Config) GetUserEntry(username string) (*Entry, error) {
 }
 
 // getPwUID is also used for mocking purpose
-var getPwUID = user.GetPwUID
-var getPwNam = user.GetPwNam
+var (
+	getPwUID = user.GetPwUID
+	getPwNam = user.GetPwNam
+)
 
 // GetIDRange determines UID/GID mappings based on configuration
 // file provided in path.

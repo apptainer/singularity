@@ -56,7 +56,7 @@ func NormalizeLibraryRef(ref string) (*scslibrary.Ref, error) {
 // DownloadImage is a helper function to wrap library image download operation
 func DownloadImage(ctx context.Context, c *scslibrary.Client, imagePath, arch string, libraryRef *scslibrary.Ref, callback client.ProgressCallback) error {
 	// open destination file for writing
-	f, err := os.OpenFile(imagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0777)
+	f, err := os.OpenFile(imagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o777)
 	if err != nil {
 		return fmt.Errorf("error opening file %s for writing: %v", imagePath, err)
 	}

@@ -17,7 +17,6 @@ const (
 )
 
 func Test_ReadToken(t *testing.T) {
-
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 

@@ -42,7 +42,7 @@ func TestCreateSocket(t *testing.T) {
 		syncCh := make(chan bool, 1)
 
 		dir := filepath.Dir(path)
-		os.Mkdir(dir, 0700)
+		os.Mkdir(dir, 0o700)
 
 		defer os.RemoveAll(dir)
 

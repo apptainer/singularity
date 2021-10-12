@@ -83,7 +83,6 @@ func TestNewBundle(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestBundle_RunSections(t *testing.T) {

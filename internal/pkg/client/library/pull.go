@@ -113,7 +113,7 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo string, pull
 
 	if directTo == "" {
 		// mode is before umask if pullTo doesn't exist
-		err = fs.CopyFileAtomic(src, pullTo, 0777)
+		err = fs.CopyFileAtomic(src, pullTo, 0o777)
 		if err != nil {
 			return "", fmt.Errorf("error copying image out of cache: %v", err)
 		}

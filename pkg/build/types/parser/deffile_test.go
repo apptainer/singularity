@@ -72,7 +72,6 @@ func TestScanDefinitionFile(t *testing.T) {
 			if s.Text() != d[0].Header {
 				t.Fatal("scanDefinitionFile does not produce same header as reference")
 			}
-
 		}))
 	}
 }
@@ -200,7 +199,7 @@ func TestParseDefinitionFile(t *testing.T) {
 			}
 			defer defFile.Close()
 
-			jsonFile, err := os.OpenFile(tt.jsonPath, os.O_RDWR, 0644)
+			jsonFile, err := os.OpenFile(tt.jsonPath, os.O_RDWR, 0o644)
 			if err != nil {
 				t.Fatal("failed to open:", err)
 			}
@@ -256,7 +255,6 @@ func TestParseDefinitionFileFailure(t *testing.T) {
 
 // Specific tests to cover some corner cases of IsInvalidSectionError()
 func TestIsInvalidSectionErrors(t *testing.T) {
-
 	// Test of IsInvalidSectionError()
 	dummyKeys := []string{"dummy_key1", "dummy_key2"}
 	myValidErr1 := &InvalidSectionError{dummyKeys, errInvalidSection}
@@ -334,7 +332,6 @@ func TestDoHeader(t *testing.T) {
 }
 
 func TestIsValidDefinition(t *testing.T) {
-
 	//
 	// Test with a bunch of valid files
 	//
@@ -427,7 +424,7 @@ func TestParseAll(t *testing.T) {
 			}
 			defer defFile.Close()
 
-			jsonFile, err := os.OpenFile(tt.jsonPath, os.O_RDWR, 0644)
+			jsonFile, err := os.OpenFile(tt.jsonPath, os.O_RDWR, 0o644)
 			if err != nil {
 				t.Fatal("failed to open:", err)
 			}

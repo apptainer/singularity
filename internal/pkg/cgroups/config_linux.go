@@ -187,5 +187,5 @@ func PutConfig(config Config, confPath string) (err error) {
 		return
 	}
 
-	return ioutil.WriteFile(confPath, data, 0600)
+	return ioutil.WriteFile(confPath, data, 0o600)
 }

@@ -21,7 +21,7 @@ func RemoteAddKeyserver(name, uri string, order uint32, insecure bool) error {
 	}
 
 	// opening config file
-	file, err := os.OpenFile(remote.SystemConfigPath, os.O_RDWR|os.O_CREATE, 0644)
+	file, err := os.OpenFile(remote.SystemConfigPath, os.O_RDWR|os.O_CREATE, 0o644)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}

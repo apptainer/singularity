@@ -23,7 +23,7 @@ import (
 
 // pull will build a SIF image into the cache if directTo="", or a specific file if directTo is set.
 func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCleanUp bool) (imagePath string, err error) {
-	// DockerInsecureSkipTLSVerify is set only if --nohttps is specified to honor
+	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
 	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
 	// can have three possible values true/false and undefined, so we left it as undefined instead
 	// of forcing it to false in order to delegate decision to /etc/containers/registries.conf:
@@ -80,7 +80,6 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom, tmpDi
 
 // Pull will build a SIF image to the cache or direct to a temporary file if cache is disabled
 func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCleanUp bool) (imagePath string, err error) {
-
 	directTo := ""
 
 	if imgCache.IsDisabled() {
@@ -97,7 +96,6 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, 
 
 // PullToFile will build a SIF image from the specified oci URI and place it at the specified dest
 func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, noHTTPS, noCleanUp bool) (imagePath string, err error) {
-
 	directTo := ""
 	if imgCache.IsDisabled() {
 		directTo = pullTo
@@ -111,7 +109,7 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom, t
 
 	if directTo == "" {
 		// mode is before umask if pullTo doesn't exist
-		err = fs.CopyFileAtomic(src, pullTo, 0777)
+		err = fs.CopyFileAtomic(src, pullTo, 0o777)
 		if err != nil {
 			return "", fmt.Errorf("error copying image out of cache: %v", err)
 		}

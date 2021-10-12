@@ -88,7 +88,7 @@ func checkGoVersion(tmpDir, goPath string) error {
 	var out bytes.Buffer
 
 	path := filepath.Join(tmpDir, "rt_version.go")
-	if err := ioutil.WriteFile(path, []byte(goVersionFile), 0600); err != nil {
+	if err := ioutil.WriteFile(path, []byte(goVersionFile), 0o600); err != nil {
 		return fmt.Errorf("while writing go file %s: %s", path, err)
 	}
 	defer os.Remove(path)
@@ -179,7 +179,7 @@ func CompilePlugin(sourceDir, destSif, buildTags string, disableMinorCheck bool)
 	}
 
 	goMod := filepath.Join(pluginDir, "go.mod")
-	if err := ioutil.WriteFile(goMod, modData, 0600); err != nil {
+	if err := ioutil.WriteFile(goMod, modData, 0o600); err != nil {
 		return fmt.Errorf("while generating %s: %s", goMod, err)
 	}
 
@@ -259,7 +259,7 @@ func generateManifest(sourceDir string, bTool buildToolchain) error {
 		return fmt.Errorf("while loading plugin %s: %s", in, err)
 	}
 
-	f, err := os.OpenFile(out, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err := os.OpenFile(out, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return fmt.Errorf("while creating manifest %s: %s", out, err)
 	}

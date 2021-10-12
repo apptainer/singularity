@@ -29,8 +29,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var errNoSIFMetadata = errors.New("no SIF metadata found")
-var errNoSIF = errors.New("invalid SIF")
+var (
+	errNoSIFMetadata = errors.New("no SIF metadata found")
+	errNoSIF         = errors.New("invalid SIF")
+)
 
 var (
 	allData     bool
@@ -223,7 +225,7 @@ func newCommand(allData bool, appName string, img *image.Image) *command {
 		allVar = "ALL_DATA=1"
 	}
 
-	var snippet = `%[1]s
+	snippet := `%[1]s
 	for app in %[2]s/scif/apps/*; do
 	if [ -d "$app/scif" ]; then
 		echo "%[3]s apps"
@@ -407,7 +409,7 @@ func (c *command) getMetadata() (*inspect.Metadata, error) {
 }
 
 func (c *command) addSingleFileCommand(file string, label string) {
-	var snippet = `
+	snippet := `
 	for prefix in ${ALL_PATH}; do
 		file="$prefix/%[1]s"
 		if [ -f "$file" ]; then

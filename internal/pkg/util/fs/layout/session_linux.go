@@ -14,8 +14,10 @@ import (
 	"github.com/hpcng/singularity/pkg/sylog"
 )
 
-const rootFsDir = "/rootfs"
-const finalDir = "/final"
+const (
+	rootFsDir = "/rootfs"
+	finalDir  = "/final"
+)
 
 // Session directory layout manager
 type Session struct {

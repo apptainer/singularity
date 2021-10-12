@@ -77,19 +77,19 @@ func (cp *BusyBoxConveyorPacker) Pack(context.Context) (b *types.Bundle, err err
 }
 
 func (c *BusyBoxConveyor) insertBaseFiles() error {
-	if err := ioutil.WriteFile(filepath.Join(c.b.RootfsPath, "/etc/passwd"), []byte("root:!:0:0:root:/root:/bin/sh"), 0664); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(c.b.RootfsPath, "/etc/passwd"), []byte("root:!:0:0:root:/root:/bin/sh"), 0o664); err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(c.b.RootfsPath, "/etc/group"), []byte(" root:x:0:"), 0664); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(c.b.RootfsPath, "/etc/group"), []byte(" root:x:0:"), 0o664); err != nil {
 		return err
 	}
 
-	return ioutil.WriteFile(filepath.Join(c.b.RootfsPath, "/etc/hosts"), []byte("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"), 0664)
+	return ioutil.WriteFile(filepath.Join(c.b.RootfsPath, "/etc/hosts"), []byte("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"), 0o664)
 }
 
 func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, err error) {
-	os.Mkdir(filepath.Join(c.b.RootfsPath, "/bin"), 0755)
+	os.Mkdir(filepath.Join(c.b.RootfsPath, "/bin"), 0o755)
 
 	resp, err := http.Get(mirrorurl)
 	if err != nil {
@@ -108,12 +108,12 @@ func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, e
 		return
 	}
 
-	//Simple check to make sure file received is the correct size
+	// Simple check to make sure file received is the correct size
 	if bytesWritten != resp.ContentLength {
 		return "", fmt.Errorf("file received is not the right size. supposed to be: %v actually: %v", resp.ContentLength, bytesWritten)
 	}
 
-	err = os.Chmod(f.Name(), 0755)
+	err = os.Chmod(f.Name(), 0o755)
 	if err != nil {
 		return
 	}
@@ -129,7 +129,7 @@ func (c *BusyBoxConveyor) insertBaseEnv() (err error) {
 }
 
 func (cp *BusyBoxConveyorPacker) insertRunScript() error {
-	return ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
+	return ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0o755)
 }
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem

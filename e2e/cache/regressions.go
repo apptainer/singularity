@@ -47,11 +47,11 @@ func (c cacheTests) issue5097(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not remove cached image '%s': %v", cachePath, err)
 	}
-	err = os.Mkdir(cachePath, 0700)
+	err = os.Mkdir(cachePath, 0o700)
 	if err != nil {
 		t.Fatalf("Could not create directory '%s': %v", cachePath, err)
 	}
-	err = fs.CopyFile(imagePath, path.Join(cachePath, hash), 0700)
+	err = fs.CopyFile(imagePath, path.Join(cachePath, hash), 0o700)
 	if err != nil {
 		t.Fatalf("Could not copy file to directory '%s': %v", cachePath, err)
 	}
@@ -69,13 +69,11 @@ func (c cacheTests) issue5097(t *testing.T) {
 	if !fs.IsFile(cachePath) {
 		t.Fatalf("Cache entry '%s' is not a file", cachePath)
 	}
-
 }
 
 // issue5350 - need to handle the cache being inside a non-accssible directory
 // e.g. home directory without perms to access
 func (c cacheTests) issue5350(t *testing.T) {
-
 	outerDir, cleanupOuter := e2e.MakeTempDir(t, c.env.TestDir, "issue5350-cache-", "")
 	defer e2e.Privileged(cleanupOuter)(t)
 
@@ -102,5 +100,4 @@ func (c cacheTests) issue5350(t *testing.T) {
 	if err := os.Chmod(outerDir, 0o755); err != nil {
 		t.Fatalf("Could not chmod 755 cache outer dir: %v", err)
 	}
-
 }

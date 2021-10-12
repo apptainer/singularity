@@ -36,17 +36,15 @@ const (
 	sectionLabels  = "applabels"
 )
 
-var (
-	sections = map[string]bool{
-		sectionInstall: true,
-		sectionFiles:   true,
-		sectionEnv:     true,
-		sectionTest:    true,
-		sectionHelp:    true,
-		sectionRun:     true,
-		sectionLabels:  true,
-	}
-)
+var sections = map[string]bool{
+	sectionInstall: true,
+	sectionFiles:   true,
+	sectionEnv:     true,
+	sectionTest:    true,
+	sectionHelp:    true,
+	sectionRun:     true,
+	sectionLabels:  true,
+}
 
 var reg = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 
@@ -124,7 +122,6 @@ func New() *BuildApp {
 	return &BuildApp{
 		Apps: make(map[string]*App),
 	}
-
 }
 
 // Name returns this handler's name [singularity_apps]
@@ -244,41 +241,41 @@ func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 		globalEnv94 += globalAppEnv(b, app)
 	}
 
-	return ioutil.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/env/94-appsbase.sh"), []byte(globalEnv94), 0755)
+	return ioutil.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/env/94-appsbase.sh"), []byte(globalEnv94), 0o755)
 }
 
 func createAppRoot(b *types.Bundle, a *App) error {
-	if err := os.MkdirAll(appBase(b, a), 0755); err != nil {
+	if err := os.MkdirAll(appBase(b, a), 0o755); err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Join(appBase(b, a), "/scif/"), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(appBase(b, a), "/scif/"), 0o755); err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Join(appBase(b, a), "/bin/"), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(appBase(b, a), "/bin/"), 0o755); err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Join(appBase(b, a), "/lib/"), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(appBase(b, a), "/lib/"), 0o755); err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Join(appBase(b, a), "/scif/env/"), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(appBase(b, a), "/scif/env/"), 0o755); err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Join(appData(b, a), "/input/"), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(appData(b, a), "/input/"), 0o755); err != nil {
 		return err
 	}
 
-	return os.MkdirAll(filepath.Join(appData(b, a), "/output/"), 0755)
+	return os.MkdirAll(filepath.Join(appData(b, a), "/output/"), 0o755)
 }
 
 // %appenv and 01-base.sh
 func writeEnvFile(b *types.Bundle, a *App) error {
 	content := fmt.Sprintf(scifEnv01Base, a.Name)
-	if err := ioutil.WriteFile(filepath.Join(appMeta(b, a), "/env/01-base.sh"), []byte(content), 0755); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(appMeta(b, a), "/env/01-base.sh"), []byte(content), 0o755); err != nil {
 		return err
 	}
 
@@ -286,7 +283,7 @@ func writeEnvFile(b *types.Bundle, a *App) error {
 		return nil
 	}
 
-	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/env/90-environment.sh"), []byte(a.Env), 0755)
+	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/env/90-environment.sh"), []byte(a.Env), 0o755)
 }
 
 func globalAppEnv(b *types.Bundle, a *App) string {
@@ -316,7 +313,7 @@ func writeRunscriptFile(b *types.Bundle, a *App) error {
 	}
 
 	content := fmt.Sprintf(scifRunscriptBase, a.Run)
-	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/runscript"), []byte(content), 0755)
+	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/runscript"), []byte(content), 0o755)
 }
 
 // %apptest
@@ -326,7 +323,7 @@ func writeTestFile(b *types.Bundle, a *App) error {
 	}
 
 	content := fmt.Sprintf(scifTestBase, a.Test)
-	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/test"), []byte(content), 0755)
+	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/test"), []byte(content), 0o755)
 }
 
 // %apphelp
@@ -335,7 +332,7 @@ func writeHelpFile(b *types.Bundle, a *App) error {
 		return nil
 	}
 
-	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/runscript.help"), []byte(a.Help), 0644)
+	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/runscript.help"), []byte(a.Help), 0o644)
 }
 
 // %appfile
@@ -408,11 +405,11 @@ func writeLabels(b *types.Bundle, a *App) error {
 	}
 
 	appBase := filepath.Join(b.RootfsPath, "/scif/apps/", a.Name)
-	err = ioutil.WriteFile(filepath.Join(appBase, "scif/labels.json"), text, 0644)
+	err = ioutil.WriteFile(filepath.Join(appBase, "scif/labels.json"), text, 0o644)
 	return err
 }
 
-//util funcs
+// util funcs
 
 func appBase(b *types.Bundle, a *App) string {
 	return filepath.Join(b.RootfsPath, "/scif/apps/", a.Name)

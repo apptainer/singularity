@@ -50,7 +50,6 @@ type OCIConveyorPacker struct {
 
 // Get downloads container information from the specified source
 func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err error) {
-
 	cp.b = b
 
 	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
@@ -59,7 +58,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 		return err
 	}
 
-	// DockerInsecureSkipTLSVerify is set only if --nohttps is specified to honor
+	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
 	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
 	// can have three possible values true/false and undefined, so we left it as undefined instead
 	// of forcing it to false in order to delegate decision to /etc/containers/registries.conf:
@@ -238,7 +237,7 @@ func (cp *OCIConveyorPacker) extractArchive(src string, dst string) error {
 	defer f.Close()
 
 	r := bufio.NewReader(f)
-	header, err := r.Peek(10) //read a few bytes without consuming
+	header, err := r.Peek(10) // read a few bytes without consuming
 	if err != nil {
 		return err
 	}
@@ -283,7 +282,7 @@ func (cp *OCIConveyorPacker) extractArchive(src string, dst string) error {
 		// if its a dir and it doesn't exist create it
 		case tar.TypeDir:
 			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0755); err != nil {
+				if err := os.MkdirAll(target, 0o755); err != nil {
 					return err
 				}
 			}
@@ -399,7 +398,7 @@ exec "$@"
 
 	f.Sync()
 
-	err = os.Chmod(cp.b.RootfsPath+"/.singularity.d/runscript", 0755)
+	err = os.Chmod(cp.b.RootfsPath+"/.singularity.d/runscript", 0o755)
 	if err != nil {
 		return
 	}
@@ -440,7 +439,7 @@ func (cp *OCIConveyorPacker) insertEnv() (err error) {
 
 	f.Sync()
 
-	err = os.Chmod(cp.b.RootfsPath+"/.singularity.d/env/10-docker2singularity.sh", 0755)
+	err = os.Chmod(cp.b.RootfsPath+"/.singularity.d/env/10-docker2singularity.sh", 0o755)
 	if err != nil {
 		return
 	}
@@ -458,7 +457,7 @@ func (cp *OCIConveyorPacker) insertOCILabels() (err error) {
 		return err
 	}
 
-	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/labels.json"), []byte(text), 0644)
+	err = ioutil.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/labels.json"), []byte(text), 0o644)
 	return err
 }
 

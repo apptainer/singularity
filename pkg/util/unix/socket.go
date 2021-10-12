@@ -66,7 +66,7 @@ func Dial(path string) (net.Conn, error) {
 
 // CreateSocket creates an unix socket and returns connection listener.
 func CreateSocket(path string) (net.Listener, error) {
-	oldmask := syscall.Umask(0177)
+	oldmask := syscall.Umask(0o177)
 	defer syscall.Umask(oldmask)
 	return Listen(path)
 }
@@ -74,7 +74,6 @@ func CreateSocket(path string) (net.Listener, error) {
 // WriteSocket writes data over unix socket
 func WriteSocket(path string, data []byte) error {
 	c, err := Dial(path)
-
 	if err != nil {
 		return fmt.Errorf("failed to connect to %s socket: %s", path, err)
 	}

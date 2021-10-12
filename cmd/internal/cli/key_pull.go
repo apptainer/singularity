@@ -49,12 +49,12 @@ func doKeyPullCmd(ctx context.Context, fingerprint string, co ...client.Option) 
 	var count int
 	var opts []sypgp.HandleOpt
 	path := ""
-	mode := os.FileMode(0600)
+	mode := os.FileMode(0o600)
 
 	if keyGlobalPubKey {
 		path = buildcfg.SINGULARITY_CONFDIR
 		opts = append(opts, sypgp.GlobalHandleOpt())
-		mode = os.FileMode(0644)
+		mode = os.FileMode(0o644)
 	}
 
 	keyring := sypgp.NewHandle(path, opts...)

@@ -90,7 +90,7 @@ func (e *EngineOperations) StartProcess(masterConnFd int) error {
 			if !terminal.IsTerminal(fd) {
 				continue
 			}
-			consfile, err := os.OpenFile("/dev/console", os.O_RDWR, 0600)
+			consfile, err := os.OpenFile("/dev/console", os.O_RDWR, 0o600)
 			if err != nil {
 				sylog.Debugf("Could not open minimal /dev/console, skipping replacing tty descriptors")
 				break

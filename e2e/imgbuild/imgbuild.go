@@ -29,7 +29,7 @@ type imgBuildTests struct {
 }
 
 func (c imgBuildTests) tempDir(t *testing.T, namespace string) (string, func()) {
-	dn, err := fs.MakeTmpDir(c.env.TestDir, namespace+".", 0755)
+	dn, err := fs.MakeTmpDir(c.env.TestDir, namespace+".", 0o755)
 	if err != nil {
 		t.Errorf("failed to create temporary directory: %#v", err)
 	}
@@ -217,7 +217,6 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 			e2e.PreRun(func(t *testing.T) {
 				if tc.requireArch != "" {
 					require.Arch(t, tc.requireArch)
-
 				}
 			}),
 
@@ -1242,7 +1241,6 @@ func (c imgBuildTests) buildWithFingerprint(t *testing.T) {
 			),
 		)
 	}
-
 }
 
 // buildBindMount checks that we can bind host files/directories during build.

@@ -27,7 +27,7 @@ type ctx struct {
 func (c ctx) testDockerPulls(t *testing.T) {
 	const tmpContainerFile = "test_container.sif"
 
-	tmpPath, err := fs.MakeTmpDir(c.env.TestDir, "docker-", 0755)
+	tmpPath, err := fs.MakeTmpDir(c.env.TestDir, "docker-", 0o755)
 	err = errors.Wrapf(err, "creating temporary directory in %q for docker pull test", c.env.TestDir)
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %+v", err)
@@ -382,7 +382,7 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 			t,
 			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("build"),
-			e2e.WithArgs("--nohttps", imagePath, defFile),
+			e2e.WithArgs("--no-https", imagePath, defFile),
 			e2e.PostRun(func(t *testing.T) {
 				defer os.Remove(imagePath)
 				defer os.Remove(defFile)

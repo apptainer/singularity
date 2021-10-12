@@ -92,28 +92,28 @@ func TestCopyFromHost(t *testing.T) {
 
 	// Source Files
 	srcFile := filepath.Join(dir, "srcFile")
-	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0644); err != nil {
+	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	srcFileGlob := filepath.Join(dir, "srcFi?*")
 	srcSpaceFile := filepath.Join(dir, "src File")
-	if err := ioutil.WriteFile(srcSpaceFile, []byte(sourceFileContent), 0644); err != nil {
+	if err := ioutil.WriteFile(srcSpaceFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
 	srcDir := filepath.Join(dir, "srcDir")
-	if err := os.Mkdir(srcDir, 0755); err != nil {
+	if err := os.Mkdir(srcDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	srcDirGlob := filepath.Join(dir, "srcD?*")
 	srcSpaceDir := filepath.Join(dir, "src Dir")
-	if err := os.Mkdir(srcSpaceDir, 0755); err != nil {
+	if err := os.Mkdir(srcSpaceDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	srcGlob := filepath.Join(dir, "src*")
 	// Nested File (to test multi level glob)
 	srcFileNested := filepath.Join(dir, "srcDir/srcFileNested")
-	if err := ioutil.WriteFile(srcFileNested, []byte(sourceFileContent), 0644); err != nil {
+	if err := ioutil.WriteFile(srcFileNested, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	srcFileNestedGlob := filepath.Join(dir, "srcDi?/srcFil?Nested")
@@ -381,17 +381,17 @@ func TestCopyFromHostNested(t *testing.T) {
 
 	// All our test files/dirs/links will be nested inside innerDir
 	innerDir := filepath.Join(dir, "innerDir")
-	if err := os.Mkdir(innerDir, 0755); err != nil {
+	if err := os.Mkdir(innerDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	// Source Files
 	srcFile := filepath.Join(innerDir, "srcFile")
-	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0644); err != nil {
+	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
 	srcDir := filepath.Join(innerDir, "srcDir")
-	if err := os.Mkdir(srcDir, 0755); err != nil {
+	if err := os.Mkdir(srcDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	// Source Symlinks
@@ -475,7 +475,6 @@ func TestCopyFromHostNested(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 // TestCopyFromStage tests that copying non-nested source dirs, files, links to various
@@ -491,25 +490,25 @@ func TestCopyFromStage(t *testing.T) {
 
 	// Source Files
 	srcFile := filepath.Join(srcRoot, "srcFile")
-	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0644); err != nil {
+	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	srcSpaceFile := filepath.Join(srcRoot, "src File")
-	if err := ioutil.WriteFile(srcSpaceFile, []byte(sourceFileContent), 0644); err != nil {
+	if err := ioutil.WriteFile(srcSpaceFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
 	srcDir := filepath.Join(srcRoot, "srcDir")
-	if err := os.Mkdir(srcDir, 0755); err != nil {
+	if err := os.Mkdir(srcDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	srcSpaceDir := filepath.Join(srcRoot, "src Dir")
-	if err := os.Mkdir(srcSpaceDir, 0755); err != nil {
+	if err := os.Mkdir(srcSpaceDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	// Nested File (to test multi level glob)
 	srcFileNested := filepath.Join(srcRoot, "srcDir/srcFileNested")
-	if err := ioutil.WriteFile(srcFileNested, []byte(sourceFileContent), 0644); err != nil {
+	if err := ioutil.WriteFile(srcFileNested, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Symlinks
@@ -794,17 +793,17 @@ func TestCopyFromStageNested(t *testing.T) {
 
 	// All our test files/dirs/links will be nested inside innerDir
 	innerDir := filepath.Join(srcRoot, "innerDir")
-	if err := os.Mkdir(innerDir, 0755); err != nil {
+	if err := os.Mkdir(innerDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	// Source Files
 	srcFile := filepath.Join(innerDir, "srcFile")
-	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0644); err != nil {
+	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
 	srcDir := filepath.Join(innerDir, "srcDir")
-	if err := os.Mkdir(srcDir, 0755); err != nil {
+	if err := os.Mkdir(srcDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	// Source Symlinks
@@ -897,5 +896,4 @@ func TestCopyFromStageNested(t *testing.T) {
 			}
 		})
 	}
-
 }

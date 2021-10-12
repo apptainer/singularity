@@ -23,10 +23,8 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var (
-	// ErrNoDefault indicates no default remote being set
-	ErrNoDefault = errors.New("no default remote")
-)
+// ErrNoDefault indicates no default remote being set
+var ErrNoDefault = errors.New("no default remote")
 
 const (
 	// DefaultRemoteName is the default remote name

@@ -113,7 +113,6 @@ func unpackRootfs(ctx context.Context, b *sytypes.Bundle, tmpfsRef types.ImageRe
 
 	// No `--fix-perms` and no sandbox... we are fine
 	return err
-
 }
 
 // fixPerms will work through the rootfs of this bundle, making sure that all
@@ -132,7 +131,7 @@ func fixPerms(rootfs string) (err error) {
 		// Directories must have the owner 'rx' bits to allow traversal and reading on move, and the 'w' bit
 		// so their content can be deleted by the user when the rootfs/sandbox is deleted
 		case mode.IsDir():
-			if err := os.Chmod(path, f.Mode().Perm()|0700); err != nil {
+			if err := os.Chmod(path, f.Mode().Perm()|0o700); err != nil {
 				sylog.Errorf("Error setting permission for %s: %s", path, err)
 				errors++
 			}
@@ -140,7 +139,7 @@ func fixPerms(rootfs string) (err error) {
 			// Regular files must have the owner 'r' bit so that everything can be read in order to
 			// copy or move the rootfs/sandbox around. Also, the `w` bit as the build does write into
 			// some files (e.g. resolv.conf) in the container rootfs.
-			if err := os.Chmod(path, f.Mode().Perm()|0600); err != nil {
+			if err := os.Chmod(path, f.Mode().Perm()|0o600); err != nil {
 				sylog.Errorf("Error setting permission for %s: %s", path, err)
 				errors++
 			}
@@ -160,7 +159,7 @@ func fixPerms(rootfs string) (err error) {
 func checkPerms(rootfs string) (err error) {
 	// This is a locally defined error we can bubble up to cancel our recursive
 	// structure.
-	var errRestrictivePerm = errors.New("restrictive file permission found")
+	errRestrictivePerm := errors.New("restrictive file permission found")
 
 	err = fs.PermWalkRaiseError(rootfs, func(path string, f os.FileInfo, err error) error {
 		if err != nil {
@@ -175,7 +174,7 @@ func checkPerms(rootfs string) (err error) {
 		// Warn on any directory not `rwX` - technically other combinations may
 		// be traversable / removable... but are confusing to the user vs
 		// the Singularity 3.4 behavior.
-		if f.Mode().IsDir() && f.Mode().Perm()&0700 != 0700 {
+		if f.Mode().IsDir() && f.Mode().Perm()&0o700 != 0o700 {
 			sylog.Debugf("Path %q has restrictive permissions", path)
 			return errRestrictivePerm
 		}

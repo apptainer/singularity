@@ -36,7 +36,7 @@ func RemoteLogin(usrConfigFile string, args *LoginArgs) (err error) {
 	c := &remote.Config{}
 
 	// opening config file
-	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0600)
+	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0o600)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}

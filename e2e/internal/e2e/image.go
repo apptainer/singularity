@@ -12,8 +12,10 @@ import (
 	"testing"
 )
 
-var ensureMutex sync.Mutex
-var pullMutex sync.Mutex
+var (
+	ensureMutex sync.Mutex
+	pullMutex   sync.Mutex
+)
 
 // EnsureImage checks if e2e test image is already built or built
 // it otherwise.

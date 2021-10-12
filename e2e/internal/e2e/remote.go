@@ -24,7 +24,7 @@ func SetupSystemRemoteFile(t *testing.T, testDir string) {
 		if err != nil {
 			t.Fatalf("while reading %s: %s", orig, err)
 		}
-		if err := ioutil.WriteFile(source, data, 0644); err != nil {
+		if err := ioutil.WriteFile(source, data, 0o644); err != nil {
 			t.Fatalf("while creating %s: %s", source, err)
 		}
 		if err := unix.Mount(source, dest, "", unix.MS_BIND, ""); err != nil {

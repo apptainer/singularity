@@ -43,7 +43,6 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 	defer registrySetup.Unlock()
 
 	registrySetup.Do(func() {
-
 		t.Log("Preparing docker registry instance.")
 
 		EnsureImage(t, env)

@@ -143,7 +143,6 @@ func ls(t *testing.T, dir string) {
 
 		return nil
 	})
-
 	if err != nil {
 		t.Logf("E: error walking the path %q: %v\n", dir, err)
 		return
@@ -205,7 +204,7 @@ func (c ctx) testSingularityReadOnlyCacheDir(t *testing.T) {
 	defer cleanup(t)
 
 	// Change the mode of the image cache to read-only
-	err := os.Chmod(c.env.ImgCacheDir, 0555)
+	err := os.Chmod(c.env.ImgCacheDir, 0o555)
 	if err != nil {
 		t.Fatalf("failed to change the access mode to read-only: %s", err)
 	}
@@ -216,7 +215,7 @@ func (c ctx) testSingularityReadOnlyCacheDir(t *testing.T) {
 	// can delete the cache if it was created. Do this _before_
 	// calling c.assertCacheDoesNotExist because that function will
 	// fail if it find a cache.
-	err = os.Chmod(c.env.ImgCacheDir, 0755)
+	err = os.Chmod(c.env.ImgCacheDir, 0o755)
 	if err != nil {
 		t.Fatalf("failed to change the access mode to read-only: %s", err)
 	}
