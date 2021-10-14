@@ -38,10 +38,6 @@ License: BSD-3-Clause-LBNL
 URL: https://singularity.hpcng.org
 Source: %{name}-%{package_version}.tar.gz
 ExclusiveOS: linux
-# RPM_BUILD_ROOT wasn't being set ... for some reason
-%if "%{sles_version}" == "11"
-BuildRoot: /var/tmp/singularity-%{version}-build
-%endif
 
 %if "%{_target_vendor}" == "suse"
 %if "%{sles_version}" != "11"
@@ -54,9 +50,7 @@ BuildRequires: git
 BuildRequires: gcc
 BuildRequires: make
 %if ! 0%{?el6}
-%if "%{sles_version}" != "11"
 BuildRequires: libseccomp-devel
-%endif
 %endif
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
@@ -130,11 +124,6 @@ cd %{name}-@PACKAGE_VERSION@
 
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
 make -C builddir DESTDIR=$RPM_BUILD_ROOT install man
-
-%if "%{suse_version}" == "11"
-%clean
-/bin/rm -rf %{buildroot}
-%endif
 
 %files
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/starter-suid
