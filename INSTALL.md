@@ -62,11 +62,10 @@ wget -O /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz \
 sudo tar -C /usr/local -xzf /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz
 ```
 
-Finally, set up your environment for Go:
+Finally, add `/usr/local/go/bin` to the `PATH` environment variable:
 
 ```sh
-echo 'export GOPATH=${HOME}/go' >> ~/.bashrc
-echo 'export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin' >> ~/.bashrc
+echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
 source ~/.bashrc
 ```
 
@@ -91,6 +90,13 @@ curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/insta
 ```
 
 <!-- markdownlint-enable MD013 -->
+
+Add `$(go env GOPATH)` to the `PATH` environment variable:
+
+```sh
+echo 'export PATH=$PATH:$(go env GOPATH)/bin' >> ~/.bashrc
+source ~/.bashrc
+```
 
 ## Clone the repo
 
