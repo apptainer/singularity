@@ -16,6 +16,11 @@
 
 ### Changed defaults / behaviours
 
+- Building Singularity requires go >=1.16. We now aim to support the
+  two most recent stable versions of Go. This corresponds to the Go
+  [Release Maintenance Policy](https://github.com/golang/go/wiki/Go-Release-Cycle#release-maintenance)
+  and [Security Policy](https://golang.org/security), ensuring critical bug
+  fixes and security patches are available for all supported language versions.
 - LABELs from Docker/OCI images are now inherited. This fixes a longstanding
   regression from Singularity 2.x. Note that you will now need to use
   `--force` in a build to override a label that already exists in the source
