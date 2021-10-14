@@ -56,6 +56,11 @@ func logCommand(common *config.Common, pid int) error {
 		username = user.Username
 	}
 
-	msg := fmt.Sprintf("UID=%d USER=\"%s\" IMAGE=\"%s\" IMAGEARG=\"%s\" COMMAND=\"%s\"", os.Getuid(), username, image, imageArg, command)
+	var jobid string
+	if val, ok := os.LookupEnv("SLURM_JOB_ID"); ok {
+		jobid = val
+	}
+
+	msg := fmt.Sprintf("UID=%d USER=\"%s\" JOBID=\"%s\" IMAGE=\"%s\" IMAGEARG=\"%s\" COMMAND=\"%s\"", os.Getuid(), username, jobid, image, imageArg, command)
 	return w.Info(msg)
 }
