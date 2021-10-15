@@ -20,7 +20,8 @@ hstld=
 hstranlib=
 hstobjcopy=
 hstgo=
-hstgo_version="1.13"
+hstgo_version="1.16"
+hstgo_preferred_version="1.16.9"
 hstgo_opts="go"
 
 tgtcc=
@@ -58,6 +59,7 @@ fi
 with_network=1
 with_suid=1
 with_seccomp_check=1
+do_go_version_check=1
 
 prefix=
 exec_prefix=
@@ -113,6 +115,7 @@ usage_args () {
 	echo "     --without-suid    do not install SUID binary (linux only)"
 	echo "     --without-network do not compile/install network plugins (linux only)"
 	echo "     --without-seccomp do not compile/install seccomp support even if available"
+	echo "     --only-rpm        only configure for rpm (skip host version check)"
 	echo
 	echo "  Path modification options:"
 	echo "     --prefix         install project in \`prefix'"
@@ -365,6 +368,8 @@ while [ $# -ne 0 ]; do
    with_network=0; shift;;
   --without-seccomp)
    with_seccomp_check=0; shift;;
+  --only-rpm)
+   do_go_version_check=0; shift;;
   -V)
    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error: option requires an argument: $1"
@@ -850,6 +855,12 @@ if [ "$host" = "unix" ]; then
 	echo "=> generating $RPMSPEC ..."
 	rm -f $sourcedir/$RPMSPEC
 
+	# See if we need to include golang source tarball
+	package_golang_source=""
+	if ! $makeit_scriptsdir/check-min-go-version go $hstgo_version >/dev/null; then
+	    package_golang_source="Source1: go${hstgo_preferred_version}.src.tar.gz"
+	fi
+
 	# Transform version numbers so that rpm accepts them:
 	#
 	# 3.4.2-rc.1            ->  3.4.2~rc.1
@@ -857,7 +868,10 @@ if [ "$host" = "unix" ]; then
 	# 3.4.2+522-gee98ef356  ->  3.4.2+522.gee98ef356
 	package_rpm_version="$(echo "${short_version}" | sed -e 's,\(^[^+]\+\)-,\1~,; s,-,.,g')"
 
-	sed "s/@PACKAGE_VERSION@/${package_version}/;s/@PACKAGE_RPM_VERSION@/${package_rpm_version}/;s/@PACKAGE_RELEASE@/${release_info}/" \
+	sed -e "s/@PACKAGE_VERSION@/${package_version}/" \
+	    -e "s/@PACKAGE_RPM_VERSION@/${package_rpm_version}/" \
+	    -e "s/@PACKAGE_RELEASE@/${release_info}/" \
+	    -e "s/@PACKAGE_GOLANG_SOURCE@/${package_golang_source}/" \
 		$sourcedir/dist/rpm/$RPMSPEC.in >$sourcedir/$RPMSPEC
 fi
 

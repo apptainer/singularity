@@ -30,7 +30,7 @@ DOCKER_CONTAINER_NAME="test_${OS_TYPE#*/}_${OS_VERSION}"
 docker run --privileged --network=host \
   -v "$(pwd):/build:rw"  \
   --name "$DOCKER_CONTAINER_NAME" "$DOCKER_HUB_URI" /bin/bash -exc \
-	"cd /build && scripts/ci-rpm-build-test $OS_TYPE $OS_VERSION"
+	"cd /build && scripts/ci-rpm-build-test $OS_TYPE $OS_VERSION $GO_ARCH"
 
 docker ps -a
 docker stop "$DOCKER_CONTAINER_NAME"

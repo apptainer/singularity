@@ -55,10 +55,28 @@ else
 	fi
 fi
 
-if [ "$hstgo" = "" ]; then
+if [ $do_go_version_check = 0 ]; then
+	if [ "$hostgo" = "" ]; then
+		printf " checking: looking for Go compiler... "
+		for go in $hstgo_opts; do
+			gopth=`command -v $go`
+			if [ "$gopth" != "" ]; then
+				hstgo=$gopth
+				break
+			fi
+		done
+		if [ "$hstgo" != "" ]; then
+			echo $hstgo
+		else
+			echo "not found!"
+			usage
+			exit 1
+		fi
+	fi
+elif [ "$hstgo" = "" ]; then
 	printf " checking: host Go compiler (at least version $hstgo_version)... "
 	for go in $hstgo_opts; do
-		if env GO111MODULE=off $go run $makeit_checksdir/version.go go$hstgo_version >/dev/null 2>&1; then
+		if $makeit_scriptsdir/check-min-go-version $go $hstgo_version >/dev/null 2>&1; then
 			hstgo=`command -v $go`
 			break
 		fi
@@ -72,7 +90,7 @@ if [ "$hstgo" = "" ]; then
 	fi
 else
 	printf " checking: host Go compiler (at least version $hstgo_version)... "
-	if env GO111MODULE=off $hstgo run $makeit_checksdir/version.go go$hstgo_version >/dev/null 2>&1; then
+	if $makeit_scriptsdir/check-min-go-version $go $hstgo_version >/dev/null 2>&1; then
 		hstgo=`command -v $hstgo`
 		echo $hstgo
 	else

@@ -1,0 +1,6 @@
+#!/bin/bash
+if [ $# != 2 ]; then
+  echo "Usage: $0: go_cmd min_go_version" >&2
+  exit 1
+fi
+env GO111MODULE=off $1 run $(dirname $0)/../checks/version.go go$2
