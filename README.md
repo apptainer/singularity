@@ -54,6 +54,16 @@ guide](https://github.com/hpcng/singularity-admindocs).
 To get help with Singularity, check out the [Singularity
 Help](https://singularity.hpcng.org/help) web page.
 
+## Go Version Compatibility
+
+Singularity aims to maintain support for the two most recent stable versions
+of Go. This corresponds to the Go
+[Release Maintenance
+Policy](https://github.com/golang/go/wiki/Go-Release-Cycle#release-maintenance)
+and [Security Policy](https://golang.org/security),
+ensuring critical bug fixes and security patches are available for all
+supported language versions.
+
 ## Citing Singularity
 
 > Kurtzer GM, Sochat V, Bauer MW (2017) Singularity: Scientific containers for
