@@ -1,0 +1,24 @@
+--- a/vendor/mvdan.cc/sh/v3/interp/api.go
++++ b/vendor/mvdan.cc/sh/v3/interp/api.go
+@@ -11,6 +11,7 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"io"
++	"io/ioutil"
+ 	"math/rand"
+ 	"os"
+ 	"path/filepath"
+@@ -310,11 +311,11 @@ func StdIO(in io.Reader, out, err io.Writer) RunnerOption {
+ 	return func(r *Runner) error {
+ 		r.stdin = in
+ 		if out == nil {
+-			out = io.Discard
++			out = ioutil.Discard
+ 		}
+ 		r.stdout = out
+ 		if err == nil {
+-			err = io.Discard
++			err = ioutil.Discard
+ 		}
+ 		r.stderr = err
+ 		return nil

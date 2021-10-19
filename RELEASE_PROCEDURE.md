@@ -43,7 +43,7 @@ present, and steps 1-2 should be skipped.
 5. Apply an annotated tag via `git tag -a -m "Singularity v3.8.0
    Release Candidate 1" v3.8.0-rc.1`.
 6. Push the tag via `git push upstream v3.8.0-rc.1`.
-7. Create a tarball via `./mconfig -v && make dist`.
+7. Create a tarball via `./mconfig --only-rpm -v && make dist`.
 8. Test intallation from the tarball.
 9. Compute the sha256sum of the tarball e.g. `sha256sum *.tar.gz > sha256sums`.
 10. Create a GitHub release, marked as a 'pre-release', incorporating

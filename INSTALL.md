@@ -41,10 +41,10 @@ _**NOTE:** if you are updating Go from a older version, make sure you remove `/u
 reinstalling it._
 
 ```sh
-$ export VERSION=1.16.7 OS=linux ARCH=amd64  # change this as you need
+$ export GOVERSION=1.16.9 OS=linux ARCH=amd64  # change this as you need
 
-$ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
-  sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
+$ wget -O /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${GOVERSION}.${OS}-${ARCH}.tar.gz && \
+  sudo tar -C /usr/local -xzf /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz
 ```
 
 Finally, set up your environment for Go:
@@ -117,17 +117,21 @@ $ ./mconfig -b ./buildtree -p /usr/local
 
 *NOTE: You should only attempt to build the RPM on a CentOS/RHEL system.*
 
-To build the RPM, you first need to install `rpm-build` and `wget`:
+To build the rpm, in addition to the
+[dependencies](#install-system-dependencies),
+install `rpm-build`, `wget`, and `golang`:
 
 ```
-$ sudo yum -y update && sudo yum install -y rpm-build wget
+$ sudo yum install -y rpm-build wget golang
 ```
 
-Make sure you have also 
-[installed the system dependencies](#install-system-dependencies)
-as shown above.  Then download the latest 
-[release tarball](https://github.com/hpcng/singularity/releases)
-and use it to install the RPM like this: 
+The rpm build can use the distribution or EPEL version of Go, even
+though as of this writing that version is older than the default
+minimum version of Go that Singularity requires.
+This is because the rpm applies a source code patch to lower the minimum
+required.
+
+To build from a release source tarball do these commands:
 
 ```
 $ export VERSION=3.8.4  # this is the singularity version, change as you need
@@ -136,6 +140,18 @@ $ wget https://github.com/hpcng/singularity/releases/download/v${VERSION}/singul
     rpmbuild -tb singularity-${VERSION}.tar.gz && \
     sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-${VERSION}-1.el7.x86_64.rpm && \
     rm -rf ~/rpmbuild singularity-${VERSION}*.tar.gz
+
+Alternatively, to build an RPM from the latest master you can
+[clone the repo as detailed above](#clone-the-repo).
+Create the build configuration using the `--only-rpm` option of
+`mconfig` if you're using the system's too-old golang installation,
+to lower the minimum required version.
+Then use the `rpm` make target to build Singularity as an rpm package:
+
+```
+$ ./mconfig --only-rpm
+$ make -C builddir rpm
+$ sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.4*.x86_64.rpm # or whatever version you built
 ```
 
 Alternatively, to build an RPM from the latest master you can 
