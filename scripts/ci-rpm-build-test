@@ -23,7 +23,7 @@ chown -R testuser .
 su testuser -c '
   set -x
   set -e
-  ./mconfig
+  ./mconfig --only-rpm
   sudo yum-builddep -y singularity.spec
   make -C builddir rpm
   sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm

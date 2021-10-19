@@ -20,7 +20,7 @@ hstld=
 hstranlib=
 hstobjcopy=
 hstgo=
-hstgo_version="1.13"
+hstgo_version="1.16"
 hstgo_opts="go"
 
 tgtcc=
@@ -113,6 +113,7 @@ usage_args () {
 	echo "     --without-suid    do not install SUID binary (linux only)"
 	echo "     --without-network do not compile/install network plugins (linux only)"
 	echo "     --without-seccomp do not compile/install seccomp support even if available"
+	echo "     --only-rpm        only configure for rpm (lower host go version check)"
 	echo
 	echo "  Path modification options:"
 	echo "     --prefix         install project in \`prefix'"
@@ -365,6 +366,8 @@ while [ $# -ne 0 ]; do
    with_network=0; shift;;
   --without-seccomp)
    with_seccomp_check=0; shift;;
+  --only-rpm)
+   hstgo_version=1.15; shift;;
   -V)
    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error: option requires an argument: $1"
