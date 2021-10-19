@@ -18,6 +18,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hpcng/singularity/internal/pkg/util/bin"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/hpcng/singularity/pkg/util/fs/lock"
 	"github.com/hpcng/singularity/pkg/util/loop"
@@ -58,9 +59,12 @@ func createLoop(path string, offset, size uint64) (string, error) {
 
 // CloseCryptDevice closes the crypt device
 func (crypt *Device) CloseCryptDevice(path string) error {
-	cryptsetup, err := bin.Cryptsetup()
+	cryptsetup, err := bin.FindBin("cryptsetup")
 	if err != nil {
 		return err
+	}
+	if !fs.IsOwner(cryptsetup, 0) {
+		return fmt.Errorf("%s must be owned by root", cryptsetup)
 	}
 
 	fd, err := lock.Exclusive("/dev/mapper")
@@ -158,9 +162,12 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 	// investigated. To do that, at least one additional partition is required, which is
 	// not encrypted.
 
-	cryptsetup, err := bin.Cryptsetup()
+	cryptsetup, err := bin.FindBin("cryptsetup")
 	if err != nil {
 		return "", err
+	}
+	if !fs.IsOwner(cryptsetup, 0) {
+		return "", fmt.Errorf("%s must be owned by root", cryptsetup)
 	}
 
 	cmd := exec.Command(cryptsetup, "luksFormat", "--batch-mode", "--type", "luks2", "--key-file", "-", loop)
@@ -267,9 +274,12 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 
 	maxRetries := 3 // Arbitrary number of retries.
 
-	cryptsetup, err := bin.Cryptsetup()
+	cryptsetup, err := bin.FindBin("cryptsetup")
 	if err != nil {
 		return "", err
+	}
+	if !fs.IsOwner(cryptsetup, 0) {
+		return "", fmt.Errorf("%s must be owned by root", cryptsetup)
 	}
 
 	for i := 0; i < maxRetries; i++ {

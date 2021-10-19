@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,19 +7,12 @@ package gpu
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 )
 
 // RocmPaths returns a list of rocm libraries/binaries that should be
 // mounted into the container in order to use AMD GPUs
-func RocmPaths(configFilePath, userEnvPath string) ([]string, []string, error) {
-	if userEnvPath != "" {
-		oldPath := os.Getenv("PATH")
-		os.Setenv("PATH", userEnvPath)
-		defer os.Setenv("PATH", oldPath)
-	}
-
+func RocmPaths(configFilePath string) ([]string, []string, error) {
 	rocmFiles, err := gpuliblist(configFilePath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not read %s: %v", filepath.Base(configFilePath), err)

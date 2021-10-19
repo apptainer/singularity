@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,6 +16,7 @@ import (
 
 	"github.com/hpcng/singularity/internal/pkg/instance"
 	fakerootConfig "github.com/hpcng/singularity/internal/pkg/runtime/engine/fakeroot/config"
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/internal/pkg/util/crypt"
 	"github.com/hpcng/singularity/internal/pkg/util/priv"
 	"github.com/hpcng/singularity/internal/pkg/util/starter"
@@ -170,7 +171,12 @@ func cleanupCrypt(path string) error {
 }
 
 func fakerootCleanup(path string) error {
-	command := []string{"/bin/rm", "-rf", path}
+	rm, err := bin.FindBin("rm")
+	if err != nil {
+		return err
+	}
+
+	command := []string{rm, "-rf", path}
 
 	sylog.Debugf("Calling fakeroot engine to execute %q", strings.Join(command, " "))
 

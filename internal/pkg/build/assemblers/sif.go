@@ -17,10 +17,10 @@ import (
 	"syscall"
 
 	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/singularity/internal/pkg/image/packer"
 	"github.com/hpcng/singularity/internal/pkg/util/crypt"
 	"github.com/hpcng/singularity/internal/pkg/util/machine"
 	"github.com/hpcng/singularity/pkg/build/types"
-	"github.com/hpcng/singularity/pkg/image/packer"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/hpcng/singularity/pkg/util/cryptkey"
 	uuid "github.com/satori/go.uuid"

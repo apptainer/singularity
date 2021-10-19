@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,10 +15,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/pkg/sylog"
 )
-
-const systemLdconfig = "/sbin/ldconfig"
 
 // gpuliblist returns libraries/binaries listed in a gpu lib list config file, typically
 // located in buildcfg.SINGULARITY_CONFDIR
@@ -159,16 +158,11 @@ func paths(gpuFileList []string) ([]string, []string, error) {
 func ldCache() (map[string]string, error) {
 	// walk through the ldconfig output and add entries which contain the filenames
 	// returned by nvidia-container-cli OR the nvliblist.conf file contents
-	ldConfig, err := exec.LookPath("ldconfig")
+	ldconfig, err := bin.FindBin("ldconfig")
 	if err != nil {
-		return nil, fmt.Errorf("could not lookup ldconfig: %v", err)
+		return nil, err
 	}
-	out, err := exec.Command(ldConfig, "-p").Output()
-	// #5002 If we failed and our ldconfig is not in standard POSIX location, try that
-	if err != nil && ldConfig != systemLdconfig {
-		sylog.Warningf("%s failed - trying %s", ldConfig, systemLdconfig)
-		out, err = exec.Command(systemLdconfig, "-p").Output()
-	}
+	out, err := exec.Command(ldconfig, "-p").Output()
 	if err != nil {
 		return nil, fmt.Errorf("could not execute ldconfig: %v", err)
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -19,6 +19,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/pkg/build/types"
 	"github.com/hpcng/singularity/pkg/sylog"
 )
@@ -49,9 +50,9 @@ func (c *YumConveyor) Get(ctx context.Context, b *types.Bundle) (err error) {
 
 	// check for dnf or yum on system
 	var installCommandPath string
-	if installCommandPath, err = exec.LookPath("dnf"); err == nil {
+	if installCommandPath, err = bin.FindBin("dnf"); err == nil {
 		sylog.Debugf("Found dnf at: %v", installCommandPath)
-	} else if installCommandPath, err = exec.LookPath("yum"); err == nil {
+	} else if installCommandPath, err = bin.FindBin("yum"); err == nil {
 		sylog.Debugf("Found yum at: %v", installCommandPath)
 	} else {
 		return fmt.Errorf("neither yum nor dnf in path")
@@ -114,7 +115,7 @@ func (cp *YumConveyorPacker) Pack(context.Context) (b *types.Bundle, err error) 
 func (c *YumConveyor) getRPMPath() (err error) {
 	var output, stderr bytes.Buffer
 
-	c.rpmPath, err = exec.LookPath("rpm")
+	c.rpmPath, err = bin.FindBin("rpm")
 	if err != nil {
 		return fmt.Errorf("rpm is not in path: %v", err)
 	}
@@ -278,7 +279,7 @@ func (c *YumConveyor) importGPGKey() (err error) {
 	}
 
 	// make sure curl is installed so rpm can import gpg key
-	if _, err = exec.LookPath("curl"); err != nil {
+	if _, err = bin.FindBin("curl"); err != nil {
 		return fmt.Errorf("neither yum nor dnf in path")
 	}
 

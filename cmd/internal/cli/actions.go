@@ -43,9 +43,10 @@ func getCacheHandle(cfg cache.Config) *cache.Handle {
 
 // actionPreRun will run replaceURIWithImage and will also do the proper path unsetting
 func actionPreRun(cmd *cobra.Command, args []string) {
-	// backup user PATH
+	// For compatibility - we still set USER_PATH so it will be visible in the
+	// container, and can be used there if needed. USER_PATH is not used by
+	// singularity itself in 3.9+
 	userPath := strings.Join([]string{os.Getenv("PATH"), defaultPath}, ":")
-
 	os.Setenv("USER_PATH", userPath)
 
 	os.Setenv("IMAGE_ARG", args[0])
@@ -53,10 +54,6 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	ctx := context.TODO()
 
 	replaceURIWithImage(ctx, cmd, args)
-
-	// set PATH after pulling images to be able to find potential
-	// docker credential helpers outside of standard paths
-	os.Setenv("PATH", defaultPath)
 
 	// --compat infers other options that give increased OCI / Docker compatibility
 	// Excludes uts/user/net namespaces as these are restrictive for many Singularity

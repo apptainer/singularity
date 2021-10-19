@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,18 +14,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/pkg/sylog"
 )
 
 // NvidiaPaths returns a list of Nvidia libraries/binaries that should be
 // mounted into the container in order to use Nvidia GPUs
-func NvidiaPaths(configFilePath, userEnvPath string) ([]string, []string, error) {
-	if userEnvPath != "" {
-		oldPath := os.Getenv("PATH")
-		os.Setenv("PATH", userEnvPath)
-		defer os.Setenv("PATH", oldPath)
-	}
-
+func NvidiaPaths(configFilePath string) ([]string, []string, error) {
 	// Parse nvidia-container-cli for the necessary binaries/libs, fallback to a
 	// list of required binaries/libs if the nvidia-container-cli is unavailable
 	nvidiaFiles, err := nvidiaContainerCli("list", "--binaries", "--libraries")
@@ -43,14 +38,8 @@ func NvidiaPaths(configFilePath, userEnvPath string) ([]string, []string, error)
 }
 
 // NvidiaIpcsPath returns list of nvidia ipcs driver.
-func NvidiaIpcsPath(envPath string) []string {
+func NvidiaIpcsPath() []string {
 	const persistencedSocket = "/var/run/nvidia-persistenced/socket"
-
-	if envPath != "" {
-		oldPath := os.Getenv("PATH")
-		os.Setenv("PATH", envPath)
-		defer os.Setenv("PATH", oldPath)
-	}
 
 	var nvidiaFiles []string
 	nvidiaFiles, err := nvidiaContainerCli("list", "--ipcs")
@@ -74,7 +63,7 @@ func NvidiaIpcsPath(envPath string) []string {
 // nvidiaContainerCli runs `nvidia-container-cli list` and returns list of
 // libraries, ipcs and binaries for proper NVIDIA work. This may return duplicates!
 func nvidiaContainerCli(args ...string) ([]string, error) {
-	nvidiaCLIPath, err := exec.LookPath("nvidia-container-cli")
+	nvidiaCLIPath, err := bin.FindBin("nvidia-container-cli")
 	if err != nil {
 		return nil, fmt.Errorf("could not find nvidia-container-cli: %v", err)
 	}

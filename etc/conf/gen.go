@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
 	"github.com/hpcng/singularity/pkg/util/singularityconf"
 )
 
@@ -40,6 +41,14 @@ func genConf(tmpl, in, out string) {
 		fmt.Printf("Unable to parse singularity.conf file: %s\n", err)
 		os.Exit(1)
 	}
+
+	// Set default external paths from build time values
+	c.CryptsetupPath = buildcfg.CRYPTSETUP_PATH
+	c.GoPath = buildcfg.GO_PATH
+	c.LdconfigPath = buildcfg.LDCONFIG_PATH
+	c.MksquashfsPath = buildcfg.MKSQUASHFS_PATH
+	c.NvidiaContainerCliPath = buildcfg.NVIDIA_CONTAINER_CLI_PATH
+	c.UnsquashfsPath = buildcfg.UNSQUASHFS_PATH
 
 	newOutFile, err := os.OpenFile(out, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {

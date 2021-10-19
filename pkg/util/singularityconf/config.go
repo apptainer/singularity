@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -59,10 +59,14 @@ type File struct {
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 	CniConfPath             string   `directive:"cni configuration path"`
 	CniPluginPath           string   `directive:"cni plugin path"`
+	CryptsetupPath          string   `directive:"cryptsetup path"`
+	GoPath                  string   `directive:"go path"`
+	LdconfigPath            string   `directive:"ldconfig path"`
 	MksquashfsPath          string   `directive:"mksquashfs path"`
 	MksquashfsProcs         uint     `default:"0" directive:"mksquashfs procs"`
 	MksquashfsMem           string   `directive:"mksquashfs mem"`
-	CryptsetupPath          string   `directive:"cryptsetup path"`
+	NvidiaContainerCliPath  string   `directive:"nvidia-container-cli path"`
+	UnsquashfsPath          string   `directive:"unsquashfs path"`
 	ImageDriver             string   `directive:"image driver"`
 }
 
@@ -339,10 +343,38 @@ memory fs type = {{ .MemoryFSType }}
 # Defines path from where CNI executable plugins are stored
 #cni plugin path =
 {{ if ne .CniPluginPath "" }}cni plugin path = {{ .CniPluginPath }}{{ end }}
+
+# CRYPTSETUP PATH: [STRING]
+# DEFAULT: Undefined
+# Path to the cryptsetup executable, used to work with encrypted containers.
+# If not set, Singularity will search $PATH, /usr/local/sbin, /usr/local/bin,
+# /usr/sbin, /usr/bin, /sbin, /bin for cryptsetup.
+# NOTE - cryptsetup is called as root, and is *required* to be owned by the
+# root user for security reasons.
+# cryptsetup path =
+{{ if ne .CryptsetupPath "" }}cryptsetup path = {{ .CryptsetupPath }}{{ end }}
+
+# GO PATH: [STRING]
+# DEFAULT: Undefined
+# Path to the go executable, used to compile plugins.
+# If not set, Singularity will search $PATH, /usr/local/sbin, /usr/local/bin,
+# /usr/sbin, /usr/bin, /sbin, /bin for go.
+# go path =
+{{ if ne .GoPath "" }}go path = {{ .GoPath }}{{ end }}
+
+# LDCONFIG PATH: [STRING]
+# DEFAULT: Undefined
+# Path to the ldconfig executable, used to find GPU libraries.
+# If not set, Singularity will search $PATH, /usr/local/sbin, /usr/local/bin,
+# /usr/sbin, /usr/bin, /sbin, /bin for ldconfig.
+# ldconfig path =
+{{ if ne .LdconfigPath "" }}ldconfig path = {{ .LdconfigPath }}{{ end }}
+
 # MKSQUASHFS PATH: [STRING]
 # DEFAULT: Undefined
-# This allows the administrator to specify the location for mksquashfs if it is not
-# installed in a standard system location
+# Path to the mksquashfs executable, used to create SIF and SquashFS containers.
+# If not set, Singularity will search $PATH, /usr/local/sbin, /usr/local/bin,
+# /usr/sbin, /usr/bin, /sbin, /bin for mksquashfs.
 # mksquashfs path =
 {{ if ne .MksquashfsPath "" }}mksquashfs path = {{ .MksquashfsPath }}{{ end }}
 
@@ -364,14 +396,22 @@ mksquashfs procs = {{ .MksquashfsProcs }}
 # mksquashfs mem = 1G
 {{ if ne .MksquashfsMem "" }}mksquashfs mem = {{ .MksquashfsMem }}{{ end }}
 
-# CRYPTSETUP PATH: [STRING]
+# NVIDIA-CONTAINER-CLI PATH: [STRING]
 # DEFAULT: Undefined
-# This allows the administrator to specify the location of cryptsetup if
-# they wish to use custom location for this installation. If this value
-# is undefined, at runtime singularity falls back to the value that was
-# recorded at build time.
-# cryptsetup path =
-{{ if ne .CryptsetupPath "" }}cryptsetup path = {{ .CryptsetupPath }}{{ end }}
+# Path to the nvidia-container-cli executable, used to find GPU libraries.
+# If not set, Singularity will search $PATH plus /bin, /usr/bin, /sbin,
+# /usr/sbin, /usr/local/bin, /usr/local/sbin for nvidia-container-cli.
+# mksquashfs path =
+{{ if ne .NvidiaContainerCliPath "" }}nvidia-container-cli path = {{ .NvidiaContainerCliPath }}{{ end }}
+
+# UNSQUASHFS PATH: [STRING]
+# DEFAULT: Undefined
+# Path to the unsquashfs executable, used to extract SIF and SquashFS containers
+# If not set, Singularity will search $PATH, /usr/local/sbin, /usr/local/bin,
+# /usr/sbin, /usr/bin, /sbin, /bin for nvidia-container-cli.
+# unsquashfs path =
+{{ if ne .UnsquashfsPath "" }}unsquashfs path = {{ .UnsquashfsPath }}{{ end }}
+
 # SHARED LOOP DEVICES: [BOOL]
 # DEFAULT: no
 # Allow to share same images associated with loop devices to minimize loop

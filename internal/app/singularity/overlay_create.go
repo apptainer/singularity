@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/pkg/image"
 	"golang.org/x/sys/unix"
 )
@@ -47,13 +48,13 @@ func OverlayCreate(size int, imgPath string, overlayDirs ...string) error {
 		return fmt.Errorf("image size must be equal or greater than 64 MiB")
 	}
 
-	mkfs, err := exec.LookPath(mkfsBinary)
+	mkfs, err := bin.FindBin(mkfsBinary)
 	if err != nil {
-		return fmt.Errorf("%s not found in $PATH", mkfsBinary)
+		return err
 	}
-	dd, err := exec.LookPath(ddBinary)
+	dd, err := bin.FindBin(ddBinary)
 	if err != nil {
-		return fmt.Errorf("%s not found in $PATH", ddBinary)
+		return err
 	}
 
 	buf := new(bytes.Buffer)

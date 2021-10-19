@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/hpcng/singularity/pkg/build/types"
 	"github.com/hpcng/singularity/pkg/sylog"
@@ -49,15 +50,15 @@ type DebootstrapConveyorPacker struct {
 // prepareFakerootEnv prepares a build environment to
 // make fakeroot working with debootstrap.
 func (cp *DebootstrapConveyorPacker) prepareFakerootEnv(ctx context.Context) (func(), error) {
-	truePath, err := exec.LookPath("true")
+	truePath, err := bin.FindBin("true")
 	if err != nil {
 		return nil, fmt.Errorf("while searching true command: %s", err)
 	}
-	mountPath, err := exec.LookPath("mount")
+	mountPath, err := bin.FindBin("mount")
 	if err != nil {
 		return nil, fmt.Errorf("while searching mount command: %s", err)
 	}
-	mknodPath, err := exec.LookPath("mknod")
+	mknodPath, err := bin.FindBin("mknod")
 	if err != nil {
 		return nil, fmt.Errorf("while searching mknod command: %s", err)
 	}
@@ -148,7 +149,7 @@ func (cp *DebootstrapConveyorPacker) Get(ctx context.Context, b *types.Bundle) (
 	cp.b = b
 
 	// check for debootstrap on system(script using "singularity_which" not sure about its importance)
-	debootstrapPath, err := exec.LookPath("debootstrap")
+	debootstrapPath, err := bin.FindBin("debootstrap")
 	if err != nil {
 		return fmt.Errorf("debootstrap is not in PATH... Perhaps 'apt-get install' it: %v", err)
 	}

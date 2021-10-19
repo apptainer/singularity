@@ -18,18 +18,17 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"os/exec"
 	"strings"
 	"syscall"
 	"unsafe"
 
+	"github.com/hpcng/singularity/internal/pkg/util/bin"
+	"github.com/hpcng/singularity/internal/pkg/util/env"
+	"github.com/hpcng/singularity/internal/pkg/util/fs"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/hpcng/singularity/pkg/util/capabilities"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
-
-const searchPath = "/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin"
 
 // SConfig is an alias for *C.struct_starterConfig
 // (see cmd/starter/c/include/starter.h) introduced for convenience.
@@ -255,15 +254,20 @@ func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) error {
 }
 
 func setNewIDMapPath(command string, pathPointer unsafe.Pointer) error {
-	os.Setenv("PATH", searchPath)
-	defer os.Unsetenv("PATH")
-
-	path, err := exec.LookPath(command)
+	path, err := bin.FindBin(command)
 	if err != nil {
 		return fmt.Errorf(
 			"%s was not found in PATH (%s), required with fakeroot and unprivileged installation",
-			command, searchPath,
+			command, env.DefaultPath,
 		)
+	}
+
+	if !fs.IsOwner(path, 0) {
+		return fmt.Errorf("%s must be owned by the root user to setup fakeroot ID mappings in an unprivileged installation", path)
+	}
+
+	if !fs.IsSuid(path) {
+		return fmt.Errorf("%s must be setuid root to setup fakeroot ID mappings in an unprivileged installation", path)
 	}
 
 	lpath := len(path)
