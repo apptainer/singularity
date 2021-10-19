@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -179,18 +180,14 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 		args        []string
 		requireArch string
 	}{
-		// TODO: our sif in git repo is amd64 only - add other archs
 		{
-			name:        "local sif",
-			buildSpec:   "testdata/busybox.sif",
-			requireArch: "amd64",
+			name:      "local sif",
+			buildSpec: "testdata/busybox_" + runtime.GOARCH + ".sif",
 		},
-		// TODO: our sif in git repo is amd64 only - add other archs
 		{
-			name:        "local sif to sandbox",
-			buildSpec:   "testdata/busybox.sif",
-			args:        []string{"--sandbox"},
-			requireArch: "amd64",
+			name:      "local sif to sandbox",
+			buildSpec: "testdata/busybox_" + runtime.GOARCH + ".sif",
+			args:      []string{"--sandbox"},
 		},
 		{
 			name:      "library sif",
