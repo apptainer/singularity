@@ -1,6 +1,6 @@
 module github.com/hpcng/singularity
 
-go 1.13
+go 1.16
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
@@ -47,10 +47,10 @@ require (
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
-	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
+	golang.org/x/sys v0.0.0-20210925032602-92d5a993a665
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
-	mvdan.cc/sh/v3 v3.3.1
+	mvdan.cc/sh/v3 v3.4.0
 	oras.land/oras-go v0.4.0
 	rsc.io/letsencrypt v0.0.3 // indirect
 )

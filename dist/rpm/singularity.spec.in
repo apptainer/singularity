@@ -105,9 +105,14 @@ export PATH=$GOPATH/bin:$PATH
 tar -xf "%SOURCE0"
 cd %{name}-%{package_version}
 
+# Apply rpm-specific patches
+for PATCH in $(find dist/rpm -name '*.patch'); do
+	patch -p1 <$PATCH
+done
+
 # Not all of these parameters currently have an effect, but they might be
 #  used someday.  They are the same parameters as in the configure macro.
-./mconfig -V %{version}-%{release} \
+./mconfig --only-rpm -V %{version}-%{release} \
         --prefix=%{_prefix} \
         --exec-prefix=%{_exec_prefix} \
         --bindir=%{_bindir} \
@@ -128,7 +133,6 @@ make old_config=
 %install
 cd %{name}-%{version}
 
-# Setup an empty GOPATH for the build
 export GOPATH=$PWD/gopath
 export PATH=$GOPATH/bin:$PATH
 

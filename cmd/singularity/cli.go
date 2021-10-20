@@ -8,7 +8,6 @@ package main
 import (
 	"github.com/hpcng/singularity/cmd/internal/cli"
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
-	_ "github.com/hpcng/singularity/internal/pkg/util/goversion"
 	useragent "github.com/hpcng/singularity/pkg/util/user-agent"
 )
 
