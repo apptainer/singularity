@@ -50,9 +50,7 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 
 	os.Setenv("IMAGE_ARG", args[0])
 
-	ctx := context.TODO()
-
-	replaceURIWithImage(ctx, cmd, args)
+	replaceURIWithImage(cmd.Context(), cmd, args)
 
 	// set PATH after pulling images to be able to find potential
 	// docker credential helpers outside of standard paths

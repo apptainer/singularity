@@ -126,7 +126,7 @@ var deleteImageCmd = &cobra.Command{
 			sylog.Fatalf("Error while getting library client config: %v", err)
 		}
 
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(deleteImageTimeout)*time.Second)
+		ctx, cancel := context.WithTimeout(cmd.Context(), time.Duration(deleteImageTimeout)*time.Second)
 		defer cancel()
 
 		if err := singularity.DeleteImage(ctx, libraryConfig, r, deleteImageArch); err != nil {

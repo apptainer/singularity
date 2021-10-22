@@ -6,8 +6,6 @@
 package cli
 
 import (
-	"context"
-
 	"github.com/hpcng/singularity/docs"
 	"github.com/hpcng/singularity/internal/app/singularity"
 	"github.com/hpcng/singularity/pkg/cmdline"
@@ -186,9 +184,7 @@ var OciRunCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.TODO()
-
-		if err := singularity.OciRun(ctx, args[0], &ociArgs); err != nil {
+		if err := singularity.OciRun(cmd.Context(), args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -220,9 +216,7 @@ var OciDeleteCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.TODO()
-
-		if err := singularity.OciDelete(ctx, args[0]); err != nil {
+		if err := singularity.OciDelete(cmd.Context(), args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -280,9 +274,7 @@ var OciAttachCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.TODO()
-
-		if err := singularity.OciAttach(ctx, args[0]); err != nil {
+		if err := singularity.OciAttach(cmd.Context(), args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},

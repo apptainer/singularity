@@ -7,7 +7,6 @@
 package cli
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -90,8 +89,6 @@ type keyNewPairOptions struct {
 }
 
 func runNewPairCmd(cmd *cobra.Command, args []string) {
-	ctx := context.TODO()
-
 	keyring := sypgp.NewHandle("")
 
 	opts, err := collectInput(cmd)
@@ -120,7 +117,7 @@ func runNewPairCmd(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("Keyserver client failed: %s", err)
 	}
 
-	if err := sypgp.PushPubkey(ctx, key, co...); err != nil {
+	if err := sypgp.PushPubkey(cmd.Context(), key, co...); err != nil {
 		fmt.Printf("Failed to push newly created key to keystore: %s\n", err)
 	} else {
 		fmt.Println("Key successfully pushed to keystore")

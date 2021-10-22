@@ -7,7 +7,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -81,8 +80,6 @@ var PushCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.TODO()
-
 		file, dest := args[0], args[1]
 
 		transport, ref := uri.Split(dest)
@@ -115,7 +112,7 @@ var PushCmd = &cobra.Command{
 				FrontendURI:   URI(),
 			}
 
-			err = singularity.LibraryPush(ctx, pushSpec, lc, co)
+			err = singularity.LibraryPush(cmd.Context(), pushSpec, lc, co)
 			if err == singularity.ErrLibraryUnsigned {
 				fmt.Printf("TIP: You can push unsigned images with 'singularity push -U %s'.\n", file)
 				fmt.Printf("TIP: Learn how to sign your own containers by using 'singularity help sign'\n\n")
