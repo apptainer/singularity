@@ -40,7 +40,7 @@ clear_env() {
     for e in ${__exported_env__}; do
         key=$(getenvkey "${e}")
         case "${key}" in
-        PWD|HOME|OPTIND|UID|SINGULARITY_APPNAME|SINGULARITY_SHELL)
+        PWD|HOME|OPTIND|UID|GID|SINGULARITY_APPNAME|SINGULARITY_SHELL)
             ;;
         SINGULARITY_NAME|SINGULARITY_CONTAINER)
             readonly "${key}"
