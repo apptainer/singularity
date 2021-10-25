@@ -776,11 +776,7 @@ func SetGPUConfig(engineConfig *singularityConfig.EngineConfig) error {
 		// from  starter, so fall back to legacy NV handling until that workflow is refactored heavily.
 		fakeRootPriv := IsFakeroot && engineConfig.File.AllowSetuid && (buildcfg.SINGULARITY_SUID_INSTALL == 1)
 		if !fakeRootPriv {
-			nvCCLIPath, err := gpu.GetNvCCLIPath()
-			if err == nil {
-				return setNvCCLIConfig(engineConfig, nvCCLIPath)
-			}
-			sylog.Warningf("While looking for nividia-container-cli: %v", err)
+			return setNvCCLIConfig(engineConfig)
 		}
 		sylog.Infof("nvidia-container-cli not available / not supported - using legacy GPU configuration")
 		return setNVLegacyConfig(engineConfig)
@@ -793,10 +789,9 @@ func SetGPUConfig(engineConfig *singularityConfig.EngineConfig) error {
 }
 
 // setNvCCLIConfig sets up EngineConfig entries for NVIDIA GPU configuration via nvidia-container-cli
-func setNvCCLIConfig(engineConfig *singularityConfig.EngineConfig, nvcCLIPath string) (err error) {
+func setNvCCLIConfig(engineConfig *singularityConfig.EngineConfig) (err error) {
 	sylog.Debugf("Using nvidia-container-cli for GPU setup")
 	engineConfig.SetNvCCLI(true)
-	engineConfig.SetNvCCLIPath(nvcCLIPath)
 
 	// When we use --contain we don't mount the NV devices by default in the nvidia-container-cli flow,
 	// they must be mounted via specifying with`NVIDIA_VISIBLE_DEVICES`. This differs from the legacy

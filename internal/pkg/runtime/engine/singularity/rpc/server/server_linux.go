@@ -438,5 +438,5 @@ func (t *Methods) NvCCLI(arguments *args.NvCCLIArgs, reply *int) (err error) {
 		}
 	}()
 
-	return gpu.NVCLIConfigure(arguments.NvCCLIPath, arguments.Flags, arguments.RootFsPath, arguments.RunAsRoot)
+	return gpu.NVCLIConfigure(arguments.Flags, arguments.RootFsPath, arguments.RunAsRoot)
 }

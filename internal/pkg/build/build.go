@@ -23,6 +23,7 @@ import (
 	"github.com/hpcng/singularity/internal/pkg/build/apps"
 	"github.com/hpcng/singularity/internal/pkg/build/assemblers"
 	"github.com/hpcng/singularity/internal/pkg/build/sources"
+	"github.com/hpcng/singularity/internal/pkg/buildcfg"
 	"github.com/hpcng/singularity/internal/pkg/image/packer"
 	"github.com/hpcng/singularity/internal/pkg/util/fs/squashfs"
 	"github.com/hpcng/singularity/internal/pkg/util/uri"
@@ -349,6 +350,19 @@ func (b *Build) Full(ctx context.Context) error {
 	config.ConfigResolvConf = false
 	config.MountHome = false
 	config.MountDevPts = false
+
+	// nvidia-container-cli path / ldconfig path will be needed by %post/%test
+	// in builds run with --nv / --nvccli. Must grab paths from the main config.
+	sysConfig := singularityconf.GetCurrentConfig()
+	if sysConfig == nil {
+		configFile := buildcfg.SINGULARITY_CONF_FILE
+		sysConfig, err = singularityconf.Parse(configFile)
+		if err != nil {
+			return fmt.Errorf("could not parse %q: %v", configFile, err)
+		}
+	}
+	config.LdconfigPath = sysConfig.LdconfigPath
+	config.NvidiaContainerCliPath = sysConfig.NvidiaContainerCliPath
 
 	var buffer bytes.Buffer
 
