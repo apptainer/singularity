@@ -139,7 +139,6 @@ type JSONConfig struct {
 	Contain           bool              `json:"container,omitempty"`
 	NvLegacy          bool              `json:"nvLegacy,omitempty"`
 	NvCCLI            bool              `json:"nvCCLI,omitempty"`
-	NvCCLIPath        string            `json:"nvCCLIPath,omitempty"`
 	NvCCLIFlags       []string          `json:"NvCCLIFlags,omitempty"`
 	Rocm              bool              `json:"rocm,omitempty"`
 	CustomHome        bool              `json:"customHome,omitempty"`
@@ -244,16 +243,6 @@ func (e *EngineConfig) SetNvCCLI(nvCCLI bool) {
 // GetNvCCLI returns if NvCCLI flag is set or not.
 func (e *EngineConfig) GetNvCCLI() bool {
 	return e.JSON.NvCCLI
-}
-
-// SetNvCCLIPath sets the path to nvidia-container-cli to use for GPU setup
-func (e *EngineConfig) SetNvCCLIPath(nvCCLIPath string) {
-	e.JSON.NvCCLIPath = nvCCLIPath
-}
-
-// GetNvCCLIPath returns the path to nvidia-container-cli to use for GPU setup
-func (e *EngineConfig) GetNvCCLIPath() string {
-	return e.JSON.NvCCLIPath
 }
 
 // SetNVCCLIFlags sets flags to call nvidia-container-cli with for CUDA setup

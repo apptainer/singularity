@@ -356,10 +356,8 @@ memory fs type = {{ .MemoryFSType }}
 # CRYPTSETUP PATH: [STRING]
 # DEFAULT: Undefined
 # Path to the cryptsetup executable, used to work with encrypted containers.
-# If not set, Singularity will search $PATH, /usr/local/sbin, /usr/local/bin,
-# /usr/sbin, /usr/bin, /sbin, /bin for cryptsetup.
-# NOTE - cryptsetup is called as root, and is *required* to be owned by the
-# root user for security reasons.
+# Must be set to build or run encrypted containers.
+# Executable must be owned by root for security reasons.
 # cryptsetup path =
 {{ if ne .CryptsetupPath "" }}cryptsetup path = {{ .CryptsetupPath }}{{ end }}
 
@@ -367,15 +365,15 @@ memory fs type = {{ .MemoryFSType }}
 # DEFAULT: Undefined
 # Path to the go executable, used to compile plugins.
 # If not set, Singularity will search $PATH, /usr/local/sbin, /usr/local/bin,
-# /usr/sbin, /usr/bin, /sbin, /bin for go.
+# /usr/sbin, /usr/bin, /sbin, /bin.
 # go path =
 {{ if ne .GoPath "" }}go path = {{ .GoPath }}{{ end }}
 
 # LDCONFIG PATH: [STRING]
 # DEFAULT: Undefined
 # Path to the ldconfig executable, used to find GPU libraries.
-# If not set, Singularity will search $PATH, /usr/local/sbin, /usr/local/bin,
-# /usr/sbin, /usr/bin, /sbin, /bin for ldconfig.
+# Must be set to use --nv / --nvccli.
+# Executable must be owned by root for security reasons.
 # ldconfig path =
 {{ if ne .LdconfigPath "" }}ldconfig path = {{ .LdconfigPath }}{{ end }}
 
@@ -383,7 +381,7 @@ memory fs type = {{ .MemoryFSType }}
 # DEFAULT: Undefined
 # Path to the mksquashfs executable, used to create SIF and SquashFS containers.
 # If not set, Singularity will search $PATH, /usr/local/sbin, /usr/local/bin,
-# /usr/sbin, /usr/bin, /sbin, /bin for mksquashfs.
+# /usr/sbin, /usr/bin, /sbin, /bin.
 # mksquashfs path =
 {{ if ne .MksquashfsPath "" }}mksquashfs path = {{ .MksquashfsPath }}{{ end }}
 
@@ -408,16 +406,16 @@ mksquashfs procs = {{ .MksquashfsProcs }}
 # NVIDIA-CONTAINER-CLI PATH: [STRING]
 # DEFAULT: Undefined
 # Path to the nvidia-container-cli executable, used to find GPU libraries.
-# If not set, Singularity will search $PATH plus /bin, /usr/bin, /sbin,
-# /usr/sbin, /usr/local/bin, /usr/local/sbin for nvidia-container-cli.
-# mksquashfs path =
+# Must be set to use --nvccli.
+# Executable must be owned by root for security reasons.
+# nvidia-container-cli path =
 {{ if ne .NvidiaContainerCliPath "" }}nvidia-container-cli path = {{ .NvidiaContainerCliPath }}{{ end }}
 
 # UNSQUASHFS PATH: [STRING]
 # DEFAULT: Undefined
 # Path to the unsquashfs executable, used to extract SIF and SquashFS containers
 # If not set, Singularity will search $PATH, /usr/local/sbin, /usr/local/bin,
-# /usr/sbin, /usr/bin, /sbin, /bin for nvidia-container-cli.
+# /usr/sbin, /usr/bin, /sbin, /bin.
 # unsquashfs path =
 {{ if ne .UnsquashfsPath "" }}unsquashfs path = {{ .UnsquashfsPath }}{{ end }}
 

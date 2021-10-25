@@ -29,11 +29,17 @@ func FindBin(name string) (path string, err error) {
 		return findOnPath(name)
 	// Configurable executables that are found at build time, can be overridden
 	// in singularity.conf. If config value is "" will look on PATH.
-	case "ldconfig", "unsquashfs", "mksquashfs", "cryptsetup", "nvidia-container-cli", "go":
-		return findFromConfig(name)
+	case "unsquashfs", "mksquashfs", "go":
+		return findFromConfigOrPath(name)
 	// distro provided setUID executables that are used in the fakeroot flow to setup subuid/subgid mappings
 	case "newuidmap", "newgidmap":
 		return findOnPath(name)
+	// cryptsetup & nvidia-container-cli paths must be explicitly specified
+	// They are called as root from the RPC server in a setuid install, so this
+	// limits to sysadmin controlled paths.
+	// ldconfig is invoked by nvidia-container-cli, so must be trusted also.
+	case "cryptsetup", "ldconfig", "nvidia-container-cli":
+		return findFromConfigOnly(name)
 	}
 	return "", fmt.Errorf("unknown executable name %q", name)
 }
@@ -53,9 +59,41 @@ func findOnPath(name string) (path string, err error) {
 	return path, err
 }
 
-// findFromConfig retrieves the path to an executable from singularity.conf,
+// findFromConfigOrPath retrieves the path to an executable from singularity.conf,
 // or searches PATH if not set there.
-func findFromConfig(name string) (path string, err error) {
+func findFromConfigOrPath(name string) (path string, err error) {
+	cfg := singularityconf.GetCurrentConfig()
+	if cfg == nil {
+		cfg, err = singularityconf.Parse(buildcfg.SINGULARITY_CONF_FILE)
+		if err != nil {
+			return "", errors.Wrap(err, "unable to parse singularity configuration file")
+		}
+	}
+
+	switch name {
+	case "go":
+		path = cfg.GoPath
+	case "mksquashfs":
+		path = cfg.MksquashfsPath
+	case "unsquashfs":
+		path = cfg.UnsquashfsPath
+	default:
+		return "", fmt.Errorf("unknown executable name %q", name)
+	}
+
+	if path == "" {
+		return findOnPath(name)
+	}
+
+	sylog.Debugf("Using %q at %q (from singularity.conf)", name, path)
+
+	// Use lookPath with the absolute path to confirm it is accessible & executable
+	return exec.LookPath(path)
+}
+
+// findFromConfigOnly retrieves the path to an executable from singularity.conf.
+// If it's not set there we error.
+func findFromConfigOnly(name string) (path string, err error) {
 	cfg := singularityconf.GetCurrentConfig()
 	if cfg == nil {
 		cfg, err = singularityconf.Parse(buildcfg.SINGULARITY_CONF_FILE)
@@ -67,22 +105,16 @@ func findFromConfig(name string) (path string, err error) {
 	switch name {
 	case "cryptsetup":
 		path = cfg.CryptsetupPath
-	case "go":
-		path = cfg.GoPath
 	case "ldconfig":
 		path = cfg.LdconfigPath
-	case "mksquashfs":
-		path = cfg.MksquashfsPath
 	case "nvidia-container-cli":
 		path = cfg.NvidiaContainerCliPath
-	case "unsquashfs":
-		path = cfg.UnsquashfsPath
 	default:
 		return "", fmt.Errorf("unknown executable name %q", name)
 	}
 
 	if path == "" {
-		return findOnPath(name)
+		return "", fmt.Errorf("path to %q not set in singularity.conf", name)
 	}
 
 	sylog.Debugf("Using %q at %q (from singularity.conf)", name, path)

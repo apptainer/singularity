@@ -10,16 +10,9 @@ import (
 	"reflect"
 	"sort"
 	"testing"
-
-	"github.com/hpcng/singularity/internal/pkg/util/bin"
 )
 
 func TestNVCLIEnvToFlags(t *testing.T) {
-	ldConfig, err := bin.FindBin("ldconfig")
-	if err != nil {
-		t.Fatalf("Could not find ldconfig: %v", err)
-	}
-
 	tests := []struct {
 		name      string
 		env       map[string]string
@@ -30,7 +23,6 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 			name: "defaults",
 			wantFlags: []string{
 				"--no-cgroups",
-				"--ldconfig=@" + ldConfig,
 				"--compute",
 				"--utility",
 			},
@@ -43,7 +35,6 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 			},
 			wantFlags: []string{
 				"--no-cgroups",
-				"--ldconfig=@" + ldConfig,
 				"--device=all",
 				"--compute",
 				"--utility",
@@ -57,7 +48,6 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 			},
 			wantFlags: []string{
 				"--no-cgroups",
-				"--ldconfig=@" + ldConfig,
 				"--mig-config=all",
 				"--compute",
 				"--utility",
@@ -71,7 +61,6 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 			},
 			wantFlags: []string{
 				"--no-cgroups",
-				"--ldconfig=@" + ldConfig,
 				"--mig-monitor=all",
 				"--compute",
 				"--utility",
@@ -85,7 +74,6 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 			},
 			wantFlags: []string{
 				"--no-cgroups",
-				"--ldconfig=@" + ldConfig,
 				"--compute",
 			},
 			wantErr: false,
@@ -97,7 +85,6 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 			},
 			wantFlags: []string{
 				"--no-cgroups",
-				"--ldconfig=@" + ldConfig,
 				"--compute",
 				"--compat32",
 				"--graphics",
@@ -121,7 +108,6 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 			},
 			wantFlags: []string{
 				"--no-cgroups",
-				"--ldconfig=@" + ldConfig,
 				"--compute",
 				"--utility",
 				"--require=cuda>=9.0",
@@ -136,7 +122,6 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 			},
 			wantFlags: []string{
 				"--no-cgroups",
-				"--ldconfig=@" + ldConfig,
 				"--compute",
 				"--utility",
 				"--require=brand=GRID",
@@ -153,7 +138,6 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 			},
 			wantFlags: []string{
 				"--no-cgroups",
-				"--ldconfig=@" + ldConfig,
 				"--compute",
 				"--utility",
 			},

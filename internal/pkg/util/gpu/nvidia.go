@@ -21,7 +21,10 @@ import (
 	"github.com/hpcng/singularity/pkg/util/slice"
 )
 
-var ErrNvCCLIInsecure = errors.New("nvidia-container-cli is not owned by root user")
+var (
+	errNvCCLIInsecure   = errors.New("nvidia-container-cli is not owned by root user")
+	errLdconfigInsecure = errors.New("ldconfig is not owned by root user")
+)
 
 // nVDriverCapabilities is the set of driver capabilities supported by nvidia-container-cli.
 // See: https://github.com/nvidia/nvidia-container-runtime#nvidia_driver_capabilities
@@ -58,36 +61,49 @@ var nVCLIAmbientCaps = []uintptr{
 	uintptr(capabilities.Map["CAP_SETPCAP"].Value),
 }
 
-// GetNvCCLIPath finds the path to nvidia-container-cli.
-// Returns ErrNvCCLIInsecure if it is not owned by root.
-func GetNvCCLIPath() (path string, err error) {
-	path, err = bin.FindBin("nvidia-container-cli")
-	if err != nil {
-		return "", err
-	}
-
-	// The nvidia-container-cli binary must be owned by root, as it is called with broad
-	// capabilities, and as root in the setuid flow.
-	if !fs.IsOwner(path, 0) {
-		return "", ErrNvCCLIInsecure
-	}
-
-	return path, nil
-}
-
 // NVCLIConfigure calls out to the nvidia-container-cli configure operation.
-// This sets up the GPU with the container. Note that the ability to set a fairly broad set of
-// ambient capabilities is required. This function will error if the bounding set does not include
-// NvidiaContainerCLIAmbientCaps.
-func NVCLIConfigure(nvCCLIPath string, flags []string, rootfs string, runAsRoot bool) error {
-	nccArgs := []string{"configure"}
+// This sets up the GPU with the container. Note that the ability to set a
+// fairly broad range of ambient capabilities is required. This function will
+// error if the bounding set does not include NvidiaContainerCLIAmbientCaps.
+//
+// When userNS is true, we are running in a user namespace and don't require
+// any privilege escalation when calling out to `nvidia-container-cli`.
+//
+// When userNS is false, we are not running in a user namespace, but are in
+// setuid mode or directly called as `sudo singularity` etc. In this case we
+// exec `nvidia-container-cli` as root via SysProcAttr, having first ensured
+// that it and `ldconfig` are root-owned.
+func NVCLIConfigure(flags []string, rootfs string, userNS bool) error {
+	nvCCLIPath, err := bin.FindBin("nvidia-container-cli")
+	if err != nil {
+		return err
+	}
+	// If we will run nvidia-container-cli as the host root user then ensure
+	// it is trusted, i.e. owned by them.
+	if !userNS && !fs.IsOwner(nvCCLIPath, 0) {
+		return errNvCCLIInsecure
+	}
 
-	// If we will not run as root (i.e. we are in a user namespace), specify --user as a global
-	// flag, or nvidia-container-cli will fail.
-	if !runAsRoot {
+	// The --ldconfig flag is constructed here, as the specified binary
+	// will be called as root in the set-uid flow, so the user should not
+	// be able to influence it from the CLI code.
+	ldConfig, err := bin.FindBin("ldconfig")
+	if err != nil {
+		return err
+	}
+	// If we will run nvidia-container-cli as the host root user then ensure
+	// ldconfig is trusted, i.e. owned by them.
+	if !userNS && !fs.IsOwner(ldConfig, 0) {
+		return errLdconfigInsecure
+	}
+	flags = append(flags, "--ldconfig=@"+ldConfig)
+
+	nccArgs := []string{"configure"}
+	// If we are running in a user namespace specify --user as a global flag,
+	// or nvidia-container-cli will fail.
+	if userNS {
 		nccArgs = []string{"--user", "configure"}
 	}
-
 	nccArgs = append(nccArgs, flags...)
 	nccArgs = append(nccArgs, rootfs)
 
@@ -99,13 +115,15 @@ func NVCLIConfigure(nvCCLIPath string, flags []string, rootfs string, runAsRoot 
 	// nvidia-container-cli requires a default sensible PATH to work correctly.
 	cmd.Env = append(cmd.Env, "PATH="+env.DefaultPath)
 
-	// We need to run nvidia-container-cli as root when we are in the setuid flow
-	// without a user namespace in play.
-	if runAsRoot {
+	// We need to run nvidia-container-cli as host root when there is no user
+	// namespace in play.
+	if !userNS {
+		sylog.Debugf("Running nvidia-container-cli as uid=0 gid=0")
 		cmd.SysProcAttr = &syscall.SysProcAttr{
 			Credential: &syscall.Credential{Uid: 0, Gid: 0},
 		}
 	} else {
+		sylog.Debugf("Running nvidia-container-cli in user namespace")
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
 	cmd.SysProcAttr.AmbientCaps = nVCLIAmbientCaps
@@ -122,12 +140,6 @@ func NVCLIConfigure(nvCCLIPath string, flags []string, rootfs string, runAsRoot 
 func NVCLIEnvToFlags() (flags []string, err error) {
 	// We don't support cgroups related usage yet.
 	flags = []string{"--no-cgroups"}
-
-	ldConfig, err := bin.FindBin("ldconfig")
-	if err != nil {
-		return nil, fmt.Errorf("could not lookup ldconfig: %v", err)
-	}
-	flags = append(flags, "--ldconfig=@"+ldConfig)
 
 	if val := os.Getenv("NVIDIA_VISIBLE_DEVICES"); val != "" {
 		flags = append(flags, "--device="+val)

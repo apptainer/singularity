@@ -132,7 +132,6 @@ type WriteFileArgs struct {
 
 // NvCCLIArgs defines the arguments to NvCCLI.
 type NvCCLIArgs struct {
-	NvCCLIPath string
 	Flags      []string
 	RootFsPath string
 	RunAsRoot  bool
