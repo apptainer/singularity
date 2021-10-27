@@ -98,7 +98,7 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 		return fmt.Errorf("failed to get working directory: %s", err)
 	}
 
-	store := content.NewFileStore(wd)
+	store := content.NewFile(wd)
 	defer store.Close()
 
 	store.AllowPathTraversalOnWrite = true
@@ -124,7 +124,7 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 	}
 	pullHandler := oras.WithPullBaseHandler(images.HandlerFunc(handlerFunc))
 
-	_, _, err = oras.Pull(orasctx.Background(), resolver, spec.String(), store, allowedMediaTypes, pullHandler)
+	_, err = oras.Copy(orasctx.Background(), resolver, spec.String(), store, "", allowedMediaTypes, pullHandler)
 	if err != nil {
 		return fmt.Errorf("unable to pull from registry: %s", err)
 	}
@@ -157,7 +157,7 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 
 	spec, err := reference.Parse(ref)
 	if err != nil {
-		return fmt.Errorf("unable to parse oci reference: %s", err)
+		return fmt.Errorf("unable to parse oci reference: %w", err)
 	}
 
 	// Hostname() will panic if there is no '/' in the locator
@@ -178,38 +178,32 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 		return fmt.Errorf("while getting resolver: %s", err)
 	}
 
-	store := content.NewFileStore("")
+	store := content.NewFile("")
 	defer store.Close()
-
-	conf, err := store.Add("$config", SifConfigMediaTypeV1, "/dev/null")
-	if err != nil {
-		return fmt.Errorf("unable to add manifest config to FileStore: %s", err)
-	}
-	conf.Annotations = nil
 
 	// Get the filename from path and use it as the name in the file store
 	name := filepath.Base(path)
 
 	desc, err := store.Add(name, SifLayerMediaTypeV1, path)
 	if err != nil {
-		return fmt.Errorf("unable to add SIF file to FileStore: %s", err)
+		return fmt.Errorf("unable to add SIF to store: %w", err)
 	}
 
-	descriptors := []ocispec.Descriptor{desc}
-
-	// First push with our null config of the SIF config type. This is the
-	// approach given in most oras CLI and code examples and works with the
-	// majority of registries.
-	if _, err := oras.Push(orasctx.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err == nil {
-		return nil
+	manifest, manifestDesc, config, configDesc, err := content.GenerateManifestAndConfig(nil, nil, desc)
+	if err != nil {
+		return fmt.Errorf("unable to generate manifest and config: %w", err)
 	}
 
-	// If we fail, try to push without a config at all. This will work with e.g.
-	// Harbor 2.2. Unfortunately the error we get when we need to retry this way
-	// isn't useful to be more specific on when this is needed.
-	sylog.Debugf("ORAS push not accepted, retrying without config for registry compatibility")
-	if _, err := oras.Push(orasctx.Background(), resolver, spec.String(), store, descriptors); err != nil {
-		return fmt.Errorf("unable to push: %s", err)
+	if err := store.Load(configDesc, config); err != nil {
+		return fmt.Errorf("unable to load config: %w", err)
+	}
+
+	if err := store.StoreManifest(spec.String(), manifestDesc, manifest); err != nil {
+		return fmt.Errorf("unable to store manifest: %w", err)
+	}
+
+	if _, err = oras.Copy(orasctx.Background(), store, spec.String(), resolver, ""); err != nil {
+		return fmt.Errorf("unable to push: %w", err)
 	}
 
 	return nil
