@@ -46,8 +46,9 @@
 - Paths for `cryptsetup`, `go`, `ldconfig`, `mksquashfs`, `nvidia-container-cli`,
   `unsquashfs` are now found at build time by `mconfig` and written into
   `singularity.conf`. The path to these executables can be overridden by
-  changing the value in `singularity.conf`. If the path is not set in
-  `singularity.conf` then the the executable will be found by searching `$PATH`.
+  changing the value in `singularity.conf`. If the path for any of them other
+  than `cryptsetup` or `ldconfig` is not set in `singularity.conf` then the
+  the executable will be found by searching `$PATH`.
 - When calling `ldconfig` to find GPU libraries, singularity will *not* fall back
   to `/sbin/ldconfig` if the `ldconfig` on `$PATH` errors. If installing in a
   Guix/Nix on environment on top of a standard host distribution you *must* set
