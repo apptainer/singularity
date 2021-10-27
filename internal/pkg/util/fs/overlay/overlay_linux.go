@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -32,7 +32,7 @@ const (
 	nfs    int64 = 0x6969
 	fuse         = 0x65735546
 	ecrypt       = 0xF15F
-	lustre       = 0x0BD00BD0
+	lustre       = 0x0BD00BD0 //nolint:misspell
 	gpfs         = 0x47504653
 )
 
@@ -53,6 +53,7 @@ var incompatibleFs = map[int64]fs{
 		overlayDir: lowerDir | upperDir,
 	},
 	// LUSTRE filesystem
+	//nolint:misspell
 	lustre: {
 		name:       "LUSTRE",
 		overlayDir: lowerDir | upperDir,
