@@ -16,7 +16,6 @@ require (
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/docker/docker v20.10.10+incompatible
 	github.com/fatih/color v1.13.0
-	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/go-log/log v0.2.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.4.2
@@ -46,13 +45,12 @@ require (
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
-	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	golang.org/x/sys v0.0.0-20210925032602-92d5a993a665
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
 	mvdan.cc/sh/v3 v3.4.1-0.20211012151248-7e067a88c992
-	oras.land/oras-go v0.4.0
-	rsc.io/letsencrypt v0.0.3 // indirect
+	oras.land/oras-go v0.5.0
 )
 
 replace golang.org/x/crypto => github.com/hpcng/golang-x-crypto v0.0.0-20210830200829-e6b35e3fb874
