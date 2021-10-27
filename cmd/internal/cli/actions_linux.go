@@ -778,8 +778,7 @@ func SetGPUConfig(engineConfig *singularityConfig.EngineConfig) error {
 		if !fakeRootPriv {
 			return setNvCCLIConfig(engineConfig)
 		}
-		sylog.Infof("nvidia-container-cli not available / not supported - using legacy GPU configuration")
-		return setNVLegacyConfig(engineConfig)
+		return fmt.Errorf("--fakeroot does not support --nvccli in set-uid installations")
 	}
 
 	if Rocm {

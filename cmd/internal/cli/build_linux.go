@@ -36,6 +36,11 @@ import (
 )
 
 func fakerootExec(cmdArgs []string) {
+	if buildArgs.nvccli && !buildArgs.noTest {
+		sylog.Warningf("Due to writable-tmpfs limitations, %%test sections will fail with --nvccli & --fakeroot")
+		sylog.Infof("Use -T / --notest to disable running tests during the build")
+	}
+
 	useSuid := buildcfg.SINGULARITY_SUID_INSTALL == 1
 
 	short := "-" + buildFakerootFlag.ShortHand
