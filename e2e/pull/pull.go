@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,6 +8,7 @@
 package pull
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -21,11 +22,8 @@ import (
 	"github.com/hpcng/singularity/e2e/internal/testhelper"
 	syoras "github.com/hpcng/singularity/internal/pkg/client/oras"
 	"github.com/hpcng/singularity/internal/pkg/util/uri"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
 	"oras.land/oras-go/pkg/content"
-	"oras.land/oras-go/pkg/context"
 	"oras.land/oras-go/pkg/oras"
 )
 
@@ -413,13 +411,12 @@ func checkPullResult(t *testing.T, tt testStruct) {
 // to test the pull validation
 // We can also set the layer mediaType - so we can push images with older media types
 // to verify that they can still be pulled.
-func orasPushNoCheck(file, ref, layerMediaType string) error {
+func orasPushNoCheck(path, ref, layerMediaType string) error {
 	ref = strings.TrimPrefix(ref, "//")
 
 	spec, err := reference.Parse(ref)
 	if err != nil {
-		err = errors.Wrapf(err, "parse OCI reference %s", ref)
-		return fmt.Errorf("unable to parse oci reference: %+v", err)
+		return fmt.Errorf("unable to parse oci reference: %w", err)
 	}
 
 	// Hostname() will panic if there is no '/' in the locator
@@ -436,29 +433,32 @@ func orasPushNoCheck(file, ref, layerMediaType string) error {
 
 	resolver := docker.NewResolver(docker.ResolverOptions{})
 
-	store := content.NewFileStore("")
+	store := content.NewFile("")
 	defer store.Close()
 
-	conf, err := store.Add("$config", syoras.SifConfigMediaTypeV1, "/dev/null")
-	if err != nil {
-		err = errors.Wrap(err, "adding manifest config to file store")
-		return fmt.Errorf("unable to add manifest config to FileStore: %+v", err)
-	}
-	conf.Annotations = nil
+	// Get the filename from path and use it as the name in the file store
+	name := filepath.Base(path)
 
-	// use last element of filepath as file name in annotation
-	fileName := filepath.Base(file)
-	desc, err := store.Add(fileName, layerMediaType, file)
+	desc, err := store.Add(name, layerMediaType, path)
 	if err != nil {
-		err = errors.Wrap(err, "adding manifest SIF file to file store")
-		return fmt.Errorf("unable to add SIF file to FileStore: %+v", err)
+		return fmt.Errorf("unable to add SIF to store: %w", err)
 	}
 
-	descriptors := []ocispec.Descriptor{desc}
+	manifest, manifestDesc, config, configDesc, err := content.GenerateManifestAndConfig(nil, nil, desc)
+	if err != nil {
+		return fmt.Errorf("unable to generate manifest and config: %w", err)
+	}
 
-	if _, err := oras.Push(context.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err != nil {
-		err = errors.Wrap(err, "pushing to oras")
-		return fmt.Errorf("unable to push: %+v", err)
+	if err := store.Load(configDesc, config); err != nil {
+		return fmt.Errorf("unable to load config: %w", err)
+	}
+
+	if err := store.StoreManifest(spec.String(), manifestDesc, manifest); err != nil {
+		return fmt.Errorf("unable to store manifest: %w", err)
+	}
+
+	if _, err := oras.Copy(context.Background(), store, spec.String(), resolver, ""); err != nil {
+		return fmt.Errorf("unable to push: %w", err)
 	}
 
 	return nil
