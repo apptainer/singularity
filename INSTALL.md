@@ -87,7 +87,7 @@ run:
 <!-- markdownlint-disable MD013 -->
 
 ```sh
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.42.0
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -111,7 +111,7 @@ To build a specific version of Singularity, check out a
 for example:
 
 ```sh
-git checkout v3.8.2
+git checkout v3.8.3
 ```
 
 ## Compiling Singularity
@@ -167,7 +167,7 @@ To build from a release source tarball do these commands:
 <!-- markdownlint-disable MD013 -->
 
 ```sh
-export VERSION=3.8.2  # this is the singularity version, change as you need
+export VERSION=3.8.3  # this is the singularity version, change as you need
 
 # Fetch the source
 wget https://github.com/hpcng/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz

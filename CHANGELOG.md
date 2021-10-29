@@ -41,8 +41,18 @@
   Guix/Nix on environment on top of a standard host distribution you *must* set
   `ldconfig path = /sbin/ldconfig` to use the host distribution `ldconfig` to
   find GPU libraries.
-- An invalid remote build source (bootstrap) will be identified before
+- Example log-plugin rewritten as a CLI callback that can log all commands
+  executed, intead of only container execution, and has access to command
+  arguments.
+  - An invalid remote build source (bootstrap) will be identified before
   attempting to submit the build.
+
+## v3.8.3 - \[2021-09-07\]
+
+### Bug fixes
+
+- Fix regression introduced in 3.8.1 that caused bind mounts without a
+  destination to be added twice.
 
 ## v3.8.2 - \[2021-08-31\]
 
