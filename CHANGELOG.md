@@ -28,6 +28,9 @@
   `type=bind,source=<src>,destination=<dst>[,options...]` format. This improves
   CLI compatibility with other runtimes, and allows binding paths containing
   `:` and `,` characters (using CSV style escaping).
+- Perform concurrent multi-part downloads for `library://` URIs. Uses 3
+  concurrent downloads by default, and is configurable in `singularity.conf` or
+  via environment variables.
 
 ### Changed defaults / behaviours
 

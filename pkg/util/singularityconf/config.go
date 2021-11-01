@@ -70,7 +70,7 @@ type File struct {
 	NvidiaContainerCliPath  string   `directive:"nvidia-container-cli path"`
 	UnsquashfsPath          string   `directive:"unsquashfs path"`
 	ImageDriver             string   `directive:"image driver"`
-	DownloadConcurrency     uint     `default:"1" directive:"download concurrency"`
+	DownloadConcurrency     uint     `default:"3" directive:"download concurrency"`
 	DownloadPartSize        uint     `default:"5242880" directive:"download part size"`
 	DownloadBufferSize      uint     `default:"32768" directive:"download buffer size"`
 }
@@ -447,20 +447,20 @@ shared loop devices = {{ if eq .SharedLoopDevices true }}yes{{ else }}no{{ end }
 image driver = {{ .ImageDriver }}
 
 # DOWNLOAD CONCURRENCY: [UINT]
-# DEFAULT: 1
+# DEFAULT: 3
 # This option specifies how many concurrent streams when downloading (pulling)
 # an image from cloud library.
-# download concurrency = {{ .DownloadConcurrency }}
+download concurrency = {{ .DownloadConcurrency }}
 
 # DOWNLOAD PART SIZE: [UINT]
 # DEFAULT: 5242880
 # This option specifies the size of each part when concurrent downloads are
 # enabled.
-# download part size = {{ .DownloadPartSize }}
+download part size = {{ .DownloadPartSize }}
 
 # DOWNLOAD BUFFER SIZE: [UINT]
 # DEFAULT: 32768
 # This option specifies the transfer buffer size when concurrent downloads
 # are enabled.
-# download buffer size = {{ .DownloadBufferSize }}
+download buffer size = {{ .DownloadBufferSize }}
 `
