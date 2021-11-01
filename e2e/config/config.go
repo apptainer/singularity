@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/hpcng/singularity/e2e/internal/e2e"
@@ -19,11 +21,83 @@ import (
 )
 
 type configTests struct {
-	env e2e.TestEnv
+	env            e2e.TestEnv
+	sifImage       string
+	encryptedImage string
+	squashfsImage  string
+	ext3Image      string
+	sandboxImage   string
+	pemPublic      string
+	pemPrivate     string
+}
+
+// prepImages creates containers covering all image formats to test the
+// `allow container xxx` directives.
+func (c *configTests) prepImages(t *testing.T) (cleanup func(t *testing.T)) {
+	require.MkfsExt3(t)
+	require.Command(t, "truncate")
+	require.Command(t, "mksquashfs")
+
+	tmpDir, cleanup := e2e.MakeTempDir(t, "", "config-", "CONFIG")
+
+	// An unencrypted SIF
+	e2e.EnsureImage(t, c.env)
+	c.sifImage = c.env.ImagePath
+
+	// An encrypted SIF
+	c.pemPublic, c.pemPrivate = e2e.GeneratePemFiles(t, tmpDir)
+	c.encryptedImage = filepath.Join(tmpDir, "encrypted.sif")
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("PrepareEncryptedSIF"),
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--encrypt", "--pem-path", c.pemPublic, c.encryptedImage, c.sifImage),
+		e2e.ExpectExit(0),
+	)
+
+	// A sandbox directory
+	c.sandboxImage = filepath.Join(tmpDir, "sandbox")
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("PrepareSandbox"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("-s", c.sandboxImage, c.sifImage),
+		e2e.ExpectExit(0),
+	)
+
+	// A bare ext3 image
+	t.Run("PrepareExt3", func(t *testing.T) {
+		c.ext3Image = filepath.Join(tmpDir, "ext3.img")
+		cmd := exec.Command("truncate", "-s", "16M", c.ext3Image)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			defer cleanup(t)
+			t.Fatalf("Error creating blank ext3 image: %v: %s", err, out)
+		}
+		cmd = exec.Command("mkfs.ext3", "-d", c.sandboxImage, c.ext3Image)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			defer cleanup(t)
+			t.Fatalf("Error creating populated ext3 image: %v: %s", err, out)
+		}
+	})
+
+	// A bare squashfs image
+	t.Run("PrepareSquashfs", func(t *testing.T) {
+		c.squashfsImage = filepath.Join(tmpDir, "squashfs.img")
+		cmd := exec.Command("mksquashfs", c.sandboxImage, c.squashfsImage)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			defer cleanup(t)
+			t.Fatalf("Error creating squashfs image: %v: %s", err, out)
+		}
+	})
+
+	return cleanup
 }
 
 func (c configTests) configGlobal(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
+	cleanup := c.prepImages(t)
+	defer cleanup(t)
 
 	setDirective := func(t *testing.T, directive, value string) {
 		c.env.RunSingularity(
@@ -346,8 +420,40 @@ func (c configTests) configGlobal(t *testing.T) {
 			exit:           0,
 		},
 		{
+			name:           "AllowContainerSifNo",
+			argv:           []string{c.sifImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow container sif",
+			directiveValue: "no",
+			exit:           255,
+		},
+		{
+			name:           "AllowContainerSifYes",
+			argv:           []string{c.sifImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow container sif",
+			directiveValue: "yes",
+			exit:           0,
+		},
+		{
+			name:           "AllowContainerEncryptedNo",
+			argv:           []string{"--pem-path", c.pemPrivate, c.encryptedImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow container encrypted",
+			directiveValue: "no",
+			exit:           255,
+		},
+		{
+			name:           "AllowContainerEncryptedYes",
+			argv:           []string{"--pem-path", c.pemPrivate, c.encryptedImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow container encrypted",
+			directiveValue: "yes",
+			exit:           0,
+		},
+		{
 			name:           "AllowContainerSquashfsNo",
-			argv:           []string{c.env.ImagePath, "true"},
+			argv:           []string{c.squashfsImage, "true"},
 			profile:        e2e.UserProfile,
 			directive:      "allow container squashfs",
 			directiveValue: "no",
@@ -355,24 +461,40 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "AllowContainerSquashfsYes",
-			argv:           []string{c.env.ImagePath, "true"},
+			argv:           []string{c.squashfsImage, "true"},
 			profile:        e2e.UserProfile,
 			directive:      "allow container squashfs",
 			directiveValue: "yes",
 			exit:           0,
 		},
 		{
+			name:           "AllowContainerExfs3No",
+			argv:           []string{c.ext3Image, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow container extfs",
+			directiveValue: "no",
+			exit:           255,
+		},
+		{
+			name:           "AllowContainerExtfsYes",
+			argv:           []string{c.ext3Image, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow container extfs",
+			directiveValue: "yes",
+			exit:           0,
+		},
+		{
 			name:           "AllowContainerDirNo",
-			argv:           []string{c.env.ImagePath, "true"},
-			profile:        e2e.UserNamespaceProfile,
+			argv:           []string{c.sandboxImage, "true"},
+			profile:        e2e.UserProfile,
 			directive:      "allow container dir",
 			directiveValue: "no",
 			exit:           255,
 		},
 		{
 			name:           "AllowContainerDirYes",
-			argv:           []string{c.env.ImagePath, "true"},
-			profile:        e2e.UserNamespaceProfile,
+			argv:           []string{c.sandboxImage, "true"},
+			profile:        e2e.UserProfile,
 			directive:      "allow container dir",
 			directiveValue: "yes",
 			exit:           0,

@@ -253,6 +253,40 @@ func (i *Image) GetDataPartitions() ([]Section, error) {
 	return i.getPartitions(DataUsage)
 }
 
+// HasEncryptedRootFs returns true if the image contains an encrypted
+// rootfs partition.
+func (i *Image) HasEncryptedRootFs() (encrypted bool, err error) {
+	rootFsParts, err := i.GetRootFsPartitions()
+	if err != nil {
+		return false, fmt.Errorf("while getting root FS partitions: %v", err)
+	}
+
+	for _, p := range rootFsParts {
+		if p.Type == ENCRYPTSQUASHFS {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// initFile ensures file descriptor is associated to a file handle.
+func (i *Image) initFile() error {
+	if i.File != nil {
+		return nil
+	}
+	if i.Path == "" {
+		return fmt.Errorf("no image path")
+	}
+	if i.Fd == emptyFd || i.Source == "" {
+		return fmt.Errorf("%s is not open", i.Path)
+	}
+	if err := os.NewFile(i.Fd, i.Path); err == nil {
+		return fmt.Errorf("image file descriptor for %s is not valid", i.Path)
+	}
+	return nil
+}
+
 // writeLocks tracks write locks for the current process.
 var writeLocks = make(map[string][]Section)
 

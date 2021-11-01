@@ -1381,25 +1381,41 @@ func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, 
 		}
 	}
 
-	for _, p := range imgObject.Partitions {
-		switch p.Type {
-		case image.SANDBOX:
-			if !e.EngineConfig.File.AllowContainerDir {
-				return nil, fmt.Errorf("configuration disallows users from running sandbox based containers")
-			}
-		case image.EXT3:
-			if !e.EngineConfig.File.AllowContainerExtfs {
-				return nil, fmt.Errorf("configuration disallows users from running extFS based containers")
-			}
-		case image.SQUASHFS:
-			if !e.EngineConfig.File.AllowContainerSquashfs {
-				return nil, fmt.Errorf("configuration disallows users from running squashFS based containers")
-			}
-		case image.ENCRYPTSQUASHFS:
-			if !e.EngineConfig.File.AllowContainerEncrypted {
-				return nil, fmt.Errorf("configuration disallows users from running encrypted containers")
-			}
+	switch imgObject.Type {
+	// Bare SquashFS
+	case image.SQUASHFS:
+		if !e.EngineConfig.File.AllowContainerSquashfs {
+			return nil, fmt.Errorf("configuration disallows users from running squashFS containers")
 		}
+	// Bare EXT3
+	case image.EXT3:
+		if !e.EngineConfig.File.AllowContainerExtfs {
+			return nil, fmt.Errorf("configuration disallows users from running extFS containers")
+		}
+	// Bare sandbox directory
+	case image.SANDBOX:
+		if !e.EngineConfig.File.AllowContainerDir {
+			return nil, fmt.Errorf("configuration disallows users from running sandbox containers")
+		}
+	// SIF
+	case image.SIF:
+		// Check if SIF contains an encrypted rootfs partition.
+		// We don't support encryption for other partitions at present.
+		encrypted, err := imgObject.HasEncryptedRootFs()
+		if err != nil {
+			return nil, fmt.Errorf("while checking for encrypted root FS: %v", err)
+		}
+		// SIF with encryption
+		if encrypted && !e.EngineConfig.File.AllowContainerEncrypted {
+			return nil, fmt.Errorf("configuration disallows users from running encrypted SIF containers")
+		}
+		// SIF without encryption - regardless of rootfs filesystem type
+		if !encrypted && !e.EngineConfig.File.AllowContainerSIF {
+			return nil, fmt.Errorf("configuration disallows users from running unencrypted SIF containers")
+		}
+	// We shouldn't be able to run anything else, but make sure we don't!
+	default:
+		return nil, fmt.Errorf("unknown image format %d", imgObject.Type)
 	}
 
 	return imgObject, imgErr
