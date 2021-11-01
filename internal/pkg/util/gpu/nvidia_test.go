@@ -6,7 +6,6 @@
 package gpu
 
 import (
-	"os"
 	"reflect"
 	"sort"
 	"testing"
@@ -15,7 +14,7 @@ import (
 func TestNVCLIEnvToFlags(t *testing.T) {
 	tests := []struct {
 		name      string
-		env       map[string]string
+		env       []string
 		wantFlags []string
 		wantErr   bool
 	}{
@@ -30,8 +29,8 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 		},
 		{
 			name: "device",
-			env: map[string]string{
-				"NVIDIA_VISIBLE_DEVICES": "all",
+			env: []string{
+				"NVIDIA_VISIBLE_DEVICES=all",
 			},
 			wantFlags: []string{
 				"--no-cgroups",
@@ -43,8 +42,8 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 		},
 		{
 			name: "mig-config",
-			env: map[string]string{
-				"NVIDIA_MIG_CONFIG_DEVICES": "all",
+			env: []string{
+				"NVIDIA_MIG_CONFIG_DEVICES=all",
 			},
 			wantFlags: []string{
 				"--no-cgroups",
@@ -56,8 +55,8 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 		},
 		{
 			name: "mig-monitor",
-			env: map[string]string{
-				"NVIDIA_MIG_MONITOR_DEVICES": "all",
+			env: []string{
+				"NVIDIA_MIG_MONITOR_DEVICES=all",
 			},
 			wantFlags: []string{
 				"--no-cgroups",
@@ -69,8 +68,8 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 		},
 		{
 			name: "compute-only",
-			env: map[string]string{
-				"NVIDIA_DRIVER_CAPABILITIES": "compute",
+			env: []string{
+				"NVIDIA_DRIVER_CAPABILITIES=compute",
 			},
 			wantFlags: []string{
 				"--no-cgroups",
@@ -80,8 +79,8 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 		},
 		{
 			name: "all-caps",
-			env: map[string]string{
-				"NVIDIA_DRIVER_CAPABILITIES": "compute,compat32,graphics,utility,video,display",
+			env: []string{
+				"NVIDIA_DRIVER_CAPABILITIES=compute,compat32,graphics,utility,video,display",
 			},
 			wantFlags: []string{
 				"--no-cgroups",
@@ -96,15 +95,15 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 		},
 		{
 			name: "invalid-caps",
-			env: map[string]string{
-				"NVIDIA_DRIVER_CAPABILITIES": "notacap",
+			env: []string{
+				"NVIDIA_DRIVER_CAPABILITIES=notacap",
 			},
 			wantErr: true,
 		},
 		{
 			name: "single-require",
-			env: map[string]string{
-				"NVIDIA_REQUIRE_CUDA": "cuda>=9.0",
+			env: []string{
+				"NVIDIA_REQUIRE_CUDA=cuda>=9.0",
 			},
 			wantFlags: []string{
 				"--no-cgroups",
@@ -116,9 +115,9 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 		},
 		{
 			name: "multi-require",
-			env: map[string]string{
-				"NVIDIA_REQUIRE_BRAND": "brand=GRID",
-				"NVIDIA_REQUIRE_CUDA":  "cuda>=9.0",
+			env: []string{
+				"NVIDIA_REQUIRE_BRAND=brand=GRID",
+				"NVIDIA_REQUIRE_CUDA=cuda>=9.0",
 			},
 			wantFlags: []string{
 				"--no-cgroups",
@@ -131,10 +130,10 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 		},
 		{
 			name: "disable-require",
-			env: map[string]string{
-				"NVIDIA_REQUIRE_BRAND":   "brand=GRID",
-				"NVIDIA_REQUIRE_CUDA":    "cuda>=9.0",
-				"NVIDIA_DISABLE_REQUIRE": "1",
+			env: []string{
+				"NVIDIA_REQUIRE_BRAND=brand=GRID",
+				"NVIDIA_REQUIRE_CUDA=cuda>=9.0",
+				"NVIDIA_DISABLE_REQUIRE=1",
 			},
 			wantFlags: []string{
 				"--no-cgroups",
@@ -146,12 +145,7 @@ func TestNVCLIEnvToFlags(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for key, val := range tt.env {
-				os.Setenv(key, val)
-				defer os.Unsetenv(key)
-			}
-
-			gotFlags, err := NVCLIEnvToFlags()
+			gotFlags, err := NVCLIEnvToFlags(tt.env)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NVCLIEnvToFlags() error = %v, wantErr %v", err, tt.wantErr)
 				return

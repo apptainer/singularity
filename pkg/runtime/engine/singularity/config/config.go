@@ -139,7 +139,7 @@ type JSONConfig struct {
 	Contain           bool              `json:"container,omitempty"`
 	NvLegacy          bool              `json:"nvLegacy,omitempty"`
 	NvCCLI            bool              `json:"nvCCLI,omitempty"`
-	NvCCLIFlags       []string          `json:"NvCCLIFlags,omitempty"`
+	NvCCLIEnv         []string          `json:"NvCCLIEnv,omitempty"`
 	Rocm              bool              `json:"rocm,omitempty"`
 	CustomHome        bool              `json:"customHome,omitempty"`
 	Instance          bool              `json:"instance,omitempty"`
@@ -245,14 +245,14 @@ func (e *EngineConfig) GetNvCCLI() bool {
 	return e.JSON.NvCCLI
 }
 
-// SetNVCCLIFlags sets flags to call nvidia-container-cli with for CUDA setup
-func (e *EngineConfig) SetNvCCLIFlags(NvCCLIFlags []string) {
-	e.JSON.NvCCLIFlags = NvCCLIFlags
+// SetNVCCLIEnv sets env vars holding options for nvidia-container-cli GPU setup
+func (e *EngineConfig) SetNvCCLIEnv(NvCCLIEnv []string) {
+	e.JSON.NvCCLIEnv = NvCCLIEnv
 }
 
-// GetNvCCLIFlags returns the flags to use in an nvidia-container-cli call
-func (e *EngineConfig) GetNvCCLIFlags() []string {
-	return e.JSON.NvCCLIFlags
+// GetNVCCLIEnv returns env vars holding options for nvidia-container-cli GPU setup
+func (e *EngineConfig) GetNvCCLIEnv() []string {
+	return e.JSON.NvCCLIEnv
 }
 
 // SetRocm sets rocm flag to bind rocm libraries into containee.JSON.
