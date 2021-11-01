@@ -37,10 +37,11 @@ type File struct {
 	EnableFusemount         bool     `default:"yes" authorized:"yes,no" directive:"enable fusemount"`
 	EnableUnderlay          bool     `default:"yes" authorized:"yes,no" directive:"enable underlay"`
 	MountSlave              bool     `default:"yes" authorized:"yes,no" directive:"mount slave"`
+	AllowContainerSIF       bool     `default:"yes" authorized:"yes,no" directive:"allow container sif"`
+	AllowContainerEncrypted bool     `default:"yes" authorized:"yes,no" directive:"allow container encrypted"`
 	AllowContainerSquashfs  bool     `default:"yes" authorized:"yes,no" directive:"allow container squashfs"`
 	AllowContainerExtfs     bool     `default:"yes" authorized:"yes,no" directive:"allow container extfs"`
 	AllowContainerDir       bool     `default:"yes" authorized:"yes,no" directive:"allow container dir"`
-	AllowContainerEncrypted bool     `default:"yes" authorized:"yes,no" directive:"allow container encrypted"`
 	AlwaysUseNv             bool     `default:"no" authorized:"yes,no" directive:"always use nv"`
 	UseNvCCLI               bool     `default:"no" authorized:"yes,no" directive:"use nvidia-container-cli"`
 	AlwaysUseRocm           bool     `default:"no" authorized:"yes,no" directive:"always use rocm"`
@@ -265,10 +266,17 @@ sessiondir max size = {{ .SessiondirMaxSize }}
 # DEFAULT: yes
 # This feature limits what kind of containers that Singularity will allow
 # users to use (note this does not apply for root).
+#
+# Allow use of unencrypted SIF containers
+allow container sif = {{ if eq .AllowContainerSIF true}}yes{{ else }}no{{ end }}
+#
+# Allow use of encrypted SIF containers
+allow container encrypted = {{ if eq .AllowContainerEncrypted true }}yes{{ else }}no{{ end }}
+#
+# Allow use of non-SIF image formats
 allow container squashfs = {{ if eq .AllowContainerSquashfs true }}yes{{ else }}no{{ end }}
 allow container extfs = {{ if eq .AllowContainerExtfs true }}yes{{ else }}no{{ end }}
 allow container dir = {{ if eq .AllowContainerDir true }}yes{{ else }}no{{ end }}
-allow container encrypted = {{ if eq .AllowContainerEncrypted true }}yes{{ else }}no{{ end }}
 
 # ALLOW NET USERS: [STRING]
 # DEFAULT: NULL

@@ -2,8 +2,6 @@
 
 ## Changes since last release
 
-### New features / functionalities
-
 - `--writable-tmpfs` can be used with `singularity build` to run
   the `%test` section of the build with a ephemeral tmpfs overlay,
   permitting tests that write to the container filesystem.
@@ -77,6 +75,17 @@
   GPUs inside a container run with `--nvccli`.
 - Build `--bind` option allows to set multiple bind mount without specifying
   the `--bind` option for each bindings.
+- The behaviour of the `allow container` directives in `singularity.conf` has
+  been modified, to support more intuitive limitations on the usage of SIF and non-SIF
+  container images. If you use these directives, _you may need to make changes
+  to singularity.conf to preserve behaviour_.
+  - A new `allow container sif` directive permits or denies usage of
+    _unencrypted_ SIF images, irrespective of the filesystem(s) inside the SIF.
+  - The `allow container encrypted` directive permits or denies usage of SIF
+    images with an encrypted root filesystem.
+  - The `allow container squashfs/extfs` directives in `singularity.conf`
+    permit or deny usage of bare SquashFS and EXT image files only.
+  - The effect of the `allow container dir` directive is unchanged.
 
 ## v3.8.3 - \[2021-09-07\]
 
