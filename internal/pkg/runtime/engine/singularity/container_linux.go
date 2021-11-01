@@ -273,7 +273,7 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		// If we are not inside a user namespace then the NVCCLI call must exec nvidia-container-cli
 		// as the host uid 0. This may happen via the setuid starter, or from singularity being run
 		// directly as uid 0, e.g. `sudo singularity`.
-		if err := c.rpcOps.NvCCLI(engine.EngineConfig.GetNvCCLIFlags(), c.session.FinalPath(), c.userNS); err != nil {
+		if err := c.rpcOps.NvCCLI(engine.EngineConfig.GetNvCCLIEnv(), c.session.FinalPath(), c.userNS); err != nil {
 			return err
 		}
 	}

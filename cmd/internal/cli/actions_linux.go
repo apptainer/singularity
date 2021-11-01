@@ -799,11 +799,15 @@ func setNvCCLIConfig(engineConfig *singularityConfig.EngineConfig) (err error) {
 		sylog.Warningf("When using nvidia-container-cli with --contain NVIDIA_VISIBLE_DEVICES must be set or no GPUs will be available in container.")
 	}
 
-	nvCCLIFlags, err := gpu.NVCLIEnvToFlags()
-	if err != nil {
-		return err
+	// Pass NVIDIA_ env vars that will be converted to nvidia-container-cli options
+	nvCCLIEnv := []string{}
+	for _, e := range os.Environ() {
+		if strings.HasPrefix(e, "NVIDIA_") {
+			nvCCLIEnv = append(nvCCLIEnv, e)
+		}
 	}
-	engineConfig.SetNvCCLIFlags(nvCCLIFlags)
+	engineConfig.SetNvCCLIEnv(nvCCLIEnv)
+
 	if UserNamespace && !IsWritable {
 		return fmt.Errorf("nvidia-container-cli requires --writable with user namespace/fakeroot")
 	}

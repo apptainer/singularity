@@ -73,7 +73,7 @@ var nVCLIAmbientCaps = []uintptr{
 // setuid mode or directly called as `sudo singularity` etc. In this case we
 // exec `nvidia-container-cli` as root via SysProcAttr, having first ensured
 // that it and `ldconfig` are root-owned.
-func NVCLIConfigure(flags []string, rootfs string, userNS bool) error {
+func NVCLIConfigure(nvidiaEnv []string, rootfs string, userNS bool) error {
 	nvCCLIPath, err := bin.FindBin("nvidia-container-cli")
 	if err != nil {
 		return err
@@ -82,6 +82,12 @@ func NVCLIConfigure(flags []string, rootfs string, userNS bool) error {
 	// it is trusted, i.e. owned by them.
 	if !userNS && !fs.IsOwner(nvCCLIPath, 0) {
 		return errNvCCLIInsecure
+	}
+
+	// Translate the passed in NVIDIA_ env vars to option flags
+	flags, err := NVCLIEnvToFlags(nvidiaEnv)
+	if err != nil {
+		return err
 	}
 
 	// The --ldconfig flag is constructed here, as the specified binary
@@ -134,48 +140,69 @@ func NVCLIConfigure(flags []string, rootfs string, userNS bool) error {
 	return nil
 }
 
-// NVCLIEnvToFlags reads the environment variables supported by nvidia-container-runtime
-// and converts them to flags for nvidia-container-cli.
-// See: https://github.com/nvidia/nvidia-container-runtime#environment-variables-oci-spec
-func NVCLIEnvToFlags() (flags []string, err error) {
+// NVCLIEnvToFlags reads the passed in NVIDIA_ environment variables supported
+// by nvidia-container-runtime and converts them to flags for
+// nvidia-container-cli. See:
+// https://github.com/nvidia/nvidia-container-runtime#environment-variables-oci-spec
+func NVCLIEnvToFlags(nvidiaEnv []string) (flags []string, err error) {
 	// We don't support cgroups related usage yet.
 	flags = []string{"--no-cgroups"}
+	requireFlags := []string{}
+	disableRequire := false
+	defaultDriverCaps := true
 
-	if val := os.Getenv("NVIDIA_VISIBLE_DEVICES"); val != "" {
-		flags = append(flags, "--device="+val)
-	}
-
-	if val := os.Getenv("NVIDIA_MIG_CONFIG_DEVICES"); val != "" {
-		flags = append(flags, "--mig-config="+val)
-	}
-
-	if val := os.Getenv("NVIDIA_MIG_MONITOR_DEVICES"); val != "" {
-		flags = append(flags, "--mig-monitor="+val)
-	}
-
-	// Driver capabilities have a default, but can be overridden.
-	caps := nVDriverDefaultCapabilities
-	if val := os.Getenv("NVIDIA_DRIVER_CAPABILITIES"); val != "" {
-		caps = strings.Split(val, ",")
-	}
-
-	for _, cap := range caps {
-		if slice.ContainsString(nVDriverCapabilities, cap) {
-			flags = append(flags, "--"+cap)
-		} else {
-			return nil, fmt.Errorf("unknown NVIDIA_DRIVER_CAPABILITIES value: %s", cap)
+	for _, e := range nvidiaEnv {
+		pair := strings.SplitN(e, "=", 2)
+		if len(pair) != 2 {
+			return []string{}, fmt.Errorf("can't process environment variable %s", e)
 		}
-	}
 
-	// One --require flag for each NVIDIA_REQUIRE_* environment
-	// https://github.com/nvidia/nvidia-container-runtime#nvidia_require_
-	if val := os.Getenv("NVIDIA_DISABLE_REQUIRE"); val == "" {
-		for _, e := range os.Environ() {
-			if strings.HasPrefix(e, "NVIDIA_REQUIRE_") {
-				req := strings.SplitN(e, "=", 2)[1]
-				flags = append(flags, "--require="+req)
+		if pair[0] == "NVIDIA_VISIBLE_DEVICES" && pair[1] != "" {
+			flags = append(flags, "--device="+pair[1])
+		}
+
+		if pair[0] == "NVIDIA_MIG_CONFIG_DEVICES" && pair[1] != "" {
+			flags = append(flags, "--mig-config="+pair[1])
+		}
+
+		if pair[0] == "NVIDIA_MIG_MONITOR_DEVICES" && pair[1] != "" {
+			flags = append(flags, "--mig-monitor="+pair[1])
+		}
+
+		// Driver capabilities have a default, but can be overridden.
+		if pair[0] == "NVIDIA_DRIVER_CAPABILITIES" && pair[1] != "" {
+			defaultDriverCaps = false
+			caps := strings.Split(pair[1], ",")
+
+			for _, cap := range caps {
+				if slice.ContainsString(nVDriverCapabilities, cap) {
+					flags = append(flags, "--"+cap)
+				} else {
+					return nil, fmt.Errorf("unknown NVIDIA_DRIVER_CAPABILITIES value: %s", cap)
+				}
 			}
 		}
+
+		// One --require flag for each NVIDIA_REQUIRE_* environment
+		// https://github.com/nvidia/nvidia-container-runtime#nvidia_require_
+		if strings.HasPrefix(pair[0], "NVIDIA_REQUIRE_") {
+			requireFlags = append(requireFlags, "--require="+pair[1])
+		}
+
+		if pair[0] == "NVIDIA_DISABLE_REQUIRE" {
+			disableRequire = true
+		}
+
+	}
+
+	if defaultDriverCaps {
+		for _, cap := range nVDriverDefaultCapabilities {
+			flags = append(flags, "--"+cap)
+		}
+	}
+
+	if !disableRequire {
+		flags = append(flags, requireFlags...)
 	}
 
 	return flags, nil
