@@ -73,7 +73,7 @@ func getResolver(ociAuth *ocitypes.DockerAuthConfig) (remotes.Resolver, error) {
 }
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
-func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
+func DownloadImage(ctx context.Context, imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
@@ -124,7 +124,7 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 	}
 	pullHandler := oras.WithPullBaseHandler(images.HandlerFunc(handlerFunc))
 
-	_, err = oras.Copy(orasctx.Background(), resolver, spec.String(), store, "", allowedMediaTypes, pullHandler)
+	_, err = oras.Copy(orasctx.WithLoggerDiscarded(ctx), resolver, spec.String(), store, "", allowedMediaTypes, pullHandler)
 	if err != nil {
 		return fmt.Errorf("unable to pull from registry: %s", err)
 	}
@@ -146,7 +146,7 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 
 // UploadImage uploads the image specified by path and pushes it to the provided oci reference,
 // it will use credentials if supplied
-func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
+func UploadImage(ctx context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	// ensure that are uploading a SIF
 	if err := ensureSIF(path); err != nil {
 		return err
@@ -202,7 +202,7 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 		return fmt.Errorf("unable to store manifest: %w", err)
 	}
 
-	if _, err = oras.Copy(orasctx.Background(), store, spec.String(), resolver, ""); err != nil {
+	if _, err = oras.Copy(orasctx.WithLoggerDiscarded(ctx), store, spec.String(), resolver, ""); err != nil {
 		return fmt.Errorf("unable to push: %w", err)
 	}
 
