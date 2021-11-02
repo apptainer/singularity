@@ -16,6 +16,8 @@
 
 ### Changed defaults / behaviours
 
+- When starting a container, in case of problem with the cwd, istead of trying to
+  default to a different directory, return error to prevent unexpected behaviors #6086
 - LABELs from Docker/OCI images are now inherited. This fixes a longstanding
   regression from Singularity 2.x. Note that you will now need to use
   `--force` in a build to override a label that already exists in the source

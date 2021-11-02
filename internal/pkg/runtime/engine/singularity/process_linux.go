@@ -70,11 +70,13 @@ func (e *EngineOperations) StartProcess(masterConnFd int) error {
 	isInstance := e.EngineConfig.GetInstance()
 	bootInstance := isInstance && e.EngineConfig.GetBootInstance()
 	shimProcess := false
-
+	// Instead of trying to use a different cwd, return error to prevent
+	// unexpected behaviors #6086
 	if err := os.Chdir(e.EngineConfig.OciConfig.Process.Cwd); err != nil {
-		if err := os.Chdir(e.EngineConfig.GetHomeDest()); err != nil {
-			os.Chdir("/")
-		}
+		return fmt.Errorf("failed to set working directory: %s", err)
+		// if err := os.Chdir(e.EngineConfig.GetHomeDest()); err != nil {
+		// 	os.Chdir("/")
+		// }
 	}
 
 	if e.EngineConfig.File.MountDev == "minimal" || e.EngineConfig.GetContain() {
