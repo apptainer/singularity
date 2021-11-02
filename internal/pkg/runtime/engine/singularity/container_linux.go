@@ -1059,7 +1059,7 @@ func (c *container) addImageBindMount(system *mount.System) error {
 
 		imagePath := bind.Source
 		destination := bind.Destination
-		id := 0
+		partID := uint32(0)
 		imageSource := "/"
 
 		if src := bind.ImageSrc(); src != "" {
@@ -1067,14 +1067,13 @@ func (c *container) addImageBindMount(system *mount.System) error {
 		}
 
 		if idStr := bind.ID(); idStr != "" {
-			var err error
-
-			id, err = strconv.Atoi(idStr)
+			p, err := strconv.ParseUint(idStr, 10, 32)
 			if err != nil {
 				return fmt.Errorf("while parsing id bind option: %s", err)
-			} else if id <= 0 {
+			} else if p <= 0 {
 				return fmt.Errorf("id number must be greater than 0")
 			}
+			partID = uint32(p)
 		}
 
 		for _, img := range imageList {
@@ -1088,13 +1087,13 @@ func (c *container) addImageBindMount(system *mount.System) error {
 			data := (*image.Section)(nil)
 
 			// id is only meaningful for SIF images
-			if img.Type == image.SIF && id > 0 {
+			if img.Type == image.SIF && partID > 0 {
 				partitions, err := img.GetAllPartitions()
 				if err != nil {
 					return fmt.Errorf("while getting partitions for %s: %s", img.Path, err)
 				}
 				for _, part := range partitions {
-					if part.ID == uint32(id) {
+					if part.ID == partID {
 						data = &part
 						break
 					}
