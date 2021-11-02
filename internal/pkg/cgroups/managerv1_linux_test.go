@@ -104,7 +104,7 @@ func TestPauseResumeV1(t *testing.T) {
 	defer manager.Remove()
 
 	manager.Pause()
-	// cgroups v1 freeze is to uninterruptable sleep
+	// cgroups v1 freeze is to uninterruptible sleep
 	ensureState(t, manager.pid, "D")
 
 	manager.Resume()

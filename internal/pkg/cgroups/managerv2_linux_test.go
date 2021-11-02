@@ -52,7 +52,7 @@ func TestCgroupsV2(t *testing.T) {
 	defer manager.Remove()
 
 	// For cgroups v2 [pids] limit -> pids.max
-	// Check for corrrect 1024 value
+	// Check for correct 1024 value
 	pidsMax := filepath.Join(mountPoint, group, "pids.max")
 	ensureIntInFile(t, pidsMax, 1024)
 
@@ -109,7 +109,7 @@ func TestPauseResumeV2(t *testing.T) {
 	defer manager.Remove()
 
 	manager.Pause()
-	// cgroups v2 freeze is to interruptable sleep, which could actually occur
+	// cgroups v2 freeze is to interruptible sleep, which could actually occur
 	// for our cat /dev/zero while it's running, so check freeze marker as well
 	// as the process state here.
 	ensureState(t, manager.pid, "S")
