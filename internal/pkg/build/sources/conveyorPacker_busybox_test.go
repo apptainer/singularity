@@ -21,6 +21,9 @@ import (
 const busyBoxDef = "../../../../examples/busybox/Singularity"
 
 func TestBusyBoxConveyor(t *testing.T) {
+	// 2021-09-07 - Always skip due to frequent download failures
+	t.SkipNow()
+
 	if testing.Short() {
 		t.SkipNow()
 	}

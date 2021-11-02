@@ -61,12 +61,13 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 		buildSpec   string
 		requireArch string
 	}{
-		{
-			name:      "BusyBox",
-			buildSpec: "../examples/busybox/Singularity",
-			// TODO: example has arch hard coded in download URL
-			requireArch: "amd64",
-		},
+		// Disabled due to frequent download failures of the busybox tgz
+		// {
+		// 	name:      "BusyBox",
+		// 	buildSpec: "../examples/busybox/Singularity",
+		// 	// TODO: example has arch hard coded in download URL
+		// 	requireArch: "amd64",
+		// },
 		{
 			name:       "Debootstrap",
 			dependency: "debootstrap",
