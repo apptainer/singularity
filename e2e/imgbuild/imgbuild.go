@@ -100,17 +100,28 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 			buildSpec: c.env.OrasTestImage,
 		},
 		{
-			name:       "Yum",
-			dependency: "yum",
-			buildSpec:  "../examples/centos/Singularity",
-			// TODO - Centos puts non-amd64 at a different mirror location
-			// need multiple def files to test on other archs
+			name:        "Yum",
+			dependency:  "yum",
+			buildSpec:   "../examples/centos/Singularity",
 			requireArch: "amd64",
 		},
 		{
-			name:       "Zypper",
-			dependency: "zypper",
-			buildSpec:  "../examples/opensuse/Singularity",
+			name:        "YumArm64",
+			dependency:  "yum",
+			buildSpec:   "../examples/centos-arm64/Singularity",
+			requireArch: "arm64",
+		},
+		{
+			name:        "Zypper",
+			dependency:  "zypper",
+			buildSpec:   "../examples/opensuse/Singularity",
+			requireArch: "amd64",
+		},
+		{
+			name:        "ZypperArm64",
+			dependency:  "zypper",
+			buildSpec:   "../examples/opensuse-arm64/Singularity",
+			requireArch: "arm64",
 		},
 	}
 
