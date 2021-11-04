@@ -163,7 +163,6 @@ func (c *ctx) singularityKeyNewpair(t *testing.T) {
 				"for e2e tests",
 				"e2etests",
 				"e2etests",
-				"n",
 			},
 		},
 	}

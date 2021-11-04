@@ -81,7 +81,7 @@ func TestCollectInput(t *testing.T) {
 	}{
 		{
 			Name:  "Valid input",
-			Input: fmt.Sprintf("%s\n%s\n%s\n%s\n%s\ny", testName, testEmail, testComment, testPassword, testPassword),
+			Input: fmt.Sprintf("%s\n%s\n%s\n%s\n%s", testName, testEmail, testComment, testPassword, testPassword),
 			Options: &keyNewPairOptions{
 				GenKeyPairOptions: sypgp.GenKeyPairOptions{
 					Name:     testName,
@@ -89,13 +89,13 @@ func TestCollectInput(t *testing.T) {
 					Comment:  testComment,
 					Password: testPassword,
 				},
-				PushToKeyStore: true,
+				PushToKeyStore: false,
 			},
 			Error: nil,
 		},
 		{
 			Name:  "No pass, OK",
-			Input: fmt.Sprintf("%s\n%s\n%s\n%s\n%s\ny\ny", testName, testEmail, testComment, "", ""),
+			Input: fmt.Sprintf("%s\n%s\n%s\n%s\n%s\ny", testName, testEmail, testComment, "", ""),
 			Options: &keyNewPairOptions{
 				GenKeyPairOptions: sypgp.GenKeyPairOptions{
 					Name:     testName,
@@ -103,7 +103,7 @@ func TestCollectInput(t *testing.T) {
 					Comment:  testComment,
 					Password: "",
 				},
-				PushToKeyStore: true,
+				PushToKeyStore: false,
 			},
 			Error: nil,
 		},

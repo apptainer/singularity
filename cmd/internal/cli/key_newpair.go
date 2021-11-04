@@ -69,7 +69,7 @@ var (
 		DefaultValue: false,
 		Name:         "push",
 		ShortHand:    "U",
-		Usage:        "specify to push the public key to the remote keystore (default true)",
+		Usage:        "specify to push the public key to the remote keystore",
 	}
 
 	// KeyNewPairCmd is 'singularity key newpair' and generate a new OpenPGP key pair
@@ -110,7 +110,6 @@ func runNewPairCmd(cmd *cobra.Command, args []string) {
 	fmt.Printf("done\n")
 
 	if !opts.PushToKeyStore {
-		fmt.Println("NOT pushing newly created key to keystore")
 		return
 	}
 
@@ -188,15 +187,6 @@ func collectInput(cmd *cobra.Command) (*keyNewPairOptions, error) {
 
 	if cmd.Flags().Changed(keyNewPairPushFlag.Name) {
 		genOpts.PushToKeyStore = keyNewPairPush
-	} else {
-		a, err := interactive.AskYNQuestion("y", "Would you like to push it to the keystore? [Y,n] ")
-		if err != nil {
-			return nil, err
-		}
-
-		if a == "y" {
-			genOpts.PushToKeyStore = true
-		}
 	}
 
 	return &genOpts, nil
