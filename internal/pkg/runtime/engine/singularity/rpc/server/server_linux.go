@@ -424,7 +424,7 @@ func (t *Methods) NvCCLI(arguments *args.NvCCLIArgs, reply *int) (err error) {
 	// In the setuid flow we need CAP_CHOWN here to be able to start
 	// nvidia-container-cli successfully as root.
 	caps := defaultEffective
-	if arguments.RunAsRoot {
+	if !arguments.UserNS {
 		caps |= uint64(1 << capabilities.Map["CAP_CHOWN"].Value)
 	}
 	oldEffective, err := capabilities.SetProcessEffective(caps)
@@ -438,5 +438,5 @@ func (t *Methods) NvCCLI(arguments *args.NvCCLIArgs, reply *int) (err error) {
 		}
 	}()
 
-	return gpu.NVCLIConfigure(arguments.Flags, arguments.RootFsPath, arguments.RunAsRoot)
+	return gpu.NVCLIConfigure(arguments.Flags, arguments.RootFsPath, arguments.UserNS)
 }

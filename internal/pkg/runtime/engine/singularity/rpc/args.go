@@ -134,7 +134,7 @@ type WriteFileArgs struct {
 type NvCCLIArgs struct {
 	Flags      []string
 	RootFsPath string
-	RunAsRoot  bool
+	UserNS     bool
 }
 
 // FileInfo returns FileInfo interface to be passed as RPC argument.
