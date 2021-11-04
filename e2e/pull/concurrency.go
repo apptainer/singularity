@@ -13,7 +13,7 @@ import (
 	"github.com/hpcng/singularity/e2e/internal/e2e"
 )
 
-func (c ctx) testDownloadConcurrencyConfig(t *testing.T) {
+func (c ctx) testConcurrencyConfig(t *testing.T) {
 	tests := []struct {
 		name             string
 		setting          string
@@ -29,32 +29,26 @@ func (c ctx) testDownloadConcurrencyConfig(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		defer func(t *testing.T) {
-			c.env.RunSingularity(
-				t,
-				e2e.WithProfile(e2e.RootProfile),
-				e2e.WithCommand("config global"),
-				e2e.WithArgs("--reset", tt.setting),
-				e2e.ExpectExit(0),
-			)
-		}(t)
-
 		c.env.RunSingularity(
 			t,
+			e2e.AsSubtest(tt.name+"-set"),
 			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("config global"),
 			e2e.WithArgs("--set", tt.setting, tt.value),
 			e2e.ExpectExit(tt.expectedExitCode),
 		)
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name+"-reset"),
+			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithCommand("config global"),
+			e2e.WithArgs("--reset", tt.setting),
+			e2e.ExpectExit(0),
+		)
 	}
 }
 
-func (c ctx) testDownloadConcurrency(t *testing.T) {
-	c.testDownloadConcurrencyConfig(t)
-	c.testDownloads(t)
-}
-
-func (c ctx) testDownloads(t *testing.T) {
+func (c ctx) testConcurrentPulls(t *testing.T) {
 	const srcURI = "library://alpine:3.11.5"
 
 	tests := []struct {
@@ -98,73 +92,73 @@ func (c ctx) testDownloads(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 
-		tmpdir, err := ioutil.TempDir(c.env.TestDir, "pull_test.")
-		if err != nil {
-			t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
-		}
-		defer os.RemoveAll(tmpdir)
-
-		cleanCfg := []string{}
-
-		if tt.settings != nil {
-			cfgCmdOps := []e2e.SingularityCmdOp{
-				e2e.WithProfile(e2e.RootProfile),
-				e2e.WithCommand("config global"),
-				e2e.ExpectExit(0),
+		t.Run(tt.name, func(t *testing.T) {
+			tmpdir, err := ioutil.TempDir(c.env.TestDir, "pull_test.")
+			if err != nil {
+				t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
 			}
+			defer os.RemoveAll(tmpdir)
 
-			for key, value := range tt.settings {
-				cfgCmd := append(cfgCmdOps, e2e.WithArgs("--set", key, value))
-
-				c.env.RunSingularity(t, cfgCmd...)
-
-				cleanCfg = append(cleanCfg, key)
-			}
-		}
-
-		ts := testStruct{
-			desc:             tt.name,
-			srcURI:           srcURI,
-			expectedExitCode: tt.expectedExitCode,
-			expectedImage:    getImageNameFromURI(srcURI),
-			envVars:          tt.envVars,
-		}
-
-		// reset config set via tests
-		defer func(t *testing.T) {
-			for _, cfg := range cleanCfg {
-				c.env.RunSingularity(
-					t,
+			// Set global configuration
+			if tt.settings != nil {
+				cfgCmdOps := []e2e.SingularityCmdOp{
 					e2e.WithProfile(e2e.RootProfile),
 					e2e.WithCommand("config global"),
-					e2e.WithArgs("--reset", cfg),
 					e2e.ExpectExit(0),
-				)
+				}
+
+				for key, value := range tt.settings {
+					t.Logf("set %s %s", key, value)
+					cfgCmd := append(cfgCmdOps, e2e.WithArgs("--set", key, value))
+					c.env.RunSingularity(t, cfgCmd...)
+
+					t.Cleanup(func() {
+						t.Logf("reset %s", key)
+						c.env.RunSingularity(
+							t,
+							e2e.WithProfile(e2e.RootProfile),
+							e2e.WithCommand("config global"),
+							e2e.WithArgs("--reset", key),
+							e2e.ExpectExit(0),
+						)
+					})
+				}
 			}
-		}(t)
 
-		// Since we are not passing an image name, change the current
-		// working directory to the temporary directory we just created so
-		// that we know it's clean. We don't do this for the other case in
-		// order to catch spurious files showing up. Maybe later we can
-		// examine the directory and assert that it only contains what we
-		// expect.
-		oldwd, err := os.Getwd()
-		if err != nil {
-			t.Fatalf("Failed to get working directory for pull test: %+v", err)
-		}
-		defer os.Chdir(oldwd)
+			// Reset global configuration at test completion
 
-		os.Chdir(tmpdir)
+			ts := testStruct{
+				desc:             "",
+				srcURI:           srcURI,
+				expectedExitCode: tt.expectedExitCode,
+				expectedImage:    getImageNameFromURI(srcURI),
+				envVars:          tt.envVars,
+			}
 
-		// if there's a pullDir, that's where we expect to find the image
-		if ts.pullDir != "" {
-			os.Chdir(ts.pullDir)
-		}
+			// Since we are not passing an image name, change the current
+			// working directory to the temporary directory we just created so
+			// that we know it's clean. We don't do this for the other case in
+			// order to catch spurious files showing up. Maybe later we can
+			// examine the directory and assert that it only contains what we
+			// expect.
+			oldwd, err := os.Getwd()
+			if err != nil {
+				t.Fatalf("Failed to get working directory for pull test: %+v", err)
+			}
+			defer os.Chdir(oldwd)
 
-		ts.expectedImage = getImageNameFromURI(srcURI)
+			os.Chdir(tmpdir)
 
-		// pull image
-		c.imagePull(t, ts)
+			// if there's a pullDir, that's where we expect to find the image
+			if ts.pullDir != "" {
+				os.Chdir(ts.pullDir)
+			}
+
+			ts.expectedImage = getImageNameFromURI(srcURI)
+
+			// pull image
+			c.imagePull(t, ts)
+		})
+
 	}
 }
