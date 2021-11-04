@@ -9,13 +9,15 @@ Uploaders:
  Gregory M. Kurtzer <gmkurtzer@gmail.com>,
 Build-Depends:
  debhelper (>= 9),
+ devscripts,
  dh-autoreconf,
  help2man,
  libarchive-dev,
  libssl-dev,
  python,
  uuid-dev,
- golang-go (>= 2:1.13)
+ cryptsetup,
+ golang-go (>= 2:1.13~~)
 Standards-Version: 3.9.8
 Homepage: http://gmkurtzer.github.io/singularity
 Vcs-Git: https://github.com/hpcng/singularity.git

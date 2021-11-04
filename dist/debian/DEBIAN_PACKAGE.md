@@ -33,6 +33,8 @@ See `mconfig --help` for details about the configuration options.
 
 To select a specific profile for `mconfig`.
 
+__REMINDER:__ to build with seccomp you need to install `libseccomp-dev` package !
+
 For real production environment us this configuration:
 ```
 export DEB_SC_PROFILE=release-stripped
