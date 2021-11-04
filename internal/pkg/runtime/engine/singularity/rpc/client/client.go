@@ -237,11 +237,11 @@ func (t *RPC) WriteFile(filename string, data []byte, perm os.FileMode) error {
 }
 
 // NvCCLI will call nvidia-container-cli to configure GPU(s) for the container.
-func (t *RPC) NvCCLI(flags []string, rootFsPath string, runAsRoot bool) error {
+func (t *RPC) NvCCLI(flags []string, rootFsPath string, userNS bool) error {
 	arguments := &args.NvCCLIArgs{
 		Flags:      flags,
 		RootFsPath: rootFsPath,
-		RunAsRoot:  runAsRoot,
+		UserNS:     userNS,
 	}
 	return t.Client.Call(t.Name+".NvCCLI", arguments, nil)
 }
