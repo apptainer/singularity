@@ -54,13 +54,13 @@ func TestLayout(t *testing.T) {
 	}
 
 	if err := session.SetRootPath("/fakedirectory"); err == nil {
-		t.Error("shoud have failed with invalid root path directory")
+		t.Error("should have failed with invalid root path directory")
 	}
 	if err := session.SetRootPath(dir); err != nil {
 		t.Fatal(err)
 	}
 	if err := session.SetRootPath(dir); err == nil {
-		t.Error("shoud have failed with root path already set error")
+		t.Error("should have failed with root path already set error")
 	}
 
 	if err := session.AddDir("etc"); err == nil {
@@ -70,7 +70,7 @@ func TestLayout(t *testing.T) {
 		t.Error(err)
 	}
 	if err := session.AddDir("/etc"); err == nil {
-		t.Error("shoud have failed with existent path")
+		t.Error("should have failed with existent path")
 	}
 
 	if _, err := session.GetPath("/etcd"); err == nil {

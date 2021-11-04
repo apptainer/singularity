@@ -171,7 +171,7 @@ func TestRemoteAdd(t *testing.T) {
 			shallPass:  true,
 		},
 		{
-			// This test checks both RemoteAdd() and RemoteRemove(), we stil
+			// This test checks both RemoteAdd() and RemoteRemove(), we still
 			// have a separate test for corner cases in the context of
 			// RemoveRemove().
 			name:       "9: valid config file; valid remote name; valid URI; local",

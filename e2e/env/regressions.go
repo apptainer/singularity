@@ -58,7 +58,7 @@ func (c ctx) issue5426(t *testing.T) {
 	)
 }
 
-// Check that we hit engine configuation size limit with a rather big
+// Check that we hit engine configuration size limit with a rather big
 // configuration by passing some big environment variables.
 func (c ctx) issue5057(t *testing.T) {
 	e2e.EnsureImage(t, c.env)

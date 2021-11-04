@@ -49,7 +49,7 @@ func TestLibraryConveyor(t *testing.T) {
 	b.Opts.ImgCache = imgCache
 
 	err = cp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", libraryURI, err)
@@ -80,7 +80,7 @@ func TestLibraryPacker(t *testing.T) {
 	b.Opts.ImgCache = imgCache
 
 	err = cp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", libraryURI, err)

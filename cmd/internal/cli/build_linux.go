@@ -391,7 +391,7 @@ func isImage(spec string) bool {
 // getEncryptionMaterial handles the setting of encryption environment and flag parameters to eventually be
 // passed to the crypt package for handling.
 // This handles the SINGULARITY_ENCRYPTION_PASSPHRASE/PEM_PATH envvars outside of cobra in order to
-// enforce the unique flag/env precidence for the encryption flow
+// enforce the unique flag/env precedence for the encryption flow
 func getEncryptionMaterial(cmd *cobra.Command) (cryptkey.KeyInfo, error) {
 	passphraseFlag := cmd.Flags().Lookup("passphrase")
 	PEMFlag := cmd.Flags().Lookup("pem-path")
@@ -403,7 +403,7 @@ func getEncryptionMaterial(cmd *cobra.Command) (cryptkey.KeyInfo, error) {
 		sylog.Fatalf("Unable to use container encryption. Must supply encryption material through environment variables or flags.")
 	}
 
-	// order of precidence:
+	// order of precedence:
 	// 1. PEM flag
 	// 2. Passphrase flag
 	// 3. PEM envvar

@@ -15,7 +15,7 @@ import (
 )
 
 // SandboxPacker holds the locations of where to pack from and to
-// Ext3Packer holds the locations of where to back from and to, aswell as image offset info
+// Ext3Packer holds the locations of where to back from and to, as well as image offset info
 type SandboxPacker struct {
 	srcdir string
 	b      *types.Bundle

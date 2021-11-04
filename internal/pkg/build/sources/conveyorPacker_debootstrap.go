@@ -228,7 +228,7 @@ func (cp *DebootstrapConveyorPacker) Pack(context.Context) (*types.Bundle, error
 
 	err := cp.insertBaseEnv(cp.b)
 	if err != nil {
-		return nil, fmt.Errorf("while inserting base environtment: %v", err)
+		return nil, fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	err = cp.insertRunScript(cp.b)

@@ -108,7 +108,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 		{
 			name:      "label_E2E",
 			insType:   "--labels",
-			compareFn: compareLabel("E2E", "AWSOME", ""),
+			compareFn: compareLabel("E2E", "AWESOME", ""),
 		},
 		{
 			name:      "label_HI",
@@ -118,7 +118,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 		{
 			name:      "label_e2e",
 			insType:   "--labels",
-			compareFn: compareLabel("e2e", "awsome", ""),
+			compareFn: compareLabel("e2e", "awesome", ""),
 		},
 		{
 			name:      "label_hi",

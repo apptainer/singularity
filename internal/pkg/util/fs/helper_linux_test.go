@@ -38,7 +38,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 		t.Errorf("Unable to create test file: %s", err)
 	}
 
-	// Ensure the test file is the currect permission.
+	// Ensure the test file has the correct permission.
 	err = fp.Chmod(0o755)
 	if err != nil {
 		t.Errorf("Unable to change file permission: %s", err)
@@ -52,7 +52,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 
 	// Double check the permission is what we expect.
 	if currentMode := finfo.Mode(); currentMode != 0o755 {
-		t.Errorf("Unexpect file permission: expecting 755, got %o", currentMode)
+		t.Errorf("Unexpected file permission: expecting 755, got %o", currentMode)
 	}
 
 	// Now the actral test!
@@ -69,7 +69,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 
 	// Finally, check the file permission.
 	if currentMode := finfo.Mode(); currentMode != 0o655 {
-		t.Errorf("Unexpect file permission: expecting 655, got %o", currentMode)
+		t.Errorf("Unexpected file permission: expecting 655, got %o", currentMode)
 	}
 
 	// Test again with another permission.
@@ -86,7 +86,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 
 	// Finally, check the file permission.
 	if currentMode := finfo.Mode(); currentMode != 0o777 {
-		t.Errorf("Unexpect file permission: expecting 777, got %o", currentMode)
+		t.Errorf("Unexpected file permission: expecting 777, got %o", currentMode)
 	}
 
 	// And close the file.
@@ -114,7 +114,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 
 	// Finally, check the file permission.
 	if currentMode := einfo.Mode(); currentMode != 0o755 {
-		t.Errorf("Unexpect file permission: expecting 755, got %o", currentMode)
+		t.Errorf("Unexpected file permission: expecting 755, got %o", currentMode)
 	}
 
 	// Test again with another permission.
@@ -131,7 +131,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 
 	// Finally, check the file permission.
 	if currentMode := einfo.Mode(); currentMode != 0o544 {
-		t.Errorf("Unexpect file permission: expecting 544, got %o", currentMode)
+		t.Errorf("Unexpected file permission: expecting 544, got %o", currentMode)
 	}
 
 	// Cleanup.

@@ -29,10 +29,10 @@ func TestGetSet(t *testing.T) {
 
 	value, err = Get("net.ipv4.ip_forward2")
 	if err == nil {
-		t.Errorf("shoud have failed, key doesn't exists")
+		t.Errorf("should have failed, key doesn't exists")
 	}
 
 	if err := Set("net.ipv4.ip_forward2", value); err == nil {
-		t.Errorf("shoud have failed, key doesn't exists")
+		t.Errorf("should have failed, key doesn't exists")
 	}
 }

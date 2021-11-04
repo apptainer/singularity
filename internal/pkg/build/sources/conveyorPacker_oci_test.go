@@ -71,7 +71,7 @@ func TestOCIConveyorDocker(t *testing.T) {
 	cp := &sources.OCIConveyorPacker{}
 
 	err = cp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", dockerURI, err)
@@ -110,7 +110,7 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	cp := &sources.OCIConveyorPacker{}
 
 	err = cp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archiveURI, err)
@@ -157,7 +157,7 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 	cp := &sources.OCIConveyorPacker{}
 
 	err = cp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", daemonURI, err)
@@ -192,7 +192,7 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	cp := &sources.OCIConveyorPacker{}
 
 	err = cp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archiveURI, err)
@@ -240,7 +240,7 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 	cp := &sources.OCIConveyorPacker{}
 
 	err = cp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", layoutURI, err)
@@ -271,7 +271,7 @@ func TestOCIPacker(t *testing.T) {
 	b.Opts.ImgCache = imgCache
 
 	err = ocp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer ocp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", dockerURI, err)

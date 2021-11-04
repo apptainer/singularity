@@ -46,7 +46,7 @@ func TestScratchConveyor(t *testing.T) {
 	c := &sources.ScratchConveyor{}
 
 	err = c.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer c.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", scratchDef, err)
@@ -76,7 +76,7 @@ func TestScratchPacker(t *testing.T) {
 	cp := &sources.ScratchConveyorPacker{}
 
 	err = cp.Get(context.Background(), b)
-	// clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", scratchDef, err)

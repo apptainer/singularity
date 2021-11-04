@@ -147,7 +147,7 @@ func (c *Config) SetWorkingDirectoryFd(fd int) {
 // KeepFileDescriptor adds a file descriptor to an array of file
 // descriptors that starter will keep open. All files opened during
 // stage 1 will be shared with starter process. Once stage 1 returns,
-// all file descriptor whichs are not listed here will be closed.
+// all file descriptors which are not listed here will be closed.
 func (c *Config) KeepFileDescriptor(fd int) error {
 	if c.config.starter.numfds >= C.MAX_STARTER_FDS {
 		return fmt.Errorf("maximum number of kept file descriptors reached")

@@ -722,7 +722,7 @@ Enterprise Performance Computing (EPC)`
   image. By default, one digital signature is added for each object group in
   the file.
   
-  To generate a keypair, see 'singularity help key newpair'`
+  To generate a key pair, see 'singularity help key newpair'`
 	SignExample string = `
   $ singularity sign container.sif`
 
@@ -809,7 +809,7 @@ Enterprise Performance Computing (EPC)`
       SCIF_APPLIB        is the application's library folder that is added to the LD_LIBRARY_PATH
       SCIF_APPRUN        is the runscript
       SCIF_APPHELP       is the help file for the runscript
-      SCIF_APPTEST       is the testing script (test.sh) associated with the applicatio
+      SCIF_APPTEST       is the testing script (test.sh) associated with the application
       SCIF_APPNAME       the name for the active application
       SCIF_APPFILES      the files section associated with the application that are added to
 

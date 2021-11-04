@@ -54,7 +54,7 @@ type Plugin struct {
 	// Install is a function called during singularity
 	// plugin install, the function take the directory
 	// where plugin object will reside and can be used
-	// to store configuration files/datas needed by a
+	// to store configuration files/data needed by a
 	// plugin.
 	Install func(string) error
 }

@@ -5,7 +5,7 @@
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 
 # SINGULARITY BOOTSTRAP: TENSORFLOW
-# Installation proceedure copied from:
+# Installation procedure copied from:
 # https://www.tensorflow.org/versions/r0.10/get_started/os_setup.html#pip-installation
 
 

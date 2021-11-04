@@ -97,23 +97,23 @@ func (s *Session) RootFsPath() string {
 }
 
 func (s *Session) createLayout(system *mount.System) error {
-	// create directory for registered overrided directory
+	// create directory for registered overridden directory
 	for _, tag := range mount.GetTagList() {
 		for _, point := range system.Points.GetByTag(tag) {
 			if point.Source == "" {
 				continue
 			}
 
-			// search until we find a parent overrided directory
-			overrided := false
+			// search until we find a parent overridden directory
+			overridden := false
 			for baseDir := filepath.Dir(point.Destination); baseDir != "/"; {
 				if _, err := s.GetOverridePath(baseDir); err == nil {
-					overrided = true
+					overridden = true
 					break
 				}
 				baseDir = filepath.Dir(baseDir)
 			}
-			if !overrided {
+			if !overridden {
 				continue
 			}
 

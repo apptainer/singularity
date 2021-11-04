@@ -124,7 +124,7 @@ func main() {
 	}
 	defer outFile.Close()
 
-	// Determin if this is a setuid install
+	// Determine if this is a setuid install
 	b, err := ioutil.ReadFile(os.Args[1])
 	if err != nil {
 		fmt.Println(err)

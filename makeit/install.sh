@@ -61,7 +61,7 @@ fi
 
 name=$1
 if ! rootdir=`(cd $2 2>/dev/null && pwd -P)`; then
-	echo "error: $2 non-existant or permission denied"
+	echo "error: $2 non-existent or permission denied"
 	exit 2
 fi
 

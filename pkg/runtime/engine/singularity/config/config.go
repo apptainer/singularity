@@ -100,7 +100,7 @@ func (b *BindPath) Readonly() bool {
 	return b.Options != nil && b.Options["ro"] != nil
 }
 
-// JSONConfig stores engine specific confguration that is allowed to be set by the user.
+// JSONConfig stores engine specific configuration that is allowed to be set by the user.
 type JSONConfig struct {
 	ScratchDir        []string          `json:"scratchdir,omitempty"`
 	OverlayImage      []string          `json:"overlayImage,omitempty"`

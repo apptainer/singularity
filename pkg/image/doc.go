@@ -11,7 +11,7 @@ a Singularity image, whether through OCI or directly.
 
 type ImageFormat interface {
     Root() *spec.Root - Root() returns the OCI compliant root of the
-                        Image. This function may preform some action,
+                        Image. This function may perform some action,
                         such as extracting the filesystem to a dir.
 
 }

@@ -20,7 +20,7 @@ import (
 )
 
 /*
- * This tool aims at gathering the list of Singularity commands and optionaly
+ * This tool aims at gathering the list of Singularity commands and optionally
  * the list of commands covered by the E2E tests. When gathering the list of
  * E2E tests, we also calculate the coverage compared to all the Singularity
  * commands.

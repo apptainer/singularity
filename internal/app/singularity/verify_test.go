@@ -220,7 +220,7 @@ func Test_verifier_getOpts(t *testing.T) {
 			wantOpts: 2,
 		},
 		{
-			name:     "Callcack",
+			name:     "Callback",
 			v:        verifier{cb: cb},
 			f:        &oneGroupImage,
 			wantOpts: 2,

@@ -960,7 +960,7 @@ func (e *EngineOperations) checkSignalPropagation() {
 		// - ENOTTY will also return 0 as process group
 		pgrp, _ = unix.IoctlGetInt(i, unix.TIOCGPGRP)
 		// based on kernel source a 0 value for process group
-		// theorically be set but really not sure it can happen
+		// theoretically be set but really not sure it can happen
 		// with linux tty behavior
 		if pgrp != 0 {
 			break

@@ -32,7 +32,7 @@ func (c ctx) testSecurityUnpriv(t *testing.T) {
 		expectOp   e2e.SingularityCmdResultOp
 		expectExit int
 	}{
-		// taget UID/GID
+		// target UID/GID
 		{
 			name:       "Set_uid",
 			argv:       []string{"id", "-u"},
@@ -133,7 +133,7 @@ func (c ctx) testSecurityPriv(t *testing.T) {
 		expectOp   e2e.SingularityCmdResultOp
 		expectExit int
 	}{
-		// taget UID/GID
+		// target UID/GID
 		{
 			name:       "Set_uid",
 			argv:       []string{"id", "-u"},

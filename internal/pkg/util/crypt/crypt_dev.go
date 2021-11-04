@@ -158,7 +158,7 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 	// to explicitly set cmd's uid or gid here
 	// TODO (schebro): Fix #3818, #3821
 	// Currently we are relying on host's cryptsetup utility to encrypt and decrypt
-	// the SIF. The possiblity to saving a version of cryptsetup inside the container should be
+	// the SIF. The possibility to saving a version of cryptsetup inside the container should be
 	// investigated. To do that, at least one additional partition is required, which is
 	// not encrypted.
 
