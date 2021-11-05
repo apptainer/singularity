@@ -11,6 +11,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"time"
 
 	"github.com/hpcng/singularity/internal/app/singularity"
 	"github.com/hpcng/singularity/internal/pkg/cache"
@@ -19,13 +21,15 @@ import (
 	"github.com/hpcng/singularity/pkg/sylog"
 	keyclient "github.com/sylabs/scs-key-client/client"
 	libclient "github.com/sylabs/scs-library-client/client"
+	scslibrary "github.com/sylabs/scs-library-client/client"
+	"golang.org/x/term"
 )
 
 // ErrLibraryPullUnsigned indicates that the interactive portion of the pull was aborted.
 var ErrLibraryPullUnsigned = errors.New("failed to verify container")
 
 // pull will pull a library image into the cache if directTo="", or a specific file if directTo is set.
-func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef *libclient.Ref, arch string, libraryConfig *libclient.Config) (imagePath string, err error) {
+func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef *libclient.Ref, arch string, libraryConfig *libclient.Config) (string, error) {
 	c, err := libclient.NewClient(libraryConfig)
 	if err != nil {
 		return "", fmt.Errorf("unable to initialize client library: %v", err)
@@ -34,50 +38,70 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef
 	ref := fmt.Sprintf("%s:%s", imageRef.Path, imageRef.Tags[0])
 
 	libraryImage, err := c.GetImage(ctx, arch, ref)
-	if err == libclient.ErrNotFound {
-		return "", fmt.Errorf("image does not exist in the library: %s (%s)", ref, arch)
-	}
 	if err != nil {
+		if errors.Is(err, libclient.ErrNotFound) {
+			return "", fmt.Errorf("image does not exist in the library: %s (%s)", ref, arch)
+		}
 		return "", err
 	}
 
-	if directTo != "" {
-		sylog.Infof("Downloading library image")
-		if err = DownloadImage(ctx, c, directTo, arch, imageRef, &client.DownloadProgressBar{}); err != nil {
-			return "", fmt.Errorf("unable to download image: %v", err)
-		}
-		imagePath = directTo
-
-	} else {
-		cacheEntry, err := imgCache.GetEntry(cache.LibraryCacheType, libraryImage.Hash)
-		if err != nil {
-			return "", fmt.Errorf("unable to check if %v exists in cache: %v", libraryImage.Hash, err)
-		}
-		defer cacheEntry.CleanTmp()
-		if !cacheEntry.Exists {
-			sylog.Infof("Downloading library image")
-
-			if err := DownloadImage(ctx, c, cacheEntry.TmpPath, arch, imageRef, &client.DownloadProgressBar{}); err != nil {
-				return "", fmt.Errorf("unable to download image: %v", err)
-			}
-
-			if cacheFileHash, err := libclient.ImageHash(cacheEntry.TmpPath); err != nil {
-				return "", fmt.Errorf("error getting image hash: %v", err)
-			} else if cacheFileHash != libraryImage.Hash {
-				return "", fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, libraryImage.Hash)
-			}
-
-			err = cacheEntry.Finalize()
-			if err != nil {
-				return "", err
-			}
-		} else {
-			sylog.Infof("Using cached image")
-		}
-		imagePath = cacheEntry.Path
+	var progressBar scslibrary.ProgressBar
+	if term.IsTerminal(2) {
+		progressBar = &client.DownloadProgressBar{}
 	}
 
-	return imagePath, nil
+	if directTo != "" {
+		// Download direct to file
+		if err := downloadWrapper(ctx, c, directTo, arch, imageRef, progressBar); err != nil {
+			return "", fmt.Errorf("unable to download image: %v", err)
+		}
+		return directTo, nil
+	}
+
+	cacheEntry, err := imgCache.GetEntry(cache.LibraryCacheType, libraryImage.Hash)
+	if err != nil {
+		return "", fmt.Errorf("unable to check if %v exists in cache: %v", libraryImage.Hash, err)
+	}
+	defer cacheEntry.CleanTmp()
+
+	if !cacheEntry.Exists {
+		if err := downloadWrapper(ctx, c, cacheEntry.TmpPath, arch, imageRef, progressBar); err != nil {
+			return "", fmt.Errorf("unable to download image: %v", err)
+		}
+
+		if cacheFileHash, err := libclient.ImageHash(cacheEntry.TmpPath); err != nil {
+			return "", fmt.Errorf("error getting image hash: %v", err)
+		} else if cacheFileHash != libraryImage.Hash {
+			return "", fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+		}
+
+		if err := cacheEntry.Finalize(); err != nil {
+			return "", err
+		}
+	} else {
+		sylog.Infof("Using cached image")
+	}
+
+	return cacheEntry.Path, nil
+}
+
+// downloadWrapper calls DownloadImage() and outputs download summary if progressBar not specified.
+func downloadWrapper(ctx context.Context, c *scslibrary.Client, imagePath, arch string, libraryRef *scslibrary.Ref, pb scslibrary.ProgressBar) error {
+	sylog.Infof("Downloading library image")
+
+	defer func(t time.Time) {
+		if pb == nil {
+			if fi, err := os.Stat(imagePath); err == nil {
+				// Progress bar interface not specified; output summary to stdout
+				sylog.Infof("Downloaded %d bytes in %v\n", fi.Size(), time.Since(t))
+			}
+		}
+	}(time.Now())
+
+	if err := DownloadImage(ctx, c, imagePath, arch, libraryRef, pb); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Pull will pull a library image to the cache or direct to a temporary file if cache is disabled
