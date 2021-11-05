@@ -6,7 +6,9 @@
 package singularity
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -38,27 +40,36 @@ func contains(slice []string, val string) bool {
 }
 
 func generateConfig(path string, directives singularityconf.Directives, dry bool) error {
-	out := os.Stdout
+	// Generate the config structure from our directives
+	c, err := singularityconf.GetConfig(directives)
+	if err != nil {
+		return fmt.Errorf("configuration directive invalid: %w", err)
+	}
 
+	// Write a config file to our in memory buffer
+	newConfig := new(bytes.Buffer)
+	if err := singularityconf.Generate(newConfig, "", c); err != nil {
+		return fmt.Errorf("while generating configuration from template: %w", err)
+	}
+
+	// Dry run = write to Stdout
+	out := os.Stdout
+	// Not dry run = create / overwrite existing file, now we know we have valid content
 	if !dry {
 		unix.Umask(0)
 
 		flags := os.O_CREATE | os.O_TRUNC | unix.O_NOFOLLOW | os.O_RDWR
 		nf, err := os.OpenFile(path, flags, 0o644)
 		if err != nil {
-			return fmt.Errorf("while creating configuration file %s: %s", path, err)
+			return fmt.Errorf("while creating configuration file %s: %w", path, err)
 		}
 		defer nf.Close()
 		out = nf
 	}
 
-	c, err := singularityconf.GetConfig(directives)
+	_, err = io.Copy(out, newConfig)
 	if err != nil {
-		return err
-	}
-
-	if err := singularityconf.Generate(out, "", c); err != nil {
-		return fmt.Errorf("while generating configuration from template: %s", err)
+		return fmt.Errorf("while writing configuration file %s: %w", path, err)
 	}
 
 	return nil
