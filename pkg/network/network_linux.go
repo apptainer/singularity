@@ -19,7 +19,7 @@ import (
 
 	"github.com/containernetworking/cni/libcni"
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/pkg/types/current"
+	cnitypes "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/plugins/plugins/ipam/host-local/backend/allocator"
 	"github.com/hpcng/singularity/internal/pkg/util/env"
 )
@@ -233,6 +233,14 @@ func (m *Setup) SetArgs(args []string) error {
 		return fmt.Errorf("there is no configured network in list")
 	}
 
+	// Force plugins to ignore extra CNI_ARGS that they don't consume.
+	// If we don't do this we get an error when e.g. passing IP= to a
+	// bridge+ipam config,  as bridge now handles args from v1.0.1, but
+	// doesn't consume IP.
+	for i := range m.networks {
+		m.runtimeConf[i].Args = append(m.runtimeConf[i].Args, [2]string{"IgnoreUnknown", "1"})
+	}
+
 	for _, arg := range args {
 		var splitted []string
 		networkName := ""
@@ -338,12 +346,13 @@ func (m *Setup) GetNetworkIP(network string, version string) (net.IP, error) {
 
 	for i := 0; i < len(m.networkConfList); i++ {
 		if m.networkConfList[i].Name == n {
-			res, err := current.NewResultFromResult(m.result[i])
+			res, err := cnitypes.NewResultFromResult(m.result[i])
 			if err != nil {
 				return nil, fmt.Errorf("could not convert result: %v", err)
 			}
 			for _, ipResult := range res.IPs {
-				if ipResult.Version == version {
+				is4 := ipResult.Address.IP.To4() != nil
+				if (is4 && version == "4") || version == "6" {
 					return ipResult.Address.IP, nil
 				}
 			}
