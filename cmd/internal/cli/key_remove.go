@@ -9,8 +9,8 @@ package cli
 import (
 	"github.com/hpcng/singularity/docs"
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/internal/pkg/sypgp"
 	"github.com/hpcng/singularity/pkg/sylog"
-	"github.com/hpcng/singularity/pkg/sypgp"
 	"github.com/spf13/cobra"
 )
 

@@ -15,7 +15,7 @@ import (
 	"testing"
 
 	"github.com/hpcng/sif/pkg/integrity"
-	"github.com/hpcng/singularity/pkg/sypgp"
+	"github.com/hpcng/singularity/internal/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
 )
 

@@ -20,9 +20,9 @@ import (
 	"github.com/hpcng/sif/pkg/integrity"
 	"github.com/hpcng/sif/pkg/sif"
 	"github.com/hpcng/singularity/internal/app/singularity"
+	"github.com/hpcng/singularity/internal/pkg/sypgp"
 	"github.com/hpcng/singularity/internal/pkg/util/interactive"
 	"github.com/hpcng/singularity/pkg/sylog"
-	"github.com/hpcng/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/packet"
 )

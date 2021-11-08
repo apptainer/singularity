@@ -12,7 +12,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hpcng/singularity/pkg/sypgp"
+	"github.com/hpcng/singularity/internal/pkg/sypgp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 

@@ -14,10 +14,10 @@ import (
 
 	"github.com/hpcng/singularity/docs"
 	"github.com/hpcng/singularity/internal/pkg/remote/endpoint"
+	"github.com/hpcng/singularity/internal/pkg/sypgp"
 	"github.com/hpcng/singularity/internal/pkg/util/interactive"
 	"github.com/hpcng/singularity/pkg/cmdline"
 	"github.com/hpcng/singularity/pkg/sylog"
-	"github.com/hpcng/singularity/pkg/sypgp"
 	"github.com/spf13/cobra"
 )
 

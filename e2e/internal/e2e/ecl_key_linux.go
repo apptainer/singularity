@@ -11,8 +11,8 @@ import (
 
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
 	"github.com/hpcng/singularity/internal/pkg/syecl"
+	"github.com/hpcng/singularity/internal/pkg/sypgp"
 	"github.com/hpcng/singularity/internal/pkg/util/fs"
-	"github.com/hpcng/singularity/pkg/sypgp"
 	"golang.org/x/sys/unix"
 )
 
