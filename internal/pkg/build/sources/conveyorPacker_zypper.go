@@ -399,6 +399,7 @@ func (cp *ZypperConveyorPacker) genZypperConfig() (err error) {
 	return nil
 }
 
+//nolint:dupl
 func (cp *ZypperConveyorPacker) copyPseudoDevices() (err error) {
 	devPath := filepath.Join(cp.b.RootfsPath, "dev")
 	err = os.Mkdir(devPath, 0o775)
