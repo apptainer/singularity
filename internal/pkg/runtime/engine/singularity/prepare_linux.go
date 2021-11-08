@@ -193,6 +193,12 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	// These are within the capability set for the starter process itself, *not* the capabilities
 	// that will be set on the running container process, which are defined with SetCapabilities above.
 	if e.EngineConfig.GetNvCCLI() {
+		// Disallow this feature under setuid mode because running
+		// the external command is too risky
+		if starterConfig.GetIsSUID() && os.Geteuid() != 0 {
+			return fmt.Errorf("nvidia-container-cli not allowed in setuid mode")
+		}
+
 		starterConfig.SetNvCCLICaps(true)
 	}
 

@@ -373,7 +373,7 @@ memory fs type = {{ .MemoryFSType }}
 # DEFAULT: Undefined
 # Path to the ldconfig executable, used to find GPU libraries.
 # Must be set to use --nv / --nvccli.
-# Executable must be owned by root for security reasons.
+# When run as root, executable must be owned by root for security reasons.
 # ldconfig path =
 {{ if ne .LdconfigPath "" }}ldconfig path = {{ .LdconfigPath }}{{ end }}
 
@@ -407,7 +407,7 @@ mksquashfs procs = {{ .MksquashfsProcs }}
 # DEFAULT: Undefined
 # Path to the nvidia-container-cli executable, used to find GPU libraries.
 # Must be set to use --nvccli.
-# Executable must be owned by root for security reasons.
+# When run as root, executable must be owned by root for security reasons
 # nvidia-container-cli path =
 {{ if ne .NvidiaContainerCliPath "" }}nvidia-container-cli path = {{ .NvidiaContainerCliPath }}{{ end }}
 

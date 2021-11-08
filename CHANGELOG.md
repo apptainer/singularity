@@ -20,11 +20,11 @@
   parsed by the `--nvccli` flag from the environment of the calling user. By
   default, the `compute` and `utility` GPU capabilities are configured. The `use
   nvidia-container-cli` option in `singularity.conf` can be set to `yes` to
-  always use `nvidia-container-cli` when supported. Note that in a setuid
-  install, `nvidia-container-cli` will be run as root with required ambient
-  capabilities. `--nvccli` is not currently supported in the hybrid fakeroot
-  (setuid install + `--fakeroot`) workflow. Please see documentation for more
-  details.
+  always use `nvidia-container-cli` when supported.
+  `--nvccli` is not supported in the setuid workflow,
+  and it requires being used in combination with `--writable` in user
+  namespace mode.
+  Please see documentation for more details.
 
 ### Changed defaults / behaviours
 
@@ -48,7 +48,7 @@
   `singularity.conf`. The path to these executables can be overridden by
   changing the value in `singularity.conf`. If the path for any of them other
   than `cryptsetup` or `ldconfig` is not set in `singularity.conf` then the
-  the executable will be found by searching `$PATH`.
+  executable will be found by searching `$PATH`.
 - When calling `ldconfig` to find GPU libraries, singularity will *not* fall back
   to `/sbin/ldconfig` if the `ldconfig` on `$PATH` errors. If installing in a
   Guix/Nix on environment on top of a standard host distribution you *must* set
@@ -63,8 +63,8 @@
   you should install it from this repository.
 - `--nv` will not call `nvidia-container-cli` to find host libraries, unless
   the new experimental GPU setup flow that employs `nvidia-container-cli`
-  for all GPU related operations is enabled (see below).
-- If a container is run with `--nvcli` and `--contain`, only GPU devices
+  for all GPU related operations is enabled (see above).
+- If a container is run with `--nvccli` and `--contain`, only GPU devices
   specified via the `NVIDIA_VISIBLE_DEVICES` environment variable will be
   exposed within the container. Use `NVIDIA_VISIBLE_DEVICES=all` to access all
   GPUs inside a container run with `--nvccli`.
