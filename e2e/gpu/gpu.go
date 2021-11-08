@@ -183,7 +183,7 @@ func (c ctx) testNvCCLI(t *testing.T) {
 		{
 			name:    "UserNamespace",
 			profile: e2e.UserNamespaceProfile,
-			args:    []string{"--nv", "--nvccli", imagePath, "nvidia-smi"},
+			args:    []string{"--nv", "--nvccli", "--writable", imagePath, "nvidia-smi"},
 		},
 	}
 
