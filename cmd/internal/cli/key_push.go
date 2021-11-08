@@ -26,14 +26,12 @@ var KeyPushCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.TODO()
-
 		co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverPushOp)
 		if err != nil {
 			sylog.Fatalf("Keyserver client failed: %s", err)
 		}
 
-		if err := doKeyPushCmd(ctx, args[0], co...); err != nil {
+		if err := doKeyPushCmd(cmd.Context(), args[0], co...); err != nil {
 			sylog.Errorf("push failed: %s", err)
 			os.Exit(2)
 		}

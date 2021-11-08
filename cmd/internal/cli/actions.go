@@ -51,9 +51,7 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 
 	os.Setenv("IMAGE_ARG", args[0])
 
-	ctx := context.TODO()
-
-	replaceURIWithImage(ctx, cmd, args)
+	replaceURIWithImage(cmd.Context(), cmd, args)
 
 	// --compat infers other options that give increased OCI / Docker compatibility
 	// Excludes uts/user/net namespaces as these are restrictive for many Singularity
