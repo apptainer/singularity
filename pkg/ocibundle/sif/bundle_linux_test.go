@@ -8,6 +8,7 @@ package sifbundle
 import (
 	"io/ioutil"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci"
@@ -20,7 +21,7 @@ import (
 
 // We need a busybox SIF for these tests. We used to download it each time, but we have one
 // around for some e2e tests already.
-const busyboxSIF = "../../../e2e/testdata/busybox.sif"
+const busyboxSIF = "../../../e2e/testdata/busybox_" + runtime.GOARCH + ".sif"
 
 func TestFromSif(t *testing.T) {
 	test.EnsurePrivilege(t)
