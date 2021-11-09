@@ -19,6 +19,7 @@ type ctx struct {
 func (c ctx) testOverlayCreate(t *testing.T) {
 	require.Filesystem(t, "overlay")
 	require.MkfsExt3(t)
+	e2e.EnsureImage(t, c.env)
 
 	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "overlay", "")
 	defer cleanup(t)

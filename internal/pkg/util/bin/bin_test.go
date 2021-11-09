@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
+	"github.com/hpcng/singularity/internal/pkg/util/env"
 	"github.com/hpcng/singularity/pkg/util/singularityconf"
 )
 
@@ -20,12 +21,19 @@ func TestFindOnPath(t *testing.T) {
 	// findOnPath should give same as exec.LookPath, but additionally work
 	// in the case where $PATH doesn't include default sensible directories
 	// as these are added to $PATH before the lookup.
+
+	// Find the true path of 'cp' under a sensible PATH=env.DefaultPath
+	// Forcing this avoid issues with PATH across sudo calls for the tests,
+	// differing orders, /usr/bin -> /bin symlinks etc.
+	oldPath := os.Getenv("PATH")
+	os.Setenv("PATH", env.DefaultPath)
+	defer os.Setenv("PATH", oldPath)
 	truePath, err := exec.LookPath("cp")
 	if err != nil {
 		t.Fatalf("exec.LookPath failed to find cp: %v", err)
 	}
 
-	t.Run("unmodified path", func(t *testing.T) {
+	t.Run("sensible path", func(t *testing.T) {
 		gotPath, err := findOnPath("cp")
 		if err != nil {
 			t.Errorf("unexpected error from findOnPath: %v", err)
@@ -35,9 +43,8 @@ func TestFindOnPath(t *testing.T) {
 		}
 	})
 
-	t.Run("modified path", func(t *testing.T) {
-		oldPath := os.Getenv("PATH")
-		defer os.Setenv("PATH", oldPath)
+	t.Run("bad path", func(t *testing.T) {
+		// Force a PATH that doesn't contain cp
 		os.Setenv("PATH", "/invalid/dir:/another/invalid/dir")
 
 		gotPath, err := findOnPath("cp")
