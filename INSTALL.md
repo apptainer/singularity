@@ -117,7 +117,7 @@ To build a specific version of Singularity, check out a
 for example:
 
 ```sh
-git checkout v3.8.3
+git checkout v3.8.4
 ```
 
 ## Compiling Singularity
@@ -173,7 +173,7 @@ To build from a release source tarball do these commands:
 <!-- markdownlint-disable MD013 -->
 
 ```sh
-export VERSION=3.8.3  # this is the singularity version, change as you need
+export VERSION=3.8.4  # this is the singularity version, change as you need
 
 # Fetch the source
 wget https://github.com/hpcng/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz
@@ -199,7 +199,7 @@ Then use the `rpm` make target to build Singularity as an rpm package:
 ```sh
 ./mconfig --only-rpm
 make -C builddir rpm
-sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.3*.x86_64.rpm # or whatever version you built
+sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.4*.x86_64.rpm # or whatever version you built
 ```
 
 <!-- markdownlint-enable MD013 -->
