@@ -1,6 +1,6 @@
 # Singularity Changelog
 
-## Changes since last release
+## v3.8.4 - \[2021-11-09\]
 
 ### New features / functionalities
 
@@ -77,6 +77,10 @@
   GPUs inside a container run with `--nvccli`.
 - Build `--bind` option allows to set multiple bind mount without specifying
   the `--bind` option for each bindings.
+- Preserve effective-ownership preserving uid mapping by replacing (expect -L) with Docker CopyWithTar.
+- Removed building for macos & remove support for Darwin.
+- Switch CI from CentOS 8 to Rocky Linux 8.
+- Avoid pushing new key pair to the pre populated default endpooint.
 
 ## v3.8.3 - \[2021-09-07\]
 
