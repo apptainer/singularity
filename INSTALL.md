@@ -193,7 +193,7 @@ Then use the `rpm` make target to build Singularity as an rpm package:
 ```sh
 ./mconfig --only-rpm
 make -C builddir rpm
-sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.2*.x86_64.rpm # or whatever version you built
+sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.3*.x86_64.rpm # or whatever version you built
 ```
 
 <!-- markdownlint-enable MD013 -->
