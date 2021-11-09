@@ -8,7 +8,7 @@
 
 ### Enhancements
  
-  - Added seccomp, cryptsetup, devscripts & correct go version test to debain packaging.
+  - Added seccomp, cryptsetup, devscripts & correct go version test to debian packaging.
 
 ## v3.8.3 - [2021-09-07]
 
