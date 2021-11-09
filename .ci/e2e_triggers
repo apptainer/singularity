@@ -1,3 +1,5 @@
-^\.circleci/
+^internal/.*\.go$
+^cmd/.*\.go$
+^pkg/.*\.go$
 ^e2e/
 ^go\.mod$
