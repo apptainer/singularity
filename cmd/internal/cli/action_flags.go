@@ -15,6 +15,7 @@ import (
 var (
 	AppName            string
 	BindPaths          []string
+	Mounts             []string
 	HomePath           string
 	OverlayPath        []string
 	ScratchPath        []string
@@ -89,6 +90,18 @@ var actionBindFlag = cmdline.Flag{
 	ShortHand:    "B",
 	Usage:        "a user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.",
 	EnvKeys:      []string{"BIND", "BINDPATH"},
+	Tag:          "<spec>",
+	EnvHandler:   cmdline.EnvAppendValue,
+}
+
+// --mount
+var actionMountFlag = cmdline.Flag{
+	ID:           "actionMountFlag",
+	Value:        &Mounts,
+	DefaultValue: cmdline.StringArray{},
+	Name:         "mount",
+	Usage:        "a mount specification e.g. 'type=bind,source=/opt,destination=/hostopt'.",
+	EnvKeys:      []string{"MOUNT"},
 	Tag:          "<spec>",
 	EnvHandler:   cmdline.EnvAppendValue,
 }
@@ -667,6 +680,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionHostnameFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionIpcNamespaceFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionKeepPrivsFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionMountFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNetNamespaceFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNetworkArgsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNetworkFlag, actionsInstanceCmd...)
