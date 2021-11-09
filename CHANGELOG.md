@@ -68,6 +68,8 @@
   specified via the `NVIDIA_VISIBLE_DEVICES` environment variable will be
   exposed within the container. Use `NVIDIA_VISIBLE_DEVICES=all` to access all
   GPUs inside a container run with `--nvccli`.
+- Build `--bind` option allows to set multiple bind mount without specifying
+  the `--bind` option for each bindings.
 
 ## v3.8.3 - \[2021-09-07\]
 

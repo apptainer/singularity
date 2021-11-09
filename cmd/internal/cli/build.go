@@ -241,7 +241,7 @@ var buildRocmFlag = cmdline.Flag{
 var buildBindFlag = cmdline.Flag{
 	ID:           "buildBindFlag",
 	Value:        &buildArgs.bindPaths,
-	DefaultValue: []string{},
+	DefaultValue: cmdline.StringArray{}, // to allow commas in bind path
 	Name:         "bind",
 	ShortHand:    "B",
 	Usage: "a user-bind path specification. spec has the format src[:dest[:opts]]," +
