@@ -1,5 +1,15 @@
 # Singularity Changelog
 
+## v3.8.4 - [2021-11-09]
+
+### Bug fixes
+
+  - Fix the oras contexts to avoid hangs upon failed pushed to Harbor registry.
+
+### Enhancements
+ 
+  - Added seccomp, cryptsetup, devscripts & correct go version test to debain packaging.
+
 ## v3.8.3 - [2021-09-07]
 
 ### Bug fixes

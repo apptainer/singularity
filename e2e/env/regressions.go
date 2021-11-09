@@ -143,7 +143,7 @@ From: continuumio/miniconda3:latest
 %post
 
 	. /opt/conda/etc/profile.d/conda.sh
-	conda create -n env python=3
+	conda create -n env
 
 %environment
 
