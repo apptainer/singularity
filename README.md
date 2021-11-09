@@ -2,19 +2,32 @@
 
 [![CI](https://github.com/hpcng/singularity/actions/workflows/ci.yml/badge.svg)](https://github.com/hpcng/singularity/actions/workflows/ci.yml)
 
-- [Guidelines for Contributing](CONTRIBUTING.md)
-- [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
-- [Project License](LICENSE.md)
 - [Documentation](https://singularity.hpcng.org/docs/)
-- [Community Meetings / Minutes / Roadmap](https://drive.google.com/drive/u/0/folders/1npfBhIDxqeJIUHZ0tMeuHPvc_iB4T2B6)
 - [Support](#support)
-- [Citation](#citing-singularity)
+- [Community Meetings / Minutes / Roadmap](https://drive.google.com/drive/u/0/folders/1npfBhIDxqeJIUHZ0tMeuHPvc_iB4T2B6)
+- [Project License](LICENSE.md)
+- [Guidelines for Contributing](CONTRIBUTING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Citation](#citing-singularity)
+
+## What is Singularity?
 
 Singularity is an open source container platform designed to be simple, fast,
-and secure. Singularity is optimized for compute focused enterprise and HPC
-workloads, allowing untrusted users to run untrusted containers in a trusted
-way.
+and secure. Many container platforms are available, but Singularity is designed
+for ease-of-use on shared systems and in high performance computing (HPC)
+environments. It features:
+
+- An immutable single-file container image format, supporting cryptographic
+  signatures and encryption.
+- Integration over isolation by default. Easily make use of GPUs, high speed
+  networks, parallel filesystems on a cluster or server.
+- Mobility of compute. The single file SIF container format is easy to transport
+  and share.
+- A simple, effective security model. You are the same user inside a container
+  as outside, and cannot gain additional privilege on the host system by
+  default.
+
+Singularity is open source software, distributed under the [BSD License](LICENSE.md).
 
 Check out [talks about Singularity](https://singularity.hpcng.org/talks)
 and some [use cases of Singularity](https://singularity.hpcng.org/usecases)
@@ -30,9 +43,8 @@ System administrators can learn how to configure Singularity, and get an
 overview of its architecture and security features in the [administrator
 guide](https://singularity.hpcng.org/admin-docs/master/).
 
-For users, see the [user
-guide](https://singularity.hpcng.org/user-docs/master/) for details on how to use
-and build Singularity containers.
+For users, see the [user guide](https://singularity.hpcng.org/user-docs/master/)
+for details on how to run and build containers with Singularity.
 
 ## Contributing to Singularity
 
@@ -66,18 +78,21 @@ supported language versions.
 
 ## Citing Singularity
 
+The Singularity software may be cited using our Zenodo DOI `10.5281/zenodo.1310023`:
+
+> Singularity Developers (2021) Singularity. 10.5281/zenodo.1310023
+> <https://doi.org/10.5281/zenodo.1310023>
+
+This is an 'all versions' DOI for referencing Singularity in a manner that is
+not version-specific. You may wish to reference the particular version of
+Singularity used in your work. Zenodo creates a unique DOI for each release,
+and these can be found in the 'Versions' sidebar on the [Zenodo record page](https://doi.org/10.5281/zenodo.1310023).
+
+Please also consider citing the original publication describing Singularity:
+
 > Kurtzer GM, Sochat V, Bauer MW (2017) Singularity: Scientific containers for
 > mobility of compute. PLoS ONE 12(5): e0177459.
 > <https://doi.org/10.1371/journal.pone.0177459>
-
-We also have a Zenodo citation:
-
-> Kurtzer, Gregory M. et. al. Singularity - Linux application and environment
-> containers for science. 10.5281/zenodo.1310023
-> <https://doi.org/10.5281/zenodo.1310023>
-
-This is an 'all versions' DOI. Follow the link to Zenodo to obtain a DOI
-specific to a particular version of Singularity.
 
 ## License
 
