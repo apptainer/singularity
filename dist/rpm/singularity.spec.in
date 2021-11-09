@@ -1,25 +1,25 @@
-# 
-# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
+#
+# Copyright (c) 2017-2021, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
-# 
+#
 # Copyright (c) 2016, The Regents of the University of California, through
 # Lawrence Berkeley National Laboratory (subject to receipt of any required
 # approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
+#
 # This software is licensed under a customized 3-clause BSD license.  Please
 # consult LICENSE file distributed with the sources of this project regarding
 # your rights to use or distribute this software.
-# 
+#
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
 # the U.S. Government has been granted for itself and others acting on its
 # behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
 # to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
-# 
-# 
+# perform publicly and display publicly, and to permit other to do so.
+#
+#
 
 # Disable debugsource packages; otherwise it ends up with an empty %files
 #   file in debugsourcefiles.list on Fedora
@@ -38,10 +38,6 @@ License: BSD-3-Clause-LBNL
 URL: https://singularity.hpcng.org
 Source: %{name}-%{package_version}.tar.gz
 ExclusiveOS: linux
-# RPM_BUILD_ROOT wasn't being set ... for some reason
-%if "%{sles_version}" == "11"
-BuildRoot: /var/tmp/singularity-%{version}-build
-%endif
 
 %if "%{_target_vendor}" == "suse"
 %if "%{sles_version}" != "11"
@@ -53,11 +49,7 @@ BuildRequires: golang
 BuildRequires: git
 BuildRequires: gcc
 BuildRequires: make
-%if ! 0%{?el6}
-%if "%{sles_version}" != "11"
 BuildRequires: libseccomp-devel
-%endif
-%endif
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 %else
@@ -96,12 +88,10 @@ mkdir %{name}-%{version}
 cd %{name}-%{version}
 
 # Setup an empty GOPATH for the build
-mkdir -p gopath
-
 export GOPATH=$PWD/gopath
-export PATH=$GOPATH/bin:$PATH
+mkdir -p "$GOPATH"
 
-# Perform the build outside of GOPATH as we are using go modules
+# Extract the source
 tar -xf "%SOURCE0"
 cd %{name}-%{package_version}
 
@@ -127,25 +117,16 @@ done
         --mandir=%{_mandir} \
         --infodir=%{_infodir}
 
-cd builddir
-make old_config=
+make -C builddir old_config=
 
 %install
 cd %{name}-%{version}
 
 export GOPATH=$PWD/gopath
-export PATH=$GOPATH/bin:$PATH
-
-# Enter the source builddir for the install
-cd %{name}-%{package_version}/builddir
+cd %{name}-%{package_version}
 
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
-make DESTDIR=$RPM_BUILD_ROOT install man
-
-%if "%{suse_version}" == "11"
-%clean
-/bin/rm -rf %{buildroot}
-%endif
+make -C builddir DESTDIR=$RPM_BUILD_ROOT install man
 
 %files
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/starter-suid
