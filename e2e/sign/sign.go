@@ -59,6 +59,7 @@ func (c *ctx) prepareImage(t *testing.T) (string, func(*testing.T)) {
 	}
 }
 
+//nolint:dupl
 func (c ctx) singularitySignIDOption(t *testing.T) {
 	imgPath, cleanup := c.prepareImage(t)
 	defer cleanup(t)
@@ -139,6 +140,7 @@ func (c ctx) singularitySignAllOption(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func (c ctx) singularitySignGroupIDOption(t *testing.T) {
 	imgPath, cleanup := c.prepareImage(t)
 	defer cleanup(t)

@@ -126,6 +126,7 @@ func (c *Config) AddGroupCaps(group string, caps []string) error {
 }
 
 // DropUserCaps drops a set of capabilities for user
+//nolint:dupl
 func (c *Config) DropUserCaps(user string, caps []string) error {
 	if err := c.checkCaps(caps); err != nil {
 		return err
@@ -153,6 +154,7 @@ func (c *Config) DropUserCaps(user string, caps []string) error {
 }
 
 // DropGroupCaps drops a set of capabilities for group
+//nolint:dupl
 func (c *Config) DropGroupCaps(group string, caps []string) error {
 	if err := c.checkCaps(caps); err != nil {
 		return err
