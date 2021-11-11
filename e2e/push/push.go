@@ -79,7 +79,7 @@ func (c ctx) testPushCmd(t *testing.T) {
 		t.Fatalf("unable to create src file for push tests: %+v", err)
 	}
 
-	tests := []testCaseForPushCmd {
+	tests := []testCaseForPushCmd{
 		{
 			desc:             "non existent image",
 			imagePath:        filepath.Join(orasInvalidDir, "not_an_existing_file.sif"),

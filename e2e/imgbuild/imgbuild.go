@@ -63,7 +63,7 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 	// use a trailing slash in tests for sandbox intentionally to make sure
 	// `singularity build -s /tmp/sand/ docker://alpine` works,
 	// see https://github.com/hpcng/singularity/issues/4407
-	tt := []testCaseForBuildFrom {
+	tt := []testCaseForBuildFrom{
 		// Disabled due to frequent download failures of the busybox tgz
 		// {
 		// 	name:      "BusyBox",
@@ -357,7 +357,7 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 	}
 	defer os.Remove(tmpfile) // clean up
 
-	tests := []testCaseForBuildMultiStageDefinition {
+	tests := []testCaseForBuildMultiStageDefinition{
 		// Simple copy from stage one to final stage
 		{
 			name: "FileCopySimple",
@@ -834,8 +834,6 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 	}
 }
 
-
-
 func (c *imgBuildTests) executeTestCaseForBuildDefinition(t *testing.T, dfd e2e.DefFileDetails, name string, profile e2e.Profile) {
 	dn, cleanup := c.tempDir(t, "build-definition")
 	defer cleanup()
@@ -1196,7 +1194,7 @@ func (c imgBuildTests) buildWithFingerprint(t *testing.T) {
 	}
 
 	// Test builds with "Fingerprint:" headers
-	tests := []testCaseForBuildWithFingerprint {
+	tests := []testCaseForBuildWithFingerprint{
 		{
 			name:       "build single signed one fingerprint",
 			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints: %s\n", singleSigned, ecl.KeyMap["key1"]),

@@ -10,11 +10,11 @@ import (
 	"log/syslog"
 	"os"
 
-	"github.com/spf13/cobra"
 	"github.com/hpcng/singularity/pkg/cmdline"
 	pluginapi "github.com/hpcng/singularity/pkg/plugin"
 	clicallback "github.com/hpcng/singularity/pkg/plugin/callback/cli"
 	"github.com/hpcng/singularity/pkg/sylog"
+	"github.com/spf13/cobra"
 )
 
 // Plugin is the only variable which a plugin MUST export.

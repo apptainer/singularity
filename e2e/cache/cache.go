@@ -56,7 +56,7 @@ type testCaseForNoninteractiveCacheCmd struct {
 }
 
 func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
-	tests := []testCaseForNoninteractiveCacheCmd {
+	tests := []testCaseForNoninteractiveCacheCmd{
 		{
 			name:               "clean force",
 			options:            []string{"clean", "--force"},
@@ -160,7 +160,7 @@ type testCaseForInteractiveCacheCmd struct {
 }
 
 func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
-	tests := []testCaseForInteractiveCacheCmd {
+	tests := []testCaseForInteractiveCacheCmd{
 		{
 			name:               "clean normal confirmed",
 			options:            []string{"clean"},
@@ -223,7 +223,7 @@ func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
 		},
 	}
 
-		// A directory where we store the image and used by separate commands
+	// A directory where we store the image and used by separate commands
 	tempDir, imgStoreCleanup := e2e.MakeTempDir(t, "", "", "image store")
 	defer imgStoreCleanup(t)
 	imagePath := filepath.Join(tempDir, imgName)
@@ -233,7 +233,7 @@ func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
 	}
 }
 
-func (c cacheTests) executeTestCaseForInteractiveCacheCmd(t *testing.T, tc testCaseForInteractiveCacheCmd, imagePath string ) {
+func (c cacheTests) executeTestCaseForInteractiveCacheCmd(t *testing.T, tc testCaseForInteractiveCacheCmd, imagePath string) {
 	// Each test get its own clean cache directory
 	cacheDir, cleanup := e2e.MakeCacheDir(t, "")
 	defer cleanup(t)
