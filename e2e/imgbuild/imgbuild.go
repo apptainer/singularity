@@ -558,7 +558,7 @@ func (c imgBuildTests) executeTestCaseForBuildMultiStageDefinition(t *testing.T,
 	)
 }
 
-func (c imgBuildTests) 2(t *testing.T) {
+func (c imgBuildTests) buildDefinition(t *testing.T) {
 	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
@@ -833,6 +833,8 @@ func (c imgBuildTests) 2(t *testing.T) {
 		})
 	}
 }
+
+
 
 func (c *imgBuildTests) executeTestCaseForBuildDefinition(t *testing.T, dfd e2e.DefFileDetails, name string, profile e2e.Profile) {
 	dn, cleanup := c.tempDir(t, "build-definition")
