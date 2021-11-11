@@ -39,54 +39,67 @@ func TestCreateSocket(t *testing.T) {
 	}
 
 	for _, path := range paths {
-		syncCh := make(chan bool, 1)
+		testCreateSocketForPath(t, path)
+	}
+}
 
-		dir := filepath.Dir(path)
-		os.Mkdir(dir, 0o700)
+func testCreateSocketForPath(t *testing.T, path string) {
+	syncCh := make(chan bool, 1)
 
-		defer os.RemoveAll(dir)
-
-		// create socket and returns listener
-		ln, err := CreateSocket(path)
+	dir := filepath.Dir(path)
+	err := os.Mkdir(dir, 0o700)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err := os.RemoveAll(dir)
 		if err != nil {
 			t.Fatal(err)
 		}
+	}()
 
-		// accept connection and test if received data are correct
-		go func() {
-			buf := make([]byte, 4)
+	// create socket and returns listener
+	ln, err := CreateSocket(path)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-			conn, err := ln.Accept()
-			if err != nil {
-				t.Error(err)
-			}
-			n, err := conn.Read(buf)
-			if err != nil {
-				t.Error(err)
-			}
-			if n != 4 {
-				t.Error()
-			}
-			if string(buf) != "send" {
-				t.Errorf("unexpected data returned: %s", string(buf))
-			}
-			syncCh <- true
-		}()
+	// accept connection and test if received data are correct
+	go func() {
+		buf := make([]byte, 4)
 
-		// open / write / close to socket path
-		if err := WriteSocket(path, []byte("send")); err != nil {
+		conn, err := ln.Accept()
+		if err != nil {
 			t.Error(err)
 		}
-
-		<-syncCh
-
-		// close socket implies to delete file automatically
-		os.Chdir(dir)
-		ln.Close()
-
-		// socket file is deleted by net package at close
-		if err := os.Remove(path); err == nil {
-			t.Errorf("unexpected success during socket removal")
+		n, err := conn.Read(buf)
+		if err != nil {
+			t.Error(err)
 		}
+		if n != 4 {
+			t.Error()
+		}
+		if string(buf) != "send" {
+			t.Errorf("unexpected data returned: %s", string(buf))
+		}
+		syncCh <- true
+	}()
+
+	// open / write / close to socket path
+	if err := WriteSocket(path, []byte("send")); err != nil {
+		t.Error(err)
+	}
+
+	<-syncCh
+
+	// close socket implies to delete file automatically
+	err = ln.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// socket file is deleted by net package at close
+	if err := os.Remove(path); err == nil {
+		t.Errorf("unexpected success during socket removal")
 	}
 }

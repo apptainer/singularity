@@ -54,6 +54,13 @@ func (c ctx) testInvalidTransport(t *testing.T) {
 	}
 }
 
+type testCaseForPushCmd struct {
+	desc             string // case description
+	dstURI           string // destination URI for image
+	imagePath        string // src image path
+	expectedExitCode int    // expected exit code for the test
+}
+
 func (c ctx) testPushCmd(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
@@ -72,12 +79,7 @@ func (c ctx) testPushCmd(t *testing.T) {
 		t.Fatalf("unable to create src file for push tests: %+v", err)
 	}
 
-	tests := []struct {
-		desc             string // case description
-		dstURI           string // destination URI for image
-		imagePath        string // src image path
-		expectedExitCode int    // expected exit code for the test
-	}{
+	tests := []testCaseForPushCmd {
 		{
 			desc:             "non existent image",
 			imagePath:        filepath.Join(orasInvalidDir, "not_an_existing_file.sif"),
@@ -105,30 +107,34 @@ func (c ctx) testPushCmd(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tmpdir, err := ioutil.TempDir(c.env.TestDir, "pull_test.")
-		if err != nil {
-			t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
-		}
-		defer os.RemoveAll(tmpdir)
-
-		// We create the list of arguments using a string instead of a slice of
-		// strings because using slices of strings most of the type ends up adding
-		// an empty elements to the list when passing it to the command, which
-		// will create a failure.
-		args := tt.dstURI
-		if tt.imagePath != "" {
-			args = tt.imagePath + " " + args
-		}
-
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.desc),
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithCommand("push"),
-			e2e.WithArgs(strings.Split(args, " ")...),
-			e2e.ExpectExit(tt.expectedExitCode),
-		)
+		c.executeTestCaseForPushCmd(t, tt)
 	}
+}
+
+func (c ctx) executeTestCaseForPushCmd(t *testing.T, tc testCaseForPushCmd) {
+	tmpdir, err := ioutil.TempDir(c.env.TestDir, "push_test.")
+	if err != nil {
+		t.Fatalf("Failed to create temporary directory for push test: %+v", err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	// We create the list of arguments using a string instead of a slice of
+	// strings because using slices of strings most of the type ends up adding
+	// an empty elements to the list when passing it to the command, which
+	// will create a failure.
+	args := tc.dstURI
+	if tc.imagePath != "" {
+		args = tc.imagePath + " " + args
+	}
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest(tc.desc),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("push"),
+		e2e.WithArgs(strings.Split(args, " ")...),
+		e2e.ExpectExit(tc.expectedExitCode),
+	)
 }
 
 // E2ETests is the main func to trigger the test suite

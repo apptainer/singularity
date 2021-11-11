@@ -50,18 +50,20 @@ func (c imgBuildTests) tempDir(t *testing.T, namespace string) (string, func()) 
 	return dn, cleanup
 }
 
+type testCaseForBuildFrom struct {
+	name        string
+	dependency  string
+	buildSpec   string
+	requireArch string
+}
+
 func (c imgBuildTests) buildFrom(t *testing.T) {
 	e2e.EnsureRegistry(t)
 
 	// use a trailing slash in tests for sandbox intentionally to make sure
 	// `singularity build -s /tmp/sand/ docker://alpine` works,
 	// see https://github.com/hpcng/singularity/issues/4407
-	tt := []struct {
-		name        string
-		dependency  string
-		buildSpec   string
-		requireArch string
-	}{
+	tt := []testCaseForBuildFrom {
 		// Disabled due to frequent download failures of the busybox tgz
 		// {
 		// 	name:      "BusyBox",
@@ -132,54 +134,60 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tc := range tt {
-				dn, cleanup := c.tempDir(t, "build-from")
-				defer cleanup()
-
-				imagePath := path.Join(dn, "sandbox")
-
-				// Pass --sandbox because sandboxes take less time to
-				// build by skipping the SIF creation step.
-				args := []string{"--force", "--sandbox", imagePath, tc.buildSpec}
-
-				c.env.RunSingularity(
-					t,
-					e2e.AsSubtest(tc.name),
-					e2e.WithProfile(profile),
-					e2e.WithCommand("build"),
-					e2e.WithArgs(args...),
-					e2e.PreRun(func(t *testing.T) {
-						require.Arch(t, tc.requireArch)
-
-						if tc.dependency == "" {
-							return
-						}
-
-						if _, err := exec.LookPath(tc.dependency); err != nil {
-							t.Skipf("%v not found in path", tc.dependency)
-						}
-					}),
-					e2e.PostRun(func(t *testing.T) {
-						if t.Failed() {
-							return
-						}
-
-						defer os.RemoveAll(imagePath)
-						c.env.ImageVerify(t, imagePath, profile)
-					}),
-					e2e.ExpectExit(0),
-				)
+				c.executeTestCaseForBuildFrom(t, profile, tc)
 			}
 		})
 	}
 }
 
+func (c imgBuildTests) executeTestCaseForBuildFrom(t *testing.T, profile e2e.Profile, tc testCaseForBuildFrom) {
+	dn, cleanup := c.tempDir(t, "build-from")
+	defer cleanup()
+
+	imagePath := path.Join(dn, "sandbox")
+
+	// Pass --sandbox because sandboxes take less time to
+	// build by skipping the SIF creation step.
+	args := []string{"--force", "--sandbox", imagePath, tc.buildSpec}
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest(tc.name),
+		e2e.WithProfile(profile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(args...),
+		e2e.PreRun(func(t *testing.T) {
+			require.Arch(t, tc.requireArch)
+
+			if tc.dependency == "" {
+				return
+			}
+
+			if _, err := exec.LookPath(tc.dependency); err != nil {
+				t.Skipf("%v not found in path", tc.dependency)
+			}
+		}),
+		e2e.PostRun(func(t *testing.T) {
+			if t.Failed() {
+				return
+			}
+
+			defer os.RemoveAll(imagePath)
+			c.env.ImageVerify(t, imagePath, profile)
+		}),
+		e2e.ExpectExit(0),
+	)
+}
+
+type testCaseForNonRootBuild struct {
+	name        string
+	buildSpec   string
+	args        []string
+	requireArch string
+}
+
 func (c imgBuildTests) nonRootBuild(t *testing.T) {
-	tt := []struct {
-		name        string
-		buildSpec   string
-		args        []string
-		requireArch string
-	}{
+	tt := []testCaseForNonRootBuild{
 		{
 			name:      "local sif",
 			buildSpec: "testdata/busybox_" + runtime.GOARCH + ".sif",
@@ -210,31 +218,35 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		dn, cleanup := c.tempDir(t, "non-root-build")
-		defer cleanup()
-
-		imagePath := path.Join(dn, "container")
-
-		args := append(tc.args, imagePath, tc.buildSpec)
-
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tc.name),
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithCommand("build"),
-			e2e.WithArgs(args...),
-			e2e.PreRun(func(t *testing.T) {
-				if tc.requireArch != "" {
-					require.Arch(t, tc.requireArch)
-				}
-			}),
-
-			e2e.PostRun(func(t *testing.T) {
-				c.env.ImageVerify(t, imagePath, e2e.UserProfile)
-			}),
-			e2e.ExpectExit(0),
-		)
+		c.executeTestCaseForNonRootBuild(t, tc)
 	}
+}
+
+func (c imgBuildTests) executeTestCaseForNonRootBuild(t *testing.T, tc testCaseForNonRootBuild) {
+	dn, cleanup := c.tempDir(t, "non-root-build")
+	defer cleanup()
+
+	imagePath := path.Join(dn, "container")
+
+	args := append(tc.args, imagePath, tc.buildSpec)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest(tc.name),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(args...),
+		e2e.PreRun(func(t *testing.T) {
+			if tc.requireArch != "" {
+				require.Arch(t, tc.requireArch)
+			}
+		}),
+
+		e2e.PostRun(func(t *testing.T) {
+			c.env.ImageVerify(t, imagePath, e2e.UserProfile)
+		}),
+		e2e.ExpectExit(0),
+	)
 }
 
 func (c imgBuildTests) buildLocalImage(t *testing.T) {
@@ -332,6 +344,12 @@ func (c imgBuildTests) badPath(t *testing.T) {
 	)
 }
 
+type testCaseForBuildMultiStageDefinition struct {
+	name    string
+	dfd     []e2e.DefFileDetails
+	correct e2e.DefFileDetails // a bit hacky, but this allows us to check final image for correct artifacts
+}
+
 func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
 	if err != nil {
@@ -339,11 +357,7 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 	}
 	defer os.Remove(tmpfile) // clean up
 
-	tests := []struct {
-		name    string
-		dfd     []e2e.DefFileDetails
-		correct e2e.DefFileDetails // a bit hacky, but this allows us to check final image for correct artifacts
-	}{
+	tests := []testCaseForBuildMultiStageDefinition {
 		// Simple copy from stage one to final stage
 		{
 			name: "FileCopySimple",
@@ -514,33 +528,37 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		dn, cleanup := c.tempDir(t, "multi-stage-definition")
-		defer cleanup()
-
-		imagePath := path.Join(dn, "container")
-
-		defFile := e2e.PrepareMultiStageDefFile(tt.dfd)
-
-		// sandboxes take less time to build
-		args := []string{"--sandbox", imagePath, defFile}
-
-		c.env.RunSingularity(
-			t,
-			e2e.WithProfile(e2e.RootProfile),
-			e2e.WithCommand("build"),
-			e2e.WithArgs(args...),
-			e2e.PostRun(func(t *testing.T) {
-				defer os.Remove(defFile)
-
-				e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.correct)
-			}),
-			e2e.ExpectExit(0),
-		)
+	for _, tc := range tests {
+		c.executeTestCaseForBuildMultiStageDefinition(t, tc)
 	}
 }
 
-func (c imgBuildTests) buildDefinition(t *testing.T) {
+func (c imgBuildTests) executeTestCaseForBuildMultiStageDefinition(t *testing.T, tc testCaseForBuildMultiStageDefinition) {
+	dn, cleanup := c.tempDir(t, "multi-stage-definition")
+	defer cleanup()
+
+	imagePath := path.Join(dn, "container")
+
+	defFile := e2e.PrepareMultiStageDefFile(tc.dfd)
+
+	// sandboxes take less time to build
+	args := []string{"--sandbox", imagePath, defFile}
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(args...),
+		e2e.PostRun(func(t *testing.T) {
+			defer os.Remove(defFile)
+
+			e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tc.correct)
+		}),
+		e2e.ExpectExit(0),
+	)
+}
+
+func (c imgBuildTests) 2(t *testing.T) {
 	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
@@ -809,31 +827,36 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 
 		t.Run(profile.String(), func(t *testing.T) {
 			for name, dfd := range tt {
-				dn, cleanup := c.tempDir(t, "build-definition")
-				defer cleanup()
-
-				imagePath := path.Join(dn, "container")
-
-				defFile := e2e.PrepareDefFile(dfd)
-
-				c.env.RunSingularity(
-					t,
-					e2e.AsSubtest(name),
-					e2e.WithProfile(profile),
-					e2e.WithCommand("build"),
-					e2e.WithArgs("--sandbox", imagePath, defFile),
-					e2e.PostRun(func(t *testing.T) {
-						if t.Failed() {
-							return
-						}
-						defer os.Remove(defFile)
-						e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, dfd)
-					}),
-					e2e.ExpectExit(0),
-				)
+				c.executeTestCaseForBuildDefinition(t, dfd, name, profile)
+				_ = 1
 			}
 		})
 	}
+}
+
+func (c *imgBuildTests) executeTestCaseForBuildDefinition(t *testing.T, dfd e2e.DefFileDetails, name string, profile e2e.Profile) {
+	dn, cleanup := c.tempDir(t, "build-definition")
+	defer cleanup()
+
+	imagePath := path.Join(dn, "container")
+
+	defFile := e2e.PrepareDefFile(dfd)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest(name),
+		e2e.WithProfile(profile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--sandbox", imagePath, defFile),
+		e2e.PostRun(func(t *testing.T) {
+			if t.Failed() {
+				return
+			}
+			defer os.Remove(defFile)
+			e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, dfd)
+		}),
+		e2e.ExpectExit(0),
+	)
 }
 
 func (c *imgBuildTests) ensureImageIsEncrypted(t *testing.T, imgPath string) {
@@ -1069,6 +1092,13 @@ func (c imgBuildTests) buildUpdateSandbox(t *testing.T) {
 	}
 }
 
+type testCaseForBuildWithFingerprint struct {
+	name       string
+	definition string
+	exit       int
+	wantErr    string
+}
+
 // buildWithFingerprint checks that we correctly verify a source image fingerprint when specified
 func (c imgBuildTests) buildWithFingerprint(t *testing.T) {
 	tmpDir, remove := e2e.MakeTempDir(t, "", "imgbuild-fingerprint-", "")
@@ -1164,12 +1194,7 @@ func (c imgBuildTests) buildWithFingerprint(t *testing.T) {
 	}
 
 	// Test builds with "Fingerprint:" headers
-	tests := []struct {
-		name       string
-		definition string
-		exit       int
-		wantErr    string
-	}{
+	tests := []testCaseForBuildWithFingerprint {
 		{
 			name:       "build single signed one fingerprint",
 			definition: fmt.Sprintf("Bootstrap: localimage\nFrom: %s\nFingerprints: %s\n", singleSigned, ecl.KeyMap["key1"]),
@@ -1234,22 +1259,26 @@ func (c imgBuildTests) buildWithFingerprint(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		defFile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", tt.definition)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer os.Remove(defFile)
-		c.env.RunSingularity(t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.RootProfile),
-			e2e.WithCommand("build"),
-			e2e.WithArgs("-F", output, defFile),
-			e2e.ExpectExit(tt.exit,
-				e2e.ExpectError(e2e.ContainMatch, tt.wantErr),
-			),
-		)
+	for _, tc := range tests {
+		c.executeTestCaseForBuildWithFingerprint(t, tc, output)
 	}
+}
+
+func (c imgBuildTests) executeTestCaseForBuildWithFingerprint(t *testing.T, tc testCaseForBuildWithFingerprint, output string) {
+	defFile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", tc.definition)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Remove(defFile)
+	c.env.RunSingularity(t,
+		e2e.AsSubtest(tc.name),
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("-F", output, defFile),
+		e2e.ExpectExit(tc.exit,
+			e2e.ExpectError(e2e.ContainMatch, tc.wantErr),
+		),
+	)
 }
 
 // buildBindMount checks that we can bind host files/directories during build.

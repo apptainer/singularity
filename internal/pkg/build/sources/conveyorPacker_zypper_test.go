@@ -47,33 +47,37 @@ func TestZypperConveyor(t *testing.T) {
 	}
 
 	for _, defName := range zyppDef {
-		defFile, err := os.Open(defName)
-		if err != nil {
-			t.Fatalf("unable to open file %s: %v\n", defName, err)
-		}
-		defer defFile.Close()
+		testZypperConveyorForFile(t, defName)
+	}
+}
 
-		// create bundle to build into
-		b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-zypper"), os.TempDir())
-		if err != nil {
-			return
-		}
+func testZypperConveyorForFile(t *testing.T, defName string) {
+	defFile, err := os.Open(defName)
+	if err != nil {
+		t.Fatalf("unable to open file %s: %v\n", defName, err)
+	}
+	defer defFile.Close()
 
-		b.Recipe, err = parser.ParseDefinitionFile(defFile)
-		if err != nil {
-			t.Fatalf("failed to parse definition file %s: %v\n", defName, err)
-		}
+	// create bundle to build into
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-zypper"), os.TempDir())
+	if err != nil {
+		return
+	}
 
-		testForSLE(t, b)
+	b.Recipe, err = parser.ParseDefinitionFile(defFile)
+	if err != nil {
+		t.Fatalf("failed to parse definition file %s: %v\n", defName, err)
+	}
 
-		zc := &ZypperConveyorPacker{}
+	testForSLE(t, b)
 
-		err = zc.Get(context.Background(), b)
-		// clean up tmpfs since assembler isn't called
-		defer zc.b.Remove()
-		if err != nil {
-			t.Fatalf("failed to Get from %s: %v\n", defName, err)
-		}
+	zc := &ZypperConveyorPacker{}
+
+	err = zc.Get(context.Background(), b)
+	// clean up tmpfs since assembler isn't called
+	defer zc.b.Remove()
+	if err != nil {
+		t.Fatalf("failed to Get from %s: %v\n", defName, err)
 	}
 }
 
@@ -89,37 +93,41 @@ func TestZypperPacker(t *testing.T) {
 	}
 
 	for _, defName := range zyppDef {
-		defFile, err := os.Open(defName)
-		if err != nil {
-			t.Fatalf("unable to open file %s: %v\n", defName, err)
-		}
-		defer defFile.Close()
+		testZypperPackerForFile(t, defName)
+	}
+}
 
-		// create bundle to build into
-		b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-zypper"), os.TempDir())
-		if err != nil {
-			return
-		}
+func testZypperPackerForFile(t *testing.T, defName string) {
+	defFile, err := os.Open(defName)
+	if err != nil {
+		t.Fatalf("unable to open file %s: %v\n", defName, err)
+	}
+	defer defFile.Close()
 
-		b.Recipe, err = parser.ParseDefinitionFile(defFile)
-		if err != nil {
-			t.Fatalf("failed to parse definition file %s: %v\n", defName, err)
-		}
+	// create bundle to build into
+	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-zypper"), os.TempDir())
+	if err != nil {
+		return
+	}
 
-		testForSLE(t, b)
+	b.Recipe, err = parser.ParseDefinitionFile(defFile)
+	if err != nil {
+		t.Fatalf("failed to parse definition file %s: %v\n", defName, err)
+	}
 
-		zcp := &ZypperConveyorPacker{}
+	testForSLE(t, b)
 
-		err = zcp.Get(context.Background(), b)
-		// clean up tmpfs since assembler isn't called
-		defer zcp.b.Remove()
-		if err != nil {
-			t.Fatalf("failed to Get from %s: %v\n", defName, err)
-		}
+	zcp := &ZypperConveyorPacker{}
 
-		_, err = zcp.Pack(context.Background())
-		if err != nil {
-			t.Fatalf("failed to Pack from %s: %v\n", defName, err)
-		}
+	err = zcp.Get(context.Background(), b)
+	// clean up tmpfs since assembler isn't called
+	defer zcp.b.Remove()
+	if err != nil {
+		t.Fatalf("failed to Get from %s: %v\n", defName, err)
+	}
+
+	_, err = zcp.Pack(context.Background())
+	if err != nil {
+		t.Fatalf("failed to Pack from %s: %v\n", defName, err)
 	}
 }

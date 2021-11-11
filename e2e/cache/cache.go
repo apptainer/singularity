@@ -46,15 +46,17 @@ func prepTest(t *testing.T, testEnv e2e.TestEnv, testName string, cacheParentDir
 	ensureCached(t, testName, imagePath, cacheParentDir)
 }
 
+type testCaseForNoninteractiveCacheCmd struct {
+	name               string
+	options            []string
+	needImage          bool
+	expectedEmptyCache bool
+	expectedOutput     string
+	exit               int
+}
+
 func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
-	tests := []struct {
-		name               string
-		options            []string
-		needImage          bool
-		expectedEmptyCache bool
-		expectedOutput     string
-		exit               int
-	}{
+	tests := []testCaseForNoninteractiveCacheCmd {
 		{
 			name:               "clean force",
 			options:            []string{"clean", "--force"},
@@ -115,44 +117,50 @@ func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 	defer imgStoreCleanup(t)
 	imagePath := filepath.Join(tempDir, imgName)
 
-	for _, tt := range tests {
-		// Each test get its own clean cache directory
-		cacheDir, cleanup := e2e.MakeCacheDir(t, "")
-		defer cleanup(t)
-		_, err := cache.New(cache.Config{ParentDir: cacheDir})
-		if err != nil {
-			t.Fatalf("Could not create image cache handle: %v", err)
-		}
-
-		if tt.needImage {
-			prepTest(t, c.env, tt.name, cacheDir, imagePath)
-		}
-
-		c.env.ImgCacheDir = cacheDir
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithCommand("cache"),
-			e2e.WithArgs(tt.options...),
-			e2e.ExpectExit(tt.exit),
-		)
-
-		if tt.needImage && tt.expectedEmptyCache {
-			ensureNotCached(t, tt.name, imagePath, cacheDir)
-		}
+	for _, tc := range tests {
+		c.executeTestCaseForNoninteractiveCacheCmd(t, tc, imagePath)
 	}
 }
 
+func (c cacheTests) executeTestCaseForNoninteractiveCacheCmd(t *testing.T, tc testCaseForNoninteractiveCacheCmd, imagePath string) {
+	// Each test get its own clean cache directory
+	cacheDir, cleanup := e2e.MakeCacheDir(t, "")
+	defer cleanup(t)
+	_, err := cache.New(cache.Config{ParentDir: cacheDir})
+	if err != nil {
+		t.Fatalf("Could not create image cache handle: %v", err)
+	}
+
+	if tc.needImage {
+		prepTest(t, c.env, tc.name, cacheDir, imagePath)
+	}
+
+	c.env.ImgCacheDir = cacheDir
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest(tc.name),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("cache"),
+		e2e.WithArgs(tc.options...),
+		e2e.ExpectExit(tc.exit),
+	)
+
+	if tc.needImage && tc.expectedEmptyCache {
+		ensureNotCached(t, tc.name, imagePath, cacheDir)
+	}
+}
+
+type testCaseForInteractiveCacheCmd struct {
+	name               string
+	options            []string
+	expect             string
+	send               string
+	exit               int
+	expectedEmptyCache bool // Is the cache supposed to be empty after the command is executed
+}
+
 func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
-	tt := []struct {
-		name               string
-		options            []string
-		expect             string
-		send               string
-		exit               int
-		expectedEmptyCache bool // Is the cache supposed to be empty after the command is executed
-	}{
+	tests := []testCaseForInteractiveCacheCmd {
 		{
 			name:               "clean normal confirmed",
 			options:            []string{"clean"},
@@ -215,42 +223,46 @@ func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
 		},
 	}
 
-	// A directory where we store the image and used by separate commands
+		// A directory where we store the image and used by separate commands
 	tempDir, imgStoreCleanup := e2e.MakeTempDir(t, "", "", "image store")
 	defer imgStoreCleanup(t)
 	imagePath := filepath.Join(tempDir, imgName)
 
-	for _, tc := range tt {
-		// Each test get its own clean cache directory
-		cacheDir, cleanup := e2e.MakeCacheDir(t, "")
-		defer cleanup(t)
-		_, err := cache.New(cache.Config{ParentDir: cacheDir})
-		if err != nil {
-			t.Fatalf("Could not create image cache handle: %v", err)
-		}
+	for _, tc := range tests {
+		c.executeTestCaseForInteractiveCacheCmd(t, tc, imagePath)
+	}
+}
 
-		c.env.ImgCacheDir = cacheDir
-		prepTest(t, c.env, tc.name, cacheDir, imagePath)
+func (c cacheTests) executeTestCaseForInteractiveCacheCmd(t *testing.T, tc testCaseForInteractiveCacheCmd, imagePath string ) {
+	// Each test get its own clean cache directory
+	cacheDir, cleanup := e2e.MakeCacheDir(t, "")
+	defer cleanup(t)
+	_, err := cache.New(cache.Config{ParentDir: cacheDir})
+	if err != nil {
+		t.Fatalf("Could not create image cache handle: %v", err)
+	}
 
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tc.name),
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithCommand("cache"),
-			e2e.WithArgs(tc.options...),
-			e2e.ConsoleRun(
-				e2e.ConsoleExpect(tc.expect),
-				e2e.ConsoleSendLine(tc.send),
-			),
-			e2e.ExpectExit(tc.exit),
-		)
+	c.env.ImgCacheDir = cacheDir
+	prepTest(t, c.env, tc.name, cacheDir, imagePath)
 
-		// Check the content of the cache
-		if tc.expectedEmptyCache {
-			ensureNotCached(t, tc.name, imagePath, cacheDir)
-		} else {
-			ensureCached(t, tc.name, imagePath, cacheDir)
-		}
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest(tc.name),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("cache"),
+		e2e.WithArgs(tc.options...),
+		e2e.ConsoleRun(
+			e2e.ConsoleExpect(tc.expect),
+			e2e.ConsoleSendLine(tc.send),
+		),
+		e2e.ExpectExit(tc.exit),
+	)
+
+	// Check the content of the cache
+	if tc.expectedEmptyCache {
+		ensureNotCached(t, tc.name, imagePath, cacheDir)
+	} else {
+		ensureCached(t, tc.name, imagePath, cacheDir)
 	}
 }
 

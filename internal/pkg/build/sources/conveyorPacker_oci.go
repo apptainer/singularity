@@ -292,10 +292,16 @@ func (cp *OCIConveyorPacker) extractArchive(src string, dst string) error {
 			if err != nil {
 				return err
 			}
-			defer f.Close()
+			err = func() error {
+				defer f.Close()
 
-			// copy over contents
-			if _, err := io.Copy(f, tr); err != nil {
+				// copy over contents
+				if _, err := io.Copy(f, tr); err != nil {
+					return err
+				}
+				return nil
+			}()
+			if err != nil {
 				return err
 			}
 		}
