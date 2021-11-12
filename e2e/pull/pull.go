@@ -652,7 +652,8 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("pullDisableCache", c.testPullDisableCacheCmd)
 
 			// Regressions
-			t.Run("issue5808", c.issue5808)
+			// Disable for now, see issue #6299
+			// t.Run("issue5808", c.issue5808)
 		}),
 	}
 }
