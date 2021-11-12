@@ -93,6 +93,7 @@ func testCreateSocketForPath(t *testing.T, path string) {
 	<-syncCh
 
 	// close socket implies to delete file automatically
+	os.Chdir(dir)
 	err = ln.Close()
 	if err != nil {
 		t.Fatal(err)
