@@ -80,13 +80,12 @@ func TestCreateSocket(t *testing.T) {
 
 		<-syncCh
 
-		// close socket implies to delete file automatically
-		os.Chdir(dir)
+		// close socket does not delete the os file
 		ln.Close()
 
-		// socket file is deleted by net package at close
-		if err := os.Remove(path); err == nil {
-			t.Errorf("unexpected success during socket removal")
+		// socket file is NOT deleted by net package at close
+		if err := os.Remove(path); err != nil {
+			t.Errorf("unexpected failure [%s] during socket file removal", err.Error())
 		}
 	}
 }
