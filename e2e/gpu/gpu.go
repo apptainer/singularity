@@ -183,7 +183,7 @@ func (c ctx) testNvCCLI(t *testing.T) {
 		{
 			name:    "UserNamespace",
 			profile: e2e.UserNamespaceProfile,
-			args:    []string{"--nv", "--nvccli", imagePath, "nvidia-smi"},
+			args:    []string{"--nv", "--nvccli", "--writable", imagePath, "nvidia-smi"},
 		},
 	}
 
@@ -266,6 +266,7 @@ func (c ctx) testRocm(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func (c ctx) testBuildNvidiaLegacy(t *testing.T) {
 	require.Nvidia(t)
 
@@ -425,6 +426,7 @@ func (c ctx) testBuildNvCCLI(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func (c ctx) testBuildRocm(t *testing.T) {
 	require.Rocm(t)
 

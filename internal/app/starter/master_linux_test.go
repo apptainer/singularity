@@ -20,6 +20,7 @@ import (
 // cover case with bad socket file descriptors or non socket file
 // file descriptor (stderr).
 
+//nolint:dupl
 func TestCreateContainer(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -71,6 +72,7 @@ func TestCreateContainer(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func TestStartContainer(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)

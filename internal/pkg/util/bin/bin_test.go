@@ -58,6 +58,7 @@ func TestFindOnPath(t *testing.T) {
 }
 
 func TestFindFromConfigOrPath(t *testing.T) {
+	//nolint:dupl
 	cases := []struct {
 		name          string
 		bin           string
@@ -200,6 +201,7 @@ func TestFindFromConfigOrPath(t *testing.T) {
 }
 
 func TestFindFromConfigOnly(t *testing.T) {
+	//nolint:dupl
 	cases := []struct {
 		name          string
 		bin           string

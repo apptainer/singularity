@@ -57,7 +57,7 @@ const (
 
 var sifLayerMediaTypes = []string{SifLayerMediaTypeV1, SifLayerMediaTypeProto}
 
-func getResolver(ociAuth *ocitypes.DockerAuthConfig) (remotes.Resolver, error) {
+func getResolver(ctx context.Context, ociAuth *ocitypes.DockerAuthConfig) (remotes.Resolver, error) {
 	opts := docker.ResolverOptions{Credentials: genCredfn(ociAuth)}
 	if ociAuth != nil && (ociAuth.Username != "" || ociAuth.Password != "") {
 		return docker.NewResolver(opts), nil
@@ -69,7 +69,7 @@ func getResolver(ociAuth *ocitypes.DockerAuthConfig) (remotes.Resolver, error) {
 		return docker.NewResolver(opts), nil
 	}
 
-	return cli.Resolver(context.Background(), &http.Client{}, false)
+	return cli.Resolver(ctx, &http.Client{}, false)
 }
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
@@ -88,7 +88,7 @@ func DownloadImage(ctx context.Context, imagePath, ref string, ociAuth *ocitypes
 		sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
 	}
 
-	resolver, err := getResolver(ociAuth)
+	resolver, err := getResolver(ctx, ociAuth)
 	if err != nil {
 		return fmt.Errorf("while getting resolver: %s", err)
 	}
@@ -173,7 +173,7 @@ func UploadImage(ctx context.Context, path, ref string, ociAuth *ocitypes.Docker
 		sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
 	}
 
-	resolver, err := getResolver(ociAuth)
+	resolver, err := getResolver(ctx, ociAuth)
 	if err != nil {
 		return fmt.Errorf("while getting resolver: %s", err)
 	}
@@ -233,7 +233,7 @@ func ImageSHA(ctx context.Context, uri string, ociAuth *ocitypes.DockerAuthConfi
 	ref := strings.TrimPrefix(uri, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
-	resolver, err := getResolver(ociAuth)
+	resolver, err := getResolver(ctx, ociAuth)
 	if err != nil {
 		return "", fmt.Errorf("while getting resolver: %s", err)
 	}

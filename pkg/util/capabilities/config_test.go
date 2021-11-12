@@ -75,6 +75,7 @@ type capTest struct {
 	caps []string
 }
 
+//nolint:dupl
 func TestAddUserCaps(t *testing.T) {
 	testsPass := []capTest{
 		{
@@ -175,6 +176,7 @@ func TestAddUserCaps(t *testing.T) {
 	})
 }
 
+//nolint:dupl
 func TestAddGroupCaps(t *testing.T) {
 	testsPass := []capTest{
 		{
@@ -275,6 +277,7 @@ func TestAddGroupCaps(t *testing.T) {
 	})
 }
 
+//nolint:dupl
 func TestDropUserCaps(t *testing.T) {
 	testsPass := []capTest{
 		{
@@ -391,6 +394,7 @@ func TestDropUserCaps(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func TestDropGroupCaps(t *testing.T) {
 	testsPass := []capTest{
 		{

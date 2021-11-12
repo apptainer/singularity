@@ -302,6 +302,7 @@ func (c *YumConveyor) importGPGKey() (err error) {
 	return nil
 }
 
+//nolint:dupl
 func (c *YumConveyor) makePseudoDevices() (err error) {
 	devPath := filepath.Join(c.b.RootfsPath, "dev")
 	err = os.Mkdir(devPath, 0o775)

@@ -303,6 +303,7 @@ func TestRootAuthorizedOwner(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func TestAuthorizedOwner(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
@@ -410,6 +411,7 @@ func TestPrivilegedAuthorizedGroup(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func TestAuthorizedGroup(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
