@@ -19,7 +19,6 @@ import (
 	"syscall"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/containerd/cgroups"
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
 	"github.com/hpcng/singularity/internal/pkg/cgroups"
 	fakerootutil "github.com/hpcng/singularity/internal/pkg/fakeroot"
