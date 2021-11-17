@@ -87,6 +87,11 @@
     permit or deny usage of bare SquashFS and EXT image files only.
   - The effect of the `allow container dir` directive is unchanged.
 
+### Changes for Testing / Development
+
+- `E2E_DOCKER_MIRROR` and `E2E_DOCKER_MIRROR_INSECURE` were added to allow
+  to use a registry mirror (or a pull through cache).
+
 ## v3.8.4 - \[2021-11-09\]
 
 ### Bug fixes

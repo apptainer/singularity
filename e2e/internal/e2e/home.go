@@ -6,12 +6,14 @@
 package e2e
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 	"testing"
+	"text/template"
 
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
 	"github.com/hpcng/singularity/internal/pkg/util/user"
@@ -24,6 +26,19 @@ import (
 var rpmMacrosContent = `
 %_var /var
 %_dbpath %{_var}/lib/rpm
+`
+
+// $HOME/.config/containers/registries.conf to bypass
+// DockerHub rate limit by using Google DockerHub mirror
+var registriesTemplate = `[[registry]]
+prefix = "docker.io"
+{{- if .MirrorInsecure -}}insecure = true{{- end -}}
+location = "{{.MirrorURL}}"
+
+[[registry]]
+prefix = "index.docker.io"
+{{- if .MirrorInsecure -}}insecure = true{{- end -}}
+location = "{{.MirrorURL}}"
 `
 
 // SetupHomeDirectories creates temporary home directories for
@@ -139,6 +154,55 @@ func SetupHomeDirectories(t *testing.T) {
 		if err := ioutil.WriteFile(macrosFile, []byte(rpmMacrosContent), 0o444); err != nil {
 			err = errors.Wrapf(err, "writing macros file at %s", macrosFile)
 			t.Fatalf("could not write macros file: %+v", err)
+		}
+
+		mirror := os.Getenv("E2E_DOCKER_MIRROR")
+
+		// add registries.conf for the registry mirror
+		if mirror != "" {
+			mirrorInsecure := false
+			if os.Getenv("E2E_DOCKER_MIRROR_INSECURE") != "" {
+				mirrorInsecure = true
+			}
+			buf := new(bytes.Buffer)
+
+			tmpl, err := template.New("registries.conf").Parse(registriesTemplate)
+			if err != nil {
+				t.Fatalf("could not create registries.conf template: %+v", err)
+			}
+			data := struct {
+				MirrorURL      string
+				MirrorInsecure bool
+			}{
+				MirrorURL:      mirror,
+				MirrorInsecure: mirrorInsecure,
+			}
+			if err := tmpl.Execute(buf, data); err != nil {
+				t.Fatalf("could not registries.conf template: %+v", err)
+			}
+			registriesContent := buf.Bytes()
+
+			registryFile := filepath.Join(unprivSessionHome, ".config", "containers", "registries.conf")
+			registryDir := filepath.Dir(registryFile)
+			if err := os.MkdirAll(registryDir, 0o755); err != nil {
+				err = errors.Wrapf(err, "creating directory at %s", registryDir)
+				t.Fatalf("could not create directory: %+v", err)
+			}
+			if err := ioutil.WriteFile(registryFile, registriesContent, 0o444); err != nil {
+				err = errors.Wrapf(err, "writing macros file at %s", macrosFile)
+				t.Fatalf("could not write registries.conf file: %+v", err)
+			}
+
+			registryFile = filepath.Join(privSessionHome, ".config", "containers", "registries.conf")
+			registryDir = filepath.Dir(registryFile)
+			if err := os.MkdirAll(registryDir, 0o755); err != nil {
+				err = errors.Wrapf(err, "creating directory at %s", registryDir)
+				t.Fatalf("could not create directory: %+v", err)
+			}
+			if err := ioutil.WriteFile(registryFile, registriesContent, 0o444); err != nil {
+				err = errors.Wrapf(err, "writing macros file at %s", macrosFile)
+				t.Fatalf("could not write registries.conf file: %+v", err)
+			}
 		}
 	})(t)
 }
