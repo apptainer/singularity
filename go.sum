@@ -1462,8 +1462,8 @@ k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd/go.mod h1:WOJ3KddDSol4tAG
 k8s.io/kubernetes v1.13.0/go.mod h1:ocZa8+6APFNC2tX1DZASIbocyYT5jHzqFVsY5aoB7Jk=
 k8s.io/utils v0.0.0-20201110183641-67b214c5f920/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
 mvdan.cc/editorconfig v0.2.0/go.mod h1:lvnnD3BNdBYkhq+B4uBuFFKatfp02eB6HixDvEz91C0=
-mvdan.cc/sh/v3 v3.4.1-0.20211012151248-7e067a88c992 h1:qp1H1QJpHFbSLMM5P5uX2gLMg5wakBJy603dhpRh6IY=
-mvdan.cc/sh/v3 v3.4.1-0.20211012151248-7e067a88c992/go.mod h1:p/tqPPI4Epfk2rICAe2RoaNd8HBSJ8t9Y2DA9yQlbzY=
+mvdan.cc/sh/v3 v3.4.1-0.20211117155449-fd5bf4bda085 h1:5DEMijC3Bv/c5bNGMB+fb744YYK9qXz8gclnfaxHm38=
+mvdan.cc/sh/v3 v3.4.1-0.20211117155449-fd5bf4bda085/go.mod h1:p/tqPPI4Epfk2rICAe2RoaNd8HBSJ8t9Y2DA9yQlbzY=
 oras.land/oras-go v0.5.0 h1:8prh1CfcDxWE+C+aoinkfIj5QqW6EAg6y+U6spGtm/Q=
 oras.land/oras-go v0.5.0/go.mod h1:kV8HXCD+3ek6INN9Jeig7hRjf72zfziwktBCA7/PvBA=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
