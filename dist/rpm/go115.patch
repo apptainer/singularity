@@ -22,3 +22,67 @@
  		}
  		r.stderr = err
  		return nil
+diff --git a/vendor/github.com/sylabs/scs-library-client/client/pull.go b/vendor/github.com/sylabs/scs-library-client/client/pull.go
+index 4e87092..25cd08d 100644
+--- a/vendor/github.com/sylabs/scs-library-client/client/pull.go
++++ b/vendor/github.com/sylabs/scs-library-client/client/pull.go
+@@ -9,6 +9,7 @@ import (
+ 	"context"
+ 	"fmt"
+ 	"io"
++	"io/ioutil"
+ 	"net/http"
+ 	"net/url"
+ 	"os"
+@@ -186,7 +187,7 @@ type NoopProgressBar struct{}
+ func (*NoopProgressBar) Init(int64) {}
+ 
+ // ProxyReader is a no-op
+-func (*NoopProgressBar) ProxyReader(r io.Reader) io.ReadCloser { return io.NopCloser(r) }
++func (*NoopProgressBar) ProxyReader(r io.Reader) io.ReadCloser { return ioutil.NopCloser(r) }
+ 
+ // IncrBy is a no-op
+ func (*NoopProgressBar) IncrBy(int) {}
+diff --git a/vendor/github.com/sylabs/scs-library-client/client/restclient.go b/vendor/github.com/sylabs/scs-library-client/client/restclient.go
+index 726fa3f..561743e 100644
+--- a/vendor/github.com/sylabs/scs-library-client/client/restclient.go
++++ b/vendor/github.com/sylabs/scs-library-client/client/restclient.go
+@@ -12,6 +12,7 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"io"
++	"io/ioutil"
+ 	"net/http"
+ 	"net/url"
+ 
+@@ -92,7 +93,7 @@ func (c *Client) commonRequestHandler(ctx context.Context, method string, path s
+ 		}
+ 		return []byte{}, fmt.Errorf("request did not succeed: http status code: %d", res.StatusCode)
+ 	}
+-	objJSON, err = io.ReadAll(res.Body)
++	objJSON, err = ioutil.ReadAll(res.Body)
+ 	if err != nil {
+ 		return []byte{}, fmt.Errorf("error reading response from server:\n\t%v", err)
+ 	}
+diff --git a/vendor/github.com/sylabs/scs-key-client/client/pks.go b/vendor/github.com/sylabs/scs-key-client/client/pks.go
+index 0260671..6b8a622 100644
+--- a/vendor/github.com/sylabs/scs-key-client/client/pks.go
++++ b/vendor/github.com/sylabs/scs-key-client/client/pks.go
+@@ -9,7 +9,7 @@ import (
+ 	"context"
+ 	"errors"
+ 	"fmt"
+-	"io"
++	"io/ioutil"
+ 	"net/http"
+ 	"net/url"
+ 	"strconv"
+@@ -137,7 +137,7 @@ func (c *Client) PKSLookup(ctx context.Context, pd *PageDetails, search, operati
+ 		pd.Token = res.Header.Get("X-HKP-Next-Page-Token")
+ 	}
+ 
+-	body, err := io.ReadAll(res.Body)
++	body, err := ioutil.ReadAll(res.Body)
+ 	if err != nil {
+ 		return "", fmt.Errorf("%w", err)
+ 	}
