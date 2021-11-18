@@ -1,10 +1,10 @@
 module github.com/hpcng/singularity/log-plugin
 
-go 1.13
+go 1.16
 
 require (
-	github.com/spf13/cobra v1.2.1
 	github.com/hpcng/singularity v0.0.0
+	github.com/spf13/cobra v1.2.1
 )
 
 replace github.com/hpcng/singularity => ./singularity_source
