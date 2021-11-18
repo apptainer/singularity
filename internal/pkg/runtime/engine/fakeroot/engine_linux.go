@@ -159,12 +159,15 @@ func (e *EngineOperations) CreateContainer(context.Context, int, net.Conn) error
 // set the return value to 0 for mknod and mknodat syscalls. It
 // allows build bootstrap like yum to work with fakeroot.
 func fakerootSeccompProfile() *specs.LinuxSeccomp {
+	zero := uint(0)
 	syscalls := []specs.LinuxSyscall{
 		{
-			Names:  []string{"mknod", "mknodat"},
-			Action: specs.ActErrno,
+			Names:    []string{"mknod", "mknodat"},
+			Action:   specs.ActErrno,
+			ErrnoRet: &zero,
 		},
 	}
+
 	return &specs.LinuxSeccomp{
 		DefaultAction: specs.ActAllow,
 		Syscalls:      syscalls,
@@ -234,7 +237,7 @@ func (e *EngineOperations) StartProcess(masterConnFd int) error {
 	}
 
 	if seccomp.Enabled() {
-		if err := seccomp.LoadSeccompConfig(fakerootSeccompProfile(), false, 0); err != nil {
+		if err := seccomp.LoadSeccompConfig(fakerootSeccompProfile(), false); err != nil {
 			sylog.Warningf("Could not apply seccomp filter, some bootstrap may not work correctly")
 		}
 	} else {

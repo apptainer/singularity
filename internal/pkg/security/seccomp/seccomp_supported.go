@@ -9,16 +9,22 @@
 package seccomp
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"syscall"
 
+	cseccomp "github.com/containers/common/pkg/seccomp"
 	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	cseccomp "github.com/seccomp/containers-golang"
 	lseccomp "github.com/seccomp/libseccomp-golang"
+)
+
+var (
+	ErrInvalidAction    = errors.New("invalid action")
+	ErrUnsupportedErrno = errors.New("errno is not supported for action")
 )
 
 var scmpArchMap = map[specs.Arch]lseccomp.ScmpArch{
@@ -69,13 +75,64 @@ func hasConditionSupport() bool {
 	return (major > 2) || (major == 2 && minor >= 2) || (major == 2 && minor == 2 && micro >= 1)
 }
 
+// getDefaultErrno returns the default errNo that is specified by the specs
+//
+// https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#seccomp
+//
+// defaultErrnoRet (uint, OPTIONAL) - the errno return code to use. Some actions
+// like SCMP_ACT_ERRNO and SCMP_ACT_TRACE allow to specify the errno code to
+// return. When the action doesn't support an errno, the runtime MUST print and
+// error and fail. If not specified then its default value is EPERM
+//
+func getDefaultErrno(config *specs.LinuxSeccomp) (errnoRet *uint, err error) {
+	// If there is no attempt to explicitly set a defaultErrnoRet then a default
+	// or explicit ERRNO/TRACE action should return EPERM.
+	if config.DefaultErrnoRet == nil {
+		eperm := uint(syscall.EPERM)
+		return &eperm, nil
+	}
+
+	// defaultErrno is set with a defaultAction of ERRNO or TRACE
+	if config.DefaultAction == specs.ActErrno || config.DefaultAction == specs.ActTrace {
+		return config.DefaultErrnoRet, nil
+	}
+
+	// defaultErrno is set for a defaultAction that doesn't support it
+	return nil, fmt.Errorf("defaultAction: %w", ErrUnsupportedErrno)
+}
+
+// getAction returns the approriate libseccomp action for a given containers/common seccomp action
+func getAction(specAction specs.LinuxSeccompAction, errnoRet *uint, defaultErrNoRet uint) (scmpAction lseccomp.ScmpAction, err error) {
+	scmpAction, ok := scmpActionMap[specAction]
+	if !ok {
+		return lseccomp.ActInvalid, fmt.Errorf("%v: %w", specAction, ErrInvalidAction)
+	}
+
+	// Errno or Trace must set an Errno
+	if specAction == specs.ActErrno || specAction == specs.ActTrace {
+		// errnoRet override of the default
+		if errnoRet != nil {
+			return scmpAction.SetReturnCode(int16(*errnoRet)), nil
+		}
+		// defaultErrnoRet (which is EPERM if not specified)
+		return scmpAction.SetReturnCode(int16(defaultErrNoRet)), nil
+	}
+
+	// Other actions which don't take an errno
+	if errnoRet != nil {
+		return lseccomp.ActInvalid, fmt.Errorf("%v, %w", specAction, ErrUnsupportedErrno)
+	}
+
+	return scmpAction, nil
+}
+
 // Enabled returns whether seccomp is enabled.
 func Enabled() bool {
 	return true
 }
 
 // LoadSeccompConfig loads seccomp configuration filter for the current process.
-func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool, errNo int16) error {
+func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 	if err := prctl(syscall.PR_GET_SECCOMP, 0, 0, 0, 0); err == syscall.EINVAL {
 		return fmt.Errorf("can't load seccomp filter: not supported by kernel")
 	}
@@ -97,15 +154,20 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool, errNo int16)
 		sylog.Warningf("seccomp rule conditions are not supported with libseccomp under 2.2.1")
 	}
 
-	scmpAction, ok := scmpActionMap[config.DefaultAction]
-	if !ok {
-		return fmt.Errorf("invalid action '%s' specified", config.DefaultAction)
+	defaultErrno, err := getDefaultErrno(config)
+	if err != nil {
+		return fmt.Errorf("can't load default action: %w", err)
 	}
-	if scmpAction == lseccomp.ActErrno {
-		scmpAction = scmpAction.SetReturnCode(errNo)
+	if defaultErrno == nil {
+		return fmt.Errorf("internal error - computed defaultErrno cannot be nil")
 	}
 
-	filter, err := lseccomp.NewFilter(scmpAction)
+	defaultAction, err := getAction(config.DefaultAction, nil, *defaultErrno)
+	if err != nil {
+		return fmt.Errorf("can't load default action: %w", err)
+	}
+
+	filter, err := lseccomp.NewFilter(defaultAction)
 	if err != nil {
 		return fmt.Errorf("error creating new filter: %s", err)
 	}
@@ -130,12 +192,16 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool, errNo int16)
 			return fmt.Errorf("no syscall specified for the rule")
 		}
 
-		scmpAction, ok = scmpActionMap[syscall.Action]
-		if !ok {
-			return fmt.Errorf("invalid action '%s' specified", syscall.Action)
+		scmpAction, err := getAction(syscall.Action, syscall.ErrnoRet, *defaultErrno)
+		if err != nil {
+			return fmt.Errorf("error adding action: %w", err)
 		}
-		if scmpAction == lseccomp.ActErrno {
-			scmpAction = scmpAction.SetReturnCode(errNo)
+
+		// If the action is equal to the default action we skip the rule
+		// silently, as it is redundant and AddRule will error inserting it.
+		if scmpAction == defaultAction {
+			sylog.Debugf("Skipping redundant seccomp rule for %v %v", syscall.Names, scmpAction)
+			continue
 		}
 
 		for _, sysName := range syscall.Names {

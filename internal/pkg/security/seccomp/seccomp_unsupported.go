@@ -21,7 +21,7 @@ func Enabled() bool {
 }
 
 // LoadSeccompConfig loads seccomp configuration filter for the current process.
-func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool, errNo int16) error {
+func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 	return fmt.Errorf("can't load seccomp filter: not enabled at compilation time")
 }
 

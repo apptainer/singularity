@@ -13,6 +13,7 @@ require (
 	github.com/containerd/containerd v1.5.8
 	github.com/containernetworking/cni v1.0.1
 	github.com/containernetworking/plugins v1.0.1
+	github.com/containers/common v0.44.3
 	github.com/containers/image/v5 v5.16.1
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/docker/docker v20.10.11+incompatible
@@ -32,8 +33,7 @@ require (
 	github.com/pelletier/go-toml v1.9.4
 	github.com/pkg/errors v0.9.1
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/seccomp/containers-golang v0.6.0
-	github.com/seccomp/libseccomp-golang v0.9.1
+	github.com/seccomp/libseccomp-golang v0.9.2-0.20211028222634-77bddc247e72
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.8.0

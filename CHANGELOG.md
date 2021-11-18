@@ -31,6 +31,9 @@
 - Perform concurrent multi-part downloads for `library://` URIs. Uses 3
   concurrent downloads by default, and is configurable in `singularity.conf` or
   via environment variables.
+- Updated seccomp support allows use of seccomp profiles that set an error
+  return code with `errnoRet` and `defaultErrnoRet`. Previously EPERM was hard
+  coded. The example `etc/seccomp-profiles/default.json` has been updated.
 
 ### Changed defaults / behaviours
 

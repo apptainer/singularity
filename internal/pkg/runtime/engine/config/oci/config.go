@@ -10,10 +10,10 @@ import (
 	"fmt"
 
 	"github.com/containerd/cgroups"
+	cseccomp "github.com/containers/common/pkg/seccomp"
 	"github.com/hpcng/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/hpcng/singularity/internal/pkg/security/seccomp"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	cseccomp "github.com/seccomp/containers-golang"
 )
 
 // Config is the OCI runtime configuration.
