@@ -20,7 +20,6 @@ import (
 	"github.com/hpcng/singularity/internal/app/starter"
 	"github.com/hpcng/singularity/internal/pkg/runtime/engine"
 	starterConfig "github.com/hpcng/singularity/internal/pkg/runtime/engine/config/starter"
-	_ "github.com/hpcng/singularity/internal/pkg/util/goversion"
 	"github.com/hpcng/singularity/internal/pkg/util/mainthread"
 	"github.com/hpcng/singularity/pkg/sylog"
 
