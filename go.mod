@@ -55,15 +55,11 @@ require (
 	golang.org/x/sys v0.0.0-20211004093028-2c5d950f24ef
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
-	mvdan.cc/sh/v3 v3.4.0
+	mvdan.cc/sh/v3 v3.4.1-0.20211117155449-fd5bf4bda085
 	oras.land/oras-go v1.0.0
 )
 
 replace (
-	// These are required for oras.land/oras-go
-	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
-	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
-
 	// Temporarily force an image-spec that has the main branch commits not in 1.0.2 which is being brought in by oras-go
 	// These commits are needed by containers/image/v5 and the replace is necessary given how image-spec v1.0.2 has been
 	// tagged / rebased.
