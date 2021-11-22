@@ -1,5 +1,33 @@
 # Singularity Changelog
 
+## Changes since last release
+
+### Security Related Fixes
+
+  - [CVE-2021-41190](https://github.com/opencontainers/image-spec/security/advisories/GHSA-77vh-xpmg-72qh) /
+    [GHSA-77vh-xpmg-72qh](https://github.com/opencontainers/image-spec/security/advisories/GHSA-77vh-xpmg-72qh):
+    OCI specifications allow ambiguous documents that contain both "manifests"
+    and "layers" fields. Interpretation depends on the presence / value of a
+    Content-Type header.  Dependencies handling the retrieval of OCI images
+    have been updated to versions that reject ambiguous documents.
+
+### Changed defaults / behaviours
+
+  - Building Singularity from source requires go >=1.16. We now aim to support
+    the two most recent stable versions of Go. This corresponds to the Go
+    [Release Maintenance Policy](https://github.com/golang/go/wiki/Go-Release-Cycle#release-maintenance)
+    and [Security Policy](https://golang.org/security), ensuring critical bug
+    fixes and security patches are available for all supported language
+    versions.  However, rpm packaging applies a patch to support older native
+    go installations.
+
+### Bug fixes
+
+  - Sourcing a script based on PATH is now permitted, fixing a regression
+    introduced in 3.6.0.
+  - Environment variables in container definition files are properly
+    scoped, fixing a regression introduced in 3.8.0.
+
 ## v3.8.4 - [2021-11-09]
 
 ### Bug fixes
