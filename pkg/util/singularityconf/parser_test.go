@@ -119,6 +119,10 @@ func TestGetConfig(t *testing.T) {
 	directives["max loop devices"] = []string{"42"}
 	directives["bind path"] = []string{"/etc/hosts"}
 
+	directives["download concurrency"] = []string{"42"}
+	directives["download part size"] = []string{"1234"}
+	directives["download buffer size"] = []string{"4567"}
+
 	config, err := GetConfig(directives)
 	if err != nil {
 		t.Errorf("unexpected error while getting config: %s", err)
@@ -134,6 +138,15 @@ func TestGetConfig(t *testing.T) {
 	}
 	if !reflect.DeepEqual(config.BindPath, directives["bind path"]) {
 		t.Errorf("bad value for BindPath: %v", config.BindPath)
+	}
+	if config.DownloadConcurrency != 42 {
+		t.Errorf("bad value for DownloadConcurrency: %v", config.DownloadConcurrency)
+	}
+	if config.DownloadPartSize != 1234 {
+		t.Errorf("bad value for DownloadPartSize: %v", config.DownloadPartSize)
+	}
+	if config.DownloadBufferSize != 4567 {
+		t.Errorf("bad value for DownloadBufferSize: %v", config.DownloadPartSize)
 	}
 }
 

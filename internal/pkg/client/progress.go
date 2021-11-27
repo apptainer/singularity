@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,6 +13,31 @@ import (
 	"github.com/vbauerster/mpb/v6"
 	"github.com/vbauerster/mpb/v6/decor"
 )
+
+func initProgressBar(totalSize int64) (*mpb.Progress, *mpb.Bar) {
+	p := mpb.New()
+
+	if totalSize > 0 {
+		return p, p.AddBar(totalSize,
+			mpb.PrependDecorators(
+				decor.Counters(decor.UnitKiB, "%.1f / %.1f"),
+			),
+			mpb.AppendDecorators(
+				decor.Percentage(),
+				decor.AverageSpeed(decor.UnitKiB, " % .1f "),
+				decor.AverageETA(decor.ET_STYLE_GO),
+			),
+		)
+	}
+	return p, p.AddBar(totalSize,
+		mpb.PrependDecorators(
+			decor.Current(decor.UnitKiB, "%.1f / ???"),
+		),
+		mpb.AppendDecorators(
+			decor.AverageSpeed(decor.UnitKiB, " % .1f "),
+		),
+	)
+}
 
 // See: https://ixday.github.io/post/golang-cancel-copy/
 type readerFunc func(p []byte) (n int, err error)
@@ -32,29 +57,7 @@ func ProgressBarCallback(ctx context.Context) ProgressCallback {
 	}
 
 	return func(totalSize int64, r io.Reader, w io.Writer) error {
-		p := mpb.New()
-		var bar *mpb.Bar
-		if totalSize > 0 {
-			bar = p.AddBar(totalSize,
-				mpb.PrependDecorators(
-					decor.Counters(decor.UnitKiB, "%.1f / %.1f"),
-				),
-				mpb.AppendDecorators(
-					decor.Percentage(),
-					decor.AverageSpeed(decor.UnitKiB, " % .1f "),
-					decor.AverageETA(decor.ET_STYLE_GO),
-				),
-			)
-		} else {
-			bar = p.AddBar(totalSize,
-				mpb.PrependDecorators(
-					decor.Current(decor.UnitKiB, "%.1f / ???"),
-				),
-				mpb.AppendDecorators(
-					decor.AverageSpeed(decor.UnitKiB, " % .1f "),
-				),
-			)
-		}
+		p, bar := initProgressBar(totalSize)
 
 		// create proxy reader
 		bodyProgress := bar.ProxyReader(r)
@@ -89,4 +92,43 @@ func CopyWithContext(ctx context.Context, dst io.Writer, src io.Reader) error {
 		}
 	}))
 	return err
+}
+
+// DownloadProgressBar is used for chunked scs-library-client downloads.
+type DownloadProgressBar struct {
+	bar *mpb.Bar
+	p   *mpb.Progress
+}
+
+func (pb *DownloadProgressBar) Init(contentLength int64) {
+	if sylog.GetLevel() <= -1 {
+		// we don't need a bar visible
+		return
+	}
+	pb.p, pb.bar = initProgressBar(contentLength)
+}
+
+func (pb *DownloadProgressBar) ProxyReader(r io.Reader) io.ReadCloser {
+	return pb.bar.ProxyReader(r)
+}
+
+func (pb *DownloadProgressBar) IncrBy(n int) {
+	if pb.bar == nil {
+		return
+	}
+	pb.bar.IncrBy(n)
+}
+
+func (pb *DownloadProgressBar) Abort(drop bool) {
+	if pb.bar == nil {
+		return
+	}
+	pb.bar.Abort(drop)
+}
+
+func (pb *DownloadProgressBar) Wait() {
+	if pb.bar == nil {
+		return
+	}
+	pb.p.Wait()
 }

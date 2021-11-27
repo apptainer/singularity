@@ -13,6 +13,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/hpcng/singularity/internal/pkg/util/fs"
@@ -21,6 +22,7 @@ import (
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
+	"golang.org/x/term"
 )
 
 // ErrLibraryUnsigned indicated that the image intended to be used is
@@ -79,8 +81,12 @@ func (c *progressCallback) Finish() {
 // LibraryPush will upload an image file according to the provided LibraryPushSpec
 // Before uploading, the image will be checked for a valid signature unless AllowUnsigned is true
 func LibraryPush(ctx context.Context, pushSpec LibraryPushSpec, libraryConfig *client.Config, co []keyclient.Option) error {
-	if _, err := os.Stat(pushSpec.SourceFile); os.IsNotExist(err) {
-		return fmt.Errorf("unable to open: %v: %v", pushSpec.SourceFile, err)
+	fi, err := os.Stat(pushSpec.SourceFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("unable to open: %v: %v", pushSpec.SourceFile, err)
+		}
+		return err
 	}
 
 	arch, err := sifArch(pushSpec.SourceFile)
@@ -116,8 +122,22 @@ func LibraryPush(ctx context.Context, pushSpec LibraryPushSpec, libraryConfig *c
 	}
 	defer f.Close()
 
-	resp, err := libraryClient.UploadImage(ctx, f, r.Host+r.Path, arch, r.Tags, pushSpec.Description, &progressCallback{})
-	if err != nil {
+	var progressBar client.UploadCallback
+	if !term.IsTerminal(2) {
+		sylog.Infof("Uploading %d bytes\n", fi.Size())
+	} else {
+		progressBar = &progressCallback{}
+	}
+
+	var resp *client.UploadImageComplete
+
+	defer func(t time.Time) {
+		if err == nil && resp != nil && progressBar == nil {
+			sylog.Infof("Uploaded %d bytes in %v\n", fi.Size(), time.Since(t))
+		}
+	}(time.Now())
+
+	if resp, err = libraryClient.UploadImage(ctx, f, r.Host+r.Path, arch, r.Tags, pushSpec.Description, progressBar); err != nil {
 		return err
 	}
 
