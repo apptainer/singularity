@@ -36,7 +36,7 @@ On CentOS/RHEL:
 sudo yum groupinstall -y 'Development Tools'
 # Ensure EPEL repository is available
 sudo yum install -y epel-release
-# Install RPM packages for dependencies 
+# Install RPM packages for dependencies
 sudo yum install -y \
     libseccomp-devel \
     squashfs-tools \

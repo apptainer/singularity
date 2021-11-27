@@ -1,3 +1,4 @@
+// Copyright (c) 2021, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -7,6 +8,7 @@ package singularity
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -56,7 +58,7 @@ func RemoteRemoveKeyserver(name, uri string) error {
 		return fmt.Errorf("while truncating remote config file: %s", err)
 	}
 
-	if n, err := file.Seek(0, os.SEEK_SET); err != nil || n != 0 {
+	if n, err := file.Seek(0, io.SeekStart); err != nil || n != 0 {
 		return fmt.Errorf("failed to reset %s cursor: %s", file.Name(), err)
 	}
 

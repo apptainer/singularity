@@ -1,3 +1,8 @@
+// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE.md file distributed with the sources of this project regarding your
+// rights to use or distribute this software.package singularity
+
 package singularity
 
 import (
@@ -10,7 +15,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	"github.com/hpcng/singularity/pkg/image"
 	"golang.org/x/sys/unix"
@@ -21,26 +26,48 @@ const (
 	ddBinary   = "dd"
 )
 
-func sifInfo(img *os.File) (string, bool, error) {
-	fimg, err := sif.LoadContainerFp(img, true)
+// isSigned returns true if the SIF in rw contains one or more signature objects.
+func isSigned(rw sif.ReadWriter) (bool, error) {
+	f, err := sif.LoadContainer(rw,
+		sif.OptLoadWithFlag(os.O_RDONLY),
+		sif.OptLoadWithCloseOnUnload(false),
+	)
 	if err != nil {
-		return "", false, err
+		return false, err
+	}
+	defer f.UnloadContainer()
+
+	sigs, err := f.GetDescriptors(sif.WithDataType(sif.DataSignature))
+	return len(sigs) > 0, err
+}
+
+// addOverlayToImage adds the EXT3 overlay at overlayPath to the SIF image at imagePath.
+func addOverlayToImage(imagePath, overlayPath string) error {
+	f, err := sif.LoadContainerFromPath(imagePath)
+	if err != nil {
+		return err
+	}
+	defer f.UnloadContainer()
+
+	tf, err := os.Open(overlayPath)
+	if err != nil {
+		return err
+	}
+	defer tf.Close()
+
+	arch := f.PrimaryArch()
+	if arch == "unknown" {
+		arch = runtime.GOARCH
 	}
 
-	arch := string(fimg.Header.Arch[:sif.HdrArchLen-1])
-	if arch == sif.HdrArchUnknown {
-		arch = sif.GetSIFArch(runtime.GOARCH)
+	di, err := sif.NewDescriptorInput(sif.DataPartition, tf,
+		sif.OptPartitionMetadata(sif.FsExt3, sif.PartOverlay, arch),
+	)
+	if err != nil {
+		return err
 	}
 
-	signed := false
-	for _, desc := range fimg.DescrArr {
-		if desc.Datatype == sif.DataSignature && desc.Link == sif.DescrDefaultGroup {
-			signed = true
-			break
-		}
-	}
-
-	return arch, signed, fimg.UnloadContainer()
+	return f.AddObject(di)
 }
 
 func OverlayCreate(size int, imgPath string, overlayDirs ...string) error {
@@ -70,7 +97,6 @@ func OverlayCreate(size int, imgPath string, overlayDirs ...string) error {
 	}
 
 	sifImage := false
-	sifArch := ""
 
 	if err := unix.Access(imgPath, unix.W_OK); err == nil {
 		img, err := image.Init(imgPath, false)
@@ -90,13 +116,12 @@ func OverlayCreate(size int, imgPath string, overlayDirs ...string) error {
 			if err != nil {
 				return fmt.Errorf("while getting SIF overlay partitions: %s", err)
 			}
-			arch, signed, err := sifInfo(img.File)
+			signed, err := isSigned(img.File)
 			if err != nil {
 				return fmt.Errorf("while getting SIF info: %s", err)
 			} else if signed {
 				return fmt.Errorf("SIF image %s is signed: could not add writable overlay", imgPath)
 			}
-			sifArch = arch
 
 			img.File.Close()
 
@@ -179,22 +204,8 @@ func OverlayCreate(size int, imgPath string, overlayDirs ...string) error {
 	errBuf.Reset()
 
 	if sifImage {
-		self, err := os.Executable()
-		if err != nil {
-			return fmt.Errorf("while determining current executable path: %s", err)
-		}
-
-		args := []string{
-			"sif", "add",
-			"--datatype", "4", "--partfs", "2",
-			"--parttype", "4", "--partarch", sifArch,
-			"--groupid", "1",
-			imgPath, tmpFile,
-		}
-		cmd = exec.Command(self, args...)
-		cmd.Stderr = errBuf
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("while adding ext3 overlay partition to %s: %s\nCommand error: %s", imgPath, err, errBuf)
+		if err := addOverlayToImage(imgPath, tmpFile); err != nil {
+			return fmt.Errorf("while adding ext3 overlay partition to %s: %w", imgPath, err)
 		}
 	} else {
 		if err := os.Rename(tmpFile, imgPath); err != nil {

@@ -103,6 +103,10 @@
 - Added seccomp, cryptsetup, devscripts & correct go version test to
   debian packaging.
 
+Additional changes include dependency updates for the SIF module (to v2.0.0),
+and migration to maintained versions of other modules. There is no change to
+functionality, on-disk SIF format etc.
+
 ## v3.8.3 - \[2021-09-07\]
 
 ### Bug fixes

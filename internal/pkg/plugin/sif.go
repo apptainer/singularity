@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/hpcng/singularity/pkg/image"
 	pluginapi "github.com/hpcng/singularity/pkg/plugin"
 )
@@ -29,9 +29,9 @@ const (
 // format:
 //
 // DESCR[0]: Sifplugin
-//   - Datatype: sif.DataPartition
-//   - Fstype:   sif.FsRaw
-//   - Parttype: sif.PartData
+//   - DataType: sif.DataPartition
+//   - FSType:   sif.FsRaw
+//   - PartType: sif.PartData
 // DESCR[1]: Sifmanifest
 //   - Datatype: sif.DataGenericJSON
 func isPluginFile(img *image.Image) bool {

@@ -42,8 +42,8 @@ import (
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/hpcng/singularity/pkg/util/rlimit"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sys/unix"
+	"golang.org/x/term"
 	"mvdan.cc/sh/v3/interp"
 )
 
@@ -87,7 +87,7 @@ func (e *EngineOperations) StartProcess(masterConnFd int) error {
 		//   place.  Also, programs that don't use ttyname() and instead
 		//   directly do readlink() on /proc/self/fd/X need this.
 		for fd := 0; fd <= 2; fd++ {
-			if !terminal.IsTerminal(fd) {
+			if !term.IsTerminal(fd) {
 				continue
 			}
 			consfile, err := os.OpenFile("/dev/console", os.O_RDWR, 0o600)
@@ -98,7 +98,7 @@ func (e *EngineOperations) StartProcess(masterConnFd int) error {
 			sylog.Debugf("Replacing tty descriptors with /dev/console")
 			consfd := int(consfile.Fd())
 			for ; fd <= 2; fd++ {
-				if !terminal.IsTerminal(fd) {
+				if !term.IsTerminal(fd) {
 					continue
 				}
 				syscall.Close(fd)

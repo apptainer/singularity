@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -63,10 +63,6 @@ func TestCreateContainer(t *testing.T) {
 				t.Fatalf("test %s expected to succeed but failed: %s", tt.name, fatal)
 			} else if !tt.shallPass && fatal == nil {
 				t.Fatalf("test %s expected to fail but succeeded", tt.name)
-			} else if tt.shallPass && fatal == nil {
-				// test succeed
-			} else if !tt.shallPass && fatal != nil {
-				// test succeed
 			}
 		})
 	}
@@ -111,10 +107,6 @@ func TestStartContainer(t *testing.T) {
 				t.Fatalf("test %s expected to succeed but failed: %s", tt.name, fatal)
 			} else if !tt.shallPass && fatal == nil {
 				t.Fatalf("test %s expected to fail but succeeded", tt.name)
-			} else if tt.shallPass && fatal == nil {
-				// test succeed
-			} else if !tt.shallPass && fatal != nil {
-				// test succeed
 			}
 		})
 	}

@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -19,14 +18,13 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/hpcng/sif/pkg/sif"
+	"github.com/hpcng/sif/v2/pkg/sif"
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
 	"github.com/hpcng/singularity/internal/pkg/plugin"
 	"github.com/hpcng/singularity/internal/pkg/util/bin"
 	pluginapi "github.com/hpcng/singularity/pkg/plugin"
 	"github.com/hpcng/singularity/pkg/sylog"
 	"github.com/hpcng/singularity/pkg/util/archive"
-	uuid "github.com/satori/go.uuid"
 )
 
 const version = "v0.0.0"
@@ -276,49 +274,45 @@ func generateManifest(sourceDir string, bTool buildToolchain) error {
 // makeSIF takes in two arguments: sourceDir, the path to the plugin source directory;
 // and sifPath, the path to the final .sif file which is ready to be used.
 func makeSIF(sourceDir, sifPath string) error {
-	id, err := uuid.NewV4()
+	objPath := pluginObjPath(sourceDir)
+
+	fp, err := os.Open(objPath)
 	if err != nil {
-		return fmt.Errorf("sif id generation failed: %v", err)
+		return fmt.Errorf("while opening plugin object file %v: %w", objPath, err)
 	}
+	defer fp.Close()
 
-	plCreateInfo := sif.CreateInfo{
-		Pathname:   sifPath,
-		Launchstr:  sif.HdrLaunch,
-		Sifversion: sif.HdrVersion,
-		ID:         id,
-	}
-
-	// create plugin object file descriptor
-	plObjInput, err := getPluginObjDescr(pluginObjPath(sourceDir))
+	plObjInput, err := sif.NewDescriptorInput(sif.DataPartition, fp,
+		sif.OptObjectName("plugin.so"),
+		sif.OptPartitionMetadata(sif.FsRaw, sif.PartData, runtime.GOARCH),
+	)
 	if err != nil {
 		return err
 	}
-
-	if fp, ok := plObjInput.Fp.(io.Closer); ok {
-		defer fp.Close()
-	}
-
-	// add plugin object file descriptor to sif
-	plCreateInfo.InputDescr = append(plCreateInfo.InputDescr, plObjInput)
 
 	// create plugin manifest descriptor
-	plManifestInput, err := getPluginManifestDescr(pluginManifestPath(sourceDir))
+	manifestPath := pluginManifestPath(sourceDir)
+
+	fp, err = os.Open(manifestPath)
+	if err != nil {
+		return fmt.Errorf("while opening plugin manifest file %v: %w", manifestPath, err)
+	}
+	defer fp.Close()
+
+	plManifestInput, err := sif.NewDescriptorInput(sif.DataGenericJSON, fp,
+		sif.OptObjectName("plugin.manifest"),
+	)
 	if err != nil {
 		return err
 	}
-	if fp, ok := plManifestInput.Fp.(io.Closer); ok {
-		defer fp.Close()
-	}
-
-	// add plugin manifest descriptor to sif
-	plCreateInfo.InputDescr = append(plCreateInfo.InputDescr, plManifestInput)
 
 	os.RemoveAll(sifPath)
 
-	// create sif file
-	f, err := sif.CreateContainer(plCreateInfo)
+	f, err := sif.CreateContainerAtPath(sifPath,
+		sif.OptCreateWithDescriptors(plObjInput, plManifestInput),
+	)
 	if err != nil {
-		return fmt.Errorf("while creating sif file: %s", err)
+		return fmt.Errorf("while creating sif file: %w", err)
 	}
 
 	if err := f.UnloadContainer(); err != nil {
@@ -326,75 +320,4 @@ func makeSIF(sourceDir, sifPath string) error {
 	}
 
 	return nil
-}
-
-// getPluginObjDescr returns a sif.DescriptorInput which contains the raw
-// data of the .so file.
-//
-// Datatype: sif.DataPartition
-// Fstype:   sif.FsRaw
-// Parttype: sif.PartData
-func getPluginObjDescr(objPath string) (sif.DescriptorInput, error) {
-	var err error
-
-	objInput := sif.DescriptorInput{
-		Datatype: sif.DataPartition,
-		Groupid:  sif.DescrDefaultGroup,
-		Link:     sif.DescrUnusedLink,
-		Fname:    objPath,
-	}
-
-	// open plugin object file
-	fp, err := os.Open(objInput.Fname)
-	if err != nil {
-		return sif.DescriptorInput{}, fmt.Errorf("while opening plugin object file %s: %s", objInput.Fname, err)
-	}
-
-	// stat file to obtain size
-	fstat, err := fp.Stat()
-	if err != nil {
-		return sif.DescriptorInput{}, fmt.Errorf("while calling stat on plugin object file %s: %s", objInput.Fname, err)
-	}
-
-	objInput.Fp = fp
-	objInput.Size = fstat.Size()
-
-	// populate objInput.Extra with appropriate Fstype & Parttype
-	err = objInput.SetPartExtra(sif.FsRaw, sif.PartData, sif.GetSIFArch(runtime.GOARCH))
-	if err != nil {
-		return sif.DescriptorInput{}, err
-	}
-
-	return objInput, nil
-}
-
-// getPluginManifestDescr returns a sif.DescriptorInput which contains the manifest
-// in JSON form. Grabbing the Manifest is done by loading the .so using the plugin
-// package, which is performed inside the container during buildPlugin() function
-//
-// Datatype: sif.DataGenericJSON
-func getPluginManifestDescr(manifestPath string) (sif.DescriptorInput, error) {
-	manifestInput := sif.DescriptorInput{
-		Datatype: sif.DataGenericJSON,
-		Groupid:  sif.DescrDefaultGroup,
-		Link:     sif.DescrUnusedLink,
-		Fname:    manifestPath,
-	}
-
-	// open plugin object file
-	fp, err := os.Open(manifestInput.Fname)
-	if err != nil {
-		return sif.DescriptorInput{}, fmt.Errorf("while opening plugin object file %s: %s", manifestInput.Fname, err)
-	}
-
-	// stat file to obtain size
-	fstat, err := fp.Stat()
-	if err != nil {
-		return sif.DescriptorInput{}, fmt.Errorf("while calling stat on plugin object file %s: %s", manifestInput.Fname, err)
-	}
-
-	manifestInput.Fp = fp
-	manifestInput.Size = fstat.Size()
-
-	return manifestInput, nil
 }

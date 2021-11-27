@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -183,7 +184,7 @@ func (c *Config) Close() error {
 	if err := c.file.Truncate(0); err != nil {
 		return fmt.Errorf("error while truncating %s to 0: %s", filename, err)
 	}
-	if _, err := c.file.Seek(0, os.SEEK_SET); err != nil {
+	if _, err := c.file.Seek(0, io.SeekStart); err != nil {
 		return fmt.Errorf("error while resetting file offset: %s", err)
 	}
 	if _, err := c.file.Write(buf.Bytes()); err != nil {

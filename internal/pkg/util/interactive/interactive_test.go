@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,6 +6,7 @@
 package interactive
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -33,7 +34,7 @@ func generateQuestionInput(t *testing.T, input string) (*os.File, *os.File) {
 	}
 
 	// Reposition to the beginning of file to ensure there is something to read
-	_, err = testFile.Seek(0, os.SEEK_SET)
+	_, err = testFile.Seek(0, io.SeekStart)
 	if err != nil {
 		testFile.Close()
 		os.Remove(testFile.Name())

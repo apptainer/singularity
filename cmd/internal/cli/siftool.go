@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,16 +6,24 @@
 package cli
 
 import (
-	"github.com/hpcng/sif/pkg/siftool"
+	"github.com/hpcng/sif/v2/pkg/siftool"
+	"github.com/hpcng/singularity/docs"
 	"github.com/hpcng/singularity/pkg/cmdline"
+	"github.com/spf13/cobra"
 )
-
-// SiftoolCmd is easily set since the sif repo allows the cobra.Command struct to be
-// easily accessed with Siftool(), we do not need to do anything but call that function.
-var SiftoolCmd = siftool.Siftool()
 
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
-		cmdManager.RegisterCmd(SiftoolCmd)
+		cmd := &cobra.Command{
+			Use:                   docs.SIFUse,
+			Aliases:               []string{docs.SIFAlias},
+			Short:                 docs.SIFShort,
+			Long:                  docs.SIFLong,
+			Example:               docs.SIFExample,
+			DisableFlagsInUseLine: true,
+		}
+		siftool.AddCommands(cmd)
+
+		cmdManager.RegisterCmd(cmd)
 	})
 }
