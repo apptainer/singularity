@@ -1330,6 +1330,63 @@ func (c imgBuildTests) buildBindMount(t *testing.T) {
 			},
 			exit: 255,
 		},
+		{
+			name: "Mount test dir to /mnt",
+			buildOption: []string{
+				"--mount", "type=bind,source=" + dir + ",destination=/mnt",
+			},
+			buildPost: []string{
+				"cat /mnt/canary",
+			},
+			buildTest: []string{
+				"cat /mnt/canary",
+			},
+			exit: 0,
+		},
+		{
+			name: "Mount test dir to multiple directory",
+			buildOption: []string{
+				"--mount", "type=bind,source=" + dir + ",destination=/mnt",
+				"--mount", "type=bind,source=" + dir + ",destination=/opt",
+			},
+			buildPost: []string{
+				"cat /mnt/canary",
+				"cat /opt/canary",
+			},
+			buildTest: []string{
+				"cat /mnt/canary",
+				"cat /opt/canary",
+			},
+			exit: 0,
+		},
+		{
+			name: "Mount test dir to /mnt read-only",
+			buildOption: []string{
+				"--mount", "type=bind,source=" + dir + ",destination=/mnt,ro",
+			},
+			buildPost: []string{
+				"mkdir /mnt/should_fail",
+			},
+			exit: 255,
+		},
+		{
+			name: "Mount test dir to non-existent image directory",
+			buildOption: []string{
+				"--mount", "type=bind,source=" + dir + ",destination=/fake/dir",
+			},
+			buildPost: []string{
+				"cat /mnt/canary",
+			},
+			exit: 255,
+		},
+		{
+			name: "Mount test dir with remote",
+			buildOption: []string{
+				"--mount", "type=bind,source=" + dir + ",destination=/mnt",
+				"--remote",
+			},
+			exit: 255,
+		},
 	}
 
 	sandboxImage := filepath.Join(tmpdir, "build-sandbox")

@@ -351,10 +351,21 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		img.File.Close()
 	}
 
+	// First get binds from -B/--bind and env var
 	binds, err := singularityConfig.ParseBindPath(BindPaths)
 	if err != nil {
 		sylog.Fatalf("while parsing bind path: %s", err)
 	}
+
+	// Now add binds from one or more --mount and env var.
+	for _, m := range Mounts {
+		bps, err := singularityConfig.ParseMountString(m)
+		if err != nil {
+			sylog.Fatalf("while parsing mount %q: %s", m, err)
+		}
+		binds = append(binds, bps...)
+	}
+
 	engineConfig.SetBindPath(binds)
 	generator.AddProcessEnv("SINGULARITY_BIND", strings.Join(BindPaths, ","))
 

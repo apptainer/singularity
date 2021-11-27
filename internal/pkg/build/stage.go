@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -109,7 +109,7 @@ func (s *stage) runPostScript(configFile, sessionResolv, sessionHosts string) er
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Dir = "/"
-		cmd.Env = currentEnvNoSingularity([]string{"NV", "NVCCLI", "ROCM", "BINDPATH"})
+		cmd.Env = currentEnvNoSingularity([]string{"NV", "NVCCLI", "ROCM", "BINDPATH", "MOUNT"})
 
 		sylog.Infof("Running post scriptlet")
 		return cmd.Run()
@@ -135,7 +135,7 @@ func (s *stage) runTestScript(configFile, sessionResolv, sessionHosts string) er
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Dir = "/"
-		cmd.Env = currentEnvNoSingularity([]string{"NV", "NVCCLI", "ROCM", "BINDPATH", "WRITABLE_TMPFS"})
+		cmd.Env = currentEnvNoSingularity([]string{"NV", "NVCCLI", "ROCM", "BINDPATH", "MOUNT", "WRITABLE_TMPFS"})
 
 		sylog.Infof("Running testscript")
 		return cmd.Run()
