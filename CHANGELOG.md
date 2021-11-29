@@ -1,6 +1,6 @@
 # Singularity Changelog
 
-## Changes since last release
+## v3.8.5 - [2021-11-29]
 
 ### Security Related Fixes
 

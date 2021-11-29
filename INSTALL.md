@@ -87,7 +87,7 @@ $ mkdir -p ${GOPATH}/src/github.com/hpcng && \
 To build a stable version of Singularity, check out a [release tag](https://github.com/hpcng/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.8.4
+$ git checkout v3.8.5
 ```
 
 ## Compiling Singularity
@@ -134,7 +134,7 @@ required.
 To build from a release source tarball do these commands:
 
 ```
-$ export VERSION=3.8.4  # this is the singularity version, change as you need
+$ export VERSION=3.8.5  # this is the singularity version, change as you need
 
 $ wget https://github.com/hpcng/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-${VERSION}.tar.gz && \
@@ -151,7 +151,7 @@ Then use the `rpm` make target to build Singularity as an rpm package:
 ```
 $ ./mconfig --only-rpm
 $ make -C builddir rpm
-$ sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.4*.x86_64.rpm # or whatever version you built
+$ sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.5*.x86_64.rpm # or whatever version you built
 ```
 
 Alternatively, to build an RPM from the latest master you can 
@@ -162,7 +162,7 @@ tarball and use it to install Singularity:
 $ cd $GOPATH/src/github.com/hpcng/singularity && \
   ./mconfig && \
   make -C builddir rpm && \
-  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.4*.x86_64.rpm # or whatever version you built
+  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.5*.x86_64.rpm # or whatever version you built
 ```
 
 To build an rpm with an alternative install prefix set RPMPREFIX on the
