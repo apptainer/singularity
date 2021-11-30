@@ -1,9 +1,9 @@
-# Singularity Support
+# Apptainer Support
 
 Need help? We have several ways to reach us, depending on your preferences and needs.
 
 ## Documentation
-If you haven't already, read our [documentation](https://singularity.hpcng.org/docs/). These docs have common use cases, and might be helpful to browse before submitting an issue. You can contribute to our documentation by creating PRs against the [singularity-admindocs](https://github.com/hpcng/singularity-admindocs) and [singularity-userdocs](https://github.com/hpcng/singularity-userdocs) repositories.
+If you haven't already, read our [documentation](https://apptainer.org/docs/). These docs have common use cases, and might be helpful to browse before submitting an issue. You can contribute to our documentation by creating PRs against the [apptainer-admindocs](https://github.com/hpcng/singularity-admindocs) and [singularity-userdocs](https://github.com/hpcng/singularity-userdocs) repositories.
 
 ## Github
 For issues with code (and especially if you need to share debug output) we recommend Github issues boards.
