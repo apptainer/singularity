@@ -1,6 +1,6 @@
 module github.com/hpcng/singularity/config-example-plugin
 
-go 1.13
+go 1.16
 
 require github.com/hpcng/singularity v0.0.0
 
