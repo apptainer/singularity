@@ -3,14 +3,14 @@
 Need help? We have several ways to reach us, depending on your preferences and needs.
 
 ## Documentation
-If you haven't already, read our [documentation](https://apptainer.org/docs/). These docs have common use cases, and might be helpful to browse before submitting an issue. You can contribute to our documentation by creating PRs against the [apptainer-admindocs](https://github.com/hpcng/singularity-admindocs) and [singularity-userdocs](https://github.com/hpcng/singularity-userdocs) repositories.
+If you haven't already, read our [documentation](https://apptainer.org/docs/). These docs have common use cases, and might be helpful to browse before submitting an issue. You can contribute to our documentation by creating PRs against the [apptainer-admindocs](https://github.com/apptainer-admindocs) and [apptainer-userdocs](https://github.com/apptainer-userdocs) repositories.
 
 ## Github
 For issues with code (and especially if you need to share debug output) we recommend Github issues boards.
 
- - [Singularity Issues](https://github.com/hpcng/singularity/issues): is recommended for most issues with the Singularity software.
- - [User Documentation](https://github.com/hpcng/singularity-userdocs/issues) questions, feedback, and suggestions should go here. Feel free to create an issue on a board and additionally request updated content here.
- - [Admin Documentation](https://github.com/hpcng/singularity-admindocs/issues) questions, feedback, and suggestions should go here. Feel free to create an issue on a board and additionally request updated content here.
+ - [Apptainer Issues](https://github.com/apptainer/issues): is recommended for most issues with the Apptainer software.
+ - [User Documentation](https://github.com/apptainer-userdocs/issues) questions, feedback, and suggestions should go here. Feel free to create an issue on a board and additionally request updated content here.
+ - [Admin Documentation](https://github.com/apptainer-admindocs/issues) questions, feedback, and suggestions should go here. Feel free to create an issue on a board and additionally request updated content here.
 
 
 ### How do I ask for help?
@@ -35,9 +35,9 @@ Issues can go stale for a number of reasons. In the bullets below, we will revie
  5. *Does your issue need to have scope?* The idea of scoping an issue means framing it with respect to other components of the software. For example, if you have a feature request to see metadata about an object, you might frame that in the context of container introspection, and suggest an addition to the software that fits with the "inspect" command. A very powerful thing to do would be to open up an issue that (not only discusses your specific addition) but also opens up discussion to the general community for "How we can do introspection" better. Then create a set of issues and add them to a [Github milestone](https://help.github.com/articles/about-milestones/).  This kind of contribution is much more powerful than simply asking for something.
  
 ## Google Group
-You can reach the community quickly by way of joining our [Google Group](https://groups.google.com/a/lbl.gov/forum/#!forum/singularity).
+You can reach the community quickly by way of joining our [Google Group](https://groups.google.com/a/lbl.gov/forum/#!forum/apptainer).
 
 ## Slack
-For real time support from the community, you can join our community on slack at [https://hpcng.slack.com/](https://hpcng.slack.com/). Ping the Google Group or one of the admins here to request to be added.
+For real time support from the community, you can join our community on slack at [https://apptainer.slack.com/](https://apptainer.slack.com/). Ping the Google Group or one of the admins here to request to be added.
 
-Is there something missing here you'd like to see? Please [let us know](https://github.com/hpcng/singularity/issues).
+Is there something missing here you'd like to see? Please [let us know](https://github.com/apptainer/issues).

@@ -4,7 +4,7 @@ The release procedure below can be performed by a project member with
 "maintainer" or higher privileges on the GitHub repository. It assumes
 that you will be working in an up-to-date local clone of the GitHub
 repository, where the `upstream` remote points to
-`github.com/hpcng/singularity`.
+`github.com/apptainer`.
 
 ## Prior to Release
 
@@ -26,7 +26,7 @@ repository, where the `upstream` remote points to
 
 ## Creating the Release Branch and Release Candidate
 
-When a new 3.Y.0 minor version of Singularity is issued the release
+When a new 3.Y.0 minor version of Apptainer is issued the release
 process begins by branching, and then issuing a release candidate for
 broader testing.
 
@@ -40,7 +40,7 @@ present, and steps 1-2 should be skipped.
    new release branch if needed.
 4. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against
    the release branch, so that they reflect the version to be released.
-5. Apply an annotated tag via `git tag -a -m "Singularity v3.8.0
+5. Apply an annotated tag via `git tag -a -m "Apptainer v3.8.0
    Release Candidate 1" v3.8.0-rc.1`.
 6. Push the tag via `git push upstream v3.8.0-rc.1`.
 7. Create a tarball via `./mconfig -v && make dist`.
@@ -62,14 +62,14 @@ bug(s), and well covered by tests.
 
 1. Ensure the user and admin documentation is up-to-date for the new
    version, branched, and tagged.
-  - [User Docs](https://singularity.hpcng.org/user-docs/master/) can be edited [here](https://github.com/hpcng/singularity-userdocs)
-  - [Admin Docs](https://singularity.hpcng.org/admin-docs/master/) can be edited [here](https://github.com/hpcng/singularity-admindocs)
+  - [User Docs](https://apptainer.org/user-docs/master/) can be edited [here](https://github.com/apptainer-userdocs)
+  - [Admin Docs](https://apptainer.org/admin-docs/master/) can be edited [here](https://github.com/apptainer-admindocs)
 2. Ensure the user and admin documentation has been deployed to the
-   singularity.hpcng.org website.
+   Apptainer.hpcng.org website.
 4. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against
    the release branch, so that they reflect the version to be released.
-5. Apply an annotated tag via `git tag -a -m "Singularity v3.8.0" v3.8.0`.
-6. Push the tag via `git push upstream v3.8.0-rc.1`.
+5. Apply an annotated tag via `git tag -a -m "apptainer v1.0.0" v1.0.0`.
+6. Push the tag via `git push upstream v1.0.0-rc.1`.
 7. Create a tarball via `./mconfig -v && make dist`.
 8. Test intallation from the tarball.
 9. Compute the sha256sum of the tarball e.g. `sha256sum *.tar.gz > sha256sums`.
@@ -79,10 +79,10 @@ bug(s), and well covered by tests.
 
 ## After the Release
 
-1. Create and merge a PR from the `release-3.x` branch into `master`,
+1. Create and merge a PR from the `release-1.x` branch into `master`,
    so that history from the RC process etc. is captured on `master`.
 2. If the release is a new major/minor version, move the prior
-   `release-3.x` branch to `vault/release-3.x`.
+   `release-1.x` branch to `vault/release-1.x`.
 3. If the release is a new major/minor version, update the
    `.github/dependabot.yml` configuration so that dependabot is tracking
    the new stable release branch.

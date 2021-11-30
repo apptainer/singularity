@@ -1,4 +1,4 @@
-_With the release of `v3.0.0`, we're introducing a new changelog format in an attempt to consolidate the information presented in the changelog. The new changelog is reduced in scope to only documenting functionality changes from version to version. This ensures that the changelog is as useful as it can be. Changes which should be documented include:_
+_With the release of Singularity's `v3.0.0`, we're introducing a new changelog format in an attempt to consolidate the information presented in the changelog. The new changelog is reduced in scope to only documenting functionality changes from version to version. This ensures that the changelog is as useful as it can be. Changes which should be documented include:_
 
   - _Renamed commands_
   - _Deprecated / removed commands_
@@ -9,7 +9,7 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 ### Changed defaults / behaviours
 
   - LABELs from Docker/OCI images are now inherited. This fixes a longstanding
-    regression from Singularity 2.x. Note that you will now need to use
+    regression from Apptainer 2.x. Note that you will now need to use
     `--force` in a build to override a label that already exists in the source
     Docker/OCI container.
 
@@ -19,14 +19,14 @@ _The old changelog can be found in the `release-2.6` branch_
 
 ### Bug Fixes
 
-  - Allow escaped `\$` in a SINGULARITYENV_ var to set a literal `$` in
+  - Allow escaped `\$` in a apptainerENV_ var to set a literal `$` in
     a container env var.
 
 # v3.8.0 - [2021-06-15]
 
 ## Changed defaults / behaviours
 
-> :warning: Go module was renamed from `github.com/sylabs/singularity` to `github.com/hpcng/singularity`
+> :warning: Go module was renamed from `github.com/sylabs/singularity` to `github.com/apptainer`
 
 ## New features / functionalities
 
@@ -34,13 +34,13 @@ _The old changelog can be found in the `release-2.6` branch_
     overlays.
   - Administrators can allow named users/groups to use specific CNI
     network configurations. Managed by directives in
-    `singularity.conf`.
+    `apptainer.conf`.
   - The `build` command now honors `--nv`, `--rocm`, and `--bind`
     flags, permitting builds that require GPU access or files bound in
     from the host.
   - A library service hostname can be specified as the first component of a
     `library://` URL.
-  - Singularity is now relocatable for unprivileged installations
+  - Apptainer is now relocatable for unprivileged installations
     only.
 
 ## Bug Fixes
@@ -74,7 +74,7 @@ of `make test` for ease of use:
 ## Security Related Fixes
 
   - [CVE-2021-32635](https://github.com/hpcng/singularity/security/advisories/GHSA-jq42-hfch-42f3):
-    Due to incorrect use of a default URL, singularity action commands
+    Due to incorrect use of a default URL, Singularity/Apptainer action commands
     (run/shell/exec) specifying a container using a library:// URI will
     always attempt to retrieve the container from the default remote
     endpoint (cloud.sylabs.io) rather than the configured remote
@@ -88,11 +88,11 @@ of `make test` for ease of use:
 ## Security Related Fixes
 
   - [CVE-2021-29136](https://github.com/opencontainers/umoci/security/advisories/GHSA-9m95-8hx6-7p9v):
-   A dependency used by Singularity to extract docker/OCI image layers
+   A dependency used by Apptainer to extract docker/OCI image layers
    can be tricked into modifying host files by creating a malicious
    layer that has a symlink with the name "." (or "/"), when running
-   as root. This vulnerability affects a `singularity build` or
-   `singularity pull` as root, from a docker or OCI source.
+   as root. This vulnerability affects a `apptainer build` or
+   `apptainer pull` as root, from a docker or OCI source.
 
 
 # v3.7.2 - [2021-03-09]
@@ -125,7 +125,7 @@ of `make test` for ease of use:
 
 ## New features / functionalities
 
-  - The singularity binary is now relocatable when built without setuid
+  - The Apptainer binary is now relocatable when built without setuid
     support
 
 
@@ -144,18 +144,18 @@ of `make test` for ease of use:
     a SIF source image can be verified, and is signed with keys
     matching all specified fingerprints.
   - Labels can be set dynamically from a build's `%post` section by
-    setting them in the `SINGULARITY_LABELS` environment variable.
+    setting them in the `Apptainer_LABELS` environment variable.
   - New `build-arch` label is automatically set to the architecure of
     the host during a container build.
-  - New `-D/--description` flag for `singularity push` sets
+  - New `-D/--description` flag for `Apptainer push` sets
     description for a library container image.
-  - `singularity remote status` shows validity of authentication token if
+  - `Apptainer remote status` shows validity of authentication token if
     set.
-  - `singularity push` reports quota usage and URL on successful push
+  - `Apptainer push` reports quota usage and URL on successful push
     to a library server that supports this.
   - A new `--no-mount` flag for actions allows a user to disable
     proc/sys/dev/devpts/home/tmp/hostfs/cwd mounts, even if they are
-    enabled in `singularity.conf`.
+    enabled in `Apptainer.conf`.
 
 ## Changed defaults / behaviours
 
@@ -180,11 +180,11 @@ of `make test` for ease of use:
     `application/vnd.sylabs.sif.layer.v1.sif` reflecting the published
     [opencontainers/artifacts](https://github.com/opencontainers/artifacts/blob/master/artifact-authors.md#defining-layermediatypes)
     value.
-  - `SINGULARITY_BIND` has been restored as an environment variable
+  - `Apptainer_BIND` has been restored as an environment variable
     set within a running container. It now reflects all user binds
     requested by the `-B/--bind` flag, as well as via
-    `SINGULARITY_BIND[PATHS]`.
-  - `singularity search` now correctly searches for container images
+    `apptainer_BIND[PATHS]`.
+  - `apptainer search` now correctly searches for container images
     matching the host architecture by default. A new `--arch` flag
     allows searching for other architectures. A new results format
     gives more detail about container image results, while users and
@@ -195,7 +195,7 @@ of `make test` for ease of use:
   - Support larger definition files, environments etc. by passing
     engine configuration in the environment vs. via socket buffer.
   - Ensure `docker-daemon:` and other source operations respect
-    `SINGULARITY_TMPDIR` for all temporary files.
+    `apptainer_TMPDIR` for all temporary files.
   - Support double quoted filenames in the `%files` section of build
     definitions.
   - Correct `cache list` sizes to show KiB with powers of 1024,
@@ -204,8 +204,8 @@ of `make test` for ease of use:
     needed.
   - Pull OCI images to the correct requested location when the cache
     is disabled.
-  - Ensure `Singularity>` prompt is set when container has no
-    environment script, or singularity is called through a wrapper
+  - Ensure `Apptainer>` prompt is set when container has no
+    environment script, or Apptainer is called through a wrapper
     script.
   - Avoid build failures in `yum/dnf` operations against the 'setup'
     package on `RHEL/CentOS/Fedora` by ensuring staged `/etc/` files
@@ -231,7 +231,7 @@ of `make test` for ease of use:
 ## Known Issues
 
   - A change in Linux kernel 5.9 causes `--fakeroot` builds to fail with a
-    `/sys/fs/selinux` remount error. This will be addressed in Singularity
+    `/sys/fs/selinux` remount error. This will be addressed in Apptainer
     v3.7.1.
 
 
@@ -244,7 +244,7 @@ Singularity 3.6.4 addresses the following security issue.
   - [CVE-2020-15229](https://github.com/hpcng/singularity/security/advisories/GHSA-7gcp-w6ww-2xv9):
     Due to insecure handling of path traversal and the lack of path
     sanitization within unsquashfs (a distribution provided utility
-    used by Singularity), it is possible to overwrite/create files on
+    used by Singularity/Apptainer), it is possible to overwrite/create files on
     the host filesystem during the extraction of a crafted squashfs
     filesystem. Affects unprivileged execution of SIF / SquashFS
     images, and image builds from SIF / SquashFS images.
@@ -260,11 +260,11 @@ Singularity 3.6.4 addresses the following security issue.
 
 ## Security related fixes
 
-Singularity 3.6.3 addresses the following security issues.
+Apptainer 3.6.3 addresses the following security issues.
 
   - [CVE-2020-25039](https://github.com/hpcng/singularity/security/advisories/GHSA-w6v2-qchm-grj7):
-    When a Singularity action command (run, shell, exec) is run with
-    the fakeroot or user namespace option, Singularity will extract a
+    When a Singularity/Apptainer action command (run, shell, exec) is run with
+    the fakeroot or user namespace option, Singularity/Apptainer will extract a
     container image to a temporary sandbox directory. Due to insecure
     permissions on the temporary directory it is possible for any user
     with access to the system to read the contents of the
@@ -273,7 +273,7 @@ Singularity 3.6.3 addresses the following security issues.
     content into the running container.
 
   - [CVE-2020-25040](https://github.com/hpcng/singularity/security/advisories/GHSA-jv9c-w74q-6762):
-    When a Singularity command that results in a container build
+    When a Singularity/Apptainer command that results in a container build
     operation is executed, it is possible for a user with access to
     the system to read the contents of the image during the
     build. Additionally, if the image contains a world-writable file
@@ -307,16 +307,16 @@ Singularity 3.6.3 addresses the following security issues.
 
 ## Change defaults / behaviours
 
-  - Default to current architecture for `singularity delete`.
+  - Default to current architecture for `apptainer delete`.
 
 ## Bug Fixes
 
-  - Respect current remote for `singularity delete` command.
+  - Respect current remote for `apptainer delete` command.
   - Allow `rw` as a (noop) bind option.
   - Fix capability handling regression in overlay mount.
   - Fix LD_LIBRARY_PATH environment override regression with
     `--nv/--rocm`.
-  - Fix environment variable duplication within singularity engine.
+  - Fix environment variable duplication within Apptainer engine.
   - Use `-user-xattrs` for unsquashfs to avoid error with rootless
     extraction using unsquashfs 3.4 (Ubuntu 20.04).
   - Correct `--no-home` message for 3.6 CWD behavior.
@@ -347,18 +347,18 @@ Singularity 3.6.3 addresses the following security issues.
 
 ## Security related fixes
 
-Singularity 3.6.0 introduces a new signature format for SIF images,
+Singularity/Apptainer 3.6.0 introduces a new signature format for SIF images,
 and changes to the signing / verification code to address:
 
   - [CVE-2020-13845](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2020-13845)
-    In Singularity 3.x versions below 3.6.0, issues allow the ECL to
+    In Singularity/Apptainer 3.x versions below 3.6.0, issues allow the ECL to
     be bypassed by a malicious user.
   - [CVE-2020-13846](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2020-13846)
-    In Singularity 3.5 the `--all / -a` option to `singularity verify`
+    In Singularity/Apptainer 3.5 the `--all / -a` option to `singularity verify`
     returns success even when some objects in a SIF container are not
     signed, or cannot be verified.
   - [CVE-2020-13847](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2020-13847)
-    In Singularity 3.x versions below 3.6.0, Singularity's sign and
+    In Singularity/Apptainer 3.x versions below 3.6.0, Singularity/Apptainer's sign and
     verify commands do not sign metadata found in the global header or
     data object descriptors of a SIF file, allowing an attacker to
     cause unexpected behavior. A signed container may verify
@@ -370,18 +370,17 @@ https://github.com/hpcng/singularity/security/advisories for full
 detail of these security issues.
 
 Note that the new signature format is necessarily incompatible with
-Singularity < 3.6.0 - e.g. Singularity 3.5.3 cannot verify containers
-signed by 3.6.0.
+Singularity/Apptainer < 3.6.0 - e.g. Singularity/Apptainer 3.5.3 cannot verify containers signed by 3.6.0.
 
 We thank Tru Huynh for a report that led to the review of, and changes to,
 the signature implementation.
 
 ## New features / functionalities
-  - Singularity now supports the execution of minimal Docker/OCI
+  - Apptainer now supports the execution of minimal Docker/OCI
     containers that do not contain `/bin/sh`, e.g. `docker://hello-world`.
   - A new cache structure is used that is concurrency safe on a filesystem that
-    supports atomic rename. *If you downgrade to Singularity 3.5 or older after
-    using 3.6 you will need to run `singularity cache clean`.*
+    supports atomic rename. *If you downgrade to Apptainer 3.5 or older after
+    using 3.6 you will need to run `apptainer cache clean`.*
   - A plugin system rework adds new hook points that will allow the
     development of plugins that modify behavior of the runtime. An image driver
     concept is introduced for plugins to support new ways of handling image and
@@ -392,10 +391,10 @@ the signature implementation.
     drivers is now a supported feature (previously an experimental hidden flag).
     This permits users to mount e.g. `sshfs` and `cvmfs` filesystems to the
     container at runtime.
-  - A new `-c/--config` flag allows an alternative `singularity.conf` to be
+  - A new `-c/--config` flag allows an alternative `apptainer.conf` to be
     specified by the `root` user, or all users in an unprivileged installation.
   - A new `--env` flag allows container environment variables to be set via the
-    Singularity command line.
+    Apptainer command line.
   - A new `--env-file` flag allows container environment variables to be set from
     a specified file.
   - A new `--days` flag for `cache clean` allows removal of items older than a
@@ -410,8 +409,8 @@ the signature implementation.
 
 ## Changed defaults / behaviours
   - New signature format (see security fixes above).
-  - Environment variables prefixed with `SINGULARITYENV_` always take
-    precedence over variables without `SINGULARITYENV_` prefix.
+  - Environment variables prefixed with `apptainerENV_` always take
+    precedence over variables without `apptainerENV_` prefix.
   - The `%post` build section inherits environment variables from the base image.
   - `%files from ...` will now follow symlinks for sources that are directly
     specified, or directly resolved from a glob pattern. It will not follow
@@ -420,10 +419,10 @@ the signature implementation.
   - Restored the CWD mount behaviour of v2, implying that CWD path is not recreated
     inside container and any symlinks in the CWD path are not resolved anymore to
     determine the destination path inside container.
-  - The `%test` build section is executed the same manner as `singularity test image`.
+  - The `%test` build section is executed the same manner as `apptainer test image`.
   - `--fusemount` with the `container:` default directive will foreground the FUSE
      process. Use `container-daemon:` for previous behavior.
-  - Fixed spacing of `singularity instance list` to be dynamically changing based off of
+  - Fixed spacing of `apptainer instance list` to be dynamically changing based off of
     input lengths instead of fixed number of spaces to account for long instance names.
 
 ## Deprecated / removed commands
@@ -434,7 +433,7 @@ the signature implementation.
 ## Bug Fixes
   - Don't try to mount `$HOME` when it is `/` (e.g. `nobody` user).
   - Process `%appinstall` sections in order when building from a definition file.
-  - Ensure `SINGULARITY_CONTAINER`, `SINGULARITY_ENVIRONMENT` and the custom
+  - Ensure `apptainer_CONTAINER`, `apptainer_ENVIRONMENT` and the custom
     shell prompt are set inside a container.
   - Honor insecure registry settings from `/etc/containers/registries.conf`.
   - Fix `http_proxy` env var handling in `yum` bootstrap builds.
@@ -483,7 +482,7 @@ image builds that was blocking use by build systems such as Spack:
   - Fix an issue causing user namespace to always be used when `allow-setuid=no`
     was configured in a setuid installation.
   - Always allow key IDs and fingerprints to be specified with or without a `0x`
-    prefix when using `singularity keys`
+    prefix when using `apptainer keys`
   - Fix an issue preventing joining an instance started with `--boot`.
   - Provide a useful error message if an invalid library:// path is provided.
   - Bring in multi-part upload client functionality that will address large
@@ -497,7 +496,7 @@ not covered by the open-source CI runs.
 # v3.5.2 - [2019.12.17]
 
 ## [Security related fix](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2019-19724)
-  - 700 permissions are enforced on `$HOME/.singularity` and `SINGULARITY_CACHEDIR`
+  - 700 permissions are enforced on `$HOME/.apptainer` and `apptainer_CACHEDIR`
   directories (CVE-2019-19724). Many thanks to Stuart Barkley for reporting this issue.
 
 ## Bug Fixes
@@ -527,7 +526,7 @@ A single feature has been added in the bugfix release, with specific
 functionality:
 
   - A new option `allow container encrypted` can be set to `no` in
-      `singularity.conf` to prevent execution of encrypted containers.
+      `apptainer.conf` to prevent execution of encrypted containers.
 
 ## Bug Fixes
 
@@ -554,35 +553,35 @@ This point release addresses the following issues:
 
   - New support for AMD GPUs via `--rocm` option added to bind ROCm devices and
     libraries into containers.
-  - Plugins can now modify Singularity behaviour with two mutators: CLI and
+  - Plugins can now modify Apptainer behaviour with two mutators: CLI and
     Runtime.
-  - Introduced the `config global` command to edit `singularity.conf` settings
+  - Introduced the `config global` command to edit `apptainer.conf` settings
     from the CLI.
   - Introduced the `config fakeroot` command to setup `subuid` and `subgid`
-    mappings for `--fakeroot` from the Singularity CLI.
+    mappings for `--fakeroot` from the Apptainer CLI.
 
 ## Changed defaults / behaviours
 
   - Go 1.13 adopted.
   - Vendored modules removed from the Git tree, will be included in release tarballs.
-  - Singularity will now fail with an error if a requested bind mount cannot be
+  - Apptainer will now fail with an error if a requested bind mount cannot be
       made.
     - This is beneficial to fail fast in workflows where a task may fail a long
          way downstream if a bind mount is unavailable.
     - Any unavailable bind mount sources must be removed from
-        `singularity.conf`.
+        `apptainer.conf`.
   - Docker/OCI image extraction now faithfully respects layer
     permissions.
     - This may lead to sandboxes that cannot be removed without
     modifying permissions.
     - `--fix-perms` option added to preserve old behaviour when
     building sandboxes.
-    - Discussion issue for this change at: https://github.com/hpcng/singularity/issues/4671
-  - `Singularity>` prompt is always set when entering shell in a container.
+    - Discussion issue for this change at: https://github.com/hpcng/ingularity/issues/4671
+  - `apptainer>` prompt is always set when entering shell in a container.
   - The current `umask` will be honored when building a SIF file.
   - `instance exec` processes acquire cgroups set on `instance start`
   - `--fakeroot` supports uid/subgid ranges >65536
-  - `singularity version` now reports semver compliant version
+  - `apptainer version` now reports semver compliant version
       information.
 
 ## Deprecated / removed commands
@@ -596,7 +595,7 @@ This point release addresses the following issues:
     - Fallback correctly to user namespace for non setuid installation
     - Correctly handle the starter-suid binary for non-root installs
     - Creates CACHEDIR if it doesn't exist
-    - Set apex loglevel for umoci to match singularity loglevel
+    - Set apex loglevel for umoci to match Apptainer loglevel
 
 # v3.4.1 - [2019.09.17]
 
@@ -606,9 +605,9 @@ This point release addresses the following issues:
     - Allows fakeroot builds for zypper, pacstrap, and debootstrap
     - Correctly detects seccomp on OpenSUSE
     - Honors GO_MODFLAGS properly in the mconfig generated makefile
-    - Passes the Mac hostname to the VM in MacOS Singularity builds
+    - Passes the Mac hostname to the VM in MacOS Apptainer builds
     - Handles temporary EAGAIN failures when setting up loop devices on recent kernels
-    - Fixes excessive memory usage in singularity push
+    - Fixes excessive memory usage in Apptainer push
 
 # v3.4.0 - [2019.08.30]
 
@@ -617,24 +616,24 @@ This point release addresses the following issues:
   - New support for building and running encrypted containers with RSA keys and passphrases
     - `--pem-path` option added to the `build` and action commands for RSA based encrypted containers
     - `--passphrase` option added to `build` and action commands for passphrase based encrypted containers
-    - `SINGULARITY_ENCRYPTION_PEM_PATH` and `SINGULARITY_ENCRYPTION_PASSPHRASE` environment variables added to serve same functions as above
+    - `Apptainer_ENCRYPTION_PEM_PATH` and `Apptainer_ENCRYPTION_PASSPHRASE` environment variables added to serve same functions as above
     - `--encrypt` option added to `build` command to build an encrypted container when environment variables contain a secret
   - New `--disable-cache` flag prevents caching of downloaded containers
-  - Added support for multi-line variables in singularity def-files
+  - Added support for multi-line variables in Apptainer def-files
   - Added support for 'indexed' def-file variables (like arrays)
   - Added support for SUSE SLE Products
   - Added the def-file variables:
       product, user, regcode, productpgp, registerurl, modules,	otherurl (indexed)
   - Support multiple-architecture tags in the SCS library
   - Added a `--dry-run` flag to `cache clean`
-  - Added a `SINGULARITY_SYPGPDIR` environment variable to specify the location of PGP key data
+  - Added a `Apptainer_SYPGPDIR` environment variable to specify the location of PGP key data
   - Added a `--nonet` option to the action commands to disable networking when running with the `--vm` option
   - Added a `--long-list` flag to the `key search` command to preserve
   - Added experimental, hidden `--fusemount` flag to pass a command to mount a libfuse3 based file system within the container
 
 ## Changed defaults / behaviors
 
-  - Runtime now properly honors `SINGULARITY_DISABLE_CACHE` environment variable
+  - Runtime now properly honors `apptainer_DISABLE_CACHE` environment variable
   - `remote add` command now automatically attempts to login and a `--no-login` flag is added to disable this behavior
   - Using the `pull` command to download an unsigned container no longer produces an error code
   - `cache clean` command now prompts user before cleaning when run without `--force` option and is more verbose
@@ -649,7 +648,7 @@ This point release addresses the following issues:
 ## Changed defaults / behaviors
 
   - Remote login and status commands will now use the default remote if a remote name is not supplied
-  - Added Singularity hub (`shub`) cache support when using the `pull` command
+  - Added Singularity/Apptainer hub (`shub`) cache support when using the `pull` command
   - Clean cache in a safer way by only deleting the cache subdirectories
   - Improvements to the `cache clean` command
 
@@ -686,22 +685,22 @@ This point release addresses the following issues:
   - Added the ability to create containers through multi-stage builds
     - Definitions now require `Bootstrap` be the first parameter of header
   - Created the concept of a Sylabs Cloud "remote" endpoint and added the ability for users and admins to set them through CLI and conf files
-  - Added caching for images from Singularity Hub
-  - Made it possible to compile Singularity outside of `$GOPATH`
+  - Added caching for images from Apptainer Hub
+  - Made it possible to compile Apptainer outside of `$GOPATH`
   - Added a json partition to SIF files for OCI configuration when building from an OCI source
-  - Full integration with Singularity desktop for MacOS code base
+  - Full integration with Apptainer desktop for MacOS code base
 
 ## New Commands
  - Introduced the `plugin` command group for creating and managing plugins
-    - `compile`   Compile a singularity plugin
-    - `disable`   disable an installed singularity plugin
-    - `enable`    Enable an installed singularity plugin
-    - `inspect`   Inspect a singularity plugin (either an installed one or an image)
-    - `install`   Install a singularity plugin
-    - `list`      List installed singularity plugins
+    - `compile`   Compile a Apptainer plugin
+    - `disable`   disable an installed Apptainer plugin
+    - `enable`    Enable an installed Apptainer, plugin
+    - `inspect`   Inspect a Apptainer plugin (either an installed one or an image)
+    - `install`   Install a Apptainer plugin
+    - `list`      List installed Apptainer plugins
     - `uninstall` Uninstall removes the named plugin from the system
 
-  - Introduced the `remote` command group to support management of Singularity endpoints:
+  - Introduced the `remote` command group to support management of Apptainer endpoints:
     - `add`       Create a new Sylabs Cloud remote endpoint
     - `list`      List all remote endpoints that are configured
     - `login`     Log into a remote endpoint using an authentication token
@@ -717,7 +716,7 @@ This point release addresses the following issues:
   - Added the `Stage: <name>` keyword to the definition file header and the `from <stage name>` option/argument pair to the `%files` section to support multistage builds
 
 ## Deprecated / removed commands
-  - The `--token/-t` option has been deprecated in favor of the `singularity remote` command group
+  - The `--token/-t` option has been deprecated in favor of the `Apptainer remote` command group
 
 ## Changed defaults / behaviors
   - Ask to confirm password on a newly generated PGP key
@@ -731,15 +730,15 @@ This point release addresses the following issues:
 ## New Commands
   - New hidden `buildcfg` command to display compile-time parameters
   - Added support for `LDFLAGS`, `CFLAGS`, `CGO_` variables in build system
-  - Added `--nocolor` flag to Singularity client to disable color in logging
+  - Added `--nocolor` flag to Apptainer client to disable color in logging
 
 ## Removed Commands
-  - `singularity capability <add/drop> --desc` has been removed
-  - `singularity capability list <--all/--group/--user>` flags have all been removed
+  - `apptainer capability <add/drop> --desc` has been removed
+  - `apptainer capability list <--all/--group/--user>` flags have all been removed
 
 ## New features / functionalities
   - The `--builder` flag to the `build` command implicitly sets `--remote`
-  - Repeated binds no longer cause Singularity to exit and fail, just warn instead
+  - Repeated binds no longer cause Apptainer to exit and fail, just warn instead
   - Corrected typos and improved docstrings throughout
   - Removed warning when CWD does not exist on the host system
   - Added support to spec file for RPM building on SLES 11
@@ -747,7 +746,7 @@ This point release addresses the following issues:
 # v3.1.0 - [2019.02.22]
 
 ## New Commands
-  - Introduced the `oci` command group to support a new OCI compliant variant of the Singularity runtime:
+  - Introduced the `oci` command group to support a new OCI compliant variant of the Apptainer runtime:
     - `attach` Attach console to a running container process
     - `create` Create a container from a bundle directory
     - `delete` Delete container
@@ -762,14 +761,14 @@ This point release addresses the following issues:
     - `umount` Umount delete bundle
     - `update` Update container cgroups resources
   - Added `cache` command group to inspect and manage cached files
-    - `clean` Clean your local Singularity cache
-    - `list`  List your local Singularity cache
+    - `clean` Clean your local Apptainer cache
+    - `list`  List your local Apptainer cache
 
 ## New features / functionalities
   - Can now build CLI on darwin for limited functionality on Mac
   - Added the `scratch` bootstrap agent to build from anything
   - Reintroduced support for zypper bootstrap agent
-  - Added the ability to overwrite a new `singularity.conf` when building from RPM if desired
+  - Added the ability to overwrite a new `Apptainer.conf` when building from RPM if desired
   - Fixed several regressions and omissions in [SCIF](https://sci-f.github.io/) support
   - Added caching for containers pulled/built from the [Container Library](https://cloud.sylabs.io/library)
   - Changed `keys` command group to `key` (retained hidden `keys` command for backward compatibility)
@@ -778,12 +777,12 @@ This point release addresses the following issues:
 
 # v3.0.3 - [2019.01.21]
 
-  - Bind paths in `singularity.conf` are properly parsed and applied at runtime
-  - Singularity runtime will properly fail if `singularity.conf` file is not owned by the root user
+  - Bind paths in `apptainer.conf` are properly parsed and applied at runtime
+  - Apptainer runtime will properly fail if `Apptainer.conf` file is not owned by the root user
   - Several improvements to RPM packaging including using golang from epel, improved support for Fedora, and avoiding overwriting conf file on new RPM install
   - Unprivileged `--contain` option now properly mounts `devpts` on older kernels
   - Uppercase proxy environment variables are now rightly respected
-  - Add http/https protocols for singularity run/pull commands
+  - Add http/https protocols for Apptainer run/pull commands
   - Update to SIF 1.0.2
   - Add _noPrompt_ parameter to `pkg/signing/Verify` function to enable silent verification
 
@@ -792,7 +791,7 @@ This point release addresses the following issues:
   - Added the `--docker-login` flag to enable interactive authentication with docker registries
   - Added support for pulling directly from HTTP and HTTPS
   - Made minor improvements to RPM packaging and added basic support for alpine packaging
-  - The `$SINGULARITY_NOHTTPS`,`$SINGULARITY_TMPDIR`, and `$SINGULARITY_DOCKER_USERNAME`/`$SINGULARITY_DOCKER_PASSWORD` environment variables are now correctly respected
+  - The `$apptainer_NOHTTPS`,`$apptainer_TMPDIR`, and `$apptainer_DOCKER_USERNAME`/`$apptainer_DOCKER_PASSWORD` environment variables are now correctly respected
   - Pulling from a private shub registry now works as expected
   - Running a container with `--network="none"` no longer incorrectly fails with an error message
   - Commands now correctly return 1 when incorrectly executed without arguments
@@ -806,7 +805,7 @@ This point release addresses the following issues:
 
 # v3.0.0 - [2018.10.08]
 
-  - Singularity is now written primarily in Go to bring better integration with the existing container ecosystem
+  - Apptainer is now written primarily in Go to bring better integration with the existing container ecosystem
   - Added support for new URIs (`build` & `run/exec/shell/start`):
     - `library://` - Supports the [Sylabs.io Cloud Library](https://cloud.sylabs.io/library)
     - `docker-daemon:` - Supports images managed by the locally running docker daemon
@@ -814,23 +813,23 @@ This point release addresses the following issues:
     - `oci:` - Supports oci images
     - `oci-archive:` - Supports archived oci images
   - Handling of `docker` & `oci` URIs/images now utilizes [containers/image](https://github.com/containers/image) to parse and convert those image types in a supported way
-  - Replaced `singularity instance.*` command group with `singularity instance *`
-  - The command `singularity help` now only provides help regarding the usage of the `singularity` command. To display an image's `help` message, use `singularity run-help <image path>` instead
+  - Replaced `apptainer instance.*` command group with `apptainer instance *`
+  - The command `apptainer help` now only provides help regarding the usage of the `apptainer` command. To display an image's `help` message, use `apptainer run-help <image path>` instead
 
 ## Removed Deprecated Commands
-  - Removed deprecated `singularity image.*` command group
-  - Removed deprecated `singularity create` command
-  - Removed deprecated `singularity bootstrap` command
-  - Removed deprecated `singularity mount` command
-  - Removed deprecated `singularity check` command
+  - Removed deprecated `apptainer image.*` command group
+  - Removed deprecated `apptainer create` command
+  - Removed deprecated `apptainer bootstrap` command
+  - Removed deprecated `apptainer mount` command
+  - Removed deprecated `apptainer check` command
 
 ## New Commands
-  - Added `singularity run-help <image path>` command to output an image's `help` message
-  - Added `singularity sign <image path>` command to allow a user to cryptographically sign a SIF image
-  - Added `singularity verify <image path>` command to allow a user to verify a SIF image's cryptographic signatures
-  - Added `singularity keys` command to allow the management of `OpenPGP` key stores
-  - Added `singularity capability` command to allow fine grained control over the capabilities of running containers
-  - Added `singularity push` command to push images to the [Sylabs.io Cloud Library](https://cloud.sylabs.io/library)
+  - Added `apptainer run-help <image path>` command to output an image's `help` message
+  - Added `apptainer sign <image path>` command to allow a user to cryptographically sign a SIF image
+  - Added `apptainer verify <image path>` command to allow a user to verify a SIF image's cryptographic signatures
+  - Added `apptainer keys` command to allow the management of `OpenPGP` key stores
+  - Added `apptainer capability` command to allow fine grained control over the capabilities of running containers
+  - Added `apptainer push` command to push images to the [Sylabs.io Cloud Library](https://cloud.sylabs.io/library)
 
 ## Changed Commands
 
@@ -849,7 +848,7 @@ This point release addresses the following issues:
     - `--no-privs`: Drop all privileges from root user inside the container (requires root)
     - `--security <string>`: Configure security features such as SELinux, Apparmor, Seccomp...
     - `--writable-tmpfs`: Run container with a `tmpfs` overlay
-  - The command `singularity instance start` now supports the `--boot` flag to boot the container via `/sbin/init`
+  - The command `Apptainer instance start` now supports the `--boot` flag to boot the container via `/sbin/init`
   - Changes to image mounting behavior:
     - All image formats are mounted as read only by default
     - `--writable` only works on images which can be mounted in read/write [applicable to: `sandbox` and legacy `ext3` images]
@@ -857,12 +856,12 @@ This point release addresses the following issues:
     - `--overlay <string>` now specifies a list of `ext3`/`sandbox` images which are set as the containers overlay [applicable to: all image formats]
 
 ### Build Command:
-  - All images are now built as [Singularity Image Format (SIF)](https://www.sylabs.io/2018/03/sif-containing-your-containers/) images by default
-  - When building to a path that already exists, `singularity build` will now prompt the user if they wish to overwrite the file existing at the specified location
+  - All images are now built as [Apptainer Image Format (SIF)](https://www.sylabs.io/2018/03/sif-containing-your-containers/) images by default
+  - When building to a path that already exists, `Apptainer build` will now prompt the user if they wish to overwrite the file existing at the specified location
   - The `-w|--writable` flag has been removed
   - The `-F|--force` flag now overrides the interactive prompt and will always attempt to overwrite the file existing at the specified location
   - The `-u|--update` flag has been added to support the workflow of running a definition file on top of an existing container [implies `--sandbox`, only supports `sandbox` image types]
-  - The `singularity build` command now supports the following flags for integration with the [Sylabs.io Cloud Library](https://cloud.sylabs.io/library):
+  - The `Apptainer build` command now supports the following flags for integration with the [Sylabs.io Cloud Library](https://cloud.sylabs.io/library):
     - `-r|--remote`: Build the image remotely on the Sylabs Remote Builder (currently unavailable)
     - `-d|--detached`: Detach from the `stdout` of the remote build [requires `--remote`]
     - `--builder <string>`: Specifies the URL of the remote builder to access
