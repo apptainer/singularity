@@ -18,7 +18,7 @@ require (
 	github.com/containernetworking/plugins v0.9.1
 	github.com/containers/image/v5 v5.17.0
 	github.com/cyphar/filepath-securejoin v0.2.3
-	github.com/fatih/color v1.12.0
+	github.com/fatih/color v1.13.0
 	github.com/go-log/log v0.2.0
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/google/uuid v1.3.0
