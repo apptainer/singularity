@@ -52,6 +52,8 @@ su testuser -c '
     fi
   fi
   go version
+  export DEB_FULLNAME="'"${DEB_FULLNAME:-CI Test}"'"
+  export DEBEMAIL="'${DEBEMAIL:-citest@example.com}'"
   debuild --build=binary --no-sign --lintian-opts --display-info --show-overrides
   sudo dpkg -i ../singularity*.deb
 

@@ -92,16 +92,17 @@ clean copy of the debian directory before you switch to (checkout) an
 older version.
 
 Usually `debchange` is configured by the environment variables
-`DEBFULLNAME` and `EMAIL`. As `debuild` creates a clean environment it
-filters out most of the environment variables. To set `DEBFULLNAME` for
+`DEBFULLNAME` and `DEBEMAIL`. As `debuild` creates a clean environment it
+filters out many of the environment variables, so to set `DEBFULLNAME` for
 the `debchange` command in the makefile, you have to set `DEB_FULLNAME`.
+`DEBEMAIL` is not filtered, so you an use that directly.
 If these variables are not set, `debchange` will try to find appropriate
 values from the system configuration, usually by using the login name
 and the domain-name.
 
 ```
 export DEB_FULLNAME="Your Name"
-export EMAIL="you@example.org"
+export DEBEMAIL="you@example.org"
 ```
 
 ## Building
