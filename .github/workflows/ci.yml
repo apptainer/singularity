@@ -79,6 +79,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
+      # fetch tags as checkout@v2 doesn't do that by default
+      - run: git fetch --prune --unshallow --tags --force
 
       - name: Build and test deb under docker
         env:
@@ -93,6 +95,8 @@ jobs:
     name: rpmbuild-centos7
     steps:
       - uses: actions/checkout@v2
+      # fetch tags as checkout@v2 doesn't do that by default
+      - run: git fetch --prune --unshallow --tags --force
 
       - name: Build and test rpm under docker
         env:
@@ -106,6 +110,8 @@ jobs:
     name: rpmbuild-rocky8
     steps:
       - uses: actions/checkout@v2
+      # fetch tags as checkout@v2 doesn't do that by default
+      - run: git fetch --prune --unshallow --tags --force
 
       - name: Build and test rpm under docker
         env:
@@ -119,6 +125,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
+      # fetch tags as checkout@v2 doesn't do that by default
+      - run: git fetch --prune --unshallow --tags --force
 
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -141,6 +149,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
+      # fetch tags as checkout@v2 doesn't do that by default
+      - run: git fetch --prune --unshallow --tags --force
 
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -163,9 +173,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-
-      - name: Get git tags
-        run: git fetch --prune --unshallow --tags --force
+      # fetch tags as checkout@v2 doesn't do that by default
+      - run: git fetch --prune --unshallow --tags --force
 
       - name: Check changes
         env:
