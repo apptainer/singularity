@@ -8,6 +8,8 @@
   environment processing. Fixes regression introduced in singularity-3.8.5.
 - Remove subshell overhead when processing large environments on container
   startup.
+- `make install` now installs man pages. A separate `make man` is not
+  required.
 
 ## v3.8.5 - [2021-11-29]
 

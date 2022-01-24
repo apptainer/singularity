@@ -153,8 +153,7 @@ export PATH=$GOPATH/bin:$PATH
 # Enter the source builddir for the install
 cd %{name}-%{package_version}/builddir
 
-mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
-make DESTDIR=$RPM_BUILD_ROOT install man
+make DESTDIR=$RPM_BUILD_ROOT install
 
 %if "%{suse_version}" == "11"
 %clean
