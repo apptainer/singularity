@@ -1791,6 +1791,11 @@ func (c actionTests) bindImage(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	scratchDir := filepath.Join(testdir, "scratch")
+	if err := os.MkdirAll(filepath.Join(scratchDir, "bin"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+
 	cleanup := func(t *testing.T) {
 		if t.Failed() {
 			t.Logf("Not removing directory %s for test %s", testdir, t.Name())
@@ -2068,6 +2073,56 @@ func (c actionTests) bindImage(t *testing.T) {
 				"--bind", c.env.ImagePath + ":/rootfs:id=4",
 				c.env.ImagePath,
 				"test", "-d", "/rootfs/etc",
+			},
+			exit: 0,
+		},
+		// check ordering between image and user bind
+		{
+			name:    "SquashfsBeforeScratch",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", sifSquashImage + ":/scratch/bin:image-src=/",
+				"--bind", scratchDir + ":/scratch",
+				c.env.ImagePath,
+				"test", "-f", filepath.Join("/scratch/bin", squashMarkerFile),
+			},
+			exit: 1,
+		},
+		{
+			name:    "ScratchBeforeSquashfs",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--bind", scratchDir + ":/scratch",
+				"--bind", sifSquashImage + ":/scratch/bin:image-src=/",
+				c.env.ImagePath,
+				"test", "-f", filepath.Join("/scratch/bin", squashMarkerFile),
+			},
+			exit: 0,
+		},
+		// For the --mount variants we are really just verifying the CLI
+		// acceptance of one or more image bind mount strings. Translation from
+		// --mount strings to BindPath structs is checked in unit tests. The
+		// functionality of image mounts of various kinds is already checked
+		// above, with --bind flags. No need to duplicate all of these.
+		{
+			name:    "MountSifWithID",
+			profile: e2e.UserProfile,
+			args: []string{
+				// rootfs ID is now '4'
+				"--mount", "type=bind,source=" + c.env.ImagePath + ",destination=/rootfs,id=4",
+				c.env.ImagePath,
+				"test", "-d", "/rootfs/etc",
+			},
+			exit: 0,
+		},
+		{
+			name:    "MountSifDataExt3AndSquash",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--mount", "type=bind,source=" + sifExt3Image + ",destination=/ext3,image-src=/",
+				"--mount", "type=bind,source=" + sifSquashImage + ",destination=/squash,image-src=/",
+				c.env.ImagePath,
+				"test", "-f", filepath.Join("/squash", squashMarkerFile), "-a", "-f", "/ext3/ext3_marker",
 			},
 			exit: 0,
 		},

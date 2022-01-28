@@ -1,5 +1,9 @@
 # Singularity Changelog
 
+## Changes since last release
+
+- Fix mount ordering between image bind and user binds.
+
 ## v3.8.5 - [2021-11-29]
 
 ### Security Related Fixes
