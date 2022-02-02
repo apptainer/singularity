@@ -6,6 +6,8 @@
   rpm (built on CentOS 7) and deb (built on Debian 11) x86_64 packages.
 - Update dependency to correctly unset variables in container startup
   environment processing. Fixes regression introduced in singularity-3.8.5.
+- Remove subshell overhead when processing large environments on container
+  startup.
 
 ## v3.8.5 - [2021-11-29]
 
