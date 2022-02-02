@@ -12,7 +12,7 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
-	github.com/containerd/cgroups v1.0.1
+	github.com/containerd/cgroups v1.0.3
 	github.com/containerd/containerd v1.5.8
 	github.com/containernetworking/cni v0.8.1
 	github.com/containernetworking/plugins v0.9.1
