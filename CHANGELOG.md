@@ -4,6 +4,8 @@
 
 - Auto-generate release assets including the distribution tarball and
   rpm (built on CentOS 7) and deb (built on Debian 11) x86_64 packages.
+- Update dependency to correctly unset variables in container startup
+  environment processing. Fixes regression introduced in singularity-3.8.5.
 
 ## v3.8.5 - [2021-11-29]
 
