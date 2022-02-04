@@ -6,7 +6,7 @@ $(SOURCEDIR)/scripts/go-test: export GO111MODULE := $(GO111MODULE)
 $(SOURCEDIR)/scripts/go-test: export GOFLAGS := $(GOFLAGS)
 $(SOURCEDIR)/scripts/go-test: export GO_TAGS := $(GO_TAGS)
 $(SOURCEDIR)/scripts/go-test: export SUDO_SCRIPT := $(SOURCEDIR)/scripts/test-sudo
-$(SOURCEDIR)/scripts/go-test: $(SOURCEDIR)/scripts/go-test.in $(SOURCEDIR)/scripts/expand-env.go
+$(SOURCEDIR)/scripts/go-test: $(SOURCEDIR)/scripts/go-test.in $(SOURCEDIR)/scripts/expand-env.go $(BUILDDIR)/config.h
 	@echo ' GEN $@'
 	$(V) $(GO) run $(GO_MODFLAGS) $(SOURCEDIR)/scripts/expand-env.go < $< > $@
 	$(V) chmod +x $@
@@ -19,7 +19,7 @@ $(SOURCEDIR)/scripts/go-generate: export GO := $(GO)
 $(SOURCEDIR)/scripts/go-generate: export GO111MODULE := $(GO111MODULE)
 $(SOURCEDIR)/scripts/go-generate: export GOFLAGS := $(GOFLAGS)
 $(SOURCEDIR)/scripts/go-generate: export GO_TAGS := $(GO_TAGS)
-$(SOURCEDIR)/scripts/go-generate: $(SOURCEDIR)/scripts/go-generate.in $(SOURCEDIR)/scripts/expand-env.go
+$(SOURCEDIR)/scripts/go-generate: $(SOURCEDIR)/scripts/go-generate.in $(SOURCEDIR)/scripts/expand-env.go $(BUILDDIR)/config.h
 	@echo ' GEN $@'
 	$(V) $(GO) run $(GO_MODFLAGS) $(SOURCEDIR)/scripts/expand-env.go < $< > $@
 	$(V) chmod +x $@
