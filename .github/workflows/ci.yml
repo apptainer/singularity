@@ -105,15 +105,15 @@ jobs:
           OS_VERSION: 7
         run: ./scripts/ci-docker-run
 
-  rpmbuild-centos8:
+  rpmbuild-rocky8:
     runs-on: ubuntu-20.04
-    name: rpmbuild-centos8
+    name: rpmbuild-rocky8
     steps:
       - uses: actions/checkout@v2
 
       - name: Build and test rpm under docker
         env:
-          OS_TYPE: centos
+          OS_TYPE: rockylinux
           OS_VERSION: 8
         run: ./scripts/ci-docker-run
 
