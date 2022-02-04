@@ -284,9 +284,9 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 			from:                "centos:7",
 		},
 		{
-			name:                "CentOS_8",
+			name:                "RockyLinux_8",
 			kernelMajorRequired: 3,
-			from:                "centos:8",
+			from:                "rockylinux:8",
 		},
 		{
 			name:                "Ubuntu_1604",
