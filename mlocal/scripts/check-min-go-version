@@ -1,0 +1,52 @@
+#!/bin/bash
+if [ $# != 2 ]; then
+    echo "Usage: $0: go_cmd min_go_version" >&2
+    echo "  min_go_version can be either of form x.y or x.y.z" >&2
+    exit 1
+fi
+
+GOVERSION="$($1 version)"
+GOVERSION="${GOVERSION//go version go/}"
+GOVERSION="${GOVERSION// *}"
+# GOVERSION can also be either form x.y or x.y.z
+GOMAJOR="${GOVERSION/.*}"
+GOMINOR="${GOVERSION#*.}"
+GOPATCH="${GOMINOR#*.}"
+if [ "$GOMINOR" = "$GOPATCH" ]; then
+    GOPATCH=""
+else
+    GOMINOR="${GOMINOR/.*}"
+fi
+
+MINVERSION="$2"
+MINMAJOR="${MINVERSION/.*}"
+MINMINOR="${MINVERSION#*.}"
+MINPATCH="${MINMINOR#*.}"
+if [ "$MINMINOR" = "$MINPATCH" ]; then
+    MINPATCH=""
+else
+    MINMINOR="${MINMINOR/.*}"
+fi
+
+if [ $GOMAJOR -lt $MINMAJOR ]; then
+    exit 1
+fi
+if [ $GOMAJOR -gt $MINMAJOR ]; then
+    exit 0
+fi
+if [ $GOMINOR -lt $MINMINOR ]; then
+    exit 1
+fi
+if [ $GOMINOR -gt $MINMINOR ]; then
+    exit 0
+fi
+if [ -z "$MINPATCH" ]; then
+    exit 0
+fi
+if [ -z "$GOPATCH" ]; then
+    exit 1
+fi
+if [ $GOPATCH -lt $MINPATCH ]; then
+    exit 1
+fi
+exit 0

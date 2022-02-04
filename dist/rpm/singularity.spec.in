@@ -37,6 +37,7 @@ Release: @PACKAGE_RELEASE@%{?dist}
 License: BSD-3-Clause-LBNL
 URL: https://singularity.hpcng.org
 Source: %{name}-%{package_version}.tar.gz
+@PACKAGE_GOLANG_SOURCE@
 ExclusiveOS: linux
 # RPM_BUILD_ROOT wasn't being set ... for some reason
 %if "%{sles_version}" == "11"
@@ -105,14 +106,24 @@ export PATH=$GOPATH/bin:$PATH
 tar -xf "%SOURCE0"
 cd %{name}-%{package_version}
 
-# Apply rpm-specific patches
-for PATCH in $(find dist/rpm -name '*.patch'); do
-	patch -p1 <$PATCH
-done
+%if "%{?SOURCE1}" != ""
+GOVERSION="$(echo %SOURCE1|sed 's,.*/,,;s/go//;s/\.src.*//')"
+if ! ./mlocal/scripts/check-min-go-version go $GOVERSION; then
+	# build the go tool chain, the existing version is too old
+	pushd ..
+	tar -xf %SOURCE1
+	cd go/src
+	./make.bash
+	cd ../..
+	export PATH=$PWD/go/bin:$PATH
+	popd
+fi
+%endif
+
 
 # Not all of these parameters currently have an effect, but they might be
 #  used someday.  They are the same parameters as in the configure macro.
-./mconfig --only-rpm -V %{version}-%{release} \
+./mconfig -V %{version}-%{release} \
         --prefix=%{_prefix} \
         --exec-prefix=%{_exec_prefix} \
         --bindir=%{_bindir} \
@@ -133,6 +144,9 @@ make old_config=
 %install
 cd %{name}-%{version}
 
+%if "%{?SOURCE1}" != ""
+export PATH=$PWD/go/bin:$PATH
+%endif
 export GOPATH=$PWD/gopath
 export PATH=$GOPATH/bin:$PATH
 

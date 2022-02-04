@@ -4,6 +4,7 @@
 
 OS_TYPE="$1"
 OS_VERSION="$2"
+GO_ARCH="$3"
 
 # build and install
 yum install -y rpm-build make yum-utils gcc binutils util-linux-ng which
@@ -18,16 +19,30 @@ yum install -y git
 useradd -u 1000 --create-home -s /bin/bash testuser
 echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
-chown -R testuser .
+mkdir -p /local
+chown -R testuser . /local
 
+# Be careful not to use unescaped single quotes in these commands
 su testuser -c '
   set -x
   set -e
   ./mconfig --only-rpm
+  GOSRC="$(sed -n "s/^Source1: //p" singularity.spec)"
+  if [ -n "$GOSRC" ]; then
+    curl -f -L -sS -o $GOSRC https://golang.org/dl/$GOSRC
+    if [ -n "'$GO_ARCH'" ]; then
+      # Download and install binary too to avoid rpm having to compile the
+      #  go toolchain from source
+      GOBIN="$(echo "$GOSRC"|sed "s/\.src./.'$GO_ARCH'./")"
+      curl -f -L -sS https://golang.org/dl/$GOBIN | tar -xzf - -C /local
+      PATH=/local/go/bin:$PATH
+    fi
+  fi
+  go version
   sudo yum-builddep -y singularity.spec
   make -C builddir rpm
   sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
-  BLD=`echo $HOME/rpmbuild/BUILD/singularity-*`
+  BLD="$(echo $HOME/rpmbuild/BUILD/singularity-*)"
   export GOPATH=$BLD/gopath
   PATH=$GOPATH/bin:$PATH
 
