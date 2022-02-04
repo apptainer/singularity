@@ -40,7 +40,7 @@ First, download the Golang archive to `/tmp`, then extract the archive to `/usr/
 _**NOTE:** if you are updating Go from a older version, make sure you remove `/usr/local/go` before
 reinstalling it._
 
-```sh
+```
 $ export GOVERSION=1.16.9 OS=linux ARCH=amd64  # change this as you need
 
 $ wget -O /tmp/go${GOVERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${GOVERSION}.${OS}-${ARCH}.tar.gz && \
@@ -68,7 +68,7 @@ checks locally before uploading your pull request.
 In order to download and install the latest version of `golangci-lint`,
 you can run:
 
-```sh
+```
 curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
 ```
 
@@ -125,33 +125,47 @@ install `rpm-build`, `wget`, and `golang`:
 $ sudo yum install -y rpm-build wget golang
 ```
 
-The rpm build can use the distribution or EPEL version of Go, even
-though as of this writing that version is older than the default
-minimum version of Go that Singularity requires.
-This is because the rpm applies a source code patch to lower the minimum
-required.
+The rpm build will use the OS distribution or EPEL version of Go,
+or it will use a different installation of Go, whichever is first in $PATH.
+If the first `go` found in $PATH is too old,
+then the rpm build uses that older version to compile the newer go
+toolchain from source.
+This mechanism is necessary for rpm build systems that do not allow
+downloading anything from the internet.
+In order to make use of this mechanism, use the `mconfig --only-rpm` option
+to skip the minimum version check.
+`mconfig` will then create a `.spec` file that looks for a go source
+tarball in the rpm build's current directory.
+Download the tarball like this:
 
-To build from a release source tarball do these commands:
+```
+eval `grep ^hstgo_preferred_version mconfig`
+wget https://dl.google.com/go/go${hstgo_preferred_version}.src.tar.gz
+```
+
+Download the latest
+[release tarball](https://github.com/apptainer/singularity/releases)
+and use it to install the RPM like this:
 
 ```
 $ export VERSION=3.8.5  # this is the singularity version, change as you need
 
-$ wget https://github.com/hpcng/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
+$ wget https://github.com/apptainer/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-${VERSION}.tar.gz && \
     sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-${VERSION}-1.el7.x86_64.rpm && \
     rm -rf ~/rpmbuild singularity-${VERSION}*.tar.gz
 
 Alternatively, to build an RPM from the latest master you can
 [clone the repo as detailed above](#clone-the-repo).
-Create the build configuration using the `--only-rpm` option of
-`mconfig` if you're using the system's too-old golang installation,
-to lower the minimum required version.
-Then use the `rpm` make target to build Singularity as an rpm package:
+Then use the `rpm` make target to build Singularity as an rpm package,
+for example like this if you already have a new enough golang first
+in your PATH:
 
 ```
-$ ./mconfig --only-rpm
-$ make -C builddir rpm
-$ sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.5*.x86_64.rpm # or whatever version you built
+VERSION=3.8.5  # this is the singularity version, change as you need
+./mconfig
+make -C builddir rpm
+sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-${VERSION}*.x86_64.rpm 
 ```
 
 Alternatively, to build an RPM from the latest master you can 
@@ -159,7 +173,7 @@ Alternatively, to build an RPM from the latest master you can
 tarball and use it to install Singularity:
 
 ```
-$ cd $GOPATH/src/github.com/hpcng/singularity && \
+$ cd $GOPATH/src/github.com/apptainer/singularity && \
   ./mconfig && \
   make -C builddir rpm && \
   sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.5*.x86_64.rpm # or whatever version you built
@@ -173,7 +187,7 @@ $ make -C builddir rpm RPMPREFIX=/usr/local
 ```
 
 For more information on installing/updating/uninstalling the RPM, check out our 
-[admin docs](https://singularity.hpcng.org/admin-docs/master/admin_quickstart.html).
+[admin docs](https://apptainer.org/admin-docs/master/admin_quickstart.html).
 
 ## Debian Package
 
