@@ -12,13 +12,17 @@ endif
 # DEBEMAIL is not filtered out by debuild 
 
 # request verbose debhelper here or from environment
-#DH_VERBOSE=1
+DH_VERBOSE=1
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 # if verbose is requested do mconfig in verbose mode, too.
 ifdef DH_VERBOSE
 SC_VERBOSE = -v
 endif
+
+# For locally compiled go
+MINGO_VERSION = $(shell scripts/get-min-go-version)
+GOROOT = $${TMPDIR:-/tmp}/appdebgo/go
 
 # get version via script
 SC_VERSION = $(shell scripts/get-version )
@@ -55,15 +59,26 @@ export SINGULARITY_CACHEDIR=$(pkgdir)/var/lib/singularity/cache
 	dh $@  --with=autoreconf
 
 override_dh_auto_configure:
+	@export PATH=$(GOROOT)/bin:$$PATH; \
+	  if ! ./mlocal/scripts/check-min-go-version go $(MINGO_VERSION); then \
+	    set -e; \
+	    if [ -d $(GOROOT) ]; then rm -rf $(GOROOT); fi; \
+	    mkdir -p $(GOROOT); \
+	    HERE=$$PWD; \
+	    cd $(GOROOT)/..; \
+	    tar -xf $$HERE/debian/go$(MINGO_VERSION).src.tar.gz; \
+	    cd go/src; \
+	    ./make.bash; \
+	  fi
 ifneq ($(NEW_VERSION),)
 	$(warning "Setting new version in debian changelog: $(NEW_VERSION)")
 	@debchange -v $(NEW_VERSION)$(VERSION_POSTFIX) "Version $(NEW_VERSION)" && debchange -m -r ""
 endif
-	@./mconfig $(SC_VERBOSE) -b $(DEB_SC_BUILDDIR) -P $(DEB_SC_PROFILE) $(SC_OPTIONS) \
+	@PATH=$(GOROOT)/bin:$$PATH ./mconfig $(SC_VERBOSE) -b $(DEB_SC_BUILDDIR) -P $(DEB_SC_PROFILE) $(SC_OPTIONS) \
                 --prefix=/usr --sysconfdir=/etc --localstatedir=/var/lib
 
 override_dh_auto_build:
-	@dh_auto_build -Smakefile --parallel --max-parallel=$(MAKEPARALLEL) -D$(DEB_SC_BUILDDIR)
+	@PATH=$(GOROOT)/bin:$$PATH dh_auto_build -Smakefile --parallel --max-parallel=$(MAKEPARALLEL) -D$(DEB_SC_BUILDDIR)
 
 override_dh_auto_install:
 	@dh_auto_install -Smakefile -D$(DEB_SC_BUILDDIR)

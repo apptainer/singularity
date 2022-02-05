@@ -1,0 +1,8 @@
+#!/bin/bash
+HERE=${0%/*}
+PARENT=${HERE%/*}
+if [ "$PARENT" = "$HERE" ]; then
+    PARENT=.
+fi
+eval `grep ^hstgo_preferred_version= ${PARENT}/mconfig`
+echo $hstgo_preferred_version

@@ -139,8 +139,7 @@ tarball in the rpm build's current directory.
 Download the tarball like this:
 
 ```
-eval `grep ^hstgo_preferred_version mconfig`
-wget https://dl.google.com/go/go${hstgo_preferred_version}.src.tar.gz
+wget https://dl.google.com/go/go$(scripts/get-min-go-version).src.tar.gz
 ```
 
 Download the latest
@@ -191,4 +190,5 @@ For more information on installing/updating/uninstalling the RPM, check out our
 
 ## Debian Package
 
-Additional information on how to build a Debian package can be found in [dist/debian/DEBIAN_PACKAGE.md](dist/debian/DEBIAN_PACKAGE.md).
+Information on how to build a Debian package can be found in
+[dist/debian/DEBIAN_PACKAGE.md](dist/debian/DEBIAN_PACKAGE.md).

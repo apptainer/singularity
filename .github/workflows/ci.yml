@@ -18,25 +18,6 @@ jobs:
       - name: Check go.mod
         run: ./scripts/check-go.mod
 
-  debian:
-    name: debian
-    runs-on: ubuntu-20.04
-    container: golang:1.16-buster
-    steps:
-      - name: Fetch deps
-        run: |
-          apt-get -q update && apt-get -q install -y build-essential libssl-dev uuid-dev squashfs-tools cryptsetup-bin
-
-      - uses: actions/checkout@v2
-
-      - name: Build Singularity
-        run: |
-          ./mconfig -v -p /usr/local
-          make -C ./builddir all
-
-      - name: Check Singularity
-        run: make -C ./builddir check
-
   alpine:
     name: alpine
     runs-on: ubuntu-20.04
@@ -93,6 +74,20 @@ jobs:
       - name: Check code
         run: make -C ./builddir check
   
+  debian:
+    name: debian
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build and test deb under docker
+        env:
+          OS_TYPE: debian
+          OS_VERSION: 11
+          # setting GO_ARCH speeds things by using go binaries instead of source
+          GO_ARCH: linux-amd64
+        run: ./scripts/ci-docker-run
+
   rpmbuild-centos7:
     runs-on: ubuntu-20.04
     name: rpmbuild-centos7
@@ -103,7 +98,6 @@ jobs:
         env:
           OS_TYPE: centos
           OS_VERSION: 7
-          # setting GO_ARCH speeds things by using binaries instead of source
           GO_ARCH: linux-amd64
         run: ./scripts/ci-docker-run
 
