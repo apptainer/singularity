@@ -21,8 +21,8 @@ Build-Depends:
  golang-go (>= 2:1.13~~)
 Standards-Version: 3.9.8
 Homepage: http://gmkurtzer.github.io/singularity
-Vcs-Git: https://github.com/hpcng/singularity.git
-Vcs-Browser: https://github.com/hpcng/singularity
+Vcs-Git: https://github.com/apptainer/singularity.git
+Vcs-Browser: https://github.com/apptainer/singularity
 
 # "singularity" is a packaged game (but the contents don't clash)
 Package: singularity-container
