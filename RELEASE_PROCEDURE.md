@@ -4,7 +4,7 @@ The release procedure below can be performed by a project member with
 "maintainer" or higher privileges on the GitHub repository. It assumes
 that you will be working in an up-to-date local clone of the GitHub
 repository, where the `upstream` remote points to
-`github.com/hpcng/singularity`.
+`github.com/apptainer/singularity`.
 
 ## Prior to Release
 
@@ -35,21 +35,18 @@ present, and steps 1-2 should be skipped.
 
 1. From a repository that is up-to-date with master, create a release
    branch e.g. `git checkout upstream/master -b release-3.8`.
-2. Push the release branch to GitHub via `git push upstream release-3.8`.
-3. Examine the GitHub branch protection rules, to extend them to the
+1. Push the release branch to GitHub via `git push upstream release-3.8`.
+1. Examine the GitHub branch protection rules, to extend them to the
    new release branch if needed.
-4. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against
+1. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against
    the release branch, so that they reflect the version to be released.
-5. Apply an annotated tag via `git tag -a -m "Singularity v3.8.0
+1. Apply an annotated tag via `git tag -a -m "Singularity v3.8.0
    Release Candidate 1" v3.8.0-rc.1`.
-6. Push the tag via `git push upstream v3.8.0-rc.1`.
-7. Create a tarball via `./mconfig --only-rpm -v && make dist`.
-8. Test intallation from the tarball.
-9. Compute the sha256sum of the tarball e.g. `sha256sum *.tar.gz > sha256sums`.
-10. Create a GitHub release, marked as a 'pre-release', incorporating
-   `CHANGELOG.md` information, and attaching the tarball and
-   `sha256sums`.
-11. Notify the community about the RC via the Google Group and Slack.
+1. Push the tag via `git push upstream v3.8.0-rc.1`.
+1. Create a GitHub release, marked as a 'pre-release', incorporating
+   `CHANGELOG.md` information.  A tarball, rpm packages, deb packages,
+   and a `sha256sums` should get automatically attached.
+1. Notify the community about the RC via the Google Group and Slack.
 
 There will often be multiple release candidates issued prior to the
 final release of a new 3.Y.0 minor version.
@@ -62,20 +59,19 @@ bug(s), and well covered by tests.
 
 1. Ensure the user and admin documentation is up-to-date for the new
    version, branched, and tagged.
-  - [User Docs](https://singularity.hpcng.org/user-docs/master/) can be edited [here](https://github.com/hpcng/singularity-userdocs)
-  - [Admin Docs](https://singularity.hpcng.org/admin-docs/master/) can be edited [here](https://github.com/hpcng/singularity-admindocs)
-2. Ensure the user and admin documentation has been deployed to the
-   singularity.hpcng.org website.
-4. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against
+  - [User Docs](https://apptainer.org/user-docs/master/) can be edited [here](https://github.com/apptainer/singularity-userdocs)
+  - [Admin Docs](https://apptainer.org/admin-docs/master/) can be edited [here](https://github.com/apptainer/singularity-admindocs)
+1. Ensure the user and admin documentation has been deployed to the
+   apptainer.org website.
+1. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against
    the release branch, so that they reflect the version to be released.
-5. Apply an annotated tag via `git tag -a -m "Singularity v3.8.0" v3.8.0`.
-6. Push the tag via `git push upstream v3.8.0-rc.1`.
-7. Create a tarball via `./mconfig -v && make dist`.
-8. Test intallation from the tarball.
-9. Compute the sha256sum of the tarball e.g. `sha256sum *.tar.gz > sha256sums`.
-10. Create a GitHub release, incorporating `CHANGELOG.md` information,
-   and attaching the tarball and `sha256sums`.
-11. Notify the community about the RC via the Google Group and Slack.
+1. Apply an annotated tag via `git tag -a -m "Singularity v3.8.0" v3.8.0`.
+1. Push the tag via `git push upstream v3.8.0-rc.1`.
+1. Compute the sha256sum of the tarball e.g. `sha256sum *.tar.gz > sha256sums`.
+1. Create a GitHub release, incorporating `CHANGELOG.md` information.
+1. Notify the community about the RC via the Google Group and Slack.
+1. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against
+   the release-3.Y branch, so that they reflect the version to be released.
 
 ## After the Release
 

@@ -223,3 +223,57 @@ jobs:
           name: e2e-artifact
           path: builddir/e2e-cmd-report.txt
           retention-days: 7
+
+  release_assets:
+    name: release_assets
+    runs-on: ubuntu-20.04
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Make dist tarball and rpm packages
+        env:
+          OS_TYPE: centos
+          OS_VERSION: 7
+          GO_ARCH: linux-amd64
+          GITHUB_REF: ${{github.ref}}
+        run: |
+          # Move the source directory down a level to separate it
+          #  from later builds; the docker build runs privileged and
+          #  changes the ownership of the files.
+          set -x
+          mkdir rpmdir
+          shopt -s extglob
+          mv .??* !(rpmdir) rpmdir
+          cd rpmdir
+          echo ${GITHUB_REF#refs/tags/v*} >VERSION
+          ./scripts/ci-docker-run
+          cp *.tar.gz *.rpm ..
+          cd ..
+          sha256sum *.tar.gz *.rpm > sha256sums
+
+      - name: Make deb packages
+        env:
+          OS_TYPE: debian
+          OS_VERSION: 11
+          GO_ARCH: linux-amd64
+          GITHUB_REF: ${{github.ref}}
+        run: |
+          # Make a new copy of the source files for this build
+          set -x
+          tar xf singularity-*.tar.gz
+          cd singularity-${GITHUB_REF#refs/tags/v*}
+          ./scripts/ci-docker-run
+          cp *.deb ..
+          cd ..
+          sha256sum *.deb >> sha256sums
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            *.tar.gz
+            *.rpm
+            *.deb
+            sha256sums
