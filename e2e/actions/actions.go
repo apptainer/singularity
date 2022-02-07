@@ -2099,33 +2099,6 @@ func (c actionTests) bindImage(t *testing.T) {
 			},
 			exit: 0,
 		},
-		// For the --mount variants we are really just verifying the CLI
-		// acceptance of one or more image bind mount strings. Translation from
-		// --mount strings to BindPath structs is checked in unit tests. The
-		// functionality of image mounts of various kinds is already checked
-		// above, with --bind flags. No need to duplicate all of these.
-		{
-			name:    "MountSifWithID",
-			profile: e2e.UserProfile,
-			args: []string{
-				// rootfs ID is now '4'
-				"--mount", "type=bind,source=" + c.env.ImagePath + ",destination=/rootfs,id=4",
-				c.env.ImagePath,
-				"test", "-d", "/rootfs/etc",
-			},
-			exit: 0,
-		},
-		{
-			name:    "MountSifDataExt3AndSquash",
-			profile: e2e.UserProfile,
-			args: []string{
-				"--mount", "type=bind,source=" + sifExt3Image + ",destination=/ext3,image-src=/",
-				"--mount", "type=bind,source=" + sifSquashImage + ",destination=/squash,image-src=/",
-				c.env.ImagePath,
-				"test", "-f", filepath.Join("/squash", squashMarkerFile), "-a", "-f", "/ext3/ext3_marker",
-			},
-			exit: 0,
-		},
 	}
 
 	for _, tt := range tests {
