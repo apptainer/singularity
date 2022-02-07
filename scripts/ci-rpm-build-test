@@ -34,6 +34,8 @@ su testuser -c '
   fi
   go version
   sudo yum-builddep -y singularity.spec
+  # eliminate the "dist" part in the rpm name, for the release_assets
+  echo "%dist %{nil}" >$HOME/.rpmmacros
   make -C builddir rpm
   sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
   BLD="$(echo $HOME/rpmbuild/BUILD/singularity-*)"
@@ -41,4 +43,7 @@ su testuser -c '
   PATH=$GOPATH/bin:$PATH
 
   singularity exec library://alpine:3.11.5 /bin/true
+
+  # copy the rpms into the current directory for the "release_assets" CI
+  cp $HOME/rpmbuild/SRPMS/*.rpm $HOME/rpmbuild/RPMS/*/*.rpm .
 '

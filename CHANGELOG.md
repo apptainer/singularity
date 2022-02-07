@@ -1,5 +1,10 @@
 # Singularity Changelog
 
+## Changes since last release
+
+- Auto-generate release assets including the distribution tarball and
+  rpm (built on CentOS 7) and deb (built on Debian 11) x86_64 packages.
+
 ## v3.8.5 - [2021-11-29]
 
 ### Security Related Fixes
