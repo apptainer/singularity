@@ -688,27 +688,6 @@ func sylogBuiltin(ctx context.Context, argv []string) error {
 	return nil
 }
 
-// unescapeBuiltin returns a string, unescaping \n to a newline
-// Used to return newlines when we export a var in the action script
-func unescapeBuiltin(ctx context.Context, argv []string) error {
-	if len(argv) < 1 {
-		return fmt.Errorf("unescape builtin requires one argument")
-	}
-	hc := interp.HandlerCtx(ctx)
-	fmt.Fprintf(hc.Stdout, "%s", strings.Replace(argv[0], "\\n", "\n", -1))
-	return nil
-}
-
-// getEnvKeyBuiltin returns the KEY part of an environment variable.
-func getEnvKeyBuiltin(ctx context.Context, argv []string) error {
-	if len(argv) < 1 {
-		return fmt.Errorf("getenvkey builtin requires one argument")
-	}
-	hc := interp.HandlerCtx(ctx)
-	fmt.Fprintf(hc.Stdout, "%s\n", strings.SplitN(argv[0], "=", 2)[0])
-	return nil
-}
-
 // getAllEnvBuiltin display all exported variables in the form KEY=VALUE.
 func getAllEnvBuiltin(shell *interpreter.Shell) interpreter.ShellBuiltin {
 	return func(ctx context.Context, argv []string) error {
@@ -818,11 +797,9 @@ func runActionScript(engineConfig *singularityConfig.EngineConfig) ([]string, []
 
 	// register few builtin
 	shell.RegisterShellBuiltin("getallenv", getAllEnvBuiltin(shell))
-	shell.RegisterShellBuiltin("getenvkey", getEnvKeyBuiltin)
 	shell.RegisterShellBuiltin("sylog", sylogBuiltin)
 	shell.RegisterShellBuiltin("fixpath", fixPathBuiltin)
 	shell.RegisterShellBuiltin("hash", hashBuiltin)
-	shell.RegisterShellBuiltin("unescape", unescapeBuiltin)
 	shell.RegisterShellBuiltin("umask_builtin", umaskBuiltin)
 
 	// exec builtin won't execute the command but instead
