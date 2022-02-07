@@ -3,34 +3,25 @@
 # Run docker as shown at
 #  https://djw8605.github.io/2016/05/03/building-centos-packages-on-travisci/
 #
-# This more complicated setup is needed for CircleCI too because their
-#  standard docker machine type does not give the container enough privileges
-#  for any reasonable subset of standard singularity tests to succeed.  
-# CircleCI does at least start a VM with docker already started.
+# This more complicated setup is needed for github actions too because 
+#  they do not provide a mechanism for directly using docker --privileged,
+#  which is needed for any reasonable subset of singularity tests to succeed
+#  (it is not needed for building, just for testing).
+# Github actions does at least start a VM with docker already running.
 
-if [[ "$OS_TYPE" = "opensuse" ]]; then
-    DOCKER_HUB_URI="${OS_TYPE}/leap:$OS_VERSION"
-else
-    DOCKER_HUB_URI="${OS_TYPE}:$OS_VERSION"
-fi
-
+DOCKER_HUB_URI="$OS_TYPE:$OS_VERSION"
 docker pull "$DOCKER_HUB_URI"
 
-# Mount /var/run/docker.sock and set --network=host so we can call docker from inside
-# cause some tests need it. Cannot mount to /var/run/docker.sock inside cause CentOS
-# /usr/sbin/init mounts another overlayfs on top of it
-
-if [[ "$OS_TYPE" = "opensuse" ]]; then
-    DOCKER_HUB_URI="${OS_TYPE}/leap:$OS_VERSION"
-else
-    DOCKER_HUB_URI="${OS_TYPE}:$OS_VERSION"
+DOCKER_CONTAINER_NAME="test_${OS_TYPE#*/}_${OS_VERSION}"
+PKGTYPE=rpm
+if [ "$OS_TYPE" = "debian" ] || [ "$OS_TYPE" = "ubuntu" ]; then
+    PKGTYPE=deb
 fi
-DOCKER_CONTAINER_NAME="test_${OS_TYPE}_${OS_VERSION}"
 
 docker run --privileged --network=host \
-  -v "$(pwd):/build:rw"  \
+  -v "$(pwd):/build:rw" -e GO_ARCH=$GO_ARCH \
   --name "$DOCKER_CONTAINER_NAME" "$DOCKER_HUB_URI" /bin/bash -exc \
-	"cd /build && scripts/ci-rpm-build-test $OS_TYPE $OS_VERSION $GO_ARCH"
+	"cd /build && scripts/ci-${PKGTYPE}-build-test"
 
 docker ps -a
 docker stop "$DOCKER_CONTAINER_NAME"

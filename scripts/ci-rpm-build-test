@@ -1,21 +1,15 @@
 #!/bin/bash -ex
 
-# this script runs as root under docker
+# this script runs as root under docker --privileged
 
-OS_TYPE="$1"
-OS_VERSION="$2"
-GO_ARCH="$3"
-
-# build and install
-yum install -y rpm-build make yum-utils gcc binutils util-linux-ng which
+# install dependencies
+yum install -y rpm-build make yum-utils gcc binutils util-linux-ng which git
 yum install -y libseccomp-devel e2fsprogs cryptsetup
 yum install -y epel-release
 yum install -y golang
 
 # switch to an unprivileged user with sudo privileges
 yum install -y sudo
-# We need Git existing here prior to the run
-yum install -y git
 useradd -u 1000 --create-home -s /bin/bash testuser
 echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers

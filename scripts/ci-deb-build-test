@@ -1,0 +1,61 @@
+#!/bin/bash -ex
+
+# this script runs as root under docker --privileged
+
+# install dependencies
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    build-essential \
+    libseccomp-dev \
+    pkg-config \
+    squashfs-tools \
+    cryptsetup \
+    curl wget git
+apt-get install -y \
+    devscripts \
+    help2man \
+    libarchive-dev \
+    libssl-dev \
+    python \
+    uuid-dev \
+    golang-go
+
+# move source code down a level because debuild writes into parent dir
+shopt -s extglob
+mkdir src
+mv .??* !(src) src
+
+# switch to an unprivileged user with sudo privileges
+apt-get install -y sudo
+useradd -u 1000 --create-home -s /bin/bash testuser
+echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
+echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
+mkdir -p /local
+chown -R testuser . /local
+
+cd src
+
+# Be careful not to use unescaped single quotes in these commands
+su testuser -c '
+  set -x
+  set -e
+  cp -r dist/debian .
+  GOSRC="go$(scripts/get-min-go-version).src.tar.gz"
+  if [ -n "$GOSRC" ]; then
+    curl -f -L -sS -o debian/$GOSRC https://golang.org/dl/$GOSRC
+    if [ -n "'$GO_ARCH'" ]; then
+      # Download and install binary too to avoid debuild having to compile the
+      #  go toolchain from source
+      GOBIN="$(echo "$GOSRC"|sed "s/\.src./.'$GO_ARCH'./")"
+      curl -f -L -sS https://golang.org/dl/$GOBIN | tar -xzf - -C /local
+      PATH=/local/go/bin:$PATH
+    fi
+  fi
+  go version
+  export DEB_FULLNAME="'"${DEB_FULLNAME:-CI Test}"'"
+  export DEBEMAIL="'${DEBEMAIL:-citest@example.com}'"
+  debuild --build=binary --no-sign --lintian-opts --display-info --show-overrides
+  sudo dpkg -i ../singularity*.deb
+
+  singularity exec library://alpine:3.11.5 /bin/true
+'
