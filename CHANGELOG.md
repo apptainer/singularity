@@ -1,7 +1,12 @@
 # Singularity Changelog
 
-## Changes since last release
+## v3.8.6 - [2022-02-08]
 
+### Changed behaviours and bug fixes
+
+- Update builds to require at least golang version 1.16.12, and update
+  package builds to build the go toolchain from source if the provided
+  version is too old.
 - Auto-generate release assets including the distribution tarball and
   rpm (built on CentOS 7) and deb (built on Debian 11) x86_64 packages.
 - Update dependency to correctly unset variables in container startup
@@ -9,7 +14,7 @@
 - Remove subshell overhead when processing large environments on container
   startup.
 - `make install` now installs man pages. A separate `make man` is not
-  required.
+  required.  As a consequence, man pages are now included in deb packages.
 
 ## v3.8.5 - [2021-11-29]
 
