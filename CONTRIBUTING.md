@@ -63,12 +63,12 @@ all your interactions with the project members and users.
     additions to `go.mod` should explain why the dependency is required.
 
 ## Documentation
-There are a few places where documentation for the Singularity project lives. The [changelog](CHANGELOG.md) is where PRs should include documentation if necessary. When a new release is tagged, the [user-docs](https://singularity.hpcng.org/user-docs/master/) and [admin-docs](https://singularity.hpcng.org/admin-docs/master/) will be updated using the contents of the `CHANGELOG.md` file as reference.
+There are a few places where documentation for the Singularity project lives. The [changelog](CHANGELOG.md) is where PRs should include documentation if necessary. When a new release is tagged, the [user-docs](https://apptainer.org/user-docs/master/) and [admin-docs](https://apptainer.org/admin-docs/master/) will be updated using the contents of the `CHANGELOG.md` file as reference.
 
 1. The [changelog](CHANGELOG.md) is a place to document **functional** differences between versions of Singularity. PRs which require documentation must update this file. This should be a document which can be used to explain what the new features of each version of Singularity are, and should **not** read like a commit log. Once a release is tagged (*e.g. v3.0.0*), a new top level section will be made titled **Changes Since vX.Y.Z** (*e.g. Changes Since v3.0.0*) where new changes will now be documented, leaving the previous section immutable.
 2. The [README](README.md) is a place to document critical information for new users of Singularity. It should typically not change, but in the case where a change is necessary a PR may update it.
-3. The [user-docs](https://www.github.com/hpcng/singularity-userdocs) should document anything pertinent to the usage of Singularity.
-4. The [admin-docs](https://www.github.com/hpcng/singularity-admindocs) document anything that is pertinent to a system administrator who manages a system with Singularity installed.
+3. The [user-docs](https://www.github.com/apptainer/singularity-userdocs) should document anything pertinent to the usage of Singularity.
+4. The [admin-docs](https://www.github.com/apptainer/singularity-admindocs) document anything that is pertinent to a system administrator who manages a system with Singularity installed.
 5. If necessary, changes to the message displayed when running `singularity help *` can be made by editing `docs/content.go`.
 
 
