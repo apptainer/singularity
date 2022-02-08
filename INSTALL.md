@@ -8,7 +8,7 @@ always be up-to-date with the latest source release version.
 
 For full instructions on installation, including building RPMs,
 installing pre-built EPEL packages etc. please check the
-[installation section of the admin guide](https://singularity.hpcng.org/admin-docs/master/installation.html).
+[installation section of the admin guide](https://apptainer.org/admin-docs/master/installation.html).
 
 ## Install system dependencies
 
@@ -78,16 +78,16 @@ Golang is a bit finicky about where things are placed. Here is the correct way
 to build Singularity from source:
 
 ```
-$ mkdir -p ${GOPATH}/src/github.com/hpcng && \
-  cd ${GOPATH}/src/github.com/hpcng && \
-  git clone https://github.com/hpcng/singularity.git && \
+$ mkdir -p ${GOPATH}/src/github.com/apptainer && \
+  cd ${GOPATH}/src/github.com/apptainer && \
+  git clone https://github.com/apptainer/singularity.git && \
   cd singularity
 ```
 
-To build a stable version of Singularity, check out a [release tag](https://github.com/hpcng/singularity/tags) before compiling:
+To build a stable version of Singularity, check out a [release tag](https://github.com/apptainer/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.8.5
+$ git checkout v3.8.6
 ```
 
 ## Compiling Singularity
@@ -95,7 +95,7 @@ $ git checkout v3.8.5
 You can build Singularity using the following commands:
 
 ```
-$ cd ${GOPATH}/src/github.com/hpcng/singularity && \
+$ cd ${GOPATH}/src/github.com/apptainer/singularity && \
   ./mconfig && \
   cd ./builddir && \
   make && \
@@ -147,7 +147,7 @@ Download the latest
 and use it to install the RPM like this:
 
 ```
-$ export VERSION=3.8.5  # this is the singularity version, change as you need
+$ export VERSION=3.8.6  # this is the singularity version, change as you need
 
 $ wget https://github.com/apptainer/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-${VERSION}.tar.gz && \
@@ -161,7 +161,7 @@ for example like this if you already have a new enough golang first
 in your PATH:
 
 ```
-VERSION=3.8.5  # this is the singularity version, change as you need
+VERSION=3.8.6  # this is the singularity version, change as you need
 ./mconfig
 make -C builddir rpm
 sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-${VERSION}*.x86_64.rpm 
@@ -175,7 +175,7 @@ tarball and use it to install Singularity:
 $ cd $GOPATH/src/github.com/apptainer/singularity && \
   ./mconfig && \
   make -C builddir rpm && \
-  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.5*.x86_64.rpm # or whatever version you built
+  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.6*.x86_64.rpm # or whatever version you built
 ```
 
 To build an rpm with an alternative install prefix set RPMPREFIX on the
