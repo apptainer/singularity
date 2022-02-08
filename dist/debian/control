@@ -1,41 +1,22 @@
 Source: singularity-container
-Section: admin
+Section: utils
 Priority: optional
-Maintainer: Gregory M. Kurtzer <gmkurtzer@gmail.com>
-Uploaders:
- Dave Love <fx@gnu.org>,
- Mehdi Dogguy <mehdi@debian.org>,
- Yaroslav Halchenko <debian@onerussian.com>,
- Gregory M. Kurtzer <gmkurtzer@gmail.com>,
-Build-Depends:
- debhelper (>= 9),
- dh-autoreconf,
- help2man,
- libarchive-dev,
- libssl-dev,
- python,
- uuid-dev,
- devscripts,
- libseccomp-dev,
- cryptsetup,
- golang-go (>= 2:1.13~~)
+Maintainer: singularity <singularity@apptainer.org>
+Build-Depends: build-essential, uuid-dev, libgpgme-dev, squashfs-tools, libseccomp-dev, wget, pkg-config, git, cryptsetup-bin, golang (>=1.17)
 Standards-Version: 3.9.8
-Homepage: http://gmkurtzer.github.io/singularity
-Vcs-Git: https://github.com/hpcng/singularity.git
-Vcs-Browser: https://github.com/hpcng/singularity
+Homepage: https://apptainer.org/
+Vcs-Git: https://github.com/apptainer/singularity.git
+Vcs-Browser: https://github.com/apptainer/singularity
 
 # "singularity" is a packaged game (but the contents don't clash)
 Package: singularity-container
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, python, squashfs-tools
-Description: container platform focused on supporting "Mobility of Compute"
- Mobility of Compute encapsulates the development to compute model
- where developers can work in an environment of their choosing and
- creation and when the developer needs additional compute resources,
- this environment can easily be copied and executed on other platforms.
- Additionally as the primary use case for Singularity is targeted
- towards computational portability, many of the barriers to entry of
- other container solutions do not apply to Singularity making it an
- ideal solution for users (both computational and non-computational)
- and HPC centers.
-
+Depends: ${shlibs:Depends}
+Description: Apptainer is a container platform.  It allows you to create and
+ run containers that package up pieces of software in a way that is portable
+ and reproducible.  You can build a container using Apptainer on your
+ laptop, and then run it on many of the largest HPC clusters in the world,
+ local university or company clusters, a single server, in the cloud, or on
+ a workstation down the hall.  Your container is a single file, and you
+ don’t have to worry about how to install all the software you need on each
+ different operating system.

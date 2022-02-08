@@ -1,0 +1,22 @@
+#!/bin/sh -ex
+
+# This script has been tested on ubuntu-20.04 using golang from this PPA:
+#   https://github.com/golang/go/wiki/Ubuntu
+#   https://launchpad.net/~longsleep/+archive/ubuntu/golang-backports
+
+name=singularity-container
+
+version=$(sed -ne "1s,^${name}.*(\(.*\)-.*$,\1,p" < debian/changelog)
+pwd=$(cd ${0%/*}; pwd)
+src=${pwd%/*}
+srcbase=${src##*/}
+srcname=${name}_${version}.orig.tar.gz
+
+(cd ../..; tar --exclude=${srcbase}/.\* -czf ${srcname} ${srcbase})
+cp -a debian ..
+cd ../debian
+debuild --check-dirname-level=0 -us -uc
+
+echo "---------------- Generated:"
+ls -al ../../${name}*deb
+echo ""

@@ -1,3 +1,9 @@
+singularity-container (3.8.5-1) unstable; urgency=low
+
+  * version 3.8.5
+
+ -- singularity <singularity@apptainer.org>  Tue, 8 Feb 2022 12:00:00 +0000
+
 singularity-container (2.4.2-1) unstable; urgency=high
 
   * This fixed an issue for support of older distributions and kernels with regards to `setns()`
