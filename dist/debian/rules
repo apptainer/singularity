@@ -75,7 +75,10 @@ ifneq ($(NEW_VERSION),)
 	@debchange -v $(NEW_VERSION)$(VERSION_POSTFIX) "Version $(NEW_VERSION)" && debchange -m -r ""
 endif
 	@PATH=$(GOROOT)/bin:$$PATH ./mconfig $(SC_VERBOSE) -b $(DEB_SC_BUILDDIR) -P $(DEB_SC_PROFILE) $(SC_OPTIONS) \
-                --prefix=/usr --sysconfdir=/etc --localstatedir=/var/lib
+                --prefix=/usr \
+		--sysconfdir=/etc \
+		--localstatedir=/var/lib \
+		--mandir=/usr/share/man
 
 override_dh_auto_build:
 	@PATH=$(GOROOT)/bin:$$PATH dh_auto_build -Smakefile --parallel --max-parallel=$(MAKEPARALLEL) -D$(DEB_SC_BUILDDIR)
