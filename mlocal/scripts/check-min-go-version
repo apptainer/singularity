@@ -17,6 +17,10 @@ if [ "$GOMINOR" = "$GOPATCH" ]; then
 else
     GOMINOR="${GOMINOR/.*}"
 fi
+# ignore GO pre-release extensions
+if ! [[ $GOMINOR =~ ^[0-9]$ ]]; then
+    GOMINOR="$(echo $GOMINOR|sed 's/^\([0-9]*\).*/\1/')"
+fi
 
 MINVERSION="$2"
 MINMAJOR="${MINVERSION/.*}"
