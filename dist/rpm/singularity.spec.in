@@ -69,8 +69,8 @@ BuildRequires: cryptsetup
 # there's no golang for ppc64, just ppc64le
 ExcludeArch: ppc64
 
-Provides: %{name}-runtime
-Obsoletes: %{name}-runtime
+Provides: %{name}-runtime = %{version}-%{release}
+Obsoletes: %{name}-runtime < 3.0
 
 %description
 Singularity provides functionality to make portable
