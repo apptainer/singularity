@@ -1,3 +1,4 @@
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -8,6 +9,7 @@
 package unpacker
 
 import (
+	"bufio"
 	"bytes"
 	"debug/elf"
 	"fmt"
@@ -16,7 +18,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/hpcng/singularity/internal/pkg/buildcfg"
@@ -27,11 +28,18 @@ func init() {
 	cmdFunc = unsquashfsSandboxCmd
 }
 
-// getLibraries returns the libraries required by the elf binary,
-// the binary path must be absolute.
-func getLibraries(binary string) ([]string, error) {
-	libs := make([]string, 0)
+// libBind represents a library bind mount required by an elf binary
+// that will be run in a contained minimal filesystem.
+type libBind struct {
+	// source is the path to bind from, on the host.
+	source string
+	// dest is the path to bind to, inside the minimal filesystem.
+	dest string
+}
 
+// getLibraryBinds returns the library bind mounts required by an elf binary.
+// The binary path must be absolute.
+func getLibraryBinds(binary string) ([]libBind, error) {
 	exe, err := elf.Open(binary)
 	if err != nil {
 		return nil, err
@@ -59,7 +67,7 @@ func getLibraries(binary string) ([]string, error) {
 
 	// this is a static binary, nothing to do
 	if interp == "" {
-		return libs, nil
+		return []libBind{}, nil
 	}
 
 	// run interpreter to list library dependencies for the
@@ -83,25 +91,52 @@ func getLibraries(binary string) ([]string, error) {
 		return nil, fmt.Errorf("while getting library dependencies: %s\n%s", err, errBuf.String())
 	}
 
-	// parse the output to get matches for ' /an/absolute/path ('
-	re := regexp.MustCompile(`[[:blank:]]?(\/.*)[[:blank:]]\(`)
+	return parseLibraryBinds(buf)
+}
 
-	match := re.FindAllStringSubmatch(buf.String(), -1)
-	for _, m := range match {
-		if len(m) < 2 {
+// parseLibrary binds parses `ld-linux-x86-64.so.2 --list <binary>` output.
+// Returns a list of source->dest bind mounts required to run the binary
+// in a minimal contained filesystem.
+func parseLibraryBinds(buf io.Reader) ([]libBind, error) {
+	libs := make([]libBind, 0)
+	scanner := bufio.NewScanner(buf)
+
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		if len(fields) < 2 {
 			continue
 		}
-		lib := m[1]
-		has := false
-		for _, l := range libs {
-			if l == lib {
-				has = true
-				break
-			}
+		// /lib64/ld64.so.2 (0x00007fff96c60000)
+		// Absolute path in 1st field - bind directly dest=source
+		if filepath.IsAbs(fields[0]) {
+			libs = append(libs, libBind{
+				source: fields[0],
+				dest:   fields[0],
+			})
+			continue
 		}
-		if !has {
-			libs = append(libs, lib)
+		// libpthread.so.0 => /lib64/libpthread.so.0 (0x00007fff96a20000)
+		//    .. or with glibc-hwcaps ..
+		// libpthread.so.0 => /lib64/glibc-hwcaps/power9/libpthread-2.28.so (0x00007fff96a20000)
+		//
+		// Bind resolved lib to same dir, but with .so filename from 1st field.
+		// e.g. source is: /lib64/glibc-hwcaps/power9/libpthread-2.28.so
+		//      dest is  : /lib64/glibc-hwcaps/power9/libpthread.so.0
+		if len(fields) >= 3 && fields[1] == "=>" {
+			destDir := filepath.Dir(fields[2])
+			dest := filepath.Join(destDir, fields[0])
+			libs = append(libs, libBind{
+				source: fields[2],
+				dest:   dest,
+			})
 		}
+		// linux-vdso64.so.1 (0x00007fff96c40000)
+		//   .. or anything else
+		// No absolute path = nothing to bind
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("while parsing library dependencies: %v", err)
 	}
 
 	return libs, nil
@@ -170,31 +205,57 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 		filename = filepath.Join(rootfsImageDir, filepath.Base(filename))
 	}
 
-	// get the library dependencies of unsquashfs
-	libs, err := getLibraries(unsquashfs)
-	if err != nil {
-		return nil, err
-	}
-	libraryPath := make([]string, 0)
-
 	roFiles := []string{
 		unsquashfs,
 	}
 
-	// add libraries for bind mount and also generate
-	// LD_LIBRARY_PATH
+	// get the library dependencies of unsquashfs
+	libs, err := getLibraryBinds(unsquashfs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Handle binding of files
+	for _, b := range roFiles {
+		// Ensure parent dir and file exist in container
+		rootfsFile := filepath.Join(rootfs, b)
+		rootfsDir := filepath.Dir(rootfsFile)
+		if err := os.MkdirAll(rootfsDir, 0o700); err != nil {
+			return nil, fmt.Errorf("while creating %s: %s", rootfsDir, err)
+		}
+		if err := ioutil.WriteFile(rootfsFile, []byte(""), 0o600); err != nil {
+			return nil, fmt.Errorf("while creating %s: %s", rootfsFile, err)
+		}
+		// Simple read-only bind, dest in container same as source on host
+		args = append(args, "-B", fmt.Sprintf("%s:%s:ro", b, b))
+	}
+
+	// Handle binding of libs and generate LD_LIBRARY_PATH
+	libraryPath := make([]string, 0)
 	for _, l := range libs {
-		dir := filepath.Dir(l)
-		roFiles = append(roFiles, l)
+		// Ensure parent dir and file exist in container
+		rootfsFile := filepath.Join(rootfs, l.dest)
+		rootfsDir := filepath.Dir(rootfsFile)
+		if err := os.MkdirAll(rootfsDir, 0o700); err != nil {
+			return nil, fmt.Errorf("while creating %s: %s", rootfsDir, err)
+		}
+		if err := ioutil.WriteFile(rootfsFile, []byte(""), 0o600); err != nil {
+			return nil, fmt.Errorf("while creating %s: %s", rootfsFile, err)
+		}
+		// Read only bind, dest in container may not match source on host due
+		// to .so symlinking (see getLibraryBinds comments).
+		args = append(args, "-B", fmt.Sprintf("%s:%s:ro", l.source, l.dest))
+		// If dir of lib not already in the LD_LIBRARY_PATH, add it.
 		has := false
+		libraryDir := filepath.Dir(l.dest)
 		for _, lp := range libraryPath {
-			if lp == dir {
+			if lp == libraryDir {
 				has = true
 				break
 			}
 		}
 		if !has {
-			libraryPath = append(libraryPath, dir)
+			libraryPath = append(libraryPath, libraryDir)
 		}
 	}
 

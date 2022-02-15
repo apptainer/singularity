@@ -1,5 +1,13 @@
 # Singularity Changelog
 
+## Changes Since Last Release
+
+### Bug fixes
+
+- Correct library bindings for `unsquashfs` containment. Fixes errors where
+  resolved library filename does not match library filename in binary (e.g. EL8,
+  POWER9 with glibc-hwcaps).
+
 ## v3.8.6 - [2022-02-08]
 
 ### Changed behaviours and bug fixes
