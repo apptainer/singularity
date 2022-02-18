@@ -18,3 +18,6 @@ jobs:
           issue-comment: >
             This repository does not accept bug reports,
             see the README for details.
+          pr-comment: >
+            This repository does not accept pull requests,
+            see the README for details.
