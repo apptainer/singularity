@@ -2,12 +2,9 @@ name: RepoLockdown
 on:
   issues:
     types: opened
-  pull_request_target:
-    types: opened
 
 permissions:
   issues: write
-  pull-requests: write
 
 jobs:
   action:
@@ -16,8 +13,4 @@ jobs:
       - uses: dessant/repo-lockdown@v2
         with:
           issue-comment: >
-            This repository does not accept bug reports,
-            see the README for details.
-          pr-comment: >
-            This repository does not accept pull requests,
-            see the README for details.
+            New issues are no longer accepted in this repository. If singularity --version says singularity-ce, submit instead to https://github.com/sylabs/singularity, otherwise submit to https://github.com/apptainer/apptainer.
