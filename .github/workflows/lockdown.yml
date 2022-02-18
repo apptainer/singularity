@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: dessant/repo-lockdown@v2
+        with:
           issue-comment: >
             This repository does not accept bug reports,
             see the README for details.
