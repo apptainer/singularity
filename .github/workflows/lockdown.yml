@@ -1,5 +1,4 @@
-name: 'Repo Lockdown'
-
+name: RepoLockdown
 on:
   issues:
     types: opened
@@ -21,4 +20,3 @@ jobs:
           pr-comment: >
             This repository does not accept pull requests,
             see the README for details.
-
