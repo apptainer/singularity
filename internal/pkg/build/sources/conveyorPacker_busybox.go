@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/hpcng/singularity/pkg/build/types"
 	"github.com/hpcng/singularity/pkg/sylog"
@@ -91,7 +92,15 @@ func (c *BusyBoxConveyor) insertBaseFiles() error {
 func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, err error) {
 	os.Mkdir(filepath.Join(c.b.RootfsPath, "/bin"), 0755)
 
-	resp, err := http.Get(mirrorurl)
+	// Increase the TLS handshake timeout because the busybox server
+	//   is often slow to connect.
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSHandshakeTimeout: 60 * time.Second,
+		},
+	}
+
+	resp, err := client.Get(mirrorurl)
 	if err != nil {
 		return "", fmt.Errorf("while performing http request: %v", err)
 	}
