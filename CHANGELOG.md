@@ -7,6 +7,8 @@
 - Correct library bindings for `unsquashfs` containment. Fixes errors where
   resolved library filename does not match library filename in binary (e.g. EL8,
   POWER9 with glibc-hwcaps).
+- Increased the TLS Handshake Timeout for the busybox bootstrap agent in
+  build definition files to 60 seconds.
 
 ## v3.8.6 - [2022-02-08]
 
