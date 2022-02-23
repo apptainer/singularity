@@ -94,10 +94,10 @@ func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, e
 
 	// Increase the TLS handshake timeout because the busybox server
 	//   is often slow to connect.
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSHandshakeTimeout = 60 * time.Second
 	client := &http.Client{
-		Transport: &http.Transport{
-			TLSHandshakeTimeout: 60 * time.Second,
-		},
+		Transport: transport,
 	}
 
 	resp, err := client.Get(mirrorurl)

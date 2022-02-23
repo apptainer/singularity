@@ -210,23 +210,19 @@ func (c *keyserverTransport) RoundTrip(req *http.Request) (*http.Response, error
 	return nil, fmt.Errorf("no keyserver configured")
 }
 
-var defaultClient = &http.Client{
-	Timeout: 5 * time.Second,
-	Transport: &http.Transport{
-		DisableKeepAlives: true,
-		// Note - when overriding transport we need to explicitly setup the
-		// proxy parsing from env vars that http.DefaultTransport does.
-		Proxy:           http.ProxyFromEnvironment,
-		TLSClientConfig: &tls.Config{},
-	},
-}
-
 func newClient(keyservers []*ServiceConfig, op KeyserverOp) *http.Client {
+	innerTransport := http.DefaultTransport.(*http.Transport).Clone()
+	innerTransport.DisableKeepAlives = true
+	innerTransport.TLSClientConfig = &tls.Config{}
+	innerClient := &http.Client{
+		Timeout:   5 * time.Second,
+		Transport: innerTransport,
+	}
 	return &http.Client{
 		Transport: &keyserverTransport{
 			keyservers: keyservers,
 			op:         op,
-			client:     defaultClient,
+			client:     innerClient,
 		},
 	}
 }
