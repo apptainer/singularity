@@ -13,7 +13,6 @@ Build-Depends:
  help2man,
  libarchive-dev,
  libssl-dev,
- python,
  uuid-dev,
  devscripts,
  libseccomp-dev,
@@ -27,7 +26,7 @@ Vcs-Browser: https://github.com/apptainer/singularity
 # "singularity" is a packaged game (but the contents don't clash)
 Package: singularity-container
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, python, squashfs-tools
+Depends: ${misc:Depends}, ${shlibs:Depends}, squashfs-tools
 Description: container platform focused on supporting "Mobility of Compute"
  Mobility of Compute encapsulates the development to compute model
  where developers can work in an environment of their choosing and
