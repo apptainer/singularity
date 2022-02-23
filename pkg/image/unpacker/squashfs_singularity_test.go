@@ -40,6 +40,18 @@ const ldListComplex = `        linux-vdso64.so.1 (0x00007fff80d70000)
         libc.so.6 => /lib64/glibc-hwcaps/power9/libc-2.28.so (0x00007fff806d0000)
         /lib64/ld64.so.2 (0x00007fff80d90000)`
 
+// Library listing on EL7 - old case
+// The linux-vdso.so.1 line has a => field that doesn't point to an absolute path
+const ldListOld = `        linux-vdso.so.1 =>  (0x00007ffccf1de000)
+        libpthread.so.0 => /lib64/libpthread.so.0 (0x00007f5ab0e3d000)
+        libm.so.6 => /lib64/libm.so.6 (0x00007f5ab0b3b000)
+        libz.so.1 => /lib64/libz.so.1 (0x00007f5ab0925000)
+        liblzma.so.5 => /lib64/liblzma.so.5 (0x00007f5ab06ff000)
+        liblzo2.so.2 => /lib64/liblzo2.so.2 (0x00007f5ab04de000)
+        libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00007f5ab02c8000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007f5aafefa000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f5ab1059000)`
+
 func Test_parseLibraryBinds(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -84,6 +96,21 @@ func Test_parseLibraryBinds(t *testing.T) {
 				{"/lib64/liblz4.so.1", "/lib64/liblz4.so.1"},
 				{"/lib64/glibc-hwcaps/power9/libc-2.28.so", "/lib64/glibc-hwcaps/power9/libc.so.6"},
 				{"/lib64/ld64.so.2", "/lib64/ld64.so.2"},
+			},
+			wantErr: false,
+		},
+		{
+			name:   "old",
+			ldList: ldListOld,
+			want: []libBind{
+				{"/lib64/libpthread.so.0", "/lib64/libpthread.so.0"},
+				{"/lib64/libm.so.6", "/lib64/libm.so.6"},
+				{"/lib64/libz.so.1", "/lib64/libz.so.1"},
+				{"/lib64/liblzma.so.5", "/lib64/liblzma.so.5"},
+				{"/lib64/liblzo2.so.2", "/lib64/liblzo2.so.2"},
+				{"/lib64/libgcc_s.so.1", "/lib64/libgcc_s.so.1"},
+				{"/lib64/libc.so.6", "/lib64/libc.so.6"},
+				{"/lib64/ld-linux-x86-64.so.2", "/lib64/ld-linux-x86-64.so.2"},
 			},
 			wantErr: false,
 		},

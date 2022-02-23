@@ -122,7 +122,7 @@ func parseLibraryBinds(buf io.Reader) ([]libBind, error) {
 		// Bind resolved lib to same dir, but with .so filename from 1st field.
 		// e.g. source is: /lib64/glibc-hwcaps/power9/libpthread-2.28.so
 		//      dest is  : /lib64/glibc-hwcaps/power9/libpthread.so.0
-		if len(fields) >= 3 && fields[1] == "=>" {
+		if len(fields) >= 3 && fields[1] == "=>" && filepath.IsAbs(fields[2]) {
 			destDir := filepath.Dir(fields[2])
 			dest := filepath.Join(destDir, fields[0])
 			libs = append(libs, libBind{
@@ -131,6 +131,7 @@ func parseLibraryBinds(buf io.Reader) ([]libBind, error) {
 			})
 		}
 		// linux-vdso64.so.1 (0x00007fff96c40000)
+		// linux-vdso64.so.1 =>  (0x00007fff96c40000)
 		//   .. or anything else
 		// No absolute path = nothing to bind
 	}
