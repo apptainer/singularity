@@ -1,11 +1,6 @@
 name: ci
 on:
   pull_request:
-  push:
-    branches:
-      - master
-    tags:
-      - 'v*.*.*'
 
 jobs:
   check_go_mod:
@@ -223,73 +218,3 @@ jobs:
           name: e2e-artifact
           path: builddir/e2e-cmd-report.txt
           retention-days: 7
-
-  release_assets:
-    name: release_assets
-    runs-on: ubuntu-20.04
-    if: startsWith(github.ref, 'refs/tags/')
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Check if release is needed because tag matches latest annotated
-        env:
-          GITHUB_REF: ${{github.ref}}
-        run: |
-          GETVERSION="$(./scripts/get-version)"
-          GITTAG="${GITHUB_REF#refs/tags/v*}"
-          if [ "$GETVERSION" == "$GITTAG" ]
-          then
-            echo "do_release=true" >> $GITHUB_ENV
-          else
-            echo "Skipping because $GETVERSION did not match $GITTAG"
-          fi
-
-      - name: Make dist tarball and rpm packages
-        if: env.do_release
-        env:
-          OS_TYPE: centos
-          OS_VERSION: 7
-          GO_ARCH: linux-amd64
-          GITHUB_REF: ${{github.ref}}
-        run: |
-          # Move the source directory down a level to separate it
-          #  from later builds; the docker build runs privileged and
-          #  changes the ownership of the files.
-          set -x
-          mkdir rpmdir
-          shopt -s extglob
-          mv .??* !(rpmdir) rpmdir
-          cd rpmdir
-          echo ${GITHUB_REF#refs/tags/v*} >VERSION
-          ./scripts/ci-docker-run
-          cp *.tar.gz *.rpm ..
-          cd ..
-          sha256sum *.tar.gz *.rpm > sha256sums
-
-      - name: Make deb packages
-        if: env.do_release
-        env:
-          OS_TYPE: debian
-          OS_VERSION: 11
-          GO_ARCH: linux-amd64
-          GITHUB_REF: ${{github.ref}}
-        run: |
-          # Make a new copy of the source files for this build
-          set -x
-          tar xf singularity-*.tar.gz
-          cd singularity-${GITHUB_REF#refs/tags/v*}
-          ./scripts/ci-docker-run
-          cp *.deb ..
-          cd ..
-          sha256sum *.deb >> sha256sums
-
-      - name: Release
-        if: env.do_release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            *.tar.gz
-            *.rpm
-            *.deb
-            sha256sums

@@ -1,0 +1,74 @@
+name: release
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release_assets:
+    name: release_assets
+    runs-on: ubuntu-20.04
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/checkout@v2
+      - run: git fetch --prune --unshallow --tags --force
+
+      - name: Check if release is needed because tag matches latest annotated
+        env:
+          GITHUB_REF: ${{github.ref}}
+        run: |
+          GETVERSION="$(./scripts/get-version)"
+          GITTAG="${GITHUB_REF#refs/tags/v*}"
+          if [ "$GETVERSION" == "$GITTAG" ]
+          then
+            echo "do_release=true" >> $GITHUB_ENV
+          else
+            echo "Skipping because $GETVERSION did not match $GITTAG"
+          fi
+
+      - name: Make dist tarball and rpm packages
+        if: env.do_release
+        env:
+          OS_TYPE: centos
+          OS_VERSION: 7
+          GO_ARCH: linux-amd64
+        run: |
+          # Move the source directory down a level to separate it
+          #  from later builds; the docker build runs privileged and
+          #  changes the ownership of the files.
+          set -x
+          mkdir rpmdir
+          shopt -s extglob
+          mv .??* !(rpmdir) rpmdir
+          cd rpmdir
+          ./scripts/ci-docker-run
+          cp *.tar.gz *.rpm ..
+          cd ..
+          sha256sum *.tar.gz *.rpm > sha256sums
+
+      - name: Make deb packages
+        if: env.do_release
+        env:
+          OS_TYPE: debian
+          OS_VERSION: 11
+          GO_ARCH: linux-amd64
+        run: |
+          # Make a new copy of the source files for this build
+          set -x
+          tar xf apptainer-*.tar.gz
+          cd `basename apptainer-*.tar.gz .tar.gz`
+          ./scripts/ci-docker-run
+          cp *.deb ..
+          cd ..
+          sha256sum *.deb >> sha256sums
+
+      - name: Release
+        if: env.do_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            *.tar.gz
+            *.rpm
+            *.deb
+            sha256sums
