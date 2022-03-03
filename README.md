@@ -1,11 +1,12 @@
 # Singularity
 
-IMPORTANT NOTE: Singularity is being renamed to
-[Apptainer](https://apptainer.org).
+IMPORTANT NOTE: Singularity has been renamed to
+[Apptainer](https://apptainer.org/news/community-announcement-20211130).
 This repository is now only for maintaining the 3.8 series and archiving
-the history.
+the history; the master branch is not used for anything.
 Submit all current issues and pull requests to
 [https://github.com/apptainer/apptainer](https://github.com/apptainer/apptainer).
+Any issue submitted here will be automatically closed.
 
 [![CI](https://github.com/hpcng/singularity/actions/workflows/ci.yml/badge.svg)](https://github.com/hpcng/singularity/actions/workflows/ci.yml)
 
