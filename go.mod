@@ -6,7 +6,6 @@ require (
 	github.com/AdamKorcz/go-fuzz-headers v0.0.0-20210319161527-f761c2329661 // indirect
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
 	github.com/adigunhammedolalekan/registry-auth v0.0.0-20200730122110-8cde180a3a60
-	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
 	github.com/apex/log v1.9.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/jsonparser v1.1.1
@@ -14,13 +13,12 @@ require (
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/cgroups v1.0.1
 	github.com/containerd/containerd v1.5.8
-	github.com/containernetworking/cni v0.8.1
-	github.com/containernetworking/plugins v0.9.1
+	github.com/containernetworking/cni v1.0.1
+	github.com/containernetworking/plugins v1.1.1
 	github.com/containers/image/v5 v5.17.0
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/fatih/color v1.12.0
 	github.com/go-log/log v0.2.0
-	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/hpcng/sif v1.6.0
