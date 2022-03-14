@@ -10,6 +10,10 @@
 - Remove python as a dependency of the debian package.
 - Increased the TLS Handshake Timeout for the busybox bootstrap agent in
   build definition files to 60 seconds.
+- Preload NSS libraries prior to mountspace name creation to avoid
+  circumstances that can cause loading those libraries from the
+  container image instead of the host, for example in the startup
+  environment.
 
 ## v3.8.6 - [2022-02-08]
 
