@@ -17,6 +17,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <pwd.h>
 #include <grp.h>
 #include <link.h>
 #include <dirent.h>
@@ -1382,6 +1383,20 @@ __attribute__((constructor)) static void init(void) {
         if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, rpc_socket) < 0 ) {
             fatalf("Failed to create communication socket: %s\n", strerror(errno));
         }
+    }
+
+    /*
+     * preload and cache of nss libraries for os/user golang CGO implementation,
+     * when libraries are not loaded prior to pivot_root in the container mount
+     * namespace, they are loaded from the container image when the stage 2 process
+     * is calling os/user golang package, and it might cause compatibility issues with
+     * the host libc library used by this starter binary.
+     */
+    if (getpwuid(0) == NULL) {
+        fatalf("Failed to retrieve root user information: %s\n", strerror(errno));
+    }
+    if (getgrgid(0) == NULL) {
+        fatalf("Failed to retrieve root group information: %s\n", strerror(errno));
     }
 
     userns = user_namespace_init(&sconfig->container.namespace);

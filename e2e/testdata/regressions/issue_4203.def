@@ -39,6 +39,10 @@ bootstrap: docker
 from: ubuntu:16.04
 stage: final
 
+%environment
+    # to trigger the regression from https://github.com/apptainer/apptainer/issues/304
+    cd /usr
+
 %files from build
     /bad.so /lib/x86_64-linux-gnu/libnss_bad.so.2
     /nsswitch.conf /etc/nsswitch.conf
