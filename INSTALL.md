@@ -87,7 +87,7 @@ $ mkdir -p ${GOPATH}/src/github.com/apptainer && \
 To build a stable version of Singularity, check out a [release tag](https://github.com/apptainer/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.8.6
+$ git checkout v3.8.7
 ```
 
 ## Compiling Singularity
@@ -147,7 +147,7 @@ Download the latest
 and use it to install the RPM like this:
 
 ```
-$ export VERSION=3.8.6  # this is the singularity version, change as you need
+$ export VERSION=3.8.7  # this is the singularity version, change as you need
 
 $ wget https://github.com/apptainer/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-${VERSION}.tar.gz && \
@@ -161,7 +161,7 @@ for example like this if you already have a new enough golang first
 in your PATH:
 
 ```
-VERSION=3.8.6  # this is the singularity version, change as you need
+VERSION=3.8.7  # this is the singularity version, change as you need
 ./mconfig
 make -C builddir rpm
 sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-${VERSION}*.x86_64.rpm 
@@ -175,7 +175,7 @@ tarball and use it to install Singularity:
 $ cd $GOPATH/src/github.com/apptainer/singularity && \
   ./mconfig && \
   make -C builddir rpm && \
-  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.6*.x86_64.rpm # or whatever version you built
+  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.8.7*.x86_64.rpm # or whatever version you built
 ```
 
 To build an rpm with an alternative install prefix set RPMPREFIX on the
