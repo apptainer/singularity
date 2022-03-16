@@ -1,6 +1,6 @@
 # Singularity Changelog
 
-## Changes Since Last Release
+## v3.8.7 - [2022-03-15]
 
 ### Bug fixes
 
