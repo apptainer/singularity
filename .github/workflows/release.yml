@@ -56,8 +56,8 @@ jobs:
         run: |
           # Make a new copy of the source files for this build
           set -x
-          tar xf apptainer-*.tar.gz
-          cd `basename apptainer-*.tar.gz .tar.gz`
+          tar xf singularity-*.tar.gz
+          cd `basename singularity-*.tar.gz .tar.gz`
           ./scripts/ci-docker-run
           cp *.deb ..
           cd ..
