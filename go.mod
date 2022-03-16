@@ -18,11 +18,11 @@ require (
 	github.com/containernetworking/plugins v0.9.1
 	github.com/containers/image/v5 v5.17.0
 	github.com/cyphar/filepath-securejoin v0.2.3
-	github.com/fatih/color v1.12.0
+	github.com/fatih/color v1.13.0
 	github.com/go-log/log v0.2.0
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/google/uuid v1.3.0
-	github.com/gorilla/websocket v1.4.2
+	github.com/gorilla/websocket v1.5.0
 	github.com/hpcng/sif v1.6.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/pty v1.1.8
@@ -32,18 +32,17 @@ require (
 	github.com/opencontainers/runtime-tools v0.9.1-0.20210326182921-59cdde06764b
 	github.com/opencontainers/selinux v1.10.0
 	github.com/opencontainers/umoci v0.4.7
-	github.com/pelletier/go-toml v1.9.3
+	github.com/pelletier/go-toml v1.9.4
 	github.com/pkg/errors v0.9.1
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/satori/go.uuid v1.2.1-0.20180404165556-75cca531ea76
 	github.com/seccomp/containers-golang v0.6.0
 	github.com/seccomp/libseccomp-golang v0.9.1
-	github.com/spf13/cobra v1.2.1
+	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.8.0
-	github.com/sylabs/scs-build-client v0.2.1
+	github.com/sylabs/scs-build-client v0.4.1
 	github.com/sylabs/scs-key-client v0.6.2
-	github.com/sylabs/scs-library-client v1.0.5
+	github.com/sylabs/scs-library-client v1.2.1
 	github.com/urfave/cli v1.22.5 // indirect
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vbauerster/mpb/v6 v6.0.4
@@ -52,7 +51,7 @@ require (
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
-	golang.org/x/sys v0.0.0-20211004093028-2c5d950f24ef
+	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
 	mvdan.cc/sh/v3 v3.4.3-0.20220202175809-113ed667a8a7
