@@ -25,6 +25,7 @@ jobs:
 
       - name: Build Singularity
         run: |
+          git config --global --add safe.directory $(pwd)
           ./mconfig -v -p /usr/local
           make -C ./builddir all
 
@@ -44,6 +45,7 @@ jobs:
 
       - name: Build Singularity
         run: |
+          git config --global --add safe.directory $(pwd)
           ./mconfig -v -p /usr/local
           make -C ./builddir all
 
