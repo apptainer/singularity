@@ -37,7 +37,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/satori/go.uuid v1.2.1-0.20180404165556-75cca531ea76
 	github.com/seccomp/containers-golang v0.6.0
-	github.com/seccomp/libseccomp-golang v0.9.1
+	github.com/seccomp/libseccomp-golang v0.10.0
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.8.0
