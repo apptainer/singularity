@@ -2,8 +2,8 @@
 
 IMPORTANT NOTE: Singularity has been renamed to
 [Apptainer](https://apptainer.org/news/community-announcement-20211130).
-This repository is now only for maintaining the 3.8 series and archiving
-the history; the master branch is not used for anything.
+This repository is now for archiving the history in the release branches.
+The master branch is not in a consistent state.
 Submit all current issues and pull requests to
 [https://github.com/apptainer/apptainer](https://github.com/apptainer/apptainer).
 Any issue submitted here will be automatically closed.
