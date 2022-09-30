@@ -3,11 +3,13 @@
 # Please see the documentation for all configuration options:
 # https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
-version: 2
-updates:
-  - package-ecosystem: "gomod" # See documentation for possible values
-    directory: "/" # Location of package manifests
-    schedule:
-      interval: "daily"
-    target-branch: release-3.8
+# This repo is no longer actively developed, dependabot is disabled
+
+#version: 2
+#updates:
+#  - package-ecosystem: "gomod" # See documentation for possible values
+#    directory: "/" # Location of package manifests
+#    schedule:
+#      interval: "daily"
+#    target-branch: release-3.8
 
